@@ -1,7 +1,9 @@
 // API client for docs/API.md. With NEXT_PUBLIC_API_URL unset, every call is
 // served from src/lib/mocks.ts; when set, it fetches `${NEXT_PUBLIC_API_URL}/api/...`.
 import type {
+  ActionFeed,
   CheckoutResponse,
+  FeedbackRequest,
   PaywallDetail,
   Roster,
   ConnectRequest,
@@ -28,11 +30,13 @@ const MOCK_ENTITLEMENTS_KEY = "edge.mock.entitlements";
 /** Thrown on HTTP 402: the feature needs a purchase. Carries the products that unlock it. */
 export class PaywallError extends Error {
   feature: string;
+  teaser: string | null;
   upsell: PaywallDetail["upsell"];
   constructor(d: PaywallDetail) {
     super(d.error);
     this.name = "PaywallError";
     this.feature = d.feature;
+    this.teaser = d.teaser ?? null;
     this.upsell = d.upsell;
   }
 }
@@ -121,6 +125,19 @@ export async function getLeague(platform: Platform, leagueId: string): Promise<L
 export async function connect(req: ConnectRequest): Promise<void> {
   if (USE_MOCKS) return;
   await request<unknown>("/connect", { method: "POST", body: JSON.stringify(req) });
+}
+
+export async function getActions(platform: Platform, leagueId: string, teamId: string): Promise<ActionFeed> {
+  if (USE_MOCKS) {
+    const me = await getMe();
+    return mocks.actionsFor(teamId, me.entitlements);
+  }
+  return request<ActionFeed>(`/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/actions`);
+}
+
+export async function sendFeedback(req: FeedbackRequest): Promise<void> {
+  if (USE_MOCKS) return;
+  await request<unknown>("/feedback", { method: "POST", body: JSON.stringify(req) });
 }
 
 export async function getRoster(platform: Platform, leagueId: string, teamId: string): Promise<Roster> {

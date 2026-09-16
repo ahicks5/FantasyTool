@@ -13,34 +13,33 @@ export function Pricing() {
 
   return (
     <section id="pricing" className="mt-12">
-      <h2 className="text-2xl font-black tracking-tight">Pay for the week you need</h2>
-      <p className="mt-1 text-muted">No subscription. Buy the piece you want for the rest of the season.</p>
-      <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+      <h2 className="text-2xl font-black">Pay for the piece you need</h2>
+      <p className="mt-1 text-muted">One payment, rest of the season. No subscription.</p>
+      <ul className="mt-5 grid gap-3">
         {(products ?? []).map((p) => {
           const everything = p.sku === "full_report";
           return (
-            <li
-              key={p.sku}
-              className={`flex flex-col rounded-xl border p-4 ${everything ? "border-2 border-start bg-start-soft" : "border-line"}`}
-            >
-              <div className="flex items-baseline justify-between">
-                <span className="text-lg font-bold">{p.name}</span>
-                <span className="text-2xl font-black">{formatCents(p.price_cents)}</span>
+            <li key={p.sku} className={`card flex items-center gap-4 p-4 ${everything ? "border-2 border-start bg-start-soft" : ""}`}>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="display text-lg font-extrabold">{p.name}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${everything ? "bg-start text-white" : "bg-soft text-muted"}`}>
+                    {p.sku === "free" ? "free" : everything ? "best value" : "à la carte"}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-sm text-muted">{p.blurb}</p>
+                <p className="mt-1 text-xs text-muted">
+                  {p.leagues} league{p.leagues > 1 ? "s" : ""}
+                </p>
               </div>
-              <span className={`mt-1 w-fit rounded-full px-2 py-0.5 text-xs font-bold uppercase ${everything ? "bg-start text-white" : "bg-soft text-muted"}`}>
-                {p.sku === "free" ? "free" : everything ? "everything" : "à la carte"}
-              </span>
-              <p className="mt-2 flex-1 text-sm">{p.blurb}</p>
-              <p className="mt-2 text-xs text-muted">
-                {p.leagues} league{p.leagues > 1 ? "s" : ""} · {p.features.join(", ").replaceAll("_", " ")}
-              </p>
+              <span className="display shrink-0 text-3xl font-black tabular-nums">{formatCents(p.price_cents)}</span>
             </li>
           );
         })}
-        {products === null && <li className="text-muted">Loading prices…</li>}
+        {products === null && <li className="skeleton h-20" />}
       </ul>
       <div className="mt-6">
-        <LinkButton href="/connect" className="w-full">
+        <LinkButton href="/connect" variant="start" className="w-full">
           Connect your league
         </LinkButton>
       </div>

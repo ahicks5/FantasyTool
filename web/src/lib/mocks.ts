@@ -1,6 +1,8 @@
 // Mock data matching docs/API.md exactly. Player names, rosters and week-2
 // half-PPR projections come from tests/fixtures/sleeper/* ("The Megalabowl").
 import type {
+  Action,
+  ActionFeed,
   Confidence,
   Feature,
   LeagueSummary,
@@ -28,7 +30,7 @@ export const PRODUCTS: Product[] = [
   { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 1, blurb: "Start/sit for one team" },
   { sku: "waivers", name: "Waiver Wire Pass", price_cents: 300, features: ["waivers"], leagues: 1, blurb: "Top pickups + FAAB bids, rest of season" },
   { sku: "trade_lab", name: "Trade Lab", price_cents: 500, features: ["trade_lab"], leagues: 1, blurb: "Trade verdicts + counteroffers, rest of season" },
-  { sku: "full_report", name: "Full Report", price_cents: 900, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, blurb: "Everything, every week, up to 5 leagues" },
+  { sku: "full_report", name: "Full Report", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, blurb: "Everything, every week, up to 5 leagues" },
 ];
 
 export const SLEEPER_LEAGUES: SleeperLeagueRef[] = [
@@ -295,6 +297,18 @@ export const ROSTERS: MockRoster[] = [
 
 export const STARTING_SLOTS = ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "FLEX", "DEF"];
 
+// Free headshots / logos, same URLs the API emits.
+function withPhoto(p: Player): Player {
+  const team = (p.nfl_team ?? "").toLowerCase();
+  const team_logo = team ? `https://sleepercdn.com/images/team_logos/nfl/${team}.png` : null;
+  const photo = p.position === "DEF" ? team_logo : /^\d+$/.test(p.id) ? `https://sleepercdn.com/content/nfl/players/thumb/${p.id}.jpg` : null;
+  return { ...p, photo, team_logo };
+}
+for (const r of ROSTERS) {
+  r.starters = r.starters.map(withPhoto);
+  r.bench = r.bench.map(withPhoto);
+}
+
 export function rosterFor(teamId: string): MockRoster {
   return ROSTERS.find((r) => r.id === teamId) ?? ROSTERS[0];
 }
@@ -555,6 +569,73 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
     explanation,
     explanation_source: "template",
     graphic,
+  };
+}
+
+// ---------- Action feed (home) ----------
+
+export function actionsFor(teamId: string, entitlements: Feature[]): ActionFeed {
+  const lineup = lineupFor(teamId);
+  const actions: Action[] = [];
+  for (const ch of lineup.changes) {
+    const inP = allPlayers(teamId).find((p) => p.id === ch.in.id) ?? null;
+    const outP = ch.out ? (allPlayers(teamId).find((p) => p.id === ch.out!.id) ?? null) : null;
+    actions.push({
+      id: `start:${ch.slot}:${ch.in.id}`, type: "start", feature: "my_team", locked: false, priority: 0,
+      title: `Start ${ch.in.name} over ${ch.out?.name ?? "an empty slot"}`,
+      subtitle: `${ch.slot} · ${inP?.position ?? ""} ${inP?.nfl_team ?? ""}`,
+      benefit: `+${ch.gain.toFixed(1)} projected points`, benefit_value: ch.gain,
+      confidence: ch.confidence, reason: ch.reason,
+      why: [`${ch.in.name} projects ${inP?.projected.toFixed(1)}.`, `${ch.out?.name ?? "The slot"} projects ${outP?.projected.toFixed(1) ?? "0.0"}.`, `${ch.confidence}: margins this size were right about ${ch.confidence === "Lock" ? 80 : ch.confidence === "Lean" ? 62 : 51}% of the time last week.`],
+      players: [inP ? withPhoto(inP) : null, outP ? withPhoto(outP) : null],
+      cta: { label: "See lineup", href: "/team" },
+    });
+  }
+  const w = WAIVERS.picks[0];
+  if (entitlements.includes("waivers")) {
+    actions.push({
+      id: `waiver:${w.player.id}`, type: "waiver", feature: "waivers", locked: false, priority: 0,
+      title: `Add ${w.player.name}`, subtitle: `Bid $${w.bid.range?.[0]}–${w.bid.range?.[1]} · Drop ${w.drop?.name}`,
+      benefit: `+${w.weekly_gain.toFixed(1)} this week · +${w.ros_gain.toFixed(0)} ROS`, benefit_value: w.fit_score,
+      confidence: "Lean", reason: w.reason,
+      why: [`Fit score ${w.fit_score.toFixed(1)}.`, `${w.trending_adds.toLocaleString()} managers added him in the last 48h.`, `Bid is ${w.bid.pct_of_budget}% of your budget.`],
+      players: [withPhoto(w.player), null], cta: { label: "View waiver plan", href: "/waivers" },
+    });
+  } else {
+    actions.push({
+      id: "waiver:locked", type: "waiver", feature: "waivers", locked: true, priority: 0,
+      title: "2 waiver adds improve your roster", subtitle: "#1 would become your FLEX immediately",
+      benefit: `+${w.weekly_gain.toFixed(1)} this week · +${w.ros_gain.toFixed(0)} ROS`, benefit_value: w.fit_score,
+      confidence: null, reason: "Unlock Waivers to see names, bids and who to drop.", why: [], players: [],
+      cta: { label: "Unlock Waivers", href: "/waivers" },
+    });
+  }
+  const t = reportFor(teamId).trade_targets[0];
+  if (entitlements.includes("trade_lab")) {
+    actions.push({
+      id: `trade:${t.their_team_id}`, type: "trade", feature: "trade_lab", locked: false, priority: 0,
+      title: `Offer ${t.give_names[0]} for ${t.get_names[0]}`, subtitle: `to ${t.their_team_name} · both teams improve`,
+      benefit: `+${t.my_gain_ros.toFixed(0)} ROS lineup points`, benefit_value: t.my_gain_ros, confidence: "Lean", reason: t.why,
+      why: [`Your lineup gains ${t.my_gain_ros.toFixed(0)} rest-of-season points.`, `Theirs gains ${t.their_gain_ros.toFixed(0)}, so it is askable.`],
+      players: [withPhoto(allPlayers(teamId).find((p) => p.id === t.give[0])!), withPhoto(allPlayers(t.their_team_id).find((p) => p.id === t.get[0])!)],
+      cta: { label: "Open in Trade Lab", href: `/trade?their=${t.their_team_id}&give=${t.give[0]}&get=${t.get[0]}` },
+    });
+  } else {
+    actions.push({
+      id: "trade:locked", type: "trade", feature: "trade_lab", locked: true, priority: 0,
+      title: `A trade with ${t.their_team_name} improves both teams`, subtitle: `1-for-1 · you gain +${t.my_gain_ros.toFixed(0)} ROS lineup points`,
+      benefit: `+${t.my_gain_ros.toFixed(0)} ROS`, benefit_value: t.my_gain_ros, confidence: null,
+      reason: "Unlock Trade Lab to see the offer and a counter tuned to them.", why: [], players: [],
+      cta: { label: "Unlock Trade Lab", href: "/trade" },
+    });
+  }
+  actions.sort((a, b) => b.benefit_value - a.benefit_value);
+  actions.forEach((a, i) => (a.priority = i + 1));
+  return {
+    week: WEEK, team: rosterFor(teamId).name, league: LEAGUE.name,
+    projected_total: lineup.projected_total, current_total: lineup.current_total,
+    summary: `${actions.length} moves worth making`, all_clear: false, footer: "Everything else looks fine.",
+    actions, entitlements, synced_at: Date.now() / 1000 - 120,
   };
 }
 

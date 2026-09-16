@@ -82,6 +82,8 @@ export interface Player {
   projected: number;
   opponent?: string;
   ros?: number;
+  photo?: string | null;
+  team_logo?: string | null;
 }
 
 export interface Roster {
@@ -250,6 +252,50 @@ export interface Report {
   html: string;
 }
 
+export type ActionType = "start" | "waiver" | "trade" | "hold";
+
+export interface Action {
+  id: string;
+  type: ActionType;
+  feature: Feature;
+  locked: boolean;
+  priority: number;
+  title: string;
+  subtitle: string;
+  benefit: string;
+  benefit_value: number;
+  confidence: Confidence | null;
+  reason: string;
+  why: string[];
+  players: (Player | null)[];
+  cta: { label: string; href: string };
+}
+
+export interface ActionFeed {
+  week: number;
+  team: string;
+  league: string;
+  projected_total: number;
+  current_total: number;
+  summary: string;
+  all_clear: boolean;
+  footer: string;
+  actions: Action[];
+  entitlements: Feature[];
+  synced_at: number;
+}
+
+export interface FeedbackRequest {
+  platform: Platform;
+  league_id: string;
+  team_id: string;
+  action_id: string;
+  action_type: ActionType;
+  verdict: "helpful" | "wrong";
+  reason?: string;
+  week?: number;
+}
+
 export interface ApiError {
   error: string;
 }
@@ -258,5 +304,6 @@ export interface ApiError {
 export interface PaywallDetail {
   error: string;
   feature: string;
+  teaser?: string | null;
   upsell: Product[];
 }

@@ -39,7 +39,7 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
 ## Day 6 — Paywall + deploy
 - [~] Supabase magic-link auth — API verifies JWTs (tested); web /login built; needs a real project to verify
-- [x] Stripe Checkout (à la carte $3/$5 + Full Report $9) + webhook → entitlement (tested with a fake event; needs a real test-mode run)
+- [x] Stripe Checkout (à la carte $3/$5 + Full Report $7) + webhook → entitlement (tested with a fake event; needs a real test-mode run)
 - [x] Free tier: 1 team; gate Trade Lab + extra teams
 - [~] Deploy web (Vercel) + API (Railway/Render) — Dockerfile + deploy/ configs written; not deployed (needs your accounts)
 

@@ -1,91 +1,98 @@
-import type { Lineup } from "@/lib/types";
+"use client";
+import type { Lineup, LineupSlot } from "@/lib/types";
 import { signed } from "@/lib/format";
-import { Card, ConfidencePill, H2 } from "./ui";
+import { Avatar } from "./Avatar";
 import { PlayerLine } from "./Players";
+import { ConfidencePill, Eyebrow, H2, Stat, Why } from "./ui";
 
-/** Shared by /team and /report. */
+const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
+
+function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
+  return (
+    <li className={`min-w-0 p-3 ${s.change ? "bg-start-soft" : ""}`}>
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="w-9 shrink-0 text-[11px] font-black uppercase tracking-wider text-muted">{s.slot}</span>
+        {s.player ? (
+          <PlayerLine p={s.player} avatar="md" ring={RING[s.confidence]} />
+        ) : (
+          <span className="flex items-center gap-3">
+            <Avatar name="?" size="md" />
+            <span className="text-muted">Empty</span>
+          </span>
+        )}
+        <span className="ml-auto shrink-0 text-right">
+          <span className="display block text-xl font-black tabular-nums">{(s.player?.projected ?? 0).toFixed(1)}</span>
+          <ConfidencePill value={s.confidence} hit={hit} />
+        </span>
+      </div>
+      <Why lines={[s.reason]} label="Why?" />
+    </li>
+  );
+}
+
 export function LineupView({ lineup, compact = false }: { lineup: Lineup; compact?: boolean }) {
   const delta = lineup.projected_total - lineup.current_total;
   return (
-    <div className="grid gap-4">
-      <Card className="flex items-end justify-between">
-        <div>
-          <div className="text-xs font-bold uppercase text-muted">Projected · week {lineup.week}</div>
-          <div className="text-4xl font-black tabular-nums">{lineup.projected_total.toFixed(1)}</div>
-        </div>
-        <div className="text-right text-sm text-muted">
-          {delta > 0 ? (
+    <div className="grid min-w-0 gap-6">
+      <div className="card flex min-w-0 items-end justify-between gap-3 p-4">
+        <Stat label={`Projected · Week ${lineup.week}`} value={lineup.projected_total.toFixed(1)} />
+        <div className="text-right">
+          {delta > 0.05 ? (
             <>
-              <span className="font-bold text-start">{signed(delta)}</span> vs current
-              <br />({lineup.current_total.toFixed(1)})
+              <div className="font-black tabular-nums text-start">{signed(delta)}</div>
+              <div className="text-xs text-muted">vs current ({lineup.current_total.toFixed(1)})</div>
             </>
           ) : (
-            "Lineup already optimal"
+            <div className="text-sm font-bold text-start">Lineup is set ✓</div>
           )}
         </div>
-      </Card>
+      </div>
 
-      <section>
-        <H2>Changes</H2>
-        {lineup.changes.length === 0 ? (
-          <p className="mt-1 text-muted">No swaps this week. Your starters are your best guys.</p>
-        ) : (
+      {lineup.changes.length > 0 && (
+        <section className="min-w-0">
+          <H2>Make these swaps</H2>
           <ul className="mt-2 grid gap-2">
             {lineup.changes.map((c, i) => (
-              <li key={i} className="rounded-xl border-2 border-start bg-start-soft p-4">
+              <li key={i} className={`card border-start/40 bg-start-soft p-4 rise rise-${Math.min(i + 1, 5)}`}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold uppercase text-muted">{c.slot}</span>
+                  <Eyebrow>{c.slot}</Eyebrow>
                   <ConfidencePill value={c.confidence} />
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 text-base">
-                  <span className="font-bold text-sit line-through decoration-2">{c.out?.name ?? "empty"}</span>
-                  <span aria-hidden>→</span>
-                  <span className="font-bold text-start">{c.in.name}</span>
-                  <span className="ml-auto font-black tabular-nums text-start">{signed(c.gain)}</span>
+                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-base">
+                  <span className="min-w-0 truncate font-bold text-sit line-through decoration-2">{c.out?.name ?? "Empty"}</span>
+                  <span aria-hidden className="text-muted">
+                    →
+                  </span>
+                  <span className="min-w-0 truncate font-extrabold text-start">{c.in.name}</span>
+                  <span className="display ml-auto text-xl font-black tabular-nums text-start">{signed(c.gain)}</span>
                 </div>
-                {!compact && <p className="mt-1 text-sm">{c.reason}</p>}
+                {!compact && <p className="mt-1 text-sm text-muted">{c.reason}</p>}
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
 
-      <section>
+      <section className="min-w-0">
         <H2>Starters</H2>
-        <ul className="mt-2 divide-y divide-line rounded-xl border border-line">
+        <ul className="card mt-2 min-w-0 divide-y divide-line overflow-hidden p-0">
           {lineup.slots.map((s, i) => (
-            <li key={i} className={`p-3 ${s.change ? "bg-start-soft" : ""}`}>
-              <div className="flex items-center gap-3">
-                <span className="w-10 shrink-0 text-xs font-black uppercase text-muted">{s.slot}</span>
-                {s.player ? <PlayerLine p={s.player} /> : <span className="text-muted">Empty</span>}
-                <span className="ml-auto shrink-0 text-right">
-                  <span className="block text-lg font-black tabular-nums">{(s.player?.projected ?? 0).toFixed(1)}</span>
-                  <ConfidencePill value={s.confidence} />
-                </span>
-              </div>
-              {!compact && <p className="mt-1 pl-13 text-sm text-muted">{s.reason}</p>}
-            </li>
+            <SlotRow key={i} s={s} hit={lineup.confidence_hit_rate?.[s.confidence]} />
           ))}
         </ul>
       </section>
 
       {!compact && (
-        <section>
+        <section className="min-w-0">
           <H2>Bench</H2>
-          <ul className="mt-2 divide-y divide-line rounded-xl border border-line">
+          <ul className="card mt-2 min-w-0 divide-y divide-line overflow-hidden p-0">
             {lineup.bench.map((b, i) => (
-              <li key={i} className="flex items-center gap-3 p-3">
-                <PlayerLine p={b.player} />
-                <span className="ml-auto shrink-0 text-right">
-                  <span className="block text-lg font-bold tabular-nums text-muted">{b.player.projected.toFixed(1)}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-          <ul className="mt-2 grid gap-1 text-sm text-muted">
-            {lineup.bench.map((b, i) => (
-              <li key={i}>
-                <span className="font-bold text-ink">{b.player.name}:</span> {b.reason}
+              <li key={i} className="p-3">
+                <div className="flex items-center gap-3">
+                  <PlayerLine p={b.player} avatar="md" />
+                  <span className="display ml-auto shrink-0 text-xl font-bold tabular-nums text-muted">{b.player.projected.toFixed(1)}</span>
+                </div>
+                <p className="mt-1 text-xs text-muted">{b.reason}</p>
               </li>
             ))}
           </ul>

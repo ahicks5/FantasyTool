@@ -11,7 +11,7 @@ PRODUCTS = [
      "kind": "a_la_carte", "blurb": "Top 5 pickups ranked for your roster, with FAAB bids. Rest of season."},
     {"sku": "trade_lab", "name": "Trade Lab", "price_cents": 500, "features": ["trade_lab"], "leagues": 1,
      "kind": "a_la_carte", "blurb": "Trade verdicts + counteroffers tuned to the other manager. Rest of season."},
-    {"sku": "full_report", "name": "Full Report", "price_cents": 900,
+    {"sku": "full_report", "name": "Full Report", "price_cents": 700,
      "features": ["my_team", "waivers", "trade_lab", "full_report"], "leagues": 5,
      "kind": "bundle", "blurb": "Everything, every week, in one report. Up to 5 leagues."},
 ]

@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS purchases (email TEXT, sku TEXT, season INTEGER, sour
   UNIQUE(email, sku, season, ref));
 CREATE TABLE IF NOT EXISTS leagues (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, name TEXT, created REAL,
   UNIQUE(email, platform, league_id));
+CREATE TABLE IF NOT EXISTS feedback (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, action_id TEXT,
+  action_type TEXT, verdict TEXT, reason TEXT, week INTEGER, created REAL);
 """
 
 
@@ -42,6 +44,16 @@ class Store:
         rows = self.db.execute("SELECT platform, league_id, team_id, name FROM leagues WHERE email=? ORDER BY created",
                                (email.lower(),))
         return [{"platform": r[0], "league_id": r[1], "team_id": r[2], "name": r[3]} for r in rows]
+
+    def add_feedback(self, email: str | None, platform: str, league_id: str, team_id: str, action_id: str,
+                     action_type: str, verdict: str, reason: str | None, week: int | None) -> None:
+        self.db.execute("INSERT INTO feedback VALUES (?,?,?,?,?,?,?,?,?,?)",
+                        ((email or "").lower(), platform, league_id, team_id, action_id, action_type, verdict, reason, week, time.time()))
+        self.db.commit()
+
+    def feedback_counts(self) -> dict[str, int]:
+        rows = self.db.execute("SELECT verdict, COUNT(*) FROM feedback GROUP BY verdict")
+        return {r[0]: r[1] for r in rows}
 
     def disconnect_league(self, email: str, platform: str, league_id: str) -> None:
         self.db.execute("DELETE FROM leagues WHERE email=? AND platform=? AND league_id=?", (email.lower(), platform, league_id))

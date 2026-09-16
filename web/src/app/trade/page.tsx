@@ -1,11 +1,13 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";
 import { ShareCard } from "@/components/ShareCard";
+import { Avatar } from "@/components/Avatar";
 import { PlayerLine } from "@/components/Players";
-import { Button, Card, ErrorBox, H2, Spinner, VerdictWord } from "@/components/ui";
-import { evaluateTrade, getLeague, getRoster } from "@/lib/api";
+import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, VerdictWord, Why } from "@/components/ui";
+import { evaluateTrade, getLeague, getRoster, PaywallError } from "@/lib/api";
 import { signed } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { LeagueSummary, Player, TradeResult } from "@/lib/types";
@@ -14,33 +16,93 @@ function sortRoster(players: Player[]): Player[] {
   return [...players].sort((a, b) => (b.ros ?? b.projected ?? 0) - (a.ros ?? a.projected ?? 0));
 }
 
-function TradeBody({ c }: { c: Connection }) {
+/** Searchable bottom-sheet picker. */
+function PickerSheet({ open, onClose, title, players, selected, onToggle, tone }: { open: boolean; onClose: () => void; title: string; players: Player[]; selected: string[]; onToggle: (id: string) => void; tone: "sit" | "start" }) {
+  const [q, setQ] = useState("");
+  const list = players.filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()) || p.position.toLowerCase() === q.toLowerCase());
+  const on = tone === "sit" ? "border-sit bg-sit-soft" : "border-start bg-start-soft";
+  return (
+    <Sheet open={open} onClose={onClose} title={title}>
+      <input
+        autoFocus
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Search name or position"
+        className="mb-3 w-full rounded-xl border-2 border-line px-4 py-3 text-base focus:border-ink focus:outline-none"
+      />
+      <ul className="grid gap-2">
+        {list.map((p) => {
+          const sel = selected.includes(p.id);
+          return (
+            <li key={p.id}>
+              <button onClick={() => onToggle(p.id)} aria-pressed={sel} className={`flex w-full items-center gap-3 rounded-xl border-2 px-3 py-2 text-left ${sel ? on : "border-line"}`}>
+                <PlayerLine p={p} avatar="md" />
+                <span className="ml-auto text-right">
+                  <span className="block font-black tabular-nums">{(p.ros ?? 0).toFixed(0)}</span>
+                  <span className="block text-[10px] uppercase text-muted">ROS</span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+        {list.length === 0 && <li className="py-6 text-center text-muted">{players.length ? "No match" : "Loading roster…"}</li>}
+      </ul>
+    </Sheet>
+  );
+}
+
+function Chips({ players, tone, onRemove, empty }: { players: Player[]; tone: "sit" | "start"; onRemove: (id: string) => void; empty: string }) {
+  if (!players.length) return <p className="text-sm text-muted">{empty}</p>;
+  return (
+    <ul className="flex flex-wrap gap-2">
+      {players.map((p) => (
+        <li key={p.id}>
+          <button onClick={() => onRemove(p.id)} className={`flex min-h-0 items-center gap-2 rounded-full border-2 py-1 pl-1 pr-3 text-sm font-bold ${tone === "sit" ? "border-sit bg-sit-soft" : "border-start bg-start-soft"}`} aria-label={`Remove ${p.name}`}>
+            <Avatar name={p.name} photo={p.photo} size="sm" />
+            {p.name}
+            <span aria-hidden className="text-muted">
+              ×
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function TradeBody({ c, refresh }: { c: Connection; refresh: () => void }) {
+  const params = useSearchParams();
   const [league, setLeague] = useState<LeagueSummary | null>(null);
   const [mine, setMine] = useState<Player[]>([]);
   const [theirs, setTheirs] = useState<Player[]>([]);
-  const [theirId, setTheirId] = useState("");
-  const [give, setGive] = useState<string[]>([]);
-  const [get, setGet] = useState<string[]>([]);
+  const [theirId, setTheirId] = useState(params.get("their") ?? "");
+  const [give, setGive] = useState<string[]>(params.get("give")?.split(",").filter(Boolean) ?? []);
+  const [get, setGet] = useState<string[]>(params.get("get")?.split(",").filter(Boolean) ?? []);
+  const [sheet, setSheet] = useState<"give" | "get" | null>(null);
   const [result, setResult] = useState<TradeResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [paywall, setPaywall] = useState<PaywallError | null>(null);
 
   useEffect(() => {
     Promise.all([getLeague(c.platform, c.league_id), getRoster(c.platform, c.league_id, c.team_id)])
       .then(([l, roster]) => {
         setLeague(l);
         setMine(sortRoster(roster.players));
-        const first = l.teams.find((t) => t.id !== c.team_id);
-        if (first) setTheirId(first.id);
+        setTheirId((cur) => cur || l.teams.find((t) => t.id !== c.team_id)?.id || "");
       })
       .catch((e: Error) => setError(e.message));
   }, [c.platform, c.league_id, c.team_id]);
 
   useEffect(() => {
     if (!theirId) return;
+    let alive = true;
     getRoster(c.platform, c.league_id, theirId)
-      .then((r) => setTheirs(sortRoster(r.players)))
-      .catch((e: Error) => setError(e.message));
+      .then((r) => alive && setTheirs(sortRoster(r.players)))
+      .catch((e: Error) => alive && setError(e.message));
+    return () => {
+      alive = false;
+    };
   }, [c.platform, c.league_id, theirId]);
 
   const others = useMemo(() => league?.teams.filter((t) => t.id !== c.team_id) ?? [], [league, c.team_id]);
@@ -48,10 +110,10 @@ function TradeBody({ c }: { c: Connection }) {
   const givePlayers = give.map((id) => mine.find((p) => p.id === id)).filter((p): p is Player => !!p);
   const getPlayers = get.map((id) => theirs.find((p) => p.id === id)).filter((p): p is Player => !!p);
 
-  function toggle(list: string[], setList: (v: string[]) => void, id: string) {
+  const toggle = useCallback((list: string[], setList: (v: string[]) => void, id: string) => {
     setList(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
     setResult(null);
-  }
+  }, []);
 
   async function submit() {
     setBusy(true);
@@ -61,19 +123,34 @@ function TradeBody({ c }: { c: Connection }) {
       setResult(r);
       setTimeout(() => document.getElementById("verdict")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     } catch (e) {
-      setError((e as Error).message);
+      if (e instanceof PaywallError) setPaywall(e);
+      else setError((e as Error).message);
     } finally {
       setBusy(false);
     }
   }
 
+  // Auto-run when arriving from an Action card with a prefilled offer.
+  const prefilled = params.get("give") && params.get("get");
+  const [autoRan, setAutoRan] = useState(false);
+  useEffect(() => {
+    if (!prefilled || autoRan || !mine.length || !theirs.length || !givePlayers.length || !getPlayers.length) return;
+    const id = window.setTimeout(() => {
+      setAutoRan(true);
+      void submit();
+    }, 0);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mine.length, theirs.length, autoRan]);
+
+  if (paywall) return <Locked sku="trade_lab" what="Trade Lab" teaser={paywall.teaser} onUnlocked={refresh} />;
   if (error && !league) return <ErrorBox message={error} />;
-  if (!league) return <Spinner />;
+  if (!league) return <SkeletonList rows={3} />;
 
   return (
     <div className="grid gap-5">
-      <section>
-        <label htmlFor="their-team" className="text-sm font-bold">
+      <section className="card p-4">
+        <label htmlFor="their-team" className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
           Trade with
         </label>
         <select
@@ -95,11 +172,35 @@ function TradeBody({ c }: { c: Connection }) {
         </select>
       </section>
 
-      <PlayerPicker title="You give" tone="sit" players={mine} selected={give} onToggle={(id) => toggle(give, setGive, id)} />
-      <PlayerPicker title={`You get from ${theirTeam?.name ?? "them"}`} tone="start" players={theirs} selected={get} onToggle={(id) => toggle(get, setGet, id)} />
+      <section className="card p-4">
+        <div className="flex items-center justify-between">
+          <Eyebrow>You give</Eyebrow>
+          <button onClick={() => setSheet("give")} className="min-h-0 rounded-full bg-soft px-3 py-1 text-sm font-bold">
+            + Add
+          </button>
+        </div>
+        <div className="mt-2">
+          <Chips players={givePlayers} tone="sit" onRemove={(id) => toggle(give, setGive, id)} empty="Tap + Add to pick from your roster." />
+        </div>
+      </section>
+
+      <section className="card p-4">
+        <div className="flex items-center justify-between">
+          <Eyebrow>You get from {theirTeam?.name ?? "them"}</Eyebrow>
+          <button onClick={() => setSheet("get")} className="min-h-0 rounded-full bg-soft px-3 py-1 text-sm font-bold">
+            + Add
+          </button>
+        </div>
+        <div className="mt-2">
+          <Chips players={getPlayers} tone="start" onRemove={(id) => toggle(get, setGet, id)} empty="Tap + Add to pick from their roster." />
+        </div>
+      </section>
+
+      <PickerSheet open={sheet === "give"} onClose={() => setSheet(null)} title="Your roster" players={mine} selected={give} onToggle={(id) => toggle(give, setGive, id)} tone="sit" />
+      <PickerSheet open={sheet === "get"} onClose={() => setSheet(null)} title={`${theirTeam?.name ?? "Their"} roster`} players={theirs} selected={get} onToggle={(id) => toggle(get, setGet, id)} tone="start" />
 
       <div className="sticky bottom-20 z-[5]">
-        <Button className="w-full shadow-lg" onClick={submit} disabled={busy || give.length === 0 || get.length === 0}>
+        <Button variant="start" className="w-full shadow-[var(--shadow-float)]" onClick={submit} disabled={busy || give.length === 0 || get.length === 0}>
           {busy ? "Evaluating…" : `Evaluate ${give.length}-for-${get.length}`}
         </Button>
       </div>
@@ -107,32 +208,40 @@ function TradeBody({ c }: { c: Connection }) {
 
       {result && (
         <div id="verdict" className="grid gap-4 scroll-mt-16">
-          <Card>
-            <div className="text-xs font-bold uppercase text-muted">Verdict</div>
-            <VerdictWord value={result.verdict} className="block text-5xl" />
+          <Card className="rise">
+            <Eyebrow>Verdict</Eyebrow>
+            <VerdictWord value={result.verdict} className="block text-6xl leading-none" />
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <SideBox label="You" side={result.me} />
               <SideBox label={theirTeam?.name ?? "Them"} side={result.them} />
             </div>
             <div className="mt-4">
-              <div className="flex justify-between text-xs font-bold uppercase text-muted">
+              <div className="flex justify-between text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
                 <span>Fairness</span>
                 <span>{Math.round(result.fairness * 100)}%</span>
               </div>
-              <div className="mt-1 h-3 w-full overflow-hidden rounded-full bg-soft">
-                <div className={`h-full ${result.fairness >= 0.9 ? "bg-start" : result.fairness >= 0.75 ? "bg-flip" : "bg-sit"}`} style={{ width: `${Math.round(result.fairness * 100)}%` }} />
+              <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-soft">
+                <div className={`h-full rounded-full ${result.fairness >= 0.9 ? "bg-start" : result.fairness >= 0.75 ? "bg-flip" : "bg-sit"}`} style={{ width: `${Math.round(result.fairness * 100)}%` }} />
               </div>
             </div>
             <p className="mt-4 text-base leading-relaxed">{result.explanation}</p>
             {result.notes?.map((n) => (
-              <p key={n} className="mt-2 rounded-lg bg-flip-soft px-3 py-2 text-sm">
+              <p key={n} className="mt-2 rounded-lg bg-flip-soft px-3 py-2 text-sm text-flip-dark">
                 {n}
               </p>
             ))}
+            <Why
+              lines={[
+                `Value = rest-of-season projected points, rescored to this league. You send ${result.me.value_out.toFixed(0)}, receive ${result.me.value_in.toFixed(0)}.`,
+                `Lineup impact is measured with free-agent replacements available, so an emptied slot costs the gap to the best waiver option, not the whole player.`,
+                `Fairness = smaller side ÷ larger side of asset value.`,
+              ]}
+              label="How is this scored?"
+            />
           </Card>
 
-          <Card>
-            <div className="text-xs font-bold uppercase text-muted">{theirTeam?.name ?? "Their"} tendencies</div>
+          <Card className="rise rise-1">
+            <Eyebrow>{theirTeam?.name ?? "Their"} tendencies</Eyebrow>
             <div className="mt-2 flex flex-wrap gap-2">
               {(result.their_tendencies.style
                 ? [
@@ -140,8 +249,8 @@ function TradeBody({ c }: { c: Connection }) {
                     `${result.their_tendencies.trades ?? 0} trades`,
                     `${result.their_tendencies.waiver_claims ?? 0} claims`,
                     `avg bid $${result.their_tendencies.avg_bid ?? 0}`,
-                    ...(result.their_tendencies.favorite_positions ?? []).map((p) => `loves ${p}`),
-                    ...(result.their_tendencies.hoards ?? []).map((p) => `hoards ${p}`),
+                    ...(result.their_tendencies.favorite_positions ?? []).map((p) => `acquires ${p}s`),
+                    ...(result.their_tendencies.hoards ?? []).map((p) => `hoards ${p}s`),
                   ]
                 : ["No transaction history yet"]
               ).map((t) => (
@@ -153,8 +262,8 @@ function TradeBody({ c }: { c: Connection }) {
           </Card>
 
           {result.counter && (
-            <Card className="border-2 border-flip bg-flip-soft">
-              <div className="text-xs font-bold uppercase text-flip-dark">Counteroffer</div>
+            <Card className="border-2 border-flip bg-flip-soft rise rise-2">
+              <Eyebrow className="text-flip-dark">Counteroffer</Eyebrow>
               <div className="mt-1 text-base">
                 <span className="font-bold text-sit">Give</span> {result.counter.give_names.join(" + ") || "nothing"}
                 <br />
@@ -164,9 +273,9 @@ function TradeBody({ c }: { c: Connection }) {
             </Card>
           )}
 
-          <section>
+          <section className="rise rise-3">
             <H2>Share graphic</H2>
-            <p className="mb-2 text-sm text-muted">1080×1080 preview. Screenshot it or save it from the report.</p>
+            <p className="mb-2 text-sm text-muted">1080×1080. Long-press or screenshot to share.</p>
             <ShareCard result={result} give={givePlayers} get={getPlayers} leagueName={c.league_name} />
           </section>
         </div>
@@ -178,68 +287,31 @@ function TradeBody({ c }: { c: Connection }) {
 function SideBox({ label, side }: { label: string; side: TradeResult["me"] }) {
   const net = side.value_in - side.value_out;
   return (
-    <div className="rounded-lg bg-soft p-3">
-      <div className="truncate text-xs font-bold uppercase text-muted">{label}</div>
+    <div className="rounded-xl bg-soft p-3">
+      <div className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-muted">{label}</div>
       <div className="mt-1 tabular-nums">
-        <span className="text-sit">out {side.value_out.toFixed(1)}</span> · <span className="text-start">in {side.value_in.toFixed(1)}</span>
+        <span className="text-sit">out {side.value_out.toFixed(0)}</span> · <span className="text-start">in {side.value_in.toFixed(0)}</span>
       </div>
-      <div className={`text-lg font-black tabular-nums ${net >= 0 ? "text-start" : "text-sit"}`}>{signed(net)}</div>
+      <div className={`display text-2xl font-black tabular-nums ${net >= 0 ? "text-start" : "text-sit"}`}>{signed(net, 0)}</div>
       <div className="text-xs text-muted">
-        wk {signed(side.lineup_delta_week)} · ROS {signed(side.lineup_delta_ros)}
+        lineup: wk {signed(side.lineup_delta_week)} · ROS {signed(side.lineup_delta_ros, 0)}
       </div>
     </div>
-  );
-}
-
-function PlayerPicker({
-  title,
-  tone,
-  players,
-  selected,
-  onToggle,
-}: {
-  title: string;
-  tone: "sit" | "start";
-  players: Player[];
-  selected: string[];
-  onToggle: (id: string) => void;
-}) {
-  const on = tone === "sit" ? "border-sit bg-sit-soft" : "border-start bg-start-soft";
-  return (
-    <section>
-      <H2>{title}</H2>
-      {players.length === 0 ? (
-        <Spinner label="Loading roster…" />
-      ) : (
-        <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {players.map((p) => {
-            const sel = selected.includes(p.id);
-            return (
-              <li key={p.id}>
-                <button
-                  onClick={() => onToggle(p.id)}
-                  aria-pressed={sel}
-                  className={`flex w-full items-center gap-3 rounded-xl border-2 px-3 py-2 text-left ${sel ? on : "border-line"}`}
-                >
-                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 text-sm font-black ${sel ? "border-ink bg-ink text-white" : "border-line"}`} aria-hidden>
-                    {sel ? "✓" : ""}
-                  </span>
-                  <PlayerLine p={p} />
-                  <span className="ml-auto font-bold tabular-nums">{(p.projected ?? 0).toFixed(1)}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
   );
 }
 
 export default function TradePage() {
   return (
     <AppShell title="Trade Lab">
-      {(s) => (s.has("trade_lab") ? <TradeBody c={s.connection!} /> : <Locked sku="trade_lab" what="Trade Lab" onUnlocked={s.refresh} />)}
+      {(s) => (
+        <Suspense fallback={<SkeletonList rows={3} />}>
+          {s.has("trade_lab") ? (
+            <TradeBody c={s.connection!} refresh={s.refresh} />
+          ) : (
+            <Locked sku="trade_lab" what="Trade Lab" teaser="Propose any trade. Edge grades it, then drafts a counter tuned to how that manager actually behaves." onUnlocked={s.refresh} />
+          )}
+        </Suspense>
+      )}
     </AppShell>
   );
 }

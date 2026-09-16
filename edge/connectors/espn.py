@@ -214,6 +214,7 @@ def build_league(
 def attach_sleeper_ids(league: League, players: dict[str, dict]) -> None:
     for team in league.teams:
         for p in team.players:
+            p.ext_ids.setdefault("espn", p.id)  # for ESPN headshots
             sid = sleeper_id_for(p.name, p.position, p.nfl_team, players)
             if sid:
                 p.ext_ids["sleeper"] = sid

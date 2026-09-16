@@ -63,7 +63,7 @@ re-run `scripts/backtest.py <week>` weekly and adjust thresholds only with data.
 
 ## Pricing / packages
 `edge/products.py` is the single source of truth: free (My Team, 1 league), à la carte passes
-(Waiver Wire $3, Trade Lab $5), Full Report bundle $9 (everything + weekly report, 5 leagues).
+(Waiver Wire $3, Trade Lab $5), Full Report bundle $7 (everything + weekly report, 5 leagues).
 The API gates features with HTTP 402 + an `upsell` list; the web shows a locked state.
 
 ## Test league (public Sleeper)

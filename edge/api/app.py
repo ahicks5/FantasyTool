@@ -13,6 +13,7 @@ from edge.api.auth import current_user, optional_user
 from edge.api.store import Store
 from edge.connectors import sleeper
 from edge.engine import lineup as lineup_mod
+from edge.engine import actions as actions_mod
 from edge.engine import report, trade, waivers
 from edge.engine.explain import explain
 
@@ -30,10 +31,10 @@ def _skus(email: str | None) -> list[str]:
     return store.skus(email, _season()) if email else []
 
 
-def _require(email: str | None, feature: str) -> None:
+def _require(email: str | None, feature: str, teaser: str | None = None) -> None:
     if not products.can(_skus(email), feature):
-        raise HTTPException(402, detail={"error": f"{feature} requires a purchase",
-                                         "feature": feature, "upsell": products.upsell(_skus(email), feature)})
+        raise HTTPException(402, detail={"error": f"{feature} requires a purchase", "feature": feature,
+                                         "teaser": teaser, "upsell": products.upsell(_skus(email), feature)})
 
 
 def _bundle(platform: str, league_id: str) -> service.Bundle:
@@ -145,11 +146,22 @@ def lineup(platform: str, league_id: str, team_id: str, email: str | None = Depe
     return report.lineup_dict(lineup_mod.advise(b.league, _team(b, team_id)))
 
 
+def _teaser(b: service.Bundle, t, feature: str) -> str | None:
+    """A concrete, name-free sentence for the paywall, computed from the real feed."""
+    try:
+        feed = actions_mod.build(b.league, t, b.ros, b.byes, entitlements={"my_team"}, bid_stats=b.bid_stats, trending=b.trending)
+        a = next((a for a in feed["actions"] if a["feature"] == feature and a["locked"]), None)
+        return f"{a['title']}. {a['subtitle']}." if a else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/waivers")
 def waiver_picks(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user)):
-    _require(email, "waivers")
     b = _bundle(platform, league_id)
     t = _team(b, team_id)
+    if not products.can(_skus(email), "waivers"):
+        _require(email, "waivers", teaser=_teaser(b, t, "waivers"))
     picks = waivers.rank(b.league, t, b.ros, b.byes, bid_stats=b.bid_stats, trending=b.trending)
     return report.waivers_dict(b.league, t, picks)
 
@@ -163,9 +175,10 @@ class TradeIn(BaseModel):
 
 @app.post("/api/league/{platform}/{league_id}/trade")
 def trade_lab(platform: str, league_id: str, body: TradeIn, email: str | None = Depends(optional_user)):
-    _require(email, "trade_lab")
     b = _bundle(platform, league_id)
     me_t, them_t = _team(b, body.my_team_id), _team(b, body.their_team_id)
+    if not products.can(_skus(email), "trade_lab"):
+        _require(email, "trade_lab", teaser=_teaser(b, me_t, "trade_lab"))
     try:
         v = trade.evaluate(b.league, me_t, them_t, body.give, body.get, b.ros,
                            their_profile=b.profiles.get(them_t.id), hoarded=b.hoarded(them_t.id))
@@ -183,6 +196,38 @@ def trade_lab(platform: str, league_id: str, body: TradeIn, email: str | None = 
             "fairness": v.fairness, "style": v.their_tendencies.get("style"),
         },
     }
+
+
+@app.get("/api/league/{platform}/{league_id}/team/{team_id}/actions")
+def action_feed(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user)):
+    """The home screen: ranked moves. Free users see lineup fixes plus teasers for paid moves."""
+    b = _bundle(platform, league_id)
+    t = _team(b, team_id)
+    ents = products.features_for(_skus(email))
+    out = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats, trending=b.trending)
+    out["entitlements"] = sorted(ents)
+    out["synced_at"] = b.loaded_at
+    return out
+
+
+class FeedbackIn(BaseModel):
+    platform: str
+    league_id: str
+    team_id: str
+    action_id: str
+    action_type: str
+    verdict: str            # helpful | wrong
+    reason: str | None = None
+    week: int | None = None
+
+
+@app.post("/api/feedback")
+def feedback(body: FeedbackIn, email: str | None = Depends(optional_user)):
+    if body.verdict not in ("helpful", "wrong"):
+        raise HTTPException(400, "verdict must be helpful or wrong")
+    store.add_feedback(email, body.platform, body.league_id, body.team_id, body.action_id, body.action_type,
+                       body.verdict, body.reason, body.week)
+    return {"ok": True}
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/report")

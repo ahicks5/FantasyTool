@@ -5,7 +5,7 @@ import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";
 import { LineupView } from "@/components/LineupView";
 import { WaiversView } from "@/components/WaiversView";
-import { Card, ErrorBox, H2, Spinner, VerdictWord } from "@/components/ui";
+import { Card, ErrorBox, H2, SkeletonList, VerdictWord } from "@/components/ui";
 import { getReport } from "@/lib/api";
 import { pct } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
@@ -18,7 +18,7 @@ function ReportBody({ c }: { c: Connection }) {
     getReport(c.platform, c.league_id, c.team_id).then(setData).catch((e: Error) => setError(e.message));
   }, [c.platform, c.league_id, c.team_id]);
   if (error) return <ErrorBox message={error} />;
-  if (!data) return <Spinner />;
+  if (!data) return <SkeletonList rows={6} tall />;
 
   const m = data.matchup;
   const favored = (m?.win_prob ?? 0) >= 0.5;
@@ -63,7 +63,7 @@ function ReportBody({ c }: { c: Connection }) {
         <ul className="mt-2 grid gap-2">
           {data.trade_targets.length === 0 && <li className="text-sm text-muted">No clean 1-for-1 upgrades this week.</li>}
           {data.trade_targets.map((t, i) => (
-            <li key={i} className="rounded-xl border border-line p-4">
+            <li key={i} className="card p-4">
               <div className="flex items-center justify-between">
                 <span className="truncate text-xs font-bold uppercase text-muted">{t.their_team_name}</span>
                 <VerdictWord value={t.verdict} className="text-lg" />
@@ -74,8 +74,8 @@ function ReportBody({ c }: { c: Connection }) {
                 <span className="font-bold text-start">Get</span> {t.get_names.join(" + ")}
               </div>
               <p className="mt-1 text-sm text-muted">{t.why}</p>
-              <Link href="/trade" className="mt-2 inline-block text-sm font-bold underline">
-                Open in Trade Lab
+              <Link href={`/trade?their=${t.their_team_id}&give=${t.give.join(",")}&get=${t.get.join(",")}`} className="mt-2 inline-block rounded-lg bg-soft px-3 py-1.5 text-sm font-bold">
+                Open in Trade Lab →
               </Link>
             </li>
           ))}

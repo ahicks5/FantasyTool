@@ -43,4 +43,4 @@ def test_product_catalog_and_entitlements():
     ups = products.upsell([], "trade_lab")
     assert [u["sku"] for u in ups] == ["trade_lab", "full_report"]
     a_la_carte = sum(p["price_cents"] for p in products.PRODUCTS if p["kind"] == "a_la_carte")
-    assert products.BY_SKU["full_report"]["price_cents"] > a_la_carte, "bundle must cost more than the sum of passes but include more"
+    assert products.BY_SKU["full_report"]["price_cents"] <= a_la_carte, "bundle should be the obvious deal vs buying both passes"

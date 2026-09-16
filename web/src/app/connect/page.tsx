@@ -67,7 +67,7 @@ export default function ConnectPage() {
         team_name: team?.name ?? `Team ${teamId}`,
         week: league.week,
       });
-      router.push("/team");
+      router.push("/home");
     }
   }
 
@@ -78,8 +78,9 @@ export default function ConnectPage() {
           <Wordmark className="text-2xl" />
         </Link>
       </header>
-      <h1 className="mt-4 text-2xl font-black tracking-tight">Connect your league</h1>
-      <p className="mt-1 text-muted">Public leagues only for now. No password needed.</p>
+      <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">Step 1 of 2</p>
+      <h1 className="mt-1 text-3xl font-black">Connect your league</h1>
+      <p className="mt-1 text-muted">Public leagues only for now. No password, no account needed to see your first moves.</p>
 
       <div className="mt-6 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Platform">
         {(["sleeper", "espn"] as Platform[]).map((p) => (
@@ -129,7 +130,7 @@ export default function ConnectPage() {
                     onClick={() => pickLeague(l.league_id)}
                     className={`w-full rounded-xl border-2 px-4 py-3 text-left ${league?.id === l.league_id ? "border-start bg-start-soft" : "border-line"}`}
                   >
-                    <span className="font-bold">{l.name}</span>
+                    <span className="display font-extrabold">{l.name}</span>
                     <span className="block text-xs text-muted">
                       {l.total_rosters} teams · {l.status.replaceAll("_", " ")}
                     </span>
@@ -170,10 +171,8 @@ export default function ConnectPage() {
 
       {league && (
         <section className="mt-6">
-          <h2 className="text-lg font-bold">
-            {league.name} <span className="font-normal text-muted">· week {league.week}</span>
-          </h2>
-          <p className="text-sm text-muted">Which team is yours?</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">Step 2 of 2 · {league.name} · week {league.week}</p>
+          <h2 className="mt-1 text-2xl font-black">Which team is yours?</h2>
           <ul className="mt-2 grid gap-2">
             {league.teams.map((t) => (
               <li key={t.id}>
@@ -182,9 +181,12 @@ export default function ConnectPage() {
                   className={`flex w-full items-center justify-between rounded-xl border-2 px-4 py-3 text-left ${teamId === t.id ? "border-start bg-start-soft" : "border-line"}`}
                   aria-pressed={teamId === t.id}
                 >
-                  <span>
-                    <span className="font-bold">{t.name}</span>
-                    <span className="block text-xs text-muted">{t.owner_name}</span>
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-soft text-sm font-black uppercase text-muted">{t.name.slice(0, 2)}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate font-extrabold">{t.name}</span>
+                      <span className="block text-xs text-muted">{t.owner_name}</span>
+                    </span>
                   </span>
                   <span className="text-sm text-muted">
                     {t.record} · {t.points_for.toFixed(1)}
@@ -194,7 +196,7 @@ export default function ConnectPage() {
             ))}
           </ul>
           <div className="sticky bottom-0 mt-4 bg-paper py-3">
-            <Button className="w-full" onClick={submit} disabled={busy || !teamId}>
+            <Button variant="start" className="w-full" onClick={submit} disabled={busy || !teamId}>
               {busy ? "Connecting…" : "Connect and see my moves"}
             </Button>
           </div>

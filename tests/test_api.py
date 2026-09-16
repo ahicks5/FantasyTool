@@ -56,6 +56,8 @@ def test_paid_features_are_gated_then_unlocked(client, league):
     tid = league.teams[0].id
     r = client.get(f"{LG}/team/{tid}/waivers", headers=H)
     assert r.status_code == 402 and r.json()["detail"]["upsell"][0]["sku"] == "waivers"
+    teaser = r.json()["detail"]["teaser"]
+    assert teaser is None or ("improve your roster" in teaser and not any(p.name in teaser for p in league.free_agents[:20]))
     app_mod.store.grant("andrew@example.com", "waivers", 2026, source="test")
     r = client.get(f"{LG}/team/{tid}/waivers", headers=H)
     assert r.status_code == 200 and 1 <= len(r.json()["picks"]) <= 5
@@ -122,3 +124,17 @@ def test_supabase_jwt_verification(monkeypatch):
     assert verify_supabase_jwt(f"{h}.{p}.{sig}", secret)["email"] == "A@b.com"
     with pytest.raises(HTTPException):
         verify_supabase_jwt(f"{h}.{p}.{sig}", "wrong")
+
+
+def test_actions_feed_and_feedback(client, league):
+    tid = league.teams[1].id
+    r = client.get(f"{LG}/team/{tid}/actions", headers=H)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["actions"] and body["summary"] and "entitlements" in body
+    r = client.post("/api/feedback", headers=H, json={"platform": "sleeper", "league_id": "1", "team_id": tid,
+                                                      "action_id": body["actions"][0]["id"], "action_type": body["actions"][0]["type"],
+                                                      "verdict": "helpful", "week": 2})
+    assert r.status_code == 200 and app_mod.store.feedback_counts() == {"helpful": 1}
+    assert client.post("/api/feedback", headers=H, json={"platform": "sleeper", "league_id": "1", "team_id": tid,
+                                                         "action_id": "x", "action_type": "start", "verdict": "meh"}).status_code == 400

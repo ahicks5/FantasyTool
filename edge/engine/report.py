@@ -11,11 +11,36 @@ from edge.engine.lineup import LineupAdvice
 from edge.models import League, Player, Team
 
 
+SLEEPER_CDN = "https://sleepercdn.com"
+ESPN_CDN = "https://a.espncdn.com"
+
+
+def photo_url(p: Player) -> str | None:
+    """Free headshots: Sleeper's CDN by Sleeper id; ESPN's by ESPN id. Team logo for a DEF."""
+    team = (p.nfl_team or "").lower()
+    if p.position == "DEF":
+        return f"{SLEEPER_CDN}/images/team_logos/nfl/{team}.png" if team else None
+    ext = getattr(p, "ext_ids", None) or {}
+    sid, eid = ext.get("sleeper"), ext.get("espn")
+    if sid:
+        return f"{SLEEPER_CDN}/content/nfl/players/thumb/{sid}.jpg"
+    if eid:
+        return f"{ESPN_CDN}/i/headshots/nfl/players/full/{eid}.png"
+    if p.id.isdigit():  # a Sleeper-platform player
+        return f"{SLEEPER_CDN}/content/nfl/players/thumb/{p.id}.jpg"
+    return None
+
+
+def team_logo_url(nfl_team: str | None) -> str | None:
+    return f"{SLEEPER_CDN}/images/team_logos/nfl/{nfl_team.lower()}.png" if nfl_team else None
+
+
 def player_dict(p: Player | None) -> dict | None:
     if p is None:
         return None
     return {"id": p.id, "name": p.name, "position": p.position, "nfl_team": p.nfl_team,
-            "injury_status": p.injury_status, "projected": p.projected}
+            "injury_status": p.injury_status, "projected": p.projected,
+            "photo": photo_url(p), "team_logo": team_logo_url(p.nfl_team)}
 
 
 def lineup_dict(adv: LineupAdvice) -> dict:

@@ -44,7 +44,7 @@ export default function LoginPage() {
             {dev ? " (dev user)" : ""}.
           </p>
           <div className="mt-4 flex gap-2">
-            <Link href="/team" className="rounded-xl bg-ink px-4 py-3 font-bold text-white">
+            <Link href="/home" className="rounded-xl bg-ink px-4 py-3 font-bold text-white">
               Go to my team
             </Link>
             {!dev && (

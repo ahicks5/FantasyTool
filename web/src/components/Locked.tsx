@@ -1,16 +1,23 @@
 "use client";
-import { useState } from "react";
-import { checkout } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { checkout, getProducts } from "@/lib/api";
 import { formatCents } from "@/lib/format";
 import type { Product, Sku } from "@/lib/types";
-import { PRODUCTS } from "@/lib/mocks";
-import { Button } from "./ui";
+import { PRODUCTS as FALLBACK } from "@/lib/mocks";
+import { Button, Eyebrow } from "./ui";
 
-/** Locked state for a paid feature. Buy button calls POST /api/checkout. */
-export function Locked({ sku, what, onUnlocked }: { sku: Sku; what: string; onUnlocked?: () => void }) {
+/**
+ * Premium teaser, not a wall: says what Edge found, then offers the pass or the bundle.
+ * `teaser` should be a concrete, name-free sentence from the engine.
+ */
+export function Locked({ sku, what, teaser, onUnlocked }: { sku: Sku; what: string; teaser?: string | null; onUnlocked?: () => void }) {
   const [busy, setBusy] = useState(false);
-  const product: Product | undefined = PRODUCTS.find((p) => p.sku === sku);
-  const full = PRODUCTS.find((p) => p.sku === "full_report");
+  const [products, setProducts] = useState<Product[]>(FALLBACK);
+  useEffect(() => {
+    getProducts().then((r) => r.products.length && setProducts(r.products)).catch(() => undefined);
+  }, []);
+  const product = products.find((p) => p.sku === sku);
+  const full = products.find((p) => p.sku === "full_report");
 
   async function buy(s: Sku) {
     setBusy(true);
@@ -26,14 +33,13 @@ export function Locked({ sku, what, onUnlocked }: { sku: Sku; what: string; onUn
   }
 
   return (
-    <div className="rounded-xl border-2 border-dashed border-line p-5 text-center">
-      <div className="mb-1 text-3xl" aria-hidden>
-        🔒
+    <div className="card overflow-hidden">
+      <div className="bg-ink p-5 text-white">
+        <Eyebrow className="text-white/60">{what}</Eyebrow>
+        <p className="display mt-1 text-xl font-extrabold leading-snug">{teaser ?? product?.blurb}</p>
       </div>
-      <h2 className="text-lg font-bold">{what} is locked</h2>
-      <p className="mx-auto mb-5 mt-1 max-w-xs text-sm text-muted">{product?.blurb}</p>
-      <div className="flex flex-col gap-2">
-        <Button onClick={() => buy(sku)} disabled={busy}>
+      <div className="grid gap-2 p-4">
+        <Button variant="start" onClick={() => buy(sku)} disabled={busy}>
           Unlock {product?.name} · {product ? formatCents(product.price_cents) : ""}
         </Button>
         {full && sku !== "full_report" && (
@@ -41,6 +47,7 @@ export function Locked({ sku, what, onUnlocked }: { sku: Sku; what: string; onUn
             Or get everything · {formatCents(full.price_cents)}
           </Button>
         )}
+        <p className="text-center text-xs text-muted">One payment for the rest of the season. No subscription.</p>
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ Auth: `Authorization: Bearer <supabase jwt>` (optional in dev; `X-Edge-User: <em
   {"sku":"free","name":"Free","price_cents":0,"features":["my_team"],"leagues":1,"blurb":"Start/sit for one team"},
   {"sku":"waivers","name":"Waiver Wire Pass","price_cents":300,"features":["waivers"],"leagues":1,"blurb":"Top pickups + FAAB bids, rest of season"},
   {"sku":"trade_lab","name":"Trade Lab","price_cents":500,"features":["trade_lab"],"leagues":1,"blurb":"Trade verdicts + counteroffers, rest of season"},
-  {"sku":"full_report","name":"Full Report","price_cents":900,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"blurb":"Everything, every week, up to 5 leagues"}
+  {"sku":"full_report","name":"Full Report","price_cents":700,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"blurb":"Everything, every week, up to 5 leagues"}
 ]}
 ```
 `GET /api/me` → `{"email":"...","entitlements":["my_team","waivers"],"leagues_allowed":1,"leagues":[{"platform":"sleeper","league_id":"...","name":"...","team_id":"3"}]}`

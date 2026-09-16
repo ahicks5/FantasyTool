@@ -68,3 +68,32 @@ def test_empty_position_prefers_healthy_zero_over_ir_and_says_so():
     t = Team(id="1", name="t", owner_id=None, owner_name=None, players=ps, starters=["1", "2", "4"])
     adv = advise(lg, t)
     assert "waiver wire" in adv.slots[1].reason and adv.slots[1].confidence == FLIP
+
+
+def test_exact_optimizer_beats_greedy_on_overlapping_flex():
+    """SUPER_FLEX + WRRB_FLEX + FLEX: greedy by restrictiveness can strand value."""
+    ps = [P(1, "QB", 22), P(2, "QB", 18), P(3, "RB", 12), P(4, "RB", 11), P(5, "RB", 10),
+          P(6, "WR", 13), P(7, "WR", 9), P(8, "TE", 7), P(9, "TE", 12)]
+    slots = ["QB", "RB", "WR", "TE", "WRRB_FLEX", "FLEX", "SUPER_FLEX"]
+    best = optimize(ps, slots)
+    assert all(best), best
+    ids = [p.id for p in best]
+    assert len(set(ids)) == len(ids)
+    for slot, p in zip(slots, best):
+        from edge.models import slot_accepts
+        assert slot_accepts(slot, p.position)
+    # brute-force optimum
+    import itertools
+    from edge.models import slot_accepts as ok
+    bestv = 0
+    for combo in itertools.permutations(ps, len(slots)):
+        if all(ok(s, p.position) for s, p in zip(slots, combo)):
+            bestv = max(bestv, sum(p.projected for p in combo))
+    assert lineup_total(ps, slots) == bestv
+
+
+def test_superflex_starts_second_qb_when_better_than_flex_options():
+    ps = [P(1, "QB", 22), P(2, "QB", 19), P(3, "RB", 12), P(4, "RB", 8), P(5, "WR", 11), P(6, "WR", 9), P(7, "TE", 6)]
+    slots = ["QB", "RB", "WR", "TE", "FLEX", "SUPER_FLEX"]
+    best = optimize(ps, slots)
+    assert best[5].id == "2" and best[4].position != "QB"

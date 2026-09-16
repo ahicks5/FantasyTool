@@ -29,10 +29,7 @@ def _slot_order(slots: list[str]) -> list[int]:
     return sorted(range(len(slots)), key=key)
 
 
-def optimize(players: list[Player], slots: list[str], values: dict[str, float] | None = None) -> list[Player | None]:
-    """Best lineup in slot order. Greedy by slot restrictiveness — optimal for standard layouts."""
-    # healthy zero-projection players before injured ones, so an IR guy never "starts" by default
-    pool = sorted(players, key=lambda p: (-effective(p, values), p.is_out))
+def _greedy(pool: list[Player], slots: list[str], values) -> list[Player | None]:
     used: set[str] = set()
     out: list[Player | None] = [None] * len(slots)
     for i in _slot_order(slots):
@@ -43,6 +40,63 @@ def optimize(players: list[Player], slots: list[str], values: dict[str, float] |
             used.add(p.id)
             break
     return out
+
+
+def _assign_exact(pool: list[Player], slots: list[str], values) -> list[Player | None]:
+    """Max-weight assignment (Hungarian, O(n^3)) — exact even when flex slots overlap
+    (e.g. FLEX + WRRB_FLEX + SUPER_FLEX). Pool is capped to keep the matrix small."""
+    n = max(len(slots), len(pool))
+    BIG = 10**6
+    # cost = -value; ineligible = BIG; padded rows/cols = 0
+    cost = [[0.0] * n for _ in range(n)]
+    for i, slot in enumerate(slots):
+        for j, p in enumerate(pool):
+            cost[i][j] = -effective(p, values) if slot_accepts(slot, p.position) else BIG
+    # Hungarian algorithm (e-maxx formulation)
+    u = [0.0] * (n + 1); v = [0.0] * (n + 1); pmatch = [0] * (n + 1); way = [0] * (n + 1)
+    for i in range(1, n + 1):
+        pmatch[0] = i; j0 = 0
+        minv = [float("inf")] * (n + 1); used = [False] * (n + 1)
+        while True:
+            used[j0] = True; i0 = pmatch[j0]; delta = float("inf"); j1 = 0
+            for j in range(1, n + 1):
+                if not used[j]:
+                    cur = cost[i0 - 1][j - 1] - u[i0] - v[j]
+                    if cur < minv[j]:
+                        minv[j] = cur; way[j] = j0
+                    if minv[j] < delta:
+                        delta = minv[j]; j1 = j
+            for j in range(n + 1):
+                if used[j]:
+                    u[pmatch[j]] += delta; v[j] -= delta
+                else:
+                    minv[j] -= delta
+            j0 = j1
+            if pmatch[j0] == 0:
+                break
+        while True:
+            j1 = way[j0]; pmatch[j0] = pmatch[j1]; j0 = j1
+            if j0 == 0:
+                break
+    out: list[Player | None] = [None] * len(slots)
+    for j in range(1, n + 1):
+        i = pmatch[j]
+        if 1 <= i <= len(slots) and j <= len(pool) and cost[i - 1][j - 1] < BIG:
+            p = pool[j - 1]
+            if effective(p, values) > 0 or True:
+                out[i - 1] = p
+    return out
+
+
+def optimize(players: list[Player], slots: list[str], values: dict[str, float] | None = None) -> list[Player | None]:
+    """Best lineup in slot order. Greedy is exact for standard layouts (one flex type);
+    with overlapping flex types we solve the assignment exactly."""
+    # healthy zero-projection players before injured ones, so an IR guy never "starts" by default
+    pool = sorted(players, key=lambda p: (-effective(p, values), p.is_out))
+    flex_types = {s for s in slots if s in FLEX_SLOTS}
+    if len(flex_types) <= 1:
+        return _greedy(pool, slots, values)
+    return _assign_exact(pool[:24], slots, values)
 
 
 def lineup_total(players: list[Player], slots: list[str], values: dict[str, float] | None = None) -> float:

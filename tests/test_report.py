@@ -24,3 +24,14 @@ def test_win_probability_is_symmetric_and_bounded():
     assert report.win_probability(100, 100) == 0.5
     assert report.win_probability(130, 100) > 0.85
     assert abs(report.win_probability(90, 110) + report.win_probability(110, 90) - 1) < 0.01
+
+
+def test_player_photos_come_from_free_cdns():
+    from edge.engine.report import player_dict
+    from edge.models import Player
+    assert player_dict(Player(id="4866", name="x", position="RB", nfl_team="DET"))["photo"].endswith("/thumb/4866.jpg")
+    d = player_dict(Player(id="DET", name="Lions", position="DEF", nfl_team="DET"))
+    assert d["photo"].endswith("/nfl/det.png") and d["team_logo"].endswith("/nfl/det.png")
+    espn = Player(id="4429795", name="y", position="WR", nfl_team="DET")
+    espn.ext_ids["espn"] = "4429795"
+    assert "espncdn" in player_dict(espn)["photo"]
