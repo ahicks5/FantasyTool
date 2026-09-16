@@ -1,12 +1,17 @@
 """Demo commands. Live network. Usage:
   python -m edge.cli sleeper <league_id> [--week N]
   python -m edge.cli leagues <sleeper_username>
+  python -m edge.cli espn <league_id> [--season YYYY] [--week N]
 """
 from __future__ import annotations
 
 import argparse
+import sys
 
-from edge.connectors import sleeper
+import requests
+
+from edge.connectors import espn, sleeper
+from edge.data.espn_api import EspnError
 
 
 def _fmt(p):
@@ -14,8 +19,7 @@ def _fmt(p):
     return f"{p.name:<24} {p.position:<3} {p.nfl_team or '-':<4} {p.projected if p.projected is not None else '-':>6}{inj}"
 
 
-def cmd_sleeper(args):
-    lg = sleeper.load_league(args.league_id, args.week)
+def _print_league(lg):
     print(f"{lg.name} — {lg.season} week {lg.week} — {lg.num_teams} teams — waivers: {lg.waiver_type}"
           f"{f' (${lg.faab_budget})' if lg.faab_budget else ''}")
     print("slots:", " ".join(lg.starting_slots), "| rec =", lg.scoring.get("rec", 0), "pts")
@@ -34,17 +38,35 @@ def cmd_sleeper(args):
         print("  " + _fmt(p))
 
 
+def cmd_sleeper(args):
+    _print_league(sleeper.load_league(args.league_id, args.week))
+
+
+def cmd_espn(args):
+    try:
+        lg = espn.load_league(args.league_id, args.season, args.week)
+    except EspnError as e:
+        print(f"error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except requests.RequestException as e:
+        print(f"error: could not reach ESPN ({e})", file=sys.stderr)
+        sys.exit(1)
+    _print_league(lg)
+
+
 def cmd_leagues(args):
     for l in sleeper.find_leagues(args.username):
         print(f"{l['league_id']}  {l['name']}  ({l['total_rosters']} teams, {l['status']})")
 
 
-def main():
+def main(argv: list[str] | None = None):
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("sleeper"); s.add_argument("league_id"); s.add_argument("--week", type=int); s.set_defaults(fn=cmd_sleeper)
     s = sub.add_parser("leagues"); s.add_argument("username"); s.set_defaults(fn=cmd_leagues)
-    args = ap.parse_args()
+    s = sub.add_parser("espn", help="public ESPN league"); s.add_argument("league_id")
+    s.add_argument("--season", type=int); s.add_argument("--week", type=int); s.set_defaults(fn=cmd_espn)
+    args = ap.parse_args(argv)
     args.fn(args)
 
 

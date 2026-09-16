@@ -1,0 +1,58 @@
+from edge.engine.lineup import FLIP, LEAN, LOCK, advise, confidence_for, effective, lineup_total, optimize
+from edge.models import Player
+
+
+def P(i, pos, proj, team="X", inj=None):
+    return Player(id=str(i), name=f"P{i}", position=pos, nfl_team=team, injury_status=inj, projected=proj)
+
+
+SLOTS = ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "FLEX", "DEF"]
+
+
+def test_optimize_fills_flex_with_best_remaining_and_respects_positions():
+    ps = [P(1, "QB", 20), P(2, "QB", 25), P(3, "RB", 15), P(4, "RB", 12), P(5, "RB", 11),
+          P(6, "WR", 14), P(7, "WR", 9), P(8, "WR", 13), P(9, "TE", 8), P(10, "TE", 10), P(11, "DEF", 6)]
+    best = optimize(ps, SLOTS)
+    ids = [p.id if p else None for p in best]
+    assert ids[0] == "2"                       # best QB
+    assert set(ids[1:3]) == {"3", "4"}          # top 2 RBs
+    assert set(ids[3:5]) == {"6", "8"}          # top 2 WRs
+    assert ids[5] == "10"
+    assert set(ids[6:8]) == {"5", "7"} - {"7"} | {"5", "7"} and "1" not in ids[6:8]  # no QB in FLEX
+    assert ids[8] == "11"
+    assert lineup_total(ps, SLOTS) == 25 + 15 + 12 + 14 + 13 + 10 + 11 + 9 + 6
+
+
+def test_out_players_are_zeroed_and_benched():
+    ps = [P(1, "QB", 30, inj="Out"), P(2, "QB", 18), P(3, "RB", 10), P(4, "RB", 9, inj="Doubtful"), P(5, "RB", 5)]
+    assert effective(ps[0]) == 0
+    best = optimize(ps, ["QB", "RB", "RB"])
+    assert [p.id for p in best] == ["2", "3", "5"]
+
+
+def test_confidence_thresholds():
+    assert confidence_for(4.0) == LOCK
+    assert confidence_for(2.0) == LEAN
+    assert confidence_for(1.0) == FLIP
+
+
+def test_advise_on_real_league_produces_calls_for_every_slot(league):
+    for t in league.teams:
+        adv = advise(league, t)
+        assert len(adv.slots) == len(league.starting_slots)
+        assert adv.projected_total >= adv.current_total  # optimizer never worse than current
+        for c in adv.slots:
+            assert c.confidence in (LOCK, LEAN, FLIP)
+            assert c.reason
+        for ch in adv.changes:
+            assert ch.gain > 0 or (ch.out is not None and ch.out.is_out)
+
+
+def test_advise_flags_out_starter_as_change(league):
+    # find a team starting an OUT player, or fabricate one
+    t = league.teams[0]
+    starter = t.player(t.starters[1])
+    starter.injury_status = "Out"
+    adv = advise(league, t)
+    assert any(ch.out and ch.out.id == starter.id for ch in adv.changes), "OUT starter must be swapped"
+    starter.injury_status = None

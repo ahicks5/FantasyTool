@@ -79,6 +79,17 @@ def projections(season: int, week: int) -> list[dict]:
     )
 
 
+def projections_season(season: int) -> list[dict]:
+    """Full-season projections (per-player totals, gp). Cached 24h."""
+    params = [("season_type", "regular"), ("order_by", "ppr")] + [("position[]", p) for p in POSITIONS]
+    return _cached(f"sleeper_proj_{season}_season.json", PLAYERS_TTL,
+                   lambda: _get(f"/projections/nfl/{season}", params=params))
+
+
+def trending_adds(hours: int = 48, limit: int = 100) -> list[dict]:
+    return _get("/v1/players/nfl/trending/add", params={"lookback_hours": hours, "limit": limit})
+
+
 def stats(season: int, week: int) -> list[dict]:
     params = [("season_type", "regular"), ("order_by", "pts_ppr")] + [("position[]", p) for p in POSITIONS]
     return _get(f"/stats/nfl/{season}/{week}", params=params)

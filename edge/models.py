@@ -30,6 +30,7 @@ class Player:
     bye_week: int | None = None
     projected: float | None = None     # this week's projection in league scoring
     proj_stats: dict[str, float] = field(default_factory=dict)
+    ext_ids: dict[str, str] = field(default_factory=dict)  # other platforms' ids, e.g. {"sleeper": "9221"}
 
     @property
     def is_out(self) -> bool:

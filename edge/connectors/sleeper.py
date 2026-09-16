@@ -1,6 +1,8 @@
 """Sleeper -> normalized League. Pure mapping functions take raw JSON so tests run offline."""
 from __future__ import annotations
 
+from typing import Callable
+
 from edge.data import sleeper_api as api
 from edge.data.scoring import score
 from edge.models import League, Player, Team
@@ -76,14 +78,27 @@ def build_league(
     return league
 
 
-def apply_projections(league: League, projections_raw: list[dict], players: dict[str, dict]) -> None:
+def apply_projections(
+    league: League,
+    projections_raw: list[dict],
+    players: dict[str, dict],
+    *,
+    sleeper_id: Callable[[Player], str | None] | None = None,
+) -> None:
     """Attach this week's projection (in league scoring) to every rostered player,
-    and build the free-agent pool from projected players nobody rosters."""
+    and build the free-agent pool from projected players nobody rosters.
+
+    Projections are keyed by Sleeper player id. `sleeper_id` translates a rostered
+    Player to its Sleeper id; the default is `Player.id` (a Sleeper league). Other
+    platforms pass their own translator (ESPN uses `Player.ext_ids["sleeper"]`).
+    Free agents come from the Sleeper players dump, so their `id` is always a Sleeper id.
+    """
+    key = sleeper_id or (lambda p: p.id)
     by_id = {p["player_id"]: p for p in projections_raw if p.get("stats")}
-    rostered = league.rostered_ids()
+    rostered = {key(p) for t in league.teams for p in t.players} - {None}
     for team in league.teams:
         for pl in team.players:
-            raw = by_id.get(pl.id)
+            raw = by_id.get(key(pl))
             if raw:
                 pl.proj_stats = raw["stats"]
                 pl.projected = score(raw["stats"], league.scoring)

@@ -28,3 +28,14 @@ def league(sleeper_raw):
     r = sleeper_raw
     return build_league(r["league"], r["users"], r["rosters"], r["players"], week=2,
                         projections_raw=r["projections"])
+
+
+@pytest.fixture(scope="session")
+def espn_raw():
+    return load("espn/league_2026.json")
+
+
+@pytest.fixture(scope="session")
+def espn_league(espn_raw, sleeper_raw):
+    from edge.connectors.espn import build_league
+    return build_league(espn_raw, week=2, projections_raw=sleeper_raw["projections"], players=sleeper_raw["players"])

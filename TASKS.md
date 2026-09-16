@@ -15,8 +15,8 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] Sleeper projections client (week N) + re-score to league scoring settings
 - [x] Demo: `python -m edge.cli sleeper <league_id>` prints every team's roster with projected points
 - [x] Sleeper: resolve a league from username (`python -m edge.cli leagues <username>`)
-- [ ] ESPN public-league connector mapped to the same models + demo
-- [ ] Recorded ESPN fixture + tests
+- [x] ESPN public-league connector mapped to the same models + demo (`python -m edge.cli espn <league_id>`)
+- [x] ESPN fixture (real player records, hand-built league) + tests; ESPN->Sleeper id bridge (`edge/data/player_map.py`)
 
 ## Day 2–3 — Recommendation engine
 - [ ] Lineup optimizer: best starters given roster_positions (FLEX/SUPER_FLEX aware)
