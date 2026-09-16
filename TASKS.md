@@ -38,7 +38,7 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] FastAPI endpoints backing each page
 
 ## Day 6 — Paywall + deploy
-- [~] Supabase magic-link auth — API verifies Supabase JWTs (tested); web login UI not wired yet
+- [~] Supabase magic-link auth — API verifies JWTs (tested); web /login built; needs a real project to verify
 - [x] Stripe Checkout (à la carte $3/$5 + Full Report $9) + webhook → entitlement (tested with a fake event; needs a real test-mode run)
 - [x] Free tier: 1 team; gate Trade Lab + extra teams
 - [~] Deploy web (Vercel) + API (Railway/Render) — Dockerfile + deploy/ configs written; not deployed (needs your accounts)
@@ -49,8 +49,8 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] Launch posts: Reddit, X, Discord
 
 ## Next up
-- [ ] Wire web to the real API end-to-end in a browser (agent verified against mocks only)
-- [ ] Supabase magic-link login in the web app (`@supabase/supabase-js`), pass JWT to API
+- [x] Wire web to the real API end-to-end in a browser (headless Chromium, 375px, live league, 0 console errors)
+- [~] Supabase magic-link login: /login page + JWT header wired; untested against a real Supabase project (needs your keys)
 - [ ] Real Stripe test-mode checkout run (needs STRIPE_SECRET_KEY / webhook secret)
 - [ ] Deploy: Vercel (web) + Railway or Render (API, Dockerfile) — free tiers
 - [ ] Verify ESPN connector on a real public league (fixture is hand-built from real player records)
