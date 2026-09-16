@@ -59,6 +59,33 @@ def cmd_leagues(args):
         print(f"{l['league_id']}  {l['name']}  ({l['total_rosters']} teams, {l['status']})")
 
 
+def cmd_card(args):
+    """Render a trade-verdict PNG for a proposed trade (marketing asset / share button)."""
+    from pathlib import Path
+
+    from edge.api import service
+    from edge.engine import trade
+    from edge.engine.explain import explain
+    from edge.graphics import render_png, verdict_card_html
+
+    b = service.get_bundle("sleeper", args.league_id)
+    me, them = b.league.team(args.my_team_id), b.league.team(args.their_team_id)
+    v = trade.evaluate(b.league, me, them, args.give.split(","), args.get.split(","), b.ros,
+                       their_profile=b.profiles.get(them.id), hoarded=b.hoarded(them.id))
+    text, _ = explain(v)
+    g = {"verdict": v.verdict, "title": v.verdict, "give": [p.name for p in v.me.give], "get": [p.name for p in v.me.get],
+         "my_delta_ros": v.me.lineup_delta_ros, "their_delta_ros": v.them.lineup_delta_ros,
+         "fairness": v.fairness, "style": v.their_tendencies.get("style")}
+    html_str = verdict_card_html(g, text, b.league.name, b.league.week)
+    Path(args.out).mkdir(parents=True, exist_ok=True)
+    out = Path(args.out) / f"{v.verdict.lower()}_{'-'.join(args.give.split(','))}_for_{'-'.join(args.get.split(','))}.png"
+    out.with_suffix(".html").write_text(html_str)
+    if not args.html_only:
+        render_png(html_str, out)
+    print(v.verdict, "->", out)
+    print(text)
+
+
 def main(argv: list[str] | None = None):
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -66,6 +93,9 @@ def main(argv: list[str] | None = None):
     s = sub.add_parser("leagues"); s.add_argument("username"); s.set_defaults(fn=cmd_leagues)
     s = sub.add_parser("espn", help="public ESPN league"); s.add_argument("league_id")
     s.add_argument("--season", type=int); s.add_argument("--week", type=int); s.set_defaults(fn=cmd_espn)
+    s = sub.add_parser("card"); s.add_argument("league_id"); s.add_argument("my_team_id"); s.add_argument("their_team_id")
+    s.add_argument("give"); s.add_argument("get"); s.add_argument("--out", default="launch/cards"); s.add_argument("--html-only", action="store_true")
+    s.set_defaults(fn=cmd_card)
     args = ap.parse_args(argv)
     args.fn(args)
 

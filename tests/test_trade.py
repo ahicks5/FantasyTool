@@ -79,3 +79,14 @@ def test_trade_targets_are_mutually_beneficial(league, ros):
         for d in targets:
             assert d["my_gain_ros"] >= 3 and d["their_gain_ros"] >= 0
             assert d["their_team_id"] != t.id
+
+
+def test_trading_only_qb_costs_gap_to_replacement_not_whole_player(league, ros):
+    them = next(t for t in league.teams if sum(p.position == "QB" for p in t.players) == 1)
+    me = next(t for t in league.teams if t.id != them.id)
+    qb = next(p for p in them.players if p.position == "QB")
+    my_rb = max((p for p in me.players if p.position == "RB"), key=lambda p: ros[p.id])
+    v = trade.evaluate(league, me, them, [my_rb.id], [qb.id], ros)
+    best_fa_qb = max((ros[p.id] for p in league.free_agents if p.position == "QB"), default=0)
+    assert best_fa_qb > 0
+    assert v.them.lineup_delta_ros > -(ros[qb.id] - best_fa_qb) - 5   # bounded by the replacement gap

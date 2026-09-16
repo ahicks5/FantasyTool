@@ -56,3 +56,15 @@ def test_advise_flags_out_starter_as_change(league):
     adv = advise(league, t)
     assert any(ch.out and ch.out.id == starter.id for ch in adv.changes), "OUT starter must be swapped"
     starter.injury_status = None
+
+
+def test_empty_position_prefers_healthy_zero_over_ir_and_says_so():
+    ps = [P(1, "QB", 20), P(2, "RB", 0, inj="IR"), P(3, "RB", 0), P(4, "WR", 9)]
+    best = optimize(ps, ["QB", "RB", "WR"])
+    assert best[1].id == "3"
+    from edge.models import League, Team
+    lg = League(id="x", platform="t", name="t", season=2026, week=2, roster_positions=["QB", "RB", "WR", "BN"],
+                scoring={}, teams=[])
+    t = Team(id="1", name="t", owner_id=None, owner_name=None, players=ps, starters=["1", "2", "4"])
+    adv = advise(lg, t)
+    assert "waiver wire" in adv.slots[1].reason and adv.slots[1].confidence == FLIP

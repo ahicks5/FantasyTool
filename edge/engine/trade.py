@@ -40,16 +40,32 @@ class Verdict:
     notes: list[str] = field(default_factory=list)
 
 
+def replacements(league: League, ros: dict[str, float]) -> list[Player]:
+    """Best free agent per position — what a manager can grab off waivers after a trade.
+    Included on both sides of every lineup comparison so an emptied slot costs the gap to
+    replacement level, not the whole player."""
+    best: dict[str, Player] = {}
+    for p in league.free_agents:
+        if p.is_out:
+            continue
+        cur = best.get(p.position)
+        if cur is None or ros.get(p.id, 0.0) > ros.get(cur.id, 0.0):
+            best[p.position] = p
+    return list(best.values())
+
+
 def _side(league: League, team: Team, give: list[Player], get: list[Player], ros: dict[str, float]) -> Side:
     slots = league.starting_slots
     give_ids = {p.id for p in give}
-    after = [p for p in team.players if p.id not in give_ids] + get
+    repl = replacements(league, ros)
+    before = team.players + repl
+    after = [p for p in team.players if p.id not in give_ids] + get + repl
     return Side(
         team, give, get,
         value_out=round(sum(ros.get(p.id, 0.0) for p in give), 1),
         value_in=round(sum(ros.get(p.id, 0.0) for p in get), 1),
-        lineup_delta_week=round(lineup_total(after, slots) - lineup_total(team.players, slots), 2),
-        lineup_delta_ros=round(lineup_total(after, slots, ros) - lineup_total(team.players, slots, ros), 1),
+        lineup_delta_week=round(lineup_total(after, slots) - lineup_total(before, slots), 2),
+        lineup_delta_ros=round(lineup_total(after, slots, ros) - lineup_total(before, slots, ros), 1),
     )
 
 
@@ -144,24 +160,14 @@ def _counter(league: League, my_team: Team, their_team: Team, give: list[Player]
 
 
 def _counter_why(c_give, c_get, give, get, me: Side, them: Side, fav: set[str]) -> str:
-    added_get = [p for p in c_get if p.id not in {x.id for x in get}]
-    added_give = [p for p in c_give if p.id not in {x.id for x in give}]
-    removed_get = [p for p in get if p.id not in {x.id for x in c_get}]
-    removed_give = [p for p in give if p.id not in {x.id for x in c_give}]
-    bits = []
-    if added_get:
-        bits.append("Ask for " + ", ".join(p.name for p in added_get))
-    if removed_get:
-        bits.append("drop the ask for " + ", ".join(p.name for p in removed_get))
-    if added_give:
-        bits.append("add " + ", ".join(p.name for p in added_give))
-    if removed_give:
-        bits.append("keep " + ", ".join(p.name for p in removed_give))
-    s = "; ".join(bits) + "." if bits else "Same players, different framing."
-    s += f" Your lineup +{me.lineup_delta_ros:.0f} ROS, theirs {them.lineup_delta_ros:+.0f}."
+    """Why this counter works — the give/get lists are shown separately, so don't restate them."""
+    s = f"Your lineup {me.lineup_delta_ros:+.0f} ROS, theirs {them.lineup_delta_ros:+.0f} — they stay whole, so it is askable."
     given_fav = [p.position for p in c_give if p.position in fav]
     if given_fav:
-        s += f" They chase {given_fav[0]}s — this feeds that."
+        s += f" They chase {given_fav[0]}s; this feeds that."
+    removed_get = [p for p in get if p.id not in {x.id for x in c_get}]
+    if removed_get:
+        s += f" Asking for {', '.join(p.name for p in removed_get)} was the sticking point."
     return s
 
 

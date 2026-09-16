@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --color-ink: #111111;
+  --color-muted: #555555;
+  --color-line: #d9d9d9;
+  --color-paper: #ffffff;
+  --color-soft: #f4f4f4;
+  --color-start: #0b6e4f; /* deep green: start / positive */
+  --color-start-soft: #e3f3ec;
+  --color-sit: #b3261e; /* strong red: sit / negative */
+  --color-sit-soft: #f9e3e1;
+  --color-flip: #f5b700; /* amber: coin flip */
+  --color-flip-dark: #8a5a00;
+  --color-flip-soft: #fff4d6;
+  --color-lean: #1d4ed8; /* blue: lean */
+  --color-lean-soft: #e4ebfb;
+}
+
+html {
+  color-scheme: light;
+  background: var(--color-paper);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Big tap targets everywhere. */
+button,
+a.btn,
+select,
+input {
+  min-height: 44px;
+}

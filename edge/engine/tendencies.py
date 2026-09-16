@@ -39,7 +39,7 @@ class Profile:
         elif self.trades >= 1:
             deal = "occasional trader"
         else:
-            deal = "rarely trades"
+            deal = "rare trader"
         if faab_budget and self.bids:
             share = self.avg_bid / faab_budget
             faab = "FAAB aggressive" if share >= 0.15 else ("FAAB frugal" if share < 0.05 else "FAAB moderate")

@@ -15,14 +15,15 @@ Business: free for 1 team, $7 unlocks the season (Stripe). Marketing via trade-v
 Andrew (self-taught Python/VBA/automation). Steers, doesn't type every line.
 Keep explanations short and plain. Visuals: light, high-contrast.
 
-## Stack (proposed, confirm with Andrew)
+## Stack (built; Andrew to confirm or redirect)
 - `edge/` — Python 3.11 engine + league connectors + FastAPI API. Andrew can read/tweak this.
 - `web/` — Next.js (App Router, TypeScript, Tailwind), mobile-first. Talks to the API.
 - Supabase — email magic-link auth + Postgres (users, leagues, entitlements).
 - Stripe Checkout + webhook — $7 season pass.
 - Hosting — Vercel (web), Railway or Render (API).
-- Claude API — `claude-sonnet-5` for trade explanations (cheap, fast). Load the `claude-api`
-  skill before touching SDK code.
+- Claude API — optional. `EDGE_USE_CLAUDE=1` turns on LLM-written trade explanations (model from
+  `EDGE_CLAUDE_MODEL`, default `claude-opus-5`); otherwise free templates. Load the `claude-api` skill before touching SDK code.
+- Persistence today: SQLite via `edge/api/store.py` (zero setup). Swap to Supabase Postgres by re-implementing that file.
 
 ## Data sources
 - **Projections: Sleeper's free projections endpoint** (Rotowire-sourced, weekly, no auth):
@@ -55,6 +56,11 @@ TASKS.md            backlog / in progress / done — keep it current
 - Run before pushing: `uv run pytest -q` (and `npm run build` in `web/` once it exists).
 - Don't add a dependency when the stdlib does the job.
 - End every session with: what's done, what's next, decisions needed from Andrew.
+
+## Pricing / packages
+`edge/products.py` is the single source of truth: free (My Team, 1 league), à la carte passes
+(Waiver Wire $3, Trade Lab $5), Full Report bundle $9 (everything + weekly report, 5 leagues).
+The API gates features with HTTP 402 + an `upsell` list; the web shows a locked state.
 
 ## Test league (public Sleeper)
 Use league **1403186749361901568** ("The Megalabowl", 12 teams, half PPR,

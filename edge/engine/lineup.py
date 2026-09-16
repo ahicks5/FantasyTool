@@ -29,7 +29,8 @@ def _slot_order(slots: list[str]) -> list[int]:
 
 def optimize(players: list[Player], slots: list[str], values: dict[str, float] | None = None) -> list[Player | None]:
     """Best lineup in slot order. Greedy by slot restrictiveness — optimal for standard layouts."""
-    pool = sorted(players, key=lambda p: -effective(p, values))
+    # healthy zero-projection players before injured ones, so an IR guy never "starts" by default
+    pool = sorted(players, key=lambda p: (-effective(p, values), p.is_out))
     used: set[str] = set()
     out: list[Player | None] = [None] * len(slots)
     for i in _slot_order(slots):
@@ -115,6 +116,10 @@ def advise(league: League, team: Team) -> LineupAdvice:
         alt = max((b for b in bench if slot_accepts(slot, b.position)), key=effective, default=None)
         margin = effective(p) - (effective(alt) if alt else 0.0)
         conf = confidence_for(margin)
+        if effective(p) <= 0:
+            calls.append(SlotCall(slot, p, FLIP, f"No healthy {slot} with a projection. Hit the waiver wire.",
+                                  change=False, margin=0.0))
+            continue
         if alt:
             reason = f"Projects {effective(p):.1f}; best bench option {alt.name} at {effective(alt):.1f}."
         else:

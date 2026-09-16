@@ -34,13 +34,20 @@ def fetch_schedule(season: int) -> dict[str, list[str]]:
 
 
 def load_schedule(season: int) -> dict[str, list[str]]:
+    """Cached 7 days. If ESPN is unreachable, fall back to the schedule bundled with the package."""
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     f = CACHE_DIR / f"schedule_{season}.json"
     if f.exists() and time.time() - f.stat().st_mtime < 7 * 86400:
         return json.loads(f.read_text())["weeks"]
-    weeks = fetch_schedule(season)
-    f.write_text(json.dumps({"season": season, "weeks": weeks}))
-    return weeks
+    try:
+        weeks = fetch_schedule(season)
+        f.write_text(json.dumps({"season": season, "weeks": weeks}))
+        return weeks
+    except Exception:  # noqa: BLE001
+        bundled = Path(__file__).with_name(f"schedule_{season}.json")
+        if bundled.exists():
+            return json.loads(bundled.read_text())["weeks"]
+        raise
 
 
 def bye_weeks(weeks: dict[str, list[str]]) -> dict[str, int]:

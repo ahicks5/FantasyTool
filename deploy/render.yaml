@@ -1,0 +1,22 @@
+# Render blueprint (alternative to Railway). Free web service + persistent disk.
+services:
+  - type: web
+    name: edge-api
+    env: docker
+    plan: free
+    healthCheckPath: /api/health
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: EDGE_CORS
+        value: https://YOUR-VERCEL-DOMAIN.vercel.app
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: EDGE_WEB_URL
+        value: https://YOUR-VERCEL-DOMAIN.vercel.app

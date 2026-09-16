@@ -1,0 +1,7 @@
+# Railway: connect the GitHub repo, it picks up the Dockerfile. Add a 1 GB volume mounted at /data.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+[deploy]
+healthcheckPath = "/api/health"
+restartPolicyType = "ON_FAILURE"

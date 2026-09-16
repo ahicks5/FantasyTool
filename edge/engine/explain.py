@@ -45,9 +45,10 @@ def template(v: Verdict) -> str:
     s += f" Their lineup moves {them.lineup_delta_ros:+.0f}."
     style = v.their_tendencies.get("style")
     if style:
-        s += f" This manager is {style}."
+        article = "an" if style[0] in "aeiou" else "a"
+        s += f" This manager is {article} {style}."
     if v.counter:
-        s += f" Counter: give {', '.join(v.counter['give_names'])} for {', '.join(v.counter['get_names'])}. {v.counter['why']}"
+        s += f" Counter: {', '.join(v.counter['give_names'])} for {', '.join(v.counter['get_names'])}. {v.counter['why']}"
     return s
 
 
