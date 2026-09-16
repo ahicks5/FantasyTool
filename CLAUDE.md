@@ -25,6 +25,12 @@ Keep explanations short and plain. Visuals: light, high-contrast.
   `EDGE_CLAUDE_MODEL`, default `claude-opus-5`); otherwise free templates. Load the `claude-api` skill before touching SDK code.
 - Persistence today: SQLite via `edge/api/store.py` (zero setup). Swap to Supabase Postgres by re-implementing that file.
 
+## Product spine (from the blueprint Andrew shared)
+`platform connector → canonical League/Team/Player → provider data → engine → Action[] → API → UI`.
+The home screen is an **Action feed** (`edge/engine/actions.py`, `GET .../actions`): lineup swaps,
+waiver claims, trade opportunities, ranked; locked features appear as name-free teasers.
+The LLM may explain; it never ranks, values, or invents numbers.
+
 ## Data sources
 - **Projections: Sleeper's free projections endpoint** (Rotowire-sourced, weekly, no auth):
   `https://api.sleeper.app/projections/nfl/{season}/{week}?season_type=regular&position[]=QB...&order_by=ppr`
@@ -32,6 +38,9 @@ Keep explanations short and plain. Visuals: light, high-contrast.
 - Actuals: `https://api.sleeper.app/stats/nfl/{season}/{week}` (same shape).
 - Players: `https://api.sleeper.app/v1/players/nfl` (14 MB, cache 24h on disk in `.cache/`).
 - League state: Sleeper v1 API (league, rosters, users, matchups, transactions).
+- Headshots: `https://sleepercdn.com/content/nfl/players/thumb/{sleeper_id}.jpg`,
+  ESPN: `https://a.espncdn.com/i/headshots/nfl/players/full/{espn_id}.png`,
+  team logos: `https://sleepercdn.com/images/team_logos/nfl/{abbr}.png` (all free, emitted as `photo`/`team_logo`).
 - ESPN public leagues: `lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{yr}/segments/0/leagues/{id}`.
 - Fallback if Sleeper projections ever break: Tank01 on RapidAPI ($10/mo).
 
@@ -41,7 +50,7 @@ edge/               Python package: connectors/, data/, engine/, api/
   models.py         normalized League / Team / Player (platform-agnostic)
   cli.py            demo commands (python -m edge.cli ...)
 tests/              pytest; fixtures/ holds recorded API JSON (no network in tests)
-web/                Next.js app (Day 5)
+web/                Next.js app: /home (action feed), /team, /waivers, /trade, /report, /connect, /login
 TASKS.md            backlog / in progress / done — keep it current
 .cache/             runtime cache, gitignored
 ```

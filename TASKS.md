@@ -48,6 +48,14 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] 5 sample trade-verdict graphics (shareable image)
 - [x] Launch posts: Reddit, X, Discord
 
+## Done this round (blueprint-driven)
+- [x] Action feed home (`/actions`): ranked moves, name-free teasers, "Everything else looks fine."
+- [x] Player headshots + team logos on every player (free CDNs), initials fallback
+- [x] UI overhaul: Inter/Inter Tight, cards, skeletons, Why? disclosures, Helpful/Wrong feedback (stored), bottom-sheet trade picker, prefilled trades from cards, headshot share card, new landing
+- [x] Exact flex-aware optimizer (Hungarian) for overlapping flex/superflex, brute-force tested
+- [x] Full Report priced at $7; teaser text in 402 responses
+- [x] Browser e2e at 375px re-verified (all pages, no overflow, photos loading)
+
 ## Next up
 - [x] Wire web to the real API end-to-end in a browser (headless Chromium, 375px, live league, 0 console errors)
 - [~] Supabase magic-link login: /login page + JWT header wired; untested against a real Supabase project (needs your keys)
@@ -56,6 +64,10 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [ ] Verify ESPN connector on a real public league (fixture is hand-built from real player records)
 - [ ] Weekly email of the Full Report (Resend free tier) — retention lever
 - [ ] Engine tuning with real week-2 → week-3 results (backtest start/sit calls vs actuals)
+- [ ] Waivers: add/drop pair valuation + fallback claims ("if X is gone, add Z")
+- [ ] Trade Finder: surplus/need matching across the league (blueprint P1)
+- [ ] RecommendationRun log with algorithm version (learning loop)
+- [ ] Projection provider interface (so Tank01/others can be swapped in)
 
 ## Later (not v1)
 - [ ] Private ESPN leagues (espn_s2 / SWID)

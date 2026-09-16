@@ -10,6 +10,15 @@ from edge.models import League, Team, slot_accepts
 FEATURE_FOR = {"start": "my_team", "waiver": "waivers", "trade": "trade_lab", "hold": "my_team"}
 
 
+def _gain_text(weekly: float, ros: float) -> str:
+    bits = []
+    if weekly > 0:
+        bits.append(f"+{weekly:.1f} this week")
+    if ros > 0:
+        bits.append(f"+{ros:.0f} rest of season")
+    return " · ".join(bits) or "Depth"
+
+
 def _pos_rank_after_add(team: Team, fa, slots: list[str]) -> str | None:
     """'RB2' if the pickup would start in the second RB slot, else None."""
     best = optimize(team.players + [fa], slots)
@@ -42,7 +51,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                     f"{ch.confidence}: margins this size were right {int(lineup_mod.HIT_RATE[ch.confidence] * 100)}% of the time last week."],
             "players": [report.player_dict(ch.in_), report.player_dict(ch.out)],
             "cta": {"label": "See lineup", "href": "/team"},
-            "score": ch.gain * 3,
+            "score": ch.gain * 6,  # lineup fixes have a deadline this week — rank them first
         })
 
     # 2. Waiver claims
@@ -56,7 +65,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                 "id": f"waiver:{p.player.id}", "type": "waiver", "feature": "waivers", "locked": False,
                 "title": f"Add {p.player.name}",
                 "subtitle": f"{bid_txt}" + (f" · Drop {p.drop.name}" if p.drop else ""),
-                "benefit": f"+{p.weekly_gain:.1f} this week · +{p.ros_gain:.0f} ROS", "benefit_value": p.fit_score,
+                "benefit": _gain_text(p.weekly_gain, p.ros_gain), "benefit_value": p.fit_score,
                 "confidence": "Lock" if p.fit_score >= 4 else ("Lean" if p.fit_score >= 1.5 else "Coin flip"),
                 "reason": p.reason,
                 "why": [f"Fit score {p.fit_score:.1f} (weekly gain, rest-of-season gain, depth).",
@@ -73,7 +82,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
             "id": "waiver:locked", "type": "waiver", "feature": "waivers", "locked": True,
             "title": f"{len(upgrades)} waiver add{'s' if len(upgrades) > 1 else ''} improve your roster",
             "subtitle": f"#1 would become your {rank} immediately" if rank else "#1 starts for you this week",
-            "benefit": f"+{top.weekly_gain:.1f} this week · +{top.ros_gain:.0f} ROS", "benefit_value": top.fit_score,
+            "benefit": _gain_text(top.weekly_gain, top.ros_gain), "benefit_value": top.fit_score,
             "confidence": None, "reason": "Unlock Waivers to see names, bids and who to drop.",
             "why": [], "players": [], "cta": {"label": "Unlock Waivers", "href": "/waivers"},
             "score": 2.5 * top.fit_score,
@@ -88,7 +97,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
             actions.append({
                 "id": f"trade:{t['their_team_id']}:{t['give'][0]}:{t['get'][0]}", "type": "trade", "feature": "trade_lab", "locked": False,
                 "title": f"Offer {t['give_names'][0]} for {t['get_names'][0]}",
-                "subtitle": f"to {t['their_team_name']} · both teams improve",
+                "subtitle": f"to {t['their_team_name']} · " + ("both teams improve" if t["their_gain_ros"] >= 1 else "fair for them, upgrade for you"),
                 "benefit": f"+{t['my_gain_ros']:.0f} ROS lineup points", "benefit_value": t["my_gain_ros"],
                 "confidence": "Lean", "reason": t["why"],
                 "why": [f"Your lineup gains {t['my_gain_ros']:.0f} rest-of-season points.",

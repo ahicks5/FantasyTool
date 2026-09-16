@@ -5,12 +5,13 @@ const SIZES = { sm: "h-9 w-9 text-xs", md: "h-12 w-12 text-sm", lg: "h-16 w-16 t
 
 function initials(name: string): string {
   const parts = name.replace(/[^A-Za-z' .-]/g, "").split(/\s+/).filter(Boolean);
-  return (parts[0]?.[0] ?? "") + (parts[parts.length - 1]?.[0] ?? "");
+  return ((parts[0]?.[0] ?? "") + (parts[parts.length - 1]?.[0] ?? "")).toUpperCase();
 }
 
 /**
- * Player headshot with a graceful fallback to initials. Photos come from free CDNs
- * (Sleeper / ESPN) via the API's `photo` field; team logo sits in the corner.
+ * Player headshot with initials always painted underneath, so a slow or missing photo never
+ * shows an empty circle. Photos come from free CDNs (Sleeper / ESPN) via the API's `photo`
+ * field; the team logo sits in the corner.
  */
 export function Avatar({
   name,
@@ -32,12 +33,11 @@ export function Avatar({
   const ringCls = ring ? { start: "ring-start", sit: "ring-sit", flip: "ring-flip", lean: "ring-lean" }[ring] + " ring-2 ring-offset-2" : "";
   return (
     <span className={`relative inline-block shrink-0 ${className}`}>
-      <span className={`flex items-center justify-center overflow-hidden rounded-full bg-soft font-black text-muted ${SIZES[size]} ${ringCls}`}>
-        {photo && !broken ? (
+      <span className={`relative flex items-center justify-center overflow-hidden rounded-full bg-soft font-black text-muted ${SIZES[size]} ${ringCls}`}>
+        <span aria-hidden>{initials(name)}</span>
+        {photo && !broken && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt="" loading="lazy" onError={() => setBroken(true)} className="h-full w-full object-cover object-top" />
-        ) : (
-          <span aria-hidden>{initials(name).toUpperCase()}</span>
+          <img src={photo} alt="" loading="lazy" decoding="async" onError={() => setBroken(true)} className="absolute inset-0 h-full w-full object-cover object-top" />
         )}
       </span>
       {teamLogo && !logoBroken && size !== "sm" && (
@@ -46,6 +46,7 @@ export function Avatar({
           src={teamLogo}
           alt=""
           loading="lazy"
+          decoding="async"
           onError={() => setLogoBroken(true)}
           className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-full bg-white p-0.5 shadow"
         />

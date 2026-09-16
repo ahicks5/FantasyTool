@@ -3,7 +3,7 @@ import { Pricing } from "@/components/Pricing";
 import { LinkButton, Wordmark } from "@/components/ui";
 
 const DEMO = [
-  { tag: "Start", tone: "bg-start", title: "Start Jahmyr Gibbs over D'Andre Swift", benefit: "+4.2 projected points", pill: "Lock", photo: "https://sleepercdn.com/content/nfl/players/thumb/9509.jpg", team: "det" },
+  { tag: "Start", tone: "bg-start", title: "Start Jahmyr Gibbs over D'Andre Swift", benefit: "+4.2 projected points", pill: "Lock", photo: "https://sleepercdn.com/content/nfl/players/thumb/9221.jpg", team: "det" },
   { tag: "Waiver", tone: "bg-lean", title: "Add Chris Brooks · bid $13–25", benefit: "+7.8 this week · +48 ROS", pill: "Lean", photo: "https://sleepercdn.com/content/nfl/players/thumb/11370.jpg", team: "gb" },
   { tag: "Trade", tone: "bg-ink", title: "Offer Jakobi Meyers for Jordan Mason", benefit: "+51 ROS lineup points", pill: "Lean", photo: "https://sleepercdn.com/content/nfl/players/thumb/8408.jpg", team: "min" },
 ];

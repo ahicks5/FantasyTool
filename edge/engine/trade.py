@@ -190,11 +190,15 @@ def trade_targets(league: League, my_team: Team, ros: dict[str, float], limit: i
                 them = _side(league, other, [t], [g], ros)
                 if them.lineup_delta_ros < 0 or _fairness(them) < 0.8:
                     continue
+                if them.lineup_delta_ros < 1 and _fairness(them) < 0.9:
+                    continue  # nothing in it for them and not even a clearly fair swap
                 out.append({"their_team_id": other.id, "their_team_name": other.name,
                             "give": [g.id], "get": [t.id], "give_names": [g.name], "get_names": [t.name],
                             "my_gain_ros": me.lineup_delta_ros, "their_gain_ros": them.lineup_delta_ros,
                             "verdict": FAIR,
-                            "why": f"You gain {me.lineup_delta_ros:.0f} ROS lineup points, they gain {them.lineup_delta_ros:.0f}. Both start the player they get."})
+                            "why": (f"You gain {me.lineup_delta_ros:.0f} ROS lineup points, they gain {them.lineup_delta_ros:.0f}. Both start the player they get."
+                                    if them.lineup_delta_ros >= 1 else
+                                    f"You gain {me.lineup_delta_ros:.0f} ROS lineup points. Even value for them ({_fairness(them):.0%} fair), so it is askable but not a slam dunk.")})
     out.sort(key=lambda d: -(d["my_gain_ros"] + 0.5 * d["their_gain_ros"]))
     seen = set()
     uniq = []
