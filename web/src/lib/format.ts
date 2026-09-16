@@ -24,6 +24,7 @@ export function verdictClass(v: Verdict): string {
 
 /** "$12 (range $8–$15, 12% of budget)" */
 export function formatBid(bid: Bid): string {
+  if (bid.amount === null || !bid.range) return bid.note ?? "Priority waivers — claim in order";
   const [lo, hi] = bid.range;
   return `$${bid.amount} (range $${lo}–$${hi}, ${bid.pct_of_budget}% of budget)`;
 }

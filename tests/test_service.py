@@ -27,7 +27,7 @@ def test_load_sleeper_assembles_full_bundle(monkeypatch):
     b = service.get_bundle("sleeper", "1403186749361901568")
     assert b.league.name == "The Megalabowl" and b.league.week == 2
     assert len(b.byes) == 32 and b.ros and b.trending == {"9758": 1234}
-    assert b.bid_stats["claims"] == 13
+    assert b.bid_stats["claims"] == 6  # only completed claims count
     assert b.profiles and b.pos_counts
     assert b.matchups
     assert service.get_bundle("sleeper", "1403186749361901568") is b   # cached

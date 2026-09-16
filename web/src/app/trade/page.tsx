@@ -5,13 +5,13 @@ import { Locked } from "@/components/Locked";
 import { ShareCard } from "@/components/ShareCard";
 import { PlayerLine } from "@/components/Players";
 import { Button, Card, ErrorBox, H2, Spinner, VerdictWord } from "@/components/ui";
-import { evaluateTrade, getLeague, getLineup } from "@/lib/api";
+import { evaluateTrade, getLeague, getRoster } from "@/lib/api";
 import { signed } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
-import type { LeagueSummary, Lineup, Player, TradeResult } from "@/lib/types";
+import type { LeagueSummary, Player, TradeResult } from "@/lib/types";
 
-function rosterPlayers(l: Lineup): Player[] {
-  return [...l.slots.map((s) => s.player), ...l.bench.map((b) => b.player)];
+function sortRoster(players: Player[]): Player[] {
+  return [...players].sort((a, b) => (b.ros ?? b.projected ?? 0) - (a.ros ?? a.projected ?? 0));
 }
 
 function TradeBody({ c }: { c: Connection }) {
@@ -26,10 +26,10 @@ function TradeBody({ c }: { c: Connection }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([getLeague(c.platform, c.league_id), getLineup(c.platform, c.league_id, c.team_id)])
-      .then(([l, lineup]) => {
+    Promise.all([getLeague(c.platform, c.league_id), getRoster(c.platform, c.league_id, c.team_id)])
+      .then(([l, roster]) => {
         setLeague(l);
-        setMine(rosterPlayers(lineup));
+        setMine(sortRoster(roster.players));
         const first = l.teams.find((t) => t.id !== c.team_id);
         if (first) setTheirId(first.id);
       })
@@ -38,9 +38,8 @@ function TradeBody({ c }: { c: Connection }) {
 
   useEffect(() => {
     if (!theirId) return;
-    // No roster endpoint in the contract yet; the lineup endpoint returns the full roster.
-    getLineup(c.platform, c.league_id, theirId)
-      .then((l) => setTheirs(rosterPlayers(l)))
+    getRoster(c.platform, c.league_id, theirId)
+      .then((r) => setTheirs(sortRoster(r.players)))
       .catch((e: Error) => setError(e.message));
   }, [c.platform, c.league_id, theirId]);
 
@@ -125,18 +124,27 @@ function TradeBody({ c }: { c: Connection }) {
               </div>
             </div>
             <p className="mt-4 text-base leading-relaxed">{result.explanation}</p>
+            {result.notes?.map((n) => (
+              <p key={n} className="mt-2 rounded-lg bg-flip-soft px-3 py-2 text-sm">
+                {n}
+              </p>
+            ))}
           </Card>
 
           <Card>
             <div className="text-xs font-bold uppercase text-muted">{theirTeam?.name ?? "Their"} tendencies</div>
             <div className="mt-2 flex flex-wrap gap-2">
-              {[
-                result.their_tendencies.style,
-                `${result.their_tendencies.trades} trades`,
-                `${result.their_tendencies.waiver_claims} claims`,
-                `avg bid $${result.their_tendencies.avg_bid}`,
-                ...result.their_tendencies.favorite_positions.map((p) => `loves ${p}`),
-              ].map((t) => (
+              {(result.their_tendencies.style
+                ? [
+                    result.their_tendencies.style,
+                    `${result.their_tendencies.trades ?? 0} trades`,
+                    `${result.their_tendencies.waiver_claims ?? 0} claims`,
+                    `avg bid $${result.their_tendencies.avg_bid ?? 0}`,
+                    ...(result.their_tendencies.favorite_positions ?? []).map((p) => `loves ${p}`),
+                    ...(result.their_tendencies.hoards ?? []).map((p) => `hoards ${p}`),
+                  ]
+                : ["No transaction history yet"]
+              ).map((t) => (
                 <span key={t} className="rounded-full bg-soft px-3 py-1 text-sm font-bold">
                   {t}
                 </span>
@@ -148,9 +156,9 @@ function TradeBody({ c }: { c: Connection }) {
             <Card className="border-2 border-flip bg-flip-soft">
               <div className="text-xs font-bold uppercase text-flip-dark">Counteroffer</div>
               <div className="mt-1 text-base">
-                <span className="font-bold text-sit">Give</span> {names(result.counter.give, mine)}
+                <span className="font-bold text-sit">Give</span> {result.counter.give_names.join(" + ") || "nothing"}
                 <br />
-                <span className="font-bold text-start">Get</span> {names(result.counter.get, theirs)}
+                <span className="font-bold text-start">Get</span> {result.counter.get_names.join(" + ") || "nothing"}
               </div>
               <p className="mt-2 text-sm">{result.counter.why}</p>
             </Card>
@@ -165,10 +173,6 @@ function TradeBody({ c }: { c: Connection }) {
       )}
     </div>
   );
-}
-
-function names(ids: string[], pool: Player[]): string {
-  return ids.map((id) => pool.find((p) => p.id === id)?.name ?? id).join(" + ") || "nothing";
 }
 
 function SideBox({ label, side }: { label: string; side: TradeResult["me"] }) {
@@ -221,7 +225,7 @@ function PlayerPicker({
                     {sel ? "✓" : ""}
                   </span>
                   <PlayerLine p={p} />
-                  <span className="ml-auto font-bold tabular-nums">{p.projected.toFixed(1)}</span>
+                  <span className="ml-auto font-bold tabular-nums">{(p.projected ?? 0).toFixed(1)}</span>
                 </button>
               </li>
             );

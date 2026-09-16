@@ -8,7 +8,7 @@ export function WaiversView({ waivers, compact = false }: { waivers: Waivers; co
     <div className="grid gap-3">
       <Card className="flex items-center justify-between">
         <span className="text-sm font-bold uppercase text-muted">FAAB remaining</span>
-        <span className="text-2xl font-black tabular-nums">${waivers.faab_remaining}</span>
+        <span className="text-2xl font-black tabular-nums">{waivers.faab_remaining === null ? "Priority" : `$${waivers.faab_remaining}`}</span>
       </Card>
       <ol className="grid gap-3">
         {waivers.picks.map((w, i) => (
@@ -24,7 +24,7 @@ export function WaiversView({ waivers, compact = false }: { waivers: Waivers; co
             <div className="mt-3 rounded-lg bg-soft p-3">
               <div className="text-xs font-bold uppercase text-muted">Suggested bid</div>
               <div className="text-xl font-black">
-                ${w.bid.amount} <span className="text-sm font-bold text-muted">{formatBid(w.bid).replace(/^\$\d+ /, "")}</span>
+                {w.bid.amount === null ? "—" : `$${w.bid.amount}`} <span className="text-sm font-bold text-muted">{formatBid(w.bid).replace(/^\$\d+ /, "")}</span>
               </div>
               {w.drop && (
                 <div className="mt-1 text-sm">

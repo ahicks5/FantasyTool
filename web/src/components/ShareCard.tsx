@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Player, TradeResult } from "@/lib/types";
-import { verdictClass } from "@/lib/format";
+import { signed, verdictClass } from "@/lib/format";
 
 const SIZE = 1080;
 
@@ -49,7 +49,9 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
         <div className="mt-auto">
           <div className="flex items-baseline justify-between" style={{ fontSize: 36 }}>
             <span className="font-bold">Fairness {fair}%</span>
-            <span className="text-muted">{result.graphic.lines[3] ?? ""}</span>
+            <span className="text-muted">
+              You {signed(result.graphic.my_delta_ros, 0)} · Them {signed(result.graphic.their_delta_ros, 0)} ROS
+            </span>
           </div>
           <div className="mt-3 w-full overflow-hidden rounded-full bg-soft" style={{ height: 28 }}>
             <div className="h-full bg-start" style={{ width: `${fair}%` }} />

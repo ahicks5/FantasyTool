@@ -77,10 +77,17 @@ export interface Player {
   id: string;
   name: string;
   position: string;
-  nfl_team: string;
+  nfl_team: string | null;
   injury_status: string | null;
   projected: number;
-  opponent: string;
+  opponent?: string;
+  ros?: number;
+}
+
+export interface Roster {
+  team: { id: string; name: string };
+  players: Player[];
+  starters: string[];
 }
 
 export interface PlayerRef {
@@ -91,7 +98,7 @@ export interface PlayerRef {
 
 export interface LineupSlot {
   slot: string;
-  player: Player;
+  player: Player | null;
   confidence: Confidence;
   reason: string;
   change: boolean;
@@ -104,7 +111,7 @@ export interface BenchEntry {
 
 export interface LineupChange {
   slot: string;
-  out: PlayerRef;
+  out: PlayerRef | null;
   in: PlayerRef;
   gain: number;
   confidence: Confidence;
@@ -118,12 +125,14 @@ export interface Lineup {
   slots: LineupSlot[];
   bench: BenchEntry[];
   changes: LineupChange[];
+  confidence_hit_rate?: Record<Confidence, number>;
 }
 
 export interface Bid {
-  amount: number;
-  range: [number, number];
-  pct_of_budget: number;
+  amount: number | null;
+  range: [number, number] | null;
+  pct_of_budget: number | null;
+  note?: string;
 }
 
 export interface WaiverPick {
@@ -139,7 +148,8 @@ export interface WaiverPick {
 
 export interface Waivers {
   week: number;
-  faab_remaining: number;
+  faab_remaining: number | null;
+  waiver_type?: string;
   picks: WaiverPick[];
 }
 
@@ -153,29 +163,46 @@ export interface TradeRequest {
 export type Verdict = "Accept" | "Reject" | "Counter" | "Fair";
 
 export interface TradeSide {
+  team_id?: string;
+  team_name?: string;
   value_out: number;
   value_in: number;
   lineup_delta_week: number;
   lineup_delta_ros: number;
 }
 
+/** Empty object when the league has no transaction history yet. */
 export interface Tendencies {
-  trades: number;
-  waiver_claims: number;
-  avg_bid: number;
-  favorite_positions: string[];
-  style: string;
+  trades?: number;
+  waiver_claims?: number;
+  fa_adds?: number;
+  avg_bid?: number;
+  max_bid?: number;
+  picks_traded?: number;
+  favorite_positions?: string[];
+  top_partner?: string | null;
+  style?: string;
+  hoards?: string[];
 }
 
 export interface Counter {
   give: string[];
   get: string[];
+  give_names: string[];
+  get_names: string[];
+  me?: TradeSide;
+  them?: TradeSide;
   why: string;
 }
 
 export interface TradeGraphic {
   title: string;
-  lines: string[];
+  give: string[];
+  get: string[];
+  my_delta_ros: number;
+  their_delta_ros: number;
+  fairness: number;
+  style: string | null;
 }
 
 export interface TradeResult {
@@ -185,34 +212,51 @@ export interface TradeResult {
   fairness: number;
   their_tendencies: Tendencies;
   counter: Counter | null;
+  notes: string[];
   explanation: string;
+  explanation_source?: "claude" | "template";
   graphic: TradeGraphic;
 }
 
 export interface TradeTarget {
   their_team_id: string;
-  give: PlayerRef[];
-  get: PlayerRef[];
+  their_team_name: string;
+  give: string[];
+  get: string[];
+  give_names: string[];
+  get_names: string[];
+  my_gain_ros: number;
+  their_gain_ros: number;
   verdict: Verdict;
   why: string;
 }
 
 export interface Matchup {
-  opponent: string;
+  opponent: string | null;
+  opponent_id?: string;
   my_proj: number;
-  their_proj: number;
-  win_prob: number;
+  their_proj: number | null;
+  win_prob: number | null;
 }
 
 export interface Report {
   week: number;
+  league?: string;
+  team?: string;
   lineup: Lineup;
   waivers: Waivers;
   trade_targets: TradeTarget[];
-  matchup: Matchup;
+  matchup: Matchup | null;
   html: string;
 }
 
 export interface ApiError {
   error: string;
+}
+
+/** FastAPI shape: `detail` is a string, or an object for paywall (402) responses. */
+export interface PaywallDetail {
+  error: string;
+  feature: string;
+  upsell: Product[];
 }

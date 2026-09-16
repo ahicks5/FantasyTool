@@ -360,10 +360,10 @@ export function lineupFor(teamId: string): Lineup {
 
   if (teamId === MY_TEAM_ID) {
     const lloyd = bench.find((b) => b.id === "11581");
-    const diggsIdx = slots.findIndex((s) => s.player.id === "2449");
+    const diggsIdx = slots.findIndex((s) => s.player?.id === "2449");
     if (lloyd && diggsIdx >= 0) {
       const boosted: Player = { ...lloyd, projected: 11.2 };
-      const diggs = slots[diggsIdx].player;
+      const diggs = slots[diggsIdx].player as Player;
       const gain = +(boosted.projected - diggs.projected).toFixed(1);
       changes.push({
         slot: "FLEX",
@@ -382,9 +382,9 @@ export function lineupFor(teamId: string): Lineup {
     }
   }
 
-  const projected_total = round1(slots.reduce((a, s) => a + s.player.projected, 0));
+  const projected_total = round1(slots.reduce((a, s) => a + (s.player?.projected ?? 0), 0));
   const current_total = round1(projected_total - changes.reduce((a, c) => a + c.gain, 0));
-  const lastFlex = Math.min(...slots.filter((s) => s.slot === "FLEX").map((s) => s.player.projected));
+  const lastFlex = Math.min(...slots.filter((s) => s.slot === "FLEX").map((s) => s.player?.projected ?? 0));
 
   return {
     week: WEEK,
@@ -475,19 +475,21 @@ export const WAIVERS: Waivers = {
 
 // ---------- Trade Lab ----------
 
-const TENDENCIES: Record<string, Tendencies> = {
+const TENDENCIES: Record<string, typeof DEFAULT_TENDENCIES> = {
   "4": { trades: 2, waiver_claims: 9, avg_bid: 14, favorite_positions: ["RB"], style: "active dealer" },
   "9": { trades: 0, waiver_claims: 3, avg_bid: 6, favorite_positions: ["WR", "TE"], style: "sits on his roster" },
   "12": { trades: 3, waiver_claims: 12, avg_bid: 21, favorite_positions: ["RB", "WR"], style: "FAAB spender" },
 };
 
-const DEFAULT_TENDENCIES: Tendencies = { trades: 1, waiver_claims: 5, avg_bid: 9, favorite_positions: ["WR"], style: "quiet" };
+const DEFAULT_TENDENCIES: Required<Pick<Tendencies, "trades" | "waiver_claims" | "avg_bid" | "favorite_positions" | "style">> = {
+  trades: 1, waiver_claims: 5, avg_bid: 9, favorite_positions: ["WR"], style: "quiet",
+};
 
 /** Rest-of-season value: a cheap stand-in for the engine's ROS number. */
 export function rosValue(p: Player): number {
   const mult: Record<string, number> = { QB: 2.6, RB: 4.3, WR: 4.0, TE: 3.4, DEF: 1.2, K: 1.0 };
   const injury = p.injury_status === "Out" || p.injury_status === "IR" || p.injury_status === "PUP" ? 0.55 : 1;
-  return round1(p.projected * (mult[p.position] ?? 3) * injury);
+  return round1((p.projected ?? 0) * (mult[p.position] ?? 3) * injury);
 }
 
 export function evaluateTrade(req: TradeRequest): TradeResult {
@@ -497,8 +499,8 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
   const get = req.get.map((id) => theirs.find((p) => p.id === id)).filter((p): p is Player => !!p);
   const value_out = round1(give.reduce((a, p) => a + rosValue(p), 0));
   const value_in = round1(get.reduce((a, p) => a + rosValue(p), 0));
-  const weekOut = give.reduce((a, p) => a + p.projected, 0);
-  const weekIn = get.reduce((a, p) => a + p.projected, 0);
+  const weekOut = give.reduce((a, p) => a + (p.projected ?? 0), 0);
+  const weekIn = get.reduce((a, p) => a + (p.projected ?? 0), 0);
   const fairness = value_in && value_out ? round2(Math.min(value_in, value_out) / Math.max(value_in, value_out)) : 0;
   const ratio = value_out ? value_in / value_out : 0;
 
@@ -519,6 +521,8 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
     counter = {
       give: bestGive.slice(0, 1).map((p) => p.id),
       get: keep.slice(0, Math.max(1, get.length)).map((p) => p.id),
+      give_names: bestGive.slice(0, 1).map((p) => p.name),
+      get_names: keep.slice(0, Math.max(1, get.length)).map((p) => p.name),
       why: `${theirName} ${tend.favorite_positions.includes("RB") ? "hoards RBs" : `chases ${tend.favorite_positions.join("/")}`}; giving up ${names(give)} for this package leaves you short. Offer ${names(bestGive.slice(0, 1))} one-for-${keep.length} instead.`,
     };
   }
@@ -530,14 +534,14 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
         ? `This is close to even: ${value_out.toFixed(1)} out, ${value_in.toFixed(1)} in. The week-2 swing is ${signed(weekIn - weekOut)}. Do it if you need the positional balance, otherwise there is no urgency. ${theirName} has made ${tend.trades} trades this year and tends to favor ${tend.favorite_positions.join("/")}.`
         : `You would give up ${value_out.toFixed(1)} of value for ${value_in.toFixed(1)}, a ${Math.round((1 - ratio) * 100)}% haircut. ${theirName} (${tend.style}) has ${tend.waiver_claims} waiver claims at an average bid of $${tend.avg_bid}, so they value depth. The counter below keeps your best piece in play without insulting them.`;
 
-  const graphic = {
-    title: `${verdict.toUpperCase()}: ${names(give)} for ${names(get)}`,
-    lines: [
-      `Out: ${value_out.toFixed(1)} ROS value`,
-      `In: ${value_in.toFixed(1)} ROS value`,
-      `Fairness ${Math.round(fairness * 100)}%`,
-      `Week ${WEEK} lineup ${signed(weekIn - weekOut)}`,
-    ],
+  const graphic: TradeResult["graphic"] = {
+    title: `${verdict}: ${names(give)} for ${names(get)}`,
+    give: give.map((p) => p.name),
+    get: get.map((p) => p.name),
+    my_delta_ros: round1((value_in - value_out) / 4),
+    their_delta_ros: round1((value_out - value_in) / 4),
+    fairness,
+    style: tend.style ?? null,
   };
 
   return {
@@ -547,7 +551,9 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
     fairness,
     their_tendencies: tend,
     counter,
+    notes: ratio > 1.4 ? ["Lopsided in your favor — they are unlikely to accept as-is."] : [],
     explanation,
+    explanation_source: "template",
     graphic,
   };
 }
@@ -563,15 +569,25 @@ export function reportFor(teamId: string): Report {
     trade_targets: [
       {
         their_team_id: "4",
-        give: [{ id: "2449", name: "Stefon Diggs", position: "WR" }],
-        get: [{ id: "7526", name: "Jaylen Waddle", position: "WR" }],
+        their_team_name: "FxxxKroenke",
+        give: ["2449"],
+        get: ["7526"],
+        give_names: ["Stefon Diggs"],
+        get_names: ["Jaylen Waddle"],
+        my_gain_ros: 6.2,
+        their_gain_ros: 2.1,
         verdict: "Fair",
         why: "FxxxKroenke is 0-2 and an active dealer. Even swap on value; Waddle's target share in DEN is the safer floor.",
       },
       {
         their_team_id: "9",
-        give: [{ id: "6790", name: "D'Andre Swift", position: "RB" }],
-        get: [{ id: "7594", name: "Chuba Hubbard", position: "RB" }],
+        their_team_name: "philking",
+        give: ["6790"],
+        get: ["7594"],
+        give_names: ["D'Andre Swift"],
+        get_names: ["Chuba Hubbard"],
+        my_gain_ros: 4.8,
+        their_gain_ros: 1.0,
         verdict: "Fair",
         why: "philking has six RBs and sits on his roster. Hubbard's role is safer than Swift's in CHI; ask, don't chase.",
       },

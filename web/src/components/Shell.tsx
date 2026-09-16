@@ -13,16 +13,20 @@ const TABS = [
 
 export function TopBar({ session }: { session: Session }) {
   const c = session.connection;
+  const email = session.me?.email;
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-paper">
-      <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
+      <div className="mx-auto flex h-14 max-w-lg items-center justify-between gap-3 px-4">
         <Link href="/" aria-label="Edge home">
           <Wordmark className="text-xl" />
         </Link>
-        <div className="min-w-0 text-right">
+        <div className="min-w-0 flex-1 text-right">
           <div className="truncate text-sm font-bold">{c ? c.league_name : "No league"}</div>
-          <div className="text-xs text-muted">{c ? `${c.team_name} · Week ${c.week}` : "Connect to start"}</div>
+          <div className="truncate text-xs text-muted">{c ? `${c.team_name} · Week ${c.week}` : "Connect to start"}</div>
         </div>
+        <Link href="/login" className="shrink-0 rounded-lg border border-line px-2 py-1 text-xs font-bold" title={email ?? "Sign in"}>
+          {email ? email.split("@")[0] : "Sign in"}
+        </Link>
       </div>
     </header>
   );

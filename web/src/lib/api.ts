@@ -2,6 +2,8 @@
 // served from src/lib/mocks.ts; when set, it fetches `${NEXT_PUBLIC_API_URL}/api/...`.
 import type {
   CheckoutResponse,
+  PaywallDetail,
+  Roster,
   ConnectRequest,
   Feature,
   LeagueSummary,
@@ -23,14 +25,48 @@ export const USE_MOCKS = API_URL === "";
 
 const MOCK_ENTITLEMENTS_KEY = "edge.mock.entitlements";
 
+/** Thrown on HTTP 402: the feature needs a purchase. Carries the products that unlock it. */
+export class PaywallError extends Error {
+  feature: string;
+  upsell: PaywallDetail["upsell"];
+  constructor(d: PaywallDetail) {
+    super(d.error);
+    this.name = "PaywallError";
+    this.feature = d.feature;
+    this.upsell = d.upsell;
+  }
+}
+
+/**
+ * Auth headers for the API. Dev: NEXT_PUBLIC_DEV_USER → X-Edge-User (API must run with EDGE_DEV=1).
+ * Prod: Supabase session → Authorization: Bearer <jwt>.
+ */
+export async function getAuthHeaders(): Promise<Record<string, string>> {
+  const dev = process.env.NEXT_PUBLIC_DEV_USER;
+  if (dev) return { "X-Edge-User": dev };
+  try {
+    const { getAccessToken } = await import("./supabase");
+    const token = await getAccessToken();
+    if (token) return { Authorization: `Bearer ${token}` };
+  } catch {
+    /* supabase not configured */
+  }
+  return {};
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const auth = await getAuthHeaders();
   const res = await fetch(`${API_URL}/api${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-    credentials: "include",
+    headers: { "Content-Type": "application/json", ...auth, ...(init?.headers ?? {}) },
   });
-  const body = (await res.json().catch(() => ({}))) as T & { error?: string };
-  if (!res.ok) throw new Error(body?.error ?? `HTTP ${res.status}`);
+  const body = (await res.json().catch(() => ({}))) as T & { error?: string; detail?: string | PaywallDetail };
+  if (!res.ok) {
+    const d = body?.detail;
+    if (res.status === 402 && d && typeof d === "object") throw new PaywallError(d);
+    if (res.status === 401) throw new Error("Sign in to continue.");
+    throw new Error(typeof d === "string" ? d : (body?.error ?? `HTTP ${res.status}`));
+  }
   return body;
 }
 
@@ -85,6 +121,15 @@ export async function getLeague(platform: Platform, leagueId: string): Promise<L
 export async function connect(req: ConnectRequest): Promise<void> {
   if (USE_MOCKS) return;
   await request<unknown>("/connect", { method: "POST", body: JSON.stringify(req) });
+}
+
+export async function getRoster(platform: Platform, leagueId: string, teamId: string): Promise<Roster> {
+  if (USE_MOCKS) {
+    const l = mocks.lineupFor(teamId);
+    const players = [...l.slots.map((s) => s.player), ...l.bench.map((b) => b.player)].filter((p): p is NonNullable<typeof p> => !!p);
+    return { team: { id: teamId, name: mocks.LEAGUE.teams.find((t) => t.id === teamId)?.name ?? teamId }, players, starters: [] };
+  }
+  return request<Roster>(`/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/roster`);
 }
 
 export async function getLineup(platform: Platform, leagueId: string, teamId: string): Promise<Lineup> {

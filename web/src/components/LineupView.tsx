@@ -38,7 +38,7 @@ export function LineupView({ lineup, compact = false }: { lineup: Lineup; compac
                   <ConfidencePill value={c.confidence} />
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 text-base">
-                  <span className="font-bold text-sit line-through decoration-2">{c.out.name}</span>
+                  <span className="font-bold text-sit line-through decoration-2">{c.out?.name ?? "empty"}</span>
                   <span aria-hidden>→</span>
                   <span className="font-bold text-start">{c.in.name}</span>
                   <span className="ml-auto font-black tabular-nums text-start">{signed(c.gain)}</span>
@@ -57,9 +57,9 @@ export function LineupView({ lineup, compact = false }: { lineup: Lineup; compac
             <li key={i} className={`p-3 ${s.change ? "bg-start-soft" : ""}`}>
               <div className="flex items-center gap-3">
                 <span className="w-10 shrink-0 text-xs font-black uppercase text-muted">{s.slot}</span>
-                <PlayerLine p={s.player} />
+                {s.player ? <PlayerLine p={s.player} /> : <span className="text-muted">Empty</span>}
                 <span className="ml-auto shrink-0 text-right">
-                  <span className="block text-lg font-black tabular-nums">{s.player.projected.toFixed(1)}</span>
+                  <span className="block text-lg font-black tabular-nums">{(s.player?.projected ?? 0).toFixed(1)}</span>
                   <ConfidencePill value={s.confidence} />
                 </span>
               </div>
