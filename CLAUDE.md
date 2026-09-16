@@ -46,6 +46,10 @@ TASKS.md            backlog / in progress / done — keep it current
 .cache/             runtime cache, gitignored
 ```
 
+## Confidence tags (validated)
+Lock ≥ 4 pts margin (~80% right), Lean 1.5–4 (~62%), Coin flip < 1.5 (~51%). See docs/BACKTEST.md;
+re-run `scripts/backtest.py <week>` weekly and adjust thresholds only with data.
+
 ## Rules
 - **Nothing is done without a test or a working demo.** Tests run offline against fixtures.
   Live-API checks go in `edge/cli.py` demo commands, not tests.

@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from edge.models import FLEX_SLOTS, League, Player, Team, slot_accepts
 
 LOCK, LEAN, FLIP = "Lock", "Lean", "Coin flip"
+# Measured on 2026 week 1 (docs/BACKTEST.md): how often the higher projection actually scored more.
+HIT_RATE = {LOCK: 0.80, LEAN: 0.62, FLIP: 0.51}
 ZERO_STATUSES = {"OUT", "IR", "PUP", "SUS", "NA", "DOUBTFUL"}
 
 

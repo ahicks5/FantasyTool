@@ -21,6 +21,7 @@ def player_dict(p: Player | None) -> dict | None:
 def lineup_dict(adv: LineupAdvice) -> dict:
     return {
         "week": adv.week, "projected_total": adv.projected_total, "current_total": adv.current_total,
+        "confidence_hit_rate": lineup_mod.HIT_RATE,
         "slots": [{"slot": c.slot, "player": player_dict(c.player), "confidence": c.confidence,
                    "reason": c.reason, "change": c.change, "margin": c.margin} for c in adv.slots],
         "bench": [{"player": player_dict(p), "reason": r} for p, r in adv.bench],
