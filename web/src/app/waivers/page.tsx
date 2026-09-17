@@ -46,9 +46,9 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
       {board && board.picks.length > 0 && (
         <section>
           <button onClick={() => setShowBoard((s) => !s)} aria-expanded={showBoard} className="min-h-0 w-full text-left">
-            <H2 className="flex items-center justify-between">
+            <H2 className="flex items-center justify-between gap-3">
               <span>Full waiver board</span>
-              <span className="text-sm font-bold text-lean">{showBoard ? "Hide" : `Show all ${board.picks.length}`}</span>
+              <span className="text-[13px] font-bold text-lean">{showBoard ? "Hide" : `Show all ${board.picks.length}`}</span>
             </H2>
           </button>
           {showBoard && (

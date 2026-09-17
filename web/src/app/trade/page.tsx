@@ -6,7 +6,7 @@ import { Locked } from "@/components/Locked";
 import { ShareCard } from "@/components/ShareCard";
 import { Avatar } from "@/components/Avatar";
 import { PlayerLine } from "@/components/Players";
-import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, VerdictWord, Why } from "@/components/ui";
+import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, StatusMeter, VerdictWord, Why } from "@/components/ui";
 import { createShare, evaluateTrade, findTrades, getLeague, getRoster, PaywallError } from "@/lib/api";
 import { TradeFinderView } from "@/components/TradeFinderView";
 import { signed } from "@/lib/format";
@@ -21,7 +21,7 @@ function sortRoster(players: Player[]): Player[] {
 function PickerSheet({ open, onClose, title, players, selected, onToggle, tone }: { open: boolean; onClose: () => void; title: string; players: Player[]; selected: string[]; onToggle: (id: string) => void; tone: "sit" | "start" }) {
   const [q, setQ] = useState("");
   const list = players.filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()) || p.position.toLowerCase() === q.toLowerCase());
-  const on = tone === "sit" ? "border-sit bg-sit-soft" : "border-start bg-start-soft";
+  const on = tone === "sit" ? "border-sit/50 bg-sit-soft" : "border-start/50 bg-start-soft";
   return (
     <Sheet open={open} onClose={onClose} title={title}>
       <input
@@ -29,18 +29,18 @@ function PickerSheet({ open, onClose, title, players, selected, onToggle, tone }
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search name or position"
-        className="mb-3 w-full rounded-xl border-2 border-line px-4 py-3 text-base focus:border-ink focus:outline-none"
+        className="mb-3 w-full rounded-xl border border-line-2 bg-paper px-4 py-3 text-[15px] focus:border-ink focus:outline-none"
       />
       <ul className="grid gap-2">
         {list.map((p) => {
           const sel = selected.includes(p.id);
           return (
             <li key={p.id}>
-              <button onClick={() => onToggle(p.id)} aria-pressed={sel} className={`flex w-full items-center gap-3 rounded-xl border-2 px-3 py-2 text-left ${sel ? on : "border-line"}`}>
+              <button onClick={() => onToggle(p.id)} aria-pressed={sel} className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition-colors ${sel ? on : "border-line hover:bg-soft"}`}>
                 <PlayerLine p={p} avatar="md" />
                 <span className="ml-auto text-right">
-                  <span className="block font-black tabular-nums">{(p.ros ?? 0).toFixed(0)}</span>
-                  <span className="block text-[10px] uppercase text-muted">ROS</span>
+                  <span className="display tnum block text-[17px]">{(p.ros ?? 0).toFixed(0)}</span>
+                  <span className="block text-[10px] font-bold uppercase tracking-wide text-muted">ROS</span>
                 </span>
               </button>
             </li>
@@ -58,7 +58,7 @@ function Chips({ players, tone, onRemove, empty }: { players: Player[]; tone: "s
     <ul className="flex flex-wrap gap-2">
       {players.map((p) => (
         <li key={p.id}>
-          <button onClick={() => onRemove(p.id)} className={`flex min-h-0 items-center gap-2 rounded-full border-2 py-1 pl-1 pr-3 text-sm font-bold ${tone === "sit" ? "border-sit bg-sit-soft" : "border-start bg-start-soft"}`} aria-label={`Remove ${p.name}`}>
+          <button onClick={() => onRemove(p.id)} className={`flex min-h-0 items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-[13px] font-bold ${tone === "sit" ? "border-sit/40 bg-sit-soft text-sit" : "border-start/40 bg-start-soft text-start"}`} aria-label={`Remove ${p.name}`}>
             <Avatar name={p.name} photo={p.photo} size="sm" />
             {p.name}
             <span aria-hidden className="text-muted">
@@ -162,14 +162,16 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
   return (
     <div className="grid gap-5">
-      <div className="grid grid-cols-2 gap-2 rounded-xl bg-soft p-1" role="tablist" aria-label="Trade mode">
+      <div className="grid grid-cols-2 gap-1 rounded-2xl border border-line bg-soft p-1" role="tablist" aria-label="Trade mode">
         {(["find", "grade"] as const).map((t) => (
           <button
             key={t}
             role="tab"
             aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className={`min-h-0 rounded-lg py-2.5 text-sm font-bold ${tab === t ? "bg-paper shadow-[var(--shadow-card)]" : "text-muted"}`}
+            className={`min-h-0 rounded-xl py-2.5 text-[13px] font-bold transition-colors ${
+              tab === t ? "bg-paper text-ink shadow-[var(--shadow-card)]" : "text-muted"
+            }`}
           >
             {t === "find" ? "Find a trade" : "Grade a trade"}
           </button>
@@ -191,7 +193,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
         </label>
         <select
           id="their-team"
-          className="mt-1 w-full rounded-xl border-2 border-line bg-paper px-4 py-3 text-base font-bold"
+          className="mt-1.5 w-full rounded-xl border border-line-2 bg-paper px-4 py-3 text-[15px] font-bold"
           value={theirId}
           onChange={(e) => {
             setTheirId(e.target.value);
@@ -211,7 +213,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       <section className="card p-4">
         <div className="flex items-center justify-between">
           <Eyebrow>You give</Eyebrow>
-          <button onClick={() => setSheet("give")} className="min-h-0 rounded-full bg-soft px-3 py-1 text-sm font-bold">
+          <button onClick={() => setSheet("give")} className="min-h-0 rounded-full border border-line-2 bg-soft px-3 py-1.5 text-[13px] font-bold hover:bg-line">
             + Add
           </button>
         </div>
@@ -223,7 +225,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       <section className="card p-4">
         <div className="flex items-center justify-between">
           <Eyebrow>You get from {theirTeam?.name ?? "them"}</Eyebrow>
-          <button onClick={() => setSheet("get")} className="min-h-0 rounded-full bg-soft px-3 py-1 text-sm font-bold">
+          <button onClick={() => setSheet("get")} className="min-h-0 rounded-full border border-line-2 bg-soft px-3 py-1.5 text-[13px] font-bold hover:bg-line">
             + Add
           </button>
         </div>
@@ -244,36 +246,34 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
       {result && (
         <div id="verdict" className="grid gap-4 scroll-mt-16">
-          <Card className="rise">
-            <Eyebrow>Verdict</Eyebrow>
-            <VerdictWord value={result.verdict} className="block text-6xl leading-none" />
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <SideBox label="You" side={result.me} />
-              <SideBox label={theirTeam?.name ?? "Them"} side={result.them} />
+          <Card className="overflow-hidden p-0 rise">
+            <div className="hero rounded-none px-5 pb-5 pt-5">
+              <Eyebrow>Verdict</Eyebrow>
+              <VerdictWord value={result.verdict} className="mt-1 block text-[64px] leading-[0.95]" />
             </div>
-            <div className="mt-4">
-              <div className="flex justify-between text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
-                <span>Fairness</span>
-                <span>{Math.round(result.fairness * 100)}%</span>
+            <div className="p-5">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <SideBox label="You" side={result.me} />
+                <SideBox label={theirTeam?.name ?? "Them"} side={result.them} />
               </div>
-              <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-soft">
-                <div className={`h-full rounded-full ${result.fairness >= 0.9 ? "bg-start" : result.fairness >= 0.75 ? "bg-flip" : "bg-sit"}`} style={{ width: `${Math.round(result.fairness * 100)}%` }} />
+              <div className="mt-4">
+                <StatusMeter value={result.fairness} label="Fairness" />
               </div>
+              <p className="mt-4 text-[15px] leading-relaxed text-ink-2">{result.explanation}</p>
+              {result.notes?.map((n) => (
+                <p key={n} className="mt-2.5 rounded-xl bg-flip-soft px-3 py-2 text-[13px] leading-snug text-flip">
+                  {n}
+                </p>
+              ))}
+              <Why
+                lines={[
+                  `Value is rest-of-season projected points, rescored to this league's settings. You send ${result.me.value_out.toFixed(0)} and receive ${result.me.value_in.toFixed(0)}.`,
+                  "Lineup impact is measured with free agents available, so an emptied slot costs the gap to the best waiver option rather than the whole player.",
+                  "Fairness is the smaller side divided by the larger side of asset value.",
+                ]}
+                label="How is this scored?"
+              />
             </div>
-            <p className="mt-4 text-base leading-relaxed">{result.explanation}</p>
-            {result.notes?.map((n) => (
-              <p key={n} className="mt-2 rounded-lg bg-flip-soft px-3 py-2 text-sm text-flip-dark">
-                {n}
-              </p>
-            ))}
-            <Why
-              lines={[
-                `Value = rest-of-season projected points, rescored to this league. You send ${result.me.value_out.toFixed(0)}, receive ${result.me.value_in.toFixed(0)}.`,
-                `Lineup impact is measured with free-agent replacements available, so an emptied slot costs the gap to the best waiver option, not the whole player.`,
-                `Fairness = smaller side ÷ larger side of asset value.`,
-              ]}
-              label="How is this scored?"
-            />
           </Card>
 
           <Card className="rise rise-1">
@@ -290,7 +290,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
                   ]
                 : ["No transaction history yet"]
               ).map((t) => (
-                <span key={t} className="rounded-full bg-soft px-3 py-1 text-sm font-bold">
+                <span key={t} className="rounded-full border border-line bg-soft px-2.5 py-1 text-[12px] font-bold">
                   {t}
                 </span>
               ))}
@@ -298,8 +298,8 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
           </Card>
 
           {result.counter && (
-            <Card className="border-2 border-flip bg-flip-soft rise rise-2">
-              <Eyebrow className="text-flip-dark">Counteroffer</Eyebrow>
+            <Card className="border-flip/40 bg-flip-soft rise rise-2">
+              <Eyebrow className="text-flip">Counteroffer</Eyebrow>
               <div className="mt-1 text-base">
                 <span className="font-bold text-sit">Give</span> {result.counter.give_names.join(" + ") || "nothing"}
                 <br />
@@ -375,8 +375,8 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
     );
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border-2 border-line p-2">
-      <code className="min-w-0 flex-1 truncate px-1 text-sm">{url}</code>
+    <div className="flex items-center gap-2 rounded-xl border border-line-2 bg-soft p-2">
+      <code className="min-w-0 flex-1 truncate px-1 text-[13px]">{url}</code>
       <Button size="sm" onClick={copy}>
         {copied ? "Copied" : "Copy"}
       </Button>
@@ -387,14 +387,14 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
 function SideBox({ label, side }: { label: string; side: TradeResult["me"] }) {
   const net = side.value_in - side.value_out;
   return (
-    <div className="rounded-xl bg-soft p-3">
-      <div className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-muted">{label}</div>
-      <div className="mt-1 tabular-nums">
+    <div className="min-w-0 rounded-2xl bg-soft p-3.5">
+      <div className="truncate text-[10px] font-black uppercase tracking-[0.1em] text-muted">{label}</div>
+      <div className={`display tnum mt-1 text-[26px] leading-none ${net >= 0 ? "text-start" : "text-sit"}`}>{signed(net, 0)}</div>
+      <div className="tnum mt-1.5 text-[11px] text-muted">
         <span className="text-sit">out {side.value_out.toFixed(0)}</span> · <span className="text-start">in {side.value_in.toFixed(0)}</span>
       </div>
-      <div className={`display text-2xl font-black tabular-nums ${net >= 0 ? "text-start" : "text-sit"}`}>{signed(net, 0)}</div>
-      <div className="text-xs text-muted">
-        lineup: wk {signed(side.lineup_delta_week)} · ROS {signed(side.lineup_delta_ros, 0)}
+      <div className="tnum mt-0.5 text-[11px] text-muted">
+        lineup wk {signed(side.lineup_delta_week)} · ROS {signed(side.lineup_delta_ros, 0)}
       </div>
     </div>
   );

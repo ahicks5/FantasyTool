@@ -1,9 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Inter_Tight } from "next/font/google";
+import { Archivo, Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const interTight = Inter_Tight({ subsets: ["latin"], variable: "--font-inter-tight", display: "swap", weight: ["600", "700", "800", "900"] });
+// Archivo carries the scoreboard weight the app is going for, and its numerals are
+// properly tabular at heavy weights — which Inter's are not.
+const archivo = Archivo({
+  subsets: ["latin"],
+  variable: "--font-archivo",
+  display: "swap",
+  weight: ["600", "700", "800", "900"],
+});
 
 export const metadata: Metadata = {
   title: "Edge — this week's moves",
@@ -13,13 +20,22 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#ffffff",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f5f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0d11" },
+  ],
 };
+
+/** Applies a saved theme before paint, so a dark-mode user never sees a white flash. */
+const THEME_BOOT = `(()=>{try{var t=localStorage.getItem('edge.theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}})()`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`h-full ${inter.variable} ${interTight.variable}`}>
-      <body className="min-h-full flex flex-col bg-paper text-ink">{children}</body>
+    <html lang="en" className={`h-full ${inter.variable} ${archivo.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+      </head>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

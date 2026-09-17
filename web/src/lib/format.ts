@@ -2,9 +2,9 @@
 import type { Confidence, Verdict, Bid } from "./types";
 
 export const CONFIDENCE_CLASSES: Record<Confidence, string> = {
-  Lock: "bg-start text-white",
-  Lean: "bg-lean text-white",
-  "Coin flip": "bg-flip text-black",
+  Lock: "bg-start-soft text-start",
+  Lean: "bg-lean-soft text-lean",
+  "Coin flip": "bg-flip-soft text-flip",
 };
 
 export function confidenceClass(c: Confidence): string {

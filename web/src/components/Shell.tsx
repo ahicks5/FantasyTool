@@ -2,44 +2,38 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
-import { LinkButton, SkeletonList, Wordmark } from "./ui";
+import { IconHome, IconReport, IconTeam, IconTrade, IconWaivers } from "./icons";
+import { LinkButton, SkeletonList, ThemeToggle, Wordmark } from "./ui";
 
 const TABS = [
-  { href: "/home", label: "Home", d: "M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" },
-  { href: "/team", label: "Team", d: "M4 5h16v4H4zM4 11h16v4H4zM4 17h10v3H4z" },
-  { href: "/waivers", label: "Waivers", d: "M12 4v16M4 12h16" },
-  { href: "/trade", label: "Trade", d: "M4 8h13l-3-3M20 16H7l3 3" },
-  { href: "/report", label: "Report", d: "M6 3h9l5 5v13H6zM14 3v6h6M9 13h6M9 17h6" },
+  { href: "/home", label: "This week", Icon: IconHome },
+  { href: "/team", label: "Team", Icon: IconTeam },
+  { href: "/waivers", label: "Waivers", Icon: IconWaivers },
+  { href: "/trade", label: "Trade", Icon: IconTrade },
+  { href: "/report", label: "Report", Icon: IconReport },
 ];
-
-function Icon({ d, active }: { d: string; active: boolean }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.4 : 1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d={d} />
-    </svg>
-  );
-}
 
 export function TopBar({ session }: { session: Session }) {
   const c = session.connection;
   const email = session.me?.email;
   return (
-    <header className="sticky top-0 z-10 border-b border-line bg-paper/90 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-lg items-center justify-between gap-3 px-4">
-        <Link href="/" aria-label="Edge home">
-          <Wordmark className="text-xl" />
+    <header className="sticky top-0 z-20 border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4">
+        <Link href="/" aria-label="Edge home" className="shrink-0">
+          <Wordmark className="text-[21px]" />
         </Link>
-        <Link href="/connect" className="min-w-0 flex-1 text-right">
-          <div className="truncate text-sm font-bold">{c ? c.league_name : "No league"}</div>
-          <div className="truncate text-xs text-muted">{c ? `${c.team_name} · Week ${c.week}` : "Connect to start"}</div>
+        <Link href="/connect" className="min-w-0 flex-1 text-right leading-tight">
+          <div className="truncate text-[13px] font-bold">{c ? c.league_name : "No league"}</div>
+          <div className="truncate text-[11px] text-muted">{c ? `${c.team_name} · Week ${c.week}` : "Connect to start"}</div>
         </Link>
+        <ThemeToggle />
         <Link
           href="/login"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-soft text-xs font-black uppercase"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line-2 text-[11px] font-black uppercase text-ink-2 hover:bg-soft"
           title={email ?? "Sign in"}
           aria-label={email ? `Account ${email}` : "Sign in"}
         >
-          {email ? email[0] : "·"}
+          {email ? email[0] : "—"}
         </Link>
       </div>
     </header>
@@ -49,19 +43,26 @@ export function TopBar({ session }: { session: Session }) {
 export function TabBar() {
   const path = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-[color-mix(in_srgb,var(--color-plane)_92%,transparent)] pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
       <ul className="mx-auto grid max-w-lg grid-cols-5">
-        {TABS.map((t) => {
-          const active = path === t.href || path.startsWith(t.href + "/");
+        {TABS.map(({ href, label, Icon }) => {
+          const active = path === href || path.startsWith(href + "/");
           return (
-            <li key={t.href}>
+            <li key={href}>
               <Link
-                href={t.href}
-                className={`flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-bold ${active ? "text-start" : "text-muted"}`}
+                href={href}
+                className={`relative flex h-[62px] flex-col items-center justify-center gap-1 text-[10px] font-bold tracking-tight ${
+                  active ? "text-ink" : "text-muted"
+                }`}
                 aria-current={active ? "page" : undefined}
               >
-                <Icon d={t.d} active={active} />
-                {t.label}
+                {/* An active marker that is not colour alone. */}
+                <span
+                  aria-hidden
+                  className={`absolute top-0 h-[3px] w-8 rounded-b-full bg-start transition-opacity ${active ? "opacity-100" : "opacity-0"}`}
+                />
+                <Icon size={21} strokeWidth={active ? 2.3 : 1.8} />
+                {label}
               </Link>
             </li>
           );
@@ -71,26 +72,33 @@ export function TabBar() {
   );
 }
 
-/**
- * Wraps every app page: top bar, bottom tabs, and a "connect first" gate.
- * `children` is a render function that receives the session once a league is connected.
- */
-export function AppShell({ title, children, hideTitle = false }: { title: string; children: (s: Session) => React.ReactNode; hideTitle?: boolean }) {
+/** Top bar, bottom tabs, and the gate that asks for a league before anything else. */
+export function AppShell({
+  title,
+  children,
+  hideTitle = false,
+}: {
+  title: string;
+  children: (s: Session) => React.ReactNode;
+  hideTitle?: boolean;
+}) {
   const session = useSession();
   return (
     <div className="flex min-h-screen flex-col">
       <TopBar session={session} />
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-4">
-        {!hideTitle && <h1 className="mb-3 text-2xl font-black tracking-tight">{title}</h1>}
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">
+        {!hideTitle && <h1 className="mb-4 text-[26px]">{title}</h1>}
         {session.loading ? (
           <SkeletonList rows={3} tall />
         ) : session.connection ? (
           children(session)
         ) : (
-          <div className="card p-6 text-center">
-            <div className="display text-2xl font-black">No league yet</div>
-            <p className="mb-5 mt-1 text-muted">Connect a Sleeper or ESPN league to see {title.toLowerCase()}.</p>
-            <LinkButton href="/connect" className="w-full">
+          <div className="hero p-7 text-center">
+            <div className="display text-[26px] leading-tight">No league yet</div>
+            <p className="mx-auto mb-6 mt-2 max-w-[17rem] text-[15px] leading-relaxed text-white/70">
+              Connect a Sleeper or ESPN league and {title.toLowerCase()} shows up here. No account needed.
+            </p>
+            <LinkButton href="/connect" variant="onHero" className="w-full">
               Connect your league
             </LinkButton>
           </div>

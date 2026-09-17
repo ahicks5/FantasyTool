@@ -1,81 +1,175 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Edge design tokens.
+
+   Light is the default because that is how Andrew wants it read in daylight,
+   but the app gets used on a couch at night, so dark is a first-class mode with
+   its own colour steps rather than an automatic flip.
+
+   Status colours (start / sit / lean / flip) were validated with the data-viz
+   palette checker against the real card surfaces in both modes: lightness band,
+   chroma floor, colour-blind separation, normal-vision separation and contrast.
+   Never swap a hex here without re-running it. Every status colour also ships
+   with a word beside it, so colour never carries the meaning alone.
+--------------------------------------------------------------------------- */
+
 @theme {
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-display: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif;
-  --color-ink: #0f1115;
-  --color-muted: #5b6069;
-  --color-line: #e3e5e9;
-  --color-paper: #ffffff;
-  --color-soft: #f3f4f6;
-  --color-start: #0b6e4f; /* deep green: start / positive */
-  --color-start-soft: #e1f3ea;
-  --color-sit: #b3261e; /* strong red: sit / negative */
-  --color-sit-soft: #fbe6e4;
-  --color-flip: #f5b700; /* amber: coin flip */
-  --color-flip-dark: #7a4f00;
-  --color-flip-soft: #fff3cf;
-  --color-lean: #1d4ed8; /* blue: lean */
-  --color-lean-soft: #e3eafc;
-  --shadow-card: 0 1px 2px rgb(15 17 21 / 0.06), 0 8px 24px -12px rgb(15 17 21 / 0.18);
-  --shadow-float: 0 12px 32px -8px rgb(15 17 21 / 0.35);
+  --font-display: var(--font-archivo), var(--font-inter), system-ui, sans-serif;
+
+  --color-ink: #0e1116;
+  --color-ink-2: #3b4048;      /* secondary text */
+  --color-muted: #6b7078;      /* tertiary text, 4.5:1 on paper */
+  --color-line: #e7e4dd;       /* warm hairline */
+  --color-line-2: #d8d4cb;     /* stronger divider */
+  --color-paper: #ffffff;      /* card surface */
+  --color-plane: #f6f5f2;      /* page behind the cards, warm not grey */
+  --color-soft: #f1efea;       /* inset wells */
+  --color-hero: #0e1116;       /* inverted surface: the one dark thing on screen */
+  --color-hero-2: #191d24;
+
+  --color-start: #0b7a4b;      /* good — start, gain, accept */
+  --color-start-soft: #e4f2ea;
+  --color-sit: #c02b23;        /* critical — sit, loss, reject */
+  --color-sit-soft: #fbe9e7;
+  --color-lean: #1e4fd8;       /* info — lean, waiver */
+  --color-lean-soft: #e6ecfc;
+  --color-flip: #b57500;       /* warning — coin flip (text-safe step) */
+  --color-flip-fill: #f0b429;  /* the same warning as a fill, dark text on top */
+  --color-flip-soft: #fdf1d8;
+
+  --radius-card: 18px;
+
+  /* Warm-tinted shadows: pure black shadows look like a screenshot of a modal. */
+  --shadow-card: 0 1px 1px rgb(20 18 12 / 0.04), 0 2px 6px -1px rgb(20 18 12 / 0.06), 0 12px 28px -12px rgb(20 18 12 / 0.16);
+  --shadow-lift: 0 2px 4px rgb(20 18 12 / 0.06), 0 18px 40px -14px rgb(20 18 12 / 0.28);
+  --shadow-hero: 0 2px 8px rgb(0 0 0 / 0.14), 0 24px 48px -20px rgb(0 0 0 / 0.45);
+}
+
+/* Dark mode: its own steps, validated against #14171c, not an inverted light theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-ink: #f4f3f0;
+    --color-ink-2: #c9c7c1;
+    --color-muted: #9a9892;
+    --color-line: #262a31;
+    --color-line-2: #333840;
+    --color-paper: #14171c;
+    --color-plane: #0b0d11;
+    --color-soft: #1b1f26;
+    --color-hero: #1b1f26;
+    --color-hero-2: #242932;
+
+    --color-start: #22a468;
+    --color-start-soft: #10281d;
+    --color-sit: #e2554e;
+    --color-sit-soft: #2d1614;
+    --color-lean: #5b8def;
+    --color-lean-soft: #121c33;
+    --color-flip: #be8109;
+    --color-flip-fill: #be8109;
+    --color-flip-soft: #2a1f08;
+
+    --shadow-card: 0 1px 1px rgb(0 0 0 / 0.5), 0 12px 28px -14px rgb(0 0 0 / 0.7);
+    --shadow-lift: 0 18px 40px -14px rgb(0 0 0 / 0.8);
+    --shadow-hero: 0 24px 48px -20px rgb(0 0 0 / 0.9);
+  }
+}
+:root[data-theme="dark"] {
+  --color-ink: #f4f3f0;
+  --color-ink-2: #c9c7c1;
+  --color-muted: #9a9892;
+  --color-line: #262a31;
+  --color-line-2: #333840;
+  --color-paper: #14171c;
+  --color-plane: #0b0d11;
+  --color-soft: #1b1f26;
+  --color-hero: #1b1f26;
+  --color-hero-2: #242932;
+
+  --color-start: #22a468;
+  --color-start-soft: #10281d;
+  --color-sit: #e2554e;
+  --color-sit-soft: #2d1614;
+  --color-lean: #5b8def;
+  --color-lean-soft: #121c33;
+  --color-flip: #be8109;
+  --color-flip-fill: #be8109;
+  --color-flip-soft: #2a1f08;
+
+  --shadow-card: 0 1px 1px rgb(0 0 0 / 0.5), 0 12px 28px -14px rgb(0 0 0 / 0.7);
+  --shadow-lift: 0 18px 40px -14px rgb(0 0 0 / 0.8);
+  --shadow-hero: 0 24px 48px -20px rgb(0 0 0 / 0.9);
 }
 
 html {
-  color-scheme: light;
-  background: var(--color-paper);
+  background: var(--color-plane);
 }
+:root[data-theme="dark"], :root[data-theme="dark"] body { color-scheme: dark; }
+:root[data-theme="light"], :root[data-theme="light"] body { color-scheme: light; }
 
 body {
-  background: var(--color-paper);
+  background: var(--color-plane);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   overflow-x: hidden;
-  font-feature-settings: "cv11", "ss01", "tnum";
 }
 
-h1, h2, .display {
+/* Display type is the app's voice: tight, heavy, confident. Numbers are tabular
+   everywhere so columns of projections do not jitter as they update. */
+.display {
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
+h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 
-/* Big tap targets everywhere. */
-button,
-a.btn,
-select,
-input {
-  min-height: 44px;
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
 }
 
 .card {
-  border-radius: 1rem;
+  border-radius: var(--radius-card);
   background: var(--color-paper);
   border: 1px solid var(--color-line);
   box-shadow: var(--shadow-card);
 }
 
-@keyframes shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+/* The one dark surface in light mode. Hierarchy from material, not from size. */
+.hero {
+  border-radius: var(--radius-card);
+  background: linear-gradient(160deg, var(--color-hero-2) 0%, var(--color-hero) 55%);
+  color: #f7f6f3;
+  box-shadow: var(--shadow-hero);
+  border: 1px solid rgb(255 255 255 / 0.08);
 }
+.hero .eyebrow { color: rgb(247 246 243 / 0.55); }
+
+button, a.btn, select, input { min-height: 44px; }
+
+@keyframes shimmer { 0% { background-position: -420px 0; } 100% { background-position: 420px 0; } }
 .skeleton {
-  border-radius: 0.5rem;
-  background: linear-gradient(90deg, #eef0f3 25%, #f7f8fa 50%, #eef0f3 75%);
-  background-size: 800px 100%;
-  animation: shimmer 1.4s linear infinite;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--color-soft) 25%, var(--color-plane) 50%, var(--color-soft) 75%);
+  background-size: 840px 100%;
+  animation: shimmer 1.5s linear infinite;
 }
 
-@keyframes rise {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
-}
-.rise { animation: rise 0.35s ease-out both; }
-.rise-1 { animation-delay: 0.05s; }
-.rise-2 { animation-delay: 0.1s; }
-.rise-3 { animation-delay: 0.15s; }
-.rise-4 { animation-delay: 0.2s; }
-.rise-5 { animation-delay: 0.25s; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 0.42s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.rise-1 { animation-delay: 0.04s; }
+.rise-2 { animation-delay: 0.08s; }
+.rise-3 { animation-delay: 0.12s; }
+.rise-4 { animation-delay: 0.16s; }
+.rise-5 { animation-delay: 0.2s; }
 
 @media (prefers-reduced-motion: reduce) {
   .rise, .skeleton { animation: none; }

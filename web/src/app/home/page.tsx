@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";
-import { Card, Eyebrow, ErrorBox, SkeletonList, Skeleton } from "@/components/ui";
+import { ErrorBox, Eyebrow, Skeleton, SkeletonList, SplitMeter } from "@/components/ui";
 import { getActions, sendFeedback } from "@/lib/api";
 import { pct, signed } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
@@ -13,10 +13,54 @@ function ago(ts: number): string {
   return m < 1 ? "just now" : m < 60 ? `${m} min ago` : `${Math.round(m / 60)} h ago`;
 }
 
+/** The dark surface is the only one on screen, so it reads as the headline by material. */
+function Hero({ feed }: { feed: ActionFeed }) {
+  const delta = feed.projected_total - feed.current_total;
+  const m = feed.matchup;
+  const showMatchup = m && m.opponent && m.win_prob !== null && m.their_proj !== null;
+  return (
+    <section className="hero overflow-hidden rise">
+      <div className="p-6">
+        <Eyebrow>
+          Week {feed.week} · {feed.team}
+        </Eyebrow>
+        <h1 className="display mt-2 text-[30px] leading-[1.08] text-white">{feed.summary}</h1>
+        <p className="mt-2.5 text-[13px] text-white/60">
+          Synced {ago(feed.synced_at)} · Projected{" "}
+          <span className="tnum font-bold text-white">{feed.projected_total.toFixed(1)}</span>
+          {delta > 0.05 && <span className="tnum font-bold text-start"> {signed(delta)} if you make the swaps</span>}
+        </p>
+      </div>
+
+      {showMatchup && (
+        <div className="border-t border-white/10 bg-black/20 px-6 py-5">
+          <Eyebrow>Matchup</Eyebrow>
+          <div className="mt-1 truncate text-[13px] font-bold text-white/85">vs {m.opponent}</div>
+          <div className="display tnum mt-1.5 text-[34px] leading-none text-white">
+            {m.my_proj.toFixed(1)}
+            <span className="mx-1.5 text-white/35">–</span>
+            <span className="text-white/55">{m.their_proj!.toFixed(1)}</span>
+          </div>
+          <div className="mt-3.5">
+            <SplitMeter
+              left={m.win_prob!}
+              right={1 - m.win_prob!}
+              leftLabel={`${pct(m.win_prob!)} to win`}
+              rightLabel={pct(1 - m.win_prob!)}
+              onHero
+            />
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function HomeBody({ c }: { c: Connection }) {
   const [feed, setFeed] = useState<ActionFeed | null>(null);
   const [error, setError] = useState("");
   const [tick, setTick] = useState(0);
+
   useEffect(() => {
     let alive = true;
     getActions(c.platform, c.league_id, c.team_id)
@@ -26,6 +70,7 @@ function HomeBody({ c }: { c: Connection }) {
       alive = false;
     };
   }, [c.platform, c.league_id, c.team_id, tick]);
+
   const load = () => {
     setError("");
     setFeed(null);
@@ -35,66 +80,42 @@ function HomeBody({ c }: { c: Connection }) {
   if (error) return <ErrorBox message={error} onRetry={load} />;
   if (!feed)
     return (
-      <div>
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="mt-2 h-4 w-32" />
-        <div className="mt-6">
-          <SkeletonList rows={3} tall />
+      <div className="grid gap-4">
+        <div className="hero p-6">
+          <Skeleton className="h-3 w-32 opacity-30" />
+          <Skeleton className="mt-3 h-8 w-56 opacity-30" />
+          <Skeleton className="mt-3 h-3 w-40 opacity-30" />
         </div>
+        <SkeletonList rows={3} tall />
       </div>
     );
 
-  const delta = feed.projected_total - feed.current_total;
   return (
     <div>
-      <header className="rise">
-        <Eyebrow>
-          Week {feed.week} — {feed.team}
-        </Eyebrow>
-        <h1 className="display mt-1 text-3xl font-black leading-tight">{feed.summary}</h1>
-        <p className="mt-1 text-sm text-muted">
-          Synced {ago(feed.synced_at)} · Projected <span className="font-bold text-ink tabular-nums">{feed.projected_total.toFixed(1)}</span>
-          {delta > 0.05 && <span className="font-bold text-start tabular-nums"> ({signed(delta)} if you make the swaps)</span>}
-        </p>
-      </header>
-
-      {feed.matchup && feed.matchup.opponent && feed.matchup.win_prob !== null && feed.matchup.their_proj !== null && (
-        <Card className="mt-4 rise rise-1">
-          <Eyebrow>This week&rsquo;s matchup</Eyebrow>
-          <div className="mt-1 flex items-end justify-between">
-            <div className="min-w-0">
-              <div className="truncate text-sm font-bold">vs {feed.matchup.opponent}</div>
-              <div className="display text-2xl font-black tabular-nums">
-                {feed.matchup.my_proj.toFixed(1)}
-                <span className="mx-1 font-normal text-muted">–</span>
-                <span className="text-muted">{feed.matchup.their_proj.toFixed(1)}</span>
-              </div>
-            </div>
-            <div className={`display text-2xl font-black ${feed.matchup.win_prob >= 0.5 ? "text-start" : "text-sit"}`}>
-              {pct(feed.matchup.win_prob)}
-            </div>
-          </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-sit-soft">
-            <div className="h-full rounded-full bg-start" style={{ width: pct(feed.matchup.win_prob) }} />
-          </div>
-        </Card>
-      )}
-
-      <ol className="mt-5 grid gap-3">
+      <Hero feed={feed} />
+      <ol className="mt-4 grid gap-3.5">
         {feed.actions.map((a, i) => (
           <li key={a.id}>
             <ActionCard
               a={a}
               delay={i + 1}
               onFeedback={(verdict, reason) =>
-                sendFeedback({ platform: c.platform, league_id: c.league_id, team_id: c.team_id, action_id: a.id, action_type: a.type, verdict, reason, week: feed.week }).catch(() => undefined)
+                sendFeedback({
+                  platform: c.platform,
+                  league_id: c.league_id,
+                  team_id: c.team_id,
+                  action_id: a.id,
+                  action_type: a.type,
+                  verdict,
+                  reason,
+                  week: feed.week,
+                }).catch(() => undefined)
               }
             />
           </li>
         ))}
       </ol>
-
-      <p className="mt-6 text-center text-sm text-muted rise rise-5">{feed.footer}</p>
+      <p className="mx-auto mt-7 max-w-[19rem] text-center text-[13px] leading-relaxed text-muted rise rise-5">{feed.footer}</p>
     </div>
   );
 }

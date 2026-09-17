@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 
-const SIZES = { sm: "h-9 w-9 text-xs", md: "h-12 w-12 text-sm", lg: "h-16 w-16 text-base", xl: "h-24 w-24 text-xl" };
+const SIZES = { sm: "h-9 w-9 text-[11px]", md: "h-12 w-12 text-xs", lg: "h-[52px] w-[52px] text-sm", xl: "h-20 w-20 text-lg" };
+const RINGS = { start: "ring-start", sit: "ring-sit", flip: "ring-flip-fill", lean: "ring-lean" };
 
 function initials(name: string): string {
   const parts = name.replace(/[^A-Za-z' .-]/g, "").split(/\s+/).filter(Boolean);
@@ -9,9 +10,8 @@ function initials(name: string): string {
 }
 
 /**
- * Player headshot with initials always painted underneath, so a slow or missing photo never
- * shows an empty circle. Photos come from free CDNs (Sleeper / ESPN) via the API's `photo`
- * field; the team logo sits in the corner.
+ * A player headshot. Initials are painted underneath rather than swapped in on error, so a
+ * slow or missing image never leaves an empty circle.
  */
 export function Avatar({
   name,
@@ -26,13 +26,13 @@ export function Avatar({
   teamLogo?: string | null;
   size?: keyof typeof SIZES;
   className?: string;
-  ring?: "start" | "sit" | "flip" | "lean";
+  ring?: keyof typeof RINGS;
 }) {
   const [broken, setBroken] = useState(false);
   const [logoBroken, setLogoBroken] = useState(false);
   // A team logo is a centred mark, not a face: crop it and you lose the badge.
-  const logo = !!photo && photo === teamLogo;
-  const ringCls = ring ? { start: "ring-start", sit: "ring-sit", flip: "ring-flip", lean: "ring-lean" }[ring] + " ring-2 ring-offset-2" : "";
+  const isLogo = !!photo && photo === teamLogo;
+  const ringCls = ring ? `${RINGS[ring]} ring-2 ring-offset-2 ring-offset-[var(--color-paper)]` : "";
   return (
     <span className={`relative inline-block shrink-0 ${className}`}>
       <span className={`relative flex items-center justify-center overflow-hidden rounded-full bg-soft font-black text-muted ${SIZES[size]} ${ringCls}`}>
@@ -42,24 +42,22 @@ export function Avatar({
           <img
             src={photo}
             alt=""
-            // A roster page is at most a few dozen 48px images; lazy-loading them only makes
-            // faces pop in as you scroll. Initials sit underneath either way.
             loading="eager"
             decoding="async"
             onError={() => setBroken(true)}
-            className={`absolute inset-0 h-full w-full ${logo ? "object-contain p-1" : "object-cover object-top"}`}
+            className={`absolute inset-0 h-full w-full ${isLogo ? "object-contain p-1.5" : "object-cover object-top"}`}
           />
         )}
       </span>
-      {teamLogo && !logo && !logoBroken && size !== "sm" && (
+      {teamLogo && !isLogo && !logoBroken && size !== "sm" && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={teamLogo}
           alt=""
+          loading="eager"
           decoding="async"
           onError={() => setLogoBroken(true)}
-          loading="eager"
-          className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-full bg-white p-0.5 shadow"
+          className="absolute -bottom-1 -right-1 h-[18px] w-[18px] rounded-full bg-paper p-[2px] shadow-[0_1px_3px_rgb(0_0_0/0.25)]"
         />
       )}
     </span>
