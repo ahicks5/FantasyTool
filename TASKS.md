@@ -112,7 +112,14 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       insurance against a future miss, not a fix for an observed one.
 - [ ] Kickers project ~2.3 points under ESPN because Sleeper's weekly projections carry no
       50-yard-FG or bonus keys. This affects Sleeper leagues identically — a vendor gap.
-- [ ] Private ESPN leagues (espn_s2/SWID) still unsupported; 16% of sampled ids were private.
+- [x] Private ESPN leagues (espn_s2/SWID) supported — ~23% of sampled live ids are private, so
+      this roughly doubles the ESPN leagues we can read. Cookies are per-request and never
+      stored (see CLAUDE.md); 21 tests cover normalization, the outbound call, both 403 shapes,
+      cache isolation between users, and that no part of a credential reaches the database.
+- [ ] Untested: a real private league with real cookies. Every layer around it is covered, but
+      nobody has yet pasted working cookies in. Five minutes with any ESPN account closes this.
+- [ ] The weekly email cannot render a private ESPN league — by design, we keep no cookies to
+      read it with. Either ask at send time or accept Sleeper + public ESPN for email.
 - [ ] `photo_url`'s ESPN CDN branch never fired live — every ESPN player matched a Sleeper id.
       It is now the fallback for an unmapped free agent, so it should fire the first time a
       name match misses.

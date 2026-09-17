@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -38,9 +38,31 @@ def _require(email: str | None, feature: str, teaser: str | None = None) -> None
                                          "teaser": teaser, "upsell": products.upsell(_skus(email), feature)})
 
 
-def _bundle(platform: str, league_id: str) -> service.Bundle:
+def espn_auth(x_espn_s2: str | None = Header(default=None),
+              x_espn_swid: str | None = Header(default=None)):
+    """A private ESPN league's cookies, sent per request by the browser that holds them.
+
+    Edge never stores these — see `espn_api.EspnAuth`. They arrive as headers rather than in
+    a body or a query string so they stay out of URLs, logs and referrers.
+    """
+    from edge.data.espn_api import EspnAuth
+    if not (x_espn_s2 and x_espn_swid):
+        return None
+    auth = EspnAuth(s2=x_espn_s2, swid=x_espn_swid)
+    return auth or None
+
+
+def _bundle(platform: str, league_id: str, auth=None) -> service.Bundle:
+    from edge.data.espn_api import EspnLeagueNotFound, EspnPrivateLeague
     try:
-        return service.get_bundle(platform, league_id)
+        return service.get_bundle(platform, league_id, auth=auth)
+    except EspnPrivateLeague as e:
+        # 403, not 404: the league exists and the answer is "sign in", which the web app
+        # turns into the cookie form instead of a dead end.
+        raise HTTPException(403, detail={"error": str(e), "platform": "espn",
+                                         "needs_espn_auth": e.needs_auth})
+    except EspnLeagueNotFound as e:
+        raise HTTPException(404, str(e))
     except Exception as e:  # noqa: BLE001
         raise HTTPException(404, f"could not load league: {e}")
 
@@ -76,13 +98,13 @@ class ConnectIn(BaseModel):
 
 
 @app.post("/api/connect")
-def connect(body: ConnectIn, email: str | None = Depends(optional_user)):
+def connect(body: ConnectIn, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     """Connect a league. No account required — value first, signup only when it buys something.
 
     Signed out, we validate the league and team and hand them back; the browser remembers the
     choice. Signed in, we also save it, which is what league limits are actually about.
     """
-    b = _bundle(body.platform, body.league_id)
+    b = _bundle(body.platform, body.league_id, auth)
     t = _team(b, body.team_id)
     saved = False
     if email:
@@ -138,8 +160,8 @@ def sleeper_leagues(username: str):
 
 
 @app.get("/api/league/{platform}/{league_id}")
-def league_summary(platform: str, league_id: str):
-    b = _bundle(platform, league_id)
+def league_summary(platform: str, league_id: str, auth=Depends(espn_auth)):
+    b = _bundle(platform, league_id, auth)
     lg = b.league
     return {"id": lg.id, "platform": lg.platform, "name": lg.name, "season": lg.season, "week": lg.week,
             "waiver_type": lg.waiver_type, "faab_budget": lg.faab_budget, "starting_slots": lg.starting_slots,
@@ -148,8 +170,8 @@ def league_summary(platform: str, league_id: str):
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/roster")
-def roster(platform: str, league_id: str, team_id: str):
-    b = _bundle(platform, league_id)
+def roster(platform: str, league_id: str, team_id: str, auth=Depends(espn_auth)):
+    b = _bundle(platform, league_id, auth)
     t = _team(b, team_id)
     return {"team": {"id": t.id, "name": t.name}, "players": [report.player_dict(p) | {"ros": b.ros.get(p.id, 0.0)} for p in t.players],
             "starters": t.starters}
@@ -158,8 +180,8 @@ def roster(platform: str, league_id: str, team_id: str):
 # ---- features ----
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/lineup")
-def lineup(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user)):
-    b = _bundle(platform, league_id)
+def lineup(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
+    b = _bundle(platform, league_id, auth)
     return report.lineup_dict(lineup_mod.advise(b.league, _team(b, team_id)))
 
 
@@ -174,8 +196,8 @@ def _teaser(b: service.Bundle, t, feature: str) -> str | None:
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/waivers")
-def waiver_picks(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user)):
-    b = _bundle(platform, league_id)
+def waiver_picks(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
+    b = _bundle(platform, league_id, auth)
     t = _team(b, team_id)
     if not products.can(_skus(email), "waivers"):
         _require(email, "waivers", teaser=_teaser(b, t, "waivers"))
@@ -191,8 +213,8 @@ class TradeIn(BaseModel):
 
 
 @app.post("/api/league/{platform}/{league_id}/trade")
-def trade_lab(platform: str, league_id: str, body: TradeIn, email: str | None = Depends(optional_user)):
-    b = _bundle(platform, league_id)
+def trade_lab(platform: str, league_id: str, body: TradeIn, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
+    b = _bundle(platform, league_id, auth)
     me_t, them_t = _team(b, body.my_team_id), _team(b, body.their_team_id)
     if not products.can(_skus(email), "trade_lab"):
         _require(email, "trade_lab", teaser=_teaser(b, me_t, "trade_lab"))
@@ -216,9 +238,9 @@ def trade_lab(platform: str, league_id: str, body: TradeIn, email: str | None = 
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/actions")
-def action_feed(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user)):
+def action_feed(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     """The home screen: ranked moves. Free users see lineup fixes plus teasers for paid moves."""
-    b = _bundle(platform, league_id)
+    b = _bundle(platform, league_id, auth)
     t = _team(b, team_id)
     ents = products.features_for(_skus(email))
     out = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats,
@@ -231,9 +253,9 @@ def action_feed(platform: str, league_id: str, team_id: str, email: str | None =
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/waivers/plan")
-def waiver_plan_endpoint(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user)):
+def waiver_plan_endpoint(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     """Add/drop pairs with fallback claims — the executable version of the waiver page."""
-    b = _bundle(platform, league_id)
+    b = _bundle(platform, league_id, auth)
     t = _team(b, team_id)
     if not products.can(_skus(email), "waivers"):
         _require(email, "waivers", teaser=_teaser(b, t, "waivers"))
@@ -244,9 +266,9 @@ def waiver_plan_endpoint(platform: str, league_id: str, team_id: str, email: str
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/trades/find")
-def trade_finder_endpoint(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user)):
+def trade_finder_endpoint(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     """Who to talk to and about what, without the user proposing anything first."""
-    b = _bundle(platform, league_id)
+    b = _bundle(platform, league_id, auth)
     t = _team(b, team_id)
     if not products.can(_skus(email), "trade_lab"):
         _require(email, "trade_lab", teaser=_teaser(b, t, "trade_lab"))
@@ -277,9 +299,9 @@ def feedback(body: FeedbackIn, email: str | None = Depends(optional_user)):
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/report")
-def full_report(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user)):
+def full_report(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     _require(email, "full_report")
-    b = _bundle(platform, league_id)
+    b = _bundle(platform, league_id, auth)
     t = _team(b, team_id)
     out = report.build(b.league, t, b.ros, b.byes, matchups_raw=b.matchups, bid_stats=b.bid_stats, trending=b.trending)
     out["waiver_plan"] = waiver_plan.build(b.league, t, b.ros, b.byes, bid_stats=b.bid_stats,

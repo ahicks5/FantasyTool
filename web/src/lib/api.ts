@@ -24,6 +24,7 @@ import type {
   Waivers,
 } from "./types";
 import * as mocks from "./mocks";
+import { espnAuthHeaders } from "./espnAuth";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 export const USE_MOCKS = API_URL === "";
@@ -41,6 +42,19 @@ export class PaywallError extends Error {
     this.feature = d.feature;
     this.teaser = d.teaser ?? null;
     this.upsell = d.upsell;
+  }
+}
+
+/**
+ * Thrown on HTTP 403 from a private ESPN league. `needsAuth` says which question to ask:
+ * true means we have no cookies for this league, false means the ones we sent were rejected.
+ */
+export class EspnAuthError extends Error {
+  needsAuth: boolean;
+  constructor(message: string, needsAuth: boolean) {
+    super(message);
+    this.name = "EspnAuthError";
+    this.needsAuth = needsAuth;
   }
 }
 
@@ -65,12 +79,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const auth = await getAuthHeaders();
   const res = await fetch(`${API_URL}/api${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...auth, ...(init?.headers ?? {}) },
+    // ESPN cookies go on every call, because any of them may hit a private league. They are
+    // headers, not query params, so they stay out of URLs, logs and referrers.
+    headers: { "Content-Type": "application/json", ...auth, ...espnAuthHeaders(), ...(init?.headers ?? {}) },
   });
-  const body = (await res.json().catch(() => ({}))) as T & { error?: string; detail?: string | PaywallDetail };
+  const body = (await res.json().catch(() => ({}))) as T & {
+    error?: string;
+    detail?: string | PaywallDetail | { error: string; needs_espn_auth?: boolean };
+  };
   if (!res.ok) {
     const d = body?.detail;
-    if (res.status === 402 && d && typeof d === "object") throw new PaywallError(d);
+    if (res.status === 402 && d && typeof d === "object" && "upsell" in d) throw new PaywallError(d as PaywallDetail);
+    if (res.status === 403 && d && typeof d === "object" && "needs_espn_auth" in d) {
+      throw new EspnAuthError(d.error, d.needs_espn_auth !== false);
+    }
     if (res.status === 401) throw new Error("Sign in to continue.");
     throw new Error(typeof d === "string" ? d : (body?.error ?? `HTTP ${res.status}`));
   }

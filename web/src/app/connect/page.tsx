@@ -2,8 +2,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { connect, getLeague, getSleeperLeagues } from "@/lib/api";
+import { EspnAuthError, connect, getLeague, getSleeperLeagues } from "@/lib/api";
 import { saveConnection } from "@/lib/storage";
+import { EspnAuthForm } from "@/components/EspnAuthForm";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck } from "@/components/icons";
 import { Button, ErrorBox, Eyebrow, ThemeToggle, Wordmark } from "@/components/ui";
@@ -40,14 +41,22 @@ export default function ConnectPage() {
   const [teamId, setTeamId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // null = no ESPN sign-in problem. Otherwise, whether we are asking for cookies for the
+  // first time or telling them the ones they gave have expired.
+  const [espnAuthNeeded, setEspnAuthNeeded] = useState<{ expired: boolean } | null>(null);
+  const [lastLeagueId, setLastLeagueId] = useState("");
 
   async function run<T>(fn: () => Promise<T>): Promise<T | undefined> {
     setBusy(true);
     setError("");
     try {
-      return await fn();
+      const out = await fn();
+      setEspnAuthNeeded(null);
+      return out;
     } catch (e) {
-      setError((e as Error).message);
+      // A private league is not an error to apologise for — it is a form to fill in.
+      if (e instanceof EspnAuthError) setEspnAuthNeeded({ expired: !e.needsAuth });
+      else setError((e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -65,6 +74,7 @@ export default function ConnectPage() {
 
   async function pickLeague(id: string) {
     if (!id.trim()) return;
+    setLastLeagueId(id.trim());
     const l = await run(() => getLeague(platform, id.trim()));
     if (l) {
       setLeague(l);
@@ -116,7 +126,7 @@ export default function ConnectPage() {
         </Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">Connect your league</h1>
         <p className="mt-2 text-[15px] leading-relaxed text-muted">
-          Public leagues only for now. No password, and no account needed to see your first moves.
+          Sleeper, or ESPN public and private. No account needed to see your first moves.
         </p>
       </div>
 
@@ -140,7 +150,7 @@ export default function ConnectPage() {
             >
               <span className="display block text-[17px] leading-tight">{p === "sleeper" ? "Sleeper" : "ESPN"}</span>
               <span className={`mt-0.5 block text-[12px] leading-snug ${on ? "text-paper/65" : "text-muted"}`}>
-                {p === "sleeper" ? "Username or ID" : "Public leagues only"}
+                {p === "sleeper" ? "Username or ID" : "League ID"}
               </span>
             </button>
           );
@@ -232,6 +242,14 @@ export default function ConnectPage() {
         <div className="mt-4">
           <ErrorBox message={error} />
         </div>
+      )}
+
+      {espnAuthNeeded && (
+        <EspnAuthForm
+          expired={espnAuthNeeded.expired}
+          busy={busy}
+          onSaved={() => pickLeague(lastLeagueId || leagueIdInput)}
+        />
       )}
 
       {league && (

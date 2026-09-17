@@ -60,6 +60,15 @@ Engine modules, in the order the feed uses them:
   `X-Fantasy-Filter` on `FREEAGENT`/`WAIVERS`), never from "Sleeper players nobody rosters".
   Only ESPN knows who is free *in this league*, and a derived pool carries every K and D/ST
   whether or not the league has a slot for one.
+- **Private ESPN leagues** work. The user's `espn_s2` + `SWID` cookies ride in as the
+  `X-ESPN-S2` / `X-ESPN-SWID` headers (`espn_api.EspnAuth`) and are **never stored** — they are
+  a read session for that person's whole ESPN account, cannot be scoped to one league, and we
+  cannot revoke them, so the browser keeps them (`web/src/lib/espnAuth.ts`) and the server
+  only borrows them. `EspnAuth.__repr__` prints a fingerprint, never the cookies. The bundle
+  cache is keyed by that fingerprint, so a private league is never served to a request that
+  did not prove it can read it. Accepted cost: a scheduled job (the weekly email) cannot read
+  a private league. A private league answers **403** with `needs_espn_auth` — true means "ask
+  for cookies", false means "the ones you gave expired"; the web turns each into a form.
 - **Name-match guard.** ESPN players reach projections by name match (`edge/data/player_map.py`).
   A player we cannot map is marked `Player.unpriced`, which is not the same as projecting 0.0:
   a free agent we cannot price is dropped from the pool, an unpriced rostered player is never

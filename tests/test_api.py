@@ -23,7 +23,7 @@ def client(league, monkeypatch):
     bundle = service.Bundle(league=league, ros=ros, byes=byes, bid_stats=league_bid_stats(tx),
                             profiles=profile_managers(tx, players), pos_counts={},
                             matchups=json.loads((FIX / "sleeper/matchups_2.json").read_text()))
-    monkeypatch.setattr(service, "get_bundle", lambda platform, league_id: bundle)
+    monkeypatch.setattr(service, "get_bundle", lambda platform, league_id, auth=None: bundle)
     monkeypatch.setattr(app_mod, "store", Store(":memory:"))
     monkeypatch.setenv("EDGE_DEV", "1")
     monkeypatch.delenv("EDGE_USE_CLAUDE", raising=False)

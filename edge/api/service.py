@@ -32,7 +32,7 @@ class Bundle:
         return hoarded_positions(self.pos_counts, roster_id)
 
 
-_cache: dict[tuple[str, str], Bundle] = {}
+_cache: dict[tuple[str, str, str], Bundle] = {}
 
 
 def _transactions_history(league_raw: dict, week: int) -> list[dict]:
@@ -86,8 +86,15 @@ def load_sleeper(league_id: str, week: int | None = None) -> Bundle:
     )
 
 
-def get_bundle(platform: str, league_id: str) -> Bundle:
-    key = (platform, league_id)
+def get_bundle(platform: str, league_id: str, auth=None) -> Bundle:
+    """`auth` is an `espn_api.EspnAuth` for a private ESPN league, or None.
+
+    It is part of the cache key, never as itself — only as its fingerprint. A private league's
+    bundle must not be served to a request that did not prove it can read that league, or
+    anyone who learns the league id inherits the first user's access. Different cookies mean
+    a different key, so proving it is the same as fetching it.
+    """
+    key = (platform, league_id, auth.fingerprint if auth else "")
     b = _cache.get(key)
     if b and time.time() - b.loaded_at < TTL:
         return b
@@ -95,7 +102,7 @@ def get_bundle(platform: str, league_id: str) -> Bundle:
         b = load_sleeper(league_id)
     elif platform == "espn":
         from edge.connectors import espn  # optional connector
-        league = espn.load_league(league_id)
+        league = espn.load_league(league_id, auth=auth)
         byes = bye_weeks(load_schedule(league.season))
         b = Bundle(league=league, ros=ros_values(league, get_provider().season(league.season), byes), byes=byes,
                    bid_stats={}, profiles={}, pos_counts={})

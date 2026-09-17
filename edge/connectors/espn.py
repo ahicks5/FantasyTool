@@ -355,13 +355,16 @@ def attach_sleeper_ids(league: League, players: dict[str, dict]) -> int:
 
 # ---- live entry point ----
 
-def load_league(league_id: str | int, season: int | None = None, week: int | None = None) -> League:
+def load_league(league_id: str | int, season: int | None = None, week: int | None = None,
+                auth: "api.EspnAuth | None" = None) -> League:
+    """`auth` carries the user's ESPN cookies for a private league; see `espn_api.EspnAuth`.
+    Public leagues ignore it."""
     st = sleeper_api.state()
     season = season or int(st["season"])
-    raw = api.league(season, league_id)
+    raw = api.league(season, league_id, auth=auth)
     week = week or int(raw.get("scoringPeriodId") or st["week"])
     try:
-        fas = api.free_agents(season, league_id, week)
+        fas = api.free_agents(season, league_id, week, auth=auth)
     except api.EspnError:
         fas = None  # fall back to the derived pool rather than showing no waiver advice at all
     return build_league(raw, week, projections_raw=to_raw(get_provider().weekly(season, week)),
