@@ -7,7 +7,7 @@ import { LineupView } from "@/components/LineupView";
 import { WaiversView } from "@/components/WaiversView";
 import { WaiverPlanView } from "@/components/WaiverPlanView";
 import { TradeFinderView } from "@/components/TradeFinderView";
-import { Card, ErrorBox, H2, SkeletonList, VerdictWord } from "@/components/ui";
+import { ErrorBox, Eyebrow, H2, SkeletonList, SplitMeter, VerdictWord } from "@/components/ui";
 import { getReport } from "@/lib/api";
 import { pct } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
@@ -23,26 +23,20 @@ function ReportBody({ c }: { c: Connection }) {
   if (!data) return <SkeletonList rows={6} tall />;
 
   const m = data.matchup;
-  const favored = (m?.win_prob ?? 0) >= 0.5;
   return (
     <div className="grid gap-8">
       {m && m.opponent && m.win_prob !== null && m.their_proj !== null && (
-        <section>
-          <H2>Matchup outlook</H2>
-          <Card className="mt-2">
-            <div className="text-sm text-muted">vs {m.opponent}</div>
-            <div className="mt-1 flex items-end justify-between">
-              <div>
-                <span className="text-3xl font-black tabular-nums">{m.my_proj.toFixed(1)}</span>
-                <span className="text-muted"> – </span>
-                <span className="text-3xl font-black tabular-nums text-muted">{m.their_proj.toFixed(1)}</span>
-              </div>
-              <div className={`text-2xl font-black ${favored ? "text-start" : "text-sit"}`}>{pct(m.win_prob)} win</div>
-            </div>
-            <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-sit-soft">
-              <div className="h-full bg-start" style={{ width: pct(m.win_prob) }} />
-            </div>
-          </Card>
+        <section className="hero p-5">
+          <Eyebrow>Matchup outlook</Eyebrow>
+          <div className="mt-1 truncate text-[13px] font-bold text-white/85">vs {m.opponent}</div>
+          <div className="display tnum mt-1.5 text-[34px] leading-none text-white">
+            {m.my_proj.toFixed(1)}
+            <span className="mx-1.5 text-white/35">–</span>
+            <span className="text-white/55">{m.their_proj.toFixed(1)}</span>
+          </div>
+          <div className="mt-3.5">
+            <SplitMeter left={m.win_prob} right={1 - m.win_prob} leftLabel={`${pct(m.win_prob)} to win`} rightLabel={pct(1 - m.win_prob)} onHero />
+          </div>
         </section>
       )}
 
@@ -75,18 +69,21 @@ function ReportBody({ c }: { c: Connection }) {
           {data.trade_targets.length === 0 && <li className="text-sm text-muted">No clean 1-for-1 upgrades this week.</li>}
           {data.trade_targets.map((t, i) => (
             <li key={i} className="card p-4">
-              <div className="flex items-center justify-between">
-                <span className="truncate text-xs font-bold uppercase text-muted">{t.their_team_name}</span>
-                <VerdictWord value={t.verdict} className="text-lg" />
+              <div className="flex items-center justify-between gap-2">
+                <Eyebrow className="truncate">{t.their_team_name}</Eyebrow>
+                <VerdictWord value={t.verdict} className="text-[17px]" />
               </div>
-              <div className="mt-1 text-sm">
-                <span className="font-bold text-sit">Give</span> {t.give_names.join(" + ")}
+              <div className="mt-1.5 text-[14px] leading-relaxed">
+                <span className="font-black text-sit">Give</span> {t.give_names.join(" + ")}
                 <br />
-                <span className="font-bold text-start">Get</span> {t.get_names.join(" + ")}
+                <span className="font-black text-start">Get</span> {t.get_names.join(" + ")}
               </div>
-              <p className="mt-1 text-sm text-muted">{t.why}</p>
-              <Link href={`/trade?their=${t.their_team_id}&give=${t.give.join(",")}&get=${t.get.join(",")}`} className="mt-2 inline-block rounded-lg bg-soft px-3 py-1.5 text-sm font-bold">
-                Open in Trade Lab →
+              <p className="mt-1.5 text-[13px] leading-snug text-muted">{t.why}</p>
+              <Link
+                href={`/trade?their=${t.their_team_id}&give=${t.give.join(",")}&get=${t.get.join(",")}`}
+                className="mt-2.5 inline-block rounded-xl bg-soft px-3.5 py-2 text-[13px] font-bold"
+              >
+                Open in Trade Lab
               </Link>
             </li>
           ))}
