@@ -101,3 +101,27 @@ def test_values_mode_trusts_supplied_numbers():
     p = Player(id="1", name="x", position="RB", projected=10, injury_status="Out")
     assert effective(p) == 0
     assert effective(p, {"1": 42.0}) == 42.0
+
+
+def test_position_caps_follow_the_league_not_a_one_qb_assumption():
+    """A superflex league can genuinely want two quarterbacks off the wire; a 1-QB league cannot."""
+    from edge.engine.waivers import position_caps
+
+    one_qb = position_caps(["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "FLEX", "K", "DEF"])
+    assert one_qb["QB"] == 1
+    assert one_qb["K"] == 1 and one_qb["DEF"] == 1
+    assert one_qb["RB"] == 2 and one_qb["WR"] == 2
+
+    superflex = position_caps(["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "SUPER_FLEX", "K", "DEF"])
+    assert superflex["QB"] == 2, "superflex starts more than one QB, so show more than one"
+
+    two_qb = position_caps(["QB", "QB", "RB", "WR", "TE", "FLEX"])
+    assert two_qb["QB"] == 2
+
+
+def test_one_qb_league_still_shows_at_most_one_quarterback(league, season_proj, byes):
+    ros = ros_values(league, season_proj, byes)
+    assert "SUPER_FLEX" not in league.starting_slots
+    for t in league.teams:
+        picks = waivers.rank(league, t, ros, byes)
+        assert sum(1 for p in picks if p.player.position == "QB") <= 1

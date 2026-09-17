@@ -1,11 +1,12 @@
 """Waiver ranker: free agents scored by how much they improve THIS roster, with FAAB bids."""
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from edge.data.schedule import FANTASY_LAST_WEEK, norm_team
 from edge.engine.lineup import effective, lineup_total, optimize
-from edge.models import League, Player, Team, player_fits
+from edge.models import FLEX_SLOTS, League, Player, Team, player_fits
 
 
 @dataclass
@@ -89,8 +90,9 @@ def rank(league: League, team: Team, ros: dict[str, float], byes: dict[str, int]
         bid = suggest_bid(fit, league, team, bid_stats, trending.get(fa.id, 0))
         picks.append(Pick(fa, fit, weekly_gain, ros_gain, drop, bid, reason, trending.get(fa.id, 0)))
     picks.sort(key=lambda p: (-p.fit_score, -(ros.get(p.player.id, 0.0))))
-    # diversity: a top-5 full of streaming defenses helps nobody
-    cap = {"QB": 1, "K": 1, "DEF": 1}
+    # Diversity: a top-5 full of streaming defenses helps nobody. The cap has to follow the
+    # league, not a 1-QB assumption — a superflex roster can genuinely want two quarterbacks.
+    cap = position_caps(slots)
     seen: dict[str, int] = {}
     out: list[Pick] = []
     for p in picks:
@@ -102,6 +104,28 @@ def rank(league: League, team: Team, ros: dict[str, float], byes: dict[str, int]
         if len(out) == limit:
             break
     return out
+
+
+def position_caps(slots: list[str], default: int = 2) -> dict[str, int]:
+    """How many of one position may appear in a ranked list of pickups.
+
+    One more than the league actually starts, so a 1-QB league sees a single quarterback and a
+    superflex league can see two. Kickers and defenses are streamed one at a time either way.
+    """
+    starts: dict[str, float] = {}
+    for slot in slots:
+        accepts = FLEX_SLOTS.get(slot, {slot})
+        for pos in accepts:
+            starts[pos] = starts.get(pos, 0.0) + 1 / len(accepts)
+    caps: dict[str, int] = {}
+    for pos, n in starts.items():
+        if pos in ("K", "DEF"):
+            caps[pos] = 1
+        else:
+            # Round up, so a superflex league's 1.25 quarterbacks allows two while a 1-QB
+            # league's exact 1.0 allows one.
+            caps[pos] = max(1, min(default, math.ceil(n)))
+    return caps
 
 
 def _drop_candidate(team: Team, slots: list[str], ros: dict[str, float]) -> Player | None:
