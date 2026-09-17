@@ -250,7 +250,7 @@ def advise(league: League, team: Team) -> LineupAdvice:
             # We are holding him over a higher-projected bench player. Say why, or the
             # recommendation looks like a mistake.
             reason = (f"Projects {effective(p):.1f}. {alt.name} projects {effective(alt):.1f}, "
-                      f"a {-margin:.1f}-point edge -- inside the band where the higher projection "
+                      f"a {-margin:.1f}-point edge — inside the band where the higher projection "
                       f"wins barely half the time, so hold.")
         elif alt:
             reason = f"Projects {effective(p):.1f}; best bench option {alt.name} at {effective(alt):.1f}."
@@ -273,7 +273,7 @@ def advise(league: League, team: Team) -> LineupAdvice:
             gap = effective(weakest.player) - effective(b)
             if gap < 0:
                 note = (f"Sit: {effective(b):.1f}, {-gap:.1f} above {weakest.player.name} in "
-                        f"{weakest.slot} -- too close to call, not worth the move.")
+                        f"{weakest.slot} — too close to call, not worth the move.")
             else:
                 note = f"Sit: {effective(b):.1f}, {gap:.1f} behind {weakest.player.name} in {weakest.slot}."
         else:
