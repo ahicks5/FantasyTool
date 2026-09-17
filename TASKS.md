@@ -61,7 +61,8 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [~] Supabase magic-link login: /login page + JWT header wired; untested against a real Supabase project (needs your keys)
 - [ ] Real Stripe test-mode checkout run (needs STRIPE_SECRET_KEY / webhook secret)
 - [ ] Deploy: Vercel (web) + Railway or Render (API, Dockerfile) — free tiers
-- [ ] Verify ESPN connector on a real public league (fixture is hand-built from real player records)
+- [ ] Verify ESPN connector on a real public league (fixture is hand-built from real player records;
+      no public ESPN league id found yet — send me one and it is a ten-minute check)
 - [ ] Weekly email of the Full Report (Resend free tier) — retention lever
 - [ ] Engine tuning with real week-2 → week-3 results (backtest start/sit calls vs actuals)
 - [x] Waivers: add/drop pair valuation + fallback claims ("if X is gone, add Z")
@@ -76,6 +77,19 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       over all five. Fixed: multi-eligible players (Sleeper `fantasy_positions`), two-way
       players (Travis Hunter), IDP group slots, IDP projections never fetched, exact
       optimizer dropping a deep roster’s only K/DEF.
+
+## Done this round
+- [x] Waiver plan: add/drop pairs, fallback claims, two-part bid, explained holds
+- [x] Trade Finder: surplus/need matching, mutually beneficial 1-for-1 and 2-for-1 offers
+- [x] Projection provider interface (Sleeper live, Tank01 stubbed) — no vendor lock-in
+- [x] Recommendation run log with algorithm version + Helpful/Wrong feedback (learning loop)
+- [x] Real league format matrix: 5 live leagues (standard PPR, superflex, 3-FLEX TE-premium,
+      WRRB_FLEX, IDP) recorded as fixtures with 59 parametrised tests
+- [x] Eight engine bugs found by that matrix, incl. multi-eligible players (a linebacker who
+      also qualifies at DL) being unstartable — we were telling IDP managers to bench a legal
+      starter. Also two-way players, deep dynasty rosters, IDP projections, IDP slot names.
+- [x] Anonymous visitors can connect a league and see their moves; signup only at checkout
+- [x] Waiver position caps follow the league instead of assuming one quarterback
 
 ## Blueprint items still open
 - [ ] Weekly action email from stored runs (Resend free tier) — retention lever
