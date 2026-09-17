@@ -20,6 +20,26 @@ COLORS = {"Accept": "#22a468", "Reject": "#e2554e", "Counter": "#f0b429", "Fair"
 COLORS_TEXT = {"Accept": "#0b7a4b", "Reject": "#c02b23", "Counter": "#b57500", "Fair": "#1e4fd8"}
 
 
+def photos_enabled() -> bool:
+    """Whether cards may carry player headshots. `EDGE_CARD_PHOTOS=0` turns them off everywhere.
+
+    This is a legal kill-switch, not a style option. Player *names and statistics* are on
+    long-settled ground for fantasy providers; a *photograph* is someone else's copyright and
+    carries a right-of-publicity question on top, and we print them on a card that markets a
+    paid product. Until that question has an answer (see docs/LEGAL_CHECKLIST.md), the switch
+    lets us strip every face from every surface with one environment variable and no redesign.
+
+    Off is a first-class look: `_player_chip` falls back to initials, which is what the app
+    already does for a player with no headshot.
+    """
+    return os.environ.get("EDGE_CARD_PHOTOS", "1").strip().lower() not in ("0", "false", "no")
+
+
+def _initials(name: str) -> str:
+    parts = [p for p in (name or "").split() if p[:1].isalpha()]
+    return ("".join(p[0] for p in parts[:2]) or "?").upper()
+
+
 def _inline_image(url: str | None) -> str | None:
     """Fetch a headshot and return it as a data URI, cached on disk.
 
@@ -27,7 +47,7 @@ def _inline_image(url: str | None) -> str | None:
     not fetch remote images — they come out as broken glyphs. Inlining also means a card can
     be regenerated later without the CDN.
     """
-    if not url:
+    if not url or not photos_enabled():
         return None
     key = hashlib.sha1(url.encode()).hexdigest()[:16]
     cache = Path(os.environ.get("EDGE_CACHE_DIR", ".cache")) / "img"
@@ -64,7 +84,10 @@ def _player_chip(p: dict) -> str:
         f'<img src="{e(photo)}" width="72" height="72" alt="" '
         f'style="border-radius:99px;object-fit:cover;object-position:top;background:rgba(255,255,255,.1);flex:0 0 auto">'
         if photo else
-        '<span style="width:72px;height:72px;border-radius:99px;background:rgba(255,255,255,.1);flex:0 0 auto"></span>'
+        # No face: initials, so the card still reads as a roster row rather than a hole.
+        '<span style="width:72px;height:72px;border-radius:99px;background:rgba(255,255,255,.1);'
+        'flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;'
+        f'font-weight:800;color:{PAPER}.55)">{e(_initials(p.get("name", "")))}</span>'
     )
     meta = " · ".join(x for x in (p.get("position"), p.get("nfl_team")) if x)
     return f"""<li style="display:flex;align-items:center;gap:16px">

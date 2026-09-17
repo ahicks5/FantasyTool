@@ -112,6 +112,38 @@ def cmd_email(args):
     print("Wrote   ", out / "weekly.html", "and", out / "weekly.txt")
 
 
+def cmd_economics(args):
+    """Print the unit-economics decision table. No network: pure model, explicit assumptions."""
+    from dataclasses import replace
+
+    from edge.business import economics as ec
+
+    base = ec.Assumptions()
+    if args.model:
+        base = replace(base, call=replace(base.call, model=args.model))
+    if args.explanations:
+        base = replace(base, usage=replace(base.usage, explanations=args.explanations))
+
+    print(ec.format_table(base))
+
+    if args.scenarios:
+        print("\nScenarios — net per Trade Lab sale, and its runway:")
+        for name, a in ec.scenarios(base).items():
+            c = ec.contribution("trade_lab", a)
+            r = ec.runway_calls("trade_lab", a)
+            runway = "unlimited" if r == float("inf") else f"{r:.0f} verdicts"
+            print(f"  {name:<18} net ${c['net']:>5.2f}  ({c['margin_pct']:>5.1f}%)  {runway}")
+
+    mix = {"waivers": args.waivers, "trade_lab": args.trade_lab, "full_report": args.full_report}
+    s = ec.season(mix, months=args.months, a=base)
+    print(f"\nCohort: {s['buyers']} buyers ({', '.join(f'{n} {k}' for k, n in mix.items() if n)}), "
+          f"{args.months:g} months of fixed cost")
+    print(f"  revenue ${s['revenue']:.2f}  variable ${s['variable_cost']:.2f}  "
+          f"fixed ${s['fixed_cost']:.2f}  profit ${s['profit']:.2f}")
+    be = ec.breakeven_buyers(mix, months=args.months, a=base)
+    print(f"  break-even at this mix: {be:.0f} buyers (avg order ${s['avg_order']:.2f})")
+
+
 def main(argv: list[str] | None = None):
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -128,6 +160,15 @@ def main(argv: list[str] | None = None):
     s.add_argument("--base-url", default="https://edge.example")
     s.add_argument("--features", default="", help="comma list, e.g. my_team to preview the free version")
     s.set_defaults(fn=cmd_email)
+    s = sub.add_parser("economics", help="unit economics: margin per SKU, runway, cohort P&L")
+    s.add_argument("--model", help="override the LLM priced in (default: the one explain.py uses)")
+    s.add_argument("--explanations", type=int, help="trade explanations per Trade Lab buyer")
+    s.add_argument("--months", type=float, default=4.0, help="months of fixed cost to carry")
+    s.add_argument("--waivers", type=int, default=100)
+    s.add_argument("--trade-lab", type=int, default=100)
+    s.add_argument("--full-report", type=int, default=400)
+    s.add_argument("--scenarios", action="store_true", help="compare pricing/model scenarios")
+    s.set_defaults(fn=cmd_economics)
     args = ap.parse_args(argv)
     args.fn(args)
 

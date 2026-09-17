@@ -55,7 +55,9 @@ def test_sleeper_provider_maps_fixture_into_player_projections(sleeper_provider,
 def test_sleeper_provider_satisfies_protocol(sleeper_provider):
     assert isinstance(sleeper_provider, ProjectionProvider)
     assert sleeper_provider.name == "sleeper"
-    assert sleeper_provider.attribution is None  # Sleeper asks for no credit line
+    # Sleeper's API docs ask for credit when you use their trending data, and the action feed
+    # does. This used to assert None; that was wrong, not a preference.
+    assert sleeper_provider.attribution and "Sleeper" in sleeper_provider.attribution
 
 
 def test_season_projections_come_through_the_provider(sleeper_provider):

@@ -103,3 +103,38 @@ class Store:
     def disconnect_league(self, email: str, platform: str, league_id: str) -> None:
         self.db.execute("DELETE FROM leagues WHERE email=? AND platform=? AND league_id=?", (email.lower(), platform, league_id))
         self.db.commit()
+
+    # ---- data subject requests ----
+    # A privacy policy that promises export and deletion needs code behind it, and the
+    # promise is cheap to keep because we hold so little: an email, which leagues it picked,
+    # what it bought, and what we recommended.
+
+    USER_TABLES = ("purchases", "leagues", "runs", "feedback")
+
+    def export_user(self, email: str) -> dict:
+        """Everything we hold that is keyed to this email. The answer to 'what do you have?'."""
+        email = email.lower()
+        out: dict[str, list[dict]] = {}
+        for table in self.USER_TABLES:
+            cur = self.db.execute(f"SELECT * FROM {table} WHERE email=?", (email,))  # noqa: S608 — fixed tuple
+            cols = [d[0] for d in cur.description]
+            out[table] = [dict(zip(cols, row)) for row in cur.fetchall()]
+        return {"email": email, "data": out}
+
+    def delete_user(self, email: str) -> dict[str, int]:
+        """Erase this email from every table that stores it. Returns rows removed per table.
+
+        Two things this deliberately does NOT do. It does not touch `shares`: a public
+        verdict snapshot carries no email and no league id by design (see api/share.py), so
+        there is nothing in it to erase, and deleting it would break links other people hold.
+        And it does not preserve entitlements — deleting the purchase row revokes the season
+        pass, which is the honest consequence of a deletion request and must be said out loud
+        before the button is pressed.
+        """
+        email = email.lower()
+        counts: dict[str, int] = {}
+        for table in self.USER_TABLES:
+            cur = self.db.execute(f"DELETE FROM {table} WHERE email=?", (email,))  # noqa: S608 — fixed tuple
+            counts[table] = cur.rowcount
+        self.db.commit()
+        return counts

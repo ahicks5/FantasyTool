@@ -90,8 +90,19 @@ export default function Landing() {
 
       <Pricing />
 
+      {/* The credit line is not decoration: Sleeper's API docs ask for attribution on the
+          trending data the action feed uses. edge/data/providers.py carries the canonical
+          string; if the projection vendor ever changes, change it there and here together. */}
       <footer className="mt-12 text-xs leading-relaxed text-muted">
-        Projections from Sleeper, rescored to your league&rsquo;s settings. Headshots via Sleeper and ESPN. Not affiliated with any league platform.
+        Projections and trending data from Sleeper, rescored to your league&rsquo;s settings. Headshots via Sleeper
+        and ESPN. Not affiliated with the NFL, the NFLPA, Sleeper, ESPN, or Yahoo.
+        <span className="mt-2 block">
+          <Link href="/legal/terms" className="underline">Terms</Link>
+          {" · "}
+          <Link href="/legal/privacy" className="underline">Privacy</Link>
+          {" · "}
+          <Link href="/legal/refunds" className="underline">Refunds</Link>
+        </span>
       </footer>
     </div>
   );

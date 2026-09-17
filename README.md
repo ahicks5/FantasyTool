@@ -17,6 +17,7 @@ uv run python -m edge.cli leagues <sleeper_username>
 uv run python -m edge.cli sleeper <league_id>          # every roster with projections
 uv run python -m edge.cli espn <league_id>             # public ESPN league
 uv run python -m edge.cli card <league_id> <my_team> <their_team> <give_ids> <get_ids>   # verdict PNG
+uv run python -m edge.cli economics --scenarios                # margin per SKU, cohort P&L (offline)
 ```
 Tests: `uv run pytest -q` (offline, fixtures) and `cd web && npm test && npm run build`.
 
@@ -30,4 +31,12 @@ Tests: `uv run pytest -q` (offline, fixtures) and `cd web && npm test && npm run
 
 ## Layout
 `edge/` engine + API · `web/` Next.js app · `docs/API.md` contract · `tests/` offline tests ·
-`launch/` posts and sample verdict cards · `deploy/` Railway/Render configs · `Dockerfile` API image.
+`launch/` posts, sample verdict cards and `ROLLOUT_PLAN.md` · `deploy/` Railway/Render configs ·
+`Dockerfile` API image.
+
+## Business docs
+`docs/RISK_REGISTER.md` (what blocks launch) · `docs/LEGAL_CHECKLIST.md` (lawyer questions) ·
+`docs/DATA_INVENTORY.md` (what we store) · `docs/UNIT_ECONOMICS.md` (margins) ·
+`docs/ACCURACY_PROGRAM.md` (how we check we're right).
+
+`EDGE_CARD_PHOTOS=0` strips player headshots everywhere — a legal kill-switch, see risk L1.
