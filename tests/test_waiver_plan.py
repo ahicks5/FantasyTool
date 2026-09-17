@@ -154,16 +154,18 @@ def test_plan_is_json_serialisable(league, ros, byes):
         json.dumps(_plan(league, t, ros, byes).to_dict())
 
 
-def test_never_recommends_a_third_quarterback_you_cannot_start(league, ros, byes):
-    """Being the best QB left on the wire is worth nothing when you already roster two."""
+HELPS = {"starts_immediately", "roster_depth", "covers_bye", "injury_insurance"}
+
+
+def test_scarcity_alone_never_justifies_a_claim(league, ros, byes):
+    """Being the best player left on the wire is not a reason to claim someone who does not
+    improve your team. It is a tiebreaker between players who do."""
     for t in league.teams:
-        starts_one_qb = sum(1 for s in league.starting_slots if s == "QB") == 1
-        if not starts_one_qb or sum(1 for p in t.players if p.position == "QB") < 2:
-            continue
         for c in _plan(league, t, ros, byes).claims:
-            if c.add.position == "QB":
-                assert "position_scarcity" not in c.reason_codes, \
-                    f"{t.name}: recommended {c.add.name} purely for being the best QB available"
+            codes = set(c.reason_codes)
+            if "position_scarcity" in codes:
+                assert codes & HELPS, \
+                    f"{t.name}: {c.add.name} recommended purely for being the best available"
 
 
 def test_prose_and_scoring_agree_on_what_counts_as_starting(league, ros, byes):

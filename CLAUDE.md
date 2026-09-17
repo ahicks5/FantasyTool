@@ -67,6 +67,15 @@ league's own scoring re-scores them. Connectors still take raw Sleeper-shaped di
 `providers.to_raw()` converts any provider's output into that shape (dicts pass through, so
 recorded fixtures still work).
 
+## Distribution
+- `edge/api/share.py` + `/api/share` — a verdict becomes a public `/s/{id}` page that opens with
+  no account and unfurls with a rendered card at `/api/share/{id}/card.png` (cached on disk).
+  Snapshots are display-only: never an email, a league id or a roster.
+- `edge/delivery/weekly_email.py` — the same Action feed as an email. Tables and inline styles
+  only (Gmail strips `<style>`), absolute links, a plain-text alternative, and a test proving a
+  free recipient never receives paid content. Render with `python -m edge.cli email`.
+  Sending is deliberately not wired: pick a provider (Resend free tier) when you have a key.
+
 ## Repo layout
 ```
 edge/               Python package: connectors/, data/, engine/, api/

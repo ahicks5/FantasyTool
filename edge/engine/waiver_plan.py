@@ -359,10 +359,14 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
     worth_it = [c for c in ranked if c.net >= CLAIM_THRESHOLD]
     if not worth_it:
         best = ranked[0] if ranked else None
-        why = (f"Nothing on the wire beats what you already roster. The best available "
-               f"({best.add.name}, {best.add.position}) is worth about {best.net:.2f} points a week, "
-               f"and you would have to drop {best.drop.name if best.drop else 'someone'} to get him."
-               ) if best else "No free agents worth a roster spot this week."
+        if best:
+            worth = ("adds nothing to your lineup" if best.net < 0.005
+                     else f"is worth about {best.net:.2f} points a week")
+            why = (f"Nothing on the wire beats what you already roster. The best available "
+                   f"({best.add.name}, {best.add.position}) {worth}, and you would have to drop "
+                   f"{best.drop.name if best.drop else 'someone'} to get him.")
+        else:
+            why = "No free agent on the wire can start or back up anyone on your roster."
         return WaiverPlan(league.week, team.faab_remaining, league.waiver_type, None, [],
                           why + " " + _keep_clause(league))
 

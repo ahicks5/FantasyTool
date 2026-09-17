@@ -86,6 +86,32 @@ def cmd_card(args):
     print(text)
 
 
+def cmd_email(args):
+    """Render the weekly email for a team. Writes files; sending is a separate concern."""
+    from pathlib import Path
+
+    from edge.api import service
+    from edge.delivery import weekly_email
+    from edge.engine import actions
+
+    b = service.get_bundle(args.platform, args.league_id)
+    team = b.league.team(args.team_id) or b.league.team_by_owner(args.team_id)
+    if not team:
+        raise SystemExit(f"error: no team {args.team_id!r} in {b.league.name}. "
+                         f"Try one of: {', '.join(t.owner_name or t.name for t in b.league.teams)}")
+    ents = set(args.features.split(",")) if args.features else {"my_team", "waivers", "trade_lab", "full_report"}
+    feed = actions.build(b.league, team, b.ros, b.byes, ents, bid_stats=b.bid_stats,
+                         trending=b.trending, profiles=b.profiles, matchups_raw=b.matchups)
+    mail = weekly_email.build(feed, base_url=args.base_url)
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "weekly.html").write_text(mail["html"])
+    (out / "weekly.txt").write_text(mail["text"])
+    print("Subject:", mail["subject"])
+    print("Preview:", mail["preheader"])
+    print("Wrote   ", out / "weekly.html", "and", out / "weekly.txt")
+
+
 def main(argv: list[str] | None = None):
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -96,6 +122,12 @@ def main(argv: list[str] | None = None):
     s = sub.add_parser("card"); s.add_argument("league_id"); s.add_argument("my_team_id"); s.add_argument("their_team_id")
     s.add_argument("give"); s.add_argument("get"); s.add_argument("--out", default="launch/cards"); s.add_argument("--html-only", action="store_true")
     s.set_defaults(fn=cmd_card)
+    s = sub.add_parser("email", help="render this week's email for a team")
+    s.add_argument("league_id"); s.add_argument("team_id", help="roster id or owner name")
+    s.add_argument("--platform", default="sleeper"); s.add_argument("--out", default="launch/email")
+    s.add_argument("--base-url", default="https://edge.example")
+    s.add_argument("--features", default="", help="comma list, e.g. my_team to preview the free version")
+    s.set_defaults(fn=cmd_email)
     args = ap.parse_args(argv)
     args.fn(args)
 

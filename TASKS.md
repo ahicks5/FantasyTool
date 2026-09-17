@@ -92,8 +92,9 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] Waiver position caps follow the league instead of assuming one quarterback
 
 ## Blueprint items still open
-- [ ] Weekly action email from stored runs (Resend free tier) — retention lever
-- [ ] Shareable public trade-verdict URLs (organic loop)
+- [x] Weekly action email — HTML + plain text renderer, `python -m edge.cli email <league> <team>`.
+      Sending still needs a Resend key; everything up to the send is built and tested.
+- [x] Shareable public trade-verdict URLs with a rendered social card (organic loop)
 - [ ] Uncertainty-aware confidence: P(a > b) from projection error by position, not raw margin
       (blueprint says do NOT build this before multi-week backtesting exists)
 - [ ] Commissioner league pack, creator affiliate codes (growth, after launch)
