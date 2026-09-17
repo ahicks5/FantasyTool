@@ -52,6 +52,10 @@ Engine modules, in the order the feed uses them:
   ESPN: `https://a.espncdn.com/i/headshots/nfl/players/full/{espn_id}.png`,
   team logos: `https://sleepercdn.com/images/team_logos/nfl/{abbr}.png` (all free, emitted as `photo`/`team_logo`).
 - ESPN public leagues: `lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{yr}/segments/0/leagues/{id}`.
+  Verified live against 7 real public 2026 leagues; league **521131** is recorded as a fixture
+  (refresh with `scripts/record_espn_fixture.py`). Two ESPN scoring traps the tests now guard:
+  a category's value can live in `pointsOverrides` rather than `points` (every league does this
+  for D/ST), and yardage is often an "every N yards" stat id rather than a per-unit one.
 - Fallback if Sleeper projections ever break: Tank01 on RapidAPI ($10/mo).
 
 ## Projection providers

@@ -61,8 +61,9 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [~] Supabase magic-link login: /login page + JWT header wired; untested against a real Supabase project (needs your keys)
 - [ ] Real Stripe test-mode checkout run (needs STRIPE_SECRET_KEY / webhook secret)
 - [ ] Deploy: Vercel (web) + Railway or Render (API, Dockerfile) — free tiers
-- [ ] Verify ESPN connector on a real public league (fixture is hand-built from real player records;
-      no public ESPN league id found yet — send me one and it is a ten-minute check)
+- [x] Verify ESPN connector on real public leagues. Found 7 live public 2026 leagues by scanning
+      (~3% of live ESPN leagues are public). Ran the whole engine on 6 drafted ones and recorded
+      league 521131 as a fixture. Five bugs fixed — see below.
 - [ ] Weekly email of the Full Report (Resend free tier) — retention lever
 - [ ] Engine tuning with real week-2 → week-3 results (backtest start/sit calls vs actuals)
 - [x] Waivers: add/drop pair valuation + fallback claims ("if X is gone, add Z")
@@ -90,6 +91,15 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       starter. Also two-way players, deep dynasty rosters, IDP projections, IDP slot names.
 - [x] Anonymous visitors can connect a league and see their moves; signup only at checkout
 - [x] Waiver position caps follow the league instead of assuming one quarterback
+
+## ESPN: known gaps after live verification
+- [ ] Free agents for ESPN leagues still come from the Sleeper pool (measured 99% sound). ESPN's
+      own free-agent endpoint works; switch when convenient. No guard today for an ESPN player
+      who fails to name-match being offered as a pickup (zero such players in the sample).
+- [ ] Kickers project ~2.3 points under ESPN because Sleeper's weekly projections carry no
+      50-yard-FG or bonus keys. This affects Sleeper leagues identically — a vendor gap.
+- [ ] Private ESPN leagues (espn_s2/SWID) still unsupported; 16% of sampled ids were private.
+- [ ] `photo_url`'s ESPN CDN branch never fired live — every ESPN player matched a Sleeper id.
 
 ## Blueprint items still open
 - [x] Weekly action email — HTML + plain text renderer, `python -m edge.cli email <league> <team>`.
