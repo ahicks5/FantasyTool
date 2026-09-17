@@ -14,7 +14,7 @@ export function confidenceClass(c: Confidence): string {
 export const VERDICT_TEXT_CLASSES: Record<Verdict, string> = {
   Accept: "text-start",
   Reject: "text-sit",
-  Counter: "text-flip-dark",
+  Counter: "text-flip",
   Fair: "text-lean",
 };
 

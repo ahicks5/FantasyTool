@@ -149,7 +149,9 @@ const VARIANTS = {
   secondary: "bg-paper text-ink border border-line-2 hover:bg-soft",
   ghost: "bg-transparent text-ink hover:bg-soft",
   start: "bg-start text-white hover:brightness-110 shadow-[var(--shadow-card)]",
-  onHero: "bg-white text-ink hover:opacity-90",
+  // `text-ink` flips to near-white in dark mode, so a white button would vanish. The hero
+  // surface colour is dark in both modes, which is exactly what this needs.
+  onHero: "bg-white text-hero hover:opacity-90",
 };
 
 export function Button({ children, variant = "primary", size = "md", className = "", ...rest }: BtnProps & React.ButtonHTMLAttributes<HTMLButtonElement>) {

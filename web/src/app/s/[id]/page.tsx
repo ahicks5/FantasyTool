@@ -171,16 +171,18 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-4 border-t border-line pt-5">
+            {/* These are the change to each starting lineup over the rest of the season, not
+                a season point total — labelling them "your season" read as the latter. */}
             <Stat
-              label="Your season"
-              value={signed(v.my_delta_ros)}
-              sub="projected points"
+              label="Your lineup"
+              value={signed(v.my_delta_ros, 0)}
+              sub="rest of season"
               tone={v.my_delta_ros >= 0 ? "start" : "sit"}
             />
             <Stat
-              label="Their season"
-              value={signed(v.their_delta_ros)}
-              sub="projected points"
+              label="Their lineup"
+              value={signed(v.their_delta_ros, 0)}
+              sub="rest of season"
               tone={v.their_delta_ros >= 0 ? "start" : "sit"}
             />
           </div>
@@ -207,8 +209,6 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
             ),
           )}
         </ul>
-        {/* onHero is `bg-white text-ink`, and `--color-ink` flips to near-white in dark
-            mode — so the label needs an explicit dark token to stay legible. */}
         <LinkButton href="/connect" variant="onHero" className="mt-6 w-full text-hero!">
           Connect your league — free
         </LinkButton>
