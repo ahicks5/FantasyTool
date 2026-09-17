@@ -65,3 +65,26 @@ def player_pool(season: int, limit: int = 50, slot_ids: list[int] | None = None)
     url = f"{BASE}/seasons/{int(season)}/segments/0/leaguedefaults/3"
     data = _get(url, params=[("view", "kona_player_info")], headers={"X-Fantasy-Filter": json.dumps(filt)})
     return data.get("players") or []
+
+
+def free_agents(season: int, league_id: str | int, week: int | None = None, limit: int = 250) -> list[dict]:
+    """The players this league says are actually available, newest waiver state included.
+
+    ESPN is the only source that knows who is free *in this league*: a pool derived from
+    "projected players nobody rosters" silently offers up anyone our name matching failed to
+    tie to a roster spot, which is the worst possible miss in a paid recommendation.
+
+    Returns playerPoolEntry dicts, each with `player` inside, `status` (FREEAGENT | WAIVERS)
+    and `onTeamId: 0`, ordered by percent owned.
+    """
+    filt = {
+        "players": {
+            "filterStatus": {"value": ["FREEAGENT", "WAIVERS"]},
+            "limit": int(limit),
+            "sortPercOwned": {"sortAsc": False, "sortPriority": 1},
+        }
+    }
+    url = f"{BASE}/seasons/{int(season)}/segments/0/leagues/{league_id}"
+    params = [("view", "kona_player_info")] + ([("scoringPeriodId", str(int(week)))] if week else [])
+    data = _get(url, params=params, headers={"X-Fantasy-Filter": json.dumps(filt)})
+    return data.get("players") or []

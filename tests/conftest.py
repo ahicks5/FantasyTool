@@ -53,6 +53,7 @@ def espn_live_raw():
         "players": load(f"{LIVE_ESPN}/sleeper_players.json"),
         "weekly": load(f"{LIVE_ESPN}/sleeper_projections_week.json"),
         "season": load(f"{LIVE_ESPN}/sleeper_projections_season.json"),
+        "free_agents": load(f"{LIVE_ESPN}/free_agents.json"),
     }
 
 
@@ -60,4 +61,5 @@ def espn_live_raw():
 def espn_live_league(espn_live_raw):
     from edge.connectors.espn import build_league
     r = espn_live_raw
-    return build_league(r["league"], week=2, projections_raw=r["weekly"], players=r["players"])
+    return build_league(r["league"], week=2, projections_raw=r["weekly"], players=r["players"],
+                        free_agents_raw=r["free_agents"])

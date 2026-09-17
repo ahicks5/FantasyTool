@@ -65,7 +65,15 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       (~3% of live ESPN leagues are public). Ran the whole engine on 6 drafted ones and recorded
       league 521131 as a fixture. Five bugs fixed — see below.
 - [ ] Weekly email of the Full Report (Resend free tier) — retention lever
-- [ ] Engine tuning with real week-2 → week-3 results (backtest start/sit calls vs actuals)
+- [x] Decision backtest: `scripts/backtest.py <week>` now replays 6 real leagues (66 teams, every
+      format) and grades Edge's lineup against the one the manager actually started. Week 1:
+      +2.02 pts/team, 82% of teams helped. It found and priced a real bug — see below.
+- [x] Noise-band hold (`lineup.stabilize`): 48 sub-1.5-point swaps cost 28 points in week 1,
+      worst was "bench Josh Allen for Stafford" (-35.6). Holding the incumbent took teams-made-
+      worse from 30% to 18%. `tests/test_evaluate.py` replays all six leagues offline.
+- [x] `scripts/freeze_projections.py` — Thursday snapshot so a backtest grades what we showed.
+- [ ] Re-run `scripts/backtest.py 2` once week 2 actuals land (Tuesday). Watch **Lean**: 50% on
+      n=20 real calls against an advertised 62%. Three more weeks decide whether the tag survives.
 - [x] Waivers: add/drop pair valuation + fallback claims ("if X is gone, add Z")
 - [x] Trade Finder: surplus/need matching across the league (blueprint P1)
 - [x] RecommendationRun log with algorithm version (learning loop)
@@ -93,13 +101,23 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] Waiver position caps follow the league instead of assuming one quarterback
 
 ## ESPN: known gaps after live verification
-- [ ] Free agents for ESPN leagues still come from the Sleeper pool (measured 99% sound). ESPN's
-      own free-agent endpoint works; switch when convenient. No guard today for an ESPN player
-      who fails to name-match being offered as a pickup (zero such players in the sample).
+- [x] Free agents now come from ESPN's own endpoint (`espn_api.free_agents`), so an add we
+      recommend is one the league really has available. The derived pool also carried every K
+      and D/ST regardless of slots — a no-DEF league had 11 defenses in its top 30 (the waiver
+      engine's position filter caught them, so nothing reached a user).
+- [x] Name-match guard: `Player.unpriced` marks a player we could not map, distinct from one
+      projecting 0.0. Unpriceable free agents are dropped, unpriced rostered players are never
+      offered as a drop and never benched, and >2% unmapped logs a warning. Measured 495/495
+      rostered and 250/250 free agents mapped across three live leagues — the guard is
+      insurance against a future miss, not a fix for an observed one.
 - [ ] Kickers project ~2.3 points under ESPN because Sleeper's weekly projections carry no
       50-yard-FG or bonus keys. This affects Sleeper leagues identically — a vendor gap.
 - [ ] Private ESPN leagues (espn_s2/SWID) still unsupported; 16% of sampled ids were private.
 - [ ] `photo_url`'s ESPN CDN branch never fired live — every ESPN player matched a Sleeper id.
+      It is now the fallback for an unmapped free agent, so it should fire the first time a
+      name match misses.
+- [ ] ESPN's free-agent list is the top 250 by percent owned. Ample for a top-5 waiver list;
+      raise the limit (600 works) if a deep-league user ever reports a missing name.
 
 ## Blueprint items still open
 - [x] Weekly action email — HTML + plain text renderer, `python -m edge.cli email <league> <team>`.

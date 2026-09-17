@@ -153,7 +153,9 @@ def stabilize(best: list[Player | None], team: Team, slots: list[str]) -> list[P
             continue
         if cur.id in in_lineup or not player_fits(slot, cur) or cur.is_out:
             continue
-        if effective(pick) - effective(cur) >= NOISE_MARGIN:
+        # An unpriced starter projects 0.0 only because we could not find him, so every
+        # "upgrade" over him is fabricated. Leave him where his manager put him.
+        if not cur.unpriced and effective(pick) - effective(cur) >= NOISE_MARGIN:
             continue
         in_lineup.discard(pick.id)
         in_lineup.add(cur.id)

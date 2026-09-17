@@ -64,6 +64,10 @@ class Player:
     ext_ids: dict[str, str] = field(default_factory=dict)  # other platforms' ids, e.g. {"sleeper": "9221"}
     # Every position this player may be started at. Empty = just `position`.
     fantasy_positions: list[str] = field(default_factory=list)
+    # True when no projection row could be found for him at all -- on ESPN that means our
+    # name matching missed. Different from projecting 0.0, which is a real answer (bye week,
+    # deep bench). We know nothing about an unpriced player, so we must not advise on him.
+    unpriced: bool = False
 
     @property
     def positions(self) -> list[str]:

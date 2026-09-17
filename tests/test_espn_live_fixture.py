@@ -224,18 +224,103 @@ def test_ros_values_reach_rostered_espn_players(espn_live_league, ros):
 
 # ---- free agents ----
 
-def test_free_agents_are_unrostered_and_named_like_espn(espn_live_league):
+def test_free_agents_come_from_espns_own_available_list(espn_live_league, espn_live_raw):
+    """Not from "Sleeper players nobody rosters". ESPN is the only source that knows who is
+    free *in this league*; a derived pool offers up anyone our name matching failed to tie to
+    a roster spot, and recommending a player someone already owns is the worst miss we can
+    make in a paid product."""
     lg = espn_live_league
+    available = {str(r["id"]) for r in espn_live_raw["free_agents"]}
     assert lg.free_agents
-    rostered_sleeper = {p.ext_ids.get("sleeper") for p in rostered(lg)}
-    assert not {p.id for p in lg.free_agents} & rostered_sleeper
-    assert all(p.ext_ids["sleeper"] == p.id for p in lg.free_agents)
+    assert {p.id for p in lg.free_agents} <= available, "offered someone ESPN does not list as free"
+
+
+def test_no_rostered_player_can_reach_the_free_agent_pool(espn_live_league):
+    lg = espn_live_league
+    rostered_espn = {p.id for p in rostered(lg)}
+    rostered_sleeper = {p.ext_ids.get("sleeper") for p in rostered(lg)} - {None}
+    assert not {p.id for p in lg.free_agents} & rostered_espn
+    assert not {p.ext_ids.get("sleeper") for p in lg.free_agents} & rostered_sleeper
+
+
+def test_free_agents_carry_both_ids_and_a_real_projection(espn_live_league):
+    lg = espn_live_league
+    for p in lg.free_agents:
+        assert p.ext_ids["espn"] == p.id, "Player.id is ESPN's id, like every other ESPN player"
+        assert p.ext_ids.get("sleeper"), "no Sleeper id means no projection; he should not be here"
     projs = [p.projected for p in lg.free_agents]
     assert projs == sorted(projs, reverse=True) and all(p > 0 for p in projs)
-    # D/ST free agents come out of the Sleeper dump as "Los Angeles Chargers"; inside an
-    # ESPN league they must read the way ESPN's own rostered defenses do.
-    fa_defs = [p for p in lg.free_agents if p.position == "DEF"]
+
+
+def test_espn_names_its_own_defenses(espn_live_league):
+    """Straight from ESPN now, so no renaming step to get wrong."""
+    fa_defs = [p for p in espn_live_league.free_agents if p.position == "DEF"]
     assert fa_defs and all(p.name.endswith("D/ST") for p in fa_defs)
+
+
+def test_the_pool_holds_no_position_espn_did_not_offer(espn_live_league, espn_live_raw):
+    """A pool derived from Sleeper projections carries every D/ST and K in the league whether
+    or not there is a slot for one — measured live, a no-DEF ESPN league got 11 defenses in
+    its top 30. ESPN's own list cannot contain a position the league does not use."""
+    from edge.connectors.espn import POSITIONS
+    offered = {POSITIONS.get(r["player"].get("defaultPositionId"), "?")
+               for r in espn_live_raw["free_agents"]}
+    assert {p.position for p in espn_live_league.free_agents} <= offered
+
+
+def test_a_player_we_cannot_map_is_dropped_rather_than_recommended(espn_live_raw):
+    """The name-match guard. Rename one free agent to something no Sleeper player answers to;
+    he must vanish from the pool, not appear in it unpriced at 0.0."""
+    from edge.connectors.espn import build_league
+    r = espn_live_raw
+    fas = json.loads(json.dumps(r["free_agents"]))
+    victim = fas[0]
+    baseline = build_league(r["league"], week=WEEK, projections_raw=r["weekly"],
+                            players=r["players"], free_agents_raw=fas)
+    assert str(victim["id"]) in {p.id for p in baseline.free_agents}
+    victim["player"]["fullName"] = "Zzqq Unmatchable"
+    lg = build_league(r["league"], week=WEEK, projections_raw=r["weekly"],
+                      players=r["players"], free_agents_raw=fas)
+    assert str(victim["id"]) not in {p.id for p in lg.free_agents}
+    assert "Zzqq Unmatchable" not in {p.name for p in lg.free_agents}
+
+
+def test_a_rostered_player_we_cannot_map_is_never_offered_as_a_drop(espn_live_raw):
+    """The inverse miss, and the more expensive one. An unmatched rostered player has no
+    projection, so a naive engine reads 0.0 and makes him the most droppable man on the
+    roster — which is how you tell someone to cut their RB1."""
+    from edge.connectors.espn import build_league
+    from edge.engine.waiver_plan import _drop_candidates
+    r = espn_live_raw
+    raw = json.loads(json.dumps(r["league"]))
+    entry = raw["teams"][0]["roster"]["entries"][0]
+    entry["playerPoolEntry"]["player"]["fullName"] = "Zzqq Unmatchable"
+    lg = build_league(raw, week=WEEK, projections_raw=r["weekly"], players=r["players"],
+                      free_agents_raw=r["free_agents"])
+    team = lg.teams[0]
+    ghost = next(p for p in team.players if p.name == "Zzqq Unmatchable")
+    assert ghost.unpriced and ghost.projected == 0.0
+    byes = bye_weeks(load_schedule(lg.season))
+    values = ros_values(lg, r["season"], byes)
+    assert values.get(ghost.id, 0.0) == 0.0, "worthless on paper, purely because we lost him"
+    drops = _drop_candidates(team, lg.starting_slots, values)
+    assert ghost.id not in {p.id for p in drops}, "offered up a player we know nothing about"
+
+
+def test_an_unpriced_starter_is_not_benched_on_a_projection_we_invented(espn_live_raw):
+    from edge.connectors.espn import build_league
+    from edge.engine.lineup import advise
+    r = espn_live_raw
+    raw = json.loads(json.dumps(r["league"]))
+    team_raw = raw["teams"][0]
+    starter = next(e for e in team_raw["roster"]["entries"] if e.get("lineupSlotId") in (0, 2, 4, 6))
+    starter["playerPoolEntry"]["player"]["fullName"] = "Zzqq Unmatchable"
+    lg = build_league(raw, week=WEEK, projections_raw=r["weekly"], players=r["players"],
+                      free_agents_raw=r["free_agents"])
+    team = lg.teams[0]
+    for ch in advise(lg, team).changes:
+        assert not (ch.out and ch.out.unpriced), \
+            f"benched {ch.out.name} for {ch.in_.name} on a projection of 0.0 we made up"
 
 
 # ---- the whole engine on a real league ----

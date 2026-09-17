@@ -52,10 +52,19 @@ Engine modules, in the order the feed uses them:
   ESPN: `https://a.espncdn.com/i/headshots/nfl/players/full/{espn_id}.png`,
   team logos: `https://sleepercdn.com/images/team_logos/nfl/{abbr}.png` (all free, emitted as `photo`/`team_logo`).
 - ESPN public leagues: `lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{yr}/segments/0/leagues/{id}`.
-  Verified live against 7 real public 2026 leagues; league **521131** is recorded as a fixture
+  Verified live against real public 2026 leagues; league **521131** is recorded as a fixture
   (refresh with `scripts/record_espn_fixture.py`). Two ESPN scoring traps the tests now guard:
   a category's value can live in `pointsOverrides` rather than `points` (every league does this
   for D/ST), and yardage is often an "every N yards" stat id rather than a per-unit one.
+- **ESPN free agents come from ESPN** (`espn_api.free_agents`, `view=kona_player_info` +
+  `X-Fantasy-Filter` on `FREEAGENT`/`WAIVERS`), never from "Sleeper players nobody rosters".
+  Only ESPN knows who is free *in this league*, and a derived pool carries every K and D/ST
+  whether or not the league has a slot for one.
+- **Name-match guard.** ESPN players reach projections by name match (`edge/data/player_map.py`).
+  A player we cannot map is marked `Player.unpriced`, which is not the same as projecting 0.0:
+  a free agent we cannot price is dropped from the pool, an unpriced rostered player is never
+  offered as a drop and never benched, and the connector logs a warning above 2% unmapped.
+  Measured 495/495 rostered and 250/250 free agents mapped across three live leagues.
 - Fallback if Sleeper projections ever break: Tank01 on RapidAPI ($10/mo).
 
 ## Projection providers

@@ -1,6 +1,6 @@
 """Record a trimmed real ESPN fixture (league 521131, 2026 week 2) + the Sleeper slices it needs."""
 import json, os, requests
-from edge.data import sleeper_api
+from edge.data import espn_api, sleeper_api
 from edge.data.player_map import normalize_name
 from edge.data.providers import get_provider, to_raw
 
@@ -10,6 +10,8 @@ os.makedirs(OUT, exist_ok=True)
 
 url = f"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{SEASON}/segments/0/leagues/{LID}"
 raw = requests.get(url, params=[("view", v) for v in ("mTeam", "mRoster", "mSettings")], timeout=90).json()
+# ESPN's own view of who is available in this league — the free-agent pool we recommend from.
+free_agents = espn_api.free_agents(SEASON, LID, WEEK)
 
 PLAYER_KEYS = ("id", "fullName", "defaultPositionId", "proTeamId", "injuryStatus")
 def trim_player(p):
@@ -45,10 +47,16 @@ league = {
 }
 json.dump(league, open(f"{OUT}/league.json", "w"), separators=(",", ":"))
 
+fa_slim = [{"id": r["id"], "status": r.get("status"), "onTeamId": r.get("onTeamId"),
+            "player": trim_player(r.get("player") or {})} for r in free_agents]
+json.dump(fa_slim, open(f"{OUT}/free_agents.json", "w"), separators=(",", ":"))
+print("free agents:", len(fa_slim))
+
 # --- Sleeper slices --------------------------------------------------------------------
 # Keep EVERY Sleeper player sharing a last name with someone on these rosters, so the
 # name matcher still has to resolve the real ambiguity (suffixes, duplicate names, team).
-espn_players = [e["playerPoolEntry"]["player"] for t in league["teams"] for e in t["roster"]["entries"]]
+espn_players = ([e["playerPoolEntry"]["player"] for t in league["teams"] for e in t["roster"]["entries"]]
+                + [r["player"] for r in fa_slim])
 last_names = {normalize_name(p.get("fullName") or "").split()[-1]
               for p in espn_players if normalize_name(p.get("fullName") or "")}
 dump = sleeper_api.players()

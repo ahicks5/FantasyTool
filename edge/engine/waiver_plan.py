@@ -232,17 +232,21 @@ def scarcity_value(fa: Player, pool: list[Player], ros: dict[str, float], weeks_
 def _drop_candidates(team: Team, slots: list[str], ros: dict[str, float], n: int = 5) -> list[Player]:
     """Bench players, cheapest to lose first.
 
-    Two safety rails, because suggesting a bad drop is worse than suggesting no move at all:
-    anyone who is a rest-of-season starter for this roster is off the table, and we sort purely
+    Three safety rails, because suggesting a bad drop is worse than suggesting no move at all:
+    anyone who is a rest-of-season starter for this roster is off the table; we sort purely
     on rest-of-season value (which already discounts injuries) so a hurt star is never treated
-    as free to drop just because he sits out this week.
+    as free to drop just because he sits out this week; and a player we could not price is
+    never offered, because his 0.0 is our ignorance, not his value. That last one matters on
+    ESPN, where players reach us by name match — without it, one missed name turns a starter
+    into the top drop candidate on the roster.
     """
     starting_now = {p.id for p in optimize(team.players, slots) if p}
     starting_ros = {p.id for p in optimize(team.players, slots, ros) if p}
     keep = starting_now | starting_ros
-    bench = [p for p in team.players if p.id not in keep]
+    bench = [p for p in team.players if p.id not in keep and not p.unpriced]
     if not bench:  # every player is a starter somewhere — offer the least valuable anyway
-        bench = [p for p in team.players if p.id not in starting_now] or list(team.players)
+        priced = [p for p in team.players if not p.unpriced]
+        bench = [p for p in priced if p.id not in starting_now] or priced
     return sorted(bench, key=lambda p: ros.get(p.id, 0.0))[:n]
 
 

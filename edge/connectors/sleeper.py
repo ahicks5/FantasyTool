@@ -102,14 +102,21 @@ def apply_projections(
     players: dict[str, dict],
     *,
     sleeper_id: Callable[[Player], str | None] | None = None,
+    free_agents: list[Player] | None = None,
 ) -> None:
     """Attach this week's projection (in league scoring) to every rostered player,
-    and build the free-agent pool from projected players nobody rosters.
+    and fill the free-agent pool.
 
     Projections are keyed by Sleeper player id. `sleeper_id` translates a rostered
     Player to its Sleeper id; the default is `Player.id` (a Sleeper league). Other
     platforms pass their own translator (ESPN uses `Player.ext_ids["sleeper"]`).
-    Free agents come from the Sleeper players dump, so their `id` is always a Sleeper id.
+
+    `free_agents` is the pool the platform itself says is available; pass it whenever the
+    platform will tell you, because deriving the pool from "projected players nobody
+    rosters" is only sound when rostered ids and projection ids are the same namespace.
+    They are on Sleeper. They are not on ESPN, where a single failed name match makes a
+    rostered player look free. Without it we fall back to deriving the pool, which is
+    exact for Sleeper.
     """
     key = sleeper_id or (lambda p: p.id)
     startable = startable_positions(league.starting_slots)
@@ -117,7 +124,12 @@ def apply_projections(
     rostered = {key(p) for t in league.teams for p in t.players} - {None}
     for team in league.teams:
         for pl in team.players:
-            raw = by_id.get(key(pl))
+            sid = key(pl)
+            # No id at all means we never even looked him up -- on ESPN, the name match
+            # missed. That is ignorance, not a projection of zero, and the engines must not
+            # advise on him. Having an id and no projection row is a real "not projected".
+            pl.unpriced = sid is None
+            raw = by_id.get(sid)
             if raw:
                 pl.proj_stats = raw["stats"]
                 pl.projected = score(raw["stats"], league.scoring)
@@ -128,16 +140,37 @@ def apply_projections(
             else:
                 pl.projected = 0.0
     fas: list[Player] = []
-    for pid, raw in by_id.items():
-        if pid in rostered:
-            continue
-        pts = score(raw["stats"], league.scoring)
-        if pts <= 0:
-            continue
-        pl = _player_from_raw(pid, players, startable)
-        pl.projected = pts
-        pl.proj_stats = raw["stats"]
-        fas.append(pl)
+    if free_agents is None:
+        for pid, raw in by_id.items():
+            if pid in rostered:
+                continue
+            pts = score(raw["stats"], league.scoring)
+            if pts <= 0:
+                continue
+            pl = _player_from_raw(pid, players, startable)
+            pl.projected = pts
+            pl.proj_stats = raw["stats"]
+            fas.append(pl)
+    else:
+        for pl in free_agents:
+            sid = key(pl)
+            # No Sleeper id means no projection, and an unpriced add is not a recommendation.
+            # A id we already counted as rostered means the platform and our mapping disagree;
+            # believe the roster and leave him out rather than offer someone else's player.
+            if sid is None or sid in rostered:
+                continue
+            raw = by_id.get(sid)
+            if raw is None:
+                continue
+            pts = score(raw["stats"], league.scoring)
+            if pts <= 0:
+                continue
+            pl.projected = pts
+            pl.proj_stats = raw["stats"]
+            inj = (raw.get("player") or {}).get("injury_status")
+            if inj and not pl.injury_status:
+                pl.injury_status = inj
+            fas.append(pl)
     fas.sort(key=lambda p: -(p.projected or 0))
     league.free_agents = fas
 

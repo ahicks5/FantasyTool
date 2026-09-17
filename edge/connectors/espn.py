@@ -3,11 +3,13 @@
 Ids: Player.id is ESPN's player id as a string (team D/ST keeps ESPN's negative id, e.g.
 "-16034", with nfl_team set from proTeamId). Projections come from Sleeper and are keyed
 by Sleeper id, so each Player also gets `ext_ids["sleeper"]` via edge.data.player_map, and
-we call the Sleeper connector's `apply_projections` with that translator. Free agents are
-built from the Sleeper dump, so their `id` is a Sleeper id (mirrored in ext_ids) until we
-pull ESPN's free-agent pool.
+we call the Sleeper connector's `apply_projections` with that translator. Free agents come
+from ESPN's own pool (`espn_api.free_agents`), so an add we recommend is one this league
+really has available; they keep ESPN ids like everyone else.
 """
 from __future__ import annotations
+
+import logging
 
 from edge.connectors.sleeper import apply_projections
 from edge.data import espn_api as api
@@ -15,6 +17,13 @@ from edge.data import sleeper_api
 from edge.data.player_map import sleeper_id_for
 from edge.data.providers import get_provider, to_raw
 from edge.models import BENCH_SLOTS, League, Player, Team
+
+log = logging.getLogger(__name__)
+
+# Above this share of unmapped players, something has changed at one end (a renamed
+# player, a stale Sleeper dump) and the advice is quietly degrading. Loud in the logs
+# beats a subscriber finding out.
+UNMAPPED_WARN = 0.02
 
 # ESPN lineupSlotId -> our slot names (edge.models). Unknown ids (IDP, HC, P, ...) are skipped.
 LINEUP_SLOTS: dict[int, str] = {
@@ -173,6 +182,37 @@ def _player_from_entry(entry: dict) -> Player:
     )
 
 
+def _player_from_pool_entry(ppe: dict) -> Player:
+    """A free-agent row. Same payload as a roster entry, one level up."""
+    return _player_from_entry({"playerPoolEntry": ppe, "playerId": ppe.get("id")})
+
+
+def free_agent_players(free_agents_raw: list[dict], players: dict[str, dict]) -> list[Player]:
+    """ESPN's available-player rows -> Players carrying both ids.
+
+    ESPN already names defenses its own way ("Chiefs D/ST"), so the pool needs no renaming
+    once it comes from here.
+    """
+    out: list[Player] = []
+    missed = 0
+    for row in free_agents_raw:
+        if row.get("onTeamId"):        # belt and braces: 0 means nobody has him
+            continue
+        pl = _player_from_pool_entry(row)
+        pl.ext_ids["espn"] = pl.id
+        sid = sleeper_id_for(pl.name, pl.position, pl.nfl_team, players)
+        if sid:
+            pl.ext_ids["sleeper"] = sid
+        else:
+            missed += 1
+            log.debug("no Sleeper id for ESPN free agent %s (%s %s)", pl.name, pl.position, pl.nfl_team)
+        out.append(pl)
+    if free_agents_raw and missed / len(free_agents_raw) > UNMAPPED_WARN:
+        log.warning("ESPN free agents: %d/%d unmatched (%.1f%%) — those players cannot be "
+                    "recommended", missed, len(free_agents_raw), 100 * missed / len(free_agents_raw))
+    return out
+
+
 def _starters(entries: list[dict], starting_slots: list[str], players_by_id: dict[str, Player]) -> list[str]:
     """Player ids in starting_slots order; "0" for an empty slot."""
     queue: dict[str, list[str]] = {}
@@ -202,13 +242,16 @@ def build_league(
     week: int | None = None,
     projections_raw: list[dict] | None = None,
     players: dict[str, dict] | None = None,
+    free_agents_raw: list[dict] | None = None,
 ) -> League:
     """Map one ESPN league response (mTeam+mRoster+mSettings) to a League.
 
     `players` is the Sleeper players dump; when given, every Player gets ext_ids["sleeper"].
-    `projections_raw` (Sleeper projections, needs `players`) attaches projected points and
-    the free-agent pool exactly like the Sleeper connector. `week` defaults to ESPN's
-    current scoringPeriodId.
+    `projections_raw` (Sleeper projections, needs `players`) attaches projected points.
+    `free_agents_raw` is ESPN's own available-player list (`espn_api.free_agents`) and is
+    what a waiver recommendation should be drawn from; without it we fall back to deriving
+    the pool from unrostered projections, which can offer up a player our name matching
+    failed to tie to a roster. `week` defaults to ESPN's current scoringPeriodId.
     """
     settings = raw.get("settings") or {}
     acq = settings.get("acquisitionSettings") or {}
@@ -255,14 +298,24 @@ def build_league(
         trade_deadline_week=None,  # ESPN gives a deadline timestamp, not a week; resolve later
     )
     if players is not None:
-        attach_sleeper_ids(league, players)
+        missed = attach_sleeper_ids(league, players)
+        total = sum(len(t.players) for t in league.teams)
+        if total and missed / total > UNMAPPED_WARN:
+            log.warning("ESPN league %s: %d/%d rostered players have no Sleeper id (%.1f%%) — "
+                        "projections and advice are unavailable for them",
+                        league.id, missed, total, 100 * missed / total)
         if projections_raw is not None:
-            apply_projections(league, projections_raw, players, sleeper_id=lambda p: p.ext_ids.get("sleeper"))
-            espn_def_names = {p.nfl_team: p.name for t in league.teams for p in t.players if p.position == "DEF"}
-            for fa in league.free_agents:
-                fa.ext_ids.setdefault("sleeper", fa.id)
-                if fa.position == "DEF":
-                    fa.name = _dst_name(fa.name, fa.nfl_team, espn_def_names)
+            pool = free_agent_players(free_agents_raw, players) if free_agents_raw is not None else None
+            apply_projections(league, projections_raw, players,
+                              sleeper_id=lambda p: p.ext_ids.get("sleeper"), free_agents=pool)
+            if pool is None:
+                # Derived pool: Sleeper ids and Sleeper names, so mirror the id and rename
+                # defenses into ESPN's form.
+                espn_def_names = {p.nfl_team: p.name for t in league.teams for p in t.players if p.position == "DEF"}
+                for fa in league.free_agents:
+                    fa.ext_ids.setdefault("sleeper", fa.id)
+                    if fa.position == "DEF":
+                        fa.name = _dst_name(fa.name, fa.nfl_team, espn_def_names)
     return league
 
 
@@ -279,13 +332,25 @@ def _dst_name(sleeper_name: str, nfl_team: str | None, espn_names: dict[str | No
     return f"{nickname} D/ST" if nickname else sleeper_name
 
 
-def attach_sleeper_ids(league: League, players: dict[str, dict]) -> None:
+def attach_sleeper_ids(league: League, players: dict[str, dict]) -> int:
+    """Give every rostered player his Sleeper id. Returns how many we could not match.
+
+    A miss is not cosmetic: projections are keyed by Sleeper id, so an unmatched player has
+    no projection, and anything that reads a projection would be reading a zero we made up.
+    `apply_projections` marks those players `unpriced` and the engines refuse to advise on
+    them, so a miss costs coverage rather than correctness — but it still costs, so count it.
+    """
+    missed = 0
     for team in league.teams:
         for p in team.players:
             p.ext_ids.setdefault("espn", p.id)  # for ESPN headshots
             sid = sleeper_id_for(p.name, p.position, p.nfl_team, players)
             if sid:
                 p.ext_ids["sleeper"] = sid
+            else:
+                missed += 1
+                log.debug("no Sleeper id for ESPN player %s (%s %s)", p.name, p.position, p.nfl_team)
+    return missed
 
 
 # ---- live entry point ----
@@ -295,5 +360,9 @@ def load_league(league_id: str | int, season: int | None = None, week: int | Non
     season = season or int(st["season"])
     raw = api.league(season, league_id)
     week = week or int(raw.get("scoringPeriodId") or st["week"])
+    try:
+        fas = api.free_agents(season, league_id, week)
+    except api.EspnError:
+        fas = None  # fall back to the derived pool rather than showing no waiver advice at all
     return build_league(raw, week, projections_raw=to_raw(get_provider().weekly(season, week)),
-                        players=sleeper_api.players())
+                        players=sleeper_api.players(), free_agents_raw=fas)
