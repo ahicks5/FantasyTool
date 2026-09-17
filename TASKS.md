@@ -3,6 +3,8 @@
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
 ## Decisions needed from Andrew
+- [ ] Rollout + marketing plan: `launch/ROLLOUT_PLAN.md` (phases, materials, research, 7 decisions at the end).
+      First action: email Sleeper about API licensing (their docs say commercial use needs a conversation).
 - [ ] Confirm stack: Python engine (FastAPI) + Next.js web, or all-TypeScript in one Vercel app?
 - [ ] Your Sleeper username + league ID and a public ESPN league ID for real-data demos.
 - [ ] Where is the existing ESPN ingestion / manager-profiling code? Port it or rebuild from Sleeper transactions?
