@@ -30,6 +30,8 @@ export function Avatar({
 }) {
   const [broken, setBroken] = useState(false);
   const [logoBroken, setLogoBroken] = useState(false);
+  // A team logo is a centred mark, not a face: crop it and you lose the badge.
+  const logo = !!photo && photo === teamLogo;
   const ringCls = ring ? { start: "ring-start", sit: "ring-sit", flip: "ring-flip", lean: "ring-lean" }[ring] + " ring-2 ring-offset-2" : "";
   return (
     <span className={`relative inline-block shrink-0 ${className}`}>
@@ -37,17 +39,26 @@ export function Avatar({
         <span aria-hidden>{initials(name)}</span>
         {photo && !broken && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt="" loading="lazy" decoding="async" onError={() => setBroken(true)} className="absolute inset-0 h-full w-full object-cover object-top" />
+          <img
+            src={photo}
+            alt=""
+            // A roster page is at most a few dozen 48px images; lazy-loading them only makes
+            // faces pop in as you scroll. Initials sit underneath either way.
+            loading="eager"
+            decoding="async"
+            onError={() => setBroken(true)}
+            className={`absolute inset-0 h-full w-full ${logo ? "object-contain p-1" : "object-cover object-top"}`}
+          />
         )}
       </span>
-      {teamLogo && !logoBroken && size !== "sm" && (
+      {teamLogo && !logo && !logoBroken && size !== "sm" && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={teamLogo}
           alt=""
-          loading="lazy"
           decoding="async"
           onError={() => setLogoBroken(true)}
+          loading="eager"
           className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-full bg-white p-0.5 shadow"
         />
       )}

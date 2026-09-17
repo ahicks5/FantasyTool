@@ -22,10 +22,16 @@ function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
         )}
         <span className="ml-auto shrink-0 text-right">
           <span className="display block text-xl font-black tabular-nums">{(s.player?.projected ?? 0).toFixed(1)}</span>
-          <ConfidencePill value={s.confidence} hit={hit} />
+          {/* The hit rate lives in Why? — repeating it here squeezes the name into an ellipsis. */}
+          <ConfidencePill value={s.confidence} />
         </span>
       </div>
-      <Why lines={[s.reason]} label="Why?" />
+      <Why
+        lines={[s.reason, hit !== undefined
+          ? `${s.confidence}: margins this size were right about ${Math.round(hit * 100)}% of the time last week.`
+          : ""].filter(Boolean)}
+        label="Why?"
+      />
     </li>
   );
 }
