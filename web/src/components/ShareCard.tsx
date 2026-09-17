@@ -1,14 +1,20 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Player, TradeResult } from "@/lib/types";
-import { signed, verdictClass } from "@/lib/format";
-import { Avatar } from "./Avatar";
+import { signed } from "@/lib/format";
 
 const SIZE = 1080;
-const BORDER: Record<string, string> = { Accept: "border-start", Reject: "border-sit", Counter: "border-flip", Fair: "border-lean" };
+const TONE: Record<string, { ink: string; soft: string }> = {
+  Accept: { ink: "#0b7a4b", soft: "#e4f2ea" },
+  Reject: { ink: "#c02b23", soft: "#fbe9e7" },
+  Counter: { ink: "#b57500", soft: "#fdf1d8" },
+  Fair: { ink: "#1e4fd8", soft: "#e6ecfc" },
+};
 
 /**
- * The marketing asset: a 1080x1080 verdict card, rendered at full size and scaled to fit.
+ * The marketing asset: a 1080x1080 card rendered at full size and scaled to fit. It is
+ * deliberately hard-coded to the light palette — it gets posted to Reddit and X, where it has
+ * to read the same for everyone regardless of their theme.
  */
 export function ShareCard({ result, give, get, leagueName }: { result: TradeResult; give: Player[]; get: Player[]; leagueName: string }) {
   const wrap = useRef<HTMLDivElement>(null);
@@ -24,41 +30,56 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
     return () => ro.disconnect();
   }, []);
 
+  const tone = TONE[result.verdict] ?? { ink: "#0e1116", soft: "#f1efea" };
   const fair = Math.round(result.fairness * 100);
+
   return (
     <div ref={wrap} className="relative w-full overflow-hidden rounded-2xl border border-line shadow-[var(--shadow-card)]" style={{ height: SIZE * scale }}>
       <div
-        className={`absolute left-0 top-0 flex flex-col border-[18px] bg-white text-ink ${BORDER[result.verdict] ?? "border-ink"}`}
-        style={{ width: SIZE, height: SIZE, transform: `scale(${scale})`, transformOrigin: "top left", padding: 64 }}
+        className="absolute left-0 top-0 flex flex-col"
+        style={{
+          width: SIZE,
+          height: SIZE,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+          background: "#0e1116",
+          color: "#f7f6f3",
+          padding: 72,
+          fontFamily: "var(--font-archivo), system-ui, sans-serif",
+        }}
       >
-        <div className="flex items-center justify-between" style={{ fontSize: 32 }}>
-          <span className="display font-black" style={{ fontSize: 44 }}>
-            edge<span className="text-start">.</span>
+        <div className="flex items-center justify-between" style={{ fontSize: 30 }}>
+          <span style={{ fontWeight: 900, fontSize: 46, letterSpacing: "-0.045em" }}>
+            edge
+            <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 99, background: "#22a468", marginLeft: 4 }} />
           </span>
-          <span className="truncate text-muted" style={{ maxWidth: 600 }}>
+          <span style={{ color: "rgba(247,246,243,0.5)", maxWidth: 560, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {leagueName}
           </span>
         </div>
 
-        <div className={`display mt-4 font-black uppercase leading-none tracking-tight ${verdictClass(result.verdict)}`} style={{ fontSize: 168 }}>
-          {result.verdict}
+        <div style={{ marginTop: 44, fontSize: 26, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(247,246,243,0.45)", fontWeight: 700 }}>
+          Trade verdict
+        </div>
+        <div style={{ fontSize: 176, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 0.92, color: tone.ink === "#0e1116" ? "#ffffff" : tone.soft, marginTop: 6 }}>
+          {result.verdict.toUpperCase()}
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-8" style={{ fontSize: 40 }}>
-          <Side label="You give" players={give} delta={result.graphic.my_delta_ros} />
-          <Side label="You get" players={get} delta={result.graphic.their_delta_ros} deltaLabel="Their lineup" />
+        <div className="grid grid-cols-2" style={{ gap: 28, marginTop: 44 }}>
+          <Side label="Gives up" players={give} delta={result.graphic.my_delta_ros} deltaLabel="Their lineup" flip />
+          <Side label="Gets back" players={get} delta={result.graphic.my_delta_ros} deltaLabel="Your lineup" />
         </div>
 
-        <div className="mt-auto">
-          <div className="flex items-baseline justify-between" style={{ fontSize: 34 }}>
-            <span className="font-bold">Fairness {fair}%</span>
-            <span className="text-muted">{result.graphic.style ?? ""}</span>
+        <div style={{ marginTop: "auto" }}>
+          <div className="flex items-baseline justify-between" style={{ fontSize: 30, fontWeight: 700 }}>
+            <span>Fairness {fair}%</span>
+            <span style={{ color: "rgba(247,246,243,0.5)", fontWeight: 500 }}>{result.graphic.style ?? ""}</span>
           </div>
-          <div className="mt-3 w-full overflow-hidden rounded-full bg-soft" style={{ height: 24 }}>
-            <div className={`h-full ${fair >= 90 ? "bg-start" : fair >= 75 ? "bg-flip" : "bg-sit"}`} style={{ width: `${fair}%` }} />
+          <div style={{ marginTop: 14, height: 18, borderRadius: 99, background: "rgba(255,255,255,0.14)", overflow: "hidden" }}>
+            <div style={{ width: `${fair}%`, height: "100%", borderRadius: 99, background: fair >= 90 ? "#22a468" : fair >= 75 ? "#f0b429" : "#e2554e" }} />
           </div>
-          <div className="mt-8 text-muted" style={{ fontSize: 30 }}>
-            Your league. This week&rsquo;s moves. · edge
+          <div style={{ marginTop: 34, fontSize: 28, color: "rgba(247,246,243,0.45)" }}>
+            Your league. This week&rsquo;s moves.
           </div>
         </div>
       </div>
@@ -66,32 +87,32 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
   );
 }
 
-function Side({ label, players, delta, deltaLabel = "Your lineup" }: { label: string; players: Player[]; delta: number; deltaLabel?: string }) {
+function Side({ label, players, delta, deltaLabel, flip = false }: { label: string; players: Player[]; delta: number; deltaLabel: string; flip?: boolean }) {
+  const shown = flip ? -delta : delta;
   return (
-    <div className="rounded-3xl border-4 border-line p-7">
-      <div className="font-bold uppercase tracking-widest text-muted" style={{ fontSize: 26 }}>
-        {label}
-      </div>
-      <ul className="mt-4 grid gap-4">
+    <div style={{ borderRadius: 28, background: "rgba(255,255,255,0.06)", border: "2px solid rgba(255,255,255,0.1)", padding: 28 }}>
+      <div style={{ fontSize: 24, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(247,246,243,0.45)", fontWeight: 700 }}>{label}</div>
+      <ul style={{ marginTop: 18, display: "grid", gap: 18 }}>
         {players.map((p) => (
-          <li key={p.id} className="flex items-center gap-5">
-            <span style={{ transform: "scale(1.9)", transformOrigin: "left center", width: 96, display: "inline-block" }}>
-              <Avatar name={p.name} photo={p.photo} teamLogo={p.team_logo} size="md" />
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate font-extrabold" style={{ fontSize: 44, lineHeight: 1.1 }}>
-                {p.name}
-              </span>
-              <span className="block text-muted" style={{ fontSize: 28 }}>
+          <li key={p.id} style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            {p.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={p.photo} alt="" width={84} height={84} style={{ borderRadius: 99, objectFit: "cover", objectPosition: "top", background: "rgba(255,255,255,0.1)", flexShrink: 0 }} />
+            ) : (
+              <span style={{ width: 84, height: 84, borderRadius: 99, background: "rgba(255,255,255,0.1)", flexShrink: 0 }} />
+            )}
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 40, fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.02em" }}>{p.name}</span>
+              <span style={{ display: "block", fontSize: 25, color: "rgba(247,246,243,0.5)", marginTop: 2 }}>
                 {p.position} · {p.nfl_team}
               </span>
             </span>
           </li>
         ))}
-        {players.length === 0 && <li className="text-muted">Nothing</li>}
+        {players.length === 0 && <li style={{ color: "rgba(247,246,243,0.5)", fontSize: 32 }}>Nothing</li>}
       </ul>
-      <div className={`mt-6 font-black tabular-nums ${delta >= 0 ? "text-start" : "text-sit"}`} style={{ fontSize: 40 }}>
-        {deltaLabel} {signed(delta, 0)} ROS
+      <div style={{ marginTop: 24, fontSize: 32, fontWeight: 900, color: shown >= 0 ? "#22a468" : "#e2554e" }}>
+        {deltaLabel} {signed(shown, 0)} ROS
       </div>
     </div>
   );
