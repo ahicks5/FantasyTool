@@ -3,13 +3,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+# A slot named for a defensive group accepts every position in that group: Sleeper names IDP
+# roster slots DL/LB/DB but gives the players their real positions (DE, DT, OLB, CB, SS, ...).
+POSITION_GROUPS: dict[str, set[str]] = {
+    "DL": {"DL", "DE", "DT", "NT", "EDGE"},
+    "LB": {"LB", "OLB", "ILB", "MLB"},
+    "DB": {"DB", "CB", "S", "SS", "FS"},
+}
+IDP_POSITIONS: set[str] = set().union(*POSITION_GROUPS.values())
+
 # Slots that can hold more than one position.
 FLEX_SLOTS: dict[str, set[str]] = {
     "FLEX": {"RB", "WR", "TE"},
     "WRRB_FLEX": {"RB", "WR"},
     "REC_FLEX": {"WR", "TE"},
     "SUPER_FLEX": {"QB", "RB", "WR", "TE"},
-    "IDP_FLEX": {"DL", "LB", "DB"},
+    "IDP_FLEX": IDP_POSITIONS,
 }
 BENCH_SLOTS = {"BN", "IR", "TAXI"}
 
@@ -17,7 +26,29 @@ BENCH_SLOTS = {"BN", "IR", "TAXI"}
 def slot_accepts(slot: str, position: str) -> bool:
     if slot in FLEX_SLOTS:
         return position in FLEX_SLOTS[slot]
+    if slot in POSITION_GROUPS:
+        return position in POSITION_GROUPS[slot]
     return slot == position
+
+
+def player_fits(slot: str, player: "Player") -> bool:
+    """Eligibility for a real player, who may qualify at more than one position.
+
+    Sleeper gives every player a list of `fantasy_positions` and lets him fill a slot that
+    accepts ANY of them — a rush end listed ["DL", "LB"] is legal in either slot. Checking
+    only `Player.position` calls a lineup illegal that the platform itself allows.
+    """
+    return any(slot_accepts(slot, pos) for pos in player.positions)
+
+
+def startable_positions(slots: list[str], vocabulary: set[str] | None = None) -> set[str]:
+    """Every player position one of these starting slots would accept.
+
+    Derived from the slots themselves, so a new slot type or a new IDP position is picked up
+    without editing a hard-coded list.
+    """
+    vocab = vocabulary or ({"QB", "RB", "WR", "TE", "K", "DEF"} | IDP_POSITIONS)
+    return {pos for pos in vocab if any(slot_accepts(s, pos) for s in slots)}
 
 
 @dataclass
@@ -31,6 +62,12 @@ class Player:
     projected: float | None = None     # this week's projection in league scoring
     proj_stats: dict[str, float] = field(default_factory=dict)
     ext_ids: dict[str, str] = field(default_factory=dict)  # other platforms' ids, e.g. {"sleeper": "9221"}
+    # Every position this player may be started at. Empty = just `position`.
+    fantasy_positions: list[str] = field(default_factory=list)
+
+    @property
+    def positions(self) -> list[str]:
+        return self.fantasy_positions or [self.position]
 
     @property
     def is_out(self) -> bool:

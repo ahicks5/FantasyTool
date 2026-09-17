@@ -29,8 +29,8 @@ def weekly_raw():
 
 @pytest.fixture
 def sleeper_provider(monkeypatch, weekly_raw):
-    monkeypatch.setattr(api, "projections", lambda s, w: weekly_raw)
-    monkeypatch.setattr(api, "projections_season", lambda s: L("sleeper/projections_2026_season.json"))
+    monkeypatch.setattr(api, "projections", lambda s, w, positions=None: weekly_raw)
+    monkeypatch.setattr(api, "projections_season", lambda s, positions=None: L("sleeper/projections_2026_season.json"))
     return SleeperProvider()
 
 
@@ -146,10 +146,10 @@ class FakeProvider:
     def __init__(self, rows: list[PlayerProjection]):
         self._rows = rows
 
-    def weekly(self, season: int, week: int) -> list[PlayerProjection]:
+    def weekly(self, season: int, week: int, positions: list[str] | None = None) -> list[PlayerProjection]:
         return list(self._rows)
 
-    def season(self, season: int) -> list[PlayerProjection]:
+    def season(self, season: int, positions: list[str] | None = None) -> list[PlayerProjection]:
         return list(self._rows)
 
 

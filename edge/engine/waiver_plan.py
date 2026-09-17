@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from edge.data.schedule import FANTASY_LAST_WEEK, norm_team
 from edge.engine.lineup import lineup_total, optimize
 from edge.engine.waivers import suggest_bid as _legacy_bid
-from edge.models import League, Player, Team, slot_accepts
+from edge.models import League, Player, Team, player_fits
 
 ALGO_VERSION = "waiver_plan.v1"
 
@@ -113,10 +113,6 @@ def suggest_bid(claim_net: float, league: League, team: Team, bid_stats: dict | 
     lo, hi = max(1, round(amount * 0.75)), min(faab_left, max(amount + 1, round(amount * 1.35)))
     return {"amount": amount, "range": [lo, hi], "pct_of_budget": round(100 * amount / budget),
             "value_cap": round(value_cap), "market": round(market)}
-
-
-def _startable_positions(slots: list[str]) -> set[str]:
-    return {pos for s in slots for pos in ("QB", "RB", "WR", "TE", "K", "DEF", "DL", "LB", "DB") if slot_accepts(s, pos)}
 
 
 def _next3_values(ros: dict[str, float], league: League, byes: dict[str, int]) -> dict[str, float]:
@@ -311,7 +307,6 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
     slots = league.starting_slots
     trending = trending or {}
     weeks_left = max(1, FANTASY_LAST_WEEK - league.week + 1)
-    usable = _startable_positions(slots)
     next3 = _next3_values(ros, league, byes)
     base = {
         "week": lineup_total(team.players, slots),
@@ -319,7 +314,8 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
         "next3": lineup_total(team.players, slots, next3),
     }
 
-    pool = [p for p in league.free_agents if not p.is_out and p.position in usable][:pool_size]
+    pool = [p for p in league.free_agents
+            if not p.is_out and any(player_fits(s, p) for s in slots)][:pool_size]
     if not pool:
         return WaiverPlan(league.week, team.faab_remaining, league.waiver_type, None, [],
                           "No free agents worth a roster spot this week.")

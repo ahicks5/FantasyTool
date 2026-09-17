@@ -6,12 +6,26 @@ from typing import Callable
 from edge.data import sleeper_api as api
 from edge.data.providers import get_provider, to_raw
 from edge.data.scoring import score
-from edge.models import League, Player, Team
+from edge.models import BENCH_SLOTS, IDP_POSITIONS, League, Player, Team, startable_positions
 
 WAIVER_TYPES = {0: "priority", 1: "priority", 2: "faab"}  # 0 rolling, 1 reverse standings, 2 FAAB
 
 
-def _player_from_raw(pid: str, players: dict[str, dict]) -> Player:
+def _position(raw: dict, startable: set[str] | None) -> str:
+    """The position this league would actually start him at.
+
+    Sleeper gives a player one `position` plus every `fantasy_positions` he qualifies for.
+    Two-way players are the trap: Travis Hunter is position "DB", fantasy_positions
+    ["DB", "WR"], so taking `position` blindly benches a startable WR forever in a league
+    with no DB slot. Prefer a fantasy position the league can start; fall back to `position`.
+    """
+    pos = raw.get("position") or (raw.get("fantasy_positions") or ["?"])[0]
+    if startable and pos not in startable:
+        pos = next((f for f in (raw.get("fantasy_positions") or []) if f in startable), pos)
+    return pos
+
+
+def _player_from_raw(pid: str, players: dict[str, dict], startable: set[str] | None = None) -> Player:
     raw = players.get(pid)
     if raw is None:
         # Team defenses are keyed by abbreviation and present in players.json, but be safe.
@@ -20,9 +34,10 @@ def _player_from_raw(pid: str, players: dict[str, dict]) -> Player:
     return Player(
         id=pid,
         name=name,
-        position=raw.get("position") or (raw.get("fantasy_positions") or ["?"])[0],
+        position=_position(raw, startable),
         nfl_team=raw.get("team"),
         injury_status=raw.get("injury_status"),
+        fantasy_positions=list(raw.get("fantasy_positions") or []),
     )
 
 
@@ -37,6 +52,8 @@ def build_league(
     settings = league_raw.get("settings", {})
     scoring = league_raw["scoring_settings"]
     user_by_id = {u["user_id"]: u for u in users_raw}
+    roster_positions = list(league_raw["roster_positions"])
+    startable = startable_positions([s for s in roster_positions if s not in BENCH_SLOTS])
 
     teams: list[Team] = []
     for r in rosters_raw:
@@ -49,7 +66,7 @@ def build_league(
             name=meta.get("team_name") or owner.get("display_name") or f"Team {r['roster_id']}",
             owner_id=r.get("owner_id"),
             owner_name=owner.get("display_name"),
-            players=[_player_from_raw(pid, players) for pid in (r.get("players") or [])],
+            players=[_player_from_raw(pid, players, startable) for pid in (r.get("players") or [])],
             starters=[str(x) for x in (r.get("starters") or [])],
             wins=s.get("wins", 0),
             losses=s.get("losses", 0),
@@ -67,7 +84,7 @@ def build_league(
         name=league_raw["name"],
         season=int(league_raw["season"]),
         week=week,
-        roster_positions=list(league_raw["roster_positions"]),
+        roster_positions=roster_positions,
         scoring=scoring,
         teams=teams,
         waiver_type=WAIVER_TYPES.get(settings.get("waiver_type", 0), "priority"),
@@ -95,6 +112,7 @@ def apply_projections(
     Free agents come from the Sleeper players dump, so their `id` is always a Sleeper id.
     """
     key = sleeper_id or (lambda p: p.id)
+    startable = startable_positions(league.starting_slots)
     by_id = {p["player_id"]: p for p in projections_raw if p.get("stats")}
     rostered = {key(p) for t in league.teams for p in t.players} - {None}
     for team in league.teams:
@@ -116,7 +134,7 @@ def apply_projections(
         pts = score(raw["stats"], league.scoring)
         if pts <= 0:
             continue
-        pl = _player_from_raw(pid, players)
+        pl = _player_from_raw(pid, players, startable)
         pl.projected = pts
         pl.proj_stats = raw["stats"]
         fas.append(pl)
@@ -126,14 +144,23 @@ def apply_projections(
 
 # ---- live entry points ----
 
+def projection_positions(roster_positions: list[str]) -> list[str]:
+    """Position filter for the projections call. IDP leagues need DL/LB/DB, which Sleeper
+    only returns when asked for by name — without this, every IDP starter projects 0.0."""
+    starting = [s for s in roster_positions if s not in BENCH_SLOTS]
+    startable = startable_positions(starting)
+    return list(api.POSITIONS) + (list(api.IDP_POSITIONS) if startable & IDP_POSITIONS else [])
+
+
 def load_league(league_id: str, week: int | None = None) -> League:
     st = api.state()
     week = week or int(st["week"])
     raw = api.league(league_id)
     season = int(raw["season"])
+    positions = projection_positions(raw["roster_positions"])
     return build_league(
         raw, api.users(league_id), api.rosters(league_id), api.players(), week,
-        projections_raw=to_raw(get_provider().weekly(season, week)),
+        projections_raw=to_raw(get_provider().weekly(season, week, positions)),
     )
 
 

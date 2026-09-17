@@ -3,6 +3,8 @@
 import type {
   Action,
   ActionFeed,
+  TradeFinderResponse,
+  WaiverPlanResponse,
   Confidence,
   Feature,
   LeagueSummary,
@@ -572,6 +574,89 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
   };
 }
 
+// ---------- Waiver plan / Trade finder ----------
+
+export const WAIVER_PLAN: WaiverPlanResponse = {
+  week: WEEK,
+  faab_remaining: 100,
+  waiver_type: "faab",
+  primary: {
+    add: withPhoto(WAIVERS.picks[0].player),
+    drop: withPhoto(allPlayers(MY_TEAM_ID).slice(-1)[0]),
+    net: 1.42,
+    weekly_gain: 2.1,
+    ros_gain: 18,
+    drop_cost: 0.04,
+    bid: { amount: 14, range: [11, 19], pct_of_budget: 14, value_cap: 31, market: 12 },
+    reason: "Starts for you this week (+2.1). Adds 18 points to your lineup rest of season. Covers Jahmyr Gibbs's week 6 bye. Drop Tank Bigsby.",
+    reason_codes: ["starts_immediately", "covers_bye", "roster_depth"],
+    trending_adds: 35811,
+  },
+  fallbacks: [
+    {
+      add: withPhoto(WAIVERS.picks[1].player),
+      drop: withPhoto(allPlayers(MY_TEAM_ID).slice(-1)[0]),
+      net: 0.86,
+      weekly_gain: 1.2,
+      ros_gain: 9,
+      drop_cost: 0.04,
+      bid: { amount: 8, range: [6, 11], pct_of_budget: 8, value_cap: 19, market: 12 },
+      reason: "Depth and insurance, not a starter. Clear best RB left on the wire. Drop Tank Bigsby.",
+      reason_codes: ["position_scarcity", "roster_depth"],
+      trending_adds: 20130,
+    },
+  ],
+  hold_reason: null,
+  total_planned_spend: 22,
+  algo_version: "waiver_plan.v1",
+};
+
+export const TRADE_FINDER: TradeFinderResponse = {
+  week: WEEK,
+  my_positions: { surplus: { WR: 106.1, QB: 61.4 }, need: { RB: 88.2, TE: 12.4 } },
+  summary: "FxxxKroenke is your best trade partner. You are WR-heavy, FxxxKroenke is RB-heavy.",
+  partners: [
+    {
+      team_id: "4",
+      team_name: "FxxxKroenke",
+      owner_name: "FxxxKroenke",
+      complement: 1.84,
+      headline: "You are WR-heavy, FxxxKroenke is RB-heavy.",
+      positions: { surplus: { RB: 74.2 }, need: { WR: 61.9 } },
+      offers: [
+        {
+          their_team_id: "4", their_team_name: "FxxxKroenke",
+          give: ["2449"], get: ["7526"],
+          give_names: ["Stefon Diggs"], get_names: ["Jaylen Waddle"],
+          give_players: [withPhoto(allPlayers(MY_TEAM_ID)[3])], get_players: [withPhoto(allPlayers("4")[2])],
+          my_gain_ros: 21, their_gain_ros: 6, my_gain_week: 1.4,
+          fairness: 0.91, verdict: "Fair", score: 27.4,
+          why: "You gain 21 rest-of-season lineup points, they gain 6. Value is 91% balanced. This manager has acquired WRs in 3 of their last 5 moves.",
+          reason_codes: ["both_sides_improve", "one_for_one", "matches_their_history"],
+        },
+      ],
+    },
+    {
+      team_id: "9", team_name: "philking", owner_name: "philking", complement: 0.92,
+      headline: "philking has RB to spare and you need one.",
+      positions: { surplus: { RB: 42.0 }, need: { TE: 18.1 } },
+      offers: [
+        {
+          their_team_id: "9", their_team_name: "philking",
+          give: ["6790"], get: ["7594"],
+          give_names: ["D'Andre Swift"], get_names: ["Chuba Hubbard"],
+          give_players: [withPhoto(allPlayers(MY_TEAM_ID)[1])], get_players: [withPhoto(allPlayers("9")[1])],
+          my_gain_ros: 11, their_gain_ros: 4, my_gain_week: 0.6,
+          fairness: 0.95, verdict: "Fair", score: 17.2,
+          why: "You gain 11 rest-of-season lineup points, they gain 4. Value is 95% balanced.",
+          reason_codes: ["both_sides_improve", "one_for_one"],
+        },
+      ],
+    },
+  ],
+  algo_version: "trade_finder.v1",
+};
+
 // ---------- Action feed (home) ----------
 
 export function actionsFor(teamId: string, entitlements: Feature[]): ActionFeed {
@@ -674,6 +759,8 @@ export function reportFor(teamId: string): Report {
       },
     ],
     matchup: { opponent: "Wait, another league?", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
+    waiver_plan: WAIVER_PLAN,
+    trade_finder: TRADE_FINDER,
     html: "",
   };
 }

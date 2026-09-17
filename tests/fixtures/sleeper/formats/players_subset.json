@@ -1,20 +1,4 @@
 {
-"10210": {
-"player_id": "10210",
-"first_name": "Cameron",
-"last_name": "Latu",
-"full_name": "Cameron Latu",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "NE",
-"status": "Active",
-"number": 36,
-"age": 26,
-"years_exp": 3,
-"search_rank": 373
-},
 "10212": {
 "player_id": "10212",
 "first_name": "Josh",
@@ -274,6 +258,22 @@
 "years_exp": 3,
 "search_rank": 667
 },
+"1052": {
+"player_id": "1052",
+"first_name": "Demario",
+"last_name": "Davis",
+"full_name": "Demario Davis",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "NYJ",
+"status": "Active",
+"number": 56,
+"age": 37,
+"years_exp": 14,
+"search_rank": 380
+},
 "10859": {
 "player_id": "10859",
 "first_name": "Sam",
@@ -323,6 +323,318 @@
 "years_exp": 3,
 "search_rank": 669
 },
+"10880": {
+"player_id": "10880",
+"first_name": "Jack",
+"last_name": "Campbell",
+"full_name": "Jack Campbell",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "DET",
+"status": "Active",
+"number": 46,
+"age": 26,
+"years_exp": 3,
+"search_rank": 94
+},
+"10881": {
+"player_id": "10881",
+"first_name": "Christian",
+"last_name": "Gonzalez",
+"full_name": "Christian Gonzalez",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "NE",
+"status": "Active",
+"number": 0,
+"age": 24,
+"years_exp": 3,
+"search_rank": 350
+},
+"10888": {
+"player_id": "10888",
+"first_name": "Jalen",
+"last_name": "Carter",
+"full_name": "Jalen Carter",
+"position": "DL",
+"fantasy_positions": [
+"DL"
+],
+"team": "PHI",
+"status": "Active",
+"number": 98,
+"age": 25,
+"years_exp": 3,
+"search_rank": 267
+},
+"10891": {
+"player_id": "10891",
+"first_name": "Devon",
+"last_name": "Witherspoon",
+"full_name": "Devon Witherspoon",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "SEA",
+"status": "Active",
+"number": 21,
+"age": 25,
+"years_exp": 3,
+"search_rank": 275
+},
+"10892": {
+"player_id": "10892",
+"first_name": "Will",
+"last_name": "Anderson",
+"full_name": "Will Anderson",
+"position": "DL",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "HOU",
+"status": "Active",
+"number": 51,
+"age": 25,
+"years_exp": 3,
+"search_rank": 100
+},
+"10897": {
+"player_id": "10897",
+"first_name": "Tyrique",
+"last_name": "Stevenson",
+"full_name": "Tyrique Stevenson",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "CHI",
+"injury_status": "Questionable",
+"status": "Active",
+"number": 29,
+"age": 26,
+"years_exp": 3,
+"search_rank": 9999999
+},
+"10898": {
+"player_id": "10898",
+"first_name": "Tuli",
+"last_name": "Tuipulotu",
+"full_name": "Tuli Tuipulotu",
+"position": "DL",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "LAC",
+"status": "Active",
+"number": 45,
+"age": 24,
+"years_exp": 3,
+"search_rank": 211
+},
+"10903": {
+"player_id": "10903",
+"first_name": "Quan",
+"last_name": "Martin",
+"full_name": "Quan Martin",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "WAS",
+"status": "Active",
+"number": 20,
+"age": 26,
+"years_exp": 3,
+"search_rank": 9999999
+},
+"10905": {
+"player_id": "10905",
+"first_name": "Brian",
+"last_name": "Branch",
+"full_name": "Brian Branch",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "DET",
+"injury_status": "PUP",
+"status": "Active",
+"number": 32,
+"age": 24,
+"years_exp": 3,
+"search_rank": 283
+},
+"10914": {
+"player_id": "10914",
+"first_name": "Daiyan",
+"last_name": "Henley",
+"full_name": "Daiyan Henley",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "LAC",
+"status": "Active",
+"number": 0,
+"age": 26,
+"years_exp": 3,
+"search_rank": 205
+},
+"10916": {
+"player_id": "10916",
+"first_name": "Kobie",
+"last_name": "Turner",
+"full_name": "Kobie Turner",
+"position": "DT",
+"fantasy_positions": [
+"DL"
+],
+"team": "LAR",
+"status": "Active",
+"number": 91,
+"age": 27,
+"years_exp": 3,
+"search_rank": 451
+},
+"10917": {
+"player_id": "10917",
+"first_name": "Byron",
+"last_name": "Young",
+"full_name": "Byron Young",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "LAR",
+"status": "Active",
+"number": 0,
+"age": 28,
+"years_exp": 3,
+"search_rank": 171
+},
+"10921": {
+"player_id": "10921",
+"first_name": "Yaya",
+"last_name": "Diaby",
+"full_name": "Yaya Diaby",
+"position": "DL",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "TB",
+"status": "Active",
+"number": 0,
+"age": 27,
+"years_exp": 3,
+"search_rank": 312
+},
+"10927": {
+"player_id": "10927",
+"first_name": "Jordan",
+"last_name": "Battle",
+"full_name": "Jordan Battle",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "CIN",
+"status": "Active",
+"number": 27,
+"age": 25,
+"years_exp": 3,
+"search_rank": 363
+},
+"10930": {
+"player_id": "10930",
+"first_name": "Riley",
+"last_name": "Moss",
+"full_name": "Riley Moss",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "DEN",
+"status": "Active",
+"number": 21,
+"age": 26,
+"years_exp": 3,
+"search_rank": 529
+},
+"10936": {
+"player_id": "10936",
+"first_name": "Ji'Ayir",
+"last_name": "Brown",
+"full_name": "Ji'Ayir Brown",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "SF",
+"status": "Active",
+"number": 27,
+"age": 26,
+"years_exp": 3,
+"search_rank": 9999999
+},
+"10940": {
+"player_id": "10940",
+"first_name": "Nick",
+"last_name": "Herbig",
+"full_name": "Nick Herbig",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "PIT",
+"status": "Active",
+"number": 51,
+"age": 24,
+"years_exp": 3,
+"search_rank": 373
+},
+"10947": {
+"player_id": "10947",
+"first_name": "Ventrell",
+"last_name": "Miller",
+"full_name": "Ventrell Miller",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "JAX",
+"status": "Active",
+"number": 51,
+"age": 27,
+"years_exp": 3,
+"search_rank": 314
+},
+"10949": {
+"player_id": "10949",
+"first_name": "Chamarri",
+"last_name": "Conner",
+"full_name": "Chamarri Conner",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "KC",
+"injury_status": "Out",
+"status": "Active",
+"number": 27,
+"age": 26,
+"years_exp": 3,
+"search_rank": 213
+},
 "10955": {
 "player_id": "10955",
 "first_name": "Chad",
@@ -339,21 +651,37 @@
 "years_exp": 3,
 "search_rank": 324
 },
-"11034": {
-"player_id": "11034",
-"first_name": "Jalen",
-"last_name": "Brooks",
-"full_name": "Jalen Brooks",
-"position": "WR",
+"10974": {
+"player_id": "10974",
+"first_name": "Antonio",
+"last_name": "Johnson",
+"full_name": "Antonio Johnson",
+"position": "DB",
 "fantasy_positions": [
-"WR"
+"DB"
 ],
-"team": "ARI",
+"team": "JAX",
 "status": "Active",
-"number": 86,
-"age": 26,
+"number": 6,
+"age": 24,
 "years_exp": 3,
-"search_rank": 661
+"search_rank": 582
+},
+"11017": {
+"player_id": "11017",
+"first_name": "Dee",
+"last_name": "Winters",
+"full_name": "Dee Winters",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "DAL",
+"status": "Active",
+"number": 53,
+"age": 25,
+"years_exp": 3,
+"search_rank": 392
 },
 "11058": {
 "player_id": "11058",
@@ -371,22 +699,6 @@
 "age": 27,
 "years_exp": 3,
 "search_rank": 689
-},
-"11157": {
-"player_id": "11157",
-"first_name": "Brycen",
-"last_name": "Tremayne",
-"full_name": "Brycen Tremayne",
-"position": "WR",
-"fantasy_positions": [
-"WR"
-],
-"team": "CAR",
-"status": "Active",
-"number": 87,
-"age": 26,
-"years_exp": 3,
-"search_rank": 614
 },
 "11168": {
 "player_id": "11168",
@@ -436,21 +748,6 @@
 "years_exp": 3,
 "search_rank": 618
 },
-"11223": {
-"player_id": "11223",
-"first_name": "John",
-"last_name": "Hall",
-"full_name": "John Hall",
-"position": "WR",
-"fantasy_positions": [
-"WR"
-],
-"status": "Active",
-"number": 82,
-"age": 25,
-"years_exp": 1,
-"search_rank": 317
-},
 "11237": {
 "player_id": "11237",
 "first_name": "Jacob",
@@ -483,22 +780,6 @@
 "years_exp": 4,
 "search_rank": 319
 },
-"11320": {
-"player_id": "11320",
-"first_name": "Nikko",
-"last_name": "Remigio",
-"full_name": "Nikko Remigio",
-"position": "WR",
-"fantasy_positions": [
-"WR"
-],
-"team": "KC",
-"status": "Active",
-"number": 81,
-"age": 26,
-"years_exp": 3,
-"search_rank": 498
-},
 "11370": {
 "player_id": "11370",
 "first_name": "Chris",
@@ -515,22 +796,6 @@
 "years_exp": 3,
 "search_rank": 447
 },
-"11433": {
-"player_id": "11433",
-"first_name": "Nate",
-"last_name": "Adkins",
-"full_name": "Nate Adkins",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "DEN",
-"status": "Active",
-"number": 45,
-"age": 27,
-"years_exp": 3,
-"search_rank": 628
-},
 "11435": {
 "player_id": "11435",
 "first_name": "Emanuel",
@@ -546,6 +811,22 @@
 "age": 27,
 "years_exp": 3,
 "search_rank": 161
+},
+"11470": {
+"player_id": "11470",
+"first_name": "Drake",
+"last_name": "Thomas",
+"full_name": "Drake Thomas",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "SEA",
+"status": "Active",
+"number": 32,
+"age": 26,
+"years_exp": 3,
+"search_rank": 395
 },
 "11510": {
 "player_id": "11510",
@@ -740,22 +1021,6 @@
 "age": 23,
 "years_exp": 1,
 "search_rank": 191
-},
-"11570": {
-"player_id": "11570",
-"first_name": "Rasheen",
-"last_name": "Ali",
-"full_name": "Rasheen Ali",
-"position": "RB",
-"fantasy_positions": [
-"RB"
-],
-"team": "BAL",
-"status": "Active",
-"number": 26,
-"age": 25,
-"years_exp": 2,
-"search_rank": 682
 },
 "11571": {
 "player_id": "11571",
@@ -1489,6 +1754,22 @@
 "years_exp": 2,
 "search_rank": 110
 },
+"11656": {
+"player_id": "11656",
+"first_name": "Nate",
+"last_name": "Wiggins",
+"full_name": "Nate Wiggins",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "BAL",
+"status": "Active",
+"number": 2,
+"age": 23,
+"years_exp": 2,
+"search_rank": 999
+},
 "1166": {
 "player_id": "1166",
 "first_name": "Kirk",
@@ -1505,6 +1786,266 @@
 "years_exp": 14,
 "search_rank": 269
 },
+"11665": {
+"player_id": "11665",
+"first_name": "Jared",
+"last_name": "Verse",
+"full_name": "Jared Verse",
+"position": "DL",
+"fantasy_positions": [
+"DL"
+],
+"team": "CLE",
+"status": "Active",
+"number": 8,
+"age": 25,
+"years_exp": 2,
+"search_rank": 126
+},
+"11667": {
+"player_id": "11667",
+"first_name": "Dallas",
+"last_name": "Turner",
+"full_name": "Dallas Turner",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "MIN",
+"status": "Active",
+"number": 15,
+"age": 23,
+"years_exp": 2,
+"search_rank": 228
+},
+"11669": {
+"player_id": "11669",
+"first_name": "Laiatu",
+"last_name": "Latu",
+"full_name": "Laiatu Latu",
+"position": "DL",
+"fantasy_positions": [
+"DL"
+],
+"team": "IND",
+"status": "Active",
+"number": 97,
+"age": 25,
+"years_exp": 2,
+"search_rank": 273
+},
+"11674": {
+"player_id": "11674",
+"first_name": "Tyler",
+"last_name": "Nubin",
+"full_name": "Tyler Nubin",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "NYG",
+"status": "Active",
+"number": 27,
+"age": 25,
+"years_exp": 2,
+"search_rank": 428
+},
+"11675": {
+"player_id": "11675",
+"first_name": "Kool-Aid",
+"last_name": "McKinstry",
+"full_name": "Kool-Aid McKinstry",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "NO",
+"status": "Active",
+"number": 1,
+"age": 23,
+"years_exp": 2,
+"search_rank": 999
+},
+"11676": {
+"player_id": "11676",
+"first_name": "Mike",
+"last_name": "Sainristil",
+"full_name": "Mike Sainristil",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "WAS",
+"status": "Active",
+"number": 0,
+"age": 25,
+"years_exp": 2,
+"search_rank": 536
+},
+"11678": {
+"player_id": "11678",
+"first_name": "Cooper",
+"last_name": "DeJean",
+"full_name": "Cooper DeJean",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "PHI",
+"status": "Active",
+"number": 33,
+"age": 23,
+"years_exp": 2,
+"search_rank": 218
+},
+"11682": {
+"player_id": "11682",
+"first_name": "Cole",
+"last_name": "Bishop",
+"full_name": "Cole Bishop",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "BUF",
+"injury_status": "Questionable",
+"status": "Active",
+"number": 24,
+"age": 23,
+"years_exp": 2,
+"search_rank": 319
+},
+"11685": {
+"player_id": "11685",
+"first_name": "Kamari",
+"last_name": "Lassiter",
+"full_name": "Kamari Lassiter",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "HOU",
+"status": "Active",
+"number": 3,
+"age": 23,
+"years_exp": 2,
+"search_rank": 303
+},
+"11687": {
+"player_id": "11687",
+"first_name": "Edgerrin",
+"last_name": "Cooper",
+"full_name": "Edgerrin Cooper",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "GB",
+"status": "Active",
+"number": 56,
+"age": 24,
+"years_exp": 2,
+"search_rank": 129
+},
+"11703": {
+"player_id": "11703",
+"first_name": "Jalyx",
+"last_name": "Hunt",
+"full_name": "Jalyx Hunt",
+"position": "DL",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "PHI",
+"status": "Active",
+"number": 58,
+"age": 25,
+"years_exp": 2,
+"search_rank": 371
+},
+"11705": {
+"player_id": "11705",
+"first_name": "Tykee",
+"last_name": "Smith",
+"full_name": "Tykee Smith",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "TB",
+"status": "Active",
+"number": 23,
+"age": 25,
+"years_exp": 2,
+"search_rank": 233
+},
+"11710": {
+"player_id": "11710",
+"first_name": "Calen",
+"last_name": "Bullock",
+"full_name": "Calen Bullock",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "HOU",
+"status": "Active",
+"number": 2,
+"age": 23,
+"years_exp": 2,
+"search_rank": 504
+},
+"11724": {
+"player_id": "11724",
+"first_name": "Trevin",
+"last_name": "Wallace",
+"full_name": "Trevin Wallace",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "NYJ",
+"injury_status": "Out",
+"status": "Active",
+"number": 49,
+"age": 23,
+"years_exp": 2,
+"search_rank": 513
+},
+"11726": {
+"player_id": "11726",
+"first_name": "Kamren",
+"last_name": "Kinchens",
+"full_name": "Kamren Kinchens",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "LAR",
+"status": "Active",
+"number": 5,
+"age": 23,
+"years_exp": 2,
+"search_rank": 9999999
+},
+"11727": {
+"player_id": "11727",
+"first_name": "Payton",
+"last_name": "Wilson",
+"full_name": "Payton Wilson",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "PIT",
+"status": "Active",
+"number": 41,
+"age": 26,
+"years_exp": 2,
+"search_rank": 375
+},
 "11729": {
 "player_id": "11729",
 "first_name": "Sione",
@@ -1520,6 +2061,71 @@
 "age": 25,
 "years_exp": 2,
 "search_rank": 527
+},
+"11731": {
+"player_id": "11731",
+"first_name": "Malik",
+"last_name": "Mustapha",
+"full_name": "Malik Mustapha",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "SF",
+"status": "Active",
+"number": 6,
+"age": 24,
+"years_exp": 2,
+"search_rank": 457
+},
+"11739": {
+"player_id": "11739",
+"first_name": "Evan",
+"last_name": "Williams",
+"full_name": "Evan Williams",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "GB",
+"status": "Active",
+"number": 33,
+"age": 25,
+"years_exp": 2,
+"search_rank": 470
+},
+"11742": {
+"player_id": "11742",
+"first_name": "Cedric",
+"last_name": "Gray",
+"full_name": "Cedric Gray",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "TEN",
+"injury_status": "Out",
+"status": "Active",
+"number": 33,
+"age": 23,
+"years_exp": 2,
+"search_rank": 210
+},
+"11760": {
+"player_id": "11760",
+"first_name": "Austin",
+"last_name": "Booker",
+"full_name": "Austin Booker",
+"position": "DL",
+"fantasy_positions": [
+"DL"
+],
+"team": "CHI",
+"status": "Active",
+"number": 94,
+"age": 23,
+"years_exp": 2,
+"search_rank": 467
 },
 "11783": {
 "player_id": "11783",
@@ -1633,22 +2239,6 @@
 "years_exp": 2,
 "search_rank": 457
 },
-"12171": {
-"player_id": "12171",
-"first_name": "British",
-"last_name": "Brooks",
-"full_name": "British Brooks",
-"position": "RB",
-"fantasy_positions": [
-"RB"
-],
-"team": "HOU",
-"status": "Active",
-"number": 44,
-"age": 26,
-"years_exp": 2,
-"search_rank": 412
-},
 "12185": {
 "player_id": "12185",
 "first_name": "Spencer",
@@ -1664,6 +2254,21 @@
 "age": 27,
 "years_exp": 2,
 "search_rank": 355
+},
+"1233": {
+"player_id": "1233",
+"first_name": "Bobby",
+"last_name": "Wagner",
+"full_name": "Bobby Wagner",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"status": "Active",
+"number": 54,
+"age": 35,
+"years_exp": 14,
+"search_rank": 308
 },
 "12455": {
 "player_id": "12455",
@@ -2590,22 +3195,6 @@
 "years_exp": 1,
 "search_rank": 190
 },
-"12539": {
-"player_id": "12539",
-"first_name": "Arian",
-"last_name": "Smith",
-"full_name": "Arian Smith",
-"position": "WR",
-"fantasy_positions": [
-"WR"
-],
-"team": "NYJ",
-"status": "Active",
-"number": 82,
-"age": 24,
-"years_exp": 1,
-"search_rank": 686
-},
 "12540": {
 "player_id": "12540",
 "first_name": "Chimere",
@@ -2720,6 +3309,219 @@
 "years_exp": 1,
 "search_rank": 195
 },
+"12556": {
+"player_id": "12556",
+"first_name": "Donovan",
+"last_name": "Ezeiruaku",
+"full_name": "Donovan Ezeiruaku",
+"position": "DL",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "DAL",
+"status": "Active",
+"number": 6,
+"age": 22,
+"years_exp": 1,
+"search_rank": 455
+},
+"12566": {
+"player_id": "12566",
+"first_name": "Jihaad",
+"last_name": "Campbell",
+"full_name": "Jihaad Campbell",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "PHI",
+"status": "Active",
+"number": 11,
+"age": 22,
+"years_exp": 1,
+"search_rank": 278
+},
+"12567": {
+"player_id": "12567",
+"first_name": "Malaki",
+"last_name": "Starks",
+"full_name": "Malaki Starks",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "BAL",
+"status": "Active",
+"number": 24,
+"age": 22,
+"years_exp": 1,
+"search_rank": 263
+},
+"12574": {
+"player_id": "12574",
+"first_name": "Abdul",
+"last_name": "Carter",
+"full_name": "Abdul Carter",
+"position": "DL",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "NYG",
+"status": "Active",
+"number": 3,
+"age": 22,
+"years_exp": 1,
+"search_rank": 170
+},
+"12578": {
+"player_id": "12578",
+"first_name": "Carson",
+"last_name": "Schwesinger",
+"full_name": "Carson Schwesinger",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "CLE",
+"status": "Active",
+"number": 49,
+"age": 23,
+"years_exp": 1,
+"search_rank": 97
+},
+"12588": {
+"player_id": "12588",
+"first_name": "Kevin",
+"last_name": "Winston",
+"full_name": "Kevin Winston",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "TEN",
+"status": "Active",
+"number": 23,
+"age": 22,
+"years_exp": 1,
+"search_rank": 374
+},
+"12591": {
+"player_id": "12591",
+"first_name": "Xavier",
+"last_name": "Watts",
+"full_name": "Xavier Watts",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "ATL",
+"status": "Active",
+"number": 31,
+"age": 24,
+"years_exp": 1,
+"search_rank": 232
+},
+"12597": {
+"player_id": "12597",
+"first_name": "Nick",
+"last_name": "Emmanwori",
+"full_name": "Nick Emmanwori",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "SEA",
+"injury_status": "Out",
+"status": "Active",
+"number": 3,
+"age": 22,
+"years_exp": 1,
+"search_rank": 207
+},
+"12602": {
+"player_id": "12602",
+"first_name": "Mykel",
+"last_name": "Williams",
+"full_name": "Mykel Williams",
+"position": "DL",
+"fantasy_positions": [
+"DL"
+],
+"team": "SF",
+"injury_status": "PUP",
+"status": "Active",
+"number": 98,
+"age": 22,
+"years_exp": 1,
+"search_rank": 591
+},
+"12605": {
+"player_id": "12605",
+"first_name": "Jacob",
+"last_name": "Parrish",
+"full_name": "Jacob Parrish",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "TB",
+"injury_status": "Questionable",
+"status": "Active",
+"number": 25,
+"age": 22,
+"years_exp": 1,
+"search_rank": 9999999
+},
+"12617": {
+"player_id": "12617",
+"first_name": "Demetrius",
+"last_name": "Knight",
+"full_name": "Demetrius Knight",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "CIN",
+"status": "Active",
+"number": 44,
+"age": 26,
+"years_exp": 1,
+"search_rank": 283
+},
+"12622": {
+"player_id": "12622",
+"first_name": "Nohl",
+"last_name": "Williams",
+"full_name": "Nohl Williams",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "KC",
+"status": "Active",
+"number": 20,
+"age": 23,
+"years_exp": 1,
+"search_rank": 9999999
+},
+"12631": {
+"player_id": "12631",
+"first_name": "Upton",
+"last_name": "Stout",
+"full_name": "Upton Stout",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "SF",
+"status": "Active",
+"number": 20,
+"age": 24,
+"years_exp": 1,
+"search_rank": 9999999
+},
 "12634": {
 "player_id": "12634",
 "first_name": "Jordan",
@@ -2737,6 +3539,23 @@
 "years_exp": 1,
 "search_rank": 999
 },
+"12640": {
+"player_id": "12640",
+"first_name": "Teddye",
+"last_name": "Buchanan",
+"full_name": "Teddye Buchanan",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "BAL",
+"injury_status": "Out",
+"status": "Active",
+"number": 40,
+"age": 23,
+"years_exp": 1,
+"search_rank": 502
+},
 "12641": {
 "player_id": "12641",
 "first_name": "Jaylin",
@@ -2752,6 +3571,22 @@
 "age": 24,
 "years_exp": 1,
 "search_rank": 691
+},
+"12646": {
+"player_id": "12646",
+"first_name": "Barrett",
+"last_name": "Carter",
+"full_name": "Barrett Carter",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "CIN",
+"status": "Active",
+"number": 49,
+"age": 23,
+"years_exp": 1,
+"search_rank": 357
 },
 "12658": {
 "player_id": "12658",
@@ -2785,22 +3620,6 @@
 "age": 24,
 "years_exp": 1,
 "search_rank": 648
-},
-"12699": {
-"player_id": "12699",
-"first_name": "LaJohntay",
-"last_name": "Wester",
-"full_name": "LaJohntay Wester",
-"position": "WR",
-"fantasy_positions": [
-"WR"
-],
-"team": "BAL",
-"status": "Active",
-"number": 10,
-"age": 24,
-"years_exp": 1,
-"search_rank": 653
 },
 "12711": {
 "player_id": "12711",
@@ -2849,22 +3668,6 @@
 "age": 23,
 "years_exp": 1,
 "search_rank": 678
-},
-"12817": {
-"player_id": "12817",
-"first_name": "Jake",
-"last_name": "Briningstool",
-"full_name": "Jake Briningstool",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "KC",
-"status": "Active",
-"number": 88,
-"age": 23,
-"years_exp": 1,
-"search_rank": 629
 },
 "12961": {
 "player_id": "12961",
@@ -3277,23 +4080,6 @@
 "years_exp": 0,
 "search_rank": 198
 },
-"13297": {
-"player_id": "13297",
-"first_name": "Reggie",
-"last_name": "Virgil",
-"full_name": "Reggie Virgil",
-"position": "WR",
-"fantasy_positions": [
-"WR"
-],
-"team": "ARI",
-"injury_status": "Out",
-"status": "Active",
-"number": 82,
-"age": 22,
-"years_exp": 0,
-"search_rank": 699
-},
 "13298": {
 "player_id": "13298",
 "first_name": "KC",
@@ -3406,22 +4192,6 @@
 "age": 23,
 "years_exp": 0,
 "search_rank": 663
-},
-"13308": {
-"player_id": "13308",
-"first_name": "Bauer",
-"last_name": "Sharp",
-"full_name": "Bauer Sharp",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "TB",
-"status": "Active",
-"number": 84,
-"age": 23,
-"years_exp": 0,
-"search_rank": 472
 },
 "13311": {
 "player_id": "13311",
@@ -3600,6 +4370,23 @@
 "years_exp": 0,
 "search_rank": 523
 },
+"13340": {
+"player_id": "13340",
+"first_name": "Rueben",
+"last_name": "Bain",
+"full_name": "Rueben Bain",
+"position": "DL",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "TB",
+"status": "Active",
+"number": 3,
+"age": 22,
+"years_exp": 0,
+"search_rank": 206
+},
 "13345": {
 "player_id": "13345",
 "first_name": "Jonah",
@@ -3699,6 +4486,88 @@
 "years_exp": 0,
 "search_rank": 400
 },
+"13363": {
+"player_id": "13363",
+"first_name": "David",
+"last_name": "Bailey",
+"full_name": "David Bailey",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "NYJ",
+"status": "Active",
+"number": 31,
+"age": 23,
+"years_exp": 0,
+"search_rank": 236
+},
+"13371": {
+"player_id": "13371",
+"first_name": "Dillon",
+"last_name": "Thieneman",
+"full_name": "Dillon Thieneman",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "CHI",
+"status": "Active",
+"number": 31,
+"age": 22,
+"years_exp": 0,
+"search_rank": 221
+},
+"13375": {
+"player_id": "13375",
+"first_name": "Sonny",
+"last_name": "Styles",
+"full_name": "Sonny Styles",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "WAS",
+"status": "Active",
+"number": 52,
+"age": 21,
+"years_exp": 0,
+"search_rank": 122
+},
+"13376": {
+"player_id": "13376",
+"first_name": "Caleb",
+"last_name": "Downs",
+"full_name": "Caleb Downs",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "DAL",
+"status": "Active",
+"number": 13,
+"age": 21,
+"years_exp": 0,
+"search_rank": 139
+},
+"13377": {
+"player_id": "13377",
+"first_name": "Arvell",
+"last_name": "Reese",
+"full_name": "Arvell Reese",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "NYG",
+"status": "Active",
+"number": 52,
+"age": 21,
+"years_exp": 0,
+"search_rank": 171
+},
 "13380": {
 "player_id": "13380",
 "first_name": "Brenen",
@@ -3715,6 +4584,38 @@
 "years_exp": 0,
 "search_rank": 504
 },
+"13384": {
+"player_id": "13384",
+"first_name": "AJ",
+"last_name": "Haulcy",
+"full_name": "AJ Haulcy",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "IND",
+"status": "Active",
+"number": 25,
+"age": 22,
+"years_exp": 0,
+"search_rank": 313
+},
+"13388": {
+"player_id": "13388",
+"first_name": "CJ",
+"last_name": "Allen",
+"full_name": "CJ Allen",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "IND",
+"status": "Active",
+"number": 53,
+"age": 21,
+"years_exp": 0,
+"search_rank": 260
+},
 "13394": {
 "player_id": "13394",
 "first_name": "Josh",
@@ -3730,6 +4631,22 @@
 "age": 23,
 "years_exp": 0,
 "search_rank": 656
+},
+"13397": {
+"player_id": "13397",
+"first_name": "Keith",
+"last_name": "Abney",
+"full_name": "Keith Abney",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "DET",
+"status": "Active",
+"number": 28,
+"age": 21,
+"years_exp": 0,
+"search_rank": 528
 },
 "13400": {
 "player_id": "13400",
@@ -3991,22 +4908,6 @@
 "years_exp": 0,
 "search_rank": 669
 },
-"13433": {
-"player_id": "13433",
-"first_name": "Riley",
-"last_name": "Nowakowski",
-"full_name": "Riley Nowakowski",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "PIT",
-"status": "Active",
-"number": 37,
-"age": 24,
-"years_exp": 0,
-"search_rank": 643
-},
 "13434": {
 "player_id": "13434",
 "first_name": "Will",
@@ -4040,6 +4941,22 @@
 "years_exp": 0,
 "search_rank": 553
 },
+"13453": {
+"player_id": "13453",
+"first_name": "Jacob",
+"last_name": "Rodriguez",
+"full_name": "Jacob Rodriguez",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "MIA",
+"status": "Active",
+"number": 10,
+"age": 24,
+"years_exp": 0,
+"search_rank": 299
+},
 "13477": {
 "player_id": "13477",
 "first_name": "Colbie",
@@ -4055,38 +4972,6 @@
 "age": 24,
 "years_exp": 0,
 "search_rank": 644
-},
-"13491": {
-"player_id": "13491",
-"first_name": "Kaden",
-"last_name": "Wetjen",
-"full_name": "Kaden Wetjen",
-"position": "WR",
-"fantasy_positions": [
-"WR"
-],
-"team": "PIT",
-"status": "Active",
-"number": 10,
-"age": 24,
-"years_exp": 0,
-"search_rank": 636
-},
-"13516": {
-"player_id": "13516",
-"first_name": "Max",
-"last_name": "Bredeson",
-"full_name": "Max Bredeson",
-"position": "RB",
-"fantasy_positions": [
-"RB"
-],
-"team": "MIN",
-"status": "Active",
-"number": 45,
-"age": 23,
-"years_exp": 0,
-"search_rank": 549
 },
 "13533": {
 "player_id": "13533",
@@ -4119,39 +5004,6 @@
 "age": 23,
 "years_exp": 0,
 "search_rank": 195
-},
-"13577": {
-"player_id": "13577",
-"first_name": "Dallen",
-"last_name": "Bentley",
-"full_name": "Dallen Bentley",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "DEN",
-"injury_status": "Out",
-"status": "Active",
-"number": 89,
-"age": 25,
-"years_exp": 0,
-"search_rank": 627
-},
-"13580": {
-"player_id": "13580",
-"first_name": "Carsen",
-"last_name": "Ryan",
-"full_name": "Carsen Ryan",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "CLE",
-"status": "Active",
-"number": 48,
-"age": 23,
-"years_exp": 0,
-"search_rank": 524
 },
 "13726": {
 "player_id": "13726",
@@ -4409,21 +5261,38 @@
 "years_exp": 11,
 "search_rank": 508
 },
-"2359": {
-"player_id": "2359",
-"first_name": "Ameer",
-"last_name": "Abdullah",
-"full_name": "Ameer Abdullah",
-"position": "RB",
+"2311": {
+"player_id": "2311",
+"first_name": "Leonard",
+"last_name": "Williams",
+"full_name": "Leonard Williams",
+"position": "DE",
 "fantasy_positions": [
-"RB"
+"DL"
 ],
-"team": "JAX",
+"team": "SEA",
 "status": "Active",
-"number": 20,
-"age": 33,
+"number": 99,
+"age": 32,
 "years_exp": 11,
-"search_rank": 599
+"search_rank": 372
+},
+"2393": {
+"player_id": "2393",
+"first_name": "Danielle",
+"last_name": "Hunter",
+"full_name": "Danielle Hunter",
+"position": "DE",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "HOU",
+"status": "Active",
+"number": 55,
+"age": 31,
+"years_exp": 11,
+"search_rank": 174
 },
 "2449": {
 "player_id": "2449",
@@ -4457,6 +5326,22 @@
 "years_exp": 11,
 "search_rank": 358
 },
+"2617": {
+"player_id": "2617",
+"first_name": "Alex",
+"last_name": "Singleton",
+"full_name": "Alex Singleton",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "DEN",
+"status": "Active",
+"number": 49,
+"age": 32,
+"years_exp": 11,
+"search_rank": 264
+},
 "2747": {
 "player_id": "2747",
 "first_name": "Jason",
@@ -4473,21 +5358,21 @@
 "years_exp": 11,
 "search_rank": 124
 },
-"3048": {
-"player_id": "3048",
-"first_name": "Chris",
-"last_name": "Manhertz",
-"full_name": "Chris Manhertz",
-"position": "TE",
+"3160": {
+"player_id": "3160",
+"first_name": "Jalen",
+"last_name": "Ramsey",
+"full_name": "Jalen Ramsey",
+"position": "CB",
 "fantasy_positions": [
-"TE"
+"DB"
 ],
-"team": "NYG",
+"team": "PIT",
 "status": "Active",
-"number": 85,
-"age": 34,
-"years_exp": 11,
-"search_rank": 625
+"number": 5,
+"age": 31,
+"years_exp": 10,
+"search_rank": 999
 },
 "3161": {
 "player_id": "3161",
@@ -4568,6 +5453,22 @@
 "age": 31,
 "years_exp": 10,
 "search_rank": 92
+},
+"3233": {
+"player_id": "3233",
+"first_name": "Kevin",
+"last_name": "Byard",
+"full_name": "Kevin Byard",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "NE",
+"status": "Active",
+"number": 31,
+"age": 33,
+"years_exp": 10,
+"search_rank": 256
 },
 "3257": {
 "player_id": "3257",
@@ -4681,6 +5582,22 @@
 "years_exp": 10,
 "search_rank": 128
 },
+"3558": {
+"player_id": "3558",
+"first_name": "Chris",
+"last_name": "Jones",
+"full_name": "Chris Jones",
+"position": "DT",
+"fantasy_positions": [
+"DL"
+],
+"team": "KC",
+"status": "Active",
+"number": 95,
+"age": 32,
+"years_exp": 10,
+"search_rank": 513
+},
 "3634": {
 "player_id": "3634",
 "first_name": "Kalif",
@@ -4712,6 +5629,23 @@
 "age": 32,
 "years_exp": 10,
 "search_rank": 177
+},
+"3973": {
+"player_id": "3973",
+"first_name": "Myles",
+"last_name": "Garrett",
+"full_name": "Myles Garrett",
+"position": "DE",
+"fantasy_positions": [
+"DL"
+],
+"team": "LAR",
+"injury_status": "Out",
+"status": "Inactive",
+"number": 95,
+"age": 30,
+"years_exp": 9,
+"search_rank": 81
 },
 "4017": {
 "player_id": "4017",
@@ -4874,6 +5808,55 @@
 "years_exp": 9,
 "search_rank": 461
 },
+"4070": {
+"player_id": "4070",
+"first_name": "T.J.",
+"last_name": "Watt",
+"full_name": "T.J. Watt",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "PIT",
+"status": "Active",
+"number": 90,
+"age": 31,
+"years_exp": 9,
+"search_rank": 110
+},
+"4071": {
+"player_id": "4071",
+"first_name": "Marlon",
+"last_name": "Humphrey",
+"full_name": "Marlon Humphrey",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "BAL",
+"status": "Active",
+"number": 44,
+"age": 30,
+"years_exp": 9,
+"search_rank": 999
+},
+"4081": {
+"player_id": "4081",
+"first_name": "Budda",
+"last_name": "Baker",
+"full_name": "Budda Baker",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "ARI",
+"status": "Active",
+"number": 3,
+"age": 30,
+"years_exp": 9,
+"search_rank": 221
+},
 "4098": {
 "player_id": "4098",
 "first_name": "Kareem",
@@ -4888,6 +5871,38 @@
 "age": 30,
 "years_exp": 9,
 "search_rank": 242
+},
+"4118": {
+"player_id": "4118",
+"first_name": "Alex",
+"last_name": "Anzalone",
+"full_name": "Alex Anzalone",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "TB",
+"status": "Active",
+"number": 34,
+"age": 31,
+"years_exp": 9,
+"search_rank": 367
+},
+"4135": {
+"player_id": "4135",
+"first_name": "Trey",
+"last_name": "Hendrickson",
+"full_name": "Trey Hendrickson",
+"position": "DE",
+"fantasy_positions": [
+"DL"
+],
+"team": "BAL",
+"status": "Active",
+"number": 91,
+"age": 31,
+"years_exp": 9,
+"search_rank": 223
 },
 "4137": {
 "player_id": "4137",
@@ -5050,21 +6065,6 @@
 "years_exp": 9,
 "search_rank": 155
 },
-"4234": {
-"player_id": "4234",
-"first_name": "Noah",
-"last_name": "Brown",
-"full_name": "Noah Brown",
-"position": "WR",
-"fantasy_positions": [
-"WR"
-],
-"status": "Active",
-"number": 33,
-"age": 30,
-"years_exp": 9,
-"search_rank": 634
-},
 "4314": {
 "player_id": "4314",
 "first_name": "Johnny",
@@ -5081,21 +6081,21 @@
 "years_exp": 9,
 "search_rank": 699
 },
-"4353": {
-"player_id": "4353",
-"first_name": "Patrick",
-"last_name": "Ricard",
-"full_name": "Patrick Ricard",
-"position": "FB",
+"4413": {
+"player_id": "4413",
+"first_name": "Eric",
+"last_name": "Wilson",
+"full_name": "Eric Wilson",
+"position": "LB",
 "fantasy_positions": [
-"RB"
+"LB"
 ],
-"team": "NYG",
+"team": "MIN",
 "status": "Active",
-"number": 45,
-"age": 32,
+"number": 55,
+"age": 31,
 "years_exp": 9,
-"search_rank": 676
+"search_rank": 377
 },
 "4454": {
 "player_id": "4454",
@@ -5112,37 +6112,6 @@
 "age": 31,
 "years_exp": 9,
 "search_rank": 673
-},
-"4504": {
-"player_id": "4504",
-"first_name": "John",
-"last_name": "Robinson-Woodgett",
-"full_name": "John Robinson-Woodgett",
-"position": "RB",
-"fantasy_positions": [
-"RB"
-],
-"status": "Active",
-"number": 42,
-"age": 28,
-"years_exp": 5,
-"search_rank": 9999999
-},
-"4602": {
-"player_id": "4602",
-"first_name": "Robert",
-"last_name": "Tonyan",
-"full_name": "Robert Tonyan",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "PIT",
-"status": "Active",
-"number": 83,
-"age": 32,
-"years_exp": 9,
-"search_rank": 619
 },
 "4866": {
 "player_id": "4866",
@@ -5192,21 +6161,6 @@
 "years_exp": 8,
 "search_rank": 74
 },
-"4910": {
-"player_id": "4910",
-"first_name": "Quincy",
-"last_name": "McDuffie",
-"full_name": "Quincy McDuffie",
-"position": "WR",
-"fantasy_positions": [
-"WR"
-],
-"status": "Active",
-"number": 16,
-"age": 31,
-"years_exp": 9,
-"search_rank": 9999999
-},
 "4943": {
 "player_id": "4943",
 "first_name": "Sam",
@@ -5223,6 +6177,88 @@
 "age": 29,
 "years_exp": 8,
 "search_rank": 92
+},
+"4960": {
+"player_id": "4960",
+"first_name": "Roquan",
+"last_name": "Smith",
+"full_name": "Roquan Smith",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "BAL",
+"status": "Active",
+"number": 0,
+"age": 29,
+"years_exp": 8,
+"search_rank": 96
+},
+"4963": {
+"player_id": "4963",
+"first_name": "Minkah",
+"last_name": "Fitzpatrick",
+"full_name": "Minkah Fitzpatrick",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "NYJ",
+"injury_status": "Questionable",
+"status": "Active",
+"number": 29,
+"age": 29,
+"years_exp": 8,
+"search_rank": 466
+},
+"4967": {
+"player_id": "4967",
+"first_name": "Bradley",
+"last_name": "Chubb",
+"full_name": "Bradley Chubb",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "BUF",
+"status": "Active",
+"number": 9,
+"age": 30,
+"years_exp": 8,
+"search_rank": 369
+},
+"4968": {
+"player_id": "4968",
+"first_name": "Tremaine",
+"last_name": "Edmunds",
+"full_name": "Tremaine Edmunds",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "NYG",
+"status": "Active",
+"number": 49,
+"age": 28,
+"years_exp": 8,
+"search_rank": 296
+},
+"4971": {
+"player_id": "4971",
+"first_name": "Derwin",
+"last_name": "James",
+"full_name": "Derwin James",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "LAC",
+"status": "Active",
+"number": 3,
+"age": 30,
+"years_exp": 8,
+"search_rank": 163
 },
 "4981": {
 "player_id": "4981",
@@ -5288,22 +6324,6 @@
 "years_exp": 8,
 "search_rank": 448
 },
-"4995": {
-"player_id": "4995",
-"first_name": "Ian",
-"last_name": "Thomas",
-"full_name": "Ian Thomas",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "LV",
-"status": "Active",
-"number": 80,
-"age": 30,
-"years_exp": 8,
-"search_rank": 509
-},
 "5001": {
 "player_id": "5001",
 "first_name": "Dalton",
@@ -5352,6 +6372,22 @@
 "years_exp": 8,
 "search_rank": 96
 },
+"5017": {
+"player_id": "5017",
+"first_name": "Jessie",
+"last_name": "Bates",
+"full_name": "Jessie Bates",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "ATL",
+"status": "Active",
+"number": 3,
+"age": 29,
+"years_exp": 8,
+"search_rank": 296
+},
 "5022": {
 "player_id": "5022",
 "first_name": "Dallas",
@@ -5368,6 +6404,40 @@
 "years_exp": 8,
 "search_rank": 94
 },
+"5030": {
+"player_id": "5030",
+"first_name": "Harold",
+"last_name": "Landry",
+"full_name": "Harold Landry",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "NE",
+"injury_status": "PUP",
+"status": "Active",
+"number": 2,
+"age": 30,
+"years_exp": 8,
+"search_rank": 413
+},
+"5041": {
+"player_id": "5041",
+"first_name": "Fred",
+"last_name": "Warner",
+"full_name": "Fred Warner",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "SF",
+"status": "Active",
+"number": 54,
+"age": 29,
+"years_exp": 8,
+"search_rank": 116
+},
 "5045": {
 "player_id": "5045",
 "first_name": "Courtland",
@@ -5383,6 +6453,22 @@
 "age": 30,
 "years_exp": 8,
 "search_rank": 72
+},
+"5054": {
+"player_id": "5054",
+"first_name": "Carlton",
+"last_name": "Davis",
+"full_name": "Carlton Davis",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "NE",
+"status": "Active",
+"number": 7,
+"age": 29,
+"years_exp": 8,
+"search_rank": 9999999
 },
 "5095": {
 "player_id": "5095",
@@ -5416,22 +6502,6 @@
 "years_exp": 8,
 "search_rank": 582
 },
-"5133": {
-"player_id": "5133",
-"first_name": "Tyler",
-"last_name": "Conklin",
-"full_name": "Tyler Conklin",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "DET",
-"status": "Active",
-"number": 83,
-"age": 31,
-"years_exp": 8,
-"search_rank": 645
-},
 "5189": {
 "player_id": "5189",
 "first_name": "Eddy",
@@ -5448,20 +6518,151 @@
 "years_exp": 8,
 "search_rank": 175
 },
-"5385": {
-"player_id": "5385",
-"first_name": "Alec",
-"last_name": "Bloom",
-"full_name": "Alec Bloom",
-"position": "TE",
+"5230": {
+"player_id": "5230",
+"first_name": "Michael",
+"last_name": "Badgley",
+"full_name": "Michael Badgley",
+"position": "K",
 "fantasy_positions": [
-"TE"
+"K"
 ],
 "status": "Active",
-"number": 87,
-"age": 25,
-"years_exp": 4,
+"number": 32,
+"age": 30,
+"years_exp": 7,
+"search_rank": 629
+},
+"5332": {
+"player_id": "5332",
+"first_name": "Foyesade",
+"last_name": "Oluokun",
+"full_name": "Foyesade Oluokun",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "JAX",
+"status": "Active",
+"number": 23,
+"age": 31,
+"years_exp": 8,
+"search_rank": 143
+},
+"5346": {
+"player_id": "5346",
+"first_name": "Zaire",
+"last_name": "Franklin",
+"full_name": "Zaire Franklin",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "GB",
+"status": "Active",
+"number": 44,
+"age": 30,
+"years_exp": 8,
+"search_rank": 215
+},
+"5372": {
+"player_id": "5372",
+"first_name": "D.J.",
+"last_name": "Reed",
+"full_name": "D.J. Reed",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "DET",
+"injury_status": "Questionable",
+"status": "Active",
+"number": 4,
+"age": 29,
+"years_exp": 8,
 "search_rank": 9999999
+},
+"5726": {
+"player_id": "5726",
+"first_name": "Robert",
+"last_name": "Spillane",
+"full_name": "Robert Spillane",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "NE",
+"status": "Active",
+"number": 14,
+"age": 30,
+"years_exp": 8,
+"search_rank": 287
+},
+"5816": {
+"player_id": "5816",
+"first_name": "Nick",
+"last_name": "Bosa",
+"full_name": "Nick Bosa",
+"position": "DE",
+"fantasy_positions": [
+"DL"
+],
+"team": "SF",
+"status": "Active",
+"number": 97,
+"age": 28,
+"years_exp": 7,
+"search_rank": 137
+},
+"5839": {
+"player_id": "5839",
+"first_name": "Rashan",
+"last_name": "Gary",
+"full_name": "Rashan Gary",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "DAL",
+"status": "Active",
+"number": 7,
+"age": 28,
+"years_exp": 7,
+"search_rank": 331
+},
+"5840": {
+"player_id": "5840",
+"first_name": "Josh",
+"last_name": "Hines-Allen",
+"full_name": "Josh Hines-Allen",
+"position": "DE",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "JAX",
+"status": "Active",
+"number": 41,
+"age": 29,
+"years_exp": 7,
+"search_rank": 223
+},
+"5843": {
+"player_id": "5843",
+"first_name": "Devin",
+"last_name": "Bush",
+"full_name": "Devin Bush",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "CHI",
+"status": "Active",
+"number": 12,
+"age": 28,
+"years_exp": 7,
+"search_rank": 257
 },
 "5844": {
 "player_id": "5844",
@@ -5594,6 +6795,39 @@
 "years_exp": 7,
 "search_rank": 17
 },
+"5862": {
+"player_id": "5862",
+"first_name": "Brian",
+"last_name": "Burns",
+"full_name": "Brian Burns",
+"position": "DE",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "NYG",
+"status": "Active",
+"number": 0,
+"age": 28,
+"years_exp": 7,
+"search_rank": 129
+},
+"5864": {
+"player_id": "5864",
+"first_name": "Byron",
+"last_name": "Murphy",
+"full_name": "Byron Murphy",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "MIN",
+"status": "Active",
+"number": 7,
+"age": 28,
+"years_exp": 7,
+"search_rank": 999
+},
 "5870": {
 "player_id": "5870",
 "first_name": "Daniel",
@@ -5609,6 +6843,22 @@
 "age": 29,
 "years_exp": 7,
 "search_rank": 131
+},
+"5871": {
+"player_id": "5871",
+"first_name": "Zach",
+"last_name": "Allen",
+"full_name": "Zach Allen",
+"position": "DE",
+"fantasy_positions": [
+"DL"
+],
+"team": "DEN",
+"status": "Active",
+"number": 99,
+"age": 29,
+"years_exp": 7,
+"search_rank": 414
 },
 "5872": {
 "player_id": "5872",
@@ -5626,6 +6876,22 @@
 "years_exp": 7,
 "search_rank": 131
 },
+"5876": {
+"player_id": "5876",
+"first_name": "Julian",
+"last_name": "Love",
+"full_name": "Julian Love",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "SEA",
+"status": "Active",
+"number": 20,
+"age": 28,
+"years_exp": 7,
+"search_rank": 326
+},
 "5892": {
 "player_id": "5892",
 "first_name": "David",
@@ -5641,6 +6907,22 @@
 "age": 29,
 "years_exp": 7,
 "search_rank": 43
+},
+"5893": {
+"player_id": "5893",
+"first_name": "C.J.",
+"last_name": "Gardner-Johnson",
+"full_name": "C.J. Gardner-Johnson",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "BUF",
+"status": "Active",
+"number": 22,
+"age": 28,
+"years_exp": 7,
+"search_rank": 999
 },
 "5906": {
 "player_id": "5906",
@@ -5658,6 +6940,22 @@
 "years_exp": 7,
 "search_rank": 684
 },
+"5908": {
+"player_id": "5908",
+"first_name": "Amani",
+"last_name": "Hooker",
+"full_name": "Amani Hooker",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "TEN",
+"status": "Active",
+"number": 37,
+"age": 28,
+"years_exp": 7,
+"search_rank": 600
+},
 "5927": {
 "player_id": "5927",
 "first_name": "Terry",
@@ -5674,6 +6972,22 @@
 "years_exp": 7,
 "search_rank": 56
 },
+"5944": {
+"player_id": "5944",
+"first_name": "Bobby",
+"last_name": "Okereke",
+"full_name": "Bobby Okereke",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "CAR",
+"status": "Active",
+"number": 58,
+"age": 30,
+"years_exp": 7,
+"search_rank": 463
+},
 "5947": {
 "player_id": "5947",
 "first_name": "Jakobi",
@@ -5689,6 +7003,22 @@
 "age": 29,
 "years_exp": 7,
 "search_rank": 77
+},
+"5960": {
+"player_id": "5960",
+"first_name": "T.J.",
+"last_name": "Edwards",
+"full_name": "T.J. Edwards",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "CHI",
+"status": "Active",
+"number": 53,
+"age": 30,
+"years_exp": 7,
+"search_rank": 354
 },
 "5967": {
 "player_id": "5967",
@@ -5738,6 +7068,22 @@
 "years_exp": 7,
 "search_rank": 638
 },
+"5991": {
+"player_id": "5991",
+"first_name": "Maxx",
+"last_name": "Crosby",
+"full_name": "Maxx Crosby",
+"position": "DE",
+"fantasy_positions": [
+"DL"
+],
+"team": "LV",
+"status": "Active",
+"number": 98,
+"age": 29,
+"years_exp": 7,
+"search_rank": 93
+},
 "5995": {
 "player_id": "5995",
 "first_name": "Justice",
@@ -5785,6 +7131,22 @@
 "age": 30,
 "years_exp": 7,
 "search_rank": 650
+},
+"6025": {
+"player_id": "6025",
+"first_name": "Mike",
+"last_name": "Jackson",
+"full_name": "Mike Jackson",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "CAR",
+"status": "Active",
+"number": 2,
+"age": 29,
+"years_exp": 7,
+"search_rank": 503
 },
 "6039": {
 "player_id": "6039",
@@ -5850,6 +7212,54 @@
 "years_exp": 7,
 "search_rank": 999
 },
+"6118": {
+"player_id": "6118",
+"first_name": "Quinnen",
+"last_name": "Williams",
+"full_name": "Quinnen Williams",
+"position": "DT",
+"fantasy_positions": [
+"DL"
+],
+"team": "DAL",
+"status": "Active",
+"number": 92,
+"age": 28,
+"years_exp": 7,
+"search_rank": 376
+},
+"6124": {
+"player_id": "6124",
+"first_name": "Montez",
+"last_name": "Sweat",
+"full_name": "Montez Sweat",
+"position": "DE",
+"fantasy_positions": [
+"DL"
+],
+"team": "CHI",
+"status": "Active",
+"number": 98,
+"age": 30,
+"years_exp": 7,
+"search_rank": 319
+},
+"6125": {
+"player_id": "6125",
+"first_name": "Jeffery",
+"last_name": "Simmons",
+"full_name": "Jeffery Simmons",
+"position": "DT",
+"fantasy_positions": [
+"DL"
+],
+"team": "TEN",
+"status": "Active",
+"number": 98,
+"age": 29,
+"years_exp": 7,
+"search_rank": 228
+},
 "6130": {
 "player_id": "6130",
 "first_name": "Devin",
@@ -5865,6 +7275,87 @@
 "age": 29,
 "years_exp": 7,
 "search_rank": 660
+},
+"6131": {
+"player_id": "6131",
+"first_name": "Mack",
+"last_name": "Wilson",
+"full_name": "Mack Wilson",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "ARI",
+"status": "Active",
+"number": 1,
+"age": 28,
+"years_exp": 7,
+"search_rank": 450
+},
+"6141": {
+"player_id": "6141",
+"first_name": "Drue",
+"last_name": "Tranquill",
+"full_name": "Drue Tranquill",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "KC",
+"status": "Active",
+"number": 23,
+"age": 31,
+"years_exp": 7,
+"search_rank": 368
+},
+"6183": {
+"player_id": "6183",
+"first_name": "Andrew",
+"last_name": "Van Ginkel",
+"full_name": "Andrew Van Ginkel",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "MIN",
+"status": "Active",
+"number": 43,
+"age": 31,
+"years_exp": 7,
+"search_rank": 180
+},
+"6214": {
+"player_id": "6214",
+"first_name": "Quincy",
+"last_name": "Williams",
+"full_name": "Quincy Williams",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "CLE",
+"status": "Active",
+"number": 5,
+"age": 30,
+"years_exp": 7,
+"search_rank": 311
+},
+"6217": {
+"player_id": "6217",
+"first_name": "Blake",
+"last_name": "Cashman",
+"full_name": "Blake Cashman",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "MIN",
+"status": "Active",
+"number": 51,
+"age": 30,
+"years_exp": 7,
+"search_rank": 230
 },
 "6271": {
 "player_id": "6271",
@@ -5882,6 +7373,54 @@
 "years_exp": 7,
 "search_rank": 698
 },
+"6301": {
+"player_id": "6301",
+"first_name": "Nick",
+"last_name": "Scott",
+"full_name": "Nick Scott",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "CAR",
+"status": "Active",
+"number": 21,
+"age": 31,
+"years_exp": 7,
+"search_rank": 488
+},
+"6315": {
+"player_id": "6315",
+"first_name": "Tyrel",
+"last_name": "Dodson",
+"full_name": "Tyrel Dodson",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "CAR",
+"status": "Active",
+"number": 33,
+"age": 28,
+"years_exp": 7,
+"search_rank": 321
+},
+"6333": {
+"player_id": "6333",
+"first_name": "Keisean",
+"last_name": "Nixon",
+"full_name": "Keisean Nixon",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "GB",
+"status": "Active",
+"number": 25,
+"age": 29,
+"years_exp": 7,
+"search_rank": 563
+},
 "6427": {
 "player_id": "6427",
 "first_name": "Ashton",
@@ -5897,6 +7436,22 @@
 "age": 29,
 "years_exp": 7,
 "search_rank": 697
+},
+"6485": {
+"player_id": "6485",
+"first_name": "Azeez",
+"last_name": "Al-Shaair",
+"full_name": "Azeez Al-Shaair",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "HOU",
+"status": "Active",
+"number": 0,
+"age": 29,
+"years_exp": 7,
+"search_rank": 324
 },
 "650": {
 "player_id": "650",
@@ -5946,21 +7501,6 @@
 "years_exp": 7,
 "search_rank": 650
 },
-"663": {
-"player_id": "663",
-"first_name": "Benjamin",
-"last_name": "Watson",
-"full_name": "Benjamin Watson",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"status": "Injured Reserve",
-"number": 0,
-"age": 41,
-"years_exp": 18,
-"search_rank": 9999999
-},
 "6650": {
 "player_id": "6650",
 "first_name": "Chase",
@@ -5977,20 +7517,21 @@
 "years_exp": 7,
 "search_rank": 199
 },
-"6744": {
-"player_id": "6744",
-"first_name": "Greg",
-"last_name": "Ward",
-"full_name": "Greg Ward",
-"position": "WR",
+"6711": {
+"player_id": "6711",
+"first_name": "Jalen",
+"last_name": "Thompson",
+"full_name": "Jalen Thompson",
+"position": "DB",
 "fantasy_positions": [
-"WR"
+"DB"
 ],
+"team": "DAL",
 "status": "Active",
-"number": 89,
-"age": 29,
+"number": 34,
+"age": 28,
 "years_exp": 7,
-"search_rank": 9999999
+"search_rank": 467
 },
 "6768": {
 "player_id": "6768",
@@ -6041,6 +7582,22 @@
 "years_exp": 6,
 "search_rank": 160
 },
+"6784": {
+"player_id": "6784",
+"first_name": "Derrick",
+"last_name": "Brown",
+"full_name": "Derrick Brown",
+"position": "DT",
+"fantasy_positions": [
+"DL"
+],
+"team": "CAR",
+"status": "Active",
+"number": 95,
+"age": 28,
+"years_exp": 6,
+"search_rank": 466
+},
 "6786": {
 "player_id": "6786",
 "first_name": "CeeDee",
@@ -6056,6 +7613,22 @@
 "age": 27,
 "years_exp": 6,
 "search_rank": 10
+},
+"6788": {
+"player_id": "6788",
+"first_name": "Xavier",
+"last_name": "McKinney",
+"full_name": "Xavier McKinney",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "GB",
+"status": "Active",
+"number": 29,
+"age": 28,
+"years_exp": 6,
+"search_rank": 287
 },
 "6790": {
 "player_id": "6790",
@@ -6104,6 +7677,22 @@
 "age": 28,
 "years_exp": 6,
 "search_rank": 34
+},
+"6799": {
+"player_id": "6799",
+"first_name": "Grant",
+"last_name": "Delpit",
+"full_name": "Grant Delpit",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "CLE",
+"status": "Active",
+"number": 9,
+"age": 27,
+"years_exp": 6,
+"search_rank": 419
 },
 "6801": {
 "player_id": "6801",
@@ -6170,6 +7759,22 @@
 "years_exp": 6,
 "search_rank": 68
 },
+"6807": {
+"player_id": "6807",
+"first_name": "Patrick",
+"last_name": "Queen",
+"full_name": "Patrick Queen",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "PIT",
+"status": "Active",
+"number": 6,
+"age": 27,
+"years_exp": 6,
+"search_rank": 271
+},
 "6813": {
 "player_id": "6813",
 "first_name": "Jonathan",
@@ -6185,6 +7790,22 @@
 "age": 27,
 "years_exp": 6,
 "search_rank": 4
+},
+"6815": {
+"player_id": "6815",
+"first_name": "Zack",
+"last_name": "Baun",
+"full_name": "Zack Baun",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "PHI",
+"status": "Active",
+"number": 53,
+"age": 29,
+"years_exp": 6,
+"search_rank": 137
 },
 "6819": {
 "player_id": "6819",
@@ -6250,6 +7871,22 @@
 "years_exp": 6,
 "search_rank": 636
 },
+"6860": {
+"player_id": "6860",
+"first_name": "Akeem",
+"last_name": "Davis-Gaither",
+"full_name": "Akeem Davis-Gaither",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "IND",
+"status": "Active",
+"number": 51,
+"age": 28,
+"years_exp": 6,
+"search_rank": 471
+},
 "6865": {
 "player_id": "6865",
 "first_name": "Colby",
@@ -6282,6 +7919,72 @@
 "years_exp": 6,
 "search_rank": 675
 },
+"6880": {
+"player_id": "6880",
+"first_name": "Logan",
+"last_name": "Wilson",
+"full_name": "Logan Wilson",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"status": "Active",
+"number": 55,
+"age": 29,
+"years_exp": 6,
+"search_rank": 223
+},
+"6888": {
+"player_id": "6888",
+"first_name": "Antoine",
+"last_name": "Winfield",
+"full_name": "Antoine Winfield",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "TB",
+"status": "Active",
+"number": 31,
+"age": 28,
+"years_exp": 6,
+"search_rank": 304
+},
+"6900": {
+"player_id": "6900",
+"first_name": "Jonathan",
+"last_name": "Greenard",
+"full_name": "Jonathan Greenard",
+"position": "DE",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "PHI",
+"injury_status": "Out",
+"status": "Active",
+"number": 52,
+"age": 29,
+"years_exp": 6,
+"search_rank": 407
+},
+"6901": {
+"player_id": "6901",
+"first_name": "Joshua",
+"last_name": "Metellus",
+"full_name": "Joshua Metellus",
+"position": "DB",
+"fantasy_positions": [
+"DB",
+"LB"
+],
+"team": "MIN",
+"status": "Active",
+"number": 44,
+"age": 28,
+"years_exp": 6,
+"search_rank": 385
+},
 "6904": {
 "player_id": "6904",
 "first_name": "Jalen",
@@ -6297,6 +8000,22 @@
 "age": 28,
 "years_exp": 6,
 "search_rank": 27
+},
+"6911": {
+"player_id": "6911",
+"first_name": "Brandon",
+"last_name": "Jones",
+"full_name": "Brandon Jones",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "DEN",
+"status": "Active",
+"number": 22,
+"age": 28,
+"years_exp": 6,
+"search_rank": 508
 },
 "6931": {
 "player_id": "6931",
@@ -6314,6 +8033,22 @@
 "years_exp": 6,
 "search_rank": 677
 },
+"6949": {
+"player_id": "6949",
+"first_name": "Jordyn",
+"last_name": "Brooks",
+"full_name": "Jordyn Brooks",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "MIA",
+"status": "Active",
+"number": 20,
+"age": 28,
+"years_exp": 6,
+"search_rank": 135
+},
 "7002": {
 "player_id": "7002",
 "first_name": "Juwan",
@@ -6329,6 +8064,23 @@
 "age": 30,
 "years_exp": 6,
 "search_rank": 103
+},
+"7016": {
+"player_id": "7016",
+"first_name": "Jeremy",
+"last_name": "Chinn",
+"full_name": "Jeremy Chinn",
+"position": "DB",
+"fantasy_positions": [
+"DB",
+"LB"
+],
+"team": "LV",
+"status": "Active",
+"number": 11,
+"age": 28,
+"years_exp": 6,
+"search_rank": 276
 },
 "7021": {
 "player_id": "7021",
@@ -6378,6 +8130,22 @@
 "years_exp": 6,
 "search_rank": 123
 },
+"7069": {
+"player_id": "7069",
+"first_name": "Alohi",
+"last_name": "Gilman",
+"full_name": "Alohi Gilman",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "KC",
+"status": "Active",
+"number": 17,
+"age": 28,
+"years_exp": 6,
+"search_rank": 548
+},
 "7075": {
 "player_id": "7075",
 "first_name": "Charlie",
@@ -6410,21 +8178,38 @@
 "years_exp": 6,
 "search_rank": 194
 },
-"7204": {
-"player_id": "7204",
-"first_name": "Reggie",
-"last_name": "Gilliam",
-"full_name": "Reggie Gilliam",
-"position": "RB",
+"7136": {
+"player_id": "7136",
+"first_name": "Kam",
+"last_name": "Curl",
+"full_name": "Kam Curl",
+"position": "DB",
 "fantasy_positions": [
-"RB"
+"DB"
 ],
-"team": "NE",
+"team": "LAR",
+"injury_status": "Questionable",
 "status": "Active",
-"number": 44,
+"number": 3,
+"age": 27,
+"years_exp": 6,
+"search_rank": 179
+},
+"7346": {
+"player_id": "7346",
+"first_name": "Christian",
+"last_name": "Rozeboom",
+"full_name": "Christian Rozeboom",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "TB",
+"status": "Active",
+"number": 52,
 "age": 29,
 "years_exp": 6,
-"search_rank": 611
+"search_rank": 497
 },
 "7523": {
 "player_id": "7523",
@@ -6507,22 +8292,6 @@
 "years_exp": 5,
 "search_rank": 170
 },
-"7531": {
-"player_id": "7531",
-"first_name": "Feleipe",
-"last_name": "Franks",
-"full_name": "Feleipe Franks",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "CAR",
-"status": "Active",
-"number": 81,
-"age": 28,
-"years_exp": 5,
-"search_rank": 582
-},
 "7536": {
 "player_id": "7536",
 "first_name": "Quintin",
@@ -6586,23 +8355,6 @@
 "age": 25,
 "years_exp": 5,
 "search_rank": 68
-},
-"7562": {
-"player_id": "7562",
-"first_name": "Tutu",
-"last_name": "Atwell",
-"full_name": "Tutu Atwell",
-"position": "WR",
-"fantasy_positions": [
-"WR"
-],
-"team": "LAR",
-"injury_status": "Out",
-"status": "Active",
-"number": 8,
-"age": 26,
-"years_exp": 5,
-"search_rank": 691
 },
 "7564": {
 "player_id": "7564",
@@ -6765,23 +8517,6 @@
 "years_exp": 5,
 "search_rank": 670
 },
-"7596": {
-"player_id": "7596",
-"first_name": "Elijah",
-"last_name": "Moore",
-"full_name": "Elijah Moore",
-"position": "WR",
-"fantasy_positions": [
-"WR"
-],
-"team": "PHI",
-"injury_status": "Out",
-"status": "Active",
-"number": 19,
-"age": 26,
-"years_exp": 5,
-"search_rank": 620
-},
 "7600": {
 "player_id": "7600",
 "first_name": "Pat",
@@ -6798,21 +8533,21 @@
 "years_exp": 5,
 "search_rank": 230
 },
-"7602": {
-"player_id": "7602",
-"first_name": "Kylen",
-"last_name": "Granson",
-"full_name": "Kylen Granson",
-"position": "TE",
+"7607": {
+"player_id": "7607",
+"first_name": "Michael",
+"last_name": "Carter",
+"full_name": "Michael Carter",
+"position": "RB",
 "fantasy_positions": [
-"TE"
+"RB"
 ],
 "team": "TEN",
 "status": "Active",
-"number": 86,
-"age": 28,
+"number": 35,
+"age": 27,
 "years_exp": 5,
-"search_rank": 505
+"search_rank": 660
 },
 "7611": {
 "player_id": "7611",
@@ -6830,6 +8565,138 @@
 "years_exp": 5,
 "search_rank": 58
 },
+"7626": {
+"player_id": "7626",
+"first_name": "Odafe",
+"last_name": "Oweh",
+"full_name": "Odafe Oweh",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "WAS",
+"status": "Active",
+"number": 98,
+"age": 27,
+"years_exp": 5,
+"search_rank": 464
+},
+"7627": {
+"player_id": "7627",
+"first_name": "Greg",
+"last_name": "Rousseau",
+"full_name": "Greg Rousseau",
+"position": "DE",
+"fantasy_positions": [
+"DL"
+],
+"team": "BUF",
+"status": "Active",
+"number": 15,
+"age": 26,
+"years_exp": 5,
+"search_rank": 273
+},
+"7635": {
+"player_id": "7635",
+"first_name": "Jaelan",
+"last_name": "Phillips",
+"full_name": "Jaelan Phillips",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "CAR",
+"status": "Active",
+"number": 5,
+"age": 27,
+"years_exp": 5,
+"search_rank": 332
+},
+"7640": {
+"player_id": "7640",
+"first_name": "Micah",
+"last_name": "Parsons",
+"full_name": "Micah Parsons",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "GB",
+"injury_status": "PUP",
+"status": "Active",
+"number": 1,
+"age": 27,
+"years_exp": 5,
+"search_rank": 161
+},
+"7648": {
+"player_id": "7648",
+"first_name": "Nick",
+"last_name": "Bolton",
+"full_name": "Nick Bolton",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "KC",
+"status": "Active",
+"number": 32,
+"age": 26,
+"years_exp": 5,
+"search_rank": 165
+},
+"7659": {
+"player_id": "7659",
+"first_name": "Tre'von",
+"last_name": "Moehrig",
+"full_name": "Tre'von Moehrig",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "CAR",
+"status": "Active",
+"number": 7,
+"age": 27,
+"years_exp": 5,
+"search_rank": 240
+},
+"7667": {
+"player_id": "7667",
+"first_name": "Tyson",
+"last_name": "Campbell",
+"full_name": "Tyson Campbell",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "CLE",
+"status": "Active",
+"number": 7,
+"age": 26,
+"years_exp": 5,
+"search_rank": 528
+},
+"7669": {
+"player_id": "7669",
+"first_name": "Paulson",
+"last_name": "Adebo",
+"full_name": "Paulson Adebo",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "NYG",
+"status": "Active",
+"number": 21,
+"age": 27,
+"years_exp": 5,
+"search_rank": 544
+},
 "7670": {
 "player_id": "7670",
 "first_name": "Joshua",
@@ -6845,6 +8712,54 @@
 "age": 26,
 "years_exp": 5,
 "search_rank": 624
+},
+"7672": {
+"player_id": "7672",
+"first_name": "Ernest",
+"last_name": "Jones",
+"full_name": "Ernest Jones",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "SEA",
+"status": "Active",
+"number": 13,
+"age": 26,
+"years_exp": 5,
+"search_rank": 210
+},
+"7677": {
+"player_id": "7677",
+"first_name": "Divine",
+"last_name": "Deablo",
+"full_name": "Divine Deablo",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "ATL",
+"status": "Active",
+"number": 0,
+"age": 28,
+"years_exp": 5,
+"search_rank": 461
+},
+"7685": {
+"player_id": "7685",
+"first_name": "Brandon",
+"last_name": "Stephens",
+"full_name": "Brandon Stephens",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "NYJ",
+"status": "Active",
+"number": 21,
+"age": 28,
+"years_exp": 5,
+"search_rank": 638
 },
 "7694": {
 "player_id": "7694",
@@ -6862,6 +8777,38 @@
 "years_exp": 5,
 "search_rank": 597
 },
+"7696": {
+"player_id": "7696",
+"first_name": "Milton",
+"last_name": "Williams",
+"full_name": "Milton Williams",
+"position": "DT",
+"fantasy_positions": [
+"DL"
+],
+"team": "NE",
+"status": "Active",
+"number": 97,
+"age": 27,
+"years_exp": 5,
+"search_rank": 510
+},
+"7715": {
+"player_id": "7715",
+"first_name": "Cam",
+"last_name": "Bynum",
+"full_name": "Cam Bynum",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "IND",
+"status": "Active",
+"number": 0,
+"age": 28,
+"years_exp": 5,
+"search_rank": 402
+},
 "7716": {
 "player_id": "7716",
 "first_name": "John",
@@ -6878,38 +8825,88 @@
 "years_exp": 5,
 "search_rank": 660
 },
-"7720": {
-"player_id": "7720",
-"first_name": "Kene",
-"last_name": "Nwangwu",
-"full_name": "Kene Nwangwu",
-"position": "RB",
+"7726": {
+"player_id": "7726",
+"first_name": "Derrick",
+"last_name": "Barnes",
+"full_name": "Derrick Barnes",
+"position": "LB",
 "fantasy_positions": [
-"RB"
+"DL",
+"LB"
 ],
-"team": "NYJ",
-"injury_status": "Out",
+"team": "DET",
 "status": "Active",
-"number": 3,
+"number": 55,
+"age": 27,
+"years_exp": 5,
+"search_rank": 445
+},
+"7765": {
+"player_id": "7765",
+"first_name": "Jonathon",
+"last_name": "Cooper",
+"full_name": "Jonathon Cooper",
+"position": "DL",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "DEN",
+"injury_status": "NA",
+"status": "Active",
+"number": 0,
 "age": 28,
 "years_exp": 5,
-"search_rank": 696
+"search_rank": 491
 },
-"7757": {
-"player_id": "7757",
-"first_name": "Ben",
-"last_name": "Skowronek",
-"full_name": "Ben Skowronek",
-"position": "WR",
+"7782": {
+"player_id": "7782",
+"first_name": "Isaiah",
+"last_name": "McDuffie",
+"full_name": "Isaiah McDuffie",
+"position": "LB",
 "fantasy_positions": [
-"WR"
+"LB"
 ],
-"team": "PIT",
+"team": "GB",
 "status": "Active",
-"number": 15,
-"age": 29,
+"number": 58,
+"age": 27,
 "years_exp": 5,
-"search_rank": 655
+"search_rank": 9999999
+},
+"7811": {
+"player_id": "7811",
+"first_name": "Talanoa",
+"last_name": "Hufanga",
+"full_name": "Talanoa Hufanga",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "DEN",
+"status": "Active",
+"number": 9,
+"age": 26,
+"years_exp": 5,
+"search_rank": 260
+},
+"7819": {
+"player_id": "7819",
+"first_name": "Deommodore",
+"last_name": "Lenoir",
+"full_name": "Deommodore Lenoir",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "SF",
+"status": "Active",
+"number": 2,
+"age": 26,
+"years_exp": 5,
+"search_rank": 9999999
 },
 "7828": {
 "player_id": "7828",
@@ -6942,6 +8939,22 @@
 "age": 27,
 "years_exp": 5,
 "search_rank": 156
+},
+"7841": {
+"player_id": "7841",
+"first_name": "Jamien",
+"last_name": "Sherwood",
+"full_name": "Jamien Sherwood",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "NYJ",
+"status": "Active",
+"number": 44,
+"age": 26,
+"years_exp": 5,
+"search_rank": 160
 },
 "7842": {
 "player_id": "7842",
@@ -6990,6 +9003,22 @@
 "age": 27,
 "years_exp": 5,
 "search_rank": 241
+},
+"8104": {
+"player_id": "8104",
+"first_name": "Dee",
+"last_name": "Alford",
+"full_name": "Dee Alford",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "BUF",
+"status": "Active",
+"number": 23,
+"age": 28,
+"years_exp": 5,
+"search_rank": 9999999
 },
 "8110": {
 "player_id": "8110",
@@ -7539,22 +9568,6 @@
 "years_exp": 4,
 "search_rank": 522
 },
-"8195": {
-"player_id": "8195",
-"first_name": "Ronnie",
-"last_name": "Rivers",
-"full_name": "Ronnie Rivers",
-"position": "RB",
-"fantasy_positions": [
-"RB"
-],
-"team": "LAR",
-"status": "Active",
-"number": 20,
-"age": 27,
-"years_exp": 4,
-"search_rank": 617
-},
 "8204": {
 "player_id": "8204",
 "first_name": "Bo",
@@ -7623,22 +9636,6 @@
 "years_exp": 4,
 "search_rank": 137
 },
-"8219": {
-"player_id": "8219",
-"first_name": "Jelani",
-"last_name": "Woods",
-"full_name": "Jelani Woods",
-"position": "TE",
-"fantasy_positions": [
-"TE"
-],
-"team": "NYJ",
-"status": "Active",
-"number": 86,
-"age": 27,
-"years_exp": 4,
-"search_rank": 243
-},
 "8225": {
 "player_id": "8225",
 "first_name": "Daniel",
@@ -7687,22 +9684,6 @@
 "years_exp": 4,
 "search_rank": 377
 },
-"8254": {
-"player_id": "8254",
-"first_name": "Julius",
-"last_name": "Chestnut",
-"full_name": "Julius Chestnut",
-"position": "RB",
-"fantasy_positions": [
-"RB"
-],
-"team": "TEN",
-"status": "Active",
-"number": 36,
-"age": 25,
-"years_exp": 4,
-"search_rank": 651
-},
 "8259": {
 "player_id": "8259",
 "first_name": "Cameron",
@@ -7719,6 +9700,54 @@
 "years_exp": 4,
 "search_rank": 119
 },
+"8265": {
+"player_id": "8265",
+"first_name": "Travon",
+"last_name": "Walker",
+"full_name": "Travon Walker",
+"position": "DL",
+"fantasy_positions": [
+"DL"
+],
+"team": "JAX",
+"status": "Active",
+"number": 44,
+"age": 25,
+"years_exp": 4,
+"search_rank": 339
+},
+"8266": {
+"player_id": "8266",
+"first_name": "Quay",
+"last_name": "Walker",
+"full_name": "Quay Walker",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "LV",
+"status": "Active",
+"number": 7,
+"age": 26,
+"years_exp": 4,
+"search_rank": 176
+},
+"8267": {
+"player_id": "8267",
+"first_name": "Nakobe",
+"last_name": "Dean",
+"full_name": "Nakobe Dean",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "LV",
+"status": "Active",
+"number": 17,
+"age": 25,
+"years_exp": 4,
+"search_rank": 160
+},
 "827": {
 "player_id": "827",
 "first_name": "Tyrod",
@@ -7734,6 +9763,330 @@
 "age": 37,
 "years_exp": 15,
 "search_rank": 611
+},
+"8275": {
+"player_id": "8275",
+"first_name": "Josh",
+"last_name": "Jobe",
+"full_name": "Josh Jobe",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "SEA",
+"status": "Active",
+"number": 29,
+"age": 28,
+"years_exp": 4,
+"search_rank": 691
+},
+"8280": {
+"player_id": "8280",
+"first_name": "Nik",
+"last_name": "Bonitto",
+"full_name": "Nik Bonitto",
+"position": "LB",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "DEN",
+"status": "Active",
+"number": 15,
+"age": 26,
+"years_exp": 4,
+"search_rank": 140
+},
+"8286": {
+"player_id": "8286",
+"first_name": "Dax",
+"last_name": "Hill",
+"full_name": "Dax Hill",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "CIN",
+"status": "Active",
+"number": 23,
+"age": 25,
+"years_exp": 4,
+"search_rank": 9999999
+},
+"8289": {
+"player_id": "8289",
+"first_name": "Aidan",
+"last_name": "Hutchinson",
+"full_name": "Aidan Hutchinson",
+"position": "DL",
+"fantasy_positions": [
+"DL"
+],
+"team": "DET",
+"status": "Active",
+"number": 97,
+"age": 26,
+"years_exp": 4,
+"search_rank": 82
+},
+"8294": {
+"player_id": "8294",
+"first_name": "Bryan",
+"last_name": "Cook",
+"full_name": "Bryan Cook",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "CIN",
+"status": "Active",
+"number": 6,
+"age": 27,
+"years_exp": 4,
+"search_rank": 9999999
+},
+"8311": {
+"player_id": "8311",
+"first_name": "Terrel",
+"last_name": "Bernard",
+"full_name": "Terrel Bernard",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "BUF",
+"injury_status": "Questionable",
+"status": "Active",
+"number": 8,
+"age": 27,
+"years_exp": 4,
+"search_rank": 305
+},
+"8314": {
+"player_id": "8314",
+"first_name": "Jalen",
+"last_name": "Pitre",
+"full_name": "Jalen Pitre",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "HOU",
+"status": "Active",
+"number": 5,
+"age": 27,
+"years_exp": 4,
+"search_rank": 389
+},
+"8323": {
+"player_id": "8323",
+"first_name": "Jaquan",
+"last_name": "Brisker",
+"full_name": "Jaquan Brisker",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "PIT",
+"status": "Active",
+"number": 3,
+"age": 27,
+"years_exp": 4,
+"search_rank": 400
+},
+"8329": {
+"player_id": "8329",
+"first_name": "Devin",
+"last_name": "Lloyd",
+"full_name": "Devin Lloyd",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "CAR",
+"status": "Active",
+"number": 55,
+"age": 27,
+"years_exp": 4,
+"search_rank": 215
+},
+"8333": {
+"player_id": "8333",
+"first_name": "Alontae",
+"last_name": "Taylor",
+"full_name": "Alontae Taylor",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "TEN",
+"status": "Active",
+"number": 24,
+"age": 27,
+"years_exp": 4,
+"search_rank": 486
+},
+"8339": {
+"player_id": "8339",
+"first_name": "Kyle",
+"last_name": "Hamilton",
+"full_name": "Kyle Hamilton",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "BAL",
+"status": "Active",
+"number": 14,
+"age": 25,
+"years_exp": 4,
+"search_rank": 122
+},
+"8343": {
+"player_id": "8343",
+"first_name": "Boye",
+"last_name": "Mafe",
+"full_name": "Boye Mafe",
+"position": "DL",
+"fantasy_positions": [
+"DL",
+"LB"
+],
+"team": "CIN",
+"status": "Active",
+"number": 53,
+"age": 27,
+"years_exp": 4,
+"search_rank": 301
+},
+"8348": {
+"player_id": "8348",
+"first_name": "Kerby",
+"last_name": "Joseph",
+"full_name": "Kerby Joseph",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "DET",
+"injury_status": "PUP",
+"status": "Active",
+"number": 31,
+"age": 25,
+"years_exp": 4,
+"search_rank": 541
+},
+"8359": {
+"player_id": "8359",
+"first_name": "Marcus",
+"last_name": "Jones",
+"full_name": "Marcus Jones",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "NE",
+"status": "Active",
+"number": 25,
+"age": 27,
+"years_exp": 4,
+"search_rank": 443
+},
+"8362": {
+"player_id": "8362",
+"first_name": "Leo",
+"last_name": "Chenal",
+"full_name": "Leo Chenal",
+"position": "LB",
+"fantasy_positions": [
+"LB"
+],
+"team": "WAS",
+"status": "Active",
+"number": 54,
+"age": 25,
+"years_exp": 4,
+"search_rank": 492
+},
+"8364": {
+"player_id": "8364",
+"first_name": "Trent",
+"last_name": "McDuffie",
+"full_name": "Trent McDuffie",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "LAR",
+"status": "Active",
+"number": 22,
+"age": 26,
+"years_exp": 4,
+"search_rank": 355
+},
+"8384": {
+"player_id": "8384",
+"first_name": "Zyon",
+"last_name": "McCollum",
+"full_name": "Zyon McCollum",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "TB",
+"status": "Active",
+"number": 27,
+"age": 27,
+"years_exp": 4,
+"search_rank": 999
+},
+"8385": {
+"player_id": "8385",
+"first_name": "George",
+"last_name": "Karlaftis",
+"full_name": "George Karlaftis",
+"position": "DL",
+"fantasy_positions": [
+"DL"
+],
+"team": "KC",
+"status": "Active",
+"number": 56,
+"age": 25,
+"years_exp": 4,
+"search_rank": 381
+},
+"8392": {
+"player_id": "8392",
+"first_name": "Nick",
+"last_name": "Cross",
+"full_name": "Nick Cross",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "WAS",
+"status": "Active",
+"number": 25,
+"age": 25,
+"years_exp": 4,
+"search_rank": 165
+},
+"8406": {
+"player_id": "8406",
+"first_name": "Reed",
+"last_name": "Blankenship",
+"full_name": "Reed Blankenship",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "HOU",
+"status": "Active",
+"number": 6,
+"age": 27,
+"years_exp": 4,
+"search_rank": 453
 },
 "8408": {
 "player_id": "8408",
@@ -7752,21 +10105,37 @@
 "years_exp": 4,
 "search_rank": 91
 },
-"8484": {
-"player_id": "8484",
-"first_name": "Ko",
-"last_name": "Kieft",
-"full_name": "Ko Kieft",
-"position": "TE",
+"8476": {
+"player_id": "8476",
+"first_name": "DaRon",
+"last_name": "Bland",
+"full_name": "DaRon Bland",
+"position": "DB",
 "fantasy_positions": [
-"TE"
+"DB"
 ],
-"team": "TB",
+"team": "DAL",
 "status": "Active",
-"number": 41,
-"age": 28,
+"number": 26,
+"age": 27,
 "years_exp": 4,
-"search_rank": 641
+"search_rank": 999
+},
+"8487": {
+"player_id": "8487",
+"first_name": "Christian",
+"last_name": "Benford",
+"full_name": "Christian Benford",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "BUF",
+"status": "Active",
+"number": 47,
+"age": 25,
+"years_exp": 4,
+"search_rank": 999
 },
 "8489": {
 "player_id": "8489",
@@ -7784,21 +10153,22 @@
 "years_exp": 4,
 "search_rank": 698
 },
-"8527": {
-"player_id": "8527",
-"first_name": "Dareke",
-"last_name": "Young",
-"full_name": "Dareke Young",
-"position": "WR",
+"8659": {
+"player_id": "8659",
+"first_name": "Nate",
+"last_name": "Landman",
+"full_name": "Nate Landman",
+"position": "LB",
 "fantasy_positions": [
-"WR"
+"LB"
 ],
-"team": "LV",
+"team": "LAR",
+"injury_status": "Questionable",
 "status": "Active",
-"number": 81,
+"number": 53,
 "age": 27,
 "years_exp": 4,
-"search_rank": 676
+"search_rank": 227
 },
 "8676": {
 "player_id": "8676",
@@ -7833,6 +10203,22 @@
 "years_exp": 4,
 "search_rank": 178
 },
+"8752": {
+"player_id": "8752",
+"first_name": "Ja'Quan",
+"last_name": "McMillian",
+"full_name": "Ja'Quan McMillian",
+"position": "CB",
+"fantasy_positions": [
+"DB"
+],
+"team": "DEN",
+"status": "Active",
+"number": 29,
+"age": 26,
+"years_exp": 4,
+"search_rank": 9999999
+},
 "8800": {
 "player_id": "8800",
 "first_name": "Malik",
@@ -7849,6 +10235,22 @@
 "age": 27,
 "years_exp": 4,
 "search_rank": 440
+},
+"8838": {
+"player_id": "8838",
+"first_name": "Isaiah",
+"last_name": "Pola-Mao",
+"full_name": "Isaiah Pola-Mao",
+"position": "DB",
+"fantasy_positions": [
+"DB"
+],
+"team": "LV",
+"status": "Active",
+"number": 20,
+"age": 27,
+"years_exp": 4,
+"search_rank": 560
 },
 "8917": {
 "player_id": "8917",

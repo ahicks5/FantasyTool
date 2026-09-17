@@ -155,6 +155,68 @@ export interface Waivers {
   picks: WaiverPick[];
 }
 
+/** One executable waiver move: add this player, drop that one, bid this much. */
+export interface WaiverClaim {
+  add: Player;
+  drop: Player | null;
+  net: number;
+  weekly_gain: number;
+  ros_gain: number;
+  drop_cost: number;
+  bid: Bid & { value_cap?: number | null; market?: number | null };
+  reason: string;
+  reason_codes: string[];
+  trending_adds: number;
+}
+
+export interface WaiverPlanResponse {
+  week: number;
+  faab_remaining: number | null;
+  waiver_type: string;
+  primary: WaiverClaim | null;
+  fallbacks: WaiverClaim[];
+  hold_reason: string | null;
+  total_planned_spend: number;
+  algo_version: string;
+}
+
+export interface FinderOffer {
+  their_team_id: string;
+  their_team_name: string;
+  give: string[];
+  get: string[];
+  give_names: string[];
+  get_names: string[];
+  give_players: Player[];
+  get_players: Player[];
+  my_gain_ros: number;
+  their_gain_ros: number;
+  my_gain_week: number;
+  fairness: number;
+  verdict: Verdict;
+  score: number;
+  why: string;
+  reason_codes: string[];
+}
+
+export interface TradePartner {
+  team_id: string;
+  team_name: string;
+  owner_name: string | null;
+  complement: number;
+  headline: string;
+  positions: { surplus: Record<string, number>; need: Record<string, number> };
+  offers: FinderOffer[];
+}
+
+export interface TradeFinderResponse {
+  week: number;
+  my_positions: { surplus: Record<string, number>; need: Record<string, number> };
+  summary: string;
+  partners: TradePartner[];
+  algo_version: string;
+}
+
 export interface TradeRequest {
   my_team_id: string;
   their_team_id: string;
@@ -249,10 +311,16 @@ export interface Report {
   waivers: Waivers;
   trade_targets: TradeTarget[];
   matchup: Matchup | null;
+  waiver_plan?: WaiverPlanResponse;
+  trade_finder?: TradeFinderResponse;
   html: string;
 }
 
 export type ActionType = "start" | "waiver" | "trade" | "hold";
+
+export interface ActionFeedExtras {
+  algo_version?: string;
+}
 
 export interface Action {
   id: string;

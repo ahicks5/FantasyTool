@@ -7,10 +7,11 @@ import { ShareCard } from "@/components/ShareCard";
 import { Avatar } from "@/components/Avatar";
 import { PlayerLine } from "@/components/Players";
 import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, VerdictWord, Why } from "@/components/ui";
-import { evaluateTrade, getLeague, getRoster, PaywallError } from "@/lib/api";
+import { evaluateTrade, findTrades, getLeague, getRoster, PaywallError } from "@/lib/api";
+import { TradeFinderView } from "@/components/TradeFinderView";
 import { signed } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
-import type { LeagueSummary, Player, TradeResult } from "@/lib/types";
+import type { LeagueSummary, Player, TradeFinderResponse, TradeResult } from "@/lib/types";
 
 function sortRoster(players: Player[]): Player[] {
   return [...players].sort((a, b) => (b.ros ?? b.projected ?? 0) - (a.ros ?? a.projected ?? 0));
@@ -83,6 +84,8 @@ function TradeBody({ c, refresh }: { c: Connection; refresh: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [paywall, setPaywall] = useState<PaywallError | null>(null);
+  const [found, setFound] = useState<TradeFinderResponse | null>(null);
+  const [tab, setTab] = useState<"find" | "grade">(params.get("give") ? "grade" : "find");
 
   useEffect(() => {
     Promise.all([getLeague(c.platform, c.league_id), getRoster(c.platform, c.league_id, c.team_id)])
@@ -92,6 +95,16 @@ function TradeBody({ c, refresh }: { c: Connection; refresh: () => void }) {
         setTheirId((cur) => cur || l.teams.find((t) => t.id !== c.team_id)?.id || "");
       })
       .catch((e: Error) => setError(e.message));
+  }, [c.platform, c.league_id, c.team_id]);
+
+  useEffect(() => {
+    let alive = true;
+    findTrades(c.platform, c.league_id, c.team_id)
+      .then((f) => alive && setFound(f))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
   }, [c.platform, c.league_id, c.team_id]);
 
   useEffect(() => {
@@ -149,6 +162,29 @@ function TradeBody({ c, refresh }: { c: Connection; refresh: () => void }) {
 
   return (
     <div className="grid gap-5">
+      <div className="grid grid-cols-2 gap-2 rounded-xl bg-soft p-1" role="tablist" aria-label="Trade mode">
+        {(["find", "grade"] as const).map((t) => (
+          <button
+            key={t}
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => setTab(t)}
+            className={`min-h-0 rounded-lg py-2.5 text-sm font-bold ${tab === t ? "bg-paper shadow-[var(--shadow-card)]" : "text-muted"}`}
+          >
+            {t === "find" ? "Find a trade" : "Grade a trade"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "find" &&
+        (found ? (
+          <TradeFinderView found={found} />
+        ) : (
+          <SkeletonList rows={3} tall />
+        ))}
+
+      {tab === "grade" && (
+      <>
       <section className="card p-4">
         <label htmlFor="their-team" className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
           Trade with
@@ -280,6 +316,8 @@ function TradeBody({ c, refresh }: { c: Connection; refresh: () => void }) {
           </section>
         </div>
       )}
+      </>
+      )}
     </div>
   );
 }
@@ -300,13 +338,20 @@ function SideBox({ label, side }: { label: string; side: TradeResult["me"] }) {
   );
 }
 
+/** Remounts the body when the query string changes, so an offer link from the finder or the
+ *  home feed lands with its players already selected. */
+function TradeBodyKeyed({ c, refresh }: { c: Connection; refresh: () => void }) {
+  const params = useSearchParams();
+  return <TradeBody key={params.toString()} c={c} refresh={refresh} />;
+}
+
 export default function TradePage() {
   return (
     <AppShell title="Trade Lab">
       {(s) => (
         <Suspense fallback={<SkeletonList rows={3} />}>
           {s.has("trade_lab") ? (
-            <TradeBody c={s.connection!} refresh={s.refresh} />
+            <TradeBodyKeyed c={s.connection!} refresh={s.refresh} />
           ) : (
             <Locked sku="trade_lab" what="Trade Lab" teaser="Propose any trade. Edge grades it, then drafts a counter tuned to how that manager actually behaves." onUnlocked={s.refresh} />
           )}

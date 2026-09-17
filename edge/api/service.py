@@ -64,10 +64,11 @@ def load_sleeper(league_id: str, week: int | None = None) -> Bundle:
     players = api.players()
     rosters = api.rosters(league_id)
     provider = get_provider()
+    positions = sleeper.projection_positions(raw["roster_positions"])
     league = sleeper.build_league(raw, api.users(league_id), rosters, players, week,
-                                  projections_raw=to_raw(provider.weekly(season, week)))
+                                  projections_raw=to_raw(provider.weekly(season, week, positions)))
     byes = bye_weeks(load_schedule(season))
-    ros = ros_values(league, provider.season(season), byes)
+    ros = ros_values(league, provider.season(season, positions), byes)
     tx = _transactions_history(raw, week)
     try:
         trending = {t["player_id"]: t["count"] for t in api.trending_adds()}

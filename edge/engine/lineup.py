@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from edge.models import FLEX_SLOTS, League, Player, Team, slot_accepts
+from edge.models import FLEX_SLOTS, League, Player, Team, player_fits
 
 LOCK, LEAN, FLIP = "Lock", "Lean", "Coin flip"
 # Measured on 2026 week 1 (docs/BACKTEST.md): how often the higher projection actually scored more.
@@ -34,7 +34,7 @@ def _greedy(pool: list[Player], slots: list[str], values) -> list[Player | None]
     out: list[Player | None] = [None] * len(slots)
     for i in _slot_order(slots):
         for p in pool:
-            if p.id in used or not slot_accepts(slots[i], p.position):
+            if p.id in used or not player_fits(slots[i], p):
                 continue
             out[i] = p
             used.add(p.id)
@@ -42,16 +42,39 @@ def _greedy(pool: list[Player], slots: list[str], values) -> list[Player | None]
     return out
 
 
+def _shortlist(pool: list[Player], slots: list[str]) -> list[Player]:
+    """Drop players who cannot possibly start, keeping the assignment exact.
+
+    For a position P, no lineup can use more than `room` players of that position, where
+    `room` is the number of slots that accept P; and swapping any used P for a higher-valued
+    unused P is always legal. So the top `room` per position is all the optimizer ever needs.
+    `pool` must already be sorted best-first. This replaces a flat cap, which could cut the
+    only K or DEF off the end of a deep dynasty roster and leave the slot empty.
+    """
+    room: dict[tuple[str, ...], int] = {}
+    seen: dict[tuple[str, ...], int] = {}
+    out: list[Player] = []
+    for p in pool:
+        key = tuple(sorted(p.positions))   # players with identical eligibility compete for the same slots
+        if key not in room:
+            room[key] = sum(1 for s in slots if player_fits(s, p))
+        n = seen.get(key, 0)
+        if n < room[key]:
+            seen[key] = n + 1
+            out.append(p)
+    return out
+
+
 def _assign_exact(pool: list[Player], slots: list[str], values) -> list[Player | None]:
     """Max-weight assignment (Hungarian, O(n^3)) — exact even when flex slots overlap
-    (e.g. FLEX + WRRB_FLEX + SUPER_FLEX). Pool is capped to keep the matrix small."""
+    (e.g. FLEX + WRRB_FLEX + SUPER_FLEX)."""
     n = max(len(slots), len(pool))
     BIG = 10**6
     # cost = -value; ineligible = BIG; padded rows/cols = 0
     cost = [[0.0] * n for _ in range(n)]
     for i, slot in enumerate(slots):
         for j, p in enumerate(pool):
-            cost[i][j] = -effective(p, values) if slot_accepts(slot, p.position) else BIG
+            cost[i][j] = -effective(p, values) if player_fits(slot, p) else BIG
     # Hungarian algorithm (e-maxx formulation)
     u = [0.0] * (n + 1); v = [0.0] * (n + 1); pmatch = [0] * (n + 1); way = [0] * (n + 1)
     for i in range(1, n + 1):
@@ -94,9 +117,14 @@ def optimize(players: list[Player], slots: list[str], values: dict[str, float] |
     # healthy zero-projection players before injured ones, so an IR guy never "starts" by default
     pool = sorted(players, key=lambda p: (-effective(p, values), p.is_out))
     flex_types = {s for s in slots if s in FLEX_SLOTS}
-    if len(flex_types) <= 1:
+    # Greedy fills dedicated slots first, which is only exact while those slots are disjoint.
+    # A multi-eligible player (Sleeper lists rush ends as ["DL", "LB"]) makes two dedicated
+    # slots compete for the same man, so fall through to the exact assignment.
+    dedicated = [s for s in dict.fromkeys(slots) if s not in FLEX_SLOTS]
+    contested = any(sum(1 for s in dedicated if player_fits(s, p)) > 1 for p in pool)
+    if len(flex_types) <= 1 and not contested:
         return _greedy(pool, slots, values)
-    return _assign_exact(pool[:24], slots, values)
+    return _assign_exact(_shortlist(pool, slots), slots, values)
 
 
 def lineup_total(players: list[Player], slots: list[str], values: dict[str, float] | None = None) -> float:
@@ -169,7 +197,7 @@ def advise(league: League, team: Team) -> LineupAdvice:
         if p is None:
             calls.append(SlotCall(slot, None, FLIP, "No eligible player. Hit the waiver wire."))
             continue
-        alt = max((b for b in bench if slot_accepts(slot, b.position)), key=effective, default=None)
+        alt = max((b for b in bench if player_fits(slot, b)), key=effective, default=None)
         margin = effective(p) - (effective(alt) if alt else 0.0)
         conf = confidence_for(margin)
         if effective(p) <= 0:
@@ -191,7 +219,7 @@ def advise(league: League, team: Team) -> LineupAdvice:
 
     bench_notes = []
     for b in sorted(bench, key=lambda b: -effective(b)):
-        eligible = [c for c in calls if c.player and slot_accepts(c.slot, b.position)]
+        eligible = [c for c in calls if c.player and player_fits(c.slot, b)]
         if eligible:
             weakest = min(eligible, key=lambda c: effective(c.player))
             gap = effective(weakest.player) - effective(b)

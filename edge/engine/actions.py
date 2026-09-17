@@ -6,7 +6,7 @@ from edge.engine import lineup as lineup_mod
 from edge.engine import report, trade_finder, waiver_plan
 from edge.engine.lineup import effective, optimize
 from edge.engine.tendencies import Profile
-from edge.models import League, Team, slot_accepts
+from edge.models import FLEX_SLOTS, League, Team, slot_accepts
 
 ALGO_VERSION = "actions.v2"
 DEADLINE_BONUS = 3.0   # this week's lineup is decided at kickoff; waivers and trades are not
@@ -29,7 +29,7 @@ def _pos_rank_after_add(team: Team, fa, slots: list[str]) -> str | None:
     for i, (slot, p) in enumerate(zip(slots, best)):
         if p and p.id == fa.id:
             n = sum(1 for s in slots[: i + 1] if s == slot)
-            return f"{slot}{n}" if slot not in ("FLEX", "SUPER_FLEX", "WRRB_FLEX", "REC_FLEX") else slot
+            return slot if slot in FLEX_SLOTS else f"{slot}{n}"
     return None
 
 
@@ -124,11 +124,13 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                 "type": "trade", "feature": "trade_lab", "locked": False,
                 "title": f"Offer {' + '.join(o['give_names'])} for {' + '.join(o['get_names'])}",
                 "subtitle": f"to {partner['team_name']} · {partner['headline']}",
-                "benefit": f"+{o['my_gain_ros']:.0f} rest-of-season lineup points", "benefit_value": o["my_gain_ros"],
+                "benefit": f"+{trade_finder._r0(o['my_gain_ros'])} rest-of-season lineup points",
+                "benefit_value": o["my_gain_ros"],
                 "confidence": "Lean", "reason": o["why"],
                 "why": [partner["headline"],
-                        f"Your lineup gains {o['my_gain_ros']:.0f} rest-of-season points; theirs gains {o['their_gain_ros']:.0f}.",
-                        f"Asset value is {o['fairness']:.0%} balanced, so it is not an insult."],
+                        f"Your lineup gains {trade_finder._r0(o['my_gain_ros'])} rest-of-season points; "
+                        f"theirs gains {trade_finder._r0(o['their_gain_ros'])}.",
+                        f"Asset value is {round(o['fairness'] * 100)}% balanced, so it is not an insult."],
                 "players": o["give_players"][:1] + o["get_players"][:1],
                 "cta": {"label": "Open in Trade Lab",
                         "href": f"/trade?their={partner['team_id']}&give={','.join(o['give'])}&get={','.join(o['get'])}"},
@@ -139,7 +141,8 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                 "id": "trade:locked", "type": "trade", "feature": "trade_lab", "locked": True,
                 "title": f"A trade with {partner['team_name']} improves both teams",
                 "subtitle": partner["headline"],
-                "benefit": f"+{o['my_gain_ros']:.0f} rest-of-season lineup points", "benefit_value": o["my_gain_ros"],
+                "benefit": f"+{trade_finder._r0(o['my_gain_ros'])} rest-of-season lineup points",
+                "benefit_value": o["my_gain_ros"],
                 "confidence": None,
                 "reason": "Unlock Trade Lab to see the offer, the other manager's habits, and a counter.",
                 "why": [], "players": [], "cta": {"label": "Unlock Trade Lab", "href": "/trade"},

@@ -64,11 +64,19 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [ ] Verify ESPN connector on a real public league (fixture is hand-built from real player records)
 - [ ] Weekly email of the Full Report (Resend free tier) — retention lever
 - [ ] Engine tuning with real week-2 → week-3 results (backtest start/sit calls vs actuals)
-- [ ] Waivers: add/drop pair valuation + fallback claims ("if X is gone, add Z")
-- [ ] Trade Finder: surplus/need matching across the league (blueprint P1)
-- [ ] RecommendationRun log with algorithm version (learning loop)
+- [x] Waivers: add/drop pair valuation + fallback claims ("if X is gone, add Z")
+- [x] Trade Finder: surplus/need matching across the league (blueprint P1)
+- [x] RecommendationRun log with algorithm version (learning loop)
 - [x] Projection provider interface (`edge/data/providers.py`): protocol + SleeperProvider,
       Tank01 stub, `EDGE_PROJECTION_PROVIDER` env switch, tests incl. a fake provider driving the engine
+
+## Blueprint items still open
+- [ ] Weekly action email from stored runs (Resend free tier) — retention lever
+- [ ] Shareable public trade-verdict URLs (organic loop)
+- [ ] Uncertainty-aware confidence: P(a > b) from projection error by position, not raw margin
+      (blueprint says do NOT build this before multi-week backtesting exists)
+- [ ] Commissioner league pack, creator affiliate codes (growth, after launch)
+- [ ] Edge Pro tier — deliberately not launched yet
 
 ## Later (not v1)
 - [ ] Private ESPN leagues (espn_s2 / SWID)

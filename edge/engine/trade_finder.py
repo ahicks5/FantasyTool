@@ -23,6 +23,12 @@ from edge.models import FLEX_SLOTS, League, Team, Player, slot_accepts
 
 ALGO_VERSION = "trade_finder.v1"
 
+def _r0(x: float) -> int:
+    """Round half UP, matching what the web UI's toFixed(0) shows, so the number in a sentence
+    never disagrees with the number in the chip beside it."""
+    return int(x + 0.5) if x >= 0 else -int(-x + 0.5)
+
+
 MIN_MY_GAIN = 2.0        # rest-of-season lineup points; below this it is not worth the message
 MIN_THEIR_GAIN = 0.0     # they must not be worse off, or they will not accept
 MIN_FAIRNESS = 0.75      # asset value balance below which the offer reads as an insult
@@ -182,14 +188,22 @@ def _tradeable(team: Team, league: League, ros: dict[str, float], positions: set
 
 
 def _headline(me: PositionProfile, theirs: PositionProfile, team_name: str) -> str:
-    my_top = max(me.surplus.items(), key=lambda kv: kv[1], default=(None, 0))[0]
-    their_top = max(theirs.surplus.items(), key=lambda kv: kv[1], default=(None, 0))[0]
-    if my_top and their_top and my_top != their_top:
-        return f"You are {my_top}-heavy, {team_name} is {their_top}-heavy."
+    """One concrete sentence about why these two rosters fit. Never generic filler."""
+    # Best case: a clean two-way swap of strengths.
+    for my_pos, _ in sorted(me.surplus.items(), key=lambda kv: -kv[1]):
+        for their_pos, _ in sorted(theirs.surplus.items(), key=lambda kv: -kv[1]):
+            if my_pos != their_pos and their_pos in me.need and my_pos in theirs.need:
+                return f"You are {my_pos}-heavy and thin at {their_pos}; they are the mirror image."
     my_need = max(me.need.items(), key=lambda kv: kv[1], default=(None, 0))[0]
     if my_need and my_need in theirs.surplus:
-        return f"{team_name} has {my_need} to spare and you need one."
-    return f"{team_name} lines up with your roster better than most."
+        return f"They have {my_need} to spare and it is your thinnest spot."
+    my_top = max(me.surplus.items(), key=lambda kv: kv[1], default=(None, 0))[0]
+    if my_top and my_top in theirs.need:
+        return f"They need {my_top} and you have one to trade."
+    their_top = max(theirs.surplus.items(), key=lambda kv: kv[1], default=(None, 0))[0]
+    if their_top:
+        return f"Their spare {their_top} is worth more to your lineup than to theirs."
+    return "Their roster shape leaves room for a deal that helps you both."
 
 
 def find(league: League, my_team: Team, ros: dict[str, float],
@@ -229,8 +243,8 @@ def find(league: League, my_team: Team, ros: dict[str, float],
                 codes.append("one_for_one")
             score = round(me_side.lineup_delta_ros + 0.5 * them_side.lineup_delta_ros
                           + 4 * fair + fit + simplicity, 2)
-            why = (f"You gain {me_side.lineup_delta_ros:.0f} rest-of-season lineup points, they gain "
-                   f"{them_side.lineup_delta_ros:.0f}. Value is {fair:.0%} balanced.")
+            why = (f"You gain {_r0(me_side.lineup_delta_ros)} rest-of-season lineup points, they gain "
+                   f"{_r0(them_side.lineup_delta_ros)}. Value is {round(fair * 100)}% balanced.")
             if fit_note:
                 why += f" This manager {fit_note}."
             offers.append(Offer(other.id, other.name, give, get, me_side, them_side, fair, score, why, codes))
@@ -254,6 +268,8 @@ def find(league: League, my_team: Team, ros: dict[str, float],
     partners = partners[:limit_partners]
     summary = (f"{partners[0].team.name} is your best trade partner. {partners[0].headline}"
                if partners else "No trade in this league helps both sides right now. Hold.")
+    for p in partners:                      # the card already names the team; do not repeat it
+        p.headline = p.headline.replace(f"{p.team.name} ", "They ")
     return {
         "week": league.week, "my_positions": mine.to_dict(), "summary": summary,
         "partners": [p.to_dict() for p in partners], "algo_version": ALGO_VERSION,

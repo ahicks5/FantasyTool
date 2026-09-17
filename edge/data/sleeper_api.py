@@ -14,6 +14,9 @@ CACHE_DIR = Path(os.environ.get("EDGE_CACHE_DIR", ".cache"))
 PLAYERS_TTL = 24 * 3600
 PROJ_TTL = 3600
 POSITIONS = ["QB", "RB", "WR", "TE", "K", "DEF"]
+# Sleeper serves IDP projections only when these are asked for by name, and they are a big
+# payload, so leagues without IDP slots never pay for them (see connectors.sleeper.load_league).
+IDP_POSITIONS = ["DL", "LB", "DB"]
 
 
 def _get(path: str, params: dict | None = None) -> Any:
@@ -69,21 +72,29 @@ def players() -> dict[str, dict]:
     return _cached("sleeper_players.json", PLAYERS_TTL, lambda: _get("/v1/players/nfl"))
 
 
-def projections(season: int, week: int) -> list[dict]:
+def _proj_params(positions: list[str]) -> list[tuple[str, str]]:
+    return [("season_type", "regular"), ("order_by", "ppr")] + [("position[]", p) for p in positions]
+
+
+def _proj_suffix(positions: list[str]) -> str:
+    return "_idp" if set(positions) - set(POSITIONS) else ""
+
+
+def projections(season: int, week: int, positions: list[str] | None = None) -> list[dict]:
     """Weekly projections with raw stat lines. Cached 1h."""
-    params = [("season_type", "regular"), ("order_by", "ppr")] + [("position[]", p) for p in POSITIONS]
+    positions = positions or POSITIONS
     return _cached(
-        f"sleeper_proj_{season}_{week}.json",
+        f"sleeper_proj_{season}_{week}{_proj_suffix(positions)}.json",
         PROJ_TTL,
-        lambda: _get(f"/projections/nfl/{season}/{week}", params=params),
+        lambda: _get(f"/projections/nfl/{season}/{week}", params=_proj_params(positions)),
     )
 
 
-def projections_season(season: int) -> list[dict]:
+def projections_season(season: int, positions: list[str] | None = None) -> list[dict]:
     """Full-season projections (per-player totals, gp). Cached 24h."""
-    params = [("season_type", "regular"), ("order_by", "ppr")] + [("position[]", p) for p in POSITIONS]
-    return _cached(f"sleeper_proj_{season}_season.json", PLAYERS_TTL,
-                   lambda: _get(f"/projections/nfl/{season}", params=params))
+    positions = positions or POSITIONS
+    return _cached(f"sleeper_proj_{season}_season{_proj_suffix(positions)}.json", PLAYERS_TTL,
+                   lambda: _get(f"/projections/nfl/{season}", params=_proj_params(positions)))
 
 
 def trending_adds(hours: int = 48, limit: int = 100) -> list[dict]:

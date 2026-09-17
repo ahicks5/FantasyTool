@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from edge.data.schedule import FANTASY_LAST_WEEK, norm_team
 from edge.engine.lineup import effective, lineup_total, optimize
-from edge.models import League, Player, Team, slot_accepts
+from edge.models import League, Player, Team, player_fits
 
 
 @dataclass
@@ -58,13 +58,12 @@ def rank(league: League, team: Team, ros: dict[str, float], byes: dict[str, int]
     base_week = lineup_total(team.players, slots)
     base_ros = lineup_total(team.players, slots, ros)
     trending = trending or {}
-    usable = {pos for s in slots for pos in ("QB", "RB", "WR", "TE", "K", "DEF", "DL", "LB", "DB") if slot_accepts(s, pos)}
     drop = _drop_candidate(team, slots, ros)
     best_ids = {p.id for p in optimize(team.players, slots) if p}
 
     picks: list[Pick] = []
     for fa in [p for p in league.free_agents if not p.is_out][:pool]:
-        if fa.position not in usable:
+        if not any(player_fits(s, fa) for s in slots):
             continue
         roster = team.players + [fa]
         weekly_gain = round(lineup_total(roster, slots) - base_week, 2)

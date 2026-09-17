@@ -64,11 +64,15 @@ class ProjectionProvider(Protocol):
     name: str
     attribution: str | None   # credit line the vendor requires in the UI (None = not required)
 
-    def weekly(self, season: int, week: int) -> list[PlayerProjection]:
-        """Projections for one week."""
+    def weekly(self, season: int, week: int, positions: list[str] | None = None) -> list[PlayerProjection]:
+        """Projections for one week.
+
+        `positions` is the position filter the league needs (IDP leagues ask for DL/LB/DB on
+        top of the offensive positions). A vendor that always returns everything may ignore it.
+        """
         ...
 
-    def season(self, season: int) -> list[PlayerProjection]:
+    def season(self, season: int, positions: list[str] | None = None) -> list[PlayerProjection]:
         """Full-season projected totals (used for rest-of-season values)."""
         ...
 
@@ -132,11 +136,11 @@ class SleeperProvider:
     name = "sleeper"
     attribution = None
 
-    def weekly(self, season: int, week: int) -> list[PlayerProjection]:
-        return [from_sleeper(r, self.name) for r in api.projections(season, week)]
+    def weekly(self, season: int, week: int, positions: list[str] | None = None) -> list[PlayerProjection]:
+        return [from_sleeper(r, self.name) for r in api.projections(season, week, positions)]
 
-    def season(self, season: int) -> list[PlayerProjection]:
-        return [from_sleeper(r, self.name) for r in api.projections_season(season)]
+    def season(self, season: int, positions: list[str] | None = None) -> list[PlayerProjection]:
+        return [from_sleeper(r, self.name) for r in api.projections_season(season, positions)]
 
 
 # Tank01 stat name -> Sleeper stat key. UNVERIFIED: written from the vendor's public docs,
@@ -208,14 +212,14 @@ class Tank01Provider:
         if not self.api_key:
             raise ProviderUnavailable("TANK01_API_KEY not set")
 
-    def weekly(self, season: int, week: int) -> list[PlayerProjection]:
+    def weekly(self, season: int, week: int, positions: list[str] | None = None) -> list[PlayerProjection]:
         raise NotImplementedError(
             "Tank01Provider is a stub: wire up GET {host}{path} and the id bridge first".format(
                 host=self.HOST, path=self.WEEKLY_PATH.format(week=week, season=season)
             )
         )
 
-    def season(self, season: int) -> list[PlayerProjection]:
+    def season(self, season: int, positions: list[str] | None = None) -> list[PlayerProjection]:
         raise NotImplementedError("Tank01 has no season-totals endpoint; sum weekly calls")
 
 

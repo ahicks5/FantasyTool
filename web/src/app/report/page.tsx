@@ -5,6 +5,8 @@ import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";
 import { LineupView } from "@/components/LineupView";
 import { WaiversView } from "@/components/WaiversView";
+import { WaiverPlanView } from "@/components/WaiverPlanView";
+import { TradeFinderView } from "@/components/TradeFinderView";
 import { Card, ErrorBox, H2, SkeletonList, VerdictWord } from "@/components/ui";
 import { getReport } from "@/lib/api";
 import { pct } from "@/lib/format";
@@ -54,11 +56,20 @@ function ReportBody({ c }: { c: Connection }) {
       <section>
         <H2>Waivers</H2>
         <div className="mt-2">
-          <WaiversView waivers={data.waivers} compact />
+          {data.waiver_plan ? <WaiverPlanView plan={data.waiver_plan} compact /> : <WaiversView waivers={data.waivers} compact />}
         </div>
       </section>
 
-      <section>
+      {data.trade_finder && data.trade_finder.partners.length > 0 && (
+        <section>
+          <H2>Trade finder</H2>
+          <div className="mt-2">
+            <TradeFinderView found={data.trade_finder} />
+          </div>
+        </section>
+      )}
+
+      <section className={data.trade_finder?.partners.length ? "hidden" : ""}>
         <H2>Trade targets</H2>
         <ul className="mt-2 grid gap-2">
           {data.trade_targets.length === 0 && <li className="text-sm text-muted">No clean 1-for-1 upgrades this week.</li>}

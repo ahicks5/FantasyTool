@@ -1560,30 +1560,6 @@
 }
 },
 {
-"player_id": "8527",
-"week": null,
-"season": "2026",
-"team": "LV",
-"opponent": null,
-"stats": {
-"bonus_rec_wr": 2.0,
-"rec": 2.0,
-"rec_0_4": 0.4,
-"rec_10_19": 0.6,
-"rec_20_29": 0.4,
-"rec_30_39": 0.2,
-"rec_40p": 0.2,
-"rec_5_9": 0.4,
-"rec_fd": 2.6,
-"rec_yd": 26.0
-},
-"player": {
-"position": "WR",
-"team": "LV",
-"injury_status": null
-}
-},
-{
 "player_id": "8489",
 "week": null,
 "season": "2026",
@@ -1604,30 +1580,6 @@
 "player": {
 "position": "TE",
 "team": "IND",
-"injury_status": null
-}
-},
-{
-"player_id": "8484",
-"week": null,
-"season": "2026",
-"team": "TB",
-"opponent": null,
-"stats": {
-"bonus_rec_te": 1.0,
-"rec": 1.0,
-"rec_0_4": 0.2,
-"rec_10_19": 0.3,
-"rec_20_29": 0.2,
-"rec_30_39": 0.1,
-"rec_40p": 0.1,
-"rec_5_9": 0.2,
-"rec_fd": 1.3,
-"rec_yd": 13.0
-},
-"player": {
-"position": "TE",
-"team": "TB",
 "injury_status": null
 }
 },
@@ -1706,33 +1658,6 @@
 }
 },
 {
-"player_id": "8254",
-"week": null,
-"season": "2026",
-"team": "TEN",
-"opponent": null,
-"stats": {
-"bonus_rec_rb": 2.0,
-"rec": 2.0,
-"rec_0_4": 0.4,
-"rec_10_19": 0.6,
-"rec_20_29": 0.4,
-"rec_30_39": 0.2,
-"rec_40p": 0.2,
-"rec_5_9": 0.4,
-"rec_fd": 1.6,
-"rec_yd": 16.0,
-"rush_att": 5.0,
-"rush_fd": 2.0,
-"rush_yd": 20.0
-},
-"player": {
-"position": "RB",
-"team": "TEN",
-"injury_status": null
-}
-},
-{
 "player_id": "8250",
 "week": null,
 "season": "2026",
@@ -1797,19 +1722,6 @@
 "player": {
 "position": "TE",
 "team": "TEN",
-"injury_status": null
-}
-},
-{
-"player_id": "8219",
-"week": null,
-"season": "2026",
-"team": "NYJ",
-"opponent": null,
-"stats": {},
-"player": {
-"position": "TE",
-"team": "NYJ",
 "injury_status": null
 }
 },
@@ -1919,33 +1831,6 @@
 "position": "WR",
 "team": "GB",
 "injury_status": "Questionable"
-}
-},
-{
-"player_id": "8195",
-"week": null,
-"season": "2026",
-"team": "LAR",
-"opponent": null,
-"stats": {
-"bonus_rec_rb": 3.0,
-"rec": 3.0,
-"rec_0_4": 0.6,
-"rec_10_19": 0.9,
-"rec_20_29": 0.6,
-"rec_30_39": 0.3,
-"rec_40p": 0.3,
-"rec_5_9": 0.6,
-"rec_fd": 2.0,
-"rec_yd": 20.0,
-"rush_att": 5.0,
-"rush_fd": 2.1,
-"rush_yd": 21.0
-},
-"player": {
-"position": "RB",
-"team": "LAR",
-"injury_status": null
 }
 },
 {
@@ -3001,36 +2886,6 @@
 }
 },
 {
-"player_id": "7757",
-"week": null,
-"season": "2026",
-"team": "PIT",
-"opponent": null,
-"stats": {
-"rush_att": 1.0,
-"rush_fd": 0.6,
-"rush_yd": 6.0
-},
-"player": {
-"position": "WR",
-"team": "PIT",
-"injury_status": null
-}
-},
-{
-"player_id": "7720",
-"week": null,
-"season": "2026",
-"team": "NYJ",
-"opponent": null,
-"stats": {},
-"player": {
-"position": "RB",
-"team": "NYJ",
-"injury_status": "Out"
-}
-},
-{
 "player_id": "7716",
 "week": null,
 "season": "2026",
@@ -3136,25 +2991,28 @@
 }
 },
 {
-"player_id": "7602",
+"player_id": "7607",
 "week": null,
 "season": "2026",
 "team": "TEN",
 "opponent": null,
 "stats": {
-"bonus_rec_te": 2.0,
-"rec": 2.0,
-"rec_0_4": 0.4,
-"rec_10_19": 0.6,
-"rec_20_29": 0.4,
-"rec_30_39": 0.2,
-"rec_40p": 0.2,
-"rec_5_9": 0.4,
-"rec_fd": 2.0,
-"rec_yd": 20.0
+"bonus_rec_rb": 3.0,
+"rec": 3.0,
+"rec_0_4": 0.6,
+"rec_10_19": 0.9,
+"rec_20_29": 0.6,
+"rec_30_39": 0.3,
+"rec_40p": 0.3,
+"rec_5_9": 0.6,
+"rec_fd": 2.2,
+"rec_yd": 22.0,
+"rush_att": 7.0,
+"rush_fd": 2.9,
+"rush_yd": 29.0
 },
 "player": {
-"position": "TE",
+"position": "RB",
 "team": "TEN",
 "injury_status": null
 }
@@ -3182,19 +3040,6 @@
 "position": "TE",
 "team": "PIT",
 "injury_status": null
-}
-},
-{
-"player_id": "7596",
-"week": null,
-"season": "2026",
-"team": "PHI",
-"opponent": null,
-"stats": {},
-"player": {
-"position": "WR",
-"team": "PHI",
-"injury_status": "Out"
 }
 },
 {
@@ -3472,33 +3317,6 @@
 }
 },
 {
-"player_id": "7562",
-"week": null,
-"season": "2026",
-"team": "LAR",
-"opponent": null,
-"stats": {
-"bonus_rec_wr": 4.0,
-"rec": 4.0,
-"rec_0_4": 0.8,
-"rec_10_19": 1.2,
-"rec_20_29": 0.8,
-"rec_30_39": 0.4,
-"rec_40p": 0.4,
-"rec_5_9": 0.8,
-"rec_fd": 6.2,
-"rec_yd": 62.0,
-"rush_att": 1.0,
-"rush_fd": 0.5,
-"rush_yd": 5.0
-},
-"player": {
-"position": "WR",
-"team": "LAR",
-"injury_status": "Out"
-}
-},
-{
 "player_id": "7553",
 "week": null,
 "season": "2026",
@@ -3605,33 +3423,6 @@
 "player": {
 "position": "TE",
 "team": "JAX",
-"injury_status": null
-}
-},
-{
-"player_id": "7531",
-"week": null,
-"season": "2026",
-"team": "CAR",
-"opponent": null,
-"stats": {
-"bonus_rec_te": 1.0,
-"rec": 1.0,
-"rec_0_4": 0.2,
-"rec_10_19": 0.3,
-"rec_20_29": 0.2,
-"rec_30_39": 0.1,
-"rec_40p": 0.1,
-"rec_5_9": 0.2,
-"rec_fd": 0.7,
-"rec_yd": 7.0,
-"rush_att": 1.0,
-"rush_fd": 0.2,
-"rush_yd": 2.0
-},
-"player": {
-"position": "TE",
-"team": "CAR",
 "injury_status": null
 }
 },
@@ -3766,33 +3557,6 @@
 "player": {
 "position": "QB",
 "team": "JAX",
-"injury_status": null
-}
-},
-{
-"player_id": "7204",
-"week": null,
-"season": "2026",
-"team": "NE",
-"opponent": null,
-"stats": {
-"bonus_rec_rb": 2.0,
-"rec": 2.0,
-"rec_0_4": 0.4,
-"rec_10_19": 0.6,
-"rec_20_29": 0.4,
-"rec_30_39": 0.2,
-"rec_40p": 0.2,
-"rec_5_9": 0.4,
-"rec_fd": 1.5,
-"rec_yd": 15.0,
-"rush_att": 3.0,
-"rush_fd": 0.7,
-"rush_yd": 7.0
-},
-"player": {
-"position": "RB",
-"team": "NE",
 "injury_status": null
 }
 },
@@ -4459,19 +4223,6 @@
 }
 },
 {
-"player_id": "6744",
-"week": null,
-"season": "2026",
-"team": null,
-"opponent": null,
-"stats": {},
-"player": {
-"position": "WR",
-"team": null,
-"injury_status": null
-}
-},
-{
 "player_id": "6650",
 "week": null,
 "season": "2026",
@@ -4489,19 +4240,6 @@
 "player": {
 "position": "K",
 "team": "TB",
-"injury_status": null
-}
-},
-{
-"player_id": "663",
-"week": null,
-"season": "2026",
-"team": null,
-"opponent": null,
-"stats": {},
-"player": {
-"position": "TE",
-"team": null,
 "injury_status": null
 }
 },
@@ -5244,14 +4982,20 @@
 }
 },
 {
-"player_id": "5385",
+"player_id": "5230",
 "week": null,
 "season": "2026",
 "team": null,
 "opponent": null,
-"stats": {},
+"stats": {
+"fgm_40_49": 1.0,
+"fgm_50p": 1.0,
+"fgm_yds": 99.0,
+"fgmiss_50p": 1.0,
+"xpm": 5.0
+},
 "player": {
-"position": "TE",
+"position": "K",
 "team": null,
 "injury_status": null
 }
@@ -5274,30 +5018,6 @@
 "player": {
 "position": "K",
 "team": "SF",
-"injury_status": null
-}
-},
-{
-"player_id": "5133",
-"week": null,
-"season": "2026",
-"team": "DET",
-"opponent": null,
-"stats": {
-"bonus_rec_te": 1.0,
-"rec": 1.0,
-"rec_0_4": 0.2,
-"rec_10_19": 0.3,
-"rec_20_29": 0.2,
-"rec_30_39": 0.1,
-"rec_40p": 0.1,
-"rec_5_9": 0.2,
-"rec_fd": 0.7,
-"rec_yd": 7.0
-},
-"player": {
-"position": "TE",
-"team": "DET",
 "injury_status": null
 }
 },
@@ -5471,30 +5191,6 @@
 }
 },
 {
-"player_id": "4995",
-"week": null,
-"season": "2026",
-"team": "LV",
-"opponent": null,
-"stats": {
-"bonus_rec_te": 2.0,
-"rec": 2.0,
-"rec_0_4": 0.4,
-"rec_10_19": 0.6,
-"rec_20_29": 0.4,
-"rec_30_39": 0.2,
-"rec_40p": 0.2,
-"rec_5_9": 0.4,
-"rec_fd": 2.0,
-"rec_yd": 20.0
-},
-"player": {
-"position": "TE",
-"team": "LV",
-"injury_status": null
-}
-},
-{
 "player_id": "4993",
 "week": null,
 "season": "2026",
@@ -5630,19 +5326,6 @@
 }
 },
 {
-"player_id": "4910",
-"week": null,
-"season": "2026",
-"team": null,
-"opponent": null,
-"stats": {},
-"player": {
-"position": "WR",
-"team": null,
-"injury_status": null
-}
-},
-{
 "player_id": "4892",
 "week": null,
 "season": "2026",
@@ -5726,43 +5409,6 @@
 }
 },
 {
-"player_id": "4602",
-"week": null,
-"season": "2026",
-"team": "PIT",
-"opponent": null,
-"stats": {
-"bonus_rec_te": 1.0,
-"rec": 1.0,
-"rec_0_4": 0.2,
-"rec_10_19": 0.3,
-"rec_20_29": 0.2,
-"rec_30_39": 0.1,
-"rec_40p": 0.1,
-"rec_5_9": 0.2,
-"rec_fd": 0.9,
-"rec_yd": 9.0
-},
-"player": {
-"position": "TE",
-"team": "PIT",
-"injury_status": null
-}
-},
-{
-"player_id": "4504",
-"week": null,
-"season": "2026",
-"team": null,
-"opponent": null,
-"stats": {},
-"player": {
-"position": "RB",
-"team": null,
-"injury_status": null
-}
-},
-{
 "player_id": "4454",
 "week": null,
 "season": "2026",
@@ -5788,19 +5434,6 @@
 }
 },
 {
-"player_id": "4353",
-"week": null,
-"season": "2026",
-"team": "NYG",
-"opponent": null,
-"stats": {},
-"player": {
-"position": "FB",
-"team": "NYG",
-"injury_status": null
-}
-},
-{
 "player_id": "4314",
 "week": null,
 "season": "2026",
@@ -5810,30 +5443,6 @@
 "player": {
 "position": "TE",
 "team": "PHI",
-"injury_status": null
-}
-},
-{
-"player_id": "4234",
-"week": null,
-"season": "2026",
-"team": null,
-"opponent": null,
-"stats": {
-"bonus_rec_wr": 4.0,
-"rec": 4.0,
-"rec_0_4": 0.8,
-"rec_10_19": 1.2,
-"rec_20_29": 0.8,
-"rec_30_39": 0.4,
-"rec_40p": 0.4,
-"rec_5_9": 0.8,
-"rec_fd": 5.3,
-"rec_yd": 53.0
-},
-"player": {
-"position": "WR",
-"team": null,
 "injury_status": null
 }
 },
@@ -6731,30 +6340,6 @@
 }
 },
 {
-"player_id": "3048",
-"week": null,
-"season": "2026",
-"team": "NYG",
-"opponent": null,
-"stats": {
-"bonus_rec_te": 1.0,
-"rec": 1.0,
-"rec_0_4": 0.2,
-"rec_10_19": 0.3,
-"rec_20_29": 0.2,
-"rec_30_39": 0.1,
-"rec_40p": 0.1,
-"rec_5_9": 0.2,
-"rec_fd": 1.3,
-"rec_yd": 13.0
-},
-"player": {
-"position": "TE",
-"team": "NYG",
-"injury_status": null
-}
-},
-{
 "player_id": "2747",
 "week": null,
 "season": "2026",
@@ -6825,33 +6410,6 @@
 "player": {
 "position": "WR",
 "team": "WAS",
-"injury_status": null
-}
-},
-{
-"player_id": "2359",
-"week": null,
-"season": "2026",
-"team": "JAX",
-"opponent": null,
-"stats": {
-"bonus_rec_rb": 2.0,
-"rec": 2.0,
-"rec_0_4": 0.4,
-"rec_10_19": 0.6,
-"rec_20_29": 0.4,
-"rec_30_39": 0.2,
-"rec_40p": 0.2,
-"rec_5_9": 0.4,
-"rec_fd": 1.5,
-"rec_yd": 15.0,
-"rush_att": 3.0,
-"rush_fd": 1.3,
-"rush_yd": 13.0
-},
-"player": {
-"position": "RB",
-"team": "JAX",
 "injury_status": null
 }
 },
@@ -7213,32 +6771,6 @@
 }
 },
 {
-"player_id": "13580",
-"week": null,
-"season": "2026",
-"team": "CLE",
-"opponent": null,
-"stats": {},
-"player": {
-"position": "TE",
-"team": "CLE",
-"injury_status": null
-}
-},
-{
-"player_id": "13577",
-"week": null,
-"season": "2026",
-"team": "DEN",
-"opponent": null,
-"stats": {},
-"player": {
-"position": "TE",
-"team": "DEN",
-"injury_status": "Out"
-}
-},
-{
 "player_id": "13545",
 "week": null,
 "season": "2026",
@@ -7280,58 +6812,6 @@
 "player": {
 "position": "WR",
 "team": "NO",
-"injury_status": null
-}
-},
-{
-"player_id": "13516",
-"week": null,
-"season": "2026",
-"team": "MIN",
-"opponent": null,
-"stats": {
-"bonus_rec_rb": 2.0,
-"rec": 2.0,
-"rec_0_4": 0.4,
-"rec_10_19": 0.6,
-"rec_20_29": 0.4,
-"rec_30_39": 0.2,
-"rec_40p": 0.2,
-"rec_5_9": 0.4,
-"rec_fd": 1.5,
-"rec_yd": 15.0,
-"rush_att": 1.0,
-"rush_fd": 0.3,
-"rush_yd": 3.0
-},
-"player": {
-"position": "RB",
-"team": "MIN",
-"injury_status": null
-}
-},
-{
-"player_id": "13491",
-"week": null,
-"season": "2026",
-"team": "PIT",
-"opponent": null,
-"stats": {
-"bonus_rec_wr": 2.0,
-"pr_td": 1.0,
-"rec": 2.0,
-"rec_0_4": 0.4,
-"rec_10_19": 0.6,
-"rec_20_29": 0.4,
-"rec_30_39": 0.2,
-"rec_40p": 0.2,
-"rec_5_9": 0.4,
-"rec_fd": 2.2,
-"rec_yd": 22.0
-},
-"player": {
-"position": "WR",
-"team": "PIT",
 "injury_status": null
 }
 },
@@ -7407,30 +6887,6 @@
 "player": {
 "position": "TE",
 "team": "MIA",
-"injury_status": null
-}
-},
-{
-"player_id": "13433",
-"week": null,
-"season": "2026",
-"team": "PIT",
-"opponent": null,
-"stats": {
-"bonus_rec_te": 5.0,
-"rec": 5.0,
-"rec_0_4": 1.0,
-"rec_10_19": 1.5,
-"rec_20_29": 1.0,
-"rec_30_39": 0.5,
-"rec_40p": 0.5,
-"rec_5_9": 1.0,
-"rec_fd": 4.6,
-"rec_yd": 46.0
-},
-"player": {
-"position": "TE",
-"team": "PIT",
 "injury_status": null
 }
 },
@@ -8327,19 +7783,6 @@
 }
 },
 {
-"player_id": "13308",
-"week": null,
-"season": "2026",
-"team": "TB",
-"opponent": null,
-"stats": {},
-"player": {
-"position": "TE",
-"team": "TB",
-"injury_status": null
-}
-},
-{
 "player_id": "13307",
 "week": null,
 "season": "2026",
@@ -8525,31 +7968,6 @@
 "position": "WR",
 "team": "CLE",
 "injury_status": null
-}
-},
-{
-"player_id": "13297",
-"week": null,
-"season": "2026",
-"team": "ARI",
-"opponent": null,
-"stats": {
-"bonus_rec_wr": 9.0,
-"rec": 9.0,
-"rec_0_4": 1.8,
-"rec_10_19": 2.7,
-"rec_20_29": 1.8,
-"rec_30_39": 0.9,
-"rec_40p": 0.9,
-"rec_5_9": 1.8,
-"rec_fd": 11.1,
-"rec_td": 1.0,
-"rec_yd": 111.0
-},
-"player": {
-"position": "WR",
-"team": "ARI",
-"injury_status": "Out"
 }
 },
 {
@@ -9192,19 +8610,6 @@
 }
 },
 {
-"player_id": "12817",
-"week": null,
-"season": "2026",
-"team": "KC",
-"opponent": null,
-"stats": {},
-"player": {
-"position": "TE",
-"team": "KC",
-"injury_status": null
-}
-},
-{
 "player_id": "12718",
 "week": null,
 "season": "2026",
@@ -9267,34 +8672,6 @@
 },
 "player": {
 "position": "K",
-"team": "BAL",
-"injury_status": null
-}
-},
-{
-"player_id": "12699",
-"week": null,
-"season": "2026",
-"team": "BAL",
-"opponent": null,
-"stats": {
-"bonus_rec_wr": 1.0,
-"fum_lost": 1.0,
-"rec": 1.0,
-"rec_0_4": 0.2,
-"rec_10_19": 0.3,
-"rec_20_29": 0.2,
-"rec_30_39": 0.1,
-"rec_40p": 0.1,
-"rec_5_9": 0.2,
-"rec_fd": 1.4,
-"rec_yd": 14.0,
-"rush_att": 1.0,
-"rush_fd": 0.6,
-"rush_yd": 6.0
-},
-"player": {
-"position": "WR",
 "team": "BAL",
 "injury_status": null
 }
@@ -9597,33 +8974,6 @@
 }
 },
 {
-"player_id": "12539",
-"week": null,
-"season": "2026",
-"team": "NYJ",
-"opponent": null,
-"stats": {
-"bonus_rec_wr": 3.0,
-"rec": 3.0,
-"rec_0_4": 0.6,
-"rec_10_19": 0.9,
-"rec_20_29": 0.6,
-"rec_30_39": 0.3,
-"rec_40p": 0.3,
-"rec_5_9": 0.6,
-"rec_fd": 3.5,
-"rec_yd": 35.0,
-"rush_att": 1.0,
-"rush_fd": 0.6,
-"rush_yd": 6.0
-},
-"player": {
-"position": "WR",
-"team": "NYJ",
-"injury_status": null
-}
-},
-{
 "player_id": "12536",
 "week": null,
 "season": "2026",
@@ -9779,6 +9129,8 @@
 "rec_td": 3.0,
 "rec_20_29": 7.0,
 "rush_fd": 2.1,
+"idp_tkl_solo": 22.0,
+"idp_int": 1.0,
 "rec": 35.0,
 "rec_fd": 41.5,
 "rush_att": 4.0,
@@ -9786,8 +9138,10 @@
 "bonus_rec_wr": 35.0,
 "rec_40p": 3.5,
 "rec_10_19": 10.5,
+"idp_fum_rec": 1.0,
 "rush_yd": 21.0,
-"rec_yd": 415.0
+"rec_yd": 415.0,
+"idp_tkl_ast": 9.0
 },
 "player": {
 "position": "DB",
@@ -11179,33 +10533,6 @@
 "player": {
 "position": "K",
 "team": "IND",
-"injury_status": null
-}
-},
-{
-"player_id": "12171",
-"week": null,
-"season": "2026",
-"team": "HOU",
-"opponent": null,
-"stats": {
-"bonus_rec_rb": 3.0,
-"rec": 3.0,
-"rec_0_4": 0.6,
-"rec_10_19": 0.9,
-"rec_20_29": 0.6,
-"rec_30_39": 0.3,
-"rec_40p": 0.3,
-"rec_5_9": 0.6,
-"rec_fd": 2.2,
-"rec_yd": 22.0,
-"rush_att": 19.0,
-"rush_fd": 4.9,
-"rush_yd": 49.0
-},
-"player": {
-"position": "RB",
-"team": "HOU",
 "injury_status": null
 }
 },
@@ -12635,34 +11962,6 @@
 }
 },
 {
-"player_id": "11570",
-"week": null,
-"season": "2026",
-"team": "BAL",
-"opponent": null,
-"stats": {
-"bonus_rec_rb": 12.0,
-"rec": 12.0,
-"rec_0_4": 2.4,
-"rec_10_19": 3.6,
-"rec_20_29": 2.4,
-"rec_30_39": 1.2,
-"rec_40p": 1.2,
-"rec_5_9": 2.4,
-"rec_fd": 8.7,
-"rec_yd": 87.0,
-"rush_att": 29.0,
-"rush_fd": 12.0,
-"rush_td": 1.0,
-"rush_yd": 120.0
-},
-"player": {
-"position": "RB",
-"team": "BAL",
-"injury_status": null
-}
-},
-{
 "player_id": "11569",
 "week": null,
 "season": "2026",
@@ -12986,30 +12285,6 @@
 }
 },
 {
-"player_id": "11433",
-"week": null,
-"season": "2026",
-"team": "DEN",
-"opponent": null,
-"stats": {
-"bonus_rec_te": 3.0,
-"rec": 3.0,
-"rec_0_4": 0.6,
-"rec_10_19": 0.9,
-"rec_20_29": 0.6,
-"rec_30_39": 0.3,
-"rec_40p": 0.3,
-"rec_5_9": 0.6,
-"rec_fd": 2.7,
-"rec_yd": 27.0
-},
-"player": {
-"position": "TE",
-"team": "DEN",
-"injury_status": null
-}
-},
-{
 "player_id": "11370",
 "week": null,
 "season": "2026",
@@ -13034,23 +12309,6 @@
 "player": {
 "position": "RB",
 "team": "GB",
-"injury_status": null
-}
-},
-{
-"player_id": "11320",
-"week": null,
-"season": "2026",
-"team": "KC",
-"opponent": null,
-"stats": {
-"rush_att": 1.0,
-"rush_fd": 0.6,
-"rush_yd": 6.0
-},
-"player": {
-"position": "WR",
-"team": "KC",
 "injury_status": null
 }
 },
@@ -13100,19 +12358,6 @@
 "player": {
 "position": "RB",
 "team": "DET",
-"injury_status": null
-}
-},
-{
-"player_id": "11223",
-"week": null,
-"season": "2026",
-"team": null,
-"opponent": null,
-"stats": {},
-"player": {
-"position": "WR",
-"team": null,
 "injury_status": null
 }
 },
@@ -13198,19 +12443,6 @@
 }
 },
 {
-"player_id": "11157",
-"week": null,
-"season": "2026",
-"team": "CAR",
-"opponent": null,
-"stats": {},
-"player": {
-"position": "WR",
-"team": "CAR",
-"injury_status": null
-}
-},
-{
 "player_id": "11058",
 "week": null,
 "season": "2026",
@@ -13229,30 +12461,6 @@
 "position": "K",
 "team": "NYJ",
 "injury_status": "Out"
-}
-},
-{
-"player_id": "11034",
-"week": null,
-"season": "2026",
-"team": "ARI",
-"opponent": null,
-"stats": {
-"bonus_rec_wr": 3.0,
-"rec": 3.0,
-"rec_0_4": 0.6,
-"rec_10_19": 0.9,
-"rec_20_29": 0.6,
-"rec_30_39": 0.3,
-"rec_40p": 0.3,
-"rec_5_9": 0.6,
-"rec_fd": 3.5,
-"rec_yd": 35.0
-},
-"player": {
-"position": "WR",
-"team": "ARI",
-"injury_status": null
 }
 },
 {
@@ -13756,26 +12964,3482 @@
 }
 },
 {
-"player_id": "10210",
+"player_id": "8838",
+"week": null,
+"season": "2026",
+"team": "LV",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 34.0,
+"idp_tkl_solo": 56.0
+},
+"player": {
+"position": "DB",
+"team": "LV",
+"injury_status": null
+}
+},
+{
+"player_id": "8752",
+"week": null,
+"season": "2026",
+"team": "DEN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 2.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 16.0,
+"idp_tkl_solo": 41.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "CB",
+"team": "DEN",
+"injury_status": null
+}
+},
+{
+"player_id": "8659",
+"week": null,
+"season": "2026",
+"team": "LAR",
+"opponent": null,
+"stats": {
+"idp_ff": 3.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 43.0,
+"idp_tkl_solo": 64.0
+},
+"player": {
+"position": "LB",
+"team": "LAR",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "8487",
+"week": null,
+"season": "2026",
+"team": "BUF",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 2.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 13.0,
+"idp_tkl_solo": 34.0
+},
+"player": {
+"position": "DB",
+"team": "BUF",
+"injury_status": null
+}
+},
+{
+"player_id": "8476",
+"week": null,
+"season": "2026",
+"team": "DAL",
+"opponent": null,
+"stats": {
+"idp_int": 2.0,
+"idp_tkl_ast": 26.0,
+"idp_tkl_solo": 42.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "DAL",
+"injury_status": null
+}
+},
+{
+"player_id": "8406",
+"week": null,
+"season": "2026",
+"team": "HOU",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_tkl_ast": 30.0,
+"idp_tkl_solo": 54.0
+},
+"player": {
+"position": "DB",
+"team": "HOU",
+"injury_status": null
+}
+},
+{
+"player_id": "8392",
+"week": null,
+"season": "2026",
+"team": "WAS",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 51.0,
+"idp_tkl_solo": 71.0
+},
+"player": {
+"position": "DB",
+"team": "WAS",
+"injury_status": null
+}
+},
+{
+"player_id": "8385",
+"week": null,
+"season": "2026",
+"team": "KC",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_sack": 7.5,
+"idp_tkl_ast": 16.0,
+"idp_tkl_solo": 22.0
+},
+"player": {
+"position": "DL",
+"team": "KC",
+"injury_status": null
+}
+},
+{
+"player_id": "8384",
+"week": null,
+"season": "2026",
+"team": "TB",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_tkl_ast": 18.0,
+"idp_tkl_solo": 50.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "TB",
+"injury_status": null
+}
+},
+{
+"player_id": "8364",
+"week": null,
+"season": "2026",
+"team": "LAR",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 13.0,
+"idp_tkl_solo": 42.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "LAR",
+"injury_status": null
+}
+},
+{
+"player_id": "8362",
+"week": null,
+"season": "2026",
+"team": "WAS",
+"opponent": null,
+"stats": {
+"idp_sack": 4.0,
+"idp_tkl_ast": 18.0,
+"idp_tkl_solo": 56.0
+},
+"player": {
+"position": "LB",
+"team": "WAS",
+"injury_status": null
+}
+},
+{
+"player_id": "8359",
 "week": null,
 "season": "2026",
 "team": "NE",
 "opponent": null,
 "stats": {
-"bonus_rec_te": 2.0,
-"rec": 2.0,
-"rec_0_4": 0.4,
-"rec_10_19": 0.6,
-"rec_20_29": 0.4,
-"rec_30_39": 0.2,
-"rec_40p": 0.2,
-"rec_5_9": 0.4,
-"rec_fd": 2.0,
-"rec_yd": 20.0
+"idp_ff": 2.0,
+"idp_fum_rec": 2.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 11.0,
+"idp_tkl_solo": 43.0,
+"pass_int_td": 1.0
 },
 "player": {
-"position": "TE",
+"position": "DB",
 "team": "NE",
+"injury_status": null
+}
+},
+{
+"player_id": "8348",
+"week": null,
+"season": "2026",
+"team": "DET",
+"opponent": null,
+"stats": {
+"idp_int": 3.0,
+"idp_tkl_ast": 22.0,
+"idp_tkl_solo": 50.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "DET",
+"injury_status": "PUP"
+}
+},
+{
+"player_id": "8343",
+"week": null,
+"season": "2026",
+"team": "CIN",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_sack": 8.0,
+"idp_tkl_ast": 18.0,
+"idp_tkl_solo": 36.0
+},
+"player": {
+"position": "DL",
+"team": "CIN",
+"injury_status": null
+}
+},
+{
+"player_id": "8339",
+"week": null,
+"season": "2026",
+"team": "BAL",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 31.0,
+"idp_tkl_solo": 80.0
+},
+"player": {
+"position": "DB",
+"team": "BAL",
+"injury_status": null
+}
+},
+{
+"player_id": "8333",
+"week": null,
+"season": "2026",
+"team": "TEN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 2.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 23.0,
+"idp_tkl_solo": 55.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "TEN",
+"injury_status": null
+}
+},
+{
+"player_id": "8329",
+"week": null,
+"season": "2026",
+"team": "CAR",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 4.0,
+"idp_tkl_ast": 56.0,
+"idp_tkl_solo": 63.0
+},
+"player": {
+"position": "LB",
+"team": "CAR",
+"injury_status": null
+}
+},
+{
+"player_id": "8323",
+"week": null,
+"season": "2026",
+"team": "PIT",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 43.0,
+"idp_tkl_solo": 56.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "PIT",
+"injury_status": null
+}
+},
+{
+"player_id": "8314",
+"week": null,
+"season": "2026",
+"team": "HOU",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 2.0,
+"idp_tkl_ast": 26.0,
+"idp_tkl_solo": 42.0
+},
+"player": {
+"position": "DB",
+"team": "HOU",
+"injury_status": null
+}
+},
+{
+"player_id": "8311",
+"week": null,
+"season": "2026",
+"team": "BUF",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 2.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 52.0,
+"idp_tkl_solo": 60.0
+},
+"player": {
+"position": "LB",
+"team": "BUF",
+"injury_status": null
+}
+},
+{
+"player_id": "8294",
+"week": null,
+"season": "2026",
+"team": "CIN",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_tkl_ast": 35.0,
+"idp_tkl_solo": 54.0
+},
+"player": {
+"position": "DB",
+"team": "CIN",
+"injury_status": null
+}
+},
+{
+"player_id": "8289",
+"week": null,
+"season": "2026",
+"team": "DET",
+"opponent": null,
+"stats": {
+"idp_ff": 3.0,
+"idp_fum_rec": 2.0,
+"idp_int": 1.0,
+"idp_sack": 13.0,
+"idp_safe": 1.0,
+"idp_tkl_ast": 17.0,
+"idp_tkl_solo": 35.0
+},
+"player": {
+"position": "DL",
+"team": "DET",
+"injury_status": null
+}
+},
+{
+"player_id": "8286",
+"week": null,
+"season": "2026",
+"team": "CIN",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_tkl_ast": 29.0,
+"idp_tkl_solo": 56.0
+},
+"player": {
+"position": "DB",
+"team": "CIN",
+"injury_status": null
+}
+},
+{
+"player_id": "8280",
+"week": null,
+"season": "2026",
+"team": "DEN",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_sack": 13.0,
+"idp_tkl_ast": 15.0,
+"idp_tkl_solo": 32.0
+},
+"player": {
+"position": "LB",
+"team": "DEN",
+"injury_status": null
+}
+},
+{
+"player_id": "8275",
+"week": null,
+"season": "2026",
+"team": "SEA",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 16.0,
+"idp_tkl_solo": 42.0
+},
+"player": {
+"position": "DB",
+"team": "SEA",
+"injury_status": null
+}
+},
+{
+"player_id": "8267",
+"week": null,
+"season": "2026",
+"team": "LV",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 4.0,
+"idp_tkl_ast": 55.0,
+"idp_tkl_solo": 83.0
+},
+"player": {
+"position": "LB",
+"team": "LV",
+"injury_status": null
+}
+},
+{
+"player_id": "8266",
+"week": null,
+"season": "2026",
+"team": "LV",
+"opponent": null,
+"stats": {
+"idp_sack": 3.0,
+"idp_tkl_ast": 59.0,
+"idp_tkl_solo": 61.0
+},
+"player": {
+"position": "LB",
+"team": "LV",
+"injury_status": null
+}
+},
+{
+"player_id": "8265",
+"week": null,
+"season": "2026",
+"team": "JAX",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 7.0,
+"idp_tkl_ast": 24.0,
+"idp_tkl_solo": 26.0
+},
+"player": {
+"position": "DL",
+"team": "JAX",
+"injury_status": null
+}
+},
+{
+"player_id": "8104",
+"week": null,
+"season": "2026",
+"team": "BUF",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 19.0,
+"idp_tkl_solo": 29.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "BUF",
+"injury_status": null
+}
+},
+{
+"player_id": "7841",
+"week": null,
+"season": "2026",
+"team": "NYJ",
+"opponent": null,
+"stats": {
+"idp_sack": 2.0,
+"idp_tkl_ast": 68.0,
+"idp_tkl_solo": 67.0
+},
+"player": {
+"position": "LB",
+"team": "NYJ",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "7819",
+"week": null,
+"season": "2026",
+"team": "SF",
+"opponent": null,
+"stats": {
+"idp_int": 2.0,
+"idp_tkl_ast": 23.0,
+"idp_tkl_solo": 40.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "SF",
+"injury_status": null
+}
+},
+{
+"player_id": "7811",
+"week": null,
+"season": "2026",
+"team": "DEN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 35.0,
+"idp_tkl_solo": 59.0
+},
+"player": {
+"position": "DB",
+"team": "DEN",
+"injury_status": null
+}
+},
+{
+"player_id": "7782",
+"week": null,
+"season": "2026",
+"team": "GB",
+"opponent": null,
+"stats": {
+"idp_sack": 1.0,
+"idp_tkl_ast": 47.0,
+"idp_tkl_solo": 47.0
+},
+"player": {
+"position": "LB",
+"team": "GB",
+"injury_status": null
+}
+},
+{
+"player_id": "7765",
+"week": null,
+"season": "2026",
+"team": "DEN",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_sack": 5.5,
+"idp_tkl_ast": 15.0,
+"idp_tkl_solo": 21.0
+},
+"player": {
+"position": "DL",
+"team": "DEN",
+"injury_status": "NA"
+}
+},
+{
+"player_id": "7726",
+"week": null,
+"season": "2026",
+"team": "DET",
+"opponent": null,
+"stats": {
+"idp_sack": 2.5,
+"idp_tkl_ast": 34.0,
+"idp_tkl_solo": 37.0
+},
+"player": {
+"position": "LB",
+"team": "DET",
+"injury_status": null
+}
+},
+{
+"player_id": "7715",
+"week": null,
+"season": "2026",
+"team": "IND",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 3.0,
+"idp_tkl_ast": 34.0,
+"idp_tkl_solo": 51.0
+},
+"player": {
+"position": "DB",
+"team": "IND",
+"injury_status": null
+}
+},
+{
+"player_id": "7696",
+"week": null,
+"season": "2026",
+"team": "NE",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 6.0,
+"idp_tkl_ast": 24.0,
+"idp_tkl_solo": 25.0
+},
+"player": {
+"position": "DT",
+"team": "NE",
+"injury_status": null
+}
+},
+{
+"player_id": "7685",
+"week": null,
+"season": "2026",
+"team": "NYJ",
+"opponent": null,
+"stats": {
+"idp_tkl_ast": 15.0,
+"idp_tkl_solo": 53.0
+},
+"player": {
+"position": "DB",
+"team": "NYJ",
+"injury_status": null
+}
+},
+{
+"player_id": "7677",
+"week": null,
+"season": "2026",
+"team": "ATL",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 45.0,
+"idp_tkl_solo": 45.0
+},
+"player": {
+"position": "LB",
+"team": "ATL",
+"injury_status": null
+}
+},
+{
+"player_id": "7672",
+"week": null,
+"season": "2026",
+"team": "SEA",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_sack": 0.5,
+"idp_tkl_ast": 59.0,
+"idp_tkl_solo": 60.0
+},
+"player": {
+"position": "LB",
+"team": "SEA",
+"injury_status": null
+}
+},
+{
+"player_id": "7669",
+"week": null,
+"season": "2026",
+"team": "NYG",
+"opponent": null,
+"stats": {
+"idp_int": 2.0,
+"idp_tkl_ast": 15.0,
+"idp_tkl_solo": 50.0
+},
+"player": {
+"position": "CB",
+"team": "NYG",
+"injury_status": null
+}
+},
+{
+"player_id": "7667",
+"week": null,
+"season": "2026",
+"team": "CLE",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 2.0,
+"idp_tkl_ast": 21.0,
+"idp_tkl_solo": 50.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "CB",
+"team": "CLE",
+"injury_status": null
+}
+},
+{
+"player_id": "7659",
+"week": null,
+"season": "2026",
+"team": "CAR",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 40.0,
+"idp_tkl_solo": 67.0
+},
+"player": {
+"position": "DB",
+"team": "CAR",
+"injury_status": null
+}
+},
+{
+"player_id": "7648",
+"week": null,
+"season": "2026",
+"team": "KC",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 62.0,
+"idp_tkl_solo": 70.0
+},
+"player": {
+"position": "LB",
+"team": "KC",
+"injury_status": null
+}
+},
+{
+"player_id": "7640",
+"week": null,
+"season": "2026",
+"team": "GB",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_sack": 9.0,
+"idp_tkl_ast": 13.0,
+"idp_tkl_solo": 16.0
+},
+"player": {
+"position": "LB",
+"team": "GB",
+"injury_status": "PUP"
+}
+},
+{
+"player_id": "7635",
+"week": null,
+"season": "2026",
+"team": "CAR",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 8.0,
+"idp_tkl_ast": 26.0,
+"idp_tkl_solo": 28.0
+},
+"player": {
+"position": "LB",
+"team": "CAR",
+"injury_status": null
+}
+},
+{
+"player_id": "7627",
+"week": null,
+"season": "2026",
+"team": "BUF",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 9.5,
+"idp_tkl_ast": 20.0,
+"idp_tkl_solo": 25.0
+},
+"player": {
+"position": "DE",
+"team": "BUF",
+"injury_status": null
+}
+},
+{
+"player_id": "7626",
+"week": null,
+"season": "2026",
+"team": "WAS",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 10.5,
+"idp_tkl_ast": 17.0,
+"idp_tkl_solo": 21.0
+},
+"player": {
+"position": "LB",
+"team": "WAS",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "7346",
+"week": null,
+"season": "2026",
+"team": "TB",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 31.0,
+"idp_tkl_solo": 45.0
+},
+"player": {
+"position": "LB",
+"team": "TB",
+"injury_status": null
+}
+},
+{
+"player_id": "7136",
+"week": null,
+"season": "2026",
+"team": "LAR",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 37.0,
+"idp_tkl_solo": 63.0
+},
+"player": {
+"position": "DB",
+"team": "LAR",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "7069",
+"week": null,
+"season": "2026",
+"team": "KC",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 2.0,
+"idp_int": 2.0,
+"idp_tkl_ast": 38.0,
+"idp_tkl_solo": 49.0
+},
+"player": {
+"position": "DB",
+"team": "KC",
+"injury_status": null
+}
+},
+{
+"player_id": "7016",
+"week": null,
+"season": "2026",
+"team": "LV",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 49.0,
+"idp_tkl_solo": 59.0
+},
+"player": {
+"position": "DB",
+"team": "LV",
+"injury_status": null
+}
+},
+{
+"player_id": "6949",
+"week": null,
+"season": "2026",
+"team": "MIA",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 77.0,
+"idp_tkl_solo": 79.0
+},
+"player": {
+"position": "LB",
+"team": "MIA",
+"injury_status": null
+}
+},
+{
+"player_id": "6911",
+"week": null,
+"season": "2026",
+"team": "DEN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 40.0,
+"idp_tkl_solo": 47.0
+},
+"player": {
+"position": "DB",
+"team": "DEN",
+"injury_status": null
+}
+},
+{
+"player_id": "6901",
+"week": null,
+"season": "2026",
+"team": "MIN",
+"opponent": null,
+"stats": {
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 44.0,
+"idp_tkl_solo": 48.0
+},
+"player": {
+"position": "DB",
+"team": "MIN",
+"injury_status": null
+}
+},
+{
+"player_id": "6900",
+"week": null,
+"season": "2026",
+"team": "PHI",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 7.5,
+"idp_tkl_ast": 17.0,
+"idp_tkl_solo": 29.0
+},
+"player": {
+"position": "DE",
+"team": "PHI",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "6888",
+"week": null,
+"season": "2026",
+"team": "TB",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 31.0,
+"idp_tkl_solo": 50.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "TB",
+"injury_status": null
+}
+},
+{
+"player_id": "6880",
+"week": null,
+"season": "2026",
+"team": null,
+"opponent": null,
+"stats": {},
+"player": {
+"position": "LB",
+"team": null,
+"injury_status": null
+}
+},
+{
+"player_id": "6860",
+"week": null,
+"season": "2026",
+"team": "IND",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_tkl_ast": 53.0,
+"idp_tkl_solo": 55.0
+},
+"player": {
+"position": "LB",
+"team": "IND",
+"injury_status": null
+}
+},
+{
+"player_id": "6815",
+"week": null,
+"season": "2026",
+"team": "PHI",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 2.5,
+"idp_tkl_ast": 59.0,
+"idp_tkl_solo": 65.0
+},
+"player": {
+"position": "LB",
+"team": "PHI",
+"injury_status": null
+}
+},
+{
+"player_id": "6807",
+"week": null,
+"season": "2026",
+"team": "PIT",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 59.0,
+"idp_tkl_solo": 57.0
+},
+"player": {
+"position": "LB",
+"team": "PIT",
+"injury_status": null
+}
+},
+{
+"player_id": "6799",
+"week": null,
+"season": "2026",
+"team": "CLE",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.5,
+"idp_tkl_ast": 41.0,
+"idp_tkl_solo": 47.0
+},
+"player": {
+"position": "DB",
+"team": "CLE",
+"injury_status": null
+}
+},
+{
+"player_id": "6788",
+"week": null,
+"season": "2026",
+"team": "GB",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 49.0,
+"idp_tkl_solo": 52.0
+},
+"player": {
+"position": "DB",
+"team": "GB",
+"injury_status": null
+}
+},
+{
+"player_id": "6784",
+"week": null,
+"season": "2026",
+"team": "CAR",
+"opponent": null,
+"stats": {
+"idp_sack": 3.0,
+"idp_tkl_ast": 37.0,
+"idp_tkl_solo": 32.0
+},
+"player": {
+"position": "DT",
+"team": "CAR",
+"injury_status": null
+}
+},
+{
+"player_id": "6711",
+"week": null,
+"season": "2026",
+"team": "DAL",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_tkl_ast": 37.0,
+"idp_tkl_solo": 59.0
+},
+"player": {
+"position": "DB",
+"team": "DAL",
+"injury_status": null
+}
+},
+{
+"player_id": "6485",
+"week": null,
+"season": "2026",
+"team": "HOU",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 47.0,
+"idp_tkl_solo": 51.0
+},
+"player": {
+"position": "LB",
+"team": "HOU",
+"injury_status": null
+}
+},
+{
+"player_id": "6333",
+"week": null,
+"season": "2026",
+"team": "GB",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_tkl_ast": 21.0,
+"idp_tkl_solo": 59.0
+},
+"player": {
+"position": "CB",
+"team": "GB",
+"injury_status": null
+}
+},
+{
+"player_id": "6315",
+"week": null,
+"season": "2026",
+"team": "CAR",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 3.0,
+"idp_tkl_ast": 20.0,
+"idp_tkl_solo": 58.0
+},
+"player": {
+"position": "LB",
+"team": "CAR",
+"injury_status": null
+}
+},
+{
+"player_id": "6301",
+"week": null,
+"season": "2026",
+"team": "CAR",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_tkl_ast": 33.0,
+"idp_tkl_solo": 63.0
+},
+"player": {
+"position": "DB",
+"team": "CAR",
+"injury_status": null
+}
+},
+{
+"player_id": "6217",
+"week": null,
+"season": "2026",
+"team": "MIN",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 46.0,
+"idp_tkl_solo": 63.0
+},
+"player": {
+"position": "LB",
+"team": "MIN",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "6214",
+"week": null,
+"season": "2026",
+"team": "CLE",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 37.0,
+"idp_tkl_solo": 71.0
+},
+"player": {
+"position": "LB",
+"team": "CLE",
+"injury_status": null
+}
+},
+{
+"player_id": "6183",
+"week": null,
+"season": "2026",
+"team": "MIN",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 8.5,
+"idp_tkl_ast": 27.0,
+"idp_tkl_solo": 41.0
+},
+"player": {
+"position": "LB",
+"team": "MIN",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "6141",
+"week": null,
+"season": "2026",
+"team": "KC",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 3.0,
+"idp_tkl_ast": 52.0,
+"idp_tkl_solo": 61.0
+},
+"player": {
+"position": "LB",
+"team": "KC",
+"injury_status": null
+}
+},
+{
+"player_id": "6131",
+"week": null,
+"season": "2026",
+"team": "ARI",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 2.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 33.0,
+"idp_tkl_solo": 47.0
+},
+"player": {
+"position": "LB",
+"team": "ARI",
+"injury_status": null
+}
+},
+{
+"player_id": "6125",
+"week": null,
+"season": "2026",
+"team": "TEN",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 6.0,
+"idp_tkl_ast": 28.0,
+"idp_tkl_solo": 38.0
+},
+"player": {
+"position": "DT",
+"team": "TEN",
+"injury_status": null
+}
+},
+{
+"player_id": "6124",
+"week": null,
+"season": "2026",
+"team": "CHI",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_sack": 8.0,
+"idp_tkl_ast": 21.0,
+"idp_tkl_solo": 30.0
+},
+"player": {
+"position": "DE",
+"team": "CHI",
+"injury_status": null
+}
+},
+{
+"player_id": "6118",
+"week": null,
+"season": "2026",
+"team": "DAL",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_sack": 5.5,
+"idp_tkl_ast": 24.0,
+"idp_tkl_solo": 24.0
+},
+"player": {
+"position": "DT",
+"team": "DAL",
+"injury_status": null
+}
+},
+{
+"player_id": "6025",
+"week": null,
+"season": "2026",
+"team": "CAR",
+"opponent": null,
+"stats": {
+"idp_int": 3.0,
+"idp_tkl_ast": 16.0,
+"idp_tkl_solo": 55.0
+},
+"player": {
+"position": "CB",
+"team": "CAR",
+"injury_status": null
+}
+},
+{
+"player_id": "5991",
+"week": null,
+"season": "2026",
+"team": "LV",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_sack": 9.0,
+"idp_tkl_ast": 23.0,
+"idp_tkl_solo": 35.0
+},
+"player": {
+"position": "DE",
+"team": "LV",
+"injury_status": null
+}
+},
+{
+"player_id": "5960",
+"week": null,
+"season": "2026",
+"team": "CHI",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 36.0,
+"idp_tkl_solo": 38.0
+},
+"player": {
+"position": "LB",
+"team": "CHI",
+"injury_status": null
+}
+},
+{
+"player_id": "5944",
+"week": null,
+"season": "2026",
+"team": "CAR",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 52.0,
+"idp_tkl_solo": 60.0
+},
+"player": {
+"position": "LB",
+"team": "CAR",
+"injury_status": null
+}
+},
+{
+"player_id": "5908",
+"week": null,
+"season": "2026",
+"team": "TEN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_tkl_ast": 26.0,
+"idp_tkl_solo": 52.0
+},
+"player": {
+"position": "DB",
+"team": "TEN",
+"injury_status": null
+}
+},
+{
+"player_id": "5893",
+"week": null,
+"season": "2026",
+"team": "BUF",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.5,
+"idp_tkl_ast": 21.0,
+"idp_tkl_solo": 45.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "BUF",
+"injury_status": null
+}
+},
+{
+"player_id": "5876",
+"week": null,
+"season": "2026",
+"team": "SEA",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 17.0,
+"idp_tkl_solo": 65.0
+},
+"player": {
+"position": "DB",
+"team": "SEA",
+"injury_status": null
+}
+},
+{
+"player_id": "5871",
+"week": null,
+"season": "2026",
+"team": "DEN",
+"opponent": null,
+"stats": {
+"idp_sack": 8.0,
+"idp_tkl_ast": 24.0,
+"idp_tkl_solo": 22.0
+},
+"player": {
+"position": "DE",
+"team": "DEN",
+"injury_status": null
+}
+},
+{
+"player_id": "5864",
+"week": null,
+"season": "2026",
+"team": "MIN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 3.0,
+"idp_tkl_ast": 19.0,
+"idp_tkl_solo": 46.0
+},
+"player": {
+"position": "CB",
+"team": "MIN",
+"injury_status": null
+}
+},
+{
+"player_id": "5862",
+"week": null,
+"season": "2026",
+"team": "NYG",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 10.0,
+"idp_tkl_ast": 28.0,
+"idp_tkl_solo": 40.0
+},
+"player": {
+"position": "DE",
+"team": "NYG",
+"injury_status": null
+}
+},
+{
+"player_id": "5843",
+"week": null,
+"season": "2026",
+"team": "CHI",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 55.0,
+"idp_tkl_solo": 61.0
+},
+"player": {
+"position": "LB",
+"team": "CHI",
+"injury_status": null
+}
+},
+{
+"player_id": "5840",
+"week": null,
+"season": "2026",
+"team": "JAX",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 9.5,
+"idp_tkl_ast": 21.0,
+"idp_tkl_solo": 29.0
+},
+"player": {
+"position": "DE",
+"team": "JAX",
+"injury_status": null
+}
+},
+{
+"player_id": "5839",
+"week": null,
+"season": "2026",
+"team": "DAL",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 7.0,
+"idp_tkl_ast": 18.0,
+"idp_tkl_solo": 23.0
+},
+"player": {
+"position": "LB",
+"team": "DAL",
+"injury_status": null
+}
+},
+{
+"player_id": "5816",
+"week": null,
+"season": "2026",
+"team": "SF",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 8.0,
+"idp_tkl_ast": 16.0,
+"idp_tkl_solo": 29.0
+},
+"player": {
+"position": "DE",
+"team": "SF",
+"injury_status": null
+}
+},
+{
+"player_id": "5726",
+"week": null,
+"season": "2026",
+"team": "NE",
+"opponent": null,
+"stats": {
+"idp_int": 2.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 56.0,
+"idp_tkl_solo": 59.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "LB",
+"team": "NE",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "5372",
+"week": null,
+"season": "2026",
+"team": "DET",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_tkl_ast": 9.0,
+"idp_tkl_solo": 49.0
+},
+"player": {
+"position": "CB",
+"team": "DET",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "5346",
+"week": null,
+"season": "2026",
+"team": "GB",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_sack": 3.0,
+"idp_tkl_ast": 55.0,
+"idp_tkl_solo": 57.0
+},
+"player": {
+"position": "LB",
+"team": "GB",
+"injury_status": null
+}
+},
+{
+"player_id": "5332",
+"week": null,
+"season": "2026",
+"team": "JAX",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 71.0,
+"idp_tkl_solo": 73.0
+},
+"player": {
+"position": "LB",
+"team": "JAX",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "5054",
+"week": null,
+"season": "2026",
+"team": "NE",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_tkl_ast": 13.0,
+"idp_tkl_solo": 45.0
+},
+"player": {
+"position": "CB",
+"team": "NE",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "5041",
+"week": null,
+"season": "2026",
+"team": "SF",
+"opponent": null,
+"stats": {
+"idp_ff": 3.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.5,
+"idp_tkl_ast": 55.0,
+"idp_tkl_solo": 69.0
+},
+"player": {
+"position": "LB",
+"team": "SF",
+"injury_status": null
+}
+},
+{
+"player_id": "5030",
+"week": null,
+"season": "2026",
+"team": "NE",
+"opponent": null,
+"stats": {
+"idp_sack": 7.0,
+"idp_tkl_ast": 17.0,
+"idp_tkl_solo": 27.0
+},
+"player": {
+"position": "LB",
+"team": "NE",
+"injury_status": "PUP"
+}
+},
+{
+"player_id": "5017",
+"week": null,
+"season": "2026",
+"team": "ATL",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 3.0,
+"idp_tkl_ast": 41.0,
+"idp_tkl_solo": 59.0
+},
+"player": {
+"position": "DB",
+"team": "ATL",
+"injury_status": null
+}
+},
+{
+"player_id": "4971",
+"week": null,
+"season": "2026",
+"team": "LAC",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 3.0,
+"idp_tkl_ast": 45.0,
+"idp_tkl_solo": 53.0
+},
+"player": {
+"position": "DB",
+"team": "LAC",
+"injury_status": null
+}
+},
+{
+"player_id": "4968",
+"week": null,
+"season": "2026",
+"team": "NYG",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 44.0,
+"idp_tkl_solo": 63.0
+},
+"player": {
+"position": "LB",
+"team": "NYG",
+"injury_status": null
+}
+},
+{
+"player_id": "4967",
+"week": null,
+"season": "2026",
+"team": "BUF",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 9.5,
+"idp_tkl_ast": 24.0,
+"idp_tkl_solo": 25.0
+},
+"player": {
+"position": "LB",
+"team": "BUF",
+"injury_status": null
+}
+},
+{
+"player_id": "4963",
+"week": null,
+"season": "2026",
+"team": "NYJ",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_tkl_ast": 27.0,
+"idp_tkl_solo": 60.0
+},
+"player": {
+"position": "DB",
+"team": "NYJ",
+"injury_status": "Doubtful"
+}
+},
+{
+"player_id": "4960",
+"week": null,
+"season": "2026",
+"team": "BAL",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.5,
+"idp_tkl_ast": 63.0,
+"idp_tkl_solo": 78.0
+},
+"player": {
+"position": "LB",
+"team": "BAL",
+"injury_status": null
+}
+},
+{
+"player_id": "4413",
+"week": null,
+"season": "2026",
+"team": "MIN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 49.0,
+"idp_tkl_solo": 52.0
+},
+"player": {
+"position": "LB",
+"team": "MIN",
+"injury_status": null
+}
+},
+{
+"player_id": "4135",
+"week": null,
+"season": "2026",
+"team": "BAL",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_sack": 11.0,
+"idp_tkl_ast": 11.0,
+"idp_tkl_solo": 26.0
+},
+"player": {
+"position": "DE",
+"team": "BAL",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "4118",
+"week": null,
+"season": "2026",
+"team": "TB",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_sack": 2.5,
+"idp_tkl_ast": 49.0,
+"idp_tkl_solo": 57.0
+},
+"player": {
+"position": "LB",
+"team": "TB",
+"injury_status": null
+}
+},
+{
+"player_id": "4081",
+"week": null,
+"season": "2026",
+"team": "ARI",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.5,
+"idp_tkl_ast": 57.0,
+"idp_tkl_solo": 56.0
+},
+"player": {
+"position": "DB",
+"team": "ARI",
+"injury_status": null
+}
+},
+{
+"player_id": "4071",
+"week": null,
+"season": "2026",
+"team": "BAL",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 13.0,
+"idp_tkl_solo": 38.0
+},
+"player": {
+"position": "CB",
+"team": "BAL",
+"injury_status": null
+}
+},
+{
+"player_id": "4070",
+"week": null,
+"season": "2026",
+"team": "PIT",
+"opponent": null,
+"stats": {
+"idp_ff": 3.0,
+"idp_fum_rec": 2.0,
+"idp_int": 1.0,
+"idp_sack": 9.0,
+"idp_tkl_ast": 23.0,
+"idp_tkl_solo": 25.0
+},
+"player": {
+"position": "LB",
+"team": "PIT",
+"injury_status": null
+}
+},
+{
+"player_id": "3973",
+"week": null,
+"season": "2026",
+"team": "LAR",
+"opponent": null,
+"stats": {
+"idp_ff": 3.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 14.0,
+"idp_tkl_ast": 12.0,
+"idp_tkl_solo": 38.0
+},
+"player": {
+"position": "DE",
+"team": "LAR",
+"injury_status": "Out"
+}
+},
+{
+"player_id": "3558",
+"week": null,
+"season": "2026",
+"team": "KC",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 7.5,
+"idp_tkl_ast": 14.0,
+"idp_tkl_solo": 17.0
+},
+"player": {
+"position": "DT",
+"team": "KC",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "3233",
+"week": null,
+"season": "2026",
+"team": "NE",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_tkl_ast": 42.0,
+"idp_tkl_solo": 74.0
+},
+"player": {
+"position": "DB",
+"team": "NE",
+"injury_status": null
+}
+},
+{
+"player_id": "3160",
+"week": null,
+"season": "2026",
+"team": "PIT",
+"opponent": null,
+"stats": {
+"idp_int": 2.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 25.0,
+"idp_tkl_solo": 46.0
+},
+"player": {
+"position": "CB",
+"team": "PIT",
+"injury_status": null
+}
+},
+{
+"player_id": "2617",
+"week": null,
+"season": "2026",
+"team": "DEN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_tkl_ast": 66.0,
+"idp_tkl_solo": 61.0
+},
+"player": {
+"position": "LB",
+"team": "DEN",
+"injury_status": null
+}
+},
+{
+"player_id": "2393",
+"week": null,
+"season": "2026",
+"team": "HOU",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_sack": 13.0,
+"idp_tkl_ast": 24.0,
+"idp_tkl_solo": 31.0
+},
+"player": {
+"position": "DE",
+"team": "HOU",
+"injury_status": null
+}
+},
+{
+"player_id": "2311",
+"week": null,
+"season": "2026",
+"team": "SEA",
+"opponent": null,
+"stats": {
+"idp_sack": 6.5,
+"idp_tkl_ast": 29.0,
+"idp_tkl_solo": 32.0
+},
+"player": {
+"position": "DE",
+"team": "SEA",
+"injury_status": null
+}
+},
+{
+"player_id": "13453",
+"week": null,
+"season": "2026",
+"team": "MIA",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 2.0,
+"idp_int": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 35.0,
+"idp_tkl_solo": 56.0
+},
+"player": {
+"position": "LB",
+"team": "MIA",
+"injury_status": null
+}
+},
+{
+"player_id": "13397",
+"week": null,
+"season": "2026",
+"team": "DET",
+"opponent": null,
+"stats": {
+"idp_int": 3.0,
+"idp_tkl_ast": 5.0,
+"idp_tkl_solo": 7.0
+},
+"player": {
+"position": "DB",
+"team": "DET",
+"injury_status": null
+}
+},
+{
+"player_id": "13388",
+"week": null,
+"season": "2026",
+"team": "IND",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_tkl_ast": 45.0,
+"idp_tkl_solo": 57.0
+},
+"player": {
+"position": "LB",
+"team": "IND",
+"injury_status": null
+}
+},
+{
+"player_id": "13384",
+"week": null,
+"season": "2026",
+"team": "IND",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_tkl_ast": 26.0,
+"idp_tkl_solo": 37.0
+},
+"player": {
+"position": "DB",
+"team": "IND",
+"injury_status": null
+}
+},
+{
+"player_id": "13377",
+"week": null,
+"season": "2026",
+"team": "NYG",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 2.0,
+"idp_sack": 3.5,
+"idp_tkl_ast": 43.0,
+"idp_tkl_solo": 51.0
+},
+"player": {
+"position": "LB",
+"team": "NYG",
+"injury_status": null
+}
+},
+{
+"player_id": "13376",
+"week": null,
+"season": "2026",
+"team": "DAL",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 27.0,
+"idp_tkl_solo": 61.0
+},
+"player": {
+"position": "DB",
+"team": "DAL",
+"injury_status": null
+}
+},
+{
+"player_id": "13375",
+"week": null,
+"season": "2026",
+"team": "WAS",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 2.0,
+"idp_int": 1.0,
+"idp_sack": 2.5,
+"idp_tkl_ast": 51.0,
+"idp_tkl_solo": 73.0
+},
+"player": {
+"position": "LB",
+"team": "WAS",
+"injury_status": null
+}
+},
+{
+"player_id": "13371",
+"week": null,
+"season": "2026",
+"team": "CHI",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 41.0,
+"idp_tkl_solo": 52.0
+},
+"player": {
+"position": "DB",
+"team": "CHI",
+"injury_status": null
+}
+},
+{
+"player_id": "13363",
+"week": null,
+"season": "2026",
+"team": "NYJ",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 8.0,
+"idp_tkl_ast": 18.0,
+"idp_tkl_solo": 21.0
+},
+"player": {
+"position": "LB",
+"team": "NYJ",
+"injury_status": null
+}
+},
+{
+"player_id": "13340",
+"week": null,
+"season": "2026",
+"team": "TB",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 6.5,
+"idp_tkl_ast": 20.0,
+"idp_tkl_solo": 26.0
+},
+"player": {
+"position": "DL",
+"team": "TB",
+"injury_status": null
+}
+},
+{
+"player_id": "12646",
+"week": null,
+"season": "2026",
+"team": "CIN",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_tkl_ast": 54.0,
+"idp_tkl_solo": 63.0
+},
+"player": {
+"position": "LB",
+"team": "CIN",
+"injury_status": null
+}
+},
+{
+"player_id": "12640",
+"week": null,
+"season": "2026",
+"team": "BAL",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_tkl_ast": 35.0,
+"idp_tkl_solo": 47.0
+},
+"player": {
+"position": "LB",
+"team": "BAL",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "12631",
+"week": null,
+"season": "2026",
+"team": "SF",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 32.0,
+"idp_tkl_solo": 37.0
+},
+"player": {
+"position": "CB",
+"team": "SF",
+"injury_status": null
+}
+},
+{
+"player_id": "12622",
+"week": null,
+"season": "2026",
+"team": "KC",
+"opponent": null,
+"stats": {
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 23.0,
+"idp_tkl_solo": 44.0
+},
+"player": {
+"position": "CB",
+"team": "KC",
+"injury_status": null
+}
+},
+{
+"player_id": "12617",
+"week": null,
+"season": "2026",
+"team": "CIN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 3.0,
+"idp_tkl_ast": 44.0,
+"idp_tkl_solo": 60.0
+},
+"player": {
+"position": "LB",
+"team": "CIN",
+"injury_status": null
+}
+},
+{
+"player_id": "12605",
+"week": null,
+"season": "2026",
+"team": "TB",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 21.0,
+"idp_tkl_solo": 46.0
+},
+"player": {
+"position": "DB",
+"team": "TB",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "12602",
+"week": null,
+"season": "2026",
+"team": "SF",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 3.5,
+"idp_tkl_ast": 14.0,
+"idp_tkl_solo": 17.0
+},
+"player": {
+"position": "DL",
+"team": "SF",
+"injury_status": "PUP"
+}
+},
+{
+"player_id": "12597",
+"week": null,
+"season": "2026",
+"team": "SEA",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 34.0,
+"idp_tkl_solo": 54.0
+},
+"player": {
+"position": "DB",
+"team": "SEA",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "12591",
+"week": null,
+"season": "2026",
+"team": "ATL",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 3.0,
+"idp_tkl_ast": 45.0,
+"idp_tkl_solo": 62.0
+},
+"player": {
+"position": "DB",
+"team": "ATL",
+"injury_status": null
+}
+},
+{
+"player_id": "12588",
+"week": null,
+"season": "2026",
+"team": "TEN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 33.0,
+"idp_tkl_solo": 54.0
+},
+"player": {
+"position": "DB",
+"team": "TEN",
+"injury_status": null
+}
+},
+{
+"player_id": "12578",
+"week": null,
+"season": "2026",
+"team": "CLE",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_sack": 3.5,
+"idp_tkl_ast": 73.0,
+"idp_tkl_solo": 68.0
+},
+"player": {
+"position": "LB",
+"team": "CLE",
+"injury_status": null
+}
+},
+{
+"player_id": "12574",
+"week": null,
+"season": "2026",
+"team": "NYG",
+"opponent": null,
+"stats": {
+"idp_ff": 3.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 8.5,
+"idp_tkl_ast": 23.0,
+"idp_tkl_solo": 28.0
+},
+"player": {
+"position": "DL",
+"team": "NYG",
+"injury_status": null
+}
+},
+{
+"player_id": "12567",
+"week": null,
+"season": "2026",
+"team": "BAL",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 3.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 48.0,
+"idp_tkl_solo": 59.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "BAL",
+"injury_status": null
+}
+},
+{
+"player_id": "12566",
+"week": null,
+"season": "2026",
+"team": "PHI",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 45.0,
+"idp_tkl_solo": 53.0
+},
+"player": {
+"position": "LB",
+"team": "PHI",
+"injury_status": null
+}
+},
+{
+"player_id": "12556",
+"week": null,
+"season": "2026",
+"team": "DAL",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 6.0,
+"idp_tkl_ast": 26.0,
+"idp_tkl_solo": 28.0
+},
+"player": {
+"position": "DL",
+"team": "DAL",
+"injury_status": null
+}
+},
+{
+"player_id": "1233",
+"week": null,
+"season": "2026",
+"team": null,
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 1.5,
+"idp_tkl_ast": 44.0,
+"idp_tkl_solo": 53.0
+},
+"player": {
+"position": "LB",
+"team": null,
+"injury_status": null
+}
+},
+{
+"player_id": "11760",
+"week": null,
+"season": "2026",
+"team": "CHI",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 7.5,
+"idp_tkl_ast": 23.0,
+"idp_tkl_solo": 26.0
+},
+"player": {
+"position": "DL",
+"team": "CHI",
+"injury_status": null
+}
+},
+{
+"player_id": "11742",
+"week": null,
+"season": "2026",
+"team": "TEN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 53.0,
+"idp_tkl_solo": 66.0
+},
+"player": {
+"position": "LB",
+"team": "TEN",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "11739",
+"week": null,
+"season": "2026",
+"team": "GB",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 2.0,
+"idp_tkl_ast": 47.0,
+"idp_tkl_solo": 48.0
+},
+"player": {
+"position": "DB",
+"team": "GB",
+"injury_status": null
+}
+},
+{
+"player_id": "11731",
+"week": null,
+"season": "2026",
+"team": "SF",
+"opponent": null,
+"stats": {
+"idp_int": 2.0,
+"idp_tkl_ast": 28.0,
+"idp_tkl_solo": 67.0
+},
+"player": {
+"position": "DB",
+"team": "SF",
+"injury_status": null
+}
+},
+{
+"player_id": "11727",
+"week": null,
+"season": "2026",
+"team": "PIT",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 41.0,
+"idp_tkl_solo": 57.0
+},
+"player": {
+"position": "LB",
+"team": "PIT",
+"injury_status": null
+}
+},
+{
+"player_id": "11726",
+"week": null,
+"season": "2026",
+"team": "LAR",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 25.0,
+"idp_tkl_solo": 46.0
+},
+"player": {
+"position": "DB",
+"team": "LAR",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "11724",
+"week": null,
+"season": "2026",
+"team": "NYJ",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 2.5,
+"idp_tkl_ast": 28.0,
+"idp_tkl_solo": 40.0
+},
+"player": {
+"position": "LB",
+"team": "NYJ",
+"injury_status": null
+}
+},
+{
+"player_id": "11710",
+"week": null,
+"season": "2026",
+"team": "HOU",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 4.0,
+"idp_tkl_ast": 22.0,
+"idp_tkl_solo": 48.0
+},
+"player": {
+"position": "DB",
+"team": "HOU",
+"injury_status": null
+}
+},
+{
+"player_id": "11705",
+"week": null,
+"season": "2026",
+"team": "TB",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_sack": 1.5,
+"idp_tkl_ast": 34.0,
+"idp_tkl_solo": 58.0
+},
+"player": {
+"position": "DB",
+"team": "TB",
+"injury_status": null
+}
+},
+{
+"player_id": "11703",
+"week": null,
+"season": "2026",
+"team": "PHI",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 7.0,
+"idp_tkl_ast": 22.0,
+"idp_tkl_solo": 25.0
+},
+"player": {
+"position": "DL",
+"team": "PHI",
+"injury_status": null
+}
+},
+{
+"player_id": "11687",
+"week": null,
+"season": "2026",
+"team": "GB",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 54.0,
+"idp_tkl_solo": 65.0
+},
+"player": {
+"position": "LB",
+"team": "GB",
+"injury_status": null
+}
+},
+{
+"player_id": "11685",
+"week": null,
+"season": "2026",
+"team": "HOU",
+"opponent": null,
+"stats": {
+"idp_int": 4.0,
+"idp_tkl_ast": 22.0,
+"idp_tkl_solo": 47.0
+},
+"player": {
+"position": "DB",
+"team": "HOU",
+"injury_status": null
+}
+},
+{
+"player_id": "11682",
+"week": null,
+"season": "2026",
+"team": "BUF",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 3.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 37.0,
+"idp_tkl_solo": 59.0
+},
+"player": {
+"position": "DB",
+"team": "BUF",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "11678",
+"week": null,
+"season": "2026",
+"team": "PHI",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_tkl_ast": 30.0,
+"idp_tkl_solo": 67.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "PHI",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "11676",
+"week": null,
+"season": "2026",
+"team": "WAS",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 3.0,
+"idp_tkl_ast": 28.0,
+"idp_tkl_solo": 49.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "WAS",
+"injury_status": null
+}
+},
+{
+"player_id": "11675",
+"week": null,
+"season": "2026",
+"team": "NO",
+"opponent": null,
+"stats": {
+"idp_int": 4.0,
+"idp_tkl_ast": 15.0,
+"idp_tkl_solo": 53.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "NO",
+"injury_status": null
+}
+},
+{
+"player_id": "11674",
+"week": null,
+"season": "2026",
+"team": "NYG",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_tkl_ast": 35.0,
+"idp_tkl_solo": 53.0
+},
+"player": {
+"position": "DB",
+"team": "NYG",
+"injury_status": null
+}
+},
+{
+"player_id": "11669",
+"week": null,
+"season": "2026",
+"team": "IND",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 7.5,
+"idp_tkl_ast": 16.0,
+"idp_tkl_solo": 27.0
+},
+"player": {
+"position": "DL",
+"team": "IND",
+"injury_status": null
+}
+},
+{
+"player_id": "11667",
+"week": null,
+"season": "2026",
+"team": "MIN",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_sack": 9.0,
+"idp_tkl_ast": 30.0,
+"idp_tkl_solo": 31.0
+},
+"player": {
+"position": "LB",
+"team": "MIN",
+"injury_status": null
+}
+},
+{
+"player_id": "11665",
+"week": null,
+"season": "2026",
+"team": "CLE",
+"opponent": null,
+"stats": {
+"idp_ff": 3.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 9.5,
+"idp_tkl_ast": 26.0,
+"idp_tkl_solo": 35.0
+},
+"player": {
+"position": "DL",
+"team": "CLE",
+"injury_status": null
+}
+},
+{
+"player_id": "11656",
+"week": null,
+"season": "2026",
+"team": "BAL",
+"opponent": null,
+"stats": {
+"idp_int": 3.0,
+"idp_tkl_ast": 18.0,
+"idp_tkl_solo": 52.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "CB",
+"team": "BAL",
+"injury_status": null
+}
+},
+{
+"player_id": "11470",
+"week": null,
+"season": "2026",
+"team": "SEA",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 1.0,
+"idp_sack": 2.5,
+"idp_tkl_ast": 45.0,
+"idp_tkl_solo": 46.0
+},
+"player": {
+"position": "LB",
+"team": "SEA",
+"injury_status": null
+}
+},
+{
+"player_id": "11017",
+"week": null,
+"season": "2026",
+"team": "DAL",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 31.0,
+"idp_tkl_solo": 63.0
+},
+"player": {
+"position": "LB",
+"team": "DAL",
+"injury_status": null
+}
+},
+{
+"player_id": "10974",
+"week": null,
+"season": "2026",
+"team": "JAX",
+"opponent": null,
+"stats": {
+"idp_int": 2.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 22.0,
+"idp_tkl_solo": 57.0
+},
+"player": {
+"position": "DB",
+"team": "JAX",
+"injury_status": null
+}
+},
+{
+"player_id": "10949",
+"week": null,
+"season": "2026",
+"team": "KC",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_int": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 38.0,
+"idp_tkl_solo": 73.0
+},
+"player": {
+"position": "DB",
+"team": "KC",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "10947",
+"week": null,
+"season": "2026",
+"team": "JAX",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_int": 1.0,
+"idp_tkl_ast": 61.0,
+"idp_tkl_solo": 62.0
+},
+"player": {
+"position": "LB",
+"team": "JAX",
+"injury_status": null
+}
+},
+{
+"player_id": "10940",
+"week": null,
+"season": "2026",
+"team": "PIT",
+"opponent": null,
+"stats": {
+"idp_ff": 3.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 9.0,
+"idp_tkl_ast": 13.0,
+"idp_tkl_solo": 23.0
+},
+"player": {
+"position": "LB",
+"team": "PIT",
+"injury_status": null
+}
+},
+{
+"player_id": "10936",
+"week": null,
+"season": "2026",
+"team": "SF",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_tkl_ast": 32.0,
+"idp_tkl_solo": 46.0
+},
+"player": {
+"position": "DB",
+"team": "SF",
+"injury_status": null
+}
+},
+{
+"player_id": "10930",
+"week": null,
+"season": "2026",
+"team": "DEN",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_tkl_ast": 21.0,
+"idp_tkl_solo": 53.0
+},
+"player": {
+"position": "DB",
+"team": "DEN",
+"injury_status": null
+}
+},
+{
+"player_id": "10927",
+"week": null,
+"season": "2026",
+"team": "CIN",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_tkl_ast": 45.0,
+"idp_tkl_solo": 52.0
+},
+"player": {
+"position": "DB",
+"team": "CIN",
+"injury_status": null
+}
+},
+{
+"player_id": "10921",
+"week": null,
+"season": "2026",
+"team": "TB",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 8.5,
+"idp_tkl_ast": 22.0,
+"idp_tkl_solo": 30.0
+},
+"player": {
+"position": "DL",
+"team": "TB",
+"injury_status": null
+}
+},
+{
+"player_id": "10917",
+"week": null,
+"season": "2026",
+"team": "LAR",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_sack": 11.0,
+"idp_tkl_ast": 34.0,
+"idp_tkl_solo": 38.0
+},
+"player": {
+"position": "LB",
+"team": "LAR",
+"injury_status": null
+}
+},
+{
+"player_id": "10916",
+"week": null,
+"season": "2026",
+"team": "LAR",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_sack": 8.0,
+"idp_tkl_ast": 26.0,
+"idp_tkl_solo": 29.0
+},
+"player": {
+"position": "DT",
+"team": "LAR",
+"injury_status": null
+}
+},
+{
+"player_id": "10914",
+"week": null,
+"season": "2026",
+"team": "LAC",
+"opponent": null,
+"stats": {
+"idp_int": 1.0,
+"idp_sack": 2.0,
+"idp_tkl_ast": 46.0,
+"idp_tkl_solo": 62.0
+},
+"player": {
+"position": "LB",
+"team": "LAC",
+"injury_status": null
+}
+},
+{
+"player_id": "10905",
+"week": null,
+"season": "2026",
+"team": "DET",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 18.0,
+"idp_tkl_solo": 31.0
+},
+"player": {
+"position": "DB",
+"team": "DET",
+"injury_status": "PUP"
+}
+},
+{
+"player_id": "10903",
+"week": null,
+"season": "2026",
+"team": "WAS",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_tkl_ast": 38.0,
+"idp_tkl_solo": 52.0
+},
+"player": {
+"position": "DB",
+"team": "WAS",
+"injury_status": null
+}
+},
+{
+"player_id": "10898",
+"week": null,
+"season": "2026",
+"team": "LAC",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 12.0,
+"idp_tkl_ast": 14.0,
+"idp_tkl_solo": 34.0
+},
+"player": {
+"position": "DL",
+"team": "LAC",
+"injury_status": null
+}
+},
+{
+"player_id": "10897",
+"week": null,
+"season": "2026",
+"team": "CHI",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_int": 2.0,
+"idp_tkl_ast": 16.0,
+"idp_tkl_solo": 38.0
+},
+"player": {
+"position": "CB",
+"team": "CHI",
+"injury_status": null
+}
+},
+{
+"player_id": "10892",
+"week": null,
+"season": "2026",
+"team": "HOU",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 1.0,
+"idp_sack": 10.5,
+"idp_tkl_ast": 17.0,
+"idp_tkl_solo": 30.0
+},
+"player": {
+"position": "DL",
+"team": "HOU",
+"injury_status": null
+}
+},
+{
+"player_id": "10891",
+"week": null,
+"season": "2026",
+"team": "SEA",
+"opponent": null,
+"stats": {
+"idp_ff": 1.0,
+"idp_int": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 25.0,
+"idp_tkl_solo": 49.0
+},
+"player": {
+"position": "DB",
+"team": "SEA",
+"injury_status": null
+}
+},
+{
+"player_id": "10888",
+"week": null,
+"season": "2026",
+"team": "PHI",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_sack": 5.0,
+"idp_tkl_ast": 19.0,
+"idp_tkl_solo": 27.0
+},
+"player": {
+"position": "DL",
+"team": "PHI",
+"injury_status": "Questionable"
+}
+},
+{
+"player_id": "10881",
+"week": null,
+"season": "2026",
+"team": "NE",
+"opponent": null,
+"stats": {
+"idp_int": 2.0,
+"idp_tkl_ast": 9.0,
+"idp_tkl_solo": 46.0,
+"pass_int_td": 1.0
+},
+"player": {
+"position": "DB",
+"team": "NE",
+"injury_status": null
+}
+},
+{
+"player_id": "10880",
+"week": null,
+"season": "2026",
+"team": "DET",
+"opponent": null,
+"stats": {
+"idp_ff": 2.0,
+"idp_fum_rec": 2.0,
+"idp_sack": 2.5,
+"idp_tkl_ast": 75.0,
+"idp_tkl_solo": 81.0
+},
+"player": {
+"position": "LB",
+"team": "DET",
+"injury_status": null
+}
+},
+{
+"player_id": "1052",
+"week": null,
+"season": "2026",
+"team": "NYJ",
+"opponent": null,
+"stats": {
+"idp_fum_rec": 1.0,
+"idp_sack": 1.0,
+"idp_tkl_ast": 59.0,
+"idp_tkl_solo": 55.0
+},
+"player": {
+"position": "LB",
+"team": "NYJ",
 "injury_status": null
 }
 }

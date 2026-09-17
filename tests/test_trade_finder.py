@@ -125,3 +125,22 @@ def test_no_partners_when_nobody_can_help(league, ros):
     out = trade_finder.find(league, me, ros, {})
     league.teams = saved
     assert out["partners"] == [] and "Hold" in out["summary"]
+
+
+def test_numbers_in_prose_match_the_numbers_in_the_payload(league, ros, profiles):
+    """A sentence saying 'you gain 24' beside a chip saying '+25' destroys trust."""
+    for t in league.teams:
+        for partner in trade_finder.find(league, t, ros, profiles)["partners"]:
+            for o in partner["offers"]:
+                assert f"You gain {trade_finder._r0(o['my_gain_ros'])} " in o["why"]
+                assert f"they gain {trade_finder._r0(o['their_gain_ros'])}." in o["why"]
+                assert f"{round(o['fairness'] * 100)}% balanced" in o["why"]
+
+
+def test_headline_is_specific_not_filler(league, ros, profiles):
+    for t in league.teams:
+        found = trade_finder.find(league, t, ros, profiles)
+        for p in found["partners"]:
+            assert p["headline"].endswith(".")
+            assert p["team_name"] not in p["headline"], "the card already names the team"
+            assert "better than most" not in p["headline"], "no generic filler headlines"

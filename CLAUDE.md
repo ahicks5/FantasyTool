@@ -31,6 +31,16 @@ The home screen is an **Action feed** (`edge/engine/actions.py`, `GET .../action
 waiver claims, trade opportunities, ranked; locked features appear as name-free teasers.
 The LLM may explain; it never ranks, values, or invents numbers.
 
+Engine modules, in the order the feed uses them:
+- `engine/lineup.py` — exact flex-aware optimizer + start/sit calls with confidence.
+- `engine/waiver_plan.py` — ADD/DROP **pairs** with fallback claims and a two-part bid
+  (value cap vs market-clearing price). A quiet week returns an explained hold.
+- `engine/trade_finder.py` — positional surplus/need per roster, complementary partners,
+  1-for-1 and 2-for-1 offers that improve both sides.
+- `engine/trade.py` — grades a trade the user proposes, plus a counteroffer.
+- Every recommendation is written to the `runs` table with its `algo_version`; user Helpful/Wrong
+  votes land in `feedback`. Pair them with next week's actuals to know if a version was right.
+
 ## Data sources
 - **Projections: Sleeper's free projections endpoint** (Rotowire-sourced, weekly, no auth):
   `https://api.sleeper.app/projections/nfl/{season}/{week}?season_type=regular&position[]=QB...&order_by=ppr`
