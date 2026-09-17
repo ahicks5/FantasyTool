@@ -221,7 +221,7 @@ def action_feed(platform: str, league_id: str, team_id: str, email: str | None =
     t = _team(b, team_id)
     ents = products.features_for(_skus(email))
     out = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats,
-                            trending=b.trending, profiles=b.profiles)
+                            trending=b.trending, profiles=b.profiles, matchups_raw=b.matchups)
     out["entitlements"] = sorted(ents)
     out["synced_at"] = b.loaded_at
     store.log_run(email, platform, league_id, team_id, b.league.week, "actions",

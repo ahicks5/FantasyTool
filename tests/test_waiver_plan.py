@@ -152,3 +152,39 @@ def test_streamers_are_judged_on_this_week_only(league, ros, byes):
 def test_plan_is_json_serialisable(league, ros, byes):
     for t in league.teams[:3]:
         json.dumps(_plan(league, t, ros, byes).to_dict())
+
+
+def test_never_recommends_a_third_quarterback_you_cannot_start(league, ros, byes):
+    """Being the best QB left on the wire is worth nothing when you already roster two."""
+    for t in league.teams:
+        starts_one_qb = sum(1 for s in league.starting_slots if s == "QB") == 1
+        if not starts_one_qb or sum(1 for p in t.players if p.position == "QB") < 2:
+            continue
+        for c in _plan(league, t, ros, byes).claims:
+            if c.add.position == "QB":
+                assert "position_scarcity" not in c.reason_codes, \
+                    f"{t.name}: recommended {c.add.name} purely for being the best QB available"
+
+
+def test_prose_and_scoring_agree_on_what_counts_as_starting(league, ros, byes):
+    for t in league.teams:
+        for c in _plan(league, t, ros, byes).claims:
+            says_starts = "Starts for you this week" in c.reason
+            assert says_starts == ("starts_immediately" in c.reason_codes)
+            assert says_starts == (c.weekly_gain >= waiver_plan.MEANINGFUL_WEEK_GAIN)
+
+
+def test_hold_wording_matches_the_league_waiver_type(league, ros, byes):
+    """Telling a priority-waiver league to 'save your FAAB' is nonsense they will notice."""
+    saved_type, saved_budget = league.waiver_type, league.faab_budget
+    saved_fa, league.free_agents = league.free_agents, []
+
+    league.waiver_type, league.faab_budget = "faab", 100
+    faab_hold = waiver_plan.build(league, league.teams[0], ros, byes).hold_reason
+    league.waiver_type, league.faab_budget = "priority", None
+    prio_hold = waiver_plan.build(league, league.teams[0], ros, byes).hold_reason
+
+    league.free_agents = saved_fa
+    league.waiver_type, league.faab_budget = saved_type, saved_budget
+    assert "FAAB" in faab_hold and "priority" not in faab_hold
+    assert "priority" in prio_hold and "FAAB" not in prio_hold

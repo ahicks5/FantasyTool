@@ -29,6 +29,9 @@ CLAIM_THRESHOLD = 0.35          # net points/week below which a claim is not wor
 # Odds that a bench upgrade at a position actually lands in your lineup at some point in the
 # rest of the season (someone gets hurt, benched, or has a bad matchup). Deliberately modest.
 DEPTH_HIT_RATE = 0.20
+# A weekly gain under this is inside projection noise; the prose already calls it "not a
+# starter", so the scoring must not treat it as one either.
+MEANINGFUL_WEEK_GAIN = 0.5
 STREAM_POSITIONS = {"K", "DEF"}  # weekly streamers: judged on this week only
 
 
@@ -79,6 +82,12 @@ class WaiverPlan:
             "total_planned_spend": sum(c.bid.get("amount") or 0 for c in self.claims),
             "algo_version": self.algo_version,
         }
+
+
+def _keep_clause(league: League) -> str:
+    """What holding actually buys you, in this league's currency."""
+    return ("Hold your FAAB for a week when it matters." if league.waiver_type == "faab"
+            else "Keep your waiver priority for a week when it matters.")
 
 
 def suggest_bid(claim_net: float, league: League, team: Team, bid_stats: dict | None,
@@ -201,8 +210,15 @@ def depth_option_value(team: Team, fa: Player, ros: dict[str, float], weeks_left
     return round(upgrade * DEPTH_HIT_RATE, 3), f"Better than your current {fa.position} depth by {upgrade:.1f} a week"
 
 
-def scarcity_value(fa: Player, pool: list[Player], ros: dict[str, float], weeks_left: int) -> tuple[float, str | None]:
-    """Tiebreaker only: being clearly the best left at a thin position is worth a little."""
+def scarcity_value(fa: Player, pool: list[Player], ros: dict[str, float], weeks_left: int,
+                   is_upgrade: bool = True) -> tuple[float, str | None]:
+    """Tiebreaker only: being clearly the best left at a thin position is worth a little.
+
+    Worth nothing at all if he is not an upgrade on what you already roster — otherwise we
+    recommend a third quarterback in a one-quarterback league purely for being the best one left.
+    """
+    if not is_upgrade:
+        return 0.0, None
     same = [p for p in pool if p.position == fa.position and p.id != fa.id]
     if not same:
         return 0.0, None
@@ -233,7 +249,7 @@ def _drop_candidates(team: Team, slots: list[str], ros: dict[str, float], n: int
 def _reason(add: Player, drop: Player | None, weekly: float, ros_gain: float, codes: list[str],
             notes: list[str]) -> str:
     bits = []
-    if weekly > 0.5:
+    if weekly >= MEANINGFUL_WEEK_GAIN:
         bits.append(f"Starts for you this week (+{weekly:.1f}).")
     elif ros_gain > 0:
         bits.append("Not a starter this week, but he gets there.")
@@ -265,7 +281,7 @@ def evaluate_pair(league: League, team: Team, add: Player, drop: Player | None,
 
     codes: list[str] = []
     notes: list[str] = []
-    if weekly_gain > 0.5:
+    if weekly_gain >= MEANINGFUL_WEEK_GAIN:
         codes.append("starts_immediately")
 
     if add.position in STREAM_POSITIONS:
@@ -276,8 +292,10 @@ def evaluate_pair(league: League, team: Team, add: Player, drop: Player | None,
         drop_cost = drop_opportunity_cost(team, drop, slots, ros, weeks_left) if drop else 0.0
         bye_v, bye_note = bye_cover_value(team, add, league.week, byes, weeks_left, ros)
         inj_v, inj_note = injury_insurance_value(team, add, ros, weeks_left)
-        sca_v, sca_note = scarcity_value(add, pool, ros, weeks_left)
         dep_v, dep_note = depth_option_value(team, add, ros, weeks_left)
+        # Being the best left on the wire only matters if he beats what you have.
+        helps_somehow = dep_v > 0 or bye_v > 0 or inj_v > 0 or weekly_gain >= MEANINGFUL_WEEK_GAIN
+        sca_v, sca_note = scarcity_value(add, pool, ros, weeks_left, is_upgrade=helps_somehow)
         for v, note, code in ((bye_v, bye_note, "covers_bye"), (inj_v, inj_note, "injury_insurance"),
                               (sca_v, sca_note, "position_scarcity"), (dep_v, dep_note, "roster_depth")):
             if v > 0:
@@ -318,7 +336,8 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
             if not p.is_out and any(player_fits(s, p) for s in slots)][:pool_size]
     if not pool:
         return WaiverPlan(league.week, team.faab_remaining, league.waiver_type, None, [],
-                          "No free agents worth a roster spot this week.")
+                          "No free agent on the wire can start or back up anyone on your roster. "
+                          + _keep_clause(league))
 
     # Cheap first pass on the add alone, then pair only the best adds with real drop candidates.
     shortlist = sorted(
@@ -345,7 +364,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                f"and you would have to drop {best.drop.name if best.drop else 'someone'} to get him."
                ) if best else "No free agents worth a roster spot this week."
         return WaiverPlan(league.week, team.faab_remaining, league.waiver_type, None, [],
-                          why + " Hold your FAAB for a week when it matters.")
+                          why + " " + _keep_clause(league))
 
     # Budget across the sequence: the primary gets the real bid, fallbacks are cheaper.
     plan_claims: list[Claim] = []

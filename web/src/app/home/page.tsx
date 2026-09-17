@@ -2,9 +2,9 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";
-import { Eyebrow, ErrorBox, SkeletonList, Skeleton } from "@/components/ui";
+import { Card, Eyebrow, ErrorBox, SkeletonList, Skeleton } from "@/components/ui";
 import { getActions, sendFeedback } from "@/lib/api";
-import { signed } from "@/lib/format";
+import { pct, signed } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { ActionFeed } from "@/lib/types";
 
@@ -57,6 +57,28 @@ function HomeBody({ c }: { c: Connection }) {
           {delta > 0.05 && <span className="font-bold text-start tabular-nums"> ({signed(delta)} if you make the swaps)</span>}
         </p>
       </header>
+
+      {feed.matchup && feed.matchup.opponent && feed.matchup.win_prob !== null && feed.matchup.their_proj !== null && (
+        <Card className="mt-4 rise rise-1">
+          <Eyebrow>This week&rsquo;s matchup</Eyebrow>
+          <div className="mt-1 flex items-end justify-between">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-bold">vs {feed.matchup.opponent}</div>
+              <div className="display text-2xl font-black tabular-nums">
+                {feed.matchup.my_proj.toFixed(1)}
+                <span className="mx-1 font-normal text-muted">–</span>
+                <span className="text-muted">{feed.matchup.their_proj.toFixed(1)}</span>
+              </div>
+            </div>
+            <div className={`display text-2xl font-black ${feed.matchup.win_prob >= 0.5 ? "text-start" : "text-sit"}`}>
+              {pct(feed.matchup.win_prob)}
+            </div>
+          </div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-sit-soft">
+            <div className="h-full rounded-full bg-start" style={{ width: pct(feed.matchup.win_prob) }} />
+          </div>
+        </Card>
+      )}
 
       <ol className="mt-5 grid gap-3">
         {feed.actions.map((a, i) => (

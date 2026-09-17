@@ -144,3 +144,28 @@ def test_headline_is_specific_not_filler(league, ros, profiles):
             assert p["headline"].endswith(".")
             assert p["team_name"] not in p["headline"], "the card already names the team"
             assert "better than most" not in p["headline"], "no generic filler headlines"
+
+
+def test_a_blocked_league_explains_what_is_in_the_way(league, ros, profiles):
+    """'Hold' on its own reads like the engine gave up. Name the player and the obstacle."""
+    me = league.teams[0]
+    # Make every other roster untouchable by pricing their players far above anything I have.
+    inflated = dict(ros)
+    for t in league.teams:
+        if t.id == me.id:
+            continue
+        for p in t.players:
+            inflated[p.id] = inflated.get(p.id, 0.0) * 50 + 5000
+    out = trade_finder.find(league, me, inflated, profiles)
+    assert out["partners"] == []
+    assert out["blockers"], "a blocked league should still explain itself"
+    b = out["blockers"][0]
+    assert b["target"] and b["their_team_name"] and b["reason"]
+    assert b["target"] in out["summary"] and b["their_team_name"] in out["summary"]
+    assert out["summary"] != "No trade in this league helps both sides right now. Hold."
+    json.dumps(out)
+
+
+def test_working_league_reports_no_blockers(league, ros, profiles):
+    out = trade_finder.find(league, league.teams[1], ros, profiles)
+    assert out["partners"] and out["blockers"] == []

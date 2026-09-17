@@ -346,6 +346,7 @@ export interface ActionFeed {
   league: string;
   projected_total: number;
   current_total: number;
+  matchup?: Matchup | null;
   summary: string;
   all_clear: boolean;
   footer: string;

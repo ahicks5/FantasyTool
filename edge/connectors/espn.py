@@ -41,8 +41,10 @@ INJURY_STATUS: dict[str, str | None] = {
 
 # ESPN scoring statId -> Sleeper stat key(s). Items are applied in descending statId order and
 # the first value written for a key wins, so a specific bucket (201: 60+ yd FG) beats a coarse
-# one (74: 50+ yd FG). Ids not listed here are skipped (IDP tackles, team win, raw yards/points
-# allowed, per-yard buckets that Sleeper has no key for).
+# one (74: 50+ yd FG). Ids not listed here are skipped (IDP tackles, punting, head coach,
+# per-game averages, and buckets Sleeper has no key for: ESPN 121 = 18-21 points allowed and
+# 125 = 46+ straddle Sleeper's boundaries, and 124 (35-45) is the better stand-in for
+# pts_allow_35p, so 125 stays unmapped and lets 124 win).
 ESPN_STAT_TO_SLEEPER: dict[int, tuple[str, ...]] = {
     # passing
     0: ("pass_att",), 1: ("pass_cmp",), 2: ("pass_inc",), 3: ("pass_yd",), 4: ("pass_td",),
@@ -52,41 +54,90 @@ ESPN_STAT_TO_SLEEPER: dict[int, tuple[str, ...]] = {
     23: ("rush_att",), 24: ("rush_yd",), 25: ("rush_td",), 26: ("rush_2pt",),
     35: ("rush_td_40p",), 36: ("rush_td_50p",), 37: ("bonus_rush_yd_100",), 38: ("bonus_rush_yd_200",),
     # receiving
-    42: ("rec_yd",), 43: ("rec_td",), 44: ("rec_2pt",), 45: ("rec_td_40p",), 46: ("rec_td_50p",),
-    53: ("rec",), 54: ("bonus_rec_yd_100",), 55: ("bonus_rec_yd_200",), 58: ("rec_tgt",),
+    41: ("rec",), 42: ("rec_yd",), 43: ("rec_td",), 44: ("rec_2pt",), 45: ("rec_td_40p",),
+    46: ("rec_td_50p",), 53: ("rec",), 56: ("bonus_rec_yd_100",), 57: ("bonus_rec_yd_200",),
+    58: ("rec_tgt",),
+    # first downs (ESPN 211-213), any-2pt, sacks taken
+    62: ("pass_2pt", "rush_2pt", "rec_2pt"), 64: ("pass_sack",),
+    211: ("pass_fd",), 212: ("rush_fd",), 213: ("rec_fd",),
     # fumbles
-    68: ("fum",), 72: ("fum_lost",),
+    63: ("fum_rec_td",), 68: ("fum",), 72: ("fum_lost",),
     # kicking (ESPN 80/82 = under 40 yds -> Sleeper's three short buckets)
     74: ("fgm_50_59", "fgm_60p"), 76: ("fgmiss_50p",), 77: ("fgm_40_49",), 79: ("fgmiss_40_49",),
+    198: ("fgm_50_59",), 200: ("fgmiss_50p",),
     80: ("fgm_0_19", "fgm_20_29", "fgm_30_39"), 82: ("fgmiss_0_19", "fgmiss_20_29", "fgmiss_30_39"),
     83: ("fgm",), 84: ("fga",), 85: ("fgmiss",), 86: ("xpm",), 87: ("xpa",), 88: ("xpmiss",),
     201: ("fgm_60p",),
-    # team defense: points allowed (ESPN 18-21 and 45+ overlap Sleeper buckets and are skipped)
+    # team defense: points allowed. 188-195 are ESPN's D/ST-only duplicates of 89-124.
     89: ("pts_allow_0",), 90: ("pts_allow_1_6",), 91: ("pts_allow_7_13",), 92: ("pts_allow_14_20",),
-    122: ("pts_allow_21_27",), 123: ("pts_allow_28_34",), 124: ("pts_allow_35p",),
+    120: ("pts_allow",), 122: ("pts_allow_21_27",), 123: ("pts_allow_28_34",), 124: ("pts_allow_35p",),
+    188: ("pts_allow_0",), 189: ("pts_allow_1_6",), 190: ("pts_allow_7_13",), 191: ("pts_allow_14_20",),
+    193: ("pts_allow_21_27",), 194: ("pts_allow_28_34",), 195: ("pts_allow_35p",),
     # team defense: yards allowed
+    127: ("yds_allow",),
     128: ("yds_allow_0_100",), 129: ("yds_allow_100_199",), 130: ("yds_allow_200_299",),
     131: ("yds_allow_300_349",), 132: ("yds_allow_350_399",), 133: ("yds_allow_400_449",),
     134: ("yds_allow_450_499",), 135: ("yds_allow_500_549",), 136: ("yds_allow_550p",),
     # team defense: plays
     93: ("def_st_td",),   # blocked kick returned for TD
     95: ("int",), 96: ("fum_rec",), 97: ("blk_kick",), 98: ("safe",), 99: ("sack",),
+    94: ("def_td",),      # fumble or INT return TD (combined)
     101: ("def_st_td",),  # kickoff return TD
     102: ("def_st_td",),  # punt return TD
     103: ("def_td",),     # interception return TD
     104: ("def_td",),     # fumble return TD
+    105: ("def_st_td",),  # total return TD
     106: ("ff",),
 }
 
+# ESPN's "every N units" scoring (PY25 = a point per 25 passing yards, REY10, REC5, ...).
+# Sleeper scores per unit, so the weight is points / N. These only fill keys the per-unit ids
+# above left empty — a league that sets both (ESPN 3 and 5) means them for different positions.
+ESPN_STAT_PER_N: dict[int, tuple[str, int]] = {
+    5: ("pass_yd", 5), 6: ("pass_yd", 10), 7: ("pass_yd", 20), 8: ("pass_yd", 25),
+    9: ("pass_yd", 50), 10: ("pass_yd", 100), 11: ("pass_cmp", 5), 12: ("pass_cmp", 10),
+    13: ("pass_inc", 5), 14: ("pass_inc", 10),
+    27: ("rush_yd", 5), 28: ("rush_yd", 10), 29: ("rush_yd", 20), 30: ("rush_yd", 25),
+    31: ("rush_yd", 50), 32: ("rush_yd", 100), 33: ("rush_att", 5), 34: ("rush_att", 10),
+    47: ("rec_yd", 5), 48: ("rec_yd", 10), 49: ("rec_yd", 20), 50: ("rec_yd", 25),
+    51: ("rec_yd", 50), 52: ("rec_yd", 100), 54: ("rec", 5), 55: ("rec", 10),
+}
+
+
+DST_POSITION_ID = "16"
+
+
+def item_points(item: dict) -> float | None:
+    """Points for one scoring item, or None if it carries no value.
+
+    ESPN parks a whole category's value in `pointsOverrides` (position id -> points) and
+    leaves `points` at 0. Every D/ST category is written this way in practice — sacks,
+    interceptions, points allowed — so reading `points` alone scores every defense at zero.
+    Our scoring dict is position-agnostic (the stat keys are position-specific anyway), so
+    take the D/ST override when there is one, else the value most positions share.
+    """
+    pts = item.get("points")
+    overrides = item.get("pointsOverrides") or {}
+    if not pts and overrides:
+        vals = [float(v) for v in overrides.values()]
+        pts = overrides.get(DST_POSITION_ID, max(set(vals), key=vals.count))
+    return None if pts is None else float(pts)
+
 
 def map_scoring(scoring_items: list[dict]) -> dict[str, float]:
+    items = sorted(scoring_items, key=lambda i: -int(i.get("statId", 0)))
     scoring: dict[str, float] = {}
-    for item in sorted(scoring_items, key=lambda i: -int(i.get("statId", 0))):
-        pts = item.get("points")
+    for item in items:
+        pts = item_points(item)
         if pts is None:
             continue
         for key in ESPN_STAT_TO_SLEEPER.get(int(item["statId"]), ()):
-            scoring.setdefault(key, float(pts))
+            scoring.setdefault(key, pts)
+    for item in items:
+        per_n = ESPN_STAT_PER_N.get(int(item.get("statId", -1)))
+        pts = item_points(item) if per_n else None
+        if per_n and pts is not None:
+            scoring.setdefault(per_n[0], round(pts / per_n[1], 6))
     return scoring
 
 
@@ -207,9 +258,25 @@ def build_league(
         attach_sleeper_ids(league, players)
         if projections_raw is not None:
             apply_projections(league, projections_raw, players, sleeper_id=lambda p: p.ext_ids.get("sleeper"))
+            espn_def_names = {p.nfl_team: p.name for t in league.teams for p in t.players if p.position == "DEF"}
             for fa in league.free_agents:
                 fa.ext_ids.setdefault("sleeper", fa.id)
+                if fa.position == "DEF":
+                    fa.name = _dst_name(fa.name, fa.nfl_team, espn_def_names)
     return league
+
+
+def _dst_name(sleeper_name: str, nfl_team: str | None, espn_names: dict[str | None, str]) -> str:
+    """ESPN calls a defense "Chargers D/ST"; Sleeper calls it "Los Angeles Chargers".
+
+    Free agents come out of the Sleeper dump, so without this an ESPN league shows two
+    different names for the same kind of player. Reuse the name ESPN gave a rostered
+    defense for that team when we have it, else build ESPN's form from the nickname.
+    """
+    if nfl_team in espn_names:
+        return espn_names[nfl_team]
+    nickname = sleeper_name.rsplit(" ", 1)[-1] or nfl_team
+    return f"{nickname} D/ST" if nickname else sleeper_name
 
 
 def attach_sleeper_ids(league: League, players: dict[str, dict]) -> None:

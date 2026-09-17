@@ -35,13 +35,18 @@ def _pos_rank_after_add(team: Team, fa, slots: list[str]) -> str | None:
 
 def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int],
           entitlements: set[str], bid_stats: dict | None = None, trending: dict[str, int] | None = None,
-          profiles: dict[str, Profile] | None = None, limit: int = 5) -> dict:
+          profiles: dict[str, Profile] | None = None, matchups_raw: list[dict] | None = None,
+          limit: int = 5) -> dict:
     slots = league.starting_slots
     adv = lineup_mod.advise(league, team)
     actions: list[dict] = []
 
-    # 1. Lineup fixes (free)
+    # 1. Lineup fixes (free). A swap inside the noise band is not a "move worth making" —
+    # our own backtest puts sub-1.5-point margins at a coin flip. It still shows on My Team.
     for ch in adv.changes:
+        forced = bool(ch.out and ch.out.is_out) or ch.out is None
+        if not forced and ch.gain < lineup_mod.NOISE_MARGIN:
+            continue
         out_name = ch.out.name if ch.out else "an empty slot"
         actions.append({
             "id": f"start:{ch.slot}:{ch.in_.id}",
@@ -90,11 +95,13 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                 "cta": {"label": "View waiver plan", "href": "/waivers"},
                 "score": (2.5 * c.net) - i * 0.5,
             })
-    if not plan.claims and plan.hold_reason and "waivers" in entitlements:
+    if not plan.claims and plan.hold_reason:
         actions.append({
             "id": "waiver:hold", "type": "hold", "feature": "my_team", "locked": False,
-            "title": "No waiver claim worth making", "subtitle": "Hold your budget",
-            "benefit": "Save your FAAB", "benefit_value": 0.0, "confidence": None,
+            "title": "No waiver claim worth making",
+            "subtitle": "Hold your budget" if league.waiver_type == "faab" else "Keep your waiver priority",
+            "benefit": "Save your FAAB" if league.waiver_type == "faab" else "Stay at the front of the queue",
+            "benefit_value": 0.0, "confidence": None,
             "reason": plan.hold_reason, "why": [], "players": [],
             "cta": {"label": "See the wire", "href": "/waivers"}, "score": 0.05,
         })
@@ -165,8 +172,10 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
     return {
         "week": league.week, "team": team.name, "league": league.name,
         "projected_total": adv.projected_total, "current_total": adv.current_total,
+        "matchup": report.matchup(league, team, matchups_raw),
         "summary": summary, "all_clear": n_real == 0 and not any(a["locked"] for a in actions),
-        "footer": "Everything else looks fine." if actions else "Check back after Thursday's injury news.",
+        "footer": ("Everything else looks fine." if moves
+                   else "We checked your lineup, the wire and all 11 other rosters. Nothing needs you this week."),
         "actions": actions,
         "algo_version": ALGO_VERSION,
     }

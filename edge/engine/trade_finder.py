@@ -266,11 +266,60 @@ def find(league: League, my_team: Team, ros: dict[str, float],
 
     partners.sort(key=lambda p: -(p.best_offers[0].score if p.best_offers else 0))
     partners = partners[:limit_partners]
-    summary = (f"{partners[0].team.name} is your best trade partner. {partners[0].headline}"
-               if partners else "No trade in this league helps both sides right now. Hold.")
+    blockers = [] if partners else _blockers(league, my_team, mine, ros, baseline)
+    if partners:
+        summary = f"{partners[0].team.name} is your best trade partner. {partners[0].headline}"
+    elif blockers:
+        summary = blockers[0]["summary"]
+    else:
+        summary = "No trade in this league helps both sides right now. Hold."
     for p in partners:                      # the card already names the team; do not repeat it
         p.headline = p.headline.replace(f"{p.team.name} ", "They ")
     return {
         "week": league.week, "my_positions": mine.to_dict(), "summary": summary,
-        "partners": [p.to_dict() for p in partners], "algo_version": ALGO_VERSION,
+        "partners": [p.to_dict() for p in partners], "blockers": blockers,
+        "algo_version": ALGO_VERSION,
     }
+
+
+def _blockers(league: League, my_team: Team, mine: PositionProfile, ros: dict[str, float],
+              baseline: dict[str, list[float]], limit: int = 3) -> list[dict]:
+    """When nothing clears, say what is actually in the way.
+
+    "Hold" on its own reads like the engine gave up. The useful version names the player you
+    want, who has him, and the reason the deal does not work yet.
+    """
+    want = list(mine.need) or ["RB", "WR"]
+    out: list[dict] = []
+    for other in league.teams:
+        if other.id == my_team.id:
+            continue
+        their_send = _tradeable(other, league, ros, set(want))
+        my_send = _tradeable(my_team, league, ros, set(mine.surplus) or set(mine.starters_required))
+        for target in their_send[:2]:
+            best_for_me = None
+            for give in my_send:
+                me_side = _side(league, my_team, [give], [target], ros)
+                them_side = _side(league, other, [target], [give], ros)
+                if best_for_me is None or me_side.lineup_delta_ros > best_for_me[0].lineup_delta_ros:
+                    best_for_me = (me_side, them_side, give)
+            if not best_for_me:
+                continue
+            me_side, them_side, give = best_for_me
+            if me_side.lineup_delta_ros < MIN_MY_GAIN:
+                reason = "Nothing they have spare would start for you."
+            elif them_side.lineup_delta_ros < MIN_THEIR_GAIN:
+                reason = (f"He starts for them, and the best piece you can offer ({give.name}) "
+                          f"leaves their lineup {_r0(them_side.lineup_delta_ros)} worse.")
+            else:
+                reason = f"The value is too lopsided ({round(_fairness(them_side) * 100)}% balanced) to send."
+            out.append({
+                "their_team_id": other.id, "their_team_name": other.name,
+                "target": target.name, "target_position": target.position,
+                "best_piece": give.name, "my_gain_ros": me_side.lineup_delta_ros,
+                "their_gain_ros": them_side.lineup_delta_ros, "reason": reason,
+                "summary": (f"No trade clears yet. The player who would help you most is {target.name} "
+                            f"({target.position}, {other.name}). {reason}"),
+            })
+    out.sort(key=lambda d: -d["my_gain_ros"])
+    return out[:limit]

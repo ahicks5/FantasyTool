@@ -107,3 +107,19 @@ def test_this_weeks_lineup_outranks_a_similar_sized_trade(league):
             continue
         if trade["benefit_value"] <= start["benefit_value"] * 6:
             assert start["priority"] < trade["priority"], f"{t.name}: lineup fix should come first"
+
+
+def test_a_quiet_week_still_shows_the_matchup_and_says_we_checked(league):
+    """A free user with no moves must not get a blank page."""
+    ros, byes = _ros(league)
+    matchups = json.loads((FIX / "sleeper/matchups_2.json").read_text())
+    saved, league.free_agents = league.free_agents, []
+    feed = actions.build(league, league.team("2"), ros, byes, entitlements={"my_team"}, matchups_raw=matchups)
+    league.free_agents = saved
+    assert feed["matchup"] and feed["matchup"]["opponent"]
+    assert 0 <= feed["matchup"]["win_prob"] <= 1
+    holds = [a for a in feed["actions"] if a["type"] == "hold"]
+    assert holds, "the hold card is free — it proves we actually looked"
+    assert not any(a["locked"] for a in holds)
+    if not [a for a in feed["actions"] if a["type"] != "hold"]:
+        assert "Nothing needs you this week" in feed["footer"]

@@ -24,18 +24,29 @@ def remaining_games(nfl_team: str | None, week: int, byes: dict[str, int], last_
     return n
 
 
+def projection_id(p: Player) -> str:
+    """The id the projection provider keys this player by — always a Sleeper id.
+
+    A Sleeper league's `Player.id` already is one. ESPN players carry ESPN's id and keep the
+    Sleeper id in `ext_ids` (edge.data.player_map), so looking up by `Player.id` there finds
+    nothing and values every rostered player at zero.
+    """
+    return (getattr(p, "ext_ids", None) or {}).get("sleeper") or p.id
+
+
 def ros_values(league: League, season_proj: list[PlayerProjection] | list[dict], byes: dict[str, int],
                last_week: int | None = None) -> dict[str, float]:
     """player_id -> projected points from this week through the fantasy regular season.
 
-    ppg = season projection / 17, times games left (minus bye, minus games we expect an injured
-    player to miss — see INJURY_GAMES_LOST).
+    Keyed by `Player.id` (what the engine holds), looked up by Sleeper id (what the provider
+    returns). ppg = season projection / 17, times games left (minus bye, minus games we expect
+    an injured player to miss — see INJURY_GAMES_LOST).
     """
     last = last_week or FANTASY_LAST_WEEK
     by_id = {p["player_id"]: p for p in to_raw(season_proj) if p.get("stats")}
     out: dict[str, float] = {}
     for pl in _all_players(league):
-        raw = by_id.get(pl.id)
+        raw = by_id.get(projection_id(pl))
         if not raw:
             out[pl.id] = 0.0
             continue

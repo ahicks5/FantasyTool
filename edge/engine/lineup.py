@@ -8,6 +8,9 @@ from edge.models import FLEX_SLOTS, League, Player, Team, player_fits
 LOCK, LEAN, FLIP = "Lock", "Lean", "Coin flip"
 # Measured on 2026 week 1 (docs/BACKTEST.md): how often the higher projection actually scored more.
 HIT_RATE = {LOCK: 0.80, LEAN: 0.62, FLIP: 0.51}
+# Below this margin the higher projection won barely half the time, so calling it a "move" is
+# overclaiming. Same number that separates Coin flip from Lean.
+NOISE_MARGIN = 1.5
 ZERO_STATUSES = {"OUT", "IR", "PUP", "SUS", "NA", "DOUBTFUL"}
 
 
