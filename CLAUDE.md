@@ -93,7 +93,18 @@ TASKS.md            backlog / in progress / done — keep it current
 
 ## Confidence tags (validated)
 Lock ≥ 4 pts margin (~80% right), Lean 1.5–4 (~62%), Coin flip < 1.5 (~51%). See docs/BACKTEST.md;
-re-run `scripts/backtest.py <week>` weekly and adjust thresholds only with data.
+adjust thresholds only with data. Below 1.5 points the higher projection wins barely half the
+time, so `lineup.stabilize` **holds the incumbent** rather than recommending the swap — week 1
+priced 48 such swaps at −28 points, including "bench Josh Allen for Stafford" over 0.55.
+
+## Weekly ritual
+- Thursday morning: `uv run python scripts/freeze_projections.py` — freezes this week's
+  projections so next week's backtest grades what we actually showed, not a revised number.
+- Tuesday: `uv run python scripts/backtest.py <week>` — projection accuracy *and* decision
+  accuracy (Edge's lineup vs the lineup 66 real managers started, in 6 leagues, every format).
+  Append the result to docs/BACKTEST.md. Week 1: **+2.02 pts/team, 82% of teams helped**.
+- Re-record the offline replay fixtures with `scripts/record_replay_fixture.py <week>` when the
+  numbers in `tests/test_evaluate.py` need to move; never loosen them without a reason.
 
 ## Rules
 - **Nothing is done without a test or a working demo.** Tests run offline against fixtures.

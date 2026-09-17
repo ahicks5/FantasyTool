@@ -20,7 +20,7 @@ import pytest
 from edge.connectors.sleeper import build_league, projection_positions
 from edge.data.schedule import bye_weeks
 from edge.engine import actions, waivers
-from edge.engine.lineup import advise, effective, lineup_total, optimize
+from edge.engine.lineup import NOISE_MARGIN, advise, effective, lineup_total, optimize
 from edge.engine.values import ros_values
 from edge.models import BENCH_SLOTS, League, Team, player_fits, slot_accepts, startable_positions
 
@@ -182,7 +182,20 @@ def test_advise_returns_a_legal_call_for_every_starting_slot(fmt):
                 assert player_fits(c.slot, c.player), \
                     f"{slug} team {t.id}: {c.player.position} in a {c.slot} slot"
                 assert c.player.id in {p.id for p in t.players}
-        assert adv.projected_total >= adv.current_total, f"{slug} team {t.id}: optimizer is worse than the current lineup"
+        # Edge recommends the optimum held steady inside the noise band, so its projected
+        # total can sit a shade under the manager's own. Three things still have to hold.
+        best = optimize(t.players, slots)
+        optimum = round(sum(effective(p) for p in best if p), 2)
+        assert optimum >= adv.current_total, f"{slug} team {t.id}: optimizer is worse than the current lineup"
+
+        held = [i for i, c in enumerate(adv.slots) if (c.player and best[i]) and c.player.id != best[i].id]
+        # A hold only ever puts back a player the manager was already starting.
+        for i in held:
+            assert adv.slots[i].player.id in set(t.starters), \
+                f"{slug} team {t.id}: held {adv.slots[i].player.name}, who was not in the lineup"
+        # And each one costs less than the noise margin, by construction.
+        assert adv.projected_total >= optimum - NOISE_MARGIN * len(held) - 0.01, \
+            f"{slug} team {t.id}: holding cost more than the noise band allows"
 
 
 def test_a_slot_is_only_left_empty_when_the_roster_truly_cannot_fill_it(fmt):

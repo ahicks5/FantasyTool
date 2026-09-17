@@ -130,6 +130,43 @@ def optimize(players: list[Player], slots: list[str], values: dict[str, float] |
     return _assign_exact(_shortlist(pool, slots), slots, values)
 
 
+def stabilize(best: list[Player | None], team: Team, slots: list[str]) -> list[Player | None]:
+    """Keep the incumbent when the upgrade is inside the noise band.
+
+    Week 1 priced this: of 48 recommended swaps with a projected gain under NOISE_MARGIN,
+    46% were right and they cost -0.58 points each -- 28 points thrown away across 66 teams,
+    including "bench Josh Allen for Matthew Stafford" over 0.55 projected points, which
+    actually lost 35.6. A projection edge that small is not an edge, and a product that tells
+    you to bench your best player for it does not get a second week. None of those 48 swaps
+    involved a starter who could not play, so holding them back costs no injury coverage.
+
+    Only a starter the manager already has can come back in, so the result is never worse
+    than the lineup he set. Non-cascading on purpose: if the incumbent is already starting
+    somewhere else in the optimal lineup, the two slots are entangled and we leave it alone.
+    """
+    out = list(best)
+    in_lineup = {p.id for p in out if p}
+    for i, slot in enumerate(slots):
+        pick = out[i]
+        cur = team.player(team.starters[i]) if i < len(team.starters) else None
+        if pick is None or cur is None or cur.id == pick.id:
+            continue
+        if cur.id in in_lineup or not player_fits(slot, cur) or cur.is_out:
+            continue
+        if effective(pick) - effective(cur) >= NOISE_MARGIN:
+            continue
+        in_lineup.discard(pick.id)
+        in_lineup.add(cur.id)
+        out[i] = cur
+    return out
+
+
+def recommended_lineup(league: League, team: Team) -> list[Player | None]:
+    """The lineup Edge actually tells you to start: optimal, then held steady inside the noise."""
+    slots = league.starting_slots
+    return stabilize(optimize(team.players, slots), team, slots)
+
+
 def lineup_total(players: list[Player], slots: list[str], values: dict[str, float] | None = None) -> float:
     return round(sum(effective(p, values) for p in optimize(players, slots, values) if p), 2)
 
@@ -187,7 +224,7 @@ def _status_note(p: Player) -> str:
 
 def advise(league: League, team: Team) -> LineupAdvice:
     slots = league.starting_slots
-    best = optimize(team.players, slots)
+    best = recommended_lineup(league, team)
     best_ids = {p.id for p in best if p}
     bench = [p for p in team.players if p.id not in best_ids]
     current_total = round(sum(effective(p) for pid in team.starters if (p := team.player(pid))), 2)
@@ -207,7 +244,13 @@ def advise(league: League, team: Team) -> LineupAdvice:
             calls.append(SlotCall(slot, p, FLIP, f"No healthy {slot} with a projection. Hit the waiver wire.",
                                   change=False, margin=0.0))
             continue
-        if alt:
+        if alt and margin < 0:
+            # We are holding him over a higher-projected bench player. Say why, or the
+            # recommendation looks like a mistake.
+            reason = (f"Projects {effective(p):.1f}. {alt.name} projects {effective(alt):.1f}, "
+                      f"a {-margin:.1f}-point edge -- inside the band where the higher projection "
+                      f"wins barely half the time, so hold.")
+        elif alt:
             reason = f"Projects {effective(p):.1f}; best bench option {alt.name} at {effective(alt):.1f}."
         else:
             reason = f"Projects {effective(p):.1f}; only option for {slot}."
@@ -226,7 +269,11 @@ def advise(league: League, team: Team) -> LineupAdvice:
         if eligible:
             weakest = min(eligible, key=lambda c: effective(c.player))
             gap = effective(weakest.player) - effective(b)
-            note = f"Sit: {effective(b):.1f}, {gap:.1f} behind {weakest.player.name} in {weakest.slot}."
+            if gap < 0:
+                note = (f"Sit: {effective(b):.1f}, {-gap:.1f} above {weakest.player.name} in "
+                        f"{weakest.slot} -- too close to call, not worth the move.")
+            else:
+                note = f"Sit: {effective(b):.1f}, {gap:.1f} behind {weakest.player.name} in {weakest.slot}."
         else:
             note = f"Sit: no {b.position} slot to fill."
         if b.is_out:

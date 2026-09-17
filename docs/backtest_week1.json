@@ -1,21 +1,60 @@
 {
- "n": 442,
- "buckets": {
-  "<1.5": {
-   "hit_rate": 0.506,
-   "n": 2118
-  },
-  "1.5-4": {
-   "hit_rate": 0.622,
-   "n": 1930
-  },
-  "4-8": {
-   "hit_rate": 0.771,
-   "n": 1316
-  },
-  ">8": {
-   "hit_rate": 0.852,
-   "n": 332
+ "week": 1,
+ "season": 2026,
+ "projections": {
+  "n": 442,
+  "mae": 3.87,
+  "buckets": {
+   "<1.5": {
+    "hit_rate": 0.506,
+    "n": 2118
+   },
+   "1.5-4": {
+    "hit_rate": 0.622,
+    "n": 1930
+   },
+   "4-8": {
+    "hit_rate": 0.771,
+    "n": 1316
+   },
+   ">8": {
+    "hit_rate": 0.852,
+    "n": 332
+   }
+  }
+ },
+ "decisions": {
+  "season": 2026,
+  "week": 1,
+  "leagues": 6,
+  "teams": 66,
+  "skipped": 2,
+  "manager_avg": 131.2,
+  "edge_avg": 133.22,
+  "avg_gain": 2.02,
+  "beat_or_tied": 0.818,
+  "beat": 0.333,
+  "hurt": 0.182,
+  "gap_captured": 0.085,
+  "confidence": {
+   "Lean": {
+    "n": 20,
+    "right": 10,
+    "hit_rate": 0.5,
+    "avg_points": 0.86
+   },
+   "Coin flip": {
+    "n": 4,
+    "right": 2,
+    "hit_rate": 0.5,
+    "avg_points": 5.72
+   },
+   "Lock": {
+    "n": 23,
+    "right": 18,
+    "hit_rate": 0.783,
+    "avg_points": 5.97
+   }
   }
  }
 }
