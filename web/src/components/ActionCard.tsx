@@ -65,7 +65,16 @@ export function ActionCard({
           <div className="min-w-0 flex-1">
             <h3 className="display text-[19px] leading-[1.2]">{a.title}</h3>
             <p className="mt-1 text-[13px] leading-snug text-muted">{a.subtitle}</p>
-            <p className={`tnum mt-2 text-[15px] font-black ${a.locked || a.type === "hold" ? "text-muted" : "text-start"}`}>{a.benefit}</p>
+            {/* A hold has no gain to shout about; its benefit is a quiet note, not a headline. */}
+            <p
+              className={`tnum mt-2 ${
+                a.type === "hold"
+                  ? "text-[13px] font-semibold text-muted"
+                  : `text-[15px] font-black ${a.locked ? "text-muted" : "text-start"}`
+              }`}
+            >
+              {a.benefit}
+            </p>
           </div>
         </div>
 

@@ -5,9 +5,30 @@ import Link from "next/link";
 import { connect, getLeague, getSleeperLeagues } from "@/lib/api";
 import { saveConnection } from "@/lib/storage";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
-import { Button, ErrorBox, Wordmark } from "@/components/ui";
+import { IconCheck } from "@/components/icons";
+import { Button, ErrorBox, Eyebrow, ThemeToggle, Wordmark } from "@/components/ui";
 
-const FIELD = "w-full rounded-xl border-2 border-line px-4 py-3 text-base focus:border-ink focus:outline-none";
+const FIELD =
+  "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
+
+/** The selected/unselected mark on every pickable row — a shape, not just a colour. */
+function Tick({ on }: { on: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 ${
+        on ? "border-start bg-start text-white" : "border-line-2 text-transparent"
+      }`}
+    >
+      <IconCheck size={12} strokeWidth={3.4} />
+    </span>
+  );
+}
+
+function initials(name: string): string {
+  const parts = name.replace(/[^A-Za-z0-9' .-]/g, "").split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "")).toUpperCase();
+}
 
 export default function ConnectPage() {
   const router = useRouter();
@@ -71,42 +92,67 @@ export default function ConnectPage() {
     }
   }
 
+  const step = league ? 2 : 1;
+
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-16">
-      <header className="flex h-14 items-center justify-between">
-        <Link href="/">
-          <Wordmark className="text-2xl" />
+      <header className="flex h-16 items-center justify-between">
+        <Link href="/" aria-label="Edge home">
+          <Wordmark className="text-[26px]" />
         </Link>
+        <ThemeToggle />
       </header>
-      <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">Step 1 of 2</p>
-      <h1 className="mt-1 text-3xl font-black">Connect your league</h1>
-      <p className="mt-1 text-muted">Public leagues only for now. No password, no account needed to see your first moves.</p>
 
-      <div className="mt-6 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Platform">
-        {(["sleeper", "espn"] as Platform[]).map((p) => (
-          <button
-            key={p}
-            role="radio"
-            aria-checked={platform === p}
-            onClick={() => {
-              setPlatform(p);
-              setLeagues(null);
-              setLeague(null);
-              setTeamId("");
-            }}
-            className={`rounded-xl border-2 px-4 py-3 font-bold ${platform === p ? "border-ink bg-ink text-white" : "border-line"}`}
-          >
-            {p === "sleeper" ? "Sleeper" : "ESPN (public)"}
-          </button>
+      {/* Two steps, and the bar says which one you are on without reading anything. */}
+      <div className="mt-2 flex items-center gap-2">
+        {[1, 2].map((n) => (
+          <span key={n} className={`h-1.5 flex-1 rounded-full ${n <= step ? "bg-start" : "bg-line"}`} aria-hidden />
         ))}
       </div>
 
+      <div className="mt-4 rise">
+        <Eyebrow>
+          Step <span className="tnum">1</span> of <span className="tnum">2</span> · Your league
+        </Eyebrow>
+        <h1 className="display mt-2 text-[34px] leading-[1.04]">Connect your league</h1>
+        <p className="mt-2 text-[15px] leading-relaxed text-muted">
+          Public leagues only for now. No password, and no account needed to see your first moves.
+        </p>
+      </div>
+
+      <div className="mt-6 grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="Platform">
+        {(["sleeper", "espn"] as Platform[]).map((p) => {
+          const on = platform === p;
+          return (
+            <button
+              key={p}
+              role="radio"
+              aria-checked={on}
+              onClick={() => {
+                setPlatform(p);
+                setLeagues(null);
+                setLeague(null);
+                setTeamId("");
+              }}
+              className={`rounded-[var(--radius-card)] border px-4 py-4 text-left transition-colors ${
+                on ? "border-ink bg-ink text-paper" : "border-line-2 bg-paper text-ink hover:bg-soft"
+              }`}
+            >
+              <span className="display block text-[17px] leading-tight">{p === "sleeper" ? "Sleeper" : "ESPN"}</span>
+              <span className={`mt-0.5 block text-[12px] leading-snug ${on ? "text-paper/65" : "text-muted"}`}>
+                {p === "sleeper" ? "Username or ID" : "Public leagues only"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {platform === "sleeper" && (
-        <section className="mt-6">
-          <label className="block text-sm font-bold" htmlFor="username">
+        <section className="mt-7">
+          <label className="eyebrow block" htmlFor="username">
             Sleeper username
           </label>
-          <div className="mt-1 flex gap-2">
+          <div className="mt-2 flex gap-2">
             <input
               id="username"
               className={FIELD}
@@ -121,33 +167,52 @@ export default function ConnectPage() {
               Find
             </Button>
           </div>
+
           {leagues && (
             <ul className="mt-3 grid gap-2">
-              {leagues.length === 0 && <li className="text-muted">No leagues found for that username.</li>}
-              {leagues.map((l) => (
-                <li key={l.league_id}>
-                  <button
-                    onClick={() => pickLeague(l.league_id)}
-                    className={`w-full rounded-xl border-2 px-4 py-3 text-left ${league?.id === l.league_id ? "border-start bg-start-soft" : "border-line"}`}
-                  >
-                    <span className="display font-extrabold">{l.name}</span>
-                    <span className="block text-xs text-muted">
-                      {l.total_rosters} teams · {l.status.replaceAll("_", " ")}
-                    </span>
-                  </button>
+              {leagues.length === 0 && (
+                <li className="rounded-xl bg-soft px-4 py-3 text-[14px] text-muted">
+                  No leagues found for that username.
                 </li>
-              ))}
+              )}
+              {leagues.map((l) => {
+                const on = league?.id === l.league_id;
+                return (
+                  <li key={l.league_id}>
+                    <button
+                      onClick={() => pickLeague(l.league_id)}
+                      aria-pressed={on}
+                      className={`flex w-full items-center gap-3 rounded-[var(--radius-card)] border px-4 py-3.5 text-left transition-colors ${
+                        on ? "border-start bg-start-soft" : "border-line-2 bg-paper hover:bg-soft"
+                      }`}
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="display block text-[16px] leading-tight">{l.name}</span>
+                        <span className="mt-0.5 block text-[12px] text-muted">
+                          <span className="tnum">{l.total_rosters}</span> teams · {l.status.replaceAll("_", " ")}
+                        </span>
+                      </span>
+                      <Tick on={on} />
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
-          <p className="mt-4 text-center text-xs font-bold uppercase text-muted">or</p>
+
+          <div className="mt-6 flex items-center gap-3" aria-hidden>
+            <span className="h-px flex-1 bg-line" />
+            <span className="eyebrow">or</span>
+            <span className="h-px flex-1 bg-line" />
+          </div>
         </section>
       )}
 
-      <section className="mt-3">
-        <label className="block text-sm font-bold" htmlFor="league-id">
+      <section className="mt-5">
+        <label className="eyebrow block" htmlFor="league-id">
           Paste a league ID
         </label>
-        <div className="mt-1 flex gap-2">
+        <div className="mt-2 flex gap-2">
           <input
             id="league-id"
             className={FIELD}
@@ -170,34 +235,44 @@ export default function ConnectPage() {
       )}
 
       {league && (
-        <section className="mt-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">Step 2 of 2 · {league.name} · week {league.week}</p>
-          <h2 className="mt-1 text-2xl font-black">Which team is yours?</h2>
-          <ul className="mt-2 grid gap-2">
-            {league.teams.map((t) => (
-              <li key={t.id}>
-                <button
-                  onClick={() => setTeamId(t.id)}
-                  className={`flex w-full items-center justify-between rounded-xl border-2 px-4 py-3 text-left ${teamId === t.id ? "border-start bg-start-soft" : "border-line"}`}
-                  aria-pressed={teamId === t.id}
-                >
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-soft text-sm font-black uppercase text-muted">{t.name.slice(0, 2)}</span>
-                    <span className="min-w-0">
-                      <span className="block truncate font-extrabold">{t.name}</span>
-                      <span className="block text-xs text-muted">{t.owner_name}</span>
+        <section className="mt-9 rise">
+          <Eyebrow>
+            Step <span className="tnum">2</span> of <span className="tnum">2</span> · {league.name} · week{" "}
+            <span className="tnum">{league.week}</span>
+          </Eyebrow>
+          <h2 className="display mt-2 text-[28px] leading-[1.06]">Which team is yours?</h2>
+          <ul className="mt-4 grid gap-2">
+            {league.teams.map((t) => {
+              const on = teamId === t.id;
+              return (
+                <li key={t.id}>
+                  <button
+                    onClick={() => setTeamId(t.id)}
+                    aria-pressed={on}
+                    className={`flex w-full items-center gap-3 rounded-[var(--radius-card)] border px-4 py-3 text-left transition-colors ${
+                      on ? "border-start bg-start-soft" : "border-line-2 bg-paper hover:bg-soft"
+                    }`}
+                  >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-soft text-[13px] font-black uppercase text-muted">
+                      {initials(t.name)}
                     </span>
-                  </span>
-                  <span className="text-sm text-muted">
-                    {t.record} · {t.points_for.toFixed(1)}
-                  </span>
-                </button>
-              </li>
-            ))}
+                    <span className="min-w-0 flex-1">
+                      <span className="display block text-[16px] leading-tight break-words">{t.name}</span>
+                      <span className="mt-0.5 block text-[12px] leading-snug text-muted">
+                        {t.owner_name} · <span className="tnum">{t.record}</span> ·{" "}
+                        <span className="tnum">{t.points_for.toFixed(1)}</span> PF
+                      </span>
+                    </span>
+                    <Tick on={on} />
+                  </button>
+                </li>
+              );
+            })}
           </ul>
-          <div className="sticky bottom-0 mt-4 bg-paper py-3">
+
+          <div className="sticky bottom-0 -mx-4 mt-5 border-t border-line bg-[color-mix(in_srgb,var(--color-plane)_92%,transparent)] px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-md">
             <Button variant="start" className="w-full" onClick={submit} disabled={busy || !teamId}>
-              {busy ? "Connecting…" : "Connect and see my moves"}
+              {busy ? "Connecting…" : teamId ? "Connect and see my moves" : "Pick your team"}
             </Button>
           </div>
         </section>

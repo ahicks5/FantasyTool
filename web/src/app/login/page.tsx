@@ -2,7 +2,8 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Button, Card, ErrorBox, Wordmark } from "@/components/ui";
+import { IconCheck } from "@/components/icons";
+import { Button, Card, ErrorBox, Eyebrow, LinkButton, ThemeToggle, Wordmark } from "@/components/ui";
 import { getUserEmail, sendMagicLink, signOut, supabaseConfigured } from "@/lib/supabase";
 
 function LoginInner() {
@@ -34,68 +35,92 @@ function LoginInner() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-lg px-4 py-8">
-      <Link href="/" aria-label="Edge home">
-        <Wordmark className="text-2xl" />
-      </Link>
-      <h1 className="mb-3 mt-6 text-2xl font-black tracking-tight">Sign in</h1>
-      {current ? (
-        <Card>
-          <p>
-            Signed in as <b>{current}</b>
-            {dev ? " (dev user)" : ""}.
-          </p>
-          <div className="mt-4 flex gap-2">
-            <Link href={next} className="rounded-xl bg-ink px-4 py-3 font-bold text-white">
-              Continue
-            </Link>
-            {!dev && (
-              <Button variant="secondary" onClick={() => signOut().then(() => setCurrent(null))}>
-                Sign out
-              </Button>
-            )}
-          </div>
-        </Card>
-      ) : !configured ? (
-        <Card>
-          <p className="text-muted">
-            Login isn&rsquo;t configured on this deployment. Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-            <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, or <code>NEXT_PUBLIC_DEV_USER</code> for local dev.
-          </p>
-        </Card>
-      ) : sent ? (
-        <Card>
-          <p>
-            Check your email. We sent a sign-in link to <b>{email}</b>. Open it on this device.
-          </p>
-        </Card>
-      ) : (
-        <form onSubmit={submit} className="grid gap-3">
-          <label htmlFor="email" className="text-sm font-bold">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            autoComplete="email"
-            inputMode="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border-2 border-line bg-paper px-4 py-3 text-base"
-            placeholder="you@example.com"
-          />
-          <Button type="submit" disabled={busy || !email}>
-            {busy ? "Sending…" : "Email me a sign-in link"}
-          </Button>
-          <p className="text-sm text-muted">No password. The link signs you in and unlocks anything you&rsquo;ve bought.</p>
-          {error && <ErrorBox message={error} />}
-        </form>
-      )}
+    <main className="mx-auto w-full max-w-lg px-4 pb-16">
+      <header className="flex h-16 items-center justify-between">
+        <Link href="/" aria-label="Edge home">
+          <Wordmark className="text-[26px]" />
+        </Link>
+        <ThemeToggle />
+      </header>
+
+      <div className="pt-8 rise">
+        <Eyebrow>Account</Eyebrow>
+        <h1 className="display mt-2 text-[34px] leading-[1.04]">Sign in</h1>
+        <p className="mt-2 max-w-[22rem] text-[15px] leading-relaxed text-muted">
+          No password. A link in your inbox signs you in and carries anything you&rsquo;ve bought.
+        </p>
+      </div>
+
+      <div className="mt-6 rise rise-1">
+        {current ? (
+          <Card>
+            <Eyebrow>Signed in</Eyebrow>
+            <p className="mt-1.5 text-[17px] font-bold break-words">
+              {current}
+              {dev ? <span className="ml-1.5 text-[13px] font-bold text-muted">dev user</span> : null}
+            </p>
+            <div className="mt-5 grid gap-2.5">
+              <LinkButton href={next} className="w-full">
+                Continue
+              </LinkButton>
+              {!dev && (
+                <Button variant="secondary" className="w-full" onClick={() => signOut().then(() => setCurrent(null))}>
+                  Sign out
+                </Button>
+              )}
+            </div>
+          </Card>
+        ) : !configured ? (
+          <Card>
+            <Eyebrow>Not configured</Eyebrow>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-ink-2">
+              Login isn&rsquo;t configured on this deployment. Set{" "}
+              <code className="rounded bg-soft px-1 py-0.5 text-[12px]">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+              <code className="rounded bg-soft px-1 py-0.5 text-[12px]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, or{" "}
+              <code className="rounded bg-soft px-1 py-0.5 text-[12px]">NEXT_PUBLIC_DEV_USER</code> for local dev.
+            </p>
+          </Card>
+        ) : sent ? (
+          <Card>
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-start-soft text-start">
+              <IconCheck size={22} strokeWidth={2.6} />
+            </span>
+            <p className="display mt-4 text-[21px] leading-tight">Check your email</p>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
+              We sent a sign-in link to <span className="font-bold text-ink break-words">{email}</span>. Open it on this
+              device.
+            </p>
+          </Card>
+        ) : (
+          <form onSubmit={submit} className="card grid gap-3 p-5">
+            <label htmlFor="email" className="eyebrow">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              inputMode="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none"
+              placeholder="you@example.com"
+            />
+            <Button type="submit" className="w-full" disabled={busy || !email}>
+              {busy ? "Sending…" : "Email me a sign-in link"}
+            </Button>
+            {error && <ErrorBox message={error} />}
+          </form>
+        )}
+      </div>
+
+      <p className="mt-6 text-center text-[12px] leading-relaxed text-muted">
+        You only need an account to buy or to keep a league. Looking is free.
+      </p>
     </main>
   );
 }
-
 
 export default function LoginPage() {
   return (

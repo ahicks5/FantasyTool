@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Wordmark } from "@/components/ui";
+import { IconArrowUp, IconCheck } from "@/components/icons";
+import { Eyebrow, LinkButton, Stat, StatusMeter, Wordmark } from "@/components/ui";
+import { signed } from "@/lib/format";
 import type { SharedVerdict } from "@/lib/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -37,30 +39,79 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-const TONE: Record<string, { text: string; border: string; bar: string }> = {
-  Accept: { text: "text-start", border: "border-start", bar: "bg-start" },
-  Reject: { text: "text-sit", border: "border-sit", bar: "bg-sit" },
-  Counter: { text: "text-flip-dark", border: "border-flip", bar: "bg-flip" },
-  Fair: { text: "text-lean", border: "border-lean", bar: "bg-lean" },
+const TONE: Record<string, { text: string; bar: string }> = {
+  Accept: { text: "text-start", bar: "bg-start" },
+  Reject: { text: "text-sit", bar: "bg-sit" },
+  Counter: { text: "text-flip", bar: "bg-flip-fill" },
+  Fair: { text: "text-lean", bar: "bg-lean" },
 };
 
-function Side({ label, names, players, tone }: { label: string; names: string[]; players: SharedVerdict["give_players"]; tone: string }) {
+const BLURB: Record<string, string> = {
+  Accept: "This one is worth taking.",
+  Reject: "Don't take this one.",
+  Counter: "Close — but ask for more.",
+  Fair: "Even money either way.",
+};
+
+function initials(name: string): string {
+  const parts = name.replace(/[^A-Za-z' .-]/g, "").split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts[parts.length - 1]?.[0] ?? "")).toUpperCase();
+}
+
+/**
+ * Headshot without client JS: the photo is painted over the initials, so a missing
+ * image degrades to initials rather than a broken icon.
+ */
+function Face({ name, photo, logo }: { name: string; photo: string | null; logo: string | null }) {
   return (
-    <div className="rounded-2xl border-2 border-line p-4">
-      <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">{label}</div>
-      <ul className="mt-2 grid gap-2">
-        {(players.length ? players : names.map((n) => ({ name: n, position: "", nfl_team: "", photo: null, team_logo: null }))).map((p, i) => (
-          <li key={i} className="flex items-center gap-2">
-            {p.photo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.photo} alt="" className="h-10 w-10 rounded-full bg-soft object-cover object-top" />
-            ) : (
-              <span className="h-10 w-10 rounded-full bg-soft" aria-hidden />
-            )}
-            <span className="min-w-0">
-              <span className={`block truncate font-extrabold ${tone}`}>{p.name}</span>
+    <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-soft text-[12px] font-black text-muted">
+      <span aria-hidden>{initials(name)}</span>
+      {photo && (
+        <span
+          aria-hidden
+          className="absolute inset-0 rounded-full bg-cover bg-top bg-no-repeat"
+          style={{ backgroundImage: `url("${photo}")` }}
+        />
+      )}
+      {logo && (
+        <span
+          aria-hidden
+          className="absolute -bottom-0.5 -right-0.5 h-[18px] w-[18px] rounded-full bg-[length:18px_18px] bg-center bg-no-repeat"
+          style={{ backgroundImage: `url("${logo}")` }}
+        />
+      )}
+    </span>
+  );
+}
+
+function Side({
+  label,
+  names,
+  players,
+  accent,
+}: {
+  label: string;
+  names: string[];
+  players: SharedVerdict["give_players"];
+  accent: string;
+}) {
+  const rows = players.length
+    ? players
+    : names.map((n) => ({ name: n, position: "", nfl_team: "", photo: null, team_logo: null }));
+  return (
+    <div className="rounded-[var(--radius-card)] bg-soft p-4">
+      <div className="flex items-center gap-2">
+        <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${accent}`} />
+        <span className="eyebrow">{label}</span>
+      </div>
+      <ul className="mt-3 grid gap-3">
+        {rows.map((p, i) => (
+          <li key={`${p.name}-${i}`} className="flex items-center gap-3">
+            <Face name={p.name} photo={p.photo} logo={p.team_logo} />
+            <span className="min-w-0 flex-1">
+              <span className="display block text-[16px] leading-[1.2] break-words">{p.name}</span>
               {p.position && (
-                <span className="block text-xs text-muted">
+                <span className="mt-0.5 block text-[12px] font-bold text-muted">
                   {p.position} · {p.nfl_team}
                 </span>
               )}
@@ -76,51 +127,96 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const v = await load(id);
   if (!v) notFound();
-  const tone = TONE[v.verdict] ?? { text: "text-ink", border: "border-ink", bar: "bg-ink" };
-  const fair = Math.round((v.fairness ?? 0) * 100);
+  const tone = TONE[v.verdict] ?? { text: "text-ink", bar: "bg-ink" };
 
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
-      <header className="flex h-14 items-center justify-between">
+      <header className="flex h-16 items-center justify-between gap-3">
         <Link href="/" aria-label="Edge home">
-          <Wordmark className="text-2xl" />
+          <Wordmark className="text-[26px]" />
         </Link>
-        <span className="text-xs text-muted">
-          {v.league_name} {v.week ? `· Week ${v.week}` : ""}
+        <span className="min-w-0 truncate text-right text-[12px] font-bold text-muted">
+          {v.league_name}
+          {v.week ? (
+            <>
+              {" · Week "}
+              <span className="tnum">{v.week}</span>
+            </>
+          ) : null}
         </span>
       </header>
 
-      <section className={`card mt-2 border-4 p-5 ${tone.border}`}>
-        <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">Trade verdict</div>
-        <div className={`display text-6xl font-black uppercase leading-none ${tone.text}`}>{v.verdict}</div>
+      <article className="card overflow-hidden rise">
+        <span aria-hidden className={`block h-1.5 w-full ${tone.bar}`} />
 
-        <div className="mt-5 grid gap-3">
-          <Side label="Gives" names={v.give} players={v.give_players} tone="text-sit" />
-          <Side label="Gets" names={v.get} players={v.get_players} tone="text-start" />
-        </div>
+        <div className="px-6 pb-6 pt-5">
+          <Eyebrow>Trade verdict</Eyebrow>
+          <h1 className={`display mt-1.5 text-[60px] uppercase leading-[0.9] ${tone.text}`}>{v.verdict}</h1>
+          <p className="mt-2.5 text-[15px] font-bold text-ink-2">{BLURB[v.verdict] ?? ""}</p>
 
-        <div className="mt-5">
-          <div className="flex justify-between text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
-            <span>Fairness</span>
-            <span>{fair}%</span>
+          <div className="mt-6 grid gap-2.5">
+            <Side label="You send" names={v.give} players={v.give_players} accent="bg-sit" />
+            <div className="flex items-center gap-3" aria-hidden>
+              <span className="h-px flex-1 bg-line" />
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-soft text-muted">
+                <IconArrowUp size={15} strokeWidth={2.6} className="rotate-180" />
+              </span>
+              <span className="h-px flex-1 bg-line" />
+            </div>
+            <Side label="You get" names={v.get} players={v.get_players} accent="bg-start" />
           </div>
-          <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-soft">
-            <div className={`h-full rounded-full ${tone.bar}`} style={{ width: `${fair}%` }} />
-          </div>
-        </div>
 
-        <p className="mt-4 text-base leading-relaxed">{v.explanation}</p>
+          <div className="mt-6">
+            <StatusMeter value={v.fairness ?? 0} label="Fairness" />
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-4 border-t border-line pt-5">
+            <Stat
+              label="Your season"
+              value={signed(v.my_delta_ros)}
+              sub="projected points"
+              tone={v.my_delta_ros >= 0 ? "start" : "sit"}
+            />
+            <Stat
+              label="Their season"
+              value={signed(v.their_delta_ros)}
+              sub="projected points"
+              tone={v.their_delta_ros >= 0 ? "start" : "sit"}
+            />
+          </div>
+
+          <p className="mt-5 text-[15px] leading-relaxed text-ink-2">{v.explanation}</p>
+          {v.style && (
+            <p className="mt-3 inline-flex rounded-full bg-soft px-3 py-1.5 text-[12px] font-bold text-muted">
+              Their trading style: {v.style}
+            </p>
+          )}
+        </div>
+      </article>
+
+      <section className="hero mt-4 p-6 text-center rise rise-2">
+        <Eyebrow>Your turn</Eyebrow>
+        <p className="display mx-auto mt-2 max-w-[15rem] text-[27px] leading-[1.08]">Run this on your own league</p>
+        <ul className="mx-auto mt-4 grid max-w-[17rem] gap-2 text-left text-[13px] leading-snug text-white/70">
+          {["Start/sit calls free, forever", "Projections rescored to your scoring", "No account needed to look"].map(
+            (l) => (
+              <li key={l} className="flex items-start gap-2">
+                <IconCheck size={14} strokeWidth={3} className="mt-[3px] shrink-0 text-white" />
+                {l}
+              </li>
+            ),
+          )}
+        </ul>
+        {/* onHero is `bg-white text-ink`, and `--color-ink` flips to near-white in dark
+            mode — so the label needs an explicit dark token to stay legible. */}
+        <LinkButton href="/connect" variant="onHero" className="mt-6 w-full text-hero!">
+          Connect your league — free
+        </LinkButton>
       </section>
 
-      <section className="card mt-4 p-5 text-center">
-        <p className="display text-lg font-extrabold">Run this on your own league</p>
-        <p className="mt-1 text-sm text-muted">
-          Connect a Sleeper or ESPN league and get your start/sit calls free. No account needed to look.
-        </p>
-        <Link href="/connect" className="btn mt-4 inline-flex w-full items-center justify-center rounded-xl bg-start px-5 py-3 font-bold text-white">
-          Connect your league
-        </Link>
-      </section>
+      <p className="mt-6 text-center text-[12px] leading-relaxed text-muted">
+        A display-only snapshot. No email, league or roster is shared.
+      </p>
     </main>
   );
 }
