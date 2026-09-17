@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS purchases (email TEXT, sku TEXT, season INTEGER, sour
   UNIQUE(email, sku, season, ref));
 CREATE TABLE IF NOT EXISTS leagues (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, name TEXT, created REAL,
   UNIQUE(email, platform, league_id));
+CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, payload TEXT, created REAL, views INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS runs (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, week INTEGER,
   kind TEXT, algo_version TEXT, payload TEXT, created REAL);
 CREATE TABLE IF NOT EXISTS feedback (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, action_id TEXT,
@@ -46,6 +47,28 @@ class Store:
         rows = self.db.execute("SELECT platform, league_id, team_id, name FROM leagues WHERE email=? ORDER BY created",
                                (email.lower(),))
         return [{"platform": r[0], "league_id": r[1], "team_id": r[2], "name": r[3]} for r in rows]
+
+    def put_share(self, share_id: str, payload: dict) -> None:
+        """Store a public snapshot of a trade verdict. Display fields only — never an email,
+        never anything identifying the league beyond the names already printed on the card."""
+        import json as _json
+        self.db.execute("INSERT OR REPLACE INTO shares (id, payload, created, views) VALUES (?,?,?,0)",
+                        (share_id, _json.dumps(payload), time.time()))
+        self.db.commit()
+
+    def get_share(self, share_id: str, count_view: bool = True) -> dict | None:
+        import json as _json
+        row = self.db.execute("SELECT payload FROM shares WHERE id=?", (share_id,)).fetchone()
+        if not row:
+            return None
+        if count_view:
+            self.db.execute("UPDATE shares SET views = views + 1 WHERE id=?", (share_id,))
+            self.db.commit()
+        return _json.loads(row[0])
+
+    def share_stats(self, limit: int = 20) -> list[dict]:
+        rows = self.db.execute("SELECT id, views, created FROM shares ORDER BY views DESC LIMIT ?", (limit,))
+        return [{"id": r[0], "views": r[1], "created": r[2]} for r in rows]
 
     def log_run(self, email: str | None, platform: str, league_id: str, team_id: str, week: int | None,
                 kind: str, algo_version: str, payload: dict) -> None:

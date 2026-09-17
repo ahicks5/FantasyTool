@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from edge import products
-from edge.api import service
+from edge.api import service, share as share_mod
 from edge.api.auth import current_user, optional_user
 from edge.api.store import Store
 from edge.connectors import sleeper
@@ -286,6 +287,60 @@ def full_report(platform: str, league_id: str, team_id: str, email: str | None =
     out["trade_finder"] = trade_finder.find(b.league, t, b.ros, b.profiles, limit_partners=2)
     store.log_run(email, platform, league_id, team_id, b.league.week, "report", "report.v2", {"team": t.name})
     return out
+
+
+class ShareIn(BaseModel):
+    graphic: dict
+    explanation: str
+    league_name: str = ""
+    week: int | None = None
+    give_players: list[dict] | None = None
+    get_players: list[dict] | None = None
+
+
+@app.post("/api/share")
+def create_share(body: ShareIn, email: str | None = Depends(optional_user)):
+    """Turn a verdict into a public link. That link is the cheapest marketing we have."""
+    if not products.can(_skus(email), "trade_lab"):
+        raise HTTPException(402, detail={"error": "trade_lab requires a purchase", "feature": "trade_lab",
+                                         "teaser": None, "upsell": products.upsell(_skus(email), "trade_lab")})
+    sid = share_mod.new_id()
+    store.put_share(sid, share_mod.snapshot(body.graphic, body.explanation, body.league_name,
+                                            body.week or 0, body.give_players, body.get_players))
+    base = os.environ.get("EDGE_WEB_URL", "http://localhost:3000").rstrip("/")
+    return {"id": sid, "url": f"{base}/s/{sid}"}
+
+
+@app.get("/api/share/{share_id}/card.png")
+def share_card(share_id: str):
+    """The image a link unfurls to. Rendered once, then served from disk — a social crawler
+    hitting this a thousand times must not spin up a browser a thousand times."""
+    from fastapi.responses import FileResponse
+
+    snap = store.get_share(share_id, count_view=False)
+    if not snap:
+        raise HTTPException(404, "no such share")
+    cache_dir = Path(os.environ.get("EDGE_CACHE_DIR", ".cache")) / "cards"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    out = cache_dir / f"{share_id}.png"
+    if not out.exists():
+        from edge import graphics
+        html = graphics.verdict_card_html(snap, snap.get("explanation", ""), snap.get("league_name", ""),
+                                          snap.get("week") or None)
+        try:
+            graphics.render_png(html, out)
+        except Exception as e:  # noqa: BLE001 — no browser on this host, or a render failure
+            raise HTTPException(503, f"card rendering unavailable: {e}")
+    return FileResponse(out, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/api/share/{share_id}")
+def read_share(share_id: str):
+    """Public on purpose: no auth, so a link works for someone who has never heard of us."""
+    snap = store.get_share(share_id)
+    if not snap:
+        raise HTTPException(404, "that share link has expired or never existed")
+    return snap
 
 
 @app.get("/api/health")

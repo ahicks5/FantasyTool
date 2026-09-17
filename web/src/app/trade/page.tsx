@@ -7,7 +7,7 @@ import { ShareCard } from "@/components/ShareCard";
 import { Avatar } from "@/components/Avatar";
 import { PlayerLine } from "@/components/Players";
 import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, VerdictWord, Why } from "@/components/ui";
-import { evaluateTrade, findTrades, getLeague, getRoster, PaywallError } from "@/lib/api";
+import { createShare, evaluateTrade, findTrades, getLeague, getRoster, PaywallError } from "@/lib/api";
 import { TradeFinderView } from "@/components/TradeFinderView";
 import { signed } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
@@ -310,14 +310,76 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
           )}
 
           <section className="rise rise-3">
-            <H2>Share graphic</H2>
-            <p className="mb-2 text-sm text-muted">1080×1080. Long-press or screenshot to share.</p>
-            <ShareCard result={result} give={givePlayers} get={getPlayers} leagueName={c.league_name} />
+            <H2>Share this verdict</H2>
+            <p className="mb-2 text-sm text-muted">
+              A public link anyone can open, with no account. Long-press the card to save the image.
+            </p>
+            <ShareLink result={result} give={givePlayers} get={getPlayers} c={c} />
+            <div className="mt-3">
+              <ShareCard result={result} give={givePlayers} get={getPlayers} leagueName={c.league_name} />
+            </div>
           </section>
         </div>
       )}
       </>
       )}
+    </div>
+  );
+}
+
+/** Turns the verdict into a public URL and offers it for copying. */
+function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player[]; get: Player[]; c: Connection }) {
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState("");
+
+  async function make() {
+    setBusy(true);
+    setError("");
+    try {
+      const r = await createShare({
+        graphic: result.graphic,
+        explanation: result.explanation,
+        league_name: c.league_name,
+        week: c.week,
+        give_players: give,
+        get_players: get,
+      });
+      setUrl(r.url);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Could not copy — select the link and copy it by hand.");
+    }
+  }
+
+  if (!url)
+    return (
+      <>
+        <Button variant="secondary" onClick={make} disabled={busy} className="w-full">
+          {busy ? "Creating link…" : "Create a share link"}
+        </Button>
+        {error && <p className="mt-2 text-sm text-sit">{error}</p>}
+      </>
+    );
+
+  return (
+    <div className="flex items-center gap-2 rounded-xl border-2 border-line p-2">
+      <code className="min-w-0 flex-1 truncate px-1 text-sm">{url}</code>
+      <Button size="sm" onClick={copy}>
+        {copied ? "Copied" : "Copy"}
+      </Button>
     </div>
   );
 }

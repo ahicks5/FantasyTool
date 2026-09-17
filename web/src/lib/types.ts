@@ -218,6 +218,35 @@ export interface TradeFinderResponse {
   algo_version: string;
 }
 
+export interface SharedPlayer {
+  name: string;
+  position: string;
+  nfl_team: string;
+  photo: string | null;
+  team_logo: string | null;
+}
+
+/** The public snapshot behind /s/{id}. Display fields only — no league, no account. */
+export interface SharedVerdict {
+  verdict: Verdict;
+  give: string[];
+  get: string[];
+  my_delta_ros: number;
+  their_delta_ros: number;
+  fairness: number;
+  style: string | null;
+  explanation: string;
+  league_name: string;
+  week: number;
+  give_players: SharedPlayer[];
+  get_players: SharedPlayer[];
+}
+
+export interface ShareResponse {
+  id: string;
+  url: string;
+}
+
 export interface TradeRequest {
   my_team_id: string;
   their_team_id: string;

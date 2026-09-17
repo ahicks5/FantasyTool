@@ -2,6 +2,7 @@
 // served from src/lib/mocks.ts; when set, it fetches `${NEXT_PUBLIC_API_URL}/api/...`.
 import type {
   ActionFeed,
+  ShareResponse,
   TradeFinderResponse,
   WaiverPlanResponse,
   CheckoutResponse,
@@ -169,6 +170,18 @@ export async function getWaiverPlan(platform: Platform, leagueId: string, teamId
 export async function findTrades(platform: Platform, leagueId: string, teamId: string): Promise<TradeFinderResponse> {
   if (USE_MOCKS) return mocks.TRADE_FINDER;
   return request<TradeFinderResponse>(`/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/trades/find`);
+}
+
+export async function createShare(body: {
+  graphic: unknown;
+  explanation: string;
+  league_name: string;
+  week: number;
+  give_players: unknown[];
+  get_players: unknown[];
+}): Promise<ShareResponse> {
+  if (USE_MOCKS) return { id: "demo1234", url: `${window.location.origin}/s/demo1234` };
+  return request<ShareResponse>("/share", { method: "POST", body: JSON.stringify(body) });
 }
 
 export async function evaluateTrade(platform: Platform, leagueId: string, req: TradeRequest): Promise<TradeResult> {
