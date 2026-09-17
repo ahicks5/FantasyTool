@@ -9,7 +9,7 @@ import { getWaiverPlan, getWaivers, PaywallError } from "@/lib/api";
 import type { Connection } from "@/lib/storage";
 import type { WaiverPlanResponse, Waivers } from "@/lib/types";
 
-function WaiversBody({ c, refresh }: { c: Connection; refresh: () => void }) {
+function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => void; signedIn: boolean }) {
   const [plan, setPlan] = useState<WaiverPlanResponse | null>(null);
   const [board, setBoard] = useState<Waivers | null>(null);
   const [paywall, setPaywall] = useState<PaywallError | null>(null);
@@ -36,7 +36,7 @@ function WaiversBody({ c, refresh }: { c: Connection; refresh: () => void }) {
     setTick((t) => t + 1);
   };
 
-  if (paywall) return <Locked sku="waivers" what="Waiver Wire Pass" teaser={paywall.teaser} onUnlocked={refresh} />;
+  if (paywall) return <Locked signedIn={signedIn} sku="waivers" what="Waiver Wire Pass" teaser={paywall.teaser} onUnlocked={refresh} />;
   if (error) return <ErrorBox message={error} onRetry={load} />;
   if (!plan) return <SkeletonList rows={4} tall />;
 
@@ -67,10 +67,9 @@ export default function WaiversPage() {
     <AppShell title="Waivers">
       {(s) =>
         s.has("waivers") ? (
-          <WaiversBody c={s.connection!} refresh={s.refresh} />
+          <WaiversBody c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
         ) : (
-          <Locked
-            sku="waivers"
+          <Locked signedIn={s.signedIn} sku="waivers"
             what="Waiver Wire Pass"
             teaser="Edge prices every add against the player you would drop, tells you what to bid, and lines up a fallback claim for when you lose the first one."
             onUnlocked={s.refresh}

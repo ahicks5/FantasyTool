@@ -27,7 +27,8 @@ export interface MeLeague {
 }
 
 export interface Me {
-  email: string;
+  email: string | null;
+  signed_in?: boolean;
   entitlements: Feature[];
   leagues_allowed: number;
   leagues: MeLeague[];

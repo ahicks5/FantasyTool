@@ -37,9 +37,11 @@ LG = "/api/league/sleeper/1403186749361901568"
 def test_products_and_me(client):
     r = client.get("/api/products")
     assert r.status_code == 200 and [p["sku"] for p in r.json()["products"]] == ["free", "waivers", "trade_lab", "full_report"]
-    assert client.get("/api/me").status_code == 401
+    anon = client.get("/api/me")
+    assert anon.status_code == 200, "a signed-out visitor still gets the free tier"
+    assert anon.json()["signed_in"] is False and anon.json()["entitlements"] == ["my_team"]
     me = client.get("/api/me", headers=H).json()
-    assert me["entitlements"] == ["my_team"] and me["leagues_allowed"] == 1
+    assert me["signed_in"] is True and me["entitlements"] == ["my_team"] and me["leagues_allowed"] == 1
 
 
 def test_league_summary_and_lineup_are_free(client, league):
@@ -85,12 +87,30 @@ def test_trade_endpoint_returns_verdict_and_graphic(client, league):
     assert r.status_code == 400
 
 
+def test_a_stranger_can_connect_without_signing_up(client, league):
+    """The whole funnel depends on this: value before signup."""
+    body = {"platform": "sleeper", "league_id": "1", "team_id": league.teams[0].id}
+    r = client.post("/api/connect", json=body)
+    assert r.status_code == 200
+    out = r.json()
+    assert out["ok"] and out["saved"] is False, "nothing is stored for an anonymous visitor"
+    assert out["league"]["name"] and out["league"]["team_name"] and out["league"]["week"]
+    # and the free tier works straight away, still signed out
+    tid = league.teams[0].id
+    assert client.get(f"{LG}/team/{tid}/lineup").status_code == 200
+    assert client.get(f"{LG}/team/{tid}/actions").status_code == 200
+    # but the paid features still hold the line
+    assert client.get(f"{LG}/team/{tid}/waivers").status_code == 402
+    assert client.get(f"{LG}/team/{tid}/report").status_code == 402
+
+
 def test_connect_respects_league_limit(client, league):
     body = {"platform": "sleeper", "league_id": "1", "team_id": league.teams[0].id}
     assert client.post("/api/connect", headers=H, json=body).status_code == 200
     assert client.post("/api/connect", headers=H, json=body).status_code == 200   # same league: idempotent
     r = client.post("/api/connect", headers=H, json=body | {"league_id": "2"})
     assert r.status_code == 402 and r.json()["detail"]["upsell"][0]["sku"] == "full_report"
+    assert r.json()["detail"]["teaser"]
 
 
 def test_stripe_webhook_grants_entitlement(client, monkeypatch):

@@ -59,10 +59,13 @@ def get_products():
 
 
 @app.get("/api/me")
-def me(email: str = Depends(current_user)):
+def me(email: str | None = Depends(optional_user)):
+    """Works signed out. An anonymous visitor gets the free tier so they can see value first."""
     skus = _skus(email)
-    return {"email": email, "skus": skus, "entitlements": sorted(products.features_for(skus)),
-            "leagues_allowed": products.leagues_allowed(skus), "leagues": store.leagues(email)}
+    return {"email": email, "signed_in": bool(email), "skus": skus,
+            "entitlements": sorted(products.features_for(skus)),
+            "leagues_allowed": products.leagues_allowed(skus),
+            "leagues": store.leagues(email) if email else []}
 
 
 class ConnectIn(BaseModel):
@@ -72,16 +75,29 @@ class ConnectIn(BaseModel):
 
 
 @app.post("/api/connect")
-def connect(body: ConnectIn, email: str = Depends(current_user)):
-    have = store.leagues(email)
-    already = any(l["platform"] == body.platform and l["league_id"] == body.league_id for l in have)
-    if not already and len(have) >= products.leagues_allowed(_skus(email)):
-        raise HTTPException(402, detail={"error": "league limit reached", "feature": "leagues",
-                                         "upsell": [products.BY_SKU["full_report"]]})
+def connect(body: ConnectIn, email: str | None = Depends(optional_user)):
+    """Connect a league. No account required — value first, signup only when it buys something.
+
+    Signed out, we validate the league and team and hand them back; the browser remembers the
+    choice. Signed in, we also save it, which is what league limits are actually about.
+    """
     b = _bundle(body.platform, body.league_id)
     t = _team(b, body.team_id)
-    store.connect_league(email, body.platform, body.league_id, t.id, b.league.name)
-    return {"ok": True, "league": {"platform": body.platform, "league_id": body.league_id, "team_id": t.id, "name": b.league.name}}
+    saved = False
+    if email:
+        have = store.leagues(email)
+        already = any(l["platform"] == body.platform and l["league_id"] == body.league_id for l in have)
+        if not already and len(have) >= products.leagues_allowed(_skus(email)):
+            raise HTTPException(402, detail={"error": "league limit reached", "feature": "leagues",
+                                             "teaser": f"You are saving {len(have)} league"
+                                                       f"{'s' if len(have) != 1 else ''}. Full Report keeps up to "
+                                                       f"{products.BY_SKU['full_report']['leagues']}.",
+                                             "upsell": [products.BY_SKU["full_report"]]})
+        store.connect_league(email, body.platform, body.league_id, t.id, b.league.name)
+        saved = True
+    return {"ok": True, "saved": saved,
+            "league": {"platform": body.platform, "league_id": body.league_id, "team_id": t.id,
+                       "team_name": t.name, "name": b.league.name, "week": b.league.week}}
 
 
 class CheckoutIn(BaseModel):

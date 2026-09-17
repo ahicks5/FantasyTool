@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { checkout, getProducts } from "@/lib/api";
 import { formatCents } from "@/lib/format";
 import type { Product, Sku } from "@/lib/types";
@@ -10,7 +11,9 @@ import { Button, Eyebrow } from "./ui";
  * Premium teaser, not a wall: says what Edge found, then offers the pass or the bundle.
  * `teaser` should be a concrete, name-free sentence from the engine.
  */
-export function Locked({ sku, what, teaser, onUnlocked }: { sku: Sku; what: string; teaser?: string | null; onUnlocked?: () => void }) {
+export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku: Sku; what: string; teaser?: string | null; signedIn?: boolean; onUnlocked?: () => void }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [busy, setBusy] = useState(false);
   const [products, setProducts] = useState<Product[]>(FALLBACK);
   useEffect(() => {
@@ -20,6 +23,11 @@ export function Locked({ sku, what, teaser, onUnlocked }: { sku: Sku; what: stri
   const full = products.find((p) => p.sku === "full_report");
 
   async function buy(s: Sku) {
+    if (!signedIn) {
+      // Payment is the first moment an account is genuinely needed.
+      router.push(`/login?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
     setBusy(true);
     try {
       const { url } = await checkout(s);
@@ -47,7 +55,10 @@ export function Locked({ sku, what, teaser, onUnlocked }: { sku: Sku; what: stri
             Or get everything · {formatCents(full.price_cents)}
           </Button>
         )}
-        <p className="text-center text-xs text-muted">One payment for the rest of the season. No subscription.</p>
+        <p className="text-center text-xs text-muted">
+          One payment for the rest of the season. No subscription.
+          {!signedIn && " You'll sign in at checkout so your purchase follows you."}
+        </p>
       </div>
     </div>
   );

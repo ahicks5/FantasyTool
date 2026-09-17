@@ -69,6 +69,13 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] RecommendationRun log with algorithm version (learning loop)
 - [x] Projection provider interface (`edge/data/providers.py`): protocol + SleeperProvider,
       Tank01 stub, `EDGE_PROJECTION_PROVIDER` env switch, tests incl. a fake provider driving the engine
+- [x] League-format QA (blueprint P0): 5 live public Sleeper leagues recorded under
+      `tests/fixtures/sleeper/formats/` — superflex, 2x WRRB_FLEX, 3x FLEX + TE-premium,
+      IDP (DL/LB/DB), priority waivers, no-K, no-DEF, 14 teams, $2500 FAAB.
+      `tests/test_league_formats.py` parametrises connector + lineup + waivers + action feed
+      over all five. Fixed: multi-eligible players (Sleeper `fantasy_positions`), two-way
+      players (Travis Hunter), IDP group slots, IDP projections never fetched, exact
+      optimizer dropping a deep roster’s only K/DEF.
 
 ## Blueprint items still open
 - [ ] Weekly action email from stored runs (Resend free tier) — retention lever

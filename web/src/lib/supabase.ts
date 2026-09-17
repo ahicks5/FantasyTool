@@ -30,10 +30,11 @@ export async function getUserEmail(): Promise<string | null> {
   return data.user?.email ?? null;
 }
 
-export async function sendMagicLink(email: string): Promise<void> {
+export async function sendMagicLink(email: string, next = "/home"): Promise<void> {
   const sb = supabase();
   if (!sb) throw new Error("Login is not configured.");
-  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/login` } });
+  const redirect = `${window.location.origin}/login?next=${encodeURIComponent(next)}`;
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirect } });
   if (error) throw new Error(error.message);
 }
 

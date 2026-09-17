@@ -1,10 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Button, Card, ErrorBox, Wordmark } from "@/components/ui";
 import { getUserEmail, sendMagicLink, signOut, supabaseConfigured } from "@/lib/supabase";
 
-export default function LoginPage() {
+function LoginInner() {
+  const next = useSearchParams().get("next") || "/home";
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -22,7 +24,7 @@ export default function LoginPage() {
     setBusy(true);
     setError("");
     try {
-      await sendMagicLink(email.trim());
+      await sendMagicLink(email.trim(), next);
       setSent(true);
     } catch (err) {
       setError((err as Error).message);
@@ -44,8 +46,8 @@ export default function LoginPage() {
             {dev ? " (dev user)" : ""}.
           </p>
           <div className="mt-4 flex gap-2">
-            <Link href="/home" className="rounded-xl bg-ink px-4 py-3 font-bold text-white">
-              Go to my team
+            <Link href={next} className="rounded-xl bg-ink px-4 py-3 font-bold text-white">
+              Continue
             </Link>
             {!dev && (
               <Button variant="secondary" onClick={() => signOut().then(() => setCurrent(null))}>
@@ -91,5 +93,14 @@ export default function LoginPage() {
         </form>
       )}
     </main>
+  );
+}
+
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginInner />
+    </Suspense>
   );
 }

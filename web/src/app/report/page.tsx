@@ -99,7 +99,7 @@ function ReportBody({ c }: { c: Connection }) {
 export default function ReportPage() {
   return (
     <AppShell title="Full Report">
-      {(s) => (s.has("full_report") ? <ReportBody c={s.connection!} /> : <Locked sku="full_report" what="Full Report" onUnlocked={s.refresh} />)}
+      {(s) => (s.has("full_report") ? <ReportBody c={s.connection!} /> : <Locked signedIn={s.signedIn} sku="full_report" what="Full Report" onUnlocked={s.refresh} />)}
     </AppShell>
   );
 }

@@ -71,7 +71,7 @@ function Chips({ players, tone, onRemove, empty }: { players: Player[]; tone: "s
   );
 }
 
-function TradeBody({ c, refresh }: { c: Connection; refresh: () => void }) {
+function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => void; signedIn: boolean }) {
   const params = useSearchParams();
   const [league, setLeague] = useState<LeagueSummary | null>(null);
   const [mine, setMine] = useState<Player[]>([]);
@@ -156,7 +156,7 @@ function TradeBody({ c, refresh }: { c: Connection; refresh: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mine.length, theirs.length, autoRan]);
 
-  if (paywall) return <Locked sku="trade_lab" what="Trade Lab" teaser={paywall.teaser} onUnlocked={refresh} />;
+  if (paywall) return <Locked signedIn={signedIn} sku="trade_lab" what="Trade Lab" teaser={paywall.teaser} onUnlocked={refresh} />;
   if (error && !league) return <ErrorBox message={error} />;
   if (!league) return <SkeletonList rows={3} />;
 
@@ -340,9 +340,9 @@ function SideBox({ label, side }: { label: string; side: TradeResult["me"] }) {
 
 /** Remounts the body when the query string changes, so an offer link from the finder or the
  *  home feed lands with its players already selected. */
-function TradeBodyKeyed({ c, refresh }: { c: Connection; refresh: () => void }) {
+function TradeBodyKeyed({ c, refresh, signedIn }: { c: Connection; refresh: () => void; signedIn: boolean }) {
   const params = useSearchParams();
-  return <TradeBody key={params.toString()} c={c} refresh={refresh} />;
+  return <TradeBody key={params.toString()} c={c} refresh={refresh} signedIn={signedIn} />;
 }
 
 export default function TradePage() {
@@ -351,9 +351,9 @@ export default function TradePage() {
       {(s) => (
         <Suspense fallback={<SkeletonList rows={3} />}>
           {s.has("trade_lab") ? (
-            <TradeBodyKeyed c={s.connection!} refresh={s.refresh} />
+            <TradeBodyKeyed c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
           ) : (
-            <Locked sku="trade_lab" what="Trade Lab" teaser="Propose any trade. Edge grades it, then drafts a counter tuned to how that manager actually behaves." onUnlocked={s.refresh} />
+            <Locked signedIn={s.signedIn} sku="trade_lab" what="Trade Lab" teaser="Propose any trade. Edge grades it, then drafts a counter tuned to how that manager actually behaves." onUnlocked={s.refresh} />
           )}
         </Suspense>
       )}

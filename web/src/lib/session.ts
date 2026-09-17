@@ -8,6 +8,7 @@ export interface Session {
   loading: boolean;
   connection: Connection | null;
   me: Me | null;
+  signedIn: boolean;
   has: (f: Feature) => boolean;
   refresh: () => void;
 }
@@ -34,6 +35,7 @@ export function useSession(): Session {
     loading: !loaded,
     connection,
     me,
+    signedIn: !!me?.signed_in,
     has: (f) => !!me?.entitlements.includes(f),
     refresh: () => setTick((t) => t + 1),
   };
