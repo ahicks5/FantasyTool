@@ -14,7 +14,7 @@ from edge.api.store import Store
 from edge.connectors import sleeper
 from edge.engine import lineup as lineup_mod
 from edge.engine import actions as actions_mod
-from edge.engine import report, trade, waivers
+from edge.engine import report, trade, trade_finder, waiver_plan, waivers
 from edge.engine.explain import explain
 
 app = FastAPI(title="Edge API", version="0.1")
@@ -204,9 +204,38 @@ def action_feed(platform: str, league_id: str, team_id: str, email: str | None =
     b = _bundle(platform, league_id)
     t = _team(b, team_id)
     ents = products.features_for(_skus(email))
-    out = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats, trending=b.trending)
+    out = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats,
+                            trending=b.trending, profiles=b.profiles)
     out["entitlements"] = sorted(ents)
     out["synced_at"] = b.loaded_at
+    store.log_run(email, platform, league_id, team_id, b.league.week, "actions",
+                  out.get("algo_version", "?"), out)
+    return out
+
+
+@app.get("/api/league/{platform}/{league_id}/team/{team_id}/waivers/plan")
+def waiver_plan_endpoint(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user)):
+    """Add/drop pairs with fallback claims — the executable version of the waiver page."""
+    b = _bundle(platform, league_id)
+    t = _team(b, team_id)
+    if not products.can(_skus(email), "waivers"):
+        _require(email, "waivers", teaser=_teaser(b, t, "waivers"))
+    plan = waiver_plan.build(b.league, t, b.ros, b.byes, bid_stats=b.bid_stats, trending=b.trending)
+    out = plan.to_dict()
+    store.log_run(email, platform, league_id, team_id, b.league.week, "waiver_plan", plan.algo_version, out)
+    return out
+
+
+@app.get("/api/league/{platform}/{league_id}/team/{team_id}/trades/find")
+def trade_finder_endpoint(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user)):
+    """Who to talk to and about what, without the user proposing anything first."""
+    b = _bundle(platform, league_id)
+    t = _team(b, team_id)
+    if not products.can(_skus(email), "trade_lab"):
+        _require(email, "trade_lab", teaser=_teaser(b, t, "trade_lab"))
+    out = trade_finder.find(b.league, t, b.ros, b.profiles)
+    store.log_run(email, platform, league_id, team_id, b.league.week, "trade_finder",
+                  out.get("algo_version", "?"), out)
     return out
 
 
@@ -235,7 +264,12 @@ def full_report(platform: str, league_id: str, team_id: str, email: str | None =
     _require(email, "full_report")
     b = _bundle(platform, league_id)
     t = _team(b, team_id)
-    return report.build(b.league, t, b.ros, b.byes, matchups_raw=b.matchups, bid_stats=b.bid_stats, trending=b.trending)
+    out = report.build(b.league, t, b.ros, b.byes, matchups_raw=b.matchups, bid_stats=b.bid_stats, trending=b.trending)
+    out["waiver_plan"] = waiver_plan.build(b.league, t, b.ros, b.byes, bid_stats=b.bid_stats,
+                                           trending=b.trending).to_dict()
+    out["trade_finder"] = trade_finder.find(b.league, t, b.ros, b.profiles, limit_partners=2)
+    store.log_run(email, platform, league_id, team_id, b.league.week, "report", "report.v2", {"team": t.name})
+    return out
 
 
 @app.get("/api/health")

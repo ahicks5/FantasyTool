@@ -138,3 +138,41 @@ def test_actions_feed_and_feedback(client, league):
     assert r.status_code == 200 and app_mod.store.feedback_counts() == {"helpful": 1}
     assert client.post("/api/feedback", headers=H, json={"platform": "sleeper", "league_id": "1", "team_id": tid,
                                                          "action_id": "x", "action_type": "start", "verdict": "meh"}).status_code == 400
+
+
+def test_waiver_plan_and_trade_finder_endpoints(client, league):
+    tid = league.teams[1].id
+    assert client.get(f"{LG}/team/{tid}/waivers/plan", headers=H).status_code == 402
+    assert client.get(f"{LG}/team/{tid}/trades/find", headers=H).status_code == 402
+    app_mod.store.grant("andrew@example.com", "full_report", 2026, source="test")
+
+    plan = client.get(f"{LG}/team/{tid}/waivers/plan", headers=H)
+    assert plan.status_code == 200
+    body = plan.json()
+    assert "algo_version" in body and "total_planned_spend" in body
+    if body["primary"]:
+        assert body["primary"]["add"]["name"] and body["primary"]["net"] > 0
+    else:
+        assert body["hold_reason"]
+
+    found = client.get(f"{LG}/team/{tid}/trades/find", headers=H)
+    assert found.status_code == 200
+    f = found.json()
+    assert f["summary"] and "partners" in f and f["algo_version"]
+    for p in f["partners"]:
+        for o in p["offers"]:
+            assert o["my_gain_ros"] > 0 and o["give_names"] and o["get_names"]
+
+
+def test_every_recommendation_is_logged_with_its_algorithm_version(client, league):
+    app_mod.store.grant("andrew@example.com", "full_report", 2026, source="test")
+    tid = league.teams[1].id
+    client.get(f"{LG}/team/{tid}/actions", headers=H)
+    client.get(f"{LG}/team/{tid}/waivers/plan", headers=H)
+    client.get(f"{LG}/team/{tid}/trades/find", headers=H)
+    runs = app_mod.store.runs()
+    kinds = {r["kind"] for r in runs}
+    assert {"actions", "waiver_plan", "trade_finder"} <= kinds
+    for r in runs:
+        assert r["algo_version"] and r["algo_version"] != "?"
+        assert r["week"] == 2 and r["team_id"] == tid

@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS purchases (email TEXT, sku TEXT, season INTEGER, sour
   UNIQUE(email, sku, season, ref));
 CREATE TABLE IF NOT EXISTS leagues (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, name TEXT, created REAL,
   UNIQUE(email, platform, league_id));
+CREATE TABLE IF NOT EXISTS runs (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, week INTEGER,
+  kind TEXT, algo_version TEXT, payload TEXT, created REAL);
 CREATE TABLE IF NOT EXISTS feedback (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, action_id TEXT,
   action_type TEXT, verdict TEXT, reason TEXT, week INTEGER, created REAL);
 """
@@ -44,6 +46,26 @@ class Store:
         rows = self.db.execute("SELECT platform, league_id, team_id, name FROM leagues WHERE email=? ORDER BY created",
                                (email.lower(),))
         return [{"platform": r[0], "league_id": r[1], "team_id": r[2], "name": r[3]} for r in rows]
+
+    def log_run(self, email: str | None, platform: str, league_id: str, team_id: str, week: int | None,
+                kind: str, algo_version: str, payload: dict) -> None:
+        """Record what we recommended and which algorithm produced it.
+
+        This is the learning loop: pair these with `feedback` rows and next week's actuals to
+        see whether a version of the engine was actually right.
+        """
+        import json as _json
+        self.db.execute("INSERT INTO runs VALUES (?,?,?,?,?,?,?,?,?)",
+                        ((email or "").lower(), platform, league_id, team_id, week, kind, algo_version,
+                         _json.dumps(payload)[:200_000], time.time()))
+        self.db.commit()
+
+    def runs(self, limit: int = 50) -> list[dict]:
+        rows = self.db.execute(
+            "SELECT email, platform, league_id, team_id, week, kind, algo_version, created "
+            "FROM runs ORDER BY created DESC LIMIT ?", (limit,))
+        cols = ["email", "platform", "league_id", "team_id", "week", "kind", "algo_version", "created"]
+        return [dict(zip(cols, r)) for r in rows]
 
     def add_feedback(self, email: str | None, platform: str, league_id: str, team_id: str, action_id: str,
                      action_type: str, verdict: str, reason: str | None, week: int | None) -> None:

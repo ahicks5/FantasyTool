@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Callable
 
 from edge.data import sleeper_api as api
+from edge.data.providers import get_provider, to_raw
 from edge.data.scoring import score
 from edge.models import League, Player, Team
 
@@ -132,7 +133,7 @@ def load_league(league_id: str, week: int | None = None) -> League:
     season = int(raw["season"])
     return build_league(
         raw, api.users(league_id), api.rosters(league_id), api.players(), week,
-        projections_raw=api.projections(season, week),
+        projections_raw=to_raw(get_provider().weekly(season, week)),
     )
 
 

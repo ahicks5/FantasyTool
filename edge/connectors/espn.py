@@ -13,6 +13,7 @@ from edge.connectors.sleeper import apply_projections
 from edge.data import espn_api as api
 from edge.data import sleeper_api
 from edge.data.player_map import sleeper_id_for
+from edge.data.providers import get_provider, to_raw
 from edge.models import BENCH_SLOTS, League, Player, Team
 
 # ESPN lineupSlotId -> our slot names (edge.models). Unknown ids (IDP, HC, P, ...) are skipped.
@@ -227,4 +228,5 @@ def load_league(league_id: str | int, season: int | None = None, week: int | Non
     season = season or int(st["season"])
     raw = api.league(season, league_id)
     week = week or int(raw.get("scoringPeriodId") or st["week"])
-    return build_league(raw, week, projections_raw=sleeper_api.projections(season, week), players=sleeper_api.players())
+    return build_league(raw, week, projections_raw=to_raw(get_provider().weekly(season, week)),
+                        players=sleeper_api.players())

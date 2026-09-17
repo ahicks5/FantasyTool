@@ -3,9 +3,13 @@ One object type for lineup swaps, waiver claims, trade opportunities, and 'hold'
 from __future__ import annotations
 
 from edge.engine import lineup as lineup_mod
-from edge.engine import report, trade, waivers
+from edge.engine import report, trade_finder, waiver_plan
 from edge.engine.lineup import effective, optimize
+from edge.engine.tendencies import Profile
 from edge.models import League, Team, slot_accepts
+
+ALGO_VERSION = "actions.v2"
+DEADLINE_BONUS = 3.0   # this week's lineup is decided at kickoff; waivers and trades are not
 
 FEATURE_FOR = {"start": "my_team", "waiver": "waivers", "trade": "trade_lab", "hold": "my_team"}
 
@@ -31,7 +35,7 @@ def _pos_rank_after_add(team: Team, fa, slots: list[str]) -> str | None:
 
 def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int],
           entitlements: set[str], bid_stats: dict | None = None, trending: dict[str, int] | None = None,
-          limit: int = 5) -> dict:
+          profiles: dict[str, Profile] | None = None, limit: int = 5) -> dict:
     slots = league.starting_slots
     adv = lineup_mod.advise(league, team)
     actions: list[dict] = []
@@ -51,71 +55,95 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                     f"{ch.confidence}: margins this size were right {int(lineup_mod.HIT_RATE[ch.confidence] * 100)}% of the time last week."],
             "players": [report.player_dict(ch.in_), report.player_dict(ch.out)],
             "cta": {"label": "See lineup", "href": "/team"},
-            "score": ch.gain * 6,  # lineup fixes have a deadline this week — rank them first
+            # Lineup fixes expire at kickoff, so they carry a deadline bonus on top of their size.
+            # A big trade can still outrank a trivial swap.
+            "score": ch.gain * 6 + DEADLINE_BONUS,
         })
 
-    # 2. Waiver claims
-    picks = waivers.rank(league, team, ros, byes, bid_stats=bid_stats, trending=trending, limit=3)
-    upgrades = [p for p in picks if p.weekly_gain > 0 or p.ros_gain > 0]
+    # 2. Waiver claims — the plan, not a list of names
+    plan = waiver_plan.build(league, team, ros, byes, bid_stats=bid_stats, trending=trending)
     if "waivers" in entitlements:
-        for i, p in enumerate(upgrades[:2]):
-            bid = p.bid.get("amount")
-            bid_txt = f"Bid ${p.bid['range'][0]}–{p.bid['range'][1]}" if bid else "Claim in priority order"
+        for i, c in enumerate(plan.claims):
+            bid = c.bid.get("amount")
+            sub = (f"Bid ${c.bid['range'][0]}–{c.bid['range'][1]}" if bid else "Claim in priority order")
+            if c.drop:
+                sub += f" · Drop {c.drop.name}"
+            if i:
+                sub = f"If #{i} is gone · " + sub
+            why = [f"Worth about {c.net:.2f} points a week to your lineup after the drop."]
+            if c.weekly_gain > 0:
+                why.append(f"Starts for you this week: +{c.weekly_gain:.1f}.")
+            if c.drop_cost > 0.05:
+                why.append(f"Dropping {c.drop.name} costs about {c.drop_cost:.2f} a week — already subtracted.")
+            if bid and c.bid.get("value_cap") is not None:
+                why.append(f"He is worth up to ${c.bid['value_cap']} to you; this league's claims usually clear around ${c.bid['market']}.")
+            if c.trending_adds:
+                why.append(f"{c.trending_adds:,} managers added him in the last 48 hours.")
             actions.append({
-                "id": f"waiver:{p.player.id}", "type": "waiver", "feature": "waivers", "locked": False,
-                "title": f"Add {p.player.name}",
-                "subtitle": f"{bid_txt}" + (f" · Drop {p.drop.name}" if p.drop else ""),
-                "benefit": _gain_text(p.weekly_gain, p.ros_gain), "benefit_value": p.fit_score,
-                "confidence": "Lock" if p.fit_score >= 4 else ("Lean" if p.fit_score >= 1.5 else "Coin flip"),
-                "reason": p.reason,
-                "why": [f"Fit score {p.fit_score:.1f} (weekly gain, rest-of-season gain, depth).",
-                        f"{p.trending_adds:,} managers added this player in the last 48h." if p.trending_adds else "Not yet trending — you can get ahead of the league.",
-                        f"Bid is {p.bid.get('pct_of_budget')}% of your original budget." if bid else "This league uses priority waivers."],
-                "players": [report.player_dict(p.player), report.player_dict(p.drop)],
+                "id": f"waiver:{c.add.id}", "type": "waiver", "feature": "waivers", "locked": False,
+                "title": ("Add " if not i else "Fallback: add ") + c.add.name,
+                "subtitle": sub,
+                "benefit": _gain_text(c.weekly_gain, c.ros_gain), "benefit_value": c.net,
+                "confidence": "Lock" if c.net >= 3 else ("Lean" if c.net >= 1 else "Coin flip"),
+                "reason": c.reason, "why": why,
+                "players": [report.player_dict(c.add), report.player_dict(c.drop)],
                 "cta": {"label": "View waiver plan", "href": "/waivers"},
-                "score": 2.5 * p.fit_score + (1.0 if i == 0 else 0),
+                "score": (2.5 * c.net) - i * 0.5,
             })
-    elif upgrades:
-        top = upgrades[0]
-        rank = _pos_rank_after_add(team, top.player, slots)
+    if not plan.claims and plan.hold_reason and "waivers" in entitlements:
+        actions.append({
+            "id": "waiver:hold", "type": "hold", "feature": "my_team", "locked": False,
+            "title": "No waiver claim worth making", "subtitle": "Hold your budget",
+            "benefit": "Save your FAAB", "benefit_value": 0.0, "confidence": None,
+            "reason": plan.hold_reason, "why": [], "players": [],
+            "cta": {"label": "See the wire", "href": "/waivers"}, "score": 0.05,
+        })
+    elif plan.primary and "waivers" not in entitlements:
+        top = plan.primary
+        rank = _pos_rank_after_add(team, top.add, slots)
+        n = len(plan.claims)
         actions.append({
             "id": "waiver:locked", "type": "waiver", "feature": "waivers", "locked": True,
-            "title": f"{len(upgrades)} waiver add{'s' if len(upgrades) > 1 else ''} improve your roster",
-            "subtitle": f"#1 would become your {rank} immediately" if rank else "#1 starts for you this week",
-            "benefit": _gain_text(top.weekly_gain, top.ros_gain), "benefit_value": top.fit_score,
-            "confidence": None, "reason": "Unlock Waivers to see names, bids and who to drop.",
+            "title": f"{n} waiver move{'s improve' if n > 1 else ' improves'} your roster",
+            "subtitle": (f"The top one would become your {rank} immediately" if rank
+                         else "The top one starts for you this week"),
+            "benefit": _gain_text(top.weekly_gain, top.ros_gain), "benefit_value": top.net,
+            "confidence": None, "reason": "Unlock Waivers to see names, bids, who to drop and your fallback claims.",
             "why": [], "players": [], "cta": {"label": "Unlock Waivers", "href": "/waivers"},
-            "score": 2.5 * top.fit_score,
+            "score": 2.5 * top.net,
         })
 
-    # 3. Trade opportunity
-    targets = trade.trade_targets(league, team, ros, limit=1)
-    if targets:
-        t = targets[0]
+    # 3. Trade opportunity — found, not merely graded
+    found = trade_finder.find(league, team, ros, profiles or {}, limit_partners=1, offers_per_partner=1)
+    partner = (found["partners"] or [None])[0]
+    if partner and partner["offers"]:
+        o = partner["offers"][0]
         if "trade_lab" in entitlements:
-            give = team.player(t["give"][0]); other = league.team(t["their_team_id"]); get = other.player(t["get"][0]) if other else None
             actions.append({
-                "id": f"trade:{t['their_team_id']}:{t['give'][0]}:{t['get'][0]}", "type": "trade", "feature": "trade_lab", "locked": False,
-                "title": f"Offer {t['give_names'][0]} for {t['get_names'][0]}",
-                "subtitle": f"to {t['their_team_name']} · " + ("both teams improve" if t["their_gain_ros"] >= 1 else "fair for them, upgrade for you"),
-                "benefit": f"+{t['my_gain_ros']:.0f} ROS lineup points", "benefit_value": t["my_gain_ros"],
-                "confidence": "Lean", "reason": t["why"],
-                "why": [f"Your lineup gains {t['my_gain_ros']:.0f} rest-of-season points.",
-                        f"Their lineup gains {t['their_gain_ros']:.0f}, so it is askable.",
-                        "Both sides start the player they receive."],
-                "players": [report.player_dict(give), report.player_dict(get)],
-                "cta": {"label": "Open in Trade Lab", "href": f"/trade?their={t['their_team_id']}&give={t['give'][0]}&get={t['get'][0]}"},
-                "score": 0.6 * t["my_gain_ros"],
+                "id": f"trade:{partner['team_id']}:{'-'.join(o['give'])}:{'-'.join(o['get'])}",
+                "type": "trade", "feature": "trade_lab", "locked": False,
+                "title": f"Offer {' + '.join(o['give_names'])} for {' + '.join(o['get_names'])}",
+                "subtitle": f"to {partner['team_name']} · {partner['headline']}",
+                "benefit": f"+{o['my_gain_ros']:.0f} rest-of-season lineup points", "benefit_value": o["my_gain_ros"],
+                "confidence": "Lean", "reason": o["why"],
+                "why": [partner["headline"],
+                        f"Your lineup gains {o['my_gain_ros']:.0f} rest-of-season points; theirs gains {o['their_gain_ros']:.0f}.",
+                        f"Asset value is {o['fairness']:.0%} balanced, so it is not an insult."],
+                "players": o["give_players"][:1] + o["get_players"][:1],
+                "cta": {"label": "Open in Trade Lab",
+                        "href": f"/trade?their={partner['team_id']}&give={','.join(o['give'])}&get={','.join(o['get'])}"},
+                "score": 0.6 * o["my_gain_ros"],
             })
         else:
             actions.append({
                 "id": "trade:locked", "type": "trade", "feature": "trade_lab", "locked": True,
-                "title": f"A trade with {t['their_team_name']} improves both teams",
-                "subtitle": f"1-for-1 · you gain +{t['my_gain_ros']:.0f} ROS lineup points",
-                "benefit": f"+{t['my_gain_ros']:.0f} ROS", "benefit_value": t["my_gain_ros"],
-                "confidence": None, "reason": "Unlock Trade Lab to see the offer and a counter tuned to them.",
+                "title": f"A trade with {partner['team_name']} improves both teams",
+                "subtitle": partner["headline"],
+                "benefit": f"+{o['my_gain_ros']:.0f} rest-of-season lineup points", "benefit_value": o["my_gain_ros"],
+                "confidence": None,
+                "reason": "Unlock Trade Lab to see the offer, the other manager's habits, and a counter.",
                 "why": [], "players": [], "cta": {"label": "Unlock Trade Lab", "href": "/trade"},
-                "score": 0.6 * t["my_gain_ros"],
+                "score": 0.6 * o["my_gain_ros"],
             })
 
     actions.sort(key=lambda a: -a["score"])
@@ -123,15 +151,19 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
     for i, a in enumerate(actions, 1):
         a["priority"] = i
         a.pop("score", None)
-    n_real = sum(1 for a in actions if not a["locked"])
+    moves = [a for a in actions if a["type"] != "hold"]
+    n_real = sum(1 for a in moves if not a["locked"])
     if not actions:
         summary = "Nothing to do. Your lineup is set."
+    elif not moves:
+        summary = "Nothing urgent this week"
     else:
-        summary = f"{len(actions)} move{'s' if len(actions) != 1 else ''} worth making"
+        summary = f"{len(moves)} move{'s' if len(moves) != 1 else ''} worth making"
     return {
         "week": league.week, "team": team.name, "league": league.name,
         "projected_total": adv.projected_total, "current_total": adv.current_total,
         "summary": summary, "all_clear": n_real == 0 and not any(a["locked"] for a in actions),
         "footer": "Everything else looks fine." if actions else "Check back after Thursday's injury news.",
         "actions": actions,
+        "algo_version": ALGO_VERSION,
     }

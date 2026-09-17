@@ -44,6 +44,19 @@ The LLM may explain; it never ranks, values, or invents numbers.
 - ESPN public leagues: `lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{yr}/segments/0/leagues/{id}`.
 - Fallback if Sleeper projections ever break: Tank01 on RapidAPI ($10/mo).
 
+## Projection providers
+Projections are the one input we don't own (P0 licensing risk), so nothing outside
+`edge/data/providers.py` talks to a projection vendor. Switch with an env var:
+`EDGE_PROJECTION_PROVIDER=sleeper` (default) `| tank01` (stub, needs `TANK01_API_KEY`).
+A new provider is a class with `name`, `attribution` (credit line the vendor requires, or
+`None`), `weekly(season, week)` and `season(season)`, both returning `PlayerProjection`
+objects; register it in `PROVIDERS`. Two things stay canonical whatever the vendor: player
+ids are **Sleeper ids** (map yours with `edge/data/player_map.py`) and stats use **Sleeper's
+stat vocabulary** (`rush_yd`, `rec`, `pass_td`, ...) — raw stats only, never points, so each
+league's own scoring re-scores them. Connectors still take raw Sleeper-shaped dicts:
+`providers.to_raw()` converts any provider's output into that shape (dicts pass through, so
+recorded fixtures still work).
+
 ## Repo layout
 ```
 edge/               Python package: connectors/, data/, engine/, api/

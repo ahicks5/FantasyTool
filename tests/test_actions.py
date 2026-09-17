@@ -21,20 +21,61 @@ def test_free_user_sees_lineup_actions_and_locked_teasers(league):
     assert "start" in types
     locked = [a for a in feed["actions"] if a["locked"]]
     assert locked and all(a["players"] == [] for a in locked), "teasers must not leak names"
-    assert any("improve your roster" in a["title"] for a in locked)
     assert [a["priority"] for a in feed["actions"]] == list(range(1, len(feed["actions"]) + 1))
     assert feed["summary"].endswith("worth making")
+    assert feed["algo_version"] == actions.ALGO_VERSION
     json.dumps(feed)
+
+
+def test_locked_teasers_never_name_a_player(league):
+    """Across every roster, a paywalled teaser must describe the value without giving it away."""
+    ros, byes = _ros(league)
+    names = {p.name for tm in league.teams for p in tm.players} | {p.name for p in league.free_agents}
+    seen_waiver_teaser = seen_trade_teaser = False
+    for tm in league.teams:
+        feed = actions.build(league, tm, ros, byes, entitlements={"my_team"})
+        for a in feed["actions"]:
+            if not a["locked"]:
+                continue
+            seen_waiver_teaser |= a["feature"] == "waivers"
+            seen_trade_teaser |= a["feature"] == "trade_lab"
+            blob = f"{a['title']} {a['subtitle']} {a['reason']}"
+            leaked = [n for n in names if n in blob]
+            assert not leaked, f"teaser leaked {leaked}"
+            assert a["players"] == []
+    assert seen_waiver_teaser and seen_trade_teaser, "fixture should exercise both paywalls"
 
 
 def test_paid_user_sees_named_waiver_and_trade_actions(league):
     ros, byes = _ros(league)
-    t = league.team("2")
-    feed = actions.build(league, t, ros, byes, entitlements={"my_team", "waivers", "trade_lab", "full_report"})
-    assert not any(a["locked"] for a in feed["actions"])
-    w = next(a for a in feed["actions"] if a["type"] == "waiver")
-    assert w["players"][0]["name"] and w["players"][0]["photo"]
-    assert w["why"] and w["cta"]["href"] == "/waivers"
+    full = {"my_team", "waivers", "trade_lab", "full_report"}
+    checked_waiver = checked_trade = 0
+    for t in league.teams:
+        feed = actions.build(league, t, ros, byes, entitlements=full)
+        assert not any(a["locked"] for a in feed["actions"])
+        for a in feed["actions"]:
+            if a["type"] == "waiver":
+                checked_waiver += 1
+                assert a["players"][0]["name"] and a["players"][0]["photo"]
+                assert a["why"] and a["cta"]["href"] == "/waivers"
+            if a["type"] == "trade":
+                checked_trade += 1
+                assert a["players"] and a["cta"]["href"].startswith("/trade?their=")
+                assert a["why"]
+    assert checked_waiver and checked_trade
+
+
+def test_a_quiet_week_still_says_something_useful(league):
+    """When the wire has nothing, the feed says hold rather than inventing a move."""
+    ros, byes = _ros(league)
+    saved, league.free_agents = league.free_agents, []
+    feeds = [actions.build(league, t, ros, byes, entitlements={"my_team", "waivers", "trade_lab"})
+             for t in league.teams]
+    league.free_agents = saved
+    holds = [a for f in feeds for a in f["actions"] if a["type"] == "hold"]
+    assert holds, "an empty wire should produce an explicit hold"
+    for h in holds:
+        assert h["reason"] and not h["locked"] and h["benefit_value"] == 0.0
 
 
 def test_all_clear_when_nothing_to_do(league):
@@ -49,4 +90,20 @@ def test_all_clear_when_nothing_to_do(league):
     t.starters = [p.id if p else "0" for p in optimize(t.players, league.starting_slots)]
     feed = actions.build(league, t, ros, byes, entitlements={"my_team", "waivers", "trade_lab"})
     league.free_agents = saved
-    assert all(a["type"] == "trade" for a in feed["actions"])
+    assert all(a["type"] in ("trade", "hold") for a in feed["actions"])
+    assert feed["summary"]
+
+
+def test_this_weeks_lineup_outranks_a_similar_sized_trade(league):
+    """A swap decided at kickoff beats a trade of comparable value — deadlines matter."""
+    ros, byes = _ros(league)
+    for t in league.teams:
+        feed = actions.build(league, t, ros, byes, entitlements={"my_team", "waivers", "trade_lab"})
+        by_type = {}
+        for a in feed["actions"]:
+            by_type.setdefault(a["type"], a)  # first (highest priority) of each type
+        start, trade = by_type.get("start"), by_type.get("trade")
+        if not (start and trade):
+            continue
+        if trade["benefit_value"] <= start["benefit_value"] * 6:
+            assert start["priority"] < trade["priority"], f"{t.name}: lineup fix should come first"

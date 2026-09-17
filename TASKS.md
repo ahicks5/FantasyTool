@@ -67,7 +67,8 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [ ] Waivers: add/drop pair valuation + fallback claims ("if X is gone, add Z")
 - [ ] Trade Finder: surplus/need matching across the league (blueprint P1)
 - [ ] RecommendationRun log with algorithm version (learning loop)
-- [ ] Projection provider interface (so Tank01/others can be swapped in)
+- [x] Projection provider interface (`edge/data/providers.py`): protocol + SleeperProvider,
+      Tank01 stub, `EDGE_PROJECTION_PROVIDER` env switch, tests incl. a fake provider driving the engine
 
 ## Later (not v1)
 - [ ] Private ESPN leagues (espn_s2 / SWID)

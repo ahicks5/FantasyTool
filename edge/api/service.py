@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 
 from edge.connectors import sleeper
 from edge.data import sleeper_api as api
+from edge.data.providers import get_provider, to_raw
 from edge.data.schedule import bye_weeks, load_schedule
 from edge.engine.tendencies import Profile, hoarded_positions, league_bid_stats, position_counts, profile_managers
 from edge.engine.values import ros_values
@@ -62,10 +63,11 @@ def load_sleeper(league_id: str, week: int | None = None) -> Bundle:
     season = int(raw["season"])
     players = api.players()
     rosters = api.rosters(league_id)
+    provider = get_provider()
     league = sleeper.build_league(raw, api.users(league_id), rosters, players, week,
-                                  projections_raw=api.projections(season, week))
+                                  projections_raw=to_raw(provider.weekly(season, week)))
     byes = bye_weeks(load_schedule(season))
-    ros = ros_values(league, api.projections_season(season), byes)
+    ros = ros_values(league, provider.season(season), byes)
     tx = _transactions_history(raw, week)
     try:
         trending = {t["player_id"]: t["count"] for t in api.trending_adds()}
@@ -94,7 +96,7 @@ def get_bundle(platform: str, league_id: str) -> Bundle:
         from edge.connectors import espn  # optional connector
         league = espn.load_league(league_id)
         byes = bye_weeks(load_schedule(league.season))
-        b = Bundle(league=league, ros=ros_values(league, api.projections_season(league.season), byes), byes=byes,
+        b = Bundle(league=league, ros=ros_values(league, get_provider().season(league.season), byes), byes=byes,
                    bid_stats={}, profiles={}, pos_counts={})
     else:
         raise ValueError(f"unknown platform {platform}")
