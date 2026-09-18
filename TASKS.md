@@ -126,6 +126,44 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [ ] ESPN's free-agent list is the top 250 by percent owned. Ample for a top-5 waiver list;
       raise the limit (600 works) if a deep-league user ever reports a missing name.
 
+## ESPN league corpus (21 real public leagues)
+- [x] 21 public ESPN 2026 leagues recorded as offline fixtures: `scripts/record_espn_corpus.py`
+      (+ `scripts/espn_corpus.py` for the trim/load rules, now shared with the single-league
+      recorder). 301 KB gzipped for all 21. Ids came from published sources only — espn-api
+      issues, the fflr/ffscrapr docs, hobby repos — never by scanning ESPN's id space.
+- [x] `scripts/survey_leagues.py` runs the whole engine over every one of them and writes
+      `docs/LEAGUE_SURVEY.md` + `docs/league_survey.json`: 218 teams, 651 trade offers,
+      552 feed actions. Re-run it after any engine change to see what moved.
+- [x] Formats now covered: 4-12 teams, full/half/standard PPR, 4/5/6-point passing TDs, FAAB
+      ($100-$1000) and priority waivers, 5 superflex leagues, 4 with no K, 3 with no D/ST,
+      one all-FLEX lineup, bench depth 4-13.
+
+## Findings from the corpus — worth fixing before charging for Trade Lab
+- [ ] **The trade finder proposes offers the other manager has no reason to accept.**
+      130 of 173 best offers (75%) leave the other roster at exactly +0.0 ROS points while we
+      gain a median +15.6; 56 gain us 20+ while they gain nothing. `trade_finder.MIN_THEIR_GAIN`
+      is 0.0, so indifference passes as "improves both sides". Worst real examples: "two D/STs
+      for D'Andre Swift" (+47.9/+0.0, fairness 1.0), "Malik Willis for D'Andre Swift" (+41.4/+0.0).
+      Fix the floor, and stop treating fungible streaming assets (D/ST, K) as tradeable value.
+- [ ] **`_fairness` is min/max of season ROS points, so it says 1.0 to two defenses for a
+      starting RB.** It needs positional scarcity — points above replacement at that position,
+      not raw projected points.
+- [ ] **ESPN TQB leagues are silently broken** (league 899513, 10 teams): ESPN's team-quarterback
+      pseudo-player has no Sleeper equivalent, so 17/152 rostered players are unpriced and every
+      QB in the league is invisible to the engine. Its lineup is 5x FLEX + DEF + K. Detect TQB
+      at connect time and say we cannot advise on this format, rather than advising badly.
+- [ ] **An unpriced player who can never fill a slot still blocks waiver claims** (league
+      21575912 rosters 12 punters). `waiver_plan._drop_candidates` excludes every `unpriced`
+      player, which is right for a name-match miss but wrong for a punter in a league with no
+      P slot — he is unstartable, not unknown, and should be the first drop offered.
+- [ ] **Two leagues score stat ids our map ignores** (358793: 7 ids, 21575912: 8 ids; both
+      include ESPN 206 and 209). 358793 also has the corpus's worst projection error
+      (median 2.82 pts vs ESPN's own, ratio 0.875) — identify those ids and map them.
+      `docs/LEAGUE_SURVEY.md` lists every ignored id per league.
+- [ ] League 690481 is abandoned (still on scoringPeriodId 1, nobody set a lineup), which is why
+      it shows 131 points on the table across 12 teams. Harmless as test data, but it skews any
+      aggregate — worth a "stale league" signal in the product too.
+
 ## Blueprint items still open
 - [x] Weekly action email — HTML + plain text renderer, `python -m edge.cli email <league> <team>`.
       Sending still needs a Resend key; everything up to the send is built and tested.
