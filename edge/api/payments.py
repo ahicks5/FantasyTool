@@ -47,17 +47,64 @@ def create_checkout(email: str, sku: str, season: int, success_url: str | None, 
 
 
 def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
-    """Verify signature, return {email, sku, season, ref} for a completed checkout, else None."""
+    """Verify the signature and translate a Stripe event into something to do.
+
+    Returns one of:
+      {"action": "grant",   email, sku, season, ref, payment_ref}
+      {"action": "revoke",  payment_ref, reason}
+      {"action": "restore", payment_ref, reason}
+      None — an event we do not act on.
+
+    A purchase that is refunded or charged back has to lose access, or a $7 pass is
+    refundable into a free season. Refunds arrive as a *charge*, which carries no
+    checkout session, so the payment intent recorded at grant time is what links them.
+    """
     import stripe
 
     event = stripe.Webhook.construct_event(payload, sig_header, os.environ["STRIPE_WEBHOOK_SECRET"])
-    if event["type"] != "checkout.session.completed":
-        return None
-    s = event["data"]["object"]
-    if s.get("payment_status") not in ("paid", None):
-        return None
-    md = s.get("metadata") or {}
-    email = (s.get("customer_details") or {}).get("email") or md.get("email") or s.get("customer_email")
-    if not (email and md.get("sku")):
-        return None
-    return {"email": email.lower(), "sku": md["sku"], "season": int(md.get("season", 0)), "ref": s.get("id", "")}
+    kind = event["type"]
+    obj = event["data"]["object"]
+
+    # Delayed payment methods settle after the redirect, so both events grant.
+    if kind in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
+        if obj.get("payment_status") not in ("paid", None):
+            return None
+        md = obj.get("metadata") or {}
+        email = (obj.get("customer_details") or {}).get("email") or md.get("email") or obj.get("customer_email")
+        if not (email and md.get("sku")):
+            return None
+        return {"action": "grant", "email": email.lower(), "sku": md["sku"],
+                "season": int(md.get("season", 0)), "ref": obj.get("id", ""),
+                "payment_ref": _payment_ref(obj)}
+
+    if kind == "charge.refunded":
+        # Partial refunds happen (a goodwill gesture, a price adjustment) and should not
+        # cost someone the thing they still mostly paid for. Only a full refund revokes.
+        amount, refunded = obj.get("amount") or 0, obj.get("amount_refunded") or 0
+        if amount and refunded < amount:
+            return None
+        return {"action": "revoke", "payment_ref": _payment_ref(obj), "reason": "refunded"}
+
+    if kind == "charge.dispute.created":
+        return {"action": "revoke", "payment_ref": _payment_ref(obj), "reason": "disputed"}
+
+    if kind == "charge.dispute.closed":
+        # Won means the charge stands, so the access it bought should stand with it.
+        if obj.get("status") == "won":
+            return {"action": "restore", "payment_ref": _payment_ref(obj), "reason": "dispute_won"}
+        return {"action": "revoke", "payment_ref": _payment_ref(obj), "reason": "dispute_lost"}
+
+    return None
+
+
+def _payment_ref(obj: dict) -> str:
+    """The payment intent id, however this particular object spells it.
+
+    Sessions, charges and disputes all reference the same payment intent, which is the
+    only identifier common to a purchase and the refund that undoes it. Stripe expands
+    it to an object in some payloads and leaves it a string in others.
+    """
+    pi = obj.get("payment_intent")
+    if isinstance(pi, dict):
+        pi = pi.get("id")
+    return pi or ""

@@ -10,6 +10,7 @@ from pathlib import Path
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS purchases (email TEXT, sku TEXT, season INTEGER, source TEXT, ref TEXT, created REAL,
+  payment_ref TEXT DEFAULT '', revoked REAL,
   UNIQUE(email, sku, season, ref));
 CREATE TABLE IF NOT EXISTS leagues (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, name TEXT, created REAL,
   UNIQUE(email, platform, league_id));
@@ -28,14 +29,58 @@ class Store:
             Path(path).parent.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(path, check_same_thread=False)
         self.db.executescript(_SCHEMA)
+        self._migrate()
 
-    def grant(self, email: str, sku: str, season: int, source: str = "stripe", ref: str = "") -> None:
-        self.db.execute("INSERT OR IGNORE INTO purchases VALUES (?,?,?,?,?,?)",
-                        (email.lower(), sku, season, source, ref, time.time()))
+    def _migrate(self) -> None:
+        """Add columns a database created by an older version is missing.
+
+        Refunds arrive as a charge, not a checkout session, so a purchase has to record
+        the payment it came from to be findable later; `revoked` marks access withdrawn
+        without deleting the row, because a purchase record is also an accounting record.
+        """
+        columns = {row[1] for row in self.db.execute("PRAGMA table_info(purchases)")}
+        if "payment_ref" not in columns:
+            self.db.execute("ALTER TABLE purchases ADD COLUMN payment_ref TEXT DEFAULT ''")
+        if "revoked" not in columns:
+            self.db.execute("ALTER TABLE purchases ADD COLUMN revoked REAL")
         self.db.commit()
 
+    def grant(self, email: str, sku: str, season: int, source: str = "stripe", ref: str = "",
+              payment_ref: str = "") -> None:
+        """Record a purchase. Re-delivering the same webhook is a no-op, not a second row."""
+        self.db.execute(
+            "INSERT OR IGNORE INTO purchases (email, sku, season, source, ref, created, payment_ref, revoked) "
+            "VALUES (?,?,?,?,?,?,?,NULL)",
+            (email.lower(), sku, season, source, ref, time.time(), payment_ref))
+        self.db.commit()
+
+    def revoke(self, payment_ref: str, at: float | None = None) -> int:
+        """Withdraw access for a refunded or charged-back payment. Returns rows affected.
+
+        The row stays: what was bought and when is still true after a refund, and a
+        deleted row cannot be restored if a dispute is later resolved in our favour.
+        """
+        if not payment_ref:
+            return 0
+        cur = self.db.execute("UPDATE purchases SET revoked=? WHERE payment_ref=? AND revoked IS NULL",
+                              (at or time.time(), payment_ref))
+        self.db.commit()
+        return cur.rowcount
+
+    def restore(self, payment_ref: str) -> int:
+        """Undo a revoke — a disputed charge resolved in our favour. Returns rows affected."""
+        if not payment_ref:
+            return 0
+        cur = self.db.execute("UPDATE purchases SET revoked=NULL WHERE payment_ref=? AND revoked IS NOT NULL",
+                              (payment_ref,))
+        self.db.commit()
+        return cur.rowcount
+
     def skus(self, email: str, season: int) -> list[str]:
-        rows = self.db.execute("SELECT DISTINCT sku FROM purchases WHERE email=? AND season=?", (email.lower(), season))
+        """Live entitlements only: a refunded or disputed purchase no longer grants anything."""
+        rows = self.db.execute(
+            "SELECT DISTINCT sku FROM purchases WHERE email=? AND season=? AND revoked IS NULL",
+            (email.lower(), season))
         return [r[0] for r in rows]
 
     def connect_league(self, email: str, platform: str, league_id: str, team_id: str, name: str) -> None:
