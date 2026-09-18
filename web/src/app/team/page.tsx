@@ -9,23 +9,23 @@ import type { Lineup } from "@/lib/types";
 
 function TeamBody({ c }: { c: Connection }) {
   const [data, setData] = useState<Lineup | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const [tick, setTick] = useState(0);
   useEffect(() => {
     let alive = true;
     getLineup(c.platform, c.league_id, c.team_id)
       .then((d) => alive && setData(d))
-      .catch((e: Error) => alive && setError(e.message));
+      .catch((e: unknown) => alive && setError(e));
     return () => {
       alive = false;
     };
   }, [c.platform, c.league_id, c.team_id, tick]);
   const load = () => {
-    setError("");
+    setError(null);
     setData(null);
     setTick((t) => t + 1);
   };
-  if (error) return <ErrorBox message={error} onRetry={load} />;
+  if (error) return <ErrorBox error={error} onRetry={load} />;
   if (!data) return <SkeletonList rows={6} />;
   return <LineupView lineup={data} />;
 }

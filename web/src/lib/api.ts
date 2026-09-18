@@ -25,6 +25,7 @@ import type {
 } from "./types";
 import * as mocks from "./mocks";
 import { espnAuthHeaders } from "./espnAuth";
+import { HttpError } from "./errors";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 export const USE_MOCKS = API_URL === "";
@@ -93,8 +94,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (res.status === 403 && d && typeof d === "object" && "needs_espn_auth" in d) {
       throw new EspnAuthError(d.error, d.needs_espn_auth !== false);
     }
-    if (res.status === 401) throw new Error("Sign in to continue.");
-    throw new Error(typeof d === "string" ? d : (body?.error ?? `HTTP ${res.status}`));
+    if (res.status === 401) throw new HttpError(401, "Sign in to continue.");
+    throw new HttpError(res.status, typeof d === "string" ? d : (body?.error ?? `HTTP ${res.status}`));
   }
   return body;
 }

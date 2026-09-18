@@ -13,7 +13,7 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
   const [plan, setPlan] = useState<WaiverPlanResponse | null>(null);
   const [board, setBoard] = useState<Waivers | null>(null);
   const [paywall, setPaywall] = useState<PaywallError | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const [showBoard, setShowBoard] = useState(false);
   const [tick, setTick] = useState(0);
 
@@ -21,7 +21,7 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
     let alive = true;
     getWaiverPlan(c.platform, c.league_id, c.team_id)
       .then((p) => alive && setPlan(p))
-      .catch((e: Error) => alive && (e instanceof PaywallError ? setPaywall(e) : setError(e.message)));
+      .catch((e: unknown) => alive && (e instanceof PaywallError ? setPaywall(e) : setError(e)));
     getWaivers(c.platform, c.league_id, c.team_id)
       .then((b) => alive && setBoard(b))
       .catch(() => undefined);
@@ -31,13 +31,13 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
   }, [c.platform, c.league_id, c.team_id, tick]);
 
   const load = () => {
-    setError("");
+    setError(null);
     setPlan(null);
     setTick((t) => t + 1);
   };
 
   if (paywall) return <Locked signedIn={signedIn} sku="waivers" what="Waiver Wire Pass" teaser={paywall.teaser} onUnlocked={refresh} />;
-  if (error) return <ErrorBox message={error} onRetry={load} />;
+  if (error) return <ErrorBox error={error} onRetry={load} />;
   if (!plan) return <SkeletonList rows={4} tall />;
 
   return (

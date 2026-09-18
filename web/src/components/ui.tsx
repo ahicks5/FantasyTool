@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Confidence, Verdict } from "@/lib/types";
 import { confidenceClass, verdictClass } from "@/lib/format";
+import { describeError, isOnline } from "@/lib/errors";
 import { IconCheck, IconChevron, IconMoon, IconSun } from "./icons";
 
 export function Card({
@@ -235,12 +236,15 @@ export function Spinner({ label = "Loading…" }: { label?: string }) {
   return <SkeletonList rows={3} />;
 }
 
-export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void }) {
+export function ErrorBox({ error, message, onRetry }: { error?: unknown; message?: string; onRetry?: () => void }) {
+  // navigator.onLine is read at render: a dropped connection explains every other
+  // symptom, and "you are offline" beats "Edge is having a problem" when it is a tunnel.
+  const copy = describeError(error ?? message, { online: isOnline() });
   return (
-    <div className="rounded-[var(--radius-card)] border border-sit bg-sit-soft p-4 text-sit">
-      <div className="font-bold">Something went wrong</div>
-      <div className="mt-0.5 text-sm">{message}</div>
-      {onRetry && (
+    <div role="alert" className="rounded-[var(--radius-card)] border border-sit bg-sit-soft p-4 text-sit">
+      <div className="font-bold">{copy.title}</div>
+      <div className="mt-0.5 text-sm">{copy.detail}</div>
+      {onRetry && copy.canRetry && (
         <button onClick={onRetry} className="mt-2 min-h-0 text-sm font-bold underline">
           Try again
         </button>

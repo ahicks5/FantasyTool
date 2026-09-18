@@ -58,26 +58,26 @@ function Hero({ feed }: { feed: ActionFeed }) {
 
 function HomeBody({ c }: { c: Connection }) {
   const [feed, setFeed] = useState<ActionFeed | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
     let alive = true;
     getActions(c.platform, c.league_id, c.team_id)
       .then((f) => alive && setFeed(f))
-      .catch((e: Error) => alive && setError(e.message));
+      .catch((e: unknown) => alive && setError(e));
     return () => {
       alive = false;
     };
   }, [c.platform, c.league_id, c.team_id, tick]);
 
   const load = () => {
-    setError("");
+    setError(null);
     setFeed(null);
     setTick((t) => t + 1);
   };
 
-  if (error) return <ErrorBox message={error} onRetry={load} />;
+  if (error) return <ErrorBox error={error} onRetry={load} />;
   if (!feed)
     return (
       <div className="grid gap-4">

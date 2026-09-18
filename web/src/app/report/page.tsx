@@ -15,11 +15,11 @@ import type { Report } from "@/lib/types";
 
 function ReportBody({ c }: { c: Connection }) {
   const [data, setData] = useState<Report | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   useEffect(() => {
-    getReport(c.platform, c.league_id, c.team_id).then(setData).catch((e: Error) => setError(e.message));
+    getReport(c.platform, c.league_id, c.team_id).then(setData).catch((e: unknown) => setError(e));
   }, [c.platform, c.league_id, c.team_id]);
-  if (error) return <ErrorBox message={error} />;
+  if (error) return <ErrorBox error={error} />;
   if (!data) return <SkeletonList rows={6} tall />;
 
   const m = data.matchup;

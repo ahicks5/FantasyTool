@@ -40,7 +40,7 @@ export default function ConnectPage() {
   const [league, setLeague] = useState<LeagueSummary | null>(null);
   const [teamId, setTeamId] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   // null = no ESPN sign-in problem. Otherwise, whether we are asking for cookies for the
   // first time or telling them the ones they gave have expired.
   const [espnAuthNeeded, setEspnAuthNeeded] = useState<{ expired: boolean } | null>(null);
@@ -48,7 +48,7 @@ export default function ConnectPage() {
 
   async function run<T>(fn: () => Promise<T>): Promise<T | undefined> {
     setBusy(true);
-    setError("");
+    setError(null);
     try {
       const out = await fn();
       setEspnAuthNeeded(null);
@@ -56,7 +56,7 @@ export default function ConnectPage() {
     } catch (e) {
       // A private league is not an error to apologise for — it is a form to fill in.
       if (e instanceof EspnAuthError) setEspnAuthNeeded({ expired: !e.needsAuth });
-      else setError((e as Error).message);
+      else setError(e);
     } finally {
       setBusy(false);
     }
@@ -238,11 +238,11 @@ export default function ConnectPage() {
         </div>
       </section>
 
-      {error && (
+      {error ? (
         <div className="mt-4">
-          <ErrorBox message={error} />
+          <ErrorBox error={error} />
         </div>
-      )}
+      ) : null}
 
       {espnAuthNeeded && (
         <EspnAuthForm
