@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test src/**/*.test.ts"
+    "test": "node --test src/**/*.test.ts",
+    "demo": "EDGE_DEMO_EXPORT=1 next build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

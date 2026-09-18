@@ -19,6 +19,15 @@ async function load(id: string): Promise<SharedVerdict | null> {
   }
 }
 
+/**
+ * No ids are known at build time: share pages are rendered on demand (dynamicParams
+ * defaults to true). Declaring this also lets `output: "export"` skip the route
+ * instead of failing the build, which is what the static demo needs.
+ */
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  return [];
+}
+
 /** Unfurls in a league chat, a subreddit or a Discord — that is the whole point of the page. */
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
