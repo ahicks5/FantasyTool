@@ -1,0 +1,93 @@
+# The weekly ritual from CLAUDE.md, on a timer instead of in someone's head.
+#
+#   Thursday morning  freeze this week's projections, so next week's backtest grades the
+#                     numbers that were on screen rather than ones revised after the games.
+#                     This one is time-critical: a freeze missed before kickoff cannot be
+#                     recreated afterwards.
+#   Tuesday           grade the finished week (lineups, waivers, FAAB, trades) and append
+#                     the result to docs/BACKTEST.md.
+#   Daily             ask the live APIs the questions the connector asks, and shout if the
+#                     answers stop making sense. The offline suite cannot see a vendor
+#                     changing a field under us; this can.
+#
+# Results arrive as a pull request, never as a push to the default branch — a scheduled job
+# that writes to main unattended is one bad week from rewriting history nobody reviewed.
+# If you would rather the Thursday freeze land directly (it is a data file, and it is the one
+# job that cannot be redone late), change the `open a pull request` step to a push.
+
+name: weekly
+
+on:
+  schedule:
+    - cron: "0 13 * * 4"    # Thursday 13:00 UTC — morning in the US, before any kickoff
+    - cron: "0 15 * * 2"    # Tuesday 15:00 UTC — after Monday night is final
+    - cron: "0 12 * * *"    # daily health check
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "which step to run"
+        required: true
+        default: health
+        type: choice
+        options: [freeze, grade, health]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  ritual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      # One workflow, three schedules: decide here which one woke us up.
+      - id: which
+        run: |
+          case "${{ github.event.schedule }}" in
+            "0 13 * * 4") step=freeze ;;
+            "0 15 * * 2") step=grade ;;
+            "0 12 * * *") step=health ;;
+            *)            step="${{ inputs.job }}" ;;
+          esac
+          echo "step=$step" >> "$GITHUB_OUTPUT"
+          echo "running: $step"
+
+      - name: run the ritual
+        run: uv run --frozen python scripts/weekly.py ${{ steps.which.outputs.step }}
+
+      - id: changed
+        if: steps.which.outputs.step != 'health'
+        run: |
+          git add -A docs
+          if git diff --cached --quiet; then
+            echo "any=false" >> "$GITHUB_OUTPUT"
+            echo "nothing new to record"
+          else
+            echo "any=true" >> "$GITHUB_OUTPUT"
+            git diff --cached --stat
+          fi
+
+      - name: open a pull request
+        if: steps.changed.outputs.any == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STEP: ${{ steps.which.outputs.step }}
+        run: |
+          set -euo pipefail
+          branch="weekly/$STEP-$(date -u +%Y-%m-%d)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git commit -m "Weekly $STEP — $(date -u +%Y-%m-%d)
+
+          Produced by scripts/weekly.py $STEP, run from .github/workflows/weekly.yml."
+          git push -u origin "$branch"
+          gh pr create --fill --head "$branch" --base "${{ github.event.repository.default_branch }}" \
+            || echo "a pull request for $branch already exists"
