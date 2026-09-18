@@ -122,7 +122,12 @@ export async function getMe(): Promise<Me> {
 }
 
 /** Mock: alerts, then grants the product's features locally so the page can be viewed. */
-export async function checkout(sku: Sku): Promise<CheckoutResponse> {
+/**
+ * Open Stripe Checkout. `returnTo` is the path the buyer should come back to — normally
+ * the page they were on, so a waiver pass does not land them on the lineup. Stripe gets
+ * it with `?paid=<sku>` appended, which the app shell uses to wait for the entitlement.
+ */
+export async function checkout(sku: Sku, returnTo?: string): Promise<CheckoutResponse> {
   if (USE_MOCKS) {
     const product = mocks.PRODUCTS.find((p) => p.sku === sku);
     window.alert(`Mock checkout: ${product?.name ?? sku}. In production this opens Stripe Checkout.`);
@@ -134,7 +139,14 @@ export async function checkout(sku: Sku): Promise<CheckoutResponse> {
     }
     return { url: "" };
   }
-  return request<CheckoutResponse>("/checkout", { method: "POST", body: JSON.stringify({ sku }) });
+  const body: { sku: Sku; success_url?: string; cancel_url?: string } = { sku };
+  if (returnTo && typeof window !== "undefined") {
+    const origin = window.location.origin;
+    const sep = returnTo.includes("?") ? "&" : "?";
+    body.success_url = `${origin}${returnTo}${sep}paid=${encodeURIComponent(sku)}`;
+    body.cancel_url = `${origin}${returnTo}${sep}canceled=1`;
+  }
+  return request<CheckoutResponse>("/checkout", { method: "POST", body: JSON.stringify(body) });
 }
 
 export async function getSleeperLeagues(username: string): Promise<SleeperLeagueRef[]> {

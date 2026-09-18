@@ -196,3 +196,57 @@ def test_every_recommendation_is_logged_with_its_algorithm_version(client, leagu
     for r in runs:
         assert r["algo_version"] and r["algo_version"] != "?"
         assert r["week"] == 2 and r["team_id"] == tid
+
+
+def test_checkout_return_urls_must_be_our_own_origin():
+    """The client picks where Stripe returns the buyer, so that value is untrusted."""
+    from edge.api.payments import same_origin
+
+    base = "https://edge.example.com"
+    assert same_origin("https://edge.example.com/waivers?paid=waivers", base) is not None
+    assert same_origin("https://edge.example.com/", base) is not None
+
+    # Anything that would send a paying customer somewhere else is dropped.
+    assert same_origin("https://evil.example/steal", base) is None
+    assert same_origin("https://edge.example.com.evil.test/x", base) is None
+    assert same_origin("http://edge.example.com/x", base) is None, "scheme downgrade"
+    assert same_origin("//evil.example/x", base) is None, "protocol-relative"
+    assert same_origin("javascript:alert(1)", base) is None
+    assert same_origin("/waivers", base) is None, "no origin to compare"
+    assert same_origin(None, base) is None
+    assert same_origin("", base) is None
+
+
+def test_checkout_falls_back_to_the_default_when_a_return_url_is_rejected(monkeypatch):
+    """A rejected URL must not reach Stripe: the session gets our own default instead."""
+    from edge.api import payments
+
+    captured = {}
+
+    class FakeSession:
+        @staticmethod
+        def create(**kwargs):
+            captured.update(kwargs)
+            return type("S", (), {"url": "https://checkout.stripe.test/c/abc"})()
+
+    import stripe
+    monkeypatch.setattr(stripe.checkout, "Session", FakeSession)
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
+    monkeypatch.setenv("EDGE_WEB_URL", "https://edge.example.com")
+
+    url = payments.create_checkout(
+        "a@b.c", "trade_lab", 2026,
+        success_url="https://evil.example/thanks",
+        cancel_url="https://evil.example/no",
+    )
+    assert url == "https://checkout.stripe.test/c/abc"
+    assert captured["success_url"].startswith("https://edge.example.com/")
+    assert captured["cancel_url"].startswith("https://edge.example.com/")
+    assert "evil.example" not in captured["success_url"] + captured["cancel_url"]
+
+    payments.create_checkout(
+        "a@b.c", "trade_lab", 2026,
+        success_url="https://edge.example.com/trade?paid=trade_lab",
+        cancel_url=None,
+    )
+    assert captured["success_url"] == "https://edge.example.com/trade?paid=trade_lab"

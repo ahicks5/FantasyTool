@@ -34,7 +34,8 @@ export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku
     }
     setBusy(true);
     try {
-      const { url } = await checkout(s);
+      // Come back to the page they were on, not whatever the API defaults to.
+      const { url } = await checkout(s, pathname);
       if (url) window.location.href = url;
       else onUnlocked?.();
     } catch (e) {

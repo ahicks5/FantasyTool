@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
 import { IconHome, IconReport, IconTeam, IconTrade, IconWaivers } from "./icons";
+import { UnlockingBanner, useUnlockOnReturn } from "./Unlocking";
 import { LinkButton, SkeletonList, ThemeToggle, Wordmark } from "./ui";
 
 const TABS = [
@@ -83,11 +84,15 @@ export function AppShell({
   hideTitle?: boolean;
 }) {
   const session = useSession();
+  // Someone returning from Stripe lands on one of these pages, so the wait for the
+  // entitlement belongs here rather than in each one.
+  const unlock = useUnlockOnReturn(session.refresh);
   return (
     <div className="flex min-h-screen flex-col">
       <TopBar session={session} />
       <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">
         {!hideTitle && <h1 className="mb-4 text-[26px]">{title}</h1>}
+        <UnlockingBanner state={unlock} />
         {session.loading ? (
           <SkeletonList rows={3} tall />
         ) : session.connection ? (
