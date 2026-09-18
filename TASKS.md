@@ -141,7 +141,8 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 ## Findings from the corpus — worth fixing before charging for Trade Lab
 - [ ] **The trade finder proposes offers the other manager has no reason to accept.**
       130 of 173 best offers (75%) leave the other roster at exactly +0.0 ROS points while we
-      gain a median +15.6; 56 gain us 20+ while they gain nothing. `trade_finder.MIN_THEIR_GAIN`
+      gain a median +15.6; 56 gain us 20+ while they gain nothing. It is the majority case in
+      17 of the 20 leagues where the finder offers anything at all. `trade_finder.MIN_THEIR_GAIN`
       is 0.0, so indifference passes as "improves both sides". Worst real examples: "two D/STs
       for D'Andre Swift" (+47.9/+0.0, fairness 1.0), "Malik Willis for D'Andre Swift" (+41.4/+0.0).
       Fix the floor, and stop treating fungible streaming assets (D/ST, K) as tradeable value.
@@ -156,9 +157,14 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       21575912 rosters 12 punters). `waiver_plan._drop_candidates` excludes every `unpriced`
       player, which is right for a name-match miss but wrong for a punter in a league with no
       P slot — he is unstartable, not unknown, and should be the first drop offered.
-- [ ] **Two leagues score stat ids our map ignores** (358793: 7 ids, 21575912: 8 ids; both
-      include ESPN 206 and 209). 358793 also has the corpus's worst projection error
-      (median 2.82 pts vs ESPN's own, ratio 0.875) — identify those ids and map them.
+- [ ] **19 of 21 leagues score at least one stat id our ESPN map ignores** — this is not an
+      exotic-format problem, it is the common case. Frequency across the corpus:
+      `125` in 18 leagues (-3 to -10 pts; ours is a *deliberate* gap, but at this frequency it
+      deserves revisiting), `206` in 15 (2-4 pts), `209` in 14 (1-2 pts), `214` and `121` in 4
+      each, and a `161`-`166` ladder worth 10/8/6/4/2/1 pts in 2 leagues. Identify 206 and 209
+      first — they are worth real points in two thirds of the corpus. League 358793 carries 7
+      ignored ids and also has the worst projection error (median 2.82 pts vs ESPN's own,
+      ratio 0.875), which is the kind of correlation to chase.
       `docs/LEAGUE_SURVEY.md` lists every ignored id per league.
 - [ ] League 690481 is abandoned (still on scoringPeriodId 1, nobody set a lineup), which is why
       it shows 131 points on the table across 12 teams. Harmless as test data, but it skews any

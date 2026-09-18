@@ -61,6 +61,66 @@ wrong. Scatter is normal (two vendors); a consistent ratio away from 1.0 is a bu
 | `42654852` | 40 | 1.13 | 1.19 | 2.99 | 16.54 | 17.24 | 0.96 |
 | `65142363` | 40 | 1.62 | 1.76 | 5.2 | 19.54 | 21.18 | 0.923 |
 
+## Scoring rules we ignore
+
+Each league's own `scoringItems` minus the ids `edge/connectors/espn.py` maps. A non-empty
+list means this league scores something we do not, so every projection in it is a little
+wrong. Some are deliberate (Sleeper has no key for ESPN's 46+ points-allowed bucket).
+
+| League | Scoring items | Ignored (statId, points) |
+|---|---|---|
+| `114052` | 40 | 125@-10.0 |
+| `164483` | 45 | 125@-5.0, 206@2.0, 209@1.0, 214@0.1 |
+| `236302` | 55 | 117@0.5, 119@0.5, 125@-5.0, 206@2.0 |
+| `252353` | 43 | 121@-3.0, 125@-7.0, 206@2.0, 209@1.0, 214@0.1 |
+| `352716` | 36 | 125@-10.0 |
+| `358793` | 47 | 112@1.0, 114@0.08, 115@0.08, 125@-5.0, 206@2.0, 209@1.0, 214@0.1 |
+| `467985` | 47 | 112@0.5, 113@0.25, 125@-5.0, 161@10.0, 162@8.0, 163@6.0, 164@4.0, 165@2.0, 166@1.0, 206@4.0, 209@1.0 |
+| `521131` | 59 | 125@-5.0, 206@2.0, 209@1.0 |
+| `532836` | 45 | 125@-5.0 |
+| `550501` | 46 | 125@-5.0, 206@2.0, 209@1.0 |
+| `609328` | 18 | — |
+| `690481` | 46 | 125@-5.0, 206@2.0, 209@1.0 |
+| `730841` | 34 | — |
+| `899513` | 50 | 114@0.02, 115@0.02, 125@-4.0, 161@10.0, 162@8.0, 163@6.0, 164@4.0, 165@2.0, 166@1.0, 206@2.0, 209@1.0, 214@0.1 |
+| `1241838` | 47 | 125@-5.0, 206@2.0, 209@1.0 |
+| `1363114` | 45 | 121@2.0, 125@-4.0, 206@2.0, 209@1.0 |
+| `1707014` | 39 | 121@15.0, 125@15.0, 206@2.0, 209@1.0 |
+| `1765914` | 44 | 125@-5.0 |
+| `21575912` | 24 | 140@1.0, 141@1.0, 145@-0.5, 148@3.0, 149@2.0, 150@1.0, 206@2.0, 209@2.0 |
+| `42654852` | 46 | 125@-5.0, 206@2.0, 209@1.0 |
+| `65142363` | 53 | 121@1.0, 125@-3.0, 206@2.0, 209@1.0 |
+
+## Do our trade offers give the other side a reason to say yes?
+
+`trade_finder` requires `MIN_THEIR_GAIN = 0.0`, so an offer that leaves the other roster
+exactly as strong as before passes. This table counts how often the best offer we would
+show a paying user is one the other manager gains nothing from.
+
+| League | Best offers | Their gain +0.0 | % | Their median | My median | We gain 20+ while they gain 0 |
+|---|---|---|---|---|---|---|
+| `114052` | 10 | 9 | 90.0 | 0.0 | 16.4 | 4 |
+| `164483` | 7 | 7 | 100.0 | 0.0 | 30.3 | 6 |
+| `236302` | 12 | 10 | 83.3 | 0.0 | 20.6 | 6 |
+| `252353` | 7 | 7 | 100.0 | 0.0 | 7.4 | 1 |
+| `352716` | 7 | 2 | 28.6 | 5.5 | 26.2 | 0 |
+| `358793` | 12 | 7 | 58.3 | 0.0 | 6.8 | 0 |
+| `467985` | 6 | 6 | 100.0 | 0.0 | 17.3 | 2 |
+| `521131` | 10 | 6 | 60.0 | 0.0 | 20.0 | 2 |
+| `532836` | 9 | 4 | 44.4 | 3.4 | 11.3 | 2 |
+| `550501` | 9 | 9 | 100.0 | 0.0 | 15.5 | 4 |
+| `609328` | 8 | 8 | 100.0 | 0.0 | 12.95 | 1 |
+| `690481` | 8 | 7 | 87.5 | 0.0 | 13.75 | 2 |
+| `730841` | 8 | 6 | 75.0 | 0.0 | 6.15 | 0 |
+| `899513` | 6 | 6 | 100.0 | 0.0 | 5.3 | 0 |
+| `1241838` | 10 | 7 | 70.0 | 0.0 | 31.1 | 7 |
+| `1363114` | 6 | 4 | 66.7 | 0.0 | 4.95 | 0 |
+| `1707014` | 11 | 10 | 90.9 | 0.0 | 31.2 | 9 |
+| `1765914` | 7 | 5 | 71.4 | 0.0 | 20.1 | 4 |
+| `21575912` | 11 | 7 | 63.6 | 0.0 | 23.0 | 5 |
+| `42654852` | 0 | — | — | — | — | — |
+| `65142363` | 9 | 4 | 44.4 | 1.1 | 21.0 | 1 |
+
 ## Name matching (ESPN player -> Sleeper projection)
 
 | League | Rostered | Unmapped | % | Unpriced | Free agents | FA unpriced |
@@ -119,13 +179,51 @@ wrong. Scatter is normal (two vendors); a consistent ratio away from 1.0 is a bu
 - Lineup changes by confidence: Lean 125, Lock 36, Coin flip 13
 - Lineup points available in total: 545.0
 - Teams offered a trade: 173/218; total offers 651
+- Best offers where the other side gains +0.0 ROS: 131/173
+- Best offers where we gain 20+ and they gain nothing: 56
 - Teams told to hold on waivers: 91/218
 
 ## Flags
 
+- 114052: 9/10 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 16.4) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 114052: scores 1 stat id(s) our map ignores ([(125, -10.0)]) — identify them before trusting this league's projections.
+- 164483: 7/7 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 30.3) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 164483: scores 4 stat id(s) our map ignores ([(125, -5.0), (206, 2.0), (209, 1.0), (214, 0.1)]) — identify them before trusting this league's projections.
+- 236302: 10/12 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 20.6) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 236302: scores 4 stat id(s) our map ignores ([(117, 0.5), (119, 0.5), (125, -5.0), (206, 2.0)]) — identify them before trusting this league's projections.
+- 252353: 7/7 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 7.4) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 252353: scores 5 stat id(s) our map ignores ([(121, -3.0), (125, -7.0), (206, 2.0), (209, 1.0), (214, 0.1)]) — identify them before trusting this league's projections.
+- 352716: scores 1 stat id(s) our map ignores ([(125, -10.0)]) — identify them before trusting this league's projections.
+- 358793: 7/12 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 6.8) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 358793: scores 7 stat id(s) our map ignores ([(112, 1.0), (114, 0.08), (115, 0.08), (125, -5.0), (206, 2.0), (209, 1.0), (214, 0.1)]) — identify them before trusting this league's projections.
+- 467985: 6/6 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 17.3) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 467985: scores 11 stat id(s) our map ignores ([(112, 0.5), (113, 0.25), (125, -5.0), (161, 10.0), (162, 8.0), (163, 6.0), (164, 4.0), (165, 2.0), (166, 1.0), (206, 4.0), (209, 1.0)]) — identify them before trusting this league's projections.
+- 521131: 6/10 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 20.0) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 521131: scores 3 stat id(s) our map ignores ([(125, -5.0), (206, 2.0), (209, 1.0)]) — identify them before trusting this league's projections.
+- 532836: scores 1 stat id(s) our map ignores ([(125, -5.0)]) — identify them before trusting this league's projections.
+- 550501: 9/9 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 15.5) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 550501: scores 3 stat id(s) our map ignores ([(125, -5.0), (206, 2.0), (209, 1.0)]) — identify them before trusting this league's projections.
+- 609328: 8/8 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 12.95) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 690481: 7/8 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 13.75) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 690481: scores 3 stat id(s) our map ignores ([(125, -5.0), (206, 2.0), (209, 1.0)]) — identify them before trusting this league's projections.
+- 730841: 6/8 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 6.15) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
 - 899513: 11.18% of rostered players have no Sleeper id (49ers TQB, Bears TQB, Bengals TQB, Bills TQB) — name matching is degrading here.
+- 899513: 6/6 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 5.3) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 899513: scores 12 stat id(s) our map ignores ([(114, 0.02), (115, 0.02), (125, -4.0), (161, 10.0), (162, 8.0), (163, 6.0), (164, 4.0), (165, 2.0), (166, 1.0), (206, 2.0), (209, 1.0), (214, 0.1)]) — identify them before trusting this league's projections.
+- 1241838: 7/10 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 31.1) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 1241838: scores 3 stat id(s) our map ignores ([(125, -5.0), (206, 2.0), (209, 1.0)]) — identify them before trusting this league's projections.
+- 1363114: 4/6 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 4.95) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 1363114: scores 4 stat id(s) our map ignores ([(121, 2.0), (125, -4.0), (206, 2.0), (209, 1.0)]) — identify them before trusting this league's projections.
+- 1707014: 10/11 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 31.2) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 1707014: scores 4 stat id(s) our map ignores ([(121, 15.0), (125, 15.0), (206, 2.0), (209, 1.0)]) — identify them before trusting this league's projections.
+- 1765914: 5/7 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 20.1) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 1765914: scores 1 stat id(s) our map ignores ([(125, -5.0)]) — identify them before trusting this league's projections.
 - 21575912: 6.94% of rostered players have no Sleeper id (AJ Cole, Austin McNamara, Blake Gillikin, Bradley Pinion) — name matching is degrading here.
+- 21575912: 7/11 of the finder's best offers give the other manager +0.0 ROS points (we gain a median 23.0) — trade_finder.MIN_THEIR_GAIN=0.0 lets indifference count as 'improves both sides'.
+- 21575912: scores 8 stat id(s) our map ignores ([(140, 1.0), (141, 1.0), (145, -0.5), (148, 3.0), (149, 2.0), (150, 1.0), (206, 2.0), (209, 2.0)]) — identify them before trusting this league's projections.
 - 42654852: the trade finder found nothing for any of 4 teams.
+- 42654852: scores 3 stat id(s) our map ignores ([(125, -5.0), (206, 2.0), (209, 1.0)]) — identify them before trusting this league's projections.
+- 65142363: scores 4 stat id(s) our map ignores ([(121, 1.0), (125, -3.0), (206, 2.0), (209, 1.0)]) — identify them before trusting this league's projections.
 
 ## Sample trades (finder's best offer per league, graded by Trade Lab)
 

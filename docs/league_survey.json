@@ -9,6 +9,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 16.4,
+   "offers": 10,
+   "one_sided": 4,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 9,
+   "their_gain_zero_pct": 90.0
+  },
   "projection_accuracy": {
    "espn_mean": 16.03,
    "mean_abs_err": 1.3,
@@ -79,6 +87,18 @@
    "sack": 1.0,
    "safe": 2.0,
    "xpm": 1.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     125,
+     -10.0
+    ]
+   ],
+   "ignored_ids": [
+    125
+   ],
+   "items": 40
   },
   "settings": {
    "bench": 8,
@@ -924,6 +944,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 30.3,
+   "offers": 7,
+   "one_sided": 6,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 7,
+   "their_gain_zero_pct": 100.0
+  },
   "projection_accuracy": {
    "espn_mean": 18.61,
    "mean_abs_err": 1.32,
@@ -993,6 +1021,33 @@
    "yds_allow_450_499": -5.0,
    "yds_allow_500_549": -6.0,
    "yds_allow_550p": -7.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     125,
+     -5.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ],
+    [
+     214,
+     0.1
+    ]
+   ],
+   "ignored_ids": [
+    125,
+    206,
+    209,
+    214
+   ],
+   "items": 45
   },
   "settings": {
    "bench": 6,
@@ -1865,6 +1920,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 20.6,
+   "offers": 12,
+   "one_sided": 6,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 10,
+   "their_gain_zero_pct": 83.3
+  },
   "projection_accuracy": {
    "espn_mean": 17.63,
    "mean_abs_err": 1.33,
@@ -1941,6 +2004,33 @@
    "yds_allow_450_499": -5.0,
    "yds_allow_500_549": -6.0,
    "yds_allow_550p": -7.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     117,
+     0.5
+    ],
+    [
+     119,
+     0.5
+    ],
+    [
+     125,
+     -5.0
+    ],
+    [
+     206,
+     2.0
+    ]
+   ],
+   "ignored_ids": [
+    117,
+    119,
+    125,
+    206
+   ],
+   "items": 55
   },
   "settings": {
    "bench": 6,
@@ -2947,6 +3037,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 7.4,
+   "offers": 7,
+   "one_sided": 1,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 7,
+   "their_gain_zero_pct": 100.0
+  },
   "projection_accuracy": {
    "espn_mean": 16.09,
    "mean_abs_err": 1.37,
@@ -3013,6 +3111,38 @@
    "yds_allow_450_499": -4.0,
    "yds_allow_500_549": -5.0,
    "yds_allow_550p": -6.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     121,
+     -3.0
+    ],
+    [
+     125,
+     -7.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ],
+    [
+     214,
+     0.1
+    ]
+   ],
+   "ignored_ids": [
+    121,
+    125,
+    206,
+    209,
+    214
+   ],
+   "items": 43
   },
   "settings": {
    "bench": 8,
@@ -3799,6 +3929,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 26.2,
+   "offers": 7,
+   "one_sided": 0,
+   "their_gain_median": 5.5,
+   "their_gain_zero": 2,
+   "their_gain_zero_pct": 28.6
+  },
   "projection_accuracy": {
    "espn_mean": 19.81,
    "mean_abs_err": 1.27,
@@ -3863,6 +4001,18 @@
    "sack": 1.0,
    "safe": 2.0,
    "xpm": 0.5
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     125,
+     -10.0
+    ]
+   ],
+   "ignored_ids": [
+    125
+   ],
+   "items": 36
   },
   "settings": {
    "bench": 9,
@@ -4667,6 +4817,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 6.8,
+   "offers": 12,
+   "one_sided": 0,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 7,
+   "their_gain_zero_pct": 58.3
+  },
   "projection_accuracy": {
    "espn_mean": 21.68,
    "mean_abs_err": 2.87,
@@ -4737,6 +4895,48 @@
    "safe": 4.0,
    "xpm": 3.0,
    "xpmiss": -1.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     112,
+     1.0
+    ],
+    [
+     114,
+     0.08
+    ],
+    [
+     115,
+     0.08
+    ],
+    [
+     125,
+     -5.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ],
+    [
+     214,
+     0.1
+    ]
+   ],
+   "ignored_ids": [
+    112,
+    114,
+    115,
+    125,
+    206,
+    209,
+    214
+   ],
+   "items": 47
   },
   "settings": {
    "bench": 9,
@@ -5677,6 +5877,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 17.3,
+   "offers": 6,
+   "one_sided": 2,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 6,
+   "their_gain_zero_pct": 100.0
+  },
   "projection_accuracy": {
    "espn_mean": 18.61,
    "mean_abs_err": 1.32,
@@ -5740,6 +5948,68 @@
    "sack": 1.0,
    "safe": 2.0,
    "xpm": 1.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     112,
+     0.5
+    ],
+    [
+     113,
+     0.25
+    ],
+    [
+     125,
+     -5.0
+    ],
+    [
+     161,
+     10.0
+    ],
+    [
+     162,
+     8.0
+    ],
+    [
+     163,
+     6.0
+    ],
+    [
+     164,
+     4.0
+    ],
+    [
+     165,
+     2.0
+    ],
+    [
+     166,
+     1.0
+    ],
+    [
+     206,
+     4.0
+    ],
+    [
+     209,
+     1.0
+    ]
+   ],
+   "ignored_ids": [
+    112,
+    113,
+    125,
+    161,
+    162,
+    163,
+    164,
+    165,
+    166,
+    206,
+    209
+   ],
+   "items": 47
   },
   "settings": {
    "bench": 6,
@@ -6686,6 +6956,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 20.0,
+   "offers": 10,
+   "one_sided": 2,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 6,
+   "their_gain_zero_pct": 60.0
+  },
   "projection_accuracy": {
    "espn_mean": 17.95,
    "mean_abs_err": 1.62,
@@ -6772,6 +7050,28 @@
    "yds_allow_450_499": -5.0,
    "yds_allow_500_549": -6.0,
    "yds_allow_550p": -7.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     125,
+     -5.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ]
+   ],
+   "ignored_ids": [
+    125,
+    206,
+    209
+   ],
+   "items": 59
   },
   "settings": {
    "bench": 8,
@@ -7674,6 +7974,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 11.3,
+   "offers": 9,
+   "one_sided": 2,
+   "their_gain_median": 3.4,
+   "their_gain_zero": 4,
+   "their_gain_zero_pct": 44.4
+  },
   "projection_accuracy": {
    "espn_mean": 17.03,
    "mean_abs_err": 1.27,
@@ -7749,6 +8057,18 @@
    "yds_allow_450_499": -3.0,
    "yds_allow_500_549": -5.0,
    "yds_allow_550p": -5.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     125,
+     -5.0
+    ]
+   ],
+   "ignored_ids": [
+    125
+   ],
+   "items": 45
   },
   "settings": {
    "bench": 9,
@@ -8564,6 +8884,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 15.5,
+   "offers": 9,
+   "one_sided": 4,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 9,
+   "their_gain_zero_pct": 100.0
+  },
   "projection_accuracy": {
    "espn_mean": 17.1,
    "mean_abs_err": 1.32,
@@ -8633,6 +8961,28 @@
    "yds_allow_450_499": -5.0,
    "yds_allow_500_549": -6.0,
    "yds_allow_550p": -7.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     125,
+     -5.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ]
+   ],
+   "ignored_ids": [
+    125,
+    206,
+    209
+   ],
+   "items": 46
   },
   "settings": {
    "bench": 6,
@@ -9614,6 +9964,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 12.95,
+   "offers": 8,
+   "one_sided": 1,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 8,
+   "their_gain_zero_pct": 100.0
+  },
   "projection_accuracy": {
    "espn_mean": 19.58,
    "mean_abs_err": 1.31,
@@ -9660,6 +10018,11 @@
    "rush_att": 0.1,
    "rush_td": 6.0,
    "rush_yd": 0.1
+  },
+  "scoring_coverage": {
+   "ignored": [],
+   "ignored_ids": [],
+   "items": 18
   },
   "settings": {
    "bench": 8,
@@ -10404,6 +10767,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 13.75,
+   "offers": 8,
+   "one_sided": 2,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 7,
+   "their_gain_zero_pct": 87.5
+  },
   "projection_accuracy": {
    "espn_mean": 16.44,
    "mean_abs_err": 1.67,
@@ -10475,6 +10846,28 @@
    "yds_allow_450_499": -5.0,
    "yds_allow_500_549": -6.0,
    "yds_allow_550p": -7.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     125,
+     -5.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ]
+   ],
+   "ignored_ids": [
+    125,
+    206,
+    209
+   ],
+   "items": 46
   },
   "settings": {
    "bench": 8,
@@ -11596,6 +11989,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 6.15,
+   "offers": 8,
+   "one_sided": 0,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 6,
+   "their_gain_zero_pct": 75.0
+  },
   "projection_accuracy": {
    "espn_mean": 11.04,
    "mean_abs_err": 1.66,
@@ -11664,6 +12065,11 @@
    "sack": 1.0,
    "safe": 2.0,
    "xpm": 1.0
+  },
+  "scoring_coverage": {
+   "ignored": [],
+   "ignored_ids": [],
+   "items": 34
   },
   "settings": {
    "bench": 13,
@@ -12279,6 +12685,14 @@
    "unmapped_pct": 11.18,
    "unpriced": 17
   },
+  "offer_quality": {
+   "my_gain_median": 5.3,
+   "offers": 6,
+   "one_sided": 0,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 6,
+   "their_gain_zero_pct": 100.0
+  },
   "projection_accuracy": {
    "espn_mean": 12.53,
    "mean_abs_err": 1.92,
@@ -12344,6 +12758,73 @@
    "yds_allow_450_499": -4.0,
    "yds_allow_500_549": -5.0,
    "yds_allow_550p": -6.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     114,
+     0.02
+    ],
+    [
+     115,
+     0.02
+    ],
+    [
+     125,
+     -4.0
+    ],
+    [
+     161,
+     10.0
+    ],
+    [
+     162,
+     8.0
+    ],
+    [
+     163,
+     6.0
+    ],
+    [
+     164,
+     4.0
+    ],
+    [
+     165,
+     2.0
+    ],
+    [
+     166,
+     1.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ],
+    [
+     214,
+     0.1
+    ]
+   ],
+   "ignored_ids": [
+    114,
+    115,
+    125,
+    161,
+    162,
+    163,
+    164,
+    165,
+    166,
+    206,
+    209,
+    214
+   ],
+   "items": 50
   },
   "settings": {
    "bench": 9,
@@ -13191,6 +13672,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 31.1,
+   "offers": 10,
+   "one_sided": 7,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 7,
+   "their_gain_zero_pct": 70.0
+  },
   "projection_accuracy": {
    "espn_mean": 17.22,
    "mean_abs_err": 1.41,
@@ -13267,6 +13756,28 @@
    "yds_allow_450_499": -5.0,
    "yds_allow_500_549": -6.0,
    "yds_allow_550p": -7.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     125,
+     -5.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ]
+   ],
+   "ignored_ids": [
+    125,
+    206,
+    209
+   ],
+   "items": 47
   },
   "settings": {
    "bench": 9,
@@ -14072,6 +14583,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 4.95,
+   "offers": 6,
+   "one_sided": 0,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 4,
+   "their_gain_zero_pct": 66.7
+  },
   "projection_accuracy": {
    "espn_mean": 18.43,
    "mean_abs_err": 1.99,
@@ -14140,6 +14659,33 @@
    "safe": 2.0,
    "xpm": 1.0,
    "xpmiss": -1.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     121,
+     2.0
+    ],
+    [
+     125,
+     -4.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ]
+   ],
+   "ignored_ids": [
+    121,
+    125,
+    206,
+    209
+   ],
+   "items": 45
   },
   "settings": {
    "bench": 7,
@@ -15010,6 +15556,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 31.2,
+   "offers": 11,
+   "one_sided": 9,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 10,
+   "their_gain_zero_pct": 90.9
+  },
   "projection_accuracy": {
    "espn_mean": 17.61,
    "mean_abs_err": 1.14,
@@ -15068,6 +15622,33 @@
    "safe": 2.0,
    "xpm": 1.0,
    "yds_allow": -0.01
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     121,
+     15.0
+    ],
+    [
+     125,
+     15.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ]
+   ],
+   "ignored_ids": [
+    121,
+    125,
+    206,
+    209
+   ],
+   "items": 39
   },
   "settings": {
    "bench": 4,
@@ -16015,6 +16596,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 20.1,
+   "offers": 7,
+   "one_sided": 4,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 5,
+   "their_gain_zero_pct": 71.4
+  },
   "projection_accuracy": {
    "espn_mean": 18.56,
    "mean_abs_err": 1.31,
@@ -16087,6 +16676,18 @@
    "yds_allow_450_499": -5.0,
    "yds_allow_500_549": -6.0,
    "yds_allow_550p": -7.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     125,
+     -5.0
+    ]
+   ],
+   "ignored_ids": [
+    125
+   ],
+   "items": 44
   },
   "settings": {
    "bench": 9,
@@ -16848,6 +17449,14 @@
    "unmapped_pct": 6.94,
    "unpriced": 12
   },
+  "offer_quality": {
+   "my_gain_median": 23.0,
+   "offers": 11,
+   "one_sided": 5,
+   "their_gain_median": 0.0,
+   "their_gain_zero": 7,
+   "their_gain_zero_pct": 63.6
+  },
   "projection_accuracy": {
    "espn_mean": 16.92,
    "mean_abs_err": 1.22,
@@ -16889,6 +17498,53 @@
    "rush_2pt": 2.0,
    "rush_td": 6.0,
    "rush_yd": 0.1
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     140,
+     1.0
+    ],
+    [
+     141,
+     1.0
+    ],
+    [
+     145,
+     -0.5
+    ],
+    [
+     148,
+     3.0
+    ],
+    [
+     149,
+     2.0
+    ],
+    [
+     150,
+     1.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     2.0
+    ]
+   ],
+   "ignored_ids": [
+    140,
+    141,
+    145,
+    148,
+    149,
+    150,
+    206,
+    209
+   ],
+   "items": 24
   },
   "settings": {
    "bench": 7,
@@ -17851,6 +18507,9 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "offers": 0
+  },
   "projection_accuracy": {
    "espn_mean": 17.24,
    "mean_abs_err": 1.19,
@@ -17922,6 +18581,28 @@
    "yds_allow_450_499": -5.0,
    "yds_allow_500_549": -6.0,
    "yds_allow_550p": -7.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     125,
+     -5.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ]
+   ],
+   "ignored_ids": [
+    125,
+    206,
+    209
+   ],
+   "items": 46
   },
   "settings": {
    "bench": 8,
@@ -18295,6 +18976,14 @@
    "unmapped_pct": 0.0,
    "unpriced": 0
   },
+  "offer_quality": {
+   "my_gain_median": 21.0,
+   "offers": 9,
+   "one_sided": 1,
+   "their_gain_median": 1.1,
+   "their_gain_zero": 4,
+   "their_gain_zero_pct": 44.4
+  },
   "projection_accuracy": {
    "espn_mean": 21.18,
    "mean_abs_err": 1.76,
@@ -18370,6 +19059,33 @@
    "yds_allow_450_499": -3.0,
    "yds_allow_500_549": -5.0,
    "yds_allow_550p": -7.0
+  },
+  "scoring_coverage": {
+   "ignored": [
+    [
+     121,
+     1.0
+    ],
+    [
+     125,
+     -3.0
+    ],
+    [
+     206,
+     2.0
+    ],
+    [
+     209,
+     1.0
+    ]
+   ],
+   "ignored_ids": [
+    121,
+    125,
+    206,
+    209
+   ],
+   "items": 53
   },
   "settings": {
    "bench": 6,
