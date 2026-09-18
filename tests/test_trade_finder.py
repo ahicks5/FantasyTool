@@ -31,7 +31,7 @@ def test_starters_required_splits_flex_across_eligible_positions():
     assert sf["QB"] == pytest.approx(1.25) and sf["RB"] == pytest.approx(0.25)
 
 
-def test_every_offer_helps_both_sides_and_stays_fair(league, ros, profiles):
+def test_every_offer_is_legal_never_worse_for_them_and_fair(league, ros, profiles):
     for t in league.teams:
         found = trade_finder.find(league, t, ros, profiles)
         rostered = {p.id for p in t.players}
@@ -45,7 +45,10 @@ def test_every_offer_helps_both_sides_and_stays_fair(league, ros, profiles):
                 assert o["my_gain_ros"] >= trade_finder.MIN_MY_GAIN
                 assert o["their_gain_ros"] >= trade_finder.MIN_THEIR_GAIN
                 assert o["fairness"] >= trade_finder.MIN_FAIRNESS
-                assert o["why"] and "both_sides_improve" in o["reason_codes"]
+                assert o["why"]
+                # Exactly one of the two, and which one is a claim about them we have to earn.
+                labels = {"both_sides_improve", "neutral_for_them"} & set(o["reason_codes"])
+                assert len(labels) == 1, f"offer must say what it does for them, got {o['reason_codes']}"
 
 
 def test_partners_are_ranked_and_offers_are_distinct(league, ros, profiles):
@@ -169,3 +172,33 @@ def test_a_blocked_league_explains_what_is_in_the_way(league, ros, profiles):
 def test_working_league_reports_no_blockers(league, ros, profiles):
     out = trade_finder.find(league, league.teams[1], ros, profiles)
     assert out["partners"] and out["blockers"] == []
+
+
+def test_we_only_claim_both_sides_improve_when_both_sides_improve(league, ros):
+    """Half of all offers move the partner's starting lineup by exactly nothing — we are
+    buying their surplus. Those are worth proposing, but a user told "both sides improve"
+    walks in expecting a yes and gets a no."""
+    for team in league.teams:
+        for partner in trade_finder.find(league, team, ros)["partners"]:
+            for o in partner["offers"]:
+                mutual = o["their_gain_ros"] >= trade_finder.MEANINGFUL_THEIR_GAIN
+                assert ("both_sides_improve" in o["reason_codes"]) == mutual, (
+                    f"{o['give_names']} -> {o['get_names']}: they gain "
+                    f"{o['their_gain_ros']} but the offer claims both sides improve"
+                )
+                assert ("neutral_for_them" in o["reason_codes"]) == (not mutual)
+
+
+def test_an_offer_that_does_nothing_for_them_says_so_in_words(league, ros):
+    """The reason codes are for the UI; the sentence is what the user actually reads."""
+    flat = [o for team in league.teams
+            for partner in trade_finder.find(league, team, ros)["partners"]
+            for o in partner["offers"] if "neutral_for_them" in o["reason_codes"]]
+    assert flat, "fixture no longer exercises the neutral case; pick another league"
+    for o in flat:
+        assert "expect to add a sweetener or hear no" in o["why"]
+    for team in league.teams:
+        for partner in trade_finder.find(league, team, ros)["partners"]:
+            for o in partner["offers"]:
+                if "both_sides_improve" in o["reason_codes"]:
+                    assert "sweetener" not in o["why"]

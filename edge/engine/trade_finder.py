@@ -31,6 +31,11 @@ def _r0(x: float) -> int:
 
 MIN_MY_GAIN = 2.0        # rest-of-season lineup points; below this it is not worth the message
 MIN_THEIR_GAIN = 0.0     # they must not be worse off, or they will not accept
+# Their gain has to clear the same bar we set for ourselves before we call an offer mutual.
+# Half of all offers move the partner's starting lineup by exactly nothing -- usually we are
+# buying their surplus, a QB3 in a 2-QB league -- and those are still worth proposing, but
+# telling the user both sides improve sets them up to be surprised by a no.
+MEANINGFUL_THEIR_GAIN = 2.0
 MIN_FAIRNESS = 0.75      # asset value balance below which the offer reads as an insult
 SIMPLICITY_BONUS = 1.5   # a 1-for-1 is far more likely to get accepted than a 2-for-1
 
@@ -234,7 +239,8 @@ def find(league: League, my_team: Team, ros: dict[str, float],
             fair = _fairness(them_side)
             if fair < MIN_FAIRNESS:
                 continue
-            codes = ["both_sides_improve"]
+            mutual = them_side.lineup_delta_ros >= MEANINGFUL_THEIR_GAIN
+            codes = ["both_sides_improve"] if mutual else ["neutral_for_them"]
             fit, fit_note = _behavioral_fit(give, get, profiles.get(other.id))
             if fit_note:
                 codes.append("matches_their_history")
@@ -245,6 +251,11 @@ def find(league: League, my_team: Team, ros: dict[str, float],
                           + 4 * fair + fit + simplicity, 2)
             why = (f"You gain {_r0(me_side.lineup_delta_ros)} rest-of-season lineup points, they gain "
                    f"{_r0(them_side.lineup_delta_ros)}. Value is {round(fair * 100)}% balanced.")
+            if not mutual:
+                # Say the quiet part: they have no lineup reason to accept. The user should
+                # walk in expecting to sweeten it, not expecting a yes.
+                why += (" Their starting lineup barely moves, so this is you buying their depth"
+                        " — expect to add a sweetener or hear no.")
             if fit_note:
                 why += f" This manager {fit_note}."
             offers.append(Offer(other.id, other.name, give, get, me_side, them_side, fair, score, why, codes))

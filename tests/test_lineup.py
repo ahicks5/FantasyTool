@@ -97,3 +97,57 @@ def test_superflex_starts_second_qb_when_better_than_flex_options():
     slots = ["QB", "RB", "WR", "TE", "FLEX", "SUPER_FLEX"]
     best = optimize(ps, slots)
     assert best[5].id == "2" and best[4].position != "QB"
+
+
+# A real private ESPN league runs QB/QB and TE/TE — two dedicated slots for one position,
+# which is not superflex (no flex eligibility) and not TE-premium (no scoring twist). None of
+# the recorded format fixtures had it, and duplicate dedicated slots are exactly the shape
+# that trips slot ordering, so it gets its own guard.
+TWO_QB_TWO_TE = ["QB", "QB", "RB", "RB", "WR", "WR", "TE", "TE", "FLEX", "FLEX", "DEF", "K"]
+
+
+def test_two_dedicated_slots_for_one_position_start_the_best_two():
+    ps = [P(1, "QB", 12), P(2, "QB", 25), P(3, "QB", 18),
+          P(4, "RB", 15), P(5, "RB", 12), P(6, "RB", 11),
+          P(7, "WR", 14), P(8, "WR", 13), P(9, "WR", 9),
+          P(10, "TE", 8), P(11, "TE", 10), P(12, "TE", 4),
+          P(13, "DEF", 6), P(14, "K", 7)]
+    best = optimize(ps, TWO_QB_TWO_TE)
+    ids = [p.id if p else None for p in best]
+    assert ids[:2] == ["2", "3"], "both QB slots take the two best QBs, not one and a gap"
+    assert ids[6:8] == ["11", "10"], "same for the two TE slots"
+    assert ids[8:10] == ["6", "9"], "flex takes the best players left over, not a third QB"
+    assert None not in ids and len(set(ids)) == len(ids)
+
+
+def test_a_third_qb_is_bench_not_flex_when_flex_does_not_accept_qb():
+    """The 2-QB league's trap: a QB3 who out-projects every flex option still cannot start."""
+    ps = [P(1, "QB", 25), P(2, "QB", 24), P(3, "QB", 23),
+          P(4, "RB", 9), P(5, "RB", 8), P(6, "WR", 7), P(7, "WR", 6),
+          P(8, "TE", 5), P(9, "TE", 4), P(10, "RB", 3), P(11, "WR", 2),
+          P(12, "DEF", 6), P(13, "K", 7)]
+    best = optimize(ps, TWO_QB_TWO_TE)
+    flex = [p.id for p in best[8:10] if p]
+    assert "3" not in flex, "QB3 cannot fill a FLEX that only accepts RB/WR/TE"
+    assert sorted(flex) == ["10", "11"], "the leftovers start instead, however far behind QB3"
+    assert best[0].id == "1" and best[1].id == "2", "the two best QBs still take the QB slots"
+
+
+def test_the_lineup_total_matches_an_independently_computed_optimum():
+    """Reference built a different way from the engine: with disjoint dedicated slots and a
+    FLEX that takes RB/WR/TE, the best lineup is the top two at each position plus the best
+    two left over. If the optimizer disagrees with that, one of them is wrong."""
+    ps = [P(1, "QB", 22.4), P(2, "QB", 19.1), P(3, "QB", 17.7),
+          P(4, "RB", 15.2), P(5, "RB", 12.9), P(6, "RB", 8.1),
+          P(7, "WR", 14.4), P(8, "WR", 13.0), P(9, "WR", 9.5),
+          P(10, "TE", 11.2), P(11, "TE", 7.8), P(12, "TE", 6.1),
+          P(13, "DEF", 6.0), P(14, "K", 7.0)]
+    by_pos: dict[str, list[float]] = {}
+    for pl in ps:
+        by_pos.setdefault(pl.position, []).append(pl.projected)
+    for v in by_pos.values():
+        v.sort(reverse=True)
+    starters = sum(sum(by_pos[pos][:2]) for pos in ("QB", "RB", "WR", "TE"))
+    leftovers = sorted([v for pos in ("RB", "WR", "TE") for v in by_pos[pos][2:]], reverse=True)
+    expected = round(starters + sum(leftovers[:2]) + by_pos["DEF"][0] + by_pos["K"][0], 2)
+    assert lineup_total(ps, TWO_QB_TWO_TE) == expected

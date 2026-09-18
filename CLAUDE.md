@@ -69,6 +69,8 @@ Engine modules, in the order the feed uses them:
   did not prove it can read it. Accepted cost: a scheduled job (the weekly email) cannot read
   a private league. A private league answers **403** with `needs_espn_auth` — true means "ask
   for cookies", false means "the ones you gave expired"; the web turns each into a form.
+  Verified end to end on a real private league. **Never paste cookies into a chat or an issue**
+  — they cannot be scoped or revoked; grab them fresh from the browser each time.
 - **Name-match guard.** ESPN players reach projections by name match (`edge/data/player_map.py`).
   A player we cannot map is marked `Player.unpriced`, which is not the same as projecting 0.0:
   a free agent we cannot price is dropped from the pool, an unpriced rostered player is never

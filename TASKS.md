@@ -116,8 +116,8 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       this roughly doubles the ESPN leagues we can read. Cookies are per-request and never
       stored (see CLAUDE.md); 21 tests cover normalization, the outbound call, both 403 shapes,
       cache isolation between users, and that no part of a credential reaches the database.
-- [ ] Untested: a real private league with real cookies. Every layer around it is covered, but
-      nobody has yet pasted working cookies in. Five minutes with any ESPN account closes this.
+- [x] Verified end to end against Andrew's real private league (295981461, 6 teams, 2 QB / 2 TE,
+      priority waivers): 401 without cookies, full engine with them, 0 unmapped of 115 rostered.
 - [ ] The weekly email cannot render a private ESPN league — by design, we keep no cookies to
       read it with. Either ask at send time or accept Sleeper + public ESPN for email.
 - [ ] `photo_url`'s ESPN CDN branch never fired live — every ESPN player matched a Sleeper id.
