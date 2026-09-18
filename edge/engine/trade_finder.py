@@ -18,7 +18,7 @@ from itertools import combinations
 
 from edge.engine.lineup import optimize
 from edge.engine.tendencies import Profile
-from edge.engine.trade import FAIR, Side, _fairness, _side
+from edge.engine.trade import FAIR, Context, Side, _fairness, _side
 from edge.models import FLEX_SLOTS, League, Team, Player, slot_accepts
 
 ALGO_VERSION = "trade_finder.v1"
@@ -216,8 +216,12 @@ def find(league: League, my_team: Team, ros: dict[str, float],
          offers_per_partner: int = 2, allow_two_for_one: bool = True) -> dict:
     """Best trade partners in the league, each with concrete offers that help both sides."""
     profiles = profiles or {}
+    ctx = Context(league, ros)
     baseline = league_baseline(league, ros)
     mine = position_profile(league, my_team, ros, baseline)
+    # What I can spare does not depend on who I am talking to, so it is settled once rather
+    # than re-optimised against every one of the other eleven rosters.
+    my_send = _tradeable(my_team, league, ros, set(mine.surplus) or set(mine.starters_required))
 
     partners: list[PartnerFit] = []
     for other in league.teams:
@@ -226,14 +230,13 @@ def find(league: League, my_team: Team, ros: dict[str, float],
         theirs = position_profile(league, other, ros, baseline)
         # Trade what I have spare at positions they are thin at, for what they have spare
         # at positions I am thin at.
-        my_send = _tradeable(my_team, league, ros, set(mine.surplus) or set(mine.starters_required))
         their_send = _tradeable(other, league, ros, set(mine.need) or set(theirs.surplus) or set(theirs.starters_required))
         offers: list[Offer] = []
         for give, get in _candidates(my_send, their_send, ros, allow_two_for_one):
-            me_side = _side(league, my_team, give, get, ros)
+            me_side = _side(league, my_team, give, get, ros, ctx)
             if me_side.lineup_delta_ros < MIN_MY_GAIN:
                 continue
-            them_side = _side(league, other, get, give, ros)
+            them_side = _side(league, other, get, give, ros, ctx)
             if them_side.lineup_delta_ros < MIN_THEIR_GAIN:
                 continue
             fair = _fairness(them_side)
@@ -277,7 +280,7 @@ def find(league: League, my_team: Team, ros: dict[str, float],
 
     partners.sort(key=lambda p: -(p.best_offers[0].score if p.best_offers else 0))
     partners = partners[:limit_partners]
-    blockers = [] if partners else _blockers(league, my_team, mine, ros, baseline)
+    blockers = [] if partners else _blockers(league, my_team, mine, ros, baseline, ctx=ctx)
     if partners:
         summary = f"{partners[0].team.name} is your best trade partner. {partners[0].headline}"
     elif blockers:
@@ -294,24 +297,25 @@ def find(league: League, my_team: Team, ros: dict[str, float],
 
 
 def _blockers(league: League, my_team: Team, mine: PositionProfile, ros: dict[str, float],
-              baseline: dict[str, list[float]], limit: int = 3) -> list[dict]:
+              baseline: dict[str, list[float]], limit: int = 3, ctx: Context | None = None) -> list[dict]:
     """When nothing clears, say what is actually in the way.
 
     "Hold" on its own reads like the engine gave up. The useful version names the player you
     want, who has him, and the reason the deal does not work yet.
     """
+    ctx = ctx if ctx is not None else Context(league, ros)
     want = list(mine.need) or ["RB", "WR"]
+    my_send = _tradeable(my_team, league, ros, set(mine.surplus) or set(mine.starters_required))
     out: list[dict] = []
     for other in league.teams:
         if other.id == my_team.id:
             continue
         their_send = _tradeable(other, league, ros, set(want))
-        my_send = _tradeable(my_team, league, ros, set(mine.surplus) or set(mine.starters_required))
         for target in their_send[:2]:
             best_for_me = None
             for give in my_send:
-                me_side = _side(league, my_team, [give], [target], ros)
-                them_side = _side(league, other, [target], [give], ros)
+                me_side = _side(league, my_team, [give], [target], ros, ctx)
+                them_side = _side(league, other, [target], [give], ros, ctx)
                 if best_for_me is None or me_side.lineup_delta_ros > best_for_me[0].lineup_delta_ros:
                     best_for_me = (me_side, them_side, give)
             if not best_for_me:

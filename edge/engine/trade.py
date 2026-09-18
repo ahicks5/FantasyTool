@@ -18,8 +18,22 @@ class Side:
     get: list[Player]
     value_out: float
     value_in: float
-    lineup_delta_week: float
     lineup_delta_ros: float
+    # This week's delta is read only for an offer that survives every filter, and almost none
+    # do: the trade finder grades hundreds of candidates to report one. Optimising a second,
+    # weekly lineup for every candidate doubled the cost of the search to produce a number
+    # that was thrown away, so the ingredients are kept and the number is worked out on
+    # demand -- from state captured here, so it cannot drift if a roster changes later.
+    _after: list[Player] = field(default_factory=list, repr=False)
+    _slots: list[str] = field(default_factory=list, repr=False)
+    _base_week: float = field(default=0.0, repr=False)
+    _week: float | None = field(default=None, repr=False)
+
+    @property
+    def lineup_delta_week(self) -> float:
+        if self._week is None:
+            self._week = round(lineup_total(self._after, self._slots) - self._base_week, 2)
+        return self._week
 
     def to_dict(self) -> dict:
         return {
@@ -54,18 +68,57 @@ def replacements(league: League, ros: dict[str, float]) -> list[Player]:
     return list(best.values())
 
 
-def _side(league: League, team: Team, give: list[Player], get: list[Player], ros: dict[str, float]) -> Side:
+@dataclass
+class Context:
+    """Call-scoped scratch space for a run of trade maths over one league.
+
+    Grading an offer asks two questions that have nothing to do with the offer: who the
+    replacement-level free agents are (one answer for the whole league) and what a team's
+    lineup is worth before the trade (one answer per team). `_side` was re-deriving both for
+    every candidate, and the trade finder grades hundreds of candidates -- profiling one
+    team's action feed on the recorded ESPN league found 490 rebuilds of the same free-agent
+    list and four lineup optimisations per candidate where two of them never change.
+
+    Deliberately not a module-level memo: a context is created inside the call that uses it
+    and dies with it, so a mutated roster or a different set of ROS values is never answered
+    from a stale cache. `_side` still works without one, it just recomputes.
+    """
+    league: League
+    ros: dict[str, float]
+    _repl: list[Player] | None = field(default=None, repr=False)
+    _baselines: dict[str, tuple[float, float]] = field(default_factory=dict, repr=False)
+
+    @property
+    def replacements(self) -> list[Player]:
+        if self._repl is None:
+            self._repl = replacements(self.league, self.ros)
+        return self._repl
+
+    def baseline(self, team: Team) -> tuple[float, float]:
+        """(this week, rest of season) lineup totals for the roster as it stands."""
+        hit = self._baselines.get(team.id)
+        if hit is None:
+            slots = self.league.starting_slots
+            before = team.players + self.replacements
+            hit = (lineup_total(before, slots), lineup_total(before, slots, self.ros))
+            self._baselines[team.id] = hit
+        return hit
+
+
+def _side(league: League, team: Team, give: list[Player], get: list[Player], ros: dict[str, float],
+          ctx: Context | None = None) -> Side:
     slots = league.starting_slots
     give_ids = {p.id for p in give}
-    repl = replacements(league, ros)
-    before = team.players + repl
+    ctx = ctx if ctx is not None else Context(league, ros)
+    repl = ctx.replacements
+    base_week, base_ros = ctx.baseline(team)
     after = [p for p in team.players if p.id not in give_ids] + get + repl
     return Side(
         team, give, get,
         value_out=round(sum(ros.get(p.id, 0.0) for p in give), 1),
         value_in=round(sum(ros.get(p.id, 0.0) for p in get), 1),
-        lineup_delta_week=round(lineup_total(after, slots) - lineup_total(before, slots), 2),
-        lineup_delta_ros=round(lineup_total(after, slots, ros) - lineup_total(before, slots, ros), 1),
+        lineup_delta_ros=round(lineup_total(after, slots, ros) - base_ros, 1),
+        _after=after, _slots=slots, _base_week=base_week,
     )
 
 
@@ -81,8 +134,9 @@ def evaluate(league: League, my_team: Team, their_team: Team, give_ids: list[str
     get = [p for p in (their_team.player(i) for i in get_ids) if p]
     if not give or not get:
         raise ValueError("Trade needs at least one player on each side that the teams actually roster.")
-    me = _side(league, my_team, give, get, ros)
-    them = _side(league, their_team, get, give, ros)
+    ctx = Context(league, ros)
+    me = _side(league, my_team, give, get, ros, ctx)
+    them = _side(league, their_team, get, give, ros, ctx)
     fairness = _fairness(me)
     notes: list[str] = []
 
@@ -105,17 +159,19 @@ def evaluate(league: League, my_team: Team, their_team: Team, give_ids: list[str
 
     counter = None
     if verdict in (REJECT, FAIR) or them.lineup_delta_ros <= -8:
-        counter = _counter(league, my_team, their_team, give, get, ros, their_profile, hoarded)
+        counter = _counter(league, my_team, their_team, give, get, ros, their_profile, hoarded, ctx)
         if counter and verdict == REJECT:
             verdict = COUNTER
     return Verdict(verdict, me, them, fairness, tend, counter, notes)
 
 
 def _counter(league: League, my_team: Team, their_team: Team, give: list[Player], get: list[Player],
-             ros: dict[str, float], profile: Profile | None, hoarded: list[str]) -> dict | None:
+             ros: dict[str, float], profile: Profile | None, hoarded: list[str],
+             ctx: Context | None = None) -> dict | None:
     """Search 1-move variations of the offer. Score: my ROS lineup gain, but they must not lose
     more than 2 ROS lineup points and value must stay within 15% — otherwise they won't bite.
     Tendencies: avoid asking for positions they hoard/chase; prefer sending them those."""
+    ctx = ctx if ctx is not None else Context(league, ros)
     fav = set((profile.favorite_positions if profile else []) + hoarded)
     give_ids = {p.id for p in give}
     get_ids = {p.id for p in get}
@@ -139,8 +195,8 @@ def _counter(league: League, my_team: Team, their_team: Team, give: list[Player]
 
     best = None
     for c_give, c_get in candidates:
-        me = _side(league, my_team, c_give, c_get, ros)
-        them = _side(league, their_team, c_get, c_give, ros)
+        me = _side(league, my_team, c_give, c_get, ros, ctx)
+        them = _side(league, their_team, c_get, c_give, ros, ctx)
         if me.lineup_delta_ros <= 0:
             continue
         if them.lineup_delta_ros < -2 or _fairness(them) < 0.85:
@@ -173,7 +229,7 @@ def _counter_why(c_give, c_get, give, get, me: Side, them: Side, fav: set[str]) 
 
 def trade_targets(league: League, my_team: Team, ros: dict[str, float], limit: int = 3) -> list[dict]:
     """Best 1-for-1 swaps across the league where both lineups improve rest of season."""
-    slots = league.starting_slots
+    ctx = Context(league, ros)
     out = []
     mine = [p for p in my_team.players if not p.is_out and ros.get(p.id, 0) > 0]
     for other in league.teams:
@@ -184,10 +240,10 @@ def trade_targets(league: League, my_team: Team, ros: dict[str, float], limit: i
             for t in theirs:
                 if g.position == t.position and abs(ros[g.id] - ros[t.id]) < 5:
                     continue  # pointless like-for-like
-                me = _side(league, my_team, [g], [t], ros)
+                me = _side(league, my_team, [g], [t], ros, ctx)
                 if me.lineup_delta_ros < 3:
                     continue
-                them = _side(league, other, [t], [g], ros)
+                them = _side(league, other, [t], [g], ros, ctx)
                 if them.lineup_delta_ros < 0 or _fairness(them) < 0.8:
                     continue
                 if them.lineup_delta_ros < 1 and _fairness(them) < 0.9:
