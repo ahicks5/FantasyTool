@@ -9,12 +9,12 @@ function ClaimCard({ c, index }: { c: WaiverClaim; index: number }) {
   const primary = index === 0;
   return (
     <li className={`card min-w-0 overflow-hidden p-0 rise rise-${Math.min(index + 1, 5)} ${primary ? "ring-2 ring-start" : ""}`}>
-      <div className={`flex items-center justify-between px-4 py-2 ${primary ? "bg-start text-white" : "bg-soft"}`}>
+      <div className={`flex items-center justify-between px-4 py-2 ${primary ? "bg-start-fill text-white" : "bg-soft"}`}>
         <span className="text-[10px] font-black uppercase tracking-[0.12em]">
           {primary ? "Claim this" : `If he's gone · #${index + 1}`}
         </span>
         {c.trending_adds > 0 && (
-          <span className={`tnum text-[11px] font-bold ${primary ? "text-white/75" : "text-muted"}`}>
+          <span className={`tnum text-[11px] font-bold ${primary ? "text-white" : "text-muted"}`}>
             {c.trending_adds.toLocaleString()} adds
           </span>
         )}

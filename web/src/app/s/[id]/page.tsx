@@ -145,7 +145,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href="/" aria-label="Edge home">
+        <Link href="/" aria-label="Edge home" className="flex min-h-11 items-center">
           <Wordmark className="text-[26px]" />
         </Link>
         <span className="min-w-0 truncate text-right text-[12px] font-bold text-muted">

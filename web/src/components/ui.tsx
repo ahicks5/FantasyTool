@@ -149,7 +149,7 @@ const VARIANTS = {
   primary: "bg-ink text-paper hover:opacity-90 shadow-[var(--shadow-card)]",
   secondary: "bg-paper text-ink border border-line-2 hover:bg-soft",
   ghost: "bg-transparent text-ink hover:bg-soft",
-  start: "bg-start text-white hover:brightness-110 shadow-[var(--shadow-card)]",
+  start: "bg-start-fill text-white hover:brightness-110 shadow-[var(--shadow-card)]",
   // `text-ink` flips to near-white in dark mode, so a white button would vanish. The hero
   // surface colour is dark in both modes, which is exactly what this needs.
   onHero: "bg-white text-hero hover:opacity-90",
@@ -200,7 +200,7 @@ export function ThemeToggle() {
     <button
       onClick={flip}
       aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      className="flex h-9 w-9 min-h-0 items-center justify-center rounded-full text-muted hover:bg-soft hover:text-ink"
+      className="flex h-11 w-11 min-h-0 items-center justify-center rounded-full text-muted hover:bg-soft hover:text-ink"
     >
       {theme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
     </button>
@@ -322,11 +322,11 @@ export function Feedback({ onSend }: { onSend: (verdict: "helpful" | "wrong", re
           void onSend("helpful");
           setState("done");
         }}
-        className="min-h-0 rounded-full border border-line-2 px-2.5 py-1 font-bold text-ink hover:bg-soft"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-line-2 px-4 font-bold text-ink hover:bg-soft"
       >
         Yes
       </button>
-      <button onClick={() => setState("wrong")} className="min-h-0 rounded-full border border-line-2 px-2.5 py-1 font-bold text-ink hover:bg-soft">
+      <button onClick={() => setState("wrong")} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-line-2 px-4 font-bold text-ink hover:bg-soft">
         No
       </button>
     </div>

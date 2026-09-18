@@ -120,13 +120,15 @@ export default function Landing() {
           <ThemeToggle />
           <Link
             href="/home"
-            className="inline-flex min-h-0 items-center gap-1 rounded-full border border-line-2 px-3.5 py-2 text-[13px] font-bold hover:bg-soft"
+            className="inline-flex min-h-11 items-center gap-1 rounded-full border border-line-2 px-4 text-[13px] font-bold hover:bg-soft"
           >
             Open app
             <IconChevron size={13} strokeWidth={2.8} />
           </Link>
         </div>
       </header>
+
+      <main id="content">
 
       <section className="pt-7 rise">
         <Eyebrow>Sleeper · ESPN public leagues</Eyebrow>
@@ -247,12 +249,14 @@ export default function Landing() {
 
       <Pricing />
 
+      </main>
+
       <footer className="mt-12 border-t border-line pt-5 text-[12px] leading-relaxed text-muted">
-        <div className="flex gap-4 font-bold">
-          <Link href="/terms" className="hover:text-ink">
+        <div className="-ml-3 flex gap-1 font-bold">
+          <Link href="/terms" className="flex min-h-11 items-center px-3 hover:text-ink">
             Terms
           </Link>
-          <Link href="/privacy" className="hover:text-ink">
+          <Link href="/privacy" className="flex min-h-11 items-center px-3 hover:text-ink">
             Privacy
           </Link>
         </div>

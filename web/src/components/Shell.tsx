@@ -20,17 +20,17 @@ export function TopBar({ session }: { session: Session }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4">
-        <Link href="/" aria-label="Edge home" className="shrink-0">
+        <Link href="/" aria-label="Edge home" className="flex min-h-11 shrink-0 items-center">
           <Wordmark className="text-[21px]" />
         </Link>
-        <Link href="/connect" className="min-w-0 flex-1 text-right leading-tight">
+        <Link href="/connect" className="flex min-h-11 min-w-0 flex-1 flex-col justify-center text-right leading-tight">
           <div className="truncate text-[13px] font-bold">{c ? c.league_name : "No league"}</div>
           <div className="truncate text-[11px] text-muted">{c ? `${c.team_name} · Week ${c.week}` : "Connect to start"}</div>
         </Link>
         <ThemeToggle />
         <Link
           href="/login"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line-2 text-[11px] font-black uppercase text-ink-2 hover:bg-soft"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-2 text-[11px] font-black uppercase text-ink-2 hover:bg-soft"
           title={email ?? "Sign in"}
           aria-label={email ? `Account ${email}` : "Sign in"}
         >

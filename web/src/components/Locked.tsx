@@ -93,11 +93,11 @@ export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku
       </p>
       {/* Stripe's review expects these reachable from the point of purchase, not just the footer. */}
       <p className="mt-2 text-center text-[12px] text-white/45">
-        <Link href="/terms" className="underline hover:text-white/70">
+        <Link href="/terms" className="inline-flex min-h-11 items-center px-2 underline hover:text-white/70">
           Terms
         </Link>
         <span aria-hidden className="px-1.5">·</span>
-        <Link href="/privacy" className="underline hover:text-white/70">
+        <Link href="/privacy" className="inline-flex min-h-11 items-center px-2 underline hover:text-white/70">
           Privacy
         </Link>
       </p>

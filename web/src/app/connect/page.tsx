@@ -18,7 +18,7 @@ function Tick({ on }: { on: boolean }) {
     <span
       aria-hidden
       className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 ${
-        on ? "border-start bg-start text-white" : "border-line-2 text-transparent"
+        on ? "border-start-fill bg-start-fill text-white" : "border-line-2 text-transparent"
       }`}
     >
       <IconCheck size={12} strokeWidth={3.4} />
@@ -107,11 +107,13 @@ export default function ConnectPage() {
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between">
-        <Link href="/" aria-label="Edge home">
+        <Link href="/" aria-label="Edge home" className="flex min-h-11 items-center">
           <Wordmark className="text-[26px]" />
         </Link>
         <ThemeToggle />
       </header>
+
+      <main id="content">
 
       {/* Two steps, and the bar says which one you are on without reading anything. */}
       <div className="mt-2 flex items-center gap-2">
@@ -295,6 +297,7 @@ export default function ConnectPage() {
           </div>
         </section>
       )}
+      </main>
     </div>
   );
 }

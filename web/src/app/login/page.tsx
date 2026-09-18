@@ -37,7 +37,7 @@ function LoginInner() {
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between">
-        <Link href="/" aria-label="Edge home">
+        <Link href="/" aria-label="Edge home" className="flex min-h-11 items-center">
           <Wordmark className="text-[26px]" />
         </Link>
         <ThemeToggle />

@@ -20,7 +20,7 @@
 
   --color-ink: #0e1116;
   --color-ink-2: #3b4048;      /* secondary text */
-  --color-muted: #6b7078;      /* tertiary text, 4.5:1 on paper */
+  --color-muted: #686d75;      /* tertiary text; 4.5:1 on paper, plane AND soft */
   --color-line: #e7e4dd;       /* warm hairline */
   --color-line-2: #d8d4cb;     /* stronger divider */
   --color-paper: #ffffff;      /* card surface */
@@ -31,11 +31,18 @@
 
   --color-start: #0b7a4b;      /* good — start, gain, accept */
   --color-start-soft: #e4f2ea;
+  /* An accent used as a fill behind white text cannot be the same value used as text on
+     a dark background: one needs to be dark enough for white to read on it, the other
+     light enough to read on near-black. In light mode they coincide; in dark they do
+     not, so the *-fill tokens stay dark in both. */
+  --color-start-fill: #0b7a4b;
   --color-sit: #c02b23;        /* critical — sit, loss, reject */
   --color-sit-soft: #fbe9e7;
+  --color-sit-fill: #c02b23;
   --color-lean: #1e4fd8;       /* info — lean, waiver */
   --color-lean-soft: #e6ecfc;
-  --color-flip: #b57500;       /* warning — coin flip (text-safe step) */
+  --color-lean-fill: #1e4fd8;
+  --color-flip: #9f5f00;       /* warning — coin flip; 4.5:1 on flip-soft */
   --color-flip-fill: #f0b429;  /* the same warning as a fill, dark text on top */
   --color-flip-soft: #fdf1d8;
 
@@ -63,10 +70,13 @@
 
     --color-start: #22a468;
     --color-start-soft: #10281d;
+    --color-start-fill: #0e7a4b;   /* white on this is 5.4:1; #22a468 would be 3.2:1 */
     --color-sit: #e2554e;
     --color-sit-soft: #2d1614;
+    --color-sit-fill: #b3241d;
     --color-lean: #5b8def;
     --color-lean-soft: #121c33;
+    --color-lean-fill: #1e4fd8;
     --color-flip: #be8109;
     --color-flip-fill: #be8109;
     --color-flip-soft: #2a1f08;
@@ -90,10 +100,13 @@
 
   --color-start: #22a468;
   --color-start-soft: #10281d;
+  --color-start-fill: #0e7a4b;
   --color-sit: #e2554e;
   --color-sit-soft: #2d1614;
+  --color-sit-fill: #b3241d;
   --color-lean: #5b8def;
   --color-lean-soft: #121c33;
+  --color-lean-fill: #1e4fd8;
   --color-flip: #be8109;
   --color-flip-fill: #be8109;
   --color-flip-soft: #2a1f08;

@@ -7,23 +7,25 @@ export function LegalPage({ title, children }: { title: string; children: React.
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between">
-        <Link href="/" aria-label="Edge home">
+        <Link href="/" aria-label="Edge home" className="flex min-h-11 items-center">
           <Wordmark className="text-[22px]" />
         </Link>
-        <nav className="flex items-center gap-4 text-[13px] font-bold text-muted">
-          <Link href="/terms" className="hover:text-ink">
+        <nav className="flex items-center gap-1 text-[13px] font-bold text-muted">
+          <Link href="/terms" className="flex min-h-11 items-center px-3 hover:text-ink">
             Terms
           </Link>
-          <Link href="/privacy" className="hover:text-ink">
+          <Link href="/privacy" className="flex min-h-11 items-center px-3 hover:text-ink">
             Privacy
           </Link>
         </nav>
       </header>
 
-      <h1 className="display mt-4 text-[32px] leading-tight">{title}</h1>
+      <main id="content">
+        <h1 className="display mt-4 text-[32px] leading-tight">{title}</h1>
       {LEGAL.effective && <p className="mt-2 text-[13px] text-muted">In effect from {LEGAL.effective}.</p>}
 
-      <div className="mt-7 grid gap-7">{children}</div>
+        <div className="mt-7 grid gap-7">{children}</div>
+      </main>
 
       <footer className="mt-12 border-t border-line pt-5 text-[12px] leading-relaxed text-muted">
         {LEGAL.supportEmail ? (

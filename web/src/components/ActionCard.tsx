@@ -56,14 +56,14 @@ export function ActionCard({
               <Avatar name={primary.name} photo={primary.photo} teamLogo={primary.team_logo} size="lg" ring={a.type === "start" ? "start" : undefined} />
               {secondary && (
                 <span className="absolute -bottom-1 right-0 rounded-full ring-2 ring-[var(--color-paper)]">
-                  <Avatar name={secondary.name} photo={secondary.photo} size="sm" className="opacity-75 grayscale" />
+                  <Avatar name={secondary.name} photo={secondary.photo} size="sm" className="grayscale" />
                 </span>
               )}
             </span>
           ) : null}
 
           <div className="min-w-0 flex-1">
-            <h3 className="display text-[19px] leading-[1.2]">{a.title}</h3>
+            <h2 className="display text-[19px] leading-[1.2]">{a.title}</h2>
             <p className="mt-1 text-[13px] leading-snug text-muted">{a.subtitle}</p>
             {/* A hold has no gain to shout about; its benefit is a quiet note, not a headline. */}
             <p
