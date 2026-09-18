@@ -1,9 +1,10 @@
 "use client";
-import type { Lineup, LineupSlot } from "@/lib/types";
+import type { Lineup, LineupChange, LineupSlot, LockCall, Player, SharedPlayer } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { PlayerLine } from "./Players";
 import { IconArrowUp, IconCheck } from "./icons";
+import { ShareLock } from "./ShareLock";
 import { ConfidencePill, Eyebrow, H2, Why } from "./ui";
 
 const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
@@ -41,8 +42,50 @@ function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
   );
 }
 
-export function LineupView({ lineup, compact = false }: { lineup: Lineup; compact?: boolean }) {
+/** What a start/sit call needs to become a public card. The page supplies it; without it the
+    lineup still renders, just with no share button (the report and email embeds). */
+export type ShareContext = { leagueName: string; week: number };
+
+/** Only Locks get a share button. "Lock" is the word we want people repeating, and a card
+    bragging about a coin flip is a bad advert — the renderer handles every tag, the UI offers
+    the one worth posting. */
+function lockCall(c: LineupChange, faces: Map<string, Player>, hit?: number): LockCall {
+  // A LineupChange carries only a PlayerRef, and the faces are what make the card. The full
+  // players are already on the page in the slots and the bench, so look them up by id.
+  const shared = (ref: { id: string; name: string; position?: string } | null): SharedPlayer | null => {
+    if (!ref) return null;
+    const p = faces.get(ref.id);
+    return {
+      name: ref.name,
+      position: p?.position ?? ref.position ?? "",
+      nfl_team: p?.nfl_team ?? "",
+      photo: p?.photo ?? null,
+      team_logo: p?.team_logo ?? null,
+    };
+  };
+  return {
+    start: shared(c.in) as SharedPlayer,
+    bench: shared(c.out),
+    gain: c.gain,
+    confidence: c.confidence,
+    slot: c.slot,
+    note: hit !== undefined
+      ? `Margins this size have been right about ${Math.round(hit * 100)}% of the time.`
+      : c.reason,
+  };
+}
+
+export function LineupView({
+  lineup,
+  compact = false,
+  share,
+}: { lineup: Lineup; compact?: boolean; share?: ShareContext }) {
   const delta = lineup.projected_total - lineup.current_total;
+  const faces = new Map<string, Player>(
+    [...lineup.slots.map((s) => s.player), ...lineup.bench.map((b) => b.player)]
+      .filter((p): p is Player => !!p)
+      .map((p) => [p.id, p]),
+  );
   return (
     <div className="grid min-w-0 gap-6">
       <section className="hero flex items-end justify-between gap-4 p-5">
@@ -89,6 +132,13 @@ export function LineupView({ lineup, compact = false }: { lineup: Lineup; compac
                   <span className="display tnum shrink-0 text-[21px] text-start">{signed(c.gain)}</span>
                 </div>
                 {!compact && <p className="mt-2 text-[13px] leading-snug text-ink-2">{c.reason}</p>}
+                {!compact && share && c.confidence === "Lock" && (
+                  <ShareLock
+                    call={lockCall(c, faces, lineup.confidence_hit_rate?.[c.confidence])}
+                    leagueName={share.leagueName}
+                    week={share.week}
+                  />
+                )}
               </li>
             ))}
           </ul>

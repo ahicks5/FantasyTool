@@ -190,6 +190,11 @@ export default function Landing() {
           <p className="border-t border-white/10 px-5 py-3.5 text-center text-[13px] text-white/55">
             Everything else on your roster looks fine.
           </p>
+          {/* The same strip that closes every share card. Someone who has seen one of those in
+              a league chat should recognise this page before they have read a word of it. */}
+          <p className="bg-flare px-5 py-3 text-center text-[13px] font-black tracking-tight text-flare-ink">
+            We grade every call. Win or lose.
+          </p>
         </div>
       </section>
 

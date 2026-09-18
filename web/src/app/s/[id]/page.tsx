@@ -2,18 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IconArrowUp, IconCheck } from "@/components/icons";
-import { Eyebrow, LinkButton, Stat, StatusMeter, Wordmark } from "@/components/ui";
+import { ConfidencePill, Eyebrow, LinkButton, Stat, StatusMeter, Wordmark } from "@/components/ui";
 import { signed } from "@/lib/format";
-import type { SharedVerdict } from "@/lib/types";
+import type { SharedLock, SharedSnapshot, SharedVerdict } from "@/lib/types";
+import { isSharedLock } from "@/lib/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-async function load(id: string): Promise<SharedVerdict | null> {
+async function load(id: string): Promise<SharedSnapshot | null> {
   if (!API) return null;
   try {
     const res = await fetch(`${API}/api/share/${encodeURIComponent(id)}`, { next: { revalidate: 300 } });
     if (!res.ok) return null;
-    return (await res.json()) as SharedVerdict;
+    return (await res.json()) as SharedSnapshot;
   } catch {
     return null;
   }
@@ -23,19 +24,22 @@ async function load(id: string): Promise<SharedVerdict | null> {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const v = await load(id);
-  if (!v) return { title: "Edge — trade verdict" };
-  const title = `${v.verdict}: ${v.give.join(" + ")} for ${v.get.join(" + ")}`;
+  if (!v) return { title: "Edge — this week's moves" };
+  const title = isSharedLock(v)
+    ? `${v.confidence}: start ${v.start.name}${v.bench ? ` over ${v.bench.name}` : ""}`
+    : `${v.verdict}: ${v.give.join(" + ")} for ${v.get.join(" + ")}`;
+  const description = isSharedLock(v) ? v.note : v.explanation;
   const image = `${API}/api/share/${encodeURIComponent(id)}/card.png`;
   return {
     title: `${title} — Edge`,
-    description: v.explanation,
+    description,
     openGraph: {
       title,
-      description: v.explanation,
+      description,
       type: "article",
       images: [{ url: image, width: 1080, height: 1080, alt: title }],
     },
-    twitter: { card: "summary_large_image", title, description: v.explanation, images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 
@@ -123,11 +127,59 @@ function Side({
   );
 }
 
+const CONFIDENCE_TONE: Record<string, { text: string; bar: string }> = {
+  Lock: { text: "text-start", bar: "bg-start" },
+  Lean: { text: "text-lean", bar: "bg-lean" },
+  "Coin flip": { text: "text-flip", bar: "bg-flip-fill" },
+};
+
+/**
+ * A shared start/sit call. The card that brought you here shouts; this page is the ledger it
+ * came out of, so it reads like the rest of the app rather than like the image.
+ */
+function LockArticle({ v }: { v: SharedLock }) {
+  const tone = CONFIDENCE_TONE[v.confidence] ?? { text: "text-ink", bar: "bg-ink" };
+  return (
+    <article className="card overflow-hidden rise">
+      <span aria-hidden className={`block h-1.5 w-full ${tone.bar}`} />
+      <div className="px-6 pb-6 pt-5">
+        <div className="flex items-center justify-between gap-2">
+          <Eyebrow>Start / sit{v.slot ? ` · ${v.slot}` : ""}</Eyebrow>
+          <ConfidencePill value={v.confidence} />
+        </div>
+
+        <h1 className={`display mt-2 text-[40px] uppercase leading-[0.92] ${tone.text}`}>{v.confidence}</h1>
+
+        <div className="mt-5 grid gap-2.5">
+          <Side label="Start" names={[v.start.name]} players={[v.start]} accent="bg-start" />
+          {v.bench && (
+            <>
+              <div className="flex items-center gap-3" aria-hidden>
+                <span className="h-px flex-1 bg-line" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-soft text-muted">
+                  <IconArrowUp size={15} strokeWidth={2.6} className="rotate-180" />
+                </span>
+                <span className="h-px flex-1 bg-line" />
+              </div>
+              <Side label="Bench" names={[v.bench.name]} players={[v.bench]} accent="bg-sit" />
+            </>
+          )}
+        </div>
+
+        <div className="mt-6 border-t border-line pt-5">
+          <Stat label="Projected gain" value={signed(v.gain, 1)} sub="in this league's scoring" tone="start" size="xl" />
+        </div>
+
+        {v.note && <p className="mt-5 text-[15px] leading-relaxed text-ink-2">{v.note}</p>}
+      </div>
+    </article>
+  );
+}
+
 export default async function SharePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const v = await load(id);
   if (!v) notFound();
-  const tone = TONE[v.verdict] ?? { text: "text-ink", bar: "bg-ink" };
 
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
@@ -146,7 +198,16 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         </span>
       </header>
 
-      <article className="card overflow-hidden rise">
+      {isSharedLock(v) ? <LockArticle v={v} /> : <VerdictArticle v={v} />}
+      <Footer />
+    </main>
+  );
+}
+
+function VerdictArticle({ v }: { v: SharedVerdict }) {
+  const tone = TONE[v.verdict] ?? { text: "text-ink", bar: "bg-ink" };
+  return (
+    <article className="card overflow-hidden rise">
         <span aria-hidden className={`block h-1.5 w-full ${tone.bar}`} />
 
         <div className="px-6 pb-6 pt-5">
@@ -193,21 +254,25 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
               Their trading style: {v.style}
             </p>
           )}
-        </div>
-      </article>
+      </div>
+    </article>
+  );
+}
 
+/** The same invitation under either card — and the same promise about what travelled. */
+function Footer() {
+  return (
+    <>
       <section className="hero mt-4 p-6 text-center rise rise-2">
         <Eyebrow>Your turn</Eyebrow>
         <p className="display mx-auto mt-2 max-w-[15rem] text-[27px] leading-[1.08]">Run this on your own league</p>
         <ul className="mx-auto mt-4 grid max-w-[17rem] gap-2 text-left text-[13px] leading-snug text-white/70">
-          {["Start/sit calls free, forever", "Projections rescored to your scoring", "No account needed to look"].map(
-            (l) => (
-              <li key={l} className="flex items-start gap-2">
-                <IconCheck size={14} strokeWidth={3} className="mt-[3px] shrink-0 text-white" />
-                {l}
-              </li>
-            ),
-          )}
+          {["Start/sit calls free, forever", "Share any Lock, free", "No account needed to look"].map((l) => (
+            <li key={l} className="flex items-start gap-2">
+              <IconCheck size={14} strokeWidth={3} className="mt-[3px] shrink-0 text-white" />
+              {l}
+            </li>
+          ))}
         </ul>
         <LinkButton href="/connect" variant="onHero" className="mt-6 w-full text-hero!">
           Connect your league — free
@@ -217,6 +282,6 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
       <p className="mt-6 text-center text-[12px] leading-relaxed text-muted">
         A display-only snapshot. No email, league or roster is shared.
       </p>
-    </main>
+    </>
   );
 }

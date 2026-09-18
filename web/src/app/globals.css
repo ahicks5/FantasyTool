@@ -39,6 +39,14 @@
   --color-flip-fill: #f0b429;  /* the same warning as a fill, dark text on top */
   --color-flip-soft: #fdf1d8;
 
+  /* The flare. The one colour that is not a status and never appears in app chrome: it is
+     the bottom strip on a share card and the wordmark's meter, and nothing else. Outside the
+     app the category is all black-and-neon, so a lime strip is what makes a card ours at
+     thumbnail size. It is fluorescent where `start` is a deep forest, which is the only
+     reason a second green is safe here — they never share a role or a lightness band. */
+  --color-flare: #d6f94a;
+  --color-flare-ink: #0e1116;   /* text on the flare is always ink, in both themes */
+
   --radius-card: 18px;
 
   /* Warm-tinted shadows: pure black shadows look like a screenshot of a modal. */

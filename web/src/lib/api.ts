@@ -2,6 +2,7 @@
 // served from src/lib/mocks.ts; when set, it fetches `${NEXT_PUBLIC_API_URL}/api/...`.
 import type {
   ActionFeed,
+  ShareKind,
   ShareResponse,
   TradeFinderResponse,
   WaiverPlanResponse,
@@ -195,12 +196,15 @@ export async function findTrades(platform: Platform, leagueId: string, teamId: s
 }
 
 export async function createShare(body: {
-  graphic: unknown;
-  explanation: string;
+  /** Omitted means "trade", which is what every share was before Lock cards. */
+  kind?: ShareKind;
   league_name: string;
   week: number;
-  give_players: unknown[];
-  get_players: unknown[];
+  graphic?: unknown;
+  explanation?: string;
+  give_players?: unknown[];
+  get_players?: unknown[];
+  call?: unknown;
 }): Promise<ShareResponse> {
   if (USE_MOCKS) return { id: "demo1234", url: `${window.location.origin}/s/demo1234` };
   return request<ShareResponse>("/share", { method: "POST", body: JSON.stringify(body) });

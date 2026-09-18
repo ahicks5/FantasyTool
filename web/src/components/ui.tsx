@@ -26,11 +26,29 @@ export function Eyebrow({ children, className = "" }: { children: React.ReactNod
   return <div className={`eyebrow ${className}`}>{children}</div>;
 }
 
-export function Wordmark({ className = "" }: { className?: string }) {
+/**
+ * The wordmark. The dot used to be decoration; it is now the same three-bar confidence meter
+ * that sits on every call in the product, so the logo and the app finally say one thing.
+ * Sized in em so it scales with whatever the mark is set at.
+ */
+export function Wordmark({
+  className = "",
+  filled = 3,
+  tone = "start",
+}: { className?: string; filled?: number; tone?: "start" | "flare" }) {
+  const bar = tone === "flare" ? "bg-flare" : "bg-start";
   return (
     <span className={`display inline-flex items-baseline ${className}`} style={{ fontWeight: 900, letterSpacing: "-0.045em" }}>
       edge
-      <span className="ml-[3px] inline-block h-[0.26em] w-[0.26em] rounded-full bg-start" aria-hidden />
+      <span className="ml-[0.1em] inline-flex items-baseline gap-[0.05em]" aria-hidden>
+        {[0.2, 0.31, 0.43].map((h, i) => (
+          <span
+            key={h}
+            className={`inline-block w-[0.1em] rounded-[0.03em] ${bar} ${i < filled ? "" : "opacity-25"}`}
+            style={{ height: `${h}em` }}
+          />
+        ))}
+      </span>
     </span>
   );
 }

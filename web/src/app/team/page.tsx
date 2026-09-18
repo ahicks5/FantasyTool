@@ -27,7 +27,7 @@ function TeamBody({ c }: { c: Connection }) {
   };
   if (error) return <ErrorBox message={error} onRetry={load} />;
   if (!data) return <SkeletonList rows={6} />;
-  return <LineupView lineup={data} />;
+  return <LineupView lineup={data} share={{ leagueName: c.league_name, week: data.week }} />;
 }
 
 export default function TeamPage() {

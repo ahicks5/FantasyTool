@@ -226,8 +226,28 @@ export interface SharedPlayer {
   team_logo: string | null;
 }
 
+export type ShareKind = "trade" | "lock";
+
+/** What the Lock share button sends. Display fields only; the API strips ids again anyway. */
+export interface LockCall {
+  start: SharedPlayer;
+  bench: SharedPlayer | null;
+  gain: number;
+  confidence: Confidence;
+  slot: string;
+  note: string;
+}
+
+/** The public snapshot behind /s/{id} for a free start/sit call. */
+export interface SharedLock extends LockCall {
+  kind: "lock";
+  league_name: string;
+  week: number;
+}
+
 /** The public snapshot behind /s/{id}. Display fields only — no league, no account. */
 export interface SharedVerdict {
+  kind?: "trade";
   verdict: Verdict;
   give: string[];
   get: string[];
@@ -240,6 +260,13 @@ export interface SharedVerdict {
   week: number;
   give_players: SharedPlayer[];
   get_players: SharedPlayer[];
+}
+
+/** Either kind of snapshot. Shares written before Lock sharing existed carry no `kind`. */
+export type SharedSnapshot = SharedVerdict | SharedLock;
+
+export function isSharedLock(s: SharedSnapshot): s is SharedLock {
+  return s.kind === "lock";
 }
 
 export interface ShareResponse {

@@ -316,7 +316,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
             </p>
             <ShareLink result={result} give={givePlayers} get={getPlayers} c={c} />
             <div className="mt-3">
-              <ShareCard result={result} give={givePlayers} get={getPlayers} leagueName={c.league_name} />
+              <ShareCard result={result} give={givePlayers} get={getPlayers} leagueName={c.league_name} week={c.week} />
             </div>
           </section>
         </div>
