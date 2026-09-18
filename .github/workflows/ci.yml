@@ -1,0 +1,81 @@
+name: CI
+
+# Runs what CLAUDE.md says to run before pushing, so "we ran the tests" stops being a
+# thing anyone has to remember. Both jobs are fully offline: the Python suite plays
+# against recorded fixtures and the web build falls back to src/lib/mocks.ts whenever
+# NEXT_PUBLIC_API_URL is unset, so no secret is needed and none is referenced here.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+# A new push supersedes the run in flight for the same branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    name: Python engine and API
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Tests
+        # No network: any test that reaches for a live API is a bug in the test.
+        run: uv run pytest -q
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        # Unset API URL on purpose: this proves the build stands up without a deployed
+        # API, which is also what the static demo relies on.
+        run: npm run build
+
+      - name: Static demo build
+        # The demo export has its own failure modes (a route with no static params, a
+        # path a static host rejects), so it is built and packed here rather than
+        # discovered to be broken the next time someone wants a link to share.
+        run: |
+          npm run demo
+          npm run demo:pack

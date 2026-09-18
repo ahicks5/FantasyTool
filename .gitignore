@@ -1,6 +1,8 @@
 .cache/
 .env
 .env.*
+# ...but the template of what to set is the point, so it ships.
+!.env.example
 __pycache__/
 *.pyc
 .pytest_cache/
