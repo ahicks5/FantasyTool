@@ -57,6 +57,9 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] Browser e2e at 375px re-verified (all pages, no overflow, photos loading)
 
 ## Next up
+- [x] Weekly email can actually send: Resend behind EDGE_EMAIL_PROVIDER, with a dry run
+      as the default and `--send` required on top of it. Needs a verified domain and a
+      RESEND_API_KEY to go live.
 - [x] Post-checkout unlock: the app waits for the Stripe webhook's grant instead of
       showing a buyer the page they just paid to unlock, still locked. Checkout return
       URLs are now origin-checked (they were an open redirect).
