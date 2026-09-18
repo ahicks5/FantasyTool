@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "node --test src/**/*.test.ts",
     "demo": "EDGE_DEMO_EXPORT=1 NEXT_PUBLIC_EDGE_DEMO=1 next build",
-    "demo:pack": "node scripts/pack-demo.mjs"
+    "demo:pack": "node scripts/pack-demo.mjs",
+    "og": "node scripts/make-og.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

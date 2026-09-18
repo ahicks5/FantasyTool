@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Inter } from "next/font/google";
 import "./globals.css";
+import { SITE_URL } from "@/lib/site";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 // Archivo carries the scoreboard weight the app is going for, and its numerals are
@@ -12,9 +13,32 @@ const archivo = Archivo({
   weight: ["600", "700", "800", "900"],
 });
 
+const TITLE = "Edge — this week's moves";
+const DESCRIPTION =
+  "Your league. This week's moves. Start/sit, waivers and trade verdicts for your fantasy football team.";
+
 export const metadata: Metadata = {
-  title: "Edge — this week's moves",
-  description: "Your league. This week's moves. Start/sit, waivers and trade verdicts for your fantasy football team.",
+  // Without this, Next resolves every Open Graph image against localhost and share
+  // links unfurl as nothing. A pasted trade verdict is the distribution plan, so this
+  // is load-bearing rather than housekeeping.
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: "%s" },
+  description: DESCRIPTION,
+  applicationName: "Edge",
+  openGraph: {
+    type: "website",
+    siteName: "Edge",
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Edge — your league, this week's moves" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/og.png"],
+  },
 };
 
 export const viewport: Viewport = {
