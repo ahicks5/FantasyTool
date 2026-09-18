@@ -312,23 +312,43 @@ def full_report(platform: str, league_id: str, team_id: str, email: str | None =
 
 
 class ShareIn(BaseModel):
-    graphic: dict
-    explanation: str
+    kind: str = "trade"
     league_name: str = ""
     week: int | None = None
+    # kind="trade": a Trade Lab verdict
+    graphic: dict | None = None
+    explanation: str = ""
     give_players: list[dict] | None = None
     get_players: list[dict] | None = None
+    # kind="lock": a start/sit call
+    call: dict | None = None
 
 
 @app.post("/api/share")
 def create_share(body: ShareIn, email: str | None = Depends(optional_user)):
-    """Turn a verdict into a public link. That link is the cheapest marketing we have."""
-    if not products.can(_skus(email), "trade_lab"):
-        raise HTTPException(402, detail={"error": "trade_lab requires a purchase", "feature": "trade_lab",
-                                         "teaser": None, "upsell": products.upsell(_skus(email), "trade_lab")})
+    """Turn a call into a public link. That link is the cheapest marketing we have.
+
+    A start/sit share needs only `my_team`, which is free — so a user who has never paid us,
+    and never even signed in, can still post a Lock card. That is deliberate: the trade card
+    is the dramatic one, but the free one is the one there are thousands of.
+    """
+    kind = body.kind or "trade"
+    if kind not in share_mod.KINDS:
+        raise HTTPException(422, f"unknown share kind {kind!r}")
+    feature = share_mod.KIND_FEATURE[kind]
+    if not products.can(_skus(email), feature):
+        raise HTTPException(402, detail={"error": f"{feature} requires a purchase", "feature": feature,
+                                         "teaser": None, "upsell": products.upsell(_skus(email), feature)})
+    if kind == "lock":
+        call = body.call or {}
+        if not (call.get("start") or {}).get("name"):
+            raise HTTPException(422, "a start/sit share needs the player to start")
+        snap = share_mod.lock_snapshot(call, body.league_name, body.week or 0)
+    else:
+        snap = share_mod.snapshot(body.graphic or {}, body.explanation, body.league_name,
+                                  body.week or 0, body.give_players, body.get_players)
     sid = share_mod.new_id()
-    store.put_share(sid, share_mod.snapshot(body.graphic, body.explanation, body.league_name,
-                                            body.week or 0, body.give_players, body.get_players))
+    store.put_share(sid, snap)
     base = os.environ.get("EDGE_WEB_URL", "http://localhost:3000").rstrip("/")
     return {"id": sid, "url": f"{base}/s/{sid}"}
 
@@ -347,8 +367,7 @@ def share_card(share_id: str):
     out = cache_dir / f"{share_id}.png"
     if not out.exists():
         from edge import graphics
-        html = graphics.verdict_card_html(snap, snap.get("explanation", ""), snap.get("league_name", ""),
-                                          snap.get("week") or None)
+        html = graphics.card_html(snap)
         try:
             graphics.render_png(html, out)
         except Exception as e:  # noqa: BLE001 — no browser on this host, or a render failure

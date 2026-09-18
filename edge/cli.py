@@ -86,6 +86,61 @@ def cmd_card(args):
     print(text)
 
 
+def cmd_lockcard(args):
+    """Render the free start/sit card — the one every user can post whether or not they pay."""
+    from pathlib import Path
+
+    from edge.api import service
+    from edge.engine import lineup as lineup_mod
+    from edge.engine.report import lineup_dict
+    from edge.graphics import lock_card_html, render_png
+
+    b = service.get_bundle(args.platform, args.league_id)
+    team = b.league.team(args.team_id) or b.league.team_by_owner(args.team_id)
+    if not team:
+        raise SystemExit(f"error: no team {args.team_id!r} in {b.league.name}. "
+                         f"Try one of: {', '.join(t.owner_name or t.name for t in b.league.teams)}")
+    L = lineup_dict(lineup_mod.advise(b.league, team))
+    calls = [c for c in L["changes"] if not args.confidence or c["confidence"] == args.confidence]
+    if not calls:
+        raise SystemExit("no start/sit call to share this week — a quiet week is an answer, not a bug")
+    ch = max(calls, key=lambda c: c["gain"])
+    hit = (L.get("confidence_hit_rate") or {}).get(ch["confidence"])
+    note = (f"Margins this size have been right about {round(hit * 100)}% of the time."
+            if hit else ch.get("reason", ""))
+    call = {"start": ch["in"], "bench": ch["out"], "gain": ch["gain"],
+            "confidence": ch["confidence"], "slot": ch["slot"], "note": note}
+    html_str = lock_card_html(call, b.league.name, b.league.week)
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / f"lock_w{b.league.week}_{ch['in']['name'].lower().replace(' ', '-')}.png"
+    out.with_suffix(".html").write_text(html_str)
+    if not args.html_only:
+        render_png(html_str, out)
+    print(ch["confidence"], "->", out)
+
+
+def cmd_receipts(args):
+    """Render the Tuesday scorecard from a backtest file. We publish this win or lose."""
+    import json
+    from pathlib import Path
+
+    from edge.graphics import receipts_card_html, render_png
+
+    src = Path(args.report or f"docs/backtest_week{args.week}.json")
+    if not src.exists():
+        raise SystemExit(f"error: no backtest at {src}. Run scripts/backtest.py {args.week} first.")
+    report_json = json.loads(src.read_text())
+    html_str = receipts_card_html(report_json)
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / f"receipts_week{report_json.get('week', args.week)}.png"
+    out.with_suffix(".html").write_text(html_str)
+    if not args.html_only:
+        render_png(html_str, out)
+    print("wrote", out)
+
+
 def cmd_email(args):
     """Render the weekly email for a team. Writes files; sending is a separate concern."""
     from pathlib import Path
@@ -122,6 +177,15 @@ def main(argv: list[str] | None = None):
     s = sub.add_parser("card"); s.add_argument("league_id"); s.add_argument("my_team_id"); s.add_argument("their_team_id")
     s.add_argument("give"); s.add_argument("get"); s.add_argument("--out", default="launch/cards"); s.add_argument("--html-only", action="store_true")
     s.set_defaults(fn=cmd_card)
+    s = sub.add_parser("lockcard", help="free start/sit share card")
+    s.add_argument("league_id"); s.add_argument("team_id", help="roster id or owner name")
+    s.add_argument("--platform", default="sleeper"); s.add_argument("--out", default="launch/cards")
+    s.add_argument("--confidence", default="Lock", help="'' for any; default only shares Locks")
+    s.add_argument("--html-only", action="store_true"); s.set_defaults(fn=cmd_lockcard)
+    s = sub.add_parser("receipts", help="Tuesday scorecard card from a backtest file")
+    s.add_argument("week", type=int); s.add_argument("--report", default="")
+    s.add_argument("--out", default="launch/cards"); s.add_argument("--html-only", action="store_true")
+    s.set_defaults(fn=cmd_receipts)
     s = sub.add_parser("email", help="render this week's email for a team")
     s.add_argument("league_id"); s.add_argument("team_id", help="roster id or owner name")
     s.add_argument("--platform", default="sleeper"); s.add_argument("--out", default="launch/email")
