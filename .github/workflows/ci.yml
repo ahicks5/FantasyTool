@@ -24,6 +24,21 @@ jobs:
     name: Python engine and API
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      # The store has two backends and they drift apart silently, so the contract suite
+      # runs against a real Postgres rather than only the SQLite half.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: edge
+          POSTGRES_PASSWORD: edge
+          POSTGRES_DB: edge_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U edge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -39,7 +54,10 @@ jobs:
         run: uv sync --frozen
 
       - name: Tests
-        # No network: any test that reaches for a live API is a bug in the test.
+        # No network beyond the Postgres service: any test that reaches for a live API is
+        # a bug in the test.
+        env:
+          TEST_DATABASE_URL: postgresql://edge:edge@127.0.0.1:5432/edge_test
         run: uv run pytest -q
 
   web:

@@ -13,8 +13,12 @@ dependencies = [
     "uvicorn[standard]>=0.53.0",
 ]
 
+[project.optional-dependencies]
+# Only needed when DATABASE_URL points at Postgres; SQLite needs nothing.
+postgres = ["psycopg[binary]>=3.2"]
+
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "psycopg[binary]>=3.2"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

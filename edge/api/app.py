@@ -12,7 +12,7 @@ from edge import products
 from edge.api import service, share as share_mod
 from edge.api.auth import current_user, optional_user
 from edge.api.limits import RateLimitMiddleware, cors_origins, validate_id, validate_platform
-from edge.api.store import Store
+from edge.api.store import open_store
 from edge.connectors import sleeper
 from edge.engine import lineup as lineup_mod
 from edge.engine import actions as actions_mod
@@ -24,7 +24,7 @@ app.add_middleware(CORSMiddleware, allow_origins=cors_origins(),
                    allow_methods=["*"], allow_headers=["*"])
 # Outermost, so a refused request costs a dict lookup rather than an upstream fetch.
 app.add_middleware(RateLimitMiddleware)
-store = Store()
+store = open_store()
 
 
 def _season() -> int:

@@ -10,8 +10,12 @@ services:
       mountPath: /data
       sizeGB: 1
     envVars:
+      - key: EDGE_TRUST_PROXY
+        value: "1"
       - key: EDGE_CORS
         value: https://YOUR-VERCEL-DOMAIN.vercel.app
+      - key: DATABASE_URL
+        sync: false
       - key: SUPABASE_JWT_SECRET
         sync: false
       - key: STRIPE_SECRET_KEY

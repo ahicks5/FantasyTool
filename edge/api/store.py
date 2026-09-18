@@ -148,3 +148,17 @@ class Store:
     def disconnect_league(self, email: str, platform: str, league_id: str) -> None:
         self.db.execute("DELETE FROM leagues WHERE email=? AND platform=? AND league_id=?", (email.lower(), platform, league_id))
         self.db.commit()
+
+
+def open_store():
+    """The store this deployment should use.
+
+    DATABASE_URL (a Supabase or other Postgres connection string) wins; otherwise SQLite,
+    which needs no setup and is right for local work. Purchases are the row we cannot
+    afford to lose, so anything that takes real money should set DATABASE_URL.
+    """
+    dsn = os.environ.get("DATABASE_URL", "").strip()
+    if dsn:
+        from edge.api.store_pg import PostgresStore
+        return PostgresStore(dsn)
+    return Store()
