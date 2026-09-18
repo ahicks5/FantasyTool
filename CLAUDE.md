@@ -92,9 +92,19 @@ league's own scoring re-scores them. Connectors still take raw Sleeper-shaped di
 recorded fixtures still work).
 
 ## Distribution
-- `edge/api/share.py` + `/api/share` — a verdict becomes a public `/s/{id}` page that opens with
+- **Look and feel: `docs/BRAND.md`.** Two temperatures — the app is a ledger (warm paper,
+  restraint, colour only where it means something), everything that *leaves* the app is a flare
+  (dark, one idea set enormous, a lime `--color-flare` strip along the bottom). Read it before
+  touching a card or the accent.
+- `edge/api/share.py` + `/api/share` — a call becomes a public `/s/{id}` page that opens with
   no account and unfurls with a rendered card at `/api/share/{id}/card.png` (cached on disk).
-  Snapshots are display-only: never an email, a league id or a roster.
+  Snapshots are display-only: never an email, a league id or a roster. Two kinds:
+  `kind="trade"` needs Trade Lab, **`kind="lock"` is free and needs no account** — a free user
+  has one or three start/sit calls every week, so that is the share that actually runs the loop.
+- `edge/graphics.py` — all three cards on one chassis: `verdict_card_html`, `lock_card_html`,
+  `receipts_card_html` (the Tuesday scorecard, straight out of `docs/backtest_week<n>.json`,
+  which renders a losing week in red on purpose). `web/src/components/ShareCard.tsx` mirrors
+  them for the in-app preview — change one, change both.
 - `edge/delivery/weekly_email.py` — the same Action feed as an email. Tables and inline styles
   only (Gmail strips `<style>`), absolute links, a plain-text alternative, and a test proving a
   free recipient never receives paid content. Render with `python -m edge.cli email`.

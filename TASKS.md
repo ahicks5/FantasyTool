@@ -126,6 +126,26 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [ ] ESPN's free-agent list is the top 250 by percent owned. Ample for a top-5 waiver list;
       raise the limit (600 works) if a deep-league user ever reports a missing name.
 
+## Brand / distribution
+- [x] Visual direction settled — `docs/BRAND.md`. Two temperatures: the app stays a ledger,
+      everything that leaves it is a flare (dark, one idea, a `--color-flare` #d6f94a strip).
+      The accent never appears in app chrome and is never a status.
+- [x] Wordmark's dot is now the three-bar confidence meter, so the mark says what the app does.
+- [x] Share cards redrawn on one chassis (`edge/graphics.py`): the old card carried seven
+      competing elements and was unreadable at the ~400px anyone actually sees it at.
+- [x] **Start/sit shares are free** (`kind="lock"`, no account needed). Sharing used to sit
+      behind the $5 Trade Lab, which switched the growth loop off for almost every user.
+- [x] Receipts card — `python -m edge.cli receipts <week>` from the backtest file. Nobody else
+      in fantasy publishes their record; renders a bad week in red without being asked.
+- [ ] **Decision for Andrew: pick a domain.** `EDGE_WEB_URL` is what prints on every card's
+      strip; until it is set the strip has no URL, and a card with no URL cannot convert.
+- [ ] Anonymous share creation is unthrottled. Fine for launch week, wants a per-IP cap before
+      anyone points a script at it.
+- [ ] Post the week 1 receipts card. It is the single most useful thing we can put in a
+      subreddit and it is already rendered by one command.
+- [ ] Revisit the name in the off-season — "edge" is unsearchable. Market the word **Lock**
+      now; a rename during launch week costs more than it buys.
+
 ## Blueprint items still open
 - [x] Weekly action email — HTML + plain text renderer, `python -m edge.cli email <league> <team>`.
       Sending still needs a Resend key; everything up to the send is built and tested.
