@@ -51,6 +51,20 @@ def startable_positions(slots: list[str], vocabulary: set[str] | None = None) ->
     return {pos for pos in vocab if any(slot_accepts(s, pos) for s in slots)}
 
 
+def clean_name(value: str | None) -> str | None:
+    """Trim and collapse whitespace in a name a human typed.
+
+    Fantasy team names arrive exactly as their manager typed them, trailing space and
+    all, and they are interpolated straight into sentences. A real recorded league has a
+    team called "Raft Ryders " — which rendered as "Raft Ryders  is your best trade
+    partner" everywhere it appeared. Normalising here covers every connector at once,
+    rather than each template remembering to strip.
+    """
+    if value is None:
+        return None
+    return " ".join(value.split()) or value.strip()
+
+
 @dataclass
 class Player:
     id: str                      # platform player id (Sleeper: "4866", team DEF: "PHI")
@@ -77,6 +91,8 @@ class Player:
     def is_out(self) -> bool:
         return (self.injury_status or "").upper() in {"OUT", "IR", "PUP", "SUS", "NA"}
 
+    def __post_init__(self) -> None:
+        self.name = clean_name(self.name) or self.name
 
 @dataclass
 class Team:
@@ -92,6 +108,11 @@ class Team:
     points_for: float = 0.0
     faab_remaining: int | None = None
     waiver_position: int | None = None
+
+    def __post_init__(self) -> None:
+        # Names come from whatever the manager typed; they are interpolated into prose.
+        self.name = clean_name(self.name) or self.name
+        self.owner_name = clean_name(self.owner_name)
 
     @property
     def record(self) -> str:
@@ -115,6 +136,9 @@ class League:
     faab_budget: int | None = None
     trade_deadline_week: int | None = None
     free_agents: list[Player] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        self.name = clean_name(self.name) or self.name
 
     @property
     def starting_slots(self) -> list[str]:

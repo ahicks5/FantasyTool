@@ -43,3 +43,28 @@ export function signed(n: number, digits = 1): string {
 export function pct(p: number): string {
   return `${Math.round(p * 100)}%`;
 }
+
+/**
+ * "a" or "an" for a phrase. Spelling is not the rule — sound is — so the vowel-letter
+ * shortcut gets "an unusual" and "a hour" wrong. The cases below are the ones English
+ * actually trips on, and the manager-style vocabulary this is used for runs through
+ * both ("active dealer" → an, "unusual" → a).
+ */
+export function article(phrase: string): "a" | "an" {
+  const word = phrase.trim().toLowerCase().split(/[\s-]/)[0] ?? "";
+  if (!word) return "a";
+  // Silent h: the vowel sound starts the word even though the letter does not.
+  if (/^(hour|honest|honou?r|heir)/.test(word)) return "an";
+  // "you" sounds: a user, a unique, a European — spelled with a vowel, said with a "y".
+  if (/^(eu|ewe|u[bcdfghjklmnpqrstvwxyz]?[aeiou])/.test(word) && !/^un[aeiou]?[bcdfgklmnprstv]/.test(word)) {
+    return "a";
+  }
+  // "one" and "once" begin with a "w" sound.
+  if (/^onc?e/.test(word)) return "a";
+  return /^[aeiou]/.test(word) ? "an" : "a";
+}
+
+/** `article(x) + " " + x`, which is what callers almost always want. */
+export function withArticle(phrase: string): string {
+  return `${article(phrase)} ${phrase}`;
+}

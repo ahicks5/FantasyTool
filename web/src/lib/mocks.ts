@@ -1,5 +1,6 @@
 // Mock data matching docs/API.md exactly. Player names, rosters and week-2
 // half-PPR projections come from tests/fixtures/sleeper/* ("The Megalabowl").
+import { withArticle } from "./format";
 import type {
   Action,
   ActionFeed,
@@ -495,7 +496,7 @@ export const WAIVERS: Waivers = {
 
 const TENDENCIES: Record<string, typeof DEFAULT_TENDENCIES> = {
   "4": { trades: 2, waiver_claims: 9, avg_bid: 14, favorite_positions: ["RB"], style: "active dealer" },
-  "9": { trades: 0, waiver_claims: 3, avg_bid: 6, favorite_positions: ["WR", "TE"], style: "sits on his roster" },
+  "9": { trades: 0, waiver_claims: 3, avg_bid: 6, favorite_positions: ["WR", "TE"], style: "roster sitter" },
   "12": { trades: 3, waiver_claims: 12, avg_bid: 21, favorite_positions: ["RB", "WR"], style: "FAAB spender" },
 };
 
@@ -547,7 +548,7 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
 
   const explanation =
     verdict === "Accept"
-      ? `You send out ${value_out.toFixed(1)} of rest-of-season value and get ${value_in.toFixed(1)} back. ${names(get)} improves your lineup by ${signed(weekIn - weekOut)} this week and roughly ${signed((value_in - value_out) / 8)} a week after that. ${theirName} is an ${tend.style}, so take the deal before they rethink it.`
+      ? `You send out ${value_out.toFixed(1)} of rest-of-season value and get ${value_in.toFixed(1)} back. ${names(get)} improves your lineup by ${signed(weekIn - weekOut)} this week and roughly ${signed((value_in - value_out) / 8)} a week after that. ${theirName} is ${withArticle(tend.style ?? "quiet manager")}, so take the deal before they rethink it.`
       : verdict === "Fair"
         ? `This is close to even: ${value_out.toFixed(1)} out, ${value_in.toFixed(1)} in. The week-2 swing is ${signed(weekIn - weekOut)}. Do it if you need the positional balance, otherwise there is no urgency. ${theirName} has made ${tend.trades} trades this year and tends to favor ${tend.favorite_positions.join("/")}.`
         : `You would give up ${value_out.toFixed(1)} of value for ${value_in.toFixed(1)}, a ${Math.round((1 - ratio) * 100)}% haircut. ${theirName} (${tend.style}) has ${tend.waiver_claims} waiver claims at an average bid of $${tend.avg_bid}, so they value depth. The counter below keeps your best piece in play without insulting them.`;
