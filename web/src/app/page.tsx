@@ -248,8 +248,18 @@ export default function Landing() {
       <Pricing />
 
       <footer className="mt-12 border-t border-line pt-5 text-[12px] leading-relaxed text-muted">
-        Projections from Sleeper, rescored to your league&rsquo;s settings. Headshots via Sleeper and ESPN. Not
-        affiliated with any league platform.
+        <div className="flex gap-4 font-bold">
+          <Link href="/terms" className="hover:text-ink">
+            Terms
+          </Link>
+          <Link href="/privacy" className="hover:text-ink">
+            Privacy
+          </Link>
+        </div>
+        <p className="mt-3">
+          Projections from Sleeper, rescored to your league&rsquo;s settings. Headshots via Sleeper and ESPN. Not
+          affiliated with any league platform.
+        </p>
       </footer>
     </div>
   );
