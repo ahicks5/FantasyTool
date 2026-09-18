@@ -57,6 +57,11 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] Browser e2e at 375px re-verified (all pages, no overflow, photos loading)
 
 ## Next up
+- [x] Static demo build (`npm run demo` + `npm run demo:pack`): the real app exported to
+      static files, driven by the recorded Megalabowl fixtures, with a league pre-connected
+      so the link opens on the action feed. Lets the app be handed to a phone or a group
+      chat before the API is deployed. Player headshots are the one thing it loses on a
+      host that blocks third-party images; the Avatar initials underneath cover it.
 - [x] Wire web to the real API end-to-end in a browser (headless Chromium, 375px, live league, 0 console errors)
 - [~] Supabase magic-link login: /login page + JWT header wired; untested against a real Supabase project (needs your keys)
 - [ ] Real Stripe test-mode checkout run (needs STRIPE_SECRET_KEY / webhook secret)

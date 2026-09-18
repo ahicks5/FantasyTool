@@ -7,8 +7,12 @@ import { signed } from "@/lib/format";
 import type { SharedVerdict } from "@/lib/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
+/** The static demo (`npm run demo`) has no API to read a snapshot from. */
+const DEMO = process.env.EDGE_DEMO_EXPORT === "1";
 
 async function load(id: string): Promise<SharedVerdict | null> {
+  // Imported lazily so the mock rosters stay out of the real server bundle.
+  if (DEMO) return (await import("@/lib/mocks")).sharedVerdictDemo();
   if (!API) return null;
   try {
     const res = await fetch(`${API}/api/share/${encodeURIComponent(id)}`, { next: { revalidate: 300 } });
@@ -20,12 +24,12 @@ async function load(id: string): Promise<SharedVerdict | null> {
 }
 
 /**
- * No ids are known at build time: share pages are rendered on demand (dynamicParams
- * defaults to true). Declaring this also lets `output: "export"` skip the route
- * instead of failing the build, which is what the static demo needs.
+ * Real share ids are minted at runtime, so none exist at build time and pages render on
+ * demand (dynamicParams defaults to true). `output: "export"` refuses an empty list, so
+ * the static demo pre-renders its one sample verdict instead.
  */
 export async function generateStaticParams(): Promise<{ id: string }[]> {
-  return [];
+  return DEMO ? [{ id: "demo" }] : [];
 }
 
 /** Unfurls in a league chat, a subreddit or a Discord — that is the whole point of the page. */

@@ -16,6 +16,8 @@
 # next.js
 /.next/
 /out/
+# `npm run demo` output, rewritten for a static host that reserves leading underscores
+/outpub/
 
 # production
 /build

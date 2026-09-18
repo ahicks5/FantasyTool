@@ -11,6 +11,25 @@ export interface Connection {
 }
 
 const KEY = "edge.connection";
+
+/**
+ * The static demo (`npm run demo`) ships with a league already connected, so the link
+ * opens on this week's moves rather than the empty state. These are the recorded
+ * Megalabowl fixtures that src/lib/mocks.ts serves. Real builds leave this null and the
+ * visitor connects their own league; the flag is inlined at build time, so the branch
+ * compiles out.
+ */
+const DEMO_CONNECTION: Connection | null =
+  process.env.NEXT_PUBLIC_EDGE_DEMO === "1"
+    ? {
+        platform: "sleeper",
+        league_id: "1403186749361901568",
+        team_id: "8",
+        league_name: "The Megalabowl",
+        team_name: "HusH",
+        week: 2,
+      }
+    : null;
 const listeners = new Set<() => void>();
 let cachedRaw: string | null | undefined;
 let cached: Connection | null = null;
@@ -26,6 +45,7 @@ function readRaw(): string | null {
 /** Parsed connection, referentially stable while the stored string is unchanged. */
 export function loadConnection(): Connection | null {
   const raw = readRaw();
+  if (raw === null && DEMO_CONNECTION) return DEMO_CONNECTION;
   if (raw === cachedRaw) return cached;
   cachedRaw = raw;
   try {

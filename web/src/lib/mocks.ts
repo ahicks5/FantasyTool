@@ -15,6 +15,8 @@ import type {
   Player,
   Product,
   Report,
+  SharedPlayer,
+  SharedVerdict,
   SleeperLeagueRef,
   TeamSummary,
   Tendencies,
@@ -781,4 +783,54 @@ function round2(n: number): number {
 function signed(n: number): string {
   const s = n.toFixed(1);
   return n > 0 ? `+${s}` : s;
+}
+
+/** The id the static demo (`npm run demo`) publishes its one share page under. */
+export const SHARE_DEMO_ID = "demo";
+
+/**
+ * A public trade-verdict snapshot, graded by the same evaluateTrade() the Trade Lab
+ * calls. Only the static demo uses it: with no API there is no /api/share to read, and
+ * a share page is the one screen a stranger sees first, so the demo should show a real
+ * one rather than a 404. Players are picked by value rather than hardcoded id, so this
+ * keeps working if the recorded rosters are re-recorded.
+ */
+export function sharedVerdictDemo(): SharedVerdict {
+  const theirTeamId = ROSTERS.find((r) => r.id !== MY_TEAM_ID)?.id ?? ROSTERS[0].id;
+  const bestAt = (teamId: string, position: string): Player =>
+    allPlayers(teamId)
+      .filter((p) => p.position === position)
+      .sort((a, b) => rosValue(b) - rosValue(a))[0] ?? allPlayers(teamId)[0];
+
+  const giveP = bestAt(MY_TEAM_ID, "WR");
+  const getP = bestAt(theirTeamId, "RB");
+  const res = evaluateTrade({
+    my_team_id: MY_TEAM_ID,
+    their_team_id: theirTeamId,
+    give: [giveP.id],
+    get: [getP.id],
+  });
+
+  const toShared = (p: Player): SharedPlayer => ({
+    name: p.name,
+    position: p.position,
+    nfl_team: p.nfl_team ?? "",
+    photo: p.photo ?? null,
+    team_logo: p.team_logo ?? null,
+  });
+
+  return {
+    verdict: res.verdict,
+    give: [giveP.name],
+    get: [getP.name],
+    my_delta_ros: res.me.lineup_delta_ros,
+    their_delta_ros: res.them.lineup_delta_ros,
+    fairness: res.fairness,
+    style: res.their_tendencies.style ?? null,
+    explanation: res.explanation,
+    league_name: LEAGUE.name,
+    week: WEEK,
+    give_players: [toShared(giveP)],
+    get_players: [toShared(getP)],
+  };
 }
