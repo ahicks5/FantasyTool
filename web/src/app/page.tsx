@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Pricing } from "@/components/Pricing";
-import { IconArrowUp, IconChevron, IconTeam, IconTrade, IconWaivers } from "@/components/icons";
-import { Eyebrow, LinkButton, ThemeToggle, Wordmark } from "@/components/ui";
+import { IconChevron, IconHeadset, IconTeam, IconTrade, IconWire } from "@/components/icons";
+import { Countdown, Eyebrow, LinkButton, OnAir, ThemeToggle, Wordmark } from "@/components/ui";
 
-/** One example move. The headshots are real Sleeper CDN images. */
+/** One example call. The headshots are real Sleeper CDN images. */
 const DEMO = [
   {
     tag: "Start",
@@ -16,7 +16,7 @@ const DEMO = [
     team: "det",
   },
   {
-    tag: "Waiver",
+    tag: "Claim",
     title: "Add Chris Brooks · bid $13–25",
     benefit: "+7.8",
     unit: "this week · +48 rest of season",
@@ -40,34 +40,34 @@ const DEMO = [
 const FEATURES = [
   {
     href: "/team",
-    title: "My Team",
+    title: "Depth chart",
     tag: "Free",
     Icon: IconTeam,
     tone: "bg-start-soft text-start",
-    body: "Start/sit calls with a confidence tag we backtest every week. Lock is right about 80% of the time.",
+    body: "Start/sit calls with a confidence stamp we backtest every week. Lock is right about 80% of the time.",
   },
   {
     href: "/waivers",
-    title: "Waivers",
+    title: "The wire",
     tag: "$3",
-    Icon: IconWaivers,
+    Icon: IconWire,
     tone: "bg-lean-soft text-lean",
-    body: "Every free agent ranked by how much he actually improves your lineup — with a FAAB bid and who to drop.",
+    body: "Every free agent ranked by how much he actually moves your lineup — with a bid and the name to drop.",
   },
   {
     href: "/trade",
-    title: "Trade Lab",
+    title: "Trade lab",
     tag: "$5",
     Icon: IconTrade,
     tone: "bg-soft text-ink",
-    body: "A verdict on any trade, plus a counteroffer tuned to how that manager has actually traded before.",
+    body: "A verdict on any trade, plus a counter tuned to how that manager has actually traded before.",
   },
 ];
 
 const STEPS = [
-  { n: "1", title: "Connect", body: "Paste a Sleeper username or a league ID. No password, no account to look." },
-  { n: "2", title: "We rescore", body: "Every projection is re-scored to your league's own settings — never assumed PPR." },
-  { n: "3", title: "You get a list", body: "Ranked moves for this week, each with one line of why and the number behind it." },
+  { n: "1", title: "Hook up your league", body: "A Sleeper username or a league ID. No password, nothing to sign." },
+  { n: "2", title: "We re-score everything", body: "Every projection re-scored to your league's own settings — never assumed PPR." },
+  { n: "3", title: "You get a call sheet", body: "Ranked moves for the week, each with one line of why. Tick them off as you make them." },
 ];
 
 function initials(name: string): string {
@@ -97,13 +97,13 @@ function Face({ name, photo, team }: { name: string; photo: string; team: string
   );
 }
 
-/** The confidence meter, redrawn in white for the one dark surface on the page. */
-function HeroBars({ filled, label }: { filled: number; label: string }) {
+/** The confidence stamp, inked white for the one dark surface on the page. */
+function HeroStamp({ filled, label }: { filled: number; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 py-[3px] pl-2 pr-2.5 text-[10px] font-black uppercase tracking-wider text-white">
+    <span className="stamp text-[10px] text-white">
       <span className="flex items-center gap-[2px]" aria-hidden>
         {[0, 1, 2].map((i) => (
-          <span key={i} className={`h-[9px] w-[3px] rounded-[1px] bg-white ${i < filled ? "" : "opacity-30"}`} />
+          <span key={i} className={`h-[9px] w-[3px] bg-white ${i < filled ? "" : "opacity-30"}`} />
         ))}
       </span>
       {label}
@@ -115,68 +115,69 @@ export default function Landing() {
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-20">
       <header className="flex h-16 items-center justify-between">
-        <Wordmark className="text-[26px]" />
+        <Wordmark className="text-[24px]" />
         <div className="flex items-center gap-1">
           <ThemeToggle />
           <Link
             href="/home"
             className="inline-flex min-h-0 items-center gap-1 rounded-full border border-line-2 px-3.5 py-2 text-[13px] font-bold hover:bg-soft"
           >
-            Open app
+            Open the booth
             <IconChevron size={13} strokeWidth={2.8} />
           </Link>
         </div>
       </header>
 
       <section className="pt-7 rise">
-        <Eyebrow>Sleeper · ESPN public leagues</Eyebrow>
+        <Eyebrow>Sleeper · ESPN public and private leagues</Eyebrow>
         <h1 className="display mt-3 text-[43px] leading-[0.98]">
-          Your league.
+          Three moves.
           <br />
-          This week&rsquo;s moves.
+          By Sunday.
         </h1>
         <p className="mt-4 max-w-[24rem] text-[17px] leading-relaxed text-ink-2">
-          Connect your league and get a ranked list of what to do — who to start, who to claim, what to offer. Numbers
-          first, one sentence of why.
+          Take the headset. Connect your league and the booth writes this week&rsquo;s call sheet — who starts, who to
+          claim, what to offer. One line of why on every call, and the number under it.
         </p>
         <div className="mt-6 grid gap-2.5">
           <LinkButton href="/connect" variant="start" className="w-full">
-            Connect your league — free
+            Open the booth — free
           </LinkButton>
           <a
             href="#pricing"
             className="btn inline-flex items-center justify-center rounded-xl border border-line-2 px-5 py-3 text-[15px] font-bold text-ink hover:bg-soft"
           >
-            See pricing
+            See what it costs
           </a>
         </div>
       </section>
 
       {/* The one dark surface: the product itself, so the page shows before it tells. */}
-      <section className="mt-9 rise rise-2" aria-label="Example moves">
-        <div className="hero overflow-hidden">
-          <div className="flex items-start justify-between gap-3 px-5 pt-5">
-            <div className="min-w-0">
-              <div className="eyebrow">Week 2 — The Megalabowl</div>
-              <div className="display mt-1 text-[27px] leading-tight">
-                <span className="tnum">3</span> moves worth making
-              </div>
+      <section className="mt-9 rise rise-2" aria-label="Example call sheet">
+        <div className="hero callsheet">
+          <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
+            <OnAir className="text-white/70" />
+            <Countdown onHero />
+          </div>
+
+          <div className="px-5 pt-5">
+            <div className="eyebrow">Week 2 — The Megalabowl</div>
+            <div className="display mt-1 text-[27px] leading-tight">
+              <span className="tnum">3</span> moves worth making
             </div>
-            <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white">
-              <IconArrowUp size={17} strokeWidth={2.4} />
-            </span>
           </div>
 
           <ul className="mt-5">
-            {DEMO.map((d) => (
+            {DEMO.map((d, i) => (
               <li key={d.title} className="flex items-start gap-3 border-t border-white/10 px-5 py-4">
+                <span className="slug w-[18px] shrink-0 pt-[3px] text-[13px] text-white/35">{String(i + 1).padStart(2, "0")}</span>
                 <Face name={d.title.split(" ").slice(1, 3).join(" ")} photo={d.photo} team={d.team} />
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-md bg-white/12 px-2 py-[3px] text-[10px] font-black uppercase tracking-[0.1em] text-white/85">
                       {d.tag}
                     </span>
-                    <HeroBars filled={d.bars} label={d.pill} />
+                    <HeroStamp filled={d.bars} label={d.pill} />
                   </div>
                   <p className="display mt-1.5 text-[15px] leading-[1.25]">{d.title}</p>
                   <p className="mt-1 text-[13px] leading-snug text-white/60">
@@ -188,7 +189,7 @@ export default function Landing() {
           </ul>
 
           <p className="border-t border-white/10 px-5 py-3.5 text-center text-[13px] text-white/55">
-            Everything else on your roster looks fine.
+            Everything else on your roster is fine. Go enjoy your Sunday.
           </p>
         </div>
       </section>
@@ -219,7 +220,7 @@ export default function Landing() {
         <ol className="mt-3 grid gap-3">
           {STEPS.map((s) => (
             <li key={s.n} className="flex gap-3.5">
-              <span className="display tnum flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-soft text-[14px] text-ink-2">
+              <span className="slug flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-soft text-[14px] text-ink-2">
                 {s.n}
               </span>
               <div className="min-w-0 pt-1">
@@ -230,26 +231,37 @@ export default function Landing() {
           ))}
         </ol>
 
+        {/* The differentiator: we publish our own hit rate. */}
         <div className="card mt-6 p-5">
-          <div className="flex items-baseline gap-3">
+          <div className="flex items-center gap-3">
+            <IconHeadset size={22} strokeWidth={1.9} className="shrink-0 text-muted" />
+            <Eyebrow>We keep score</Eyebrow>
+          </div>
+          <div className="mt-3 flex items-baseline gap-3">
             <span className="display tnum shrink-0 text-[40px] leading-none text-start">80%</span>
             <div className="min-w-0">
-              <Eyebrow>Lock calls, right</Eyebrow>
+              <div className="text-[13px] font-bold">Lock calls, right</div>
               <div className="mt-0.5 text-[12px] text-muted">backtested every week</div>
             </div>
           </div>
           <p className="mt-3.5 text-[14px] leading-relaxed text-ink-2">
-            Every confidence tag is checked against what actually happened. We only move the thresholds when the data
-            says to.
+            Every stamp is graded against what actually happened, and we publish the result. We only move the thresholds
+            when the data says to — and when a call is too close to matter, the booth tells you to leave it alone.
           </p>
         </div>
       </section>
 
       <Pricing />
 
-      <footer className="mt-12 border-t border-line pt-5 text-[12px] leading-relaxed text-muted">
-        Projections from Sleeper, rescored to your league&rsquo;s settings. Headshots via Sleeper and ESPN. Not
-        affiliated with any league platform.
+      <footer className="mt-12 border-t border-line pt-5">
+        <div className="flex items-center gap-2.5">
+          <Wordmark className="text-[16px]" lamp={false} />
+          <span className="text-[12px] font-bold text-muted">Three moves. By Sunday. We keep score.</span>
+        </div>
+        <p className="mt-3 text-[12px] leading-relaxed text-muted">
+          Projections from Sleeper, re-scored to your league&rsquo;s settings. Headshots via Sleeper and ESPN. Not
+          affiliated with any league platform.
+        </p>
       </footer>
     </div>
   );

@@ -107,7 +107,7 @@ export default function ConnectPage() {
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between">
-        <Link href="/" aria-label="Edge home">
+        <Link href="/" aria-label="The Booth home">
           <Wordmark className="text-[26px]" />
         </Link>
         <ThemeToggle />

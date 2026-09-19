@@ -1,4 +1,4 @@
-"""Product catalog: free tier, à la carte passes, and the Full Report bundle. Prices in cents.
+"""Product catalog: free tier, à la carte passes, and the Full Booth bundle. Prices in cents.
 Change prices here only; everything else reads this."""
 from __future__ import annotations
 
@@ -7,13 +7,13 @@ FEATURES = ("my_team", "waivers", "trade_lab", "full_report")
 PRODUCTS = [
     {"sku": "free", "name": "Free", "price_cents": 0, "features": ["my_team"], "leagues": 1,
      "kind": "free", "blurb": "Start/sit calls for one team, every week."},
-    {"sku": "waivers", "name": "Waiver Wire Pass", "price_cents": 300, "features": ["waivers"], "leagues": 1,
-     "kind": "a_la_carte", "blurb": "Top 5 pickups ranked for your roster, with FAAB bids. Rest of season."},
+    {"sku": "waivers", "name": "Wire Pass", "price_cents": 300, "features": ["waivers"], "leagues": 1,
+     "kind": "a_la_carte", "blurb": "The wire, ranked for your roster, with the bid and the drop. Rest of season."},
     {"sku": "trade_lab", "name": "Trade Lab", "price_cents": 500, "features": ["trade_lab"], "leagues": 1,
-     "kind": "a_la_carte", "blurb": "Trade verdicts + counteroffers tuned to the other manager. Rest of season."},
-    {"sku": "full_report", "name": "Full Report", "price_cents": 700,
+     "kind": "a_la_carte", "blurb": "Trade verdicts and counters tuned to the other manager. Rest of season."},
+    {"sku": "full_report", "name": "Full Booth", "price_cents": 700,
      "features": ["my_team", "waivers", "trade_lab", "full_report"], "leagues": 5,
-     "kind": "bundle", "blurb": "Everything, every week, in one report. Up to 5 leagues."},
+     "kind": "bundle", "blurb": "The whole booth, every week, up to 5 leagues."},
 ]
 BY_SKU = {p["sku"]: p for p in PRODUCTS}
 

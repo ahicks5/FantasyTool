@@ -1,11 +1,29 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { confidenceClass, formatBid, formatCents, signed, verdictClass, pct } from "./format.ts";
+import {
+  calledKey,
+  confidenceClass,
+  confidenceInk,
+  countdown,
+  formatBid,
+  formatCents,
+  nextKickoff,
+  pct,
+  sheetStatus,
+  signed,
+  verdictClass,
+} from "./format.ts";
 
 test("confidence colors", () => {
   assert.match(confidenceClass("Lock"), /bg-start/);
   assert.match(confidenceClass("Lean"), /bg-lean/);
   assert.match(confidenceClass("Coin flip"), /bg-flip/);
+});
+
+test("confidence stamp ink draws border and text from one color", () => {
+  assert.equal(confidenceInk("Lock"), "text-start");
+  assert.equal(confidenceInk("Lean"), "text-lean");
+  assert.equal(confidenceInk("Coin flip"), "text-flip");
 });
 
 test("verdict colors", () => {
@@ -24,4 +42,75 @@ test("money and numbers", () => {
   assert.equal(signed(1), "+1.0");
   assert.equal(signed(-0.4), "-0.4");
   assert.equal(pct(0.61), "61%");
+});
+
+/* ----------------------------------------------------------------- kickoff ---
+   The season straddles the November DST change, so the offset is asserted on
+   both sides of it. A hard-coded -04:00 or -05:00 would pass one of these and
+   fail the other.                                                              */
+
+/** What the clock in New York reads at this instant. */
+function inET(ms: number): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(ms));
+}
+
+test("kickoff is the next Sunday 1pm in New York, during EDT", () => {
+  // Wed 2026-09-16 12:00 ET (UTC-4) → Sun 2026-09-20 1:00 PM ET.
+  const at = nextKickoff(new Date("2026-09-16T16:00:00Z"));
+  assert.equal(inET(at), "Sun 1:00 PM");
+  assert.equal(new Date(at).toISOString(), "2026-09-20T17:00:00.000Z");
+});
+
+test("kickoff is the next Sunday 1pm in New York, during EST", () => {
+  // Wed 2026-12-02 12:00 ET (UTC-5) → Sun 2026-12-06 1:00 PM ET.
+  const at = nextKickoff(new Date("2026-12-02T17:00:00Z"));
+  assert.equal(inET(at), "Sun 1:00 PM");
+  assert.equal(new Date(at).toISOString(), "2026-12-06T18:00:00.000Z");
+});
+
+test("kickoff rolls to next week once Sunday's slate has started", () => {
+  // Sun 2026-09-20 2:00 PM ET — this week's sheet is spent.
+  const at = nextKickoff(new Date("2026-09-20T18:00:00Z"));
+  assert.equal(new Date(at).toISOString(), "2026-09-27T17:00:00.000Z");
+});
+
+test("kickoff on Sunday morning is still today", () => {
+  // Sun 2026-09-20 9:00 AM ET — four hours to go.
+  const at = nextKickoff(new Date("2026-09-20T13:00:00Z"));
+  assert.equal(new Date(at).toISOString(), "2026-09-20T17:00:00.000Z");
+});
+
+test("kickoff crossing the DST boundary lands on the wall clock, not 24h math", () => {
+  // Wed 2026-10-28, before the Nov 1 change: the Sunday after it is EST.
+  const at = nextKickoff(new Date("2026-10-28T16:00:00Z"));
+  assert.equal(inET(at), "Sun 1:00 PM");
+  assert.equal(new Date(at).toISOString(), "2026-11-01T18:00:00.000Z");
+});
+
+test("countdown formatting", () => {
+  assert.equal(countdown(2 * 86400e3 + 4 * 3600e3 + 11 * 60e3), "2d 04:11");
+  assert.equal(countdown(4 * 3600e3 + 11 * 60e3 + 32e3), "04:11:32");
+  assert.equal(countdown(0), "00:00:00");
+  assert.equal(countdown(-5000), "00:00:00");
+});
+
+/* -------------------------------------------------------------- the sheet --- */
+
+test("called calls are scoped to a league and a week", () => {
+  assert.equal(calledKey("1403186749361901568", 2), "booth.called.1403186749361901568.2");
+  assert.notEqual(calledKey("abc", 2), calledKey("abc", 3));
+  assert.notEqual(calledKey("abc", 2), calledKey("xyz", 2));
+});
+
+test("sheet status line", () => {
+  assert.equal(sheetStatus(0, 3), "0 of 3 called");
+  assert.equal(sheetStatus(2, 3), "2 of 3 called");
+  assert.equal(sheetStatus(3, 3), "Sheet's clean");
+  assert.equal(sheetStatus(0, 0), "Nothing to call");
 });

@@ -23,11 +23,11 @@ async function load(id: string): Promise<SharedVerdict | null> {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const v = await load(id);
-  if (!v) return { title: "Edge — trade verdict" };
+  if (!v) return { title: "The Booth — trade verdict" };
   const title = `${v.verdict}: ${v.give.join(" + ")} for ${v.get.join(" + ")}`;
   const image = `${API}/api/share/${encodeURIComponent(id)}/card.png`;
   return {
-    title: `${title} — Edge`,
+    title: `${title} — The Booth`,
     description: v.explanation,
     openGraph: {
       title,
@@ -132,7 +132,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href="/" aria-label="Edge home">
+        <Link href="/" aria-label="The Booth home">
           <Wordmark className="text-[26px]" />
         </Link>
         <span className="min-w-0 truncate text-right text-[12px] font-bold text-muted">

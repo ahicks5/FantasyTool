@@ -49,7 +49,7 @@ test("forgetting really forgets", () => {
 });
 
 test("corrupt storage is ignored rather than thrown", () => {
-  store.set("edge.espn.auth", "{not json");
+  store.set("booth.espn.auth", "{not json");
   assert.equal(loadEspnAuth(), null);
 });
 

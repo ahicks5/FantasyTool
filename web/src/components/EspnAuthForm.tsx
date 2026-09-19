@@ -36,7 +36,7 @@ export function EspnAuthForm({
       <p className="mt-2 text-[15px] leading-relaxed text-muted">
         {expired
           ? "The cookies you gave us stopped working. ESPN rotates them every few weeks — paste fresh ones and you are back in."
-          : "ESPN only shows a private league to someone signed in. Paste two values from your own browser and Edge can read it."}
+          : "ESPN only shows a private league to someone signed in. Paste two values from your own browser and the booth can read it."}
       </p>
 
       <p className="mt-3 rounded-xl bg-soft px-4 py-3 text-[13px] leading-relaxed text-muted">

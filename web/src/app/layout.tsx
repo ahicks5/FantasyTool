@@ -13,8 +13,8 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
-  title: "Edge — this week's moves",
-  description: "Your league. This week's moves. Start/sit, waivers and trade verdicts for your fantasy football team.",
+  title: "The Booth — three moves by Sunday",
+  description: "Take the headset. The booth writes your fantasy football call sheet every week: who starts, who to claim, what to offer.",
 };
 
 export const viewport: Viewport = {
@@ -27,7 +27,7 @@ export const viewport: Viewport = {
 };
 
 /** Applies a saved theme before paint, so a dark-mode user never sees a white flash. */
-const THEME_BOOT = `(()=>{try{var t=localStorage.getItem('edge.theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}})()`;
+const THEME_BOOT = `(()=>{try{var t=localStorage.getItem('booth.theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}})()`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

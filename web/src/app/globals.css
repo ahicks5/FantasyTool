@@ -1,7 +1,12 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Edge design tokens.
+   THE BOOTH — design tokens.
+
+   The product is a coaching booth: you sit upstairs with a headset and a call
+   sheet, and the staff hands you this week's plan. The look is "clean sideline"
+   — printed call sheet, heavy tabular numerals, one dark surface, a red ON AIR
+   lamp — with game-feel motion on top. Never a neon dashboard.
 
    Light is the default because that is how Andrew wants it read in daylight,
    but the app gets used on a couch at night, so dark is a first-class mode with
@@ -12,6 +17,12 @@
    chroma floor, colour-blind separation, normal-vision separation and contrast.
    Never swap a hex here without re-running it. Every status colour also ships
    with a word beside it, so colour never carries the meaning alone.
+
+   `signal` is the brand's ON AIR red and is deliberately NOT part of that
+   scale. It never appears on a player row or a verdict, only on the booth
+   chrome (wordmark, call-sheet band, ON AIR chip), where the word "ON AIR"
+   always sits beside it. Status red (`sit`) never appears on the chrome. The
+   two live on different surfaces, so neither can be mistaken for the other.
 --------------------------------------------------------------------------- */
 
 @theme {
@@ -38,6 +49,9 @@
   --color-flip: #b57500;       /* warning — coin flip (text-safe step) */
   --color-flip-fill: #f0b429;  /* the same warning as a fill, dark text on top */
   --color-flip-soft: #fdf1d8;
+
+  /* Brand only. See the note above: chrome, never status. */
+  --color-signal: #e02d1b;
 
   --radius-card: 18px;
 
@@ -71,6 +85,8 @@
     --color-flip-fill: #be8109;
     --color-flip-soft: #2a1f08;
 
+    --color-signal: #ff4d3a;
+
     --shadow-card: 0 1px 1px rgb(0 0 0 / 0.5), 0 12px 28px -14px rgb(0 0 0 / 0.7);
     --shadow-lift: 0 18px 40px -14px rgb(0 0 0 / 0.8);
     --shadow-hero: 0 24px 48px -20px rgb(0 0 0 / 0.9);
@@ -97,6 +113,8 @@
   --color-flip: #be8109;
   --color-flip-fill: #be8109;
   --color-flip-soft: #2a1f08;
+
+  --color-signal: #ff4d3a;
 
   --shadow-card: 0 1px 1px rgb(0 0 0 / 0.5), 0 12px 28px -14px rgb(0 0 0 / 0.7);
   --shadow-lift: 0 18px 40px -14px rgb(0 0 0 / 0.8);
@@ -136,6 +154,14 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   color: var(--color-muted);
 }
 
+/* The call-sheet slug: a printed sheet numbers its plays in the margin. */
+.slug {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
 .card {
   border-radius: var(--radius-card);
   background: var(--color-paper);
@@ -153,7 +179,86 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 }
 .hero .eyebrow { color: rgb(247 246 243 / 0.55); }
 
-button, a.btn, select, input { min-height: 44px; }
+/* --------------------------------------------------------------- the booth ---
+   The call sheet is the hero with a printed grid laid over it: faint rules the
+   eye reads as paper, not as a table. The grid is decorative and sits under the
+   content, so it never interferes with text contrast.                          */
+
+.callsheet {
+  position: relative;
+  overflow: hidden;
+}
+.callsheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.05) 0 1px,
+    transparent 1px 34px
+  );
+}
+
+/* ON AIR lamp. The glow is the whole point, so it survives reduced motion —
+   only the pulse stops. */
+.lamp {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--color-signal);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-signal) 70%, transparent),
+              0 0 10px 1px color-mix(in srgb, var(--color-signal) 55%, transparent);
+  animation: lamp 2.4s ease-out infinite;
+}
+@keyframes lamp {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-signal) 65%, transparent), 0 0 10px 1px color-mix(in srgb, var(--color-signal) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 7px color-mix(in srgb, var(--color-signal) 0%, transparent), 0 0 10px 1px color-mix(in srgb, var(--color-signal) 55%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-signal) 0%, transparent), 0 0 10px 1px color-mix(in srgb, var(--color-signal) 55%, transparent); }
+}
+
+/* ------------------------------------------------------------------ stamps ---
+   A verdict gets stamped, not printed. Heavy letterspaced caps inside a thick
+   rule, rotated a touch off-axis, with the ink broken up by a mask so it reads
+   as rubber on paper rather than as another rounded chip.                      */
+
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  border: 2.5px solid currentColor;
+  border-radius: 6px;
+  padding: 5px 8px 4px;
+  transform: rotate(-3.5deg);
+  opacity: 0.92;
+  /* Faint diagonal breaks in the ink. Decorative only — the word stays solid
+     enough to read, and the mask is skipped where it isn't supported. */
+  -webkit-mask-image: repeating-linear-gradient(58deg, #000 0 7px, rgb(0 0 0 / 0.72) 7px 9px);
+  mask-image: repeating-linear-gradient(58deg, #000 0 7px, rgb(0 0 0 / 0.72) 7px 9px);
+}
+.stamp-lg { font-size: 15px; border-width: 3.5px; padding: 8px 12px 7px; border-radius: 8px; }
+
+/* The stamp landing. Overshoots, settles, like it was pressed down by hand. */
+@keyframes slam {
+  0%   { opacity: 0; transform: rotate(-16deg) scale(2.1); }
+  55%  { opacity: 1; transform: rotate(-1deg) scale(0.93); }
+  78%  { transform: rotate(-5deg) scale(1.04); }
+  100% { opacity: 0.92; transform: rotate(-3.5deg) scale(1); }
+}
+.slam { animation: slam 0.46s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+
+/* ------------------------------------------------------------------ motion ---
+   Four moves, and that is the whole vocabulary:
+     rise   — anything arriving on a page
+     print  — a call sheet row coming off the printer, top edge first
+     promote/demote — a depth-chart tile changing places
+     tick   — a number that just changed                                        */
 
 @keyframes shimmer { 0% { background-position: -420px 0; } 100% { background-position: 420px 0; } }
 .skeleton {
@@ -171,6 +276,46 @@ button, a.btn, select, input { min-height: 44px; }
 .rise-4 { animation-delay: 0.16s; }
 .rise-5 { animation-delay: 0.2s; }
 
+@keyframes printin {
+  from { opacity: 0; transform: translateY(14px); clip-path: inset(0 0 100% 0); }
+  60%  { opacity: 1; }
+  to   { opacity: 1; transform: none; clip-path: inset(0 0 0 0); }
+}
+.print { animation: printin 0.5s cubic-bezier(0.22, 0.75, 0.3, 1) both; }
+.print-1 { animation-delay: 0.16s; }
+.print-2 { animation-delay: 0.30s; }
+.print-3 { animation-delay: 0.44s; }
+.print-4 { animation-delay: 0.58s; }
+.print-5 { animation-delay: 0.72s; }
+
+@keyframes promote { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes demote  { from { transform: translateY(-12px); opacity: 0; } to { transform: none; opacity: 0.55; } }
+.promote { animation: promote 0.36s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.demote  { animation: demote 0.36s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+
+@keyframes tick { 0% { transform: translateY(6px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.tick { animation: tick 0.24s ease-out both; }
+
+/* The booth coming on: a light sweeps the band once while the plan loads. */
+@keyframes sweep { from { transform: translateX(-120%); } to { transform: translateX(320%); } }
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 42%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.09), transparent);
+  animation: sweep 1.9s ease-in-out infinite;
+}
+
+button, a.btn, select, input { min-height: 44px; }
+
+/* Everything above degrades to a plain, instant layout. The lamp keeps its glow
+   and loses its pulse; nothing else moves. */
 @media (prefers-reduced-motion: reduce) {
-  .rise, .skeleton { animation: none; }
+  .rise, .skeleton, .print, .promote, .demote, .tick, .slam, .lamp, .sweep::after {
+    animation: none;
+  }
+  .demote { opacity: 0.55; }
+  .stamp { transform: rotate(-3.5deg); opacity: 0.92; }
 }

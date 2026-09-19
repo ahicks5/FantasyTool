@@ -10,7 +10,7 @@ export interface Connection {
   week: number;
 }
 
-const KEY = "edge.connection";
+const KEY = "booth.connection";
 const listeners = new Set<() => void>();
 let cachedRaw: string | null | undefined;
 let cached: Connection | null = null;
@@ -71,4 +71,28 @@ function subscribe(cb: () => void): () => void {
 /** Client hook: null during SSR/hydration, then the persisted connection. */
 export function useConnection(): Connection | null {
   return useSyncExternalStore(subscribe, loadConnection, () => null);
+}
+
+/* --------------------------------------------------------------- the sheet ---
+   Which calls you have made this week. Scoped per league and per week by
+   `calledKey`, so a new week starts with a clean sheet instead of inheriting
+   last week's ticks. Advice only — nothing here is written back to Sleeper or
+   ESPN, so this is a checklist, not a lineup submission.                       */
+
+export function loadCalled(key: string): string[] {
+  try {
+    const raw = window.localStorage.getItem(key);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCalled(key: string, ids: string[]): void {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(ids));
+  } catch {
+    /* private mode / blocked storage: the sheet just does not remember */
+  }
 }

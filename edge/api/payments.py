@@ -18,7 +18,7 @@ def create_checkout(email: str, sku: str, season: int, success_url: str | None, 
         customer_email=email,
         line_items=[{"quantity": 1, "price_data": {
             "currency": "usd", "unit_amount": p["price_cents"],
-            "product_data": {"name": f"Edge — {p['name']} ({season} season)", "description": p["blurb"]},
+            "product_data": {"name": f"The Booth — {p['name']} ({season} season)", "description": p["blurb"]},
         }}],
         metadata={"email": email, "sku": sku, "season": str(season)},
         success_url=success_url or f"{base}/team?paid={sku}",

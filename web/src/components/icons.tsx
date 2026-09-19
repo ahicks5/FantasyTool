@@ -53,3 +53,21 @@ export const IconMoon = (p: P) => (
 export const IconChevron = (p: P) => (
   <Svg {...p}><path d="M9 5.5 15.5 12 9 18.5" /></Svg>
 );
+
+/* The booth's own set: a call sheet, a depth-chart board, the wire, the film. */
+
+export const IconSheet = (p: P) => (
+  <Svg {...p}><rect x="4.5" y="3.5" width="15" height="17" rx="2" /><path d="M9 3.5V6h6V3.5" /><path d="M8.5 11h7M8.5 15h4.5" /></Svg>
+);
+export const IconWire = (p: P) => (
+  <Svg {...p}><path d="M12 13.5V21" /><circle cx="12" cy="11" r="1.6" /><path d="M8.6 14.4a4.8 4.8 0 0 1 0-6.8M15.4 7.6a4.8 4.8 0 0 1 0 6.8" /><path d="M5.8 17.2a8.8 8.8 0 0 1 0-12.4M18.2 4.8a8.8 8.8 0 0 1 0 12.4" /></Svg>
+);
+export const IconFilm = (p: P) => (
+  <Svg {...p}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M8 5v14M16 5v14" /><path d="M3 12h18" /></Svg>
+);
+export const IconHeadset = (p: P) => (
+  <Svg {...p}><path d="M4.5 14v-2a7.5 7.5 0 0 1 15 0v2" /><rect x="2.8" y="13.5" width="4" height="6" rx="1.8" /><rect x="17.2" y="13.5" width="4" height="6" rx="1.8" /><path d="M19.2 19.5v.6a2 2 0 0 1-2 2H13" /></Svg>
+);
+export const IconClock = (p: P) => (
+  <Svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5.2l3.2 2" /></Svg>
+);

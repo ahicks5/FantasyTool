@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { LineupView } from "@/components/LineupView";
-import { ErrorBox, SkeletonList } from "@/components/ui";
+import { BoothOpening, ErrorBox } from "@/components/ui";
 import { getLineup } from "@/lib/api";
 import type { Connection } from "@/lib/storage";
 import type { Lineup } from "@/lib/types";
@@ -26,10 +26,10 @@ function TeamBody({ c }: { c: Connection }) {
     setTick((t) => t + 1);
   };
   if (error) return <ErrorBox message={error} onRetry={load} />;
-  if (!data) return <SkeletonList rows={6} />;
+  if (!data) return <BoothOpening />;
   return <LineupView lineup={data} />;
 }
 
 export default function TeamPage() {
-  return <AppShell title="My Team">{(s) => <TeamBody c={s.connection!} />}</AppShell>;
+  return <AppShell title="Depth chart">{(s) => <TeamBody c={s.connection!} />}</AppShell>;
 }

@@ -31,6 +31,8 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
   }, []);
 
   const tone = TONE[result.verdict] ?? { ink: "#0e1116", soft: "#f1efea" };
+  // The card is always dark, so the stamp takes the light step of the verdict colour.
+  const stampInk = tone.ink === "#0e1116" ? "#ffffff" : tone.soft;
   const fair = Math.round(result.fairness * 100);
 
   return (
@@ -49,20 +51,42 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
         }}
       >
         <div className="flex items-center justify-between" style={{ fontSize: 30 }}>
-          <span style={{ fontWeight: 900, fontSize: 46, letterSpacing: "-0.045em" }}>
-            edge
-            <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 99, background: "#22a468", marginLeft: 4 }} />
+          <span style={{ display: "inline-flex", alignItems: "baseline", gap: 9, fontWeight: 900, fontSize: 46, letterSpacing: "-0.04em" }}>
+            <span style={{ fontSize: 23, letterSpacing: "0.2em", opacity: 0.55 }}>THE</span>
+            <span>BOOTH</span>
+            {/* The lamp, drawn rather than animated: this is a still image. */}
+            <span style={{ display: "inline-block", width: 13, height: 13, borderRadius: 99, background: "#ff4d3a", marginLeft: 3 }} />
           </span>
-          <span style={{ color: "rgba(247,246,243,0.5)", maxWidth: 560, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ color: "rgba(247,246,243,0.5)", maxWidth: 520, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {leagueName}
           </span>
         </div>
 
         <div style={{ marginTop: 44, fontSize: 26, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(247,246,243,0.45)", fontWeight: 700 }}>
-          Trade verdict
+          The booth&rsquo;s verdict
         </div>
-        <div style={{ fontSize: 176, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 0.92, color: tone.ink === "#0e1116" ? "#ffffff" : tone.soft, marginTop: 6 }}>
-          {result.verdict.toUpperCase()}
+        {/* The signature: the verdict is stamped, not typeset. Same device as the app. */}
+        <div style={{ marginTop: 18, paddingLeft: 10 }}>
+          <span
+            style={{
+              display: "inline-block",
+              transform: "rotate(-3.5deg)",
+              border: `11px solid ${stampInk}`,
+              borderRadius: 22,
+              padding: "14px 34px 20px",
+              color: stampInk,
+              fontSize: 132,
+              fontWeight: 900,
+              lineHeight: 1,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              opacity: 0.93,
+              WebkitMaskImage: "repeating-linear-gradient(58deg, #000 0 38px, rgba(0,0,0,0.88) 38px 44px)",
+              maskImage: "repeating-linear-gradient(58deg, #000 0 38px, rgba(0,0,0,0.88) 38px 44px)",
+            }}
+          >
+            {result.verdict.toUpperCase()}
+          </span>
         </div>
 
         <div className="grid grid-cols-2" style={{ gap: 28, marginTop: 44 }}>
@@ -79,7 +103,7 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
             <div style={{ width: `${fair}%`, height: "100%", borderRadius: 99, background: fair >= 90 ? "#22a468" : fair >= 75 ? "#f0b429" : "#e2554e" }} />
           </div>
           <div style={{ marginTop: 34, fontSize: 28, color: "rgba(247,246,243,0.45)" }}>
-            Your league. This week&rsquo;s moves.
+            Three moves. By Sunday. We keep score.
           </div>
         </div>
       </div>

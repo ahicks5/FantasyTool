@@ -4,7 +4,7 @@ import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";
 import { WaiverPlanView } from "@/components/WaiverPlanView";
 import { WaiversView } from "@/components/WaiversView";
-import { ErrorBox, H2, SkeletonList } from "@/components/ui";
+import { BoothOpening, ErrorBox, H2 } from "@/components/ui";
 import { getWaiverPlan, getWaivers, PaywallError } from "@/lib/api";
 import type { Connection } from "@/lib/storage";
 import type { WaiverPlanResponse, Waivers } from "@/lib/types";
@@ -38,7 +38,7 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
 
   if (paywall) return <Locked signedIn={signedIn} sku="waivers" what="Waiver Wire Pass" teaser={paywall.teaser} onUnlocked={refresh} />;
   if (error) return <ErrorBox message={error} onRetry={load} />;
-  if (!plan) return <SkeletonList rows={4} tall />;
+  if (!plan) return <BoothOpening />;
 
   return (
     <div className="grid gap-6">
@@ -47,7 +47,7 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
         <section>
           <button onClick={() => setShowBoard((s) => !s)} aria-expanded={showBoard} className="min-h-0 w-full text-left">
             <H2 className="flex items-center justify-between gap-3">
-              <span>Full waiver board</span>
+              <span>The whole wire</span>
               <span className="text-[13px] font-bold text-lean">{showBoard ? "Hide" : `Show all ${board.picks.length}`}</span>
             </H2>
           </button>
@@ -64,14 +64,14 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
 
 export default function WaiversPage() {
   return (
-    <AppShell title="Waivers">
+    <AppShell title="The wire">
       {(s) =>
         s.has("waivers") ? (
           <WaiversBody c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
         ) : (
           <Locked signedIn={s.signedIn} sku="waivers"
             what="Waiver Wire Pass"
-            teaser="Edge prices every add against the player you would drop, tells you what to bid, and lines up a fallback claim for when you lose the first one."
+            teaser="The booth prices every add against the player you would drop, tells you what to bid, and lines up a fallback claim for when you lose the first one."
             onUnlocked={s.refresh}
           />
         )

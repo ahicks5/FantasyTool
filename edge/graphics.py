@@ -16,6 +16,7 @@ import requests
 INK = "#0e1116"
 PAPER = "rgba(247,246,243,"
 COLORS = {"Accept": "#22a468", "Reject": "#e2554e", "Counter": "#f0b429", "Fair": "#5b8def"}
+SIGNAL = "#ff4d3a"  # the ON AIR lamp — brand chrome only, never a status colour
 # The text-safe steps for the same four, used where a word sits on the light strip.
 COLORS_TEXT = {"Accept": "#0b7a4b", "Reject": "#c02b23", "Counter": "#b57500", "Fair": "#1e4fd8"}
 
@@ -88,7 +89,8 @@ def _side(label: str, players: list[dict], names: list[str]) -> str:
 
 
 def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", week: int | None = None) -> str:
-    """The 1080x1080 share card. Same identity as the app: one dark surface, Archivo weight."""
+    """The 1080x1080 share card. Same identity as the app: one dark surface, Archivo weight,
+    and the verdict stamped rather than typeset."""
     e = html.escape
     verdict = graphic.get("verdict") or str(graphic.get("title", "")).split(":")[0]
     colour = COLORS.get(verdict, "#ffffff")
@@ -110,12 +112,17 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
   .card{{width:1080px;height:1080px;box-sizing:border-box;padding:72px;display:flex;flex-direction:column}}
 </style></head><body><div class="card">
   <div style="display:flex;align-items:center;justify-content:space-between;font-size:30px">
-    <span style="font-weight:900;font-size:46px;letter-spacing:-.045em">edge<span style="display:inline-block;width:12px;height:12px;border-radius:99px;background:{COLORS['Accept']};margin-left:4px"></span></span>
+    <span style="display:inline-flex;align-items:baseline;gap:9px;font-weight:900;font-size:46px;letter-spacing:-.04em"><span style="font-size:23px;letter-spacing:.2em;opacity:.55">THE</span><span>BOOTH</span><span style="display:inline-block;width:13px;height:13px;border-radius:99px;background:{SIGNAL};margin-left:3px"></span></span>
     <span style="color:{PAPER}.5);max-width:560px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{sub}</span>
   </div>
 
-  <div style="margin-top:44px;font-size:26px;letter-spacing:.16em;text-transform:uppercase;color:{PAPER}.45);font-weight:700">Trade verdict</div>
-  <div style="font-size:176px;font-weight:900;letter-spacing:-.05em;line-height:.92;margin-top:6px;color:{colour}">{e(verdict).upper()}</div>
+  <div style="margin-top:40px;font-size:26px;letter-spacing:.16em;text-transform:uppercase;color:{PAPER}.45);font-weight:700">The booth&rsquo;s verdict</div>
+  <div style="margin-top:16px;padding-left:10px">
+    <span style="display:inline-block;transform:rotate(-3.5deg);border:11px solid {colour};border-radius:22px;
+      padding:14px 34px 20px;color:{colour};font-size:132px;font-weight:900;line-height:1;letter-spacing:.04em;
+      text-transform:uppercase;opacity:.93;
+      -webkit-mask-image:repeating-linear-gradient(58deg,#000 0 38px,rgba(0,0,0,.88) 38px 44px)">{e(verdict).upper()}</span>
+  </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:36px">
     {_side("You give", graphic.get("give_players") or [], graphic.get("give") or [])}
@@ -136,7 +143,7 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
     <div style="margin-top:14px;height:18px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden">
       <div style="width:{fair}%;height:100%;border-radius:99px;background:{bar}"></div>
     </div>
-    <div style="margin-top:34px;font-size:28px;color:{PAPER}.45)">Your league. This week&rsquo;s moves.</div>
+    <div style="margin-top:34px;font-size:28px;color:{PAPER}.45)">Three moves. By Sunday. We keep score.</div>
   </div>
 </div></body></html>"""
 

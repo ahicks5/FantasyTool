@@ -1,4 +1,4 @@
-"""Edge API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload"""
+"""The Booth API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload"""
 from __future__ import annotations
 
 import os
@@ -18,7 +18,7 @@ from edge.engine import actions as actions_mod
 from edge.engine import report, trade, trade_finder, waiver_plan, waivers
 from edge.engine.explain import explain
 
-app = FastAPI(title="Edge API", version="0.1")
+app = FastAPI(title="The Booth API", version="0.1")
 app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("EDGE_CORS", "*").split(","),
                    allow_methods=["*"], allow_headers=["*"])
 store = Store()
@@ -42,7 +42,7 @@ def espn_auth(x_espn_s2: str | None = Header(default=None),
               x_espn_swid: str | None = Header(default=None)):
     """A private ESPN league's cookies, sent per request by the browser that holds them.
 
-    Edge never stores these — see `espn_api.EspnAuth`. They arrive as headers rather than in
+    The Booth never stores these — see `espn_api.EspnAuth`. They arrive as headers rather than in
     a body or a query string so they stay out of URLs, logs and referrers.
     """
     from edge.data.espn_api import EspnAuth

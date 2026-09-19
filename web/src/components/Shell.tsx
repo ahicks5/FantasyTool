@@ -2,15 +2,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
-import { IconHome, IconReport, IconTeam, IconTrade, IconWaivers } from "./icons";
-import { LinkButton, SkeletonList, ThemeToggle, Wordmark } from "./ui";
+import { IconFilm, IconSheet, IconTeam, IconTrade, IconWire } from "./icons";
+import { BoothOpening, LinkButton, OnAir, ThemeToggle, Wordmark } from "./ui";
 
+// Coach vocabulary, but every label still says what the screen is. "Wire" is what
+// a manager already calls the waiver wire; "Film" is the weekly recap.
 const TABS = [
-  { href: "/home", label: "This week", Icon: IconHome },
-  { href: "/team", label: "Team", Icon: IconTeam },
-  { href: "/waivers", label: "Waivers", Icon: IconWaivers },
-  { href: "/trade", label: "Trade", Icon: IconTrade },
-  { href: "/report", label: "Report", Icon: IconReport },
+  { href: "/home", label: "Call sheet", Icon: IconSheet },
+  { href: "/team", label: "Depth", Icon: IconTeam },
+  { href: "/waivers", label: "Wire", Icon: IconWire },
+  { href: "/trade", label: "Trades", Icon: IconTrade },
+  { href: "/report", label: "Film", Icon: IconFilm },
 ];
 
 export function TopBar({ session }: { session: Session }) {
@@ -19,8 +21,8 @@ export function TopBar({ session }: { session: Session }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4">
-        <Link href="/" aria-label="Edge home" className="shrink-0">
-          <Wordmark className="text-[21px]" />
+        <Link href="/" aria-label="The Booth home" className="shrink-0">
+          <Wordmark className="text-[20px]" />
         </Link>
         <Link href="/connect" className="min-w-0 flex-1 text-right leading-tight">
           <div className="truncate text-[13px] font-bold">{c ? c.league_name : "No league"}</div>
@@ -89,17 +91,18 @@ export function AppShell({
       <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">
         {!hideTitle && <h1 className="mb-4 text-[26px]">{title}</h1>}
         {session.loading ? (
-          <SkeletonList rows={3} tall />
+          <BoothOpening />
         ) : session.connection ? (
           children(session)
         ) : (
-          <div className="hero p-7 text-center">
-            <div className="display text-[26px] leading-tight">No league yet</div>
+          <div className="hero callsheet p-7 text-center">
+            <OnAir className="text-white/45" label="Off air" />
+            <div className="display mt-3 text-[26px] leading-tight">Booth&rsquo;s empty</div>
             <p className="mx-auto mb-6 mt-2 max-w-[17rem] text-[15px] leading-relaxed text-white/70">
-              Connect a Sleeper or ESPN league and {title.toLowerCase()} shows up here. No account needed.
+              Hook up a Sleeper or ESPN league and {title.toLowerCase()} shows up here. No account, no password.
             </p>
             <LinkButton href="/connect" variant="onHero" className="w-full">
-              Connect your league
+              Put me in the booth
             </LinkButton>
           </div>
         )}

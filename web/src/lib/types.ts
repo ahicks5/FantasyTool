@@ -1,4 +1,4 @@
-// Mirrors docs/API.md (Edge API contract v1).
+// Mirrors docs/API.md (The Booth API contract v1).
 
 export type Platform = "sleeper" | "espn";
 

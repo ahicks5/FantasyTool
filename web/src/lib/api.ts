@@ -29,7 +29,7 @@ import { espnAuthHeaders } from "./espnAuth";
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 export const USE_MOCKS = API_URL === "";
 
-const MOCK_ENTITLEMENTS_KEY = "edge.mock.entitlements";
+const MOCK_ENTITLEMENTS_KEY = "booth.mock.entitlements";
 
 /** Thrown on HTTP 402: the feature needs a purchase. Carries the products that unlock it. */
 export class PaywallError extends Error {

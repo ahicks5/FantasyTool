@@ -1,7 +1,11 @@
-# Edge — your league, this week's moves
+# The Booth — three moves, by Sunday
 
-Connect a Sleeper (or public ESPN) league → start/sit calls, ranked waiver pickups with FAAB bids,
-and a Trade Lab that grades trades and drafts counteroffers tuned to the other manager.
+Take the headset. Connect a Sleeper or ESPN league and the booth writes this week's **call sheet**:
+who starts, who to claim, what to offer. Each call carries a confidence stamp, one line of why, and
+the number under it — and we publish our own hit rate every week.
+
+The Python package is still `edge/` (renaming it would touch every import for no user-visible gain).
+Anything a user reads says The Booth.
 
 ## Run it
 ```bash
@@ -23,10 +27,10 @@ Tests: `uv run pytest -q` (offline, fixtures) and `cd web && npm test && npm run
 ## Pricing (edit `edge/products.py`)
 | SKU | Price | Unlocks |
 |---|---|---|
-| free | $0 | My Team start/sit, 1 league |
-| waivers | $3 / season | Waiver Wire Pass |
+| free | $0 | Depth chart start/sit, 1 league |
+| waivers | $3 / season | Wire Pass |
 | trade_lab | $5 / season | Trade Lab |
-| full_report | $7 / season | Everything + weekly Full Report, 5 leagues |
+| full_report | $7 / season | Full Booth: everything + the weekly film, 5 leagues |
 
 ## Layout
 `edge/` engine + API · `web/` Next.js app · `docs/API.md` contract · `tests/` offline tests ·

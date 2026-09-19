@@ -12,7 +12,7 @@ const BTN =
   "btn inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-bold transition-[transform,background-color] duration-150 active:scale-[0.985] disabled:opacity-50 disabled:active:scale-100";
 
 /**
- * Premium teaser, not a wall: says what Edge found, then offers the pass or the bundle.
+ * Premium teaser, not a wall: says what the booth found, then offers the pass or the bundle.
  * `teaser` should be a concrete, name-free sentence from the engine.
  */
 export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku: Sku; what: string; teaser?: string | null; signedIn?: boolean; onUnlocked?: () => void }) {
@@ -78,7 +78,7 @@ export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku
             disabled={busy}
             className={`${BTN} border border-white/25 text-white hover:bg-white/10`}
           >
-            Or get everything
+            Or take the whole booth
             <span aria-hidden className="opacity-50">·</span>
             <span className="tnum">{formatCents(full.price_cents)}</span>
           </button>

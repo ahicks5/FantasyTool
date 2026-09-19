@@ -8,10 +8,10 @@ import { Eyebrow, LinkButton, Skeleton } from "./ui";
 
 /** What each entitlement actually buys, in the user's words rather than the API's. */
 const UNLOCKS: Record<Feature, string> = {
-  my_team: "Start/sit calls with confidence",
-  waivers: "Waiver plan, FAAB bid and the drop",
-  trade_lab: "Trade verdicts and counteroffers",
-  full_report: "The full weekly report",
+  my_team: "Start/sit calls, stamped with confidence",
+  waivers: "The wire: claims, the bid, and the drop",
+  trade_lab: "Trade verdicts and counters",
+  full_report: "The full weekly film",
 };
 
 function Badge({ sku }: { sku: Product["sku"] }) {
@@ -92,7 +92,7 @@ export function Pricing() {
 
       <div className="mt-6">
         <LinkButton href="/connect" variant="start" className="w-full">
-          Connect your league
+          Put me in the booth
         </LinkButton>
         <p className="mt-2.5 text-center text-[12px] text-muted">
           Start free on one team. Pay only when you want the rest.

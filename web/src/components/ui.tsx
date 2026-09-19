@@ -1,9 +1,9 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Confidence, Verdict } from "@/lib/types";
-import { confidenceClass, verdictClass } from "@/lib/format";
-import { IconCheck, IconChevron, IconMoon, IconSun } from "./icons";
+import { confidenceClass, confidenceInk, countdown, nextKickoff, verdictClass } from "@/lib/format";
+import { IconCheck, IconChevron, IconClock, IconMoon, IconSun } from "./icons";
 
 export function Card({
   children,
@@ -26,11 +26,55 @@ export function Eyebrow({ children, className = "" }: { children: React.ReactNod
   return <div className={`eyebrow ${className}`}>{children}</div>;
 }
 
-export function Wordmark({ className = "" }: { className?: string }) {
+/**
+ * THE BOOTH. "THE" is a small tracked-out label sitting on the same baseline as
+ * the heavy word, with the ON AIR lamp as the terminal. `lamp={false}` for
+ * surfaces where the pulse would be noise — a footer, a print card.
+ */
+export function Wordmark({ className = "", lamp = true }: { className?: string; lamp?: boolean }) {
   return (
-    <span className={`display inline-flex items-baseline ${className}`} style={{ fontWeight: 900, letterSpacing: "-0.045em" }}>
-      edge
-      <span className="ml-[3px] inline-block h-[0.26em] w-[0.26em] rounded-full bg-start" aria-hidden />
+    <span className={`display inline-flex items-baseline gap-[0.2em] ${className}`} style={{ fontWeight: 900, letterSpacing: "-0.04em" }}>
+      <span className="opacity-55" style={{ fontSize: "0.5em", letterSpacing: "0.2em" }}>
+        THE
+      </span>
+      <span>BOOTH</span>
+      {lamp && <span className="lamp ml-[0.06em]" aria-hidden />}
+    </span>
+  );
+}
+
+/** The lamp plus the words. The red never carries meaning on its own. */
+export function OnAir({ className = "", label = "On air" }: { className?: string; label?: string }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] ${className}`}>
+      <span className="lamp" aria-hidden />
+      {label}
+    </span>
+  );
+}
+
+/* ----------------------------------------------------------------- stamps ---
+   A decision gets stamped. The stamp is the brand's loudest device, so it is
+   reserved for a call the user is being asked to make — never for a row in a
+   list, which would turn a scannable table into confetti.                     */
+
+export function Stamp({
+  children,
+  ink = "text-ink",
+  size = "md",
+  slam = false,
+  className = "",
+}: {
+  children: React.ReactNode;
+  ink?: string;
+  size?: "md" | "lg";
+  /** Animate it landing. Use once per screen, on the thing that just resolved. */
+  slam?: boolean;
+  className?: string;
+}) {
+  return (
+    <span className={`stamp ${size === "lg" ? "stamp-lg text-[15px]" : "text-[11px]"} ${ink} ${slam ? "slam" : ""} ${className}`}>
+      {children}
     </span>
   );
 }
@@ -40,6 +84,32 @@ export function Wordmark({ className = "" }: { className?: string }) {
    a colour and a word. Colour is never the only channel.                      */
 
 const SEGMENTS: Record<Confidence, number> = { Lock: 3, Lean: 2, "Coin flip": 1 };
+
+/**
+ * The headline form of a confidence tag: the same three bars, stamped. Shown on
+ * the card for a call you have to make. Dense lists keep `ConfidencePill`.
+ */
+export function ConfidenceStamp({ value, hit, slam = false }: { value: Confidence; hit?: number; slam?: boolean }) {
+  const filled = SEGMENTS[value] ?? 1;
+  return (
+    <Stamp
+      ink={confidenceInk(value)}
+      slam={slam}
+      className={hit !== undefined ? "cursor-help" : ""}
+    >
+      <span
+        className="flex items-center gap-[2px]"
+        aria-hidden
+        title={hit !== undefined ? `Margins this size were right about ${Math.round(hit * 100)}% of the time last week` : undefined}
+      >
+        {[0, 1, 2].map((i) => (
+          <span key={i} className={`h-[10px] w-[3px] ${i < filled ? "bg-current" : "bg-current opacity-25"}`} />
+        ))}
+      </span>
+      {value}
+    </Stamp>
+  );
+}
 
 export function ConfidencePill({ value, hit }: { value: Confidence; hit?: number }) {
   const filled = SEGMENTS[value] ?? 1;
@@ -132,6 +202,113 @@ export function Stat({
   );
 }
 
+/* ------------------------------------------------------------------ clock ---
+   The sheet is only urgent if it says how long you have.                       */
+
+/** Live time to the next Sunday 1pm ET slate. Ticks once a second inside the last day. */
+export function Countdown({ onHero = false, className = "" }: { onHero?: boolean; className?: string }) {
+  // Rendered empty on the server and filled on the client: the deadline depends
+  // on the reader's current time, so server HTML would hydrate mismatched.
+  const [left, setLeft] = useState<number | null>(null);
+  useEffect(() => {
+    const update = () => setLeft(nextKickoff() - Date.now());
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, []);
+  const muted = onHero ? "text-white/55" : "text-muted";
+  const bright = onHero ? "text-white" : "text-ink";
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${className}`}>
+      <IconClock size={13} strokeWidth={2.2} className={muted} />
+      <span className={`text-[10px] font-black uppercase tracking-[0.14em] ${muted}`}>Kickoff</span>
+      <span className={`tnum text-[13px] font-black ${bright}`} suppressHydrationWarning>
+        {left === null ? "—" : countdown(left)}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * A number that counts up to its value the first time it lands, then snaps on
+ * later changes. Returns a string so callers keep control of formatting.
+ * Honours reduced motion by showing the final value immediately.
+ */
+export function useCountUp(value: number, digits = 1, ms = 620): string {
+  const [shown, setShown] = useState(value);
+  const started = useRef(false);
+  useEffect(() => {
+    const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || started.current) {
+      setShown(value);
+      started.current = true;
+      return;
+    }
+    started.current = true;
+    const from = 0;
+    const t0 = performance.now();
+    let raf = 0;
+    const step = (t: number) => {
+      const p = Math.min(1, (t - t0) / ms);
+      // Ease out: fast start, soft landing, like a scoreboard settling.
+      const eased = 1 - Math.pow(1 - p, 3);
+      setShown(from + (value - from) * eased);
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value, ms]);
+  return shown.toFixed(digits);
+}
+
+/* ------------------------------------------------------------- pre-snap ---- */
+
+const OPENING = [
+  "Reading your league",
+  "Pulling this week's projections",
+  "Re-scoring to your settings",
+  "Writing the call sheet",
+];
+
+/**
+ * The booth coming on while the feed loads. These are the real phases the API
+ * goes through; the ticks advance on a timer rather than on measured progress,
+ * the way a loading sequence normally does.
+ */
+export function BoothOpening() {
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+    const id = setInterval(() => setStep((s) => Math.min(s + 1, OPENING.length)), 420);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="hero callsheet sweep relative p-6" aria-busy="true" aria-label="Opening the booth">
+      <OnAir className="text-white/70" />
+      <div className="display mt-3 text-[26px] leading-tight text-white">Opening the booth</div>
+      <ul className="mt-4 grid gap-2.5">
+        {OPENING.map((line, i) => {
+          const done = i < step;
+          return (
+            <li key={line} className={`flex items-center gap-2.5 text-[14px] ${done ? "text-white" : "text-white/40"}`}>
+              <span
+                aria-hidden
+                className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border ${
+                  done ? "border-start bg-start text-white" : "border-white/25"
+                }`}
+              >
+                {done && <IconCheck size={10} strokeWidth={3.5} />}
+              </span>
+              {line}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 /* --------------------------------------------------------------- controls --- */
 
 type BtnProps = {
@@ -189,7 +366,7 @@ export function ThemeToggle() {
     const next = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
     try {
-      localStorage.setItem("edge.theme", next);
+      localStorage.setItem("booth.theme", next);
     } catch {
       /* private mode */
     }

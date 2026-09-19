@@ -126,6 +126,31 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [ ] ESPN's free-agent list is the top 250 by percent owned. Ample for a top-5 waiver list;
       raise the limit (600 works) if a deep-league user ever reports a missing name.
 
+## The Booth — rebrand (this round)
+Andrew's call: ffwrapped is an encyclopedia you browse; we are three moves you make before
+kickoff. Named it **The Booth** and rebuilt the shell around a coaching call sheet.
+- [x] Brand system in `web/src/app/globals.css`: ON AIR lamp token (`--color-signal`, chrome only),
+      `.stamp` / `.slam`, `.callsheet` ruled paper, `.slug` margin numerals, and the whole motion
+      vocabulary (`rise`/`print`/`promote`/`demote`/`tick`/`lamp`/`sweep`). Pure CSS, no new dep.
+      Every animation collapses under `prefers-reduced-motion`.
+- [x] Primitives: `Wordmark` (THE BOOTH + lamp), `OnAir`, `Stamp`, `ConfidenceStamp`, `Countdown`,
+      `useCountUp`, `BoothOpening` (the pre-snap loader, replaces the bare skeletons).
+- [x] Home is the **call sheet**: ON AIR band, live kickoff countdown, calls numbered in the margin,
+      and "Make the call" per row. Ticks persist per league + week; a full sheet stamps itself clean.
+- [x] `nextKickoff` / `countdown` / `calledKey` / `sheetStatus` in `lib/format.ts`, 13 unit tests
+      including both sides of the November DST change (a hard-coded ET offset fails half the season).
+- [x] Team is the **depth chart** ("on the field" / "on the bench", swap cards animate the promote
+      and demote). Tabs: Call sheet · Depth · Wire · Trades · Film.
+- [x] Verdict share card stamped rather than typeset, in both renderers (`ShareCard.tsx` and
+      `edge/graphics.py`) — rendered three real PNGs through Playwright to check the frame.
+- [x] Copy pass in the booth voice across web, the weekly email, Stripe line items and ESPN errors.
+      Product names: Wire Pass ($3), Trade Lab ($5), Full Booth ($7).
+- [ ] Domain: check `thebooth.*` / `boothfantasy.*` availability — placeholder is `thebooth.example`.
+- [ ] Sound on the stamp (off by default). Deliberately not built: it is the first thing that would
+      make the app feel cheap if it were even slightly wrong.
+- [ ] Drag-to-move tiles on the depth chart, and the manager dossier wall in Trade Lab — the two
+      "video game" ideas worth doing after launch, not before.
+
 ## Blueprint items still open
 - [x] Weekly action email — HTML + plain text renderer, `python -m edge.cli email <league> <team>`.
       Sending still needs a Resend key; everything up to the send is built and tested.
@@ -133,7 +158,7 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [ ] Uncertainty-aware confidence: P(a > b) from projection error by position, not raw margin
       (blueprint says do NOT build this before multi-week backtesting exists)
 - [ ] Commissioner league pack, creator affiliate codes (growth, after launch)
-- [ ] Edge Pro tier — deliberately not launched yet
+- [ ] A Booth Pro tier — deliberately not launched yet
 
 ## Later (not v1)
 - [ ] Private ESPN leagues (espn_s2 / SWID)

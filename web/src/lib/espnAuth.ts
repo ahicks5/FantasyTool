@@ -17,7 +17,7 @@ export interface EspnCredentials {
   swid: string;
 }
 
-const KEY = "edge.espn.auth";
+const KEY = "booth.espn.auth";
 const listeners = new Set<() => void>();
 let cachedRaw: string | null | undefined;
 let cached: EspnCredentials | null = null;

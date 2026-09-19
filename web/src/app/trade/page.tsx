@@ -415,7 +415,7 @@ export default function TradePage() {
           {s.has("trade_lab") ? (
             <TradeBodyKeyed c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
           ) : (
-            <Locked signedIn={s.signedIn} sku="trade_lab" what="Trade Lab" teaser="Propose any trade. Edge grades it, then drafts a counter tuned to how that manager actually behaves." onUnlocked={s.refresh} />
+            <Locked signedIn={s.signedIn} sku="trade_lab" what="Trade Lab" teaser="Propose any trade. The booth grades it, then drafts a counter tuned to how that manager actually behaves." onUnlocked={s.refresh} />
           )}
         </Suspense>
       )}

@@ -1,15 +1,51 @@
-# Edge — fantasy football weekly moves (working name)
+# THE BOOTH — fantasy football weekly moves
 
 ## Goal
 Paid fantasy football web app. Users connect a league and get this week's moves.
 Launch in 7 days; NFL 2026 season is already underway. Speed > polish.
 
-1. **My Team** — start/sit calls with a confidence tag and a one-line reason.
-2. **Waivers** — top 5 pickups ranked by roster fit, with a suggested FAAB bid.
+1. **Depth chart** — start/sit calls with a confidence stamp and a one-line reason.
+2. **The wire** — top 5 pickups ranked by roster fit, with a suggested FAAB bid.
 3. **Trade Lab (paid)** — verdict on a proposed trade + counteroffer tuned to the
    other manager's tendencies. Numbers from the engine; Claude API writes the explanation.
 
-Business: free for 1 team, $7 unlocks the season (Stripe). Marketing via trade-verdict graphics.
+Business: free for 1 team, $7 unlocks the season (Stripe). Marketing via stamped verdict graphics.
+
+## Brand — the booth
+The product is a **coaching booth**: you sit upstairs with a headset and the staff hands you a
+**call sheet**. Competitors (ffwrapped and friends) are encyclopedias you browse; we are three
+moves you make before kickoff. That difference is the whole brand.
+
+- **Name** The Booth. **Tagline** "Three moves. By Sunday. We keep score."
+- **Voice** the coordinator in your headset: confident, clipped, verb first, plural staff ("we").
+  Never hedge on a call the engine is confident about; say plainly when it's a coin flip.
+- **Vocabulary** call sheet (home) · depth chart (team) · the wire (waivers) · trade lab · the film
+  (weekly report) · "make the call" · "board's set" · "sheet's clean".
+- **Look** clean sideline, not neon dashboard: printed call sheet, heavy tabular Archivo numerals,
+  one dark surface per screen, warm paper behind it. Game-feel motion on top (see below).
+- **ON AIR lamp** (`--color-signal`) is brand chrome only — wordmark, call-sheet band, ON AIR chip.
+  It is deliberately NOT in the status scale, never appears on a player row or a verdict, and always
+  has the words "ON AIR" beside it. Status red (`sit`) never appears on the chrome. Different
+  surfaces, so the two reds can't be confused.
+- **Stamps vs pills.** A stamp (`.stamp`, `<Stamp>`, `<ConfidenceStamp>`) is the loudest device we
+  have, so it is reserved for a decision the user is being asked to make — a call sheet card, a swap
+  card, a verdict. Dense scannable lists keep `<ConfidencePill>`; stamping every row is confetti.
+  On the dark hero, ink a stamp `text-white` — status green/amber vanish there in light mode.
+- **Motion vocabulary**, and that is all of it: `rise` (arriving), `print` (a call sheet row coming
+  off the printer), `promote`/`demote` (a depth-chart tile changing places), `slam` (a stamp
+  landing), `tick` (a number that changed), `lamp` (the ON AIR pulse). Everything is CSS — no
+  animation dependency. All of it collapses under `prefers-reduced-motion`; the lamp keeps its glow
+  and loses its pulse.
+- **The call sheet is checkable.** Each call has "Make the call", stored per league and per week
+  (`calledKey`, `booth.called.<league>.<week>` in localStorage). It is a checklist, not a lineup
+  submission — we never write back to Sleeper or ESPN. When every call is ticked the sheet stamps
+  itself clean.
+- **Kickoff countdown** (`nextKickoff`) is the next Sunday 1:00 PM ET slate, computed via `Intl`
+  against `America/New_York` so it stays right across the November DST change. Tested both sides.
+
+**The package is still `edge/`.** Renaming it would touch every import, test and script for no
+user-visible gain before launch. Env vars (`EDGE_DEV`, `EDGE_DB`, `X-Edge-User`) stay too. Anything
+a *user* reads says The Booth; browser storage keys are namespaced `booth.*`.
 
 ## Owner
 Andrew (self-taught Python/VBA/automation). Steers, doesn't type every line.
@@ -95,7 +131,7 @@ recorded fixtures still work).
 - `edge/api/share.py` + `/api/share` — a verdict becomes a public `/s/{id}` page that opens with
   no account and unfurls with a rendered card at `/api/share/{id}/card.png` (cached on disk).
   Snapshots are display-only: never an email, a league id or a roster.
-- `edge/delivery/weekly_email.py` — the same Action feed as an email. Tables and inline styles
+- `edge/delivery/weekly_email.py` — the same call sheet as an email. Tables and inline styles
   only (Gmail strips `<style>`), absolute links, a plain-text alternative, and a test proving a
   free recipient never receives paid content. Render with `python -m edge.cli email`.
   Sending is deliberately not wired: pick a provider (Resend free tier) when you have a key.
@@ -138,8 +174,8 @@ priced 48 such swaps at −28 points, including "bench Josh Allen for Stafford" 
 - End every session with: what's done, what's next, decisions needed from Andrew.
 
 ## Pricing / packages
-`edge/products.py` is the single source of truth: free (My Team, 1 league), à la carte passes
-(Waiver Wire $3, Trade Lab $5), Full Report bundle $7 (everything + weekly report, 5 leagues).
+`edge/products.py` is the single source of truth: free (depth chart, 1 league), à la carte passes
+(Wire Pass $3, Trade Lab $5), Full Booth bundle $7 (everything + the weekly film, 5 leagues).
 The API gates features with HTTP 402 + an `upsell` list; the web shows a locked state.
 
 ## Test league (public Sleeper)

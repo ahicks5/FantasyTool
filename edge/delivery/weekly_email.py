@@ -16,6 +16,7 @@ LINE = "#e3e5e9"
 START = "#0b6e4f"
 SIT = "#b3261e"
 FLIP = "#7a4f00"
+SIGNAL = "#e02d1b"   # the ON AIR lamp — brand chrome only, never a status
 TYPE_COLOR = {"start": START, "waiver": "#1d4ed8", "trade": INK, "hold": MUTED}
 MAX_ACTIONS = 4
 
@@ -89,14 +90,14 @@ def _action_row(a: dict, base_url: str) -> str:
                 {_esc(a.get('reason'))}</div>
               <a href="{_esc(href)}" style="display:inline-block;margin-top:12px;background:{INK};
                  color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:9px 14px;
-                 border-radius:8px;">{_esc(a.get('cta', {}).get('label') or 'Open Edge')}</a>
+                 border-radius:8px;">{_esc(a.get('cta', {}).get('label') or 'Open the booth')}</a>
             </td>
           </tr>
         </table>
       </td></tr>"""
 
 
-def render_html(feed: dict, base_url: str = "https://edge.example", unsubscribe_url: str = "") -> str:
+def render_html(feed: dict, base_url: str = "https://thebooth.example", unsubscribe_url: str = "") -> str:
     m = feed.get("matchup") or {}
     actions = (feed.get("actions") or [])[:MAX_ACTIONS]
     matchup_block = ""
@@ -134,7 +135,8 @@ def render_html(feed: dict, base_url: str = "https://edge.example", unsubscribe_
                   font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
       <tr><td style="padding:24px 20px 8px 20px;">
         <div style="font-size:22px;font-weight:800;color:{INK};letter-spacing:-0.5px;">
-          edge<span style="color:{START};">.</span></div>
+          <span style="font-size:11px;letter-spacing:2px;color:{MUTED};font-weight:700;">THE</span>
+          BOOTH<span style="color:{SIGNAL};">&#9679;</span></div>
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
              color:{MUTED};margin-top:16px;">Week {_esc(feed.get('week'))} &mdash; {_esc(feed.get('team'))}</div>
         <div style="font-size:26px;font-weight:800;color:{INK};line-height:1.2;margin-top:4px;">
@@ -149,7 +151,7 @@ def render_html(feed: dict, base_url: str = "https://edge.example", unsubscribe_
       <tr><td style="padding:4px 20px 24px 20px;">
         <div style="font-size:14px;color:{MUTED};text-align:center;">{_esc(feed.get('footer'))}</div>
         <div style="font-size:12px;color:{MUTED};text-align:center;margin-top:16px;">
-          <a href="{_esc(base_url)}/home" style="color:{MUTED};">Open Edge</a>
+          <a href="{_esc(base_url)}/home" style="color:{MUTED};">Open the booth</a>
           {' &middot; ' + unsub if unsub else ''}
         </div>
       </td></tr>
@@ -159,7 +161,7 @@ def render_html(feed: dict, base_url: str = "https://edge.example", unsubscribe_
 </body></html>"""
 
 
-def render_text(feed: dict, base_url: str = "https://edge.example") -> str:
+def render_text(feed: dict, base_url: str = "https://thebooth.example") -> str:
     """Plain-text alternative. Some clients show only this, and spam filters want it to exist."""
     lines = [f"Week {feed.get('week')} — {feed.get('team')}", feed.get("summary", ""), ""]
     m = feed.get("matchup") or {}
@@ -175,7 +177,7 @@ def render_text(feed: dict, base_url: str = "https://edge.example") -> str:
     return "\n".join(lines)
 
 
-def build(feed: dict, base_url: str = "https://edge.example", unsubscribe_url: str = "") -> dict:
+def build(feed: dict, base_url: str = "https://thebooth.example", unsubscribe_url: str = "") -> dict:
     return {
         "subject": subject(feed),
         "preheader": preheader(feed),
