@@ -251,6 +251,25 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 }
 .hero .eyebrow { color: rgb(247 246 243 / 0.55); }
 
+/* ----------------------------------------------------------------- ribbon ---
+   The league nameplate above the tab bar. A small plate that spans only the words
+   it holds: card surface, a hairline on three sides, open at the bottom where it
+   meets the bar, and the chrome rail along its top edge (`.rail`) so it reads as
+   metal screwed onto metal rather than as one more strip of UI.
+
+   Translucent with the same blur as the bar below it, so the page scrolls *under*
+   the plate instead of stopping dead at it.                                       */
+
+.ribbon {
+  border-radius: 11px 11px 0 0;
+  background: color-mix(in srgb, var(--color-paper) 86%, transparent);
+  border: 1px solid var(--color-line);
+  border-bottom: 0;
+  box-shadow: var(--bevel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
 /* ------------------------------------------------------------ the call sheet ---
    The sheet is the hero with a printed grid laid over it: faint rules the eye
    reads as an etched surface, not as a table. Decorative, under the content, so

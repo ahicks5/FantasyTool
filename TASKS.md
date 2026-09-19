@@ -19,7 +19,23 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       dead-even table is unreachable by its own formula (regenerated from the code), the
       pseudocode divides by a starter unit that is legitimately 0.0, and ties needed a mid-rank
       or a league of clones would grade everyone A. `edge_starters` carries the margin.
-- [ ] **S-3** Matchup on the call-sheet header + `/matchup` breakdown page and endpoint.
+- [x] **S-3** Matchup is its own cell directly under the call sheet's title (`MatchupCell`) and
+      opens `/home/matchup`: scoreline, win meter, the read on the game, and every starting slot
+      set against the slot opposite it. **No new endpoint** — the breakdown is two calls to the
+      existing free `/lineup` route (yours and the opponent's), so the engine still owns the
+      flex-aware lineups and the page works against the API already on Render. The pairing and
+      the "even" band live in `web/src/lib/matchup.ts`, pure and covered by 10 node tests.
+      It is a sub-route of `/home` on purpose, so the call sheet tab stays lit.
+- [x] **S-8** League and team came out of the top bar and became a nameplate ribbon riveted to
+      the top edge of the tab bar. Names are capped in `ch` rather than left to flex-shrink —
+      shrink gave a long league name and a short team name the same haircut and produced "H…".
+- [x] **S-9** GM's Office reworked. Partner cards open and shut (best fit starts open, the rest
+      preview their top offer in one line); the hero headline is a derived short phrase so it
+      cannot wrap into a five-line block of display type; every figure strip is a grid rather
+      than inline spans; the two halves of "Grade an offer" became one table with a live ROS
+      tally between them; the wait is the hero's own frame with a one-line label instead of a
+      stack of skeletons that jumped when the answer landed. Also fixed the mock roster, which
+      omitted `ros` and made every player in the picker read "0 ROS".
 - [ ] **S-5** Depth-chart player panel: structured stats, not free text. Needs `opponent`/`ros`
       on `report.player_dict` and `margin` on the web's `LineupSlot`.
 - [ ] **S-6** Injury Protocol (`edge/engine/protocol.py`, endpoint, bottom sheet). Biggest piece,

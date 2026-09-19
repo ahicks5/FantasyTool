@@ -195,7 +195,12 @@ export async function sendFeedback(req: FeedbackRequest): Promise<void> {
 export async function getRoster(platform: Platform, leagueId: string, teamId: string): Promise<Roster> {
   if (USE_MOCKS) {
     const l = mocks.lineupFor(teamId);
-    const players = [...l.slots.map((s) => s.player), ...l.bench.map((b) => b.player)].filter((p): p is NonNullable<typeof p> => !!p);
+    // `ros` is part of the real roster payload (`report.player_dict | {"ros": ...}`), and
+    // the trade table weighs both sides with it. The mock used to leave it off, so every
+    // player in the picker read "0 ROS" and the table's tally never moved.
+    const players = [...l.slots.map((s) => s.player), ...l.bench.map((b) => b.player)]
+      .filter((p): p is NonNullable<typeof p> => !!p)
+      .map((p) => ({ ...p, ros: p.ros ?? mocks.rosValue(p) }));
     return { team: { id: teamId, name: mocks.LEAGUE.teams.find((t) => t.id === teamId)?.name ?? teamId }, players, starters: [] };
   }
   return request<Roster>(`/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/roster`);
