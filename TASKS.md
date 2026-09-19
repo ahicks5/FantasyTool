@@ -251,3 +251,15 @@ call on §8 of docs/MARKETING.md before any of this is built.
 - [ ] Send the weekly film (Resend free tier) to the Stripe email; unsubscribe + postal address.
 - [ ] Board analytics: connects, board views, board → checkout.
 - [ ] Re-render `launch/cards/` — stale wordmark, un-stamped verdicts. Blocks every launch post.
+
+### Paid acquisition prerequisites (docs/MARKETING.md §9)
+- [ ] Install Meta / Reddit / Google / GA4 pixels **before the soft open**, firing a custom event
+      on connect-a-league, so the free-tier period builds the retargeting audience.
+- [ ] Carry a UTM/board ref through `CheckoutIn` into the Stripe session metadata
+      (`edge/api/payments.py:23` sets email/sku/season today). Without it, revenue is unattributable.
+- [ ] Server-side conversions: hashed Stripe email to Meta CAPI + Google offline conversions.
+      Browser pixels lose a large share of conversions; this is what teaches the algorithm.
+- [ ] Cache the Claude trade explanation per trade — it is the only per-view variable cost, and a
+      viral share card must not re-bill on every view.
+- [ ] Dashboard: cost per click, per league connected, per purchase, and the League/Team mix.
+      The mix is the kill signal — ads buying $7 passes instead of $39 collapse the CAC ceiling.

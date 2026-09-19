@@ -186,11 +186,11 @@ and the content writes itself from data that already exists:
 - **Sunday morning — ON AIR.** The countdown and the live lamp are already built; the moment
   they create is a weekly reason to open the app.
 
-### 5.6 What not to do
-- **No paid ads at launch.** From September to December you are bidding against DraftKings,
-  FanDuel and Underdog for the same eyeballs. CPMs are at their annual peak and your AOV is $7.
-  The ceiling on CAC here is about $5. If curiosity demands it, cap a Reddit-only test at $200
-  and treat it as tuition.
+### 5.6 Paid — see §9
+Ads are viable here, but only pointed at the League Pass and only after the funnel converts
+organically. The math, the channels and the kill criteria are in §9.
+
+### 5.7 What not to do
 - **Not Product Hunt.** Wrong audience, and a week-3 fantasy manager is not browsing it.
 - **No claim that is not in `docs/BACKTEST.md`.** Including "thousands of managers."
 
@@ -235,4 +235,162 @@ and the content writes itself from data that already exists:
    also a name on a public page. Default proposed: opt-in at checkout, first name only.
 4. **Who does the Reddit grind, and under what handle?** It is the top channel and it is a person,
    not a feature. It cannot be automated and it should not be faked.
-5. **Creator budget:** comped League Passes cost nothing. Is there cash for two newsletter tests?
+5. **Ad budget.** §9 ladders from $300 to about $5,000 across the season, front-loaded, with a kill
+   criterion at every phase. What is the number you are willing to lose to find out?
+
+---
+
+## 9. Paid acquisition
+
+The first draft of this plan said don't buy ads, on the grounds that the AOV is $7. That reasoning
+was wrong in one place, and the correction changes the answer.
+
+### 9.1 The number that changes it
+
+The product you advertise is not the $7 Team Pass. It is the **$39 League Pass**, and the board
+means one League Pass buyer drags eleven people into the product for free.
+
+| | Price | Stripe takes | You keep |
+|---|---|---|---|
+| Team Pass | $7 | $0.50 | **$6.50** |
+| League Pass | $39 | $1.43 | **$37.57** |
+| Playoff Push | $19 | $0.85 | **$18.15** |
+
+Serving cost is near zero — Sleeper's API is free, Render and Vercel are flat. The one variable
+cost is the Claude explanation on a trade verdict, which should be cached per trade so a viral
+share card is not re-billed on every view.
+
+At a 60/40 split of Team to League passes, **blended net revenue per buyer is about $19.** That,
+not $7, is the break-even CAC. Add the board's organic tail — if an average League Pass buyer
+yields even two extra Team Passes from their own league, that buyer is worth ~$50 — and the
+ceiling on a League Pass acquisition is somewhere near $37 at break-even and healthy at $12.
+
+Now run it backwards, which is the part that decides the strategy. At a $0.50 CPC:
+
+| Click → purchase | CAC | Verdict |
+|---|---|---|
+| 1% | $50 | Dead |
+| 2.6% | $19 | Break-even |
+| 5% | $10 | Healthy |
+| 10% | $5 | Scale hard |
+
+**Roughly 3% click-to-purchase is the line.** Cold prospecting traffic does not hit 3% for a paid
+utility. Retargeting and high-intent search do, routinely. So the conclusion is not "no ads" — it
+is **no cold prospecting.** Spend on people who have already touched the product or who are
+typing the problem into a search bar.
+
+### 9.2 The gate — do not spend a dollar before these are true
+
+1. **A real Stripe purchase has completed end to end.** It never has. Paying for traffic into an
+   untested checkout is the fastest way to burn a budget.
+2. **The board exists** (§3). Without it an ad buys one customer instead of a league.
+3. **Pixels are installed and have been collecting for two weeks.** This is the single most
+   important prep step and it costs nothing — see §9.5. Install them before the Sep 24 soft open
+   so the free-tier period builds the retargeting audience the paid period spends against.
+4. **Organic conversion is measured.** If connected-league → purchase is under 3% organically,
+   ads amplify a leak. Fix the page, not the budget.
+
+### 9.3 Where the money goes, ranked
+
+**1. Retargeting people who connected a league and did not buy.** Highest-converting audience you
+will ever have: they gave you a league, saw a real call sheet with their own players in it, and
+stopped at the locked panel. Tiny audience, cheap to reach, and the only place 5–10%
+click-to-purchase is realistic. Meta and Reddit both do this off a pixel. Start here.
+
+**2. Google Search, commercial-intent queries.** "fantasy trade analyzer", "fantasy trade value
+calculator", "waiver wire pickups week N", "start em sit em week N". Someone typing *fantasy trade
+analyzer* has the exact problem the GM's Office solves and is one click from a verdict. Highest
+intent available anywhere, and the sports-betting giants are not bidding on it — they want
+depositors, not tool users. Underrated channel; test it before Meta.
+
+**3. Reddit, subreddit-targeted.** The only network where you can buy r/fantasyfootball,
+r/fantasyfootballadvice, r/Sleeperapp, r/DynastyFF and r/FFCommish by name. Low minimum spend,
+cheap clicks, and the audience is exactly right. Use the conversation placement, which puts the ad
+inside comment threads — the same threads §5.1 has you answering by hand, so the paid and organic
+plays reinforce each other. **r/FFCommish is the League Pass ad, specifically.**
+
+**4. Facebook — not Instagram — for the League Pass.** The commissioner of a ten-year-old league
+is 30–45 and runs it out of a Facebook group or a group text. Instagram and Reels sell the $7 Team
+Pass to a younger manager; Facebook sells the $39 to the person who already collects money from
+eleven people. Different creative, different landing page, different SKU. Do not blend them.
+
+**5. TikTok/Reels, only as Spark Ads on real creator content.** Paying to amplify a creator's
+organic video about using the product beats any ad you can produce. Ties directly into §5.4 —
+comp a creator's league, let them post, then put money behind the post that performs.
+
+**6. YouTube placement targeting** on the big fantasy channels is cheap awareness and poor direct
+response at this price. Deadline week only, if at all.
+
+### 9.4 Dayparting — the tactic most people would miss
+
+A fantasy manager's intent is not spread across the week. It spikes twice and vanishes:
+
+- **Tuesday night → Wednesday morning**: waiver claims process Wednesday. This is the Wire Pass window.
+- **Thursday evening → Sunday 12:45 PM ET**: lineups lock at 1:00. This is everything else, and
+  Sunday 9:00–12:45 ET is the single highest-intent window of the entire week.
+- **Monday is dark.** Nobody is making a decision on Monday.
+
+Run the budget on a schedule, not evenly. Concentrating the same dollars into roughly 60 hours a
+week is free performance, and the product's own kickoff urgency (`kickoffUrgency`, the ON AIR
+lamp) is already built to meet traffic arriving in exactly that window.
+
+### 9.5 Measurement, and what it costs in code
+
+With no accounts, attribution has to be deliberate or the spend is unreadable.
+
+1. **Pixels before launch**: Meta, Reddit, Google, GA4. Fire a custom event on connect-a-league,
+   not just pageview — that is the activation metric everything optimizes toward.
+2. **Pass the source into Stripe.** `create_checkout` already sets
+   `metadata={"email", "sku", "season"}` (`edge/api/payments.py:23`). Add `source` and a board
+   ref, carried from the UTM on the landing URL through `CheckoutIn`. Without this, Stripe tells
+   you revenue happened but never which ad bought it.
+3. **Server-side conversions.** Stripe hands you a verified email at purchase. Send it hashed to
+   Meta's Conversions API and Google's offline conversions. Browser pixels lose a large share of
+   conversions to iOS and ad blockers; the server-side event is what actually teaches the
+   algorithm who to find, and it matters far more than targeting choices.
+4. **One dashboard metric per stage**: cost per click, cost per league connected, cost per
+   purchase, and the League/Team mix. The mix is the one to watch — if ads are buying $7 Team
+   Passes instead of $39 League Passes, the CAC ceiling collapses by 5x and the channel dies.
+
+### 9.6 Creative
+
+The stamped verdict card is already a rendered PNG at a public URL. It is the ad. Five to run:
+
+1. **The receipt.** "We told 66 real teams what to start in week 1. +2.02 points a team. 82%
+   helped. Here's the week we got it wrong." → the scoreboard. Nobody in this category admits a
+   loss in an ad, which is exactly why it stops the scroll.
+2. **The card.** The stamped verdict, unedited, with one line: *paste this in your league chat.*
+3. **The commissioner** (Facebook, League Pass). "$39 unlocks the whole league. Less than one
+   buy-in." → the board, pre-filled with their league.
+4. **The bench.** "Your league left N points on the bench last week." Uses the backtest byproduct
+   from §5.5. Specific, personal, and true.
+5. **The anti-encyclopedia.** "Other sites give you 400 rankings. We give you three moves."
+
+Sports creative fatigues in about 7–10 days at any real frequency. Budget for producing new cuts
+weekly; the card renderer means that is a script run, not a design job.
+
+### 9.7 Budget ladder, with kill criteria
+
+| Phase | When | Spend | Where | Kill if |
+|---|---|---|---|---|
+| 0 | Now → Sep 24 | $0 | Pixels only | — |
+| 1 | Week 4, ~10 days | $300 | Reddit subreddit-targeted + Search | CAC > $40 or connect rate < 15% |
+| 2 | Weeks 5–6 | $500 | Add retargeting + Facebook commissioner | Retargeting CAC > $19 |
+| 3 | Weeks 7–9 | $1,500 | Scale only what cleared phase 2 | League/Team mix falls under 30% League |
+| 4 | **Nov 3–17, deadline** | $2,000–3,000 | Everything that works, all on the GM's Office | — |
+| 5 | Week 12+ | $300 | Retargeting only, Playoff Push | — |
+
+Front-load it. The season is finite and a pass sold in December is worth a third of one sold in
+October. Worst case you have spent $300 and learned the funnel's real conversion rate, which you
+need to know anyway.
+
+### 9.8 Two traps
+
+- **Meta will flag you as gambling.** Fantasy sports creative gets auto-reviewed against betting
+  policy, and an account restriction mid-season is unrecoverable. Never use *bet*, *odds*, *wager*,
+  *picks*, *win money*, *DFS*, or a sportsbook's name in copy, creative or the landing page. Say
+  *lineup advice*, *start/sit*, *waiver claims*. Keep the landing page free of anything that reads
+  as real-money play.
+- **Ads cannot outrun the season.** Everything above assumes the engine keeps its week-1 result.
+  If the scoreboard turns red in week 6, stop the spend that week — paying to put more people in
+  front of a losing model is how a refund problem becomes a reputation problem.
