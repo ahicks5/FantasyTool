@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
 import { GROUPS, SECTIONS, type GroupKey } from "@/lib/vocab";
-import { IconArrowUp, IconCheck, IconChevron } from "./icons";
+import { IconArrowUp, IconChevron } from "./icons";
 import { Stamp } from "./ui";
 
 /**
@@ -47,29 +47,40 @@ export function SheetGroup({
           the whole string and pushes the arrow off a 320px screen. */}
       <span className="min-w-0 flex-1">
         <span className="display block truncate text-[17px] leading-tight">{section.title}</span>
-        {status ? (
-          <span className="tnum mt-1 block truncate text-[12px] font-semibold leading-tight text-muted">{status}</span>
-        ) : (
-          // Wraps rather than truncates: "Nothing worth a bid" and a STANDING PAT stamp
-          // want about 230px and a 320px screen leaves this column 178, so inline they
-          // would cut the sentence in half. The stamp drops to its own line instead, and
-          // sits back beside the words from 375px up.
-          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12px] leading-tight text-muted">
-            {GROUPS[group].clear}
-            <Stamp ink="text-start" className="shrink-0">
-              <IconCheck size={11} strokeWidth={3.2} />
-              {GROUPS[group].stamp}
-            </Stamp>
-          </span>
+        <span
+          className={`mt-1 block truncate text-[12px] font-semibold leading-tight text-muted ${status ? "tnum" : ""}`}
+        >
+          {status ?? GROUPS[group].clear}
+        </span>
+      </span>
+      {/* Pinned top-right rather than trailing the sentence it belongs to.
+          Inline, the stamp had to wrap under the words at 320px -- "Nothing worth a bid"
+          plus STANDING PAT wants ~230px and the column has ~178 -- so a clear bench was
+          a line taller than a busy one, which is backwards. Up here it is out of the
+          text flow entirely: the status line truncates on one line at every width, all
+          three rows are the same height, and the stamps line up down the right edge
+          where they read as a column of verdicts rather than as trailing punctuation. */}
+      {!status && (
+        // No tick inside it. The glyph cost ~17px of a row that has none to spare at
+        // 320px, and the stamp does not need it: the rotated rule and the word are both
+        // non-colour channels already, so dropping it loses decoration, not meaning.
+        <Stamp ink="text-start" className="mt-0.5 shrink-0 self-start">
+          {GROUPS[group].stamp}
+        </Stamp>
+      )}
+      {/* The caret's slot is reserved whether or not there is a caret in it. Rendered only
+          when expandable, it stole 14px from the row it appeared on and nothing from the
+          others, so the stamps ended at three different x positions and read as scattered
+          rather than as a column of verdicts down the right edge. */}
+      <span aria-hidden className="flex w-[14px] shrink-0 self-center justify-center">
+        {expandable && (
+          <IconChevron
+            size={14}
+            strokeWidth={2.8}
+            className={`text-muted transition-transform ${open ? "rotate-90" : ""}`}
+          />
         )}
       </span>
-      {expandable && (
-        <IconChevron
-          size={14}
-          strokeWidth={2.8}
-          className={`shrink-0 text-muted transition-transform ${open ? "rotate-90" : ""}`}
-        />
-      )}
     </>
   );
 
@@ -82,14 +93,14 @@ export function SheetGroup({
               onClick={() => setOpen((o) => !o)}
               aria-expanded={open}
               aria-controls={panelId}
-              className="flex min-h-[44px] min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
+              className="flex min-h-[44px] min-w-0 flex-1 items-start gap-3 px-4 py-3 text-left"
             >
               {head}
             </button>
           ) : (
             // Nothing to reveal, so it is not a control. A disabled button here would still
             // take a tab stop and promise something that is not there.
-            <div className="flex min-h-[44px] min-w-0 flex-1 items-center gap-3 px-4 py-3">{head}</div>
+            <div className="flex min-h-[44px] min-w-0 flex-1 items-start gap-3 px-4 py-3">{head}</div>
           )}
           <Link
             href={section.href}

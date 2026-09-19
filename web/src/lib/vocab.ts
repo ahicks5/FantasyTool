@@ -103,7 +103,12 @@ export const LINES = {
  */
 export const GROUPS = {
   team: { clear: "Lineup's set", stamp: "All set" },
-  waivers: { clear: "Nothing worth a bid", stamp: "Standing pat" },
+  // "Standing pat" was the better phrase and did not survive the layout. The stamp sits
+  // top-right of the row now, sharing ~204px at 320px with the section title, and twelve
+  // letterspaced caps wanted 133 of them on their own -- which truncated "Scouting" to
+  // "S..". A stamp is a verdict and has to be readable at the narrowest width we support,
+  // so it is the word that gives, not the title.
+  waivers: { clear: "Nothing worth a bid", stamp: "Holding" },
   trade: { clear: "No deal worth making", stamp: "Quiet" },
 } as const satisfies Partial<Record<TabKey, { clear: string; stamp: string }>>;
 
