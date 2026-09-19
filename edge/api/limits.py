@@ -152,16 +152,25 @@ class RateLimitMiddleware:
         await self.app(scope, receive, send)
 
 
+#: Our own deployed web app. In the default list because an unset env var used to take the
+#: whole site down silently: the API stayed healthy, answered every curl, and the browser
+#: threw away every response, so it read as "cannot reach Penthouse" rather than as config.
+#: This is our domain, not a wildcard — it grants nobody else anything.
+PRODUCTION_WEB_ORIGIN = "https://fantasy-tool-alpha.vercel.app"
+
+
 def cors_origins() -> list[str]:
     """Allowed browser origins.
 
-    EDGE_CORS wins when set. Otherwise fall back to local development origins rather than
-    "*": a wildcard on a deployed API lets any page on the internet make a browser call
-    with a visitor's ESPN cookies attached, and "we forgot to set one env var" is not a
-    good reason for that to be the default.
+    EDGE_CORS wins when set, then EDGE_WEB_URL. With neither, fall back to our own
+    production origin plus local development — never to "*": a wildcard on a deployed API
+    lets any page on the internet make a browser call with a visitor's ESPN cookies
+    attached, and "we forgot to set one env var" is not a good reason for that.
     """
     configured = os.environ.get("EDGE_CORS", "").strip()
     if configured:
         return [origin.strip() for origin in configured.split(",") if origin.strip()]
     web = os.environ.get("EDGE_WEB_URL", "").strip()
-    return [web] if web else ["http://localhost:3000", "http://127.0.0.1:3000"]
+    if web:
+        return [web]
+    return [PRODUCTION_WEB_ORIGIN, "http://localhost:3000", "http://127.0.0.1:3000"]

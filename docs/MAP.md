@@ -107,13 +107,13 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (38 modules, 7,436 lines)
+### `edge/` — the Python engine and API (38 modules, 7,452 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
-| `edge/api/app.py` | Penthouse API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload | api, compliance +3 | 473 |
+| `edge/api/app.py` | Penthouse API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload | api, compliance +3 | 480 |
 | `edge/api/auth.py` | Who is calling? Supabase JWT (HS256) in production, X-Edge-User header in dev. Stdlib only. | api | 52 |
-| `edge/api/limits.py` | Per-IP rate limiting and request validation. Stdlib only. | limits | 167 |
+| `edge/api/limits.py` | Per-IP rate limiting and request validation. Stdlib only. | limits | 176 |
 | `edge/api/payments.py` | Stripe Checkout + webhook. Prices are created inline from products.py, so there's nothing to set | api | 110 |
 | `edge/api/service.py` | Loads a league with everything the engine needs (ROS values, byes, bid history, tendencies), | service, api +3 | 112 |
 | `edge/api/share.py` | Public share snapshots — the organic loop. | share, compliance | 69 |

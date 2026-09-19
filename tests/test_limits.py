@@ -4,7 +4,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from edge.api import limits
-from edge.api.limits import RateLimitMiddleware, SlidingWindow, client_ip, cors_origins, validate_id, validate_platform
+from edge.api.limits import (PRODUCTION_WEB_ORIGIN, RateLimitMiddleware, SlidingWindow, client_ip,
+                             cors_origins, validate_id, validate_platform)
 
 
 # ---- the window itself ------------------------------------------------------------
@@ -72,7 +73,17 @@ def test_cors_never_defaults_to_a_wildcard(monkeypatch):
     monkeypatch.delenv("EDGE_CORS", raising=False)
     monkeypatch.delenv("EDGE_WEB_URL", raising=False)
     assert "*" not in cors_origins()
-    assert all(o.startswith("http://localhost") or o.startswith("http://127.0.0.1") for o in cors_origins())
+    assert all(o.startswith("https://") or o.startswith("http://localhost")
+               or o.startswith("http://127.0.0.1") for o in cors_origins())
+
+
+def test_the_live_site_is_allowed_even_with_no_env_set(monkeypatch):
+    """An unset env var took the whole site down: the API was healthy, and the browser threw
+    away every answer. Our own production origin is in the default list so that cannot recur."""
+    monkeypatch.delenv("EDGE_CORS", raising=False)
+    monkeypatch.delenv("EDGE_WEB_URL", raising=False)
+    assert PRODUCTION_WEB_ORIGIN in cors_origins()
+    assert PRODUCTION_WEB_ORIGIN.startswith("https://")
 
     monkeypatch.setenv("EDGE_WEB_URL", "https://edge.example.com")
     assert cors_origins() == ["https://edge.example.com"]

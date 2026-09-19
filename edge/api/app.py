@@ -470,4 +470,11 @@ def read_share(share_id: str):
 
 @app.get("/api/health")
 def health():
-    return {"ok": True}
+    """Liveness, plus the one setting that can take the site down without erroring.
+
+    `cors_origins` is reported because a misconfigured allowlist is invisible from the
+    server side — every request succeeds and the browser discards the answer. Knowing what
+    the running process actually believes turns an afternoon of guessing into one curl.
+    """
+    return {"ok": True, "cors_origins": cors_origins(),
+            "web_url": os.environ.get("EDGE_WEB_URL", "") or None}
