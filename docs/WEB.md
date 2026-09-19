@@ -94,6 +94,25 @@ Changing `web/src/lib/mocks.ts` changes nothing users see. A mock build contains
 `booth.mock.entitlements` and `Mock checkout`; a real-API build contains neither. The web's
 `?unlock=1` only affects that mock path.
 
+## A tested lib module imports its neighbours with `.ts`
+
+`npm test` is `node --test src/**/*.test.ts` — Node strips the types and resolves the
+imports itself, with no bundler in the loop, so an extensionless **value** import across
+lib files does not resolve and the suite dies on load rather than on an assertion.
+
+So the rule is about what the test runner loads, not about tidiness:
+
+- A lib module a test imports must write `from "./errors.ts"`, extension included.
+- `import type` is erased before resolution, so type-only imports stay extensionless.
+- A module no test loads (`api.ts`, `session.ts`) is never forced either way, which is why
+  most of `lib/` still reads extensionless and looks inconsistent beside `sheet.ts` and
+  `leagueInput.ts`.
+
+`allowImportingTsExtensions` is on in `tsconfig.json` and `next build` resolves both forms,
+so nothing here shows up until someone "cleans up" an extension and `npm test` stops
+running. Two separate agents hit this within an hour of each other; that is why it is
+written down.
+
 ## Before you push a web change
 
 ```bash

@@ -133,8 +133,14 @@ const PAGES: PageCase[] = [
     path: "/connect",
     name: "connect",
     check: async (page) => {
-      await expect(page.getByText(/Sleeper username/i)).toBeVisible();
-      await expect(page.locator("#username")).toBeVisible();
+      // Nothing is selected on arrival: the two platform buttons are the whole screen,
+      // and the one box only exists once one of them is picked.
+      const sleeper = page.getByRole("radio", { name: "Sleeper" });
+      await expect(sleeper).toBeVisible();
+      await expect(page.getByRole("radio", { name: "ESPN" })).toBeVisible();
+      await expect(page.locator("#sleeper-input")).toHaveCount(0);
+      await sleeper.click();
+      await expect(page.locator("#sleeper-input")).toBeVisible();
     },
   },
   {
@@ -144,6 +150,22 @@ const PAGES: PageCase[] = [
       // The hero names the week and team once the feed has loaded.
       await expect(page.getByText(`Week ${CONNECTION.week}`).first()).toBeVisible();
       await expect(page.getByText(CONNECTION.team_name).first()).toBeVisible();
+      // The sheet is three group rows now, one per tab that owns calls, and every one of
+      // them renders even when it holds nothing — that empty row is the whole feature.
+      // Assert the words rather than a role: a bench with no calls is deliberately a plain
+      // row and not a control, and in this fixture the depth chart is exactly that, so
+      // looking for three buttons here fails on the case the grouping exists to show.
+      // Scoped to `main` because the tab bar says several of these words too.
+      const sheet = page.locator("main");
+      for (const key of ["team", "waivers", "trade"] as const) {
+        await expect(sheet.getByText(SECTIONS[key].title, { exact: true }).first()).toBeVisible();
+      }
+      // The cards are folded behind whichever rows do have calls. Group rows are the only
+      // `<section>` with a disclosure — cards are `<article>` — so this cannot catch a
+      // card's own Why? toggle by accident.
+      const toggles = sheet.locator("section button[aria-expanded]");
+      expect(await toggles.count(), "no group on the sheet had anything to open").toBeGreaterThan(0);
+      await toggles.first().click();
       // At least one action card, and cards are <article>, not skeletons.
       const cards = page.locator("main article");
       await expect(cards.first()).toBeVisible();
@@ -213,7 +235,9 @@ test("the API really is the fixture server, not mocks", async ({ page }) => {
   const seen: string[] = [];
   page.on("request", (r) => r.url().includes("/api/") && seen.push(r.url()));
   await page.goto("/home");
-  await expect(page.locator("main article").first()).toBeVisible();
+  // Attached, not visible: the call sheet folds its cards behind the group rows, and this
+  // test is about where the data came from rather than about what is on screen.
+  await expect(page.locator("main article").first()).toBeAttached();
   expect(seen.some((u) => u.includes("/actions")), `no API calls seen: ${seen.join(", ")}`).toBe(true);
   expect(DEV_USER).toContain("@");
 });
