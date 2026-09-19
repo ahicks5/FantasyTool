@@ -64,7 +64,12 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] Wire web to the real API end-to-end in a browser (headless Chromium, 375px, live league, 0 console errors)
 - [~] Supabase magic-link login: /login page + JWT header wired; untested against a real Supabase project (needs your keys)
 - [ ] Real Stripe test-mode checkout run (needs STRIPE_SECRET_KEY / webhook secret)
-- [ ] Deploy: Vercel (web) + Railway or Render (API, Dockerfile) — free tiers
+- [x] Deploy: web on Vercel, API on Render (https://edge-api-gi8d.onrender.com). Both live,
+      and the web build talks to the API rather than to mocks. See docs/DEPLOY.md.
+- [ ] **Set `EDGE_DEMO_UNLOCK=1` on Render** to open the paywall for testing (code is
+      deployed and waiting; the API still answers 402, so the variable is not set yet).
+- [ ] **Unset `EDGE_DEV` on Render before launch.** It makes the API accept an X-Edge-User
+      header as identity, so anyone can claim any email. See docs/DEPLOY.md for the check.
 - [x] Verify ESPN connector on real public leagues. Found 7 live public 2026 leagues by scanning
       (~3% of live ESPN leagues are public). Ran the whole engine on 6 drafted ones and recorded
       league 521131 as a fixture. Five bugs fixed — see below.

@@ -83,6 +83,10 @@ Vercel's Root Directory is `web/`. Full detail, env vars and rollback: **docs/DE
 it before asking Andrew anything about hosting. `vercel login` needs a browser and cannot run in
 a sandbox; a CLI deploy needs `VERCEL_TOKEN` in the environment.
 
+## Picking this up
+**docs/HANDOFF.md** — state of play, what is blocked on Andrew, and the mistakes that have
+already cost time in this repo. Read it before a first change.
+
 ## Owner
 Andrew (self-taught Python/VBA/automation). Steers, doesn't type every line.
 Keep explanations short and plain. Visuals: light, high-contrast.
