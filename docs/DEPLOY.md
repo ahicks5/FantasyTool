@@ -43,6 +43,34 @@ whole test suite runs with `EDGE_DEV=1` and still expects 402s.
 The web build also has `?lock=1` / `?unlock=1` switches, but those only affect the mock path
 and therefore do nothing on the deployed site. They are for `npm run dev` with no API.
 
+### EDGE_WEB_URL is not set on Render, and three things depend on it
+
+Verified live on 2026-09-19 by creating a share against the deployed API:
+
+```bash
+curl -s -X POST https://edge-api-gi8d.onrender.com/api/share \
+  -H 'Content-Type: application/json' -d '{"kind":"lock", ...}'
+# {"id":"m7vwfrje","url":"http://localhost:3000/s/m7vwfrje"}
+```
+
+`deploy/render.yaml` ships it as the placeholder `https://YOUR-VERCEL-DOMAIN.vercel.app`,
+which was never filled in, so the service falls back to the localhost default in the code.
+Nothing errors. Three things quietly point at a machine the user does not have:
+
+| What | Where | What breaks |
+|---|---|---|
+| Share links | `app.py` `/api/share` | The copy-link button hands the user `http://localhost:3000/s/...`. `ShareLock.tsx` uses the API's `url` verbatim. **The whole organic loop is dead** — the Lock card exists to be pasted, and the link it comes with goes nowhere. |
+| Stripe redirect | `payments.py` | `same_origin()` pins the success and cancel URLs to that base, so a customer who pays is sent to localhost. |
+| CORS | `limits.py` | Falls back to localhost origins — masked today because `EDGE_CORS` is set separately. |
+
+**Fix:** set `EDGE_WEB_URL=https://fantasy-tool-alpha.vercel.app` in the Render service's
+environment (and update the placeholder in `deploy/render.yaml`). The API reads it per
+request, so a restart is enough; no rebuild needed.
+
+The share *page* and its unfurl are fine — `/s/{id}` renders on Vercel and its `og:image`
+points at the real API host, because the web builds those from `NEXT_PUBLIC_SITE_URL`
+rather than from anything the API says. Only the URL the API hands back is wrong.
+
 ### Security: EDGE_DEV is currently on in production
 
 The live API honours an `X-Edge-User` header as proof of identity, which means anyone can
