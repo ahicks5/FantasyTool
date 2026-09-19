@@ -2,6 +2,35 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Call sheet v2 (docs/SPEC-CALLSHEET-V2.md)
+- [x] **S-1** Every tab renders a fixed-height title band; `hideTitle` gone. Content sits at the
+      same Y on all five tabs at 320 and 420px, loading or loaded. Section names centralised in
+      `web/src/lib/vocab.ts` so a rename is one file.
+- [x] **S-2** One wait per screen (`web/src/lib/wait.ts` owns who narrates and how many loaders
+      are up), both loaders share the call sheet's geometry, count-ups and the clock reserve
+      their width, Archivo switched to `display: optional`, stagger halved, depth-chart panels
+      animate once per view. Found and fixed a countdown that read "—" for up to 60s: the value
+      was resolved in the state initialiser under `suppressHydrationWarning`, which makes React
+      keep the DOM and discard its own output.
+- [x] **S-4** Cards fit one screen: 309/314px at 390x844 against a 380px target, 343px at 320px,
+      no sideways scroll. Spec's single action row at 320px is not reachable (339px of controls
+      in 211px) — two rows, primary pair on the first.
+- [x] **S-7** Grades are rank-anchored with a spread damper. Three corrections to the spec: its
+      dead-even table is unreachable by its own formula (regenerated from the code), the
+      pseudocode divides by a starter unit that is legitimately 0.0, and ties needed a mid-rank
+      or a league of clones would grade everyone A. `edge_starters` carries the margin.
+- [ ] **S-3** Matchup on the call-sheet header + `/matchup` breakdown page and endpoint.
+- [ ] **S-5** Depth-chart player panel: structured stats, not free text. Needs `opponent`/`ros`
+      on `report.player_dict` and `margin` on the web's `LineupSlot`.
+- [ ] **S-6** Injury Protocol (`edge/engine/protocol.py`, endpoint, bottom sheet). Biggest piece,
+      own PR. Gating decision still open: plan free, named waiver adds behind Wire Pass.
+
+## Deviations worth Andrew's eye
+- Rank-anchored grades mean a league of 7 or fewer can never reach A+ or F — including Andrew's
+  own 6-team ESPN league. Pinned by `test_a_small_league_cannot_reach_the_ends_of_the_scale`.
+- `docs/DEPLOY.md` documented `NEXT_PUBLIC_API_URL` with an `/api` suffix. The client appends
+  `/api` itself, so that value 404s every call while the page still renders. Corrected.
+
 ## Decisions needed from Andrew
 - [ ] Confirm stack: Python engine (FastAPI) + Next.js web, or all-TypeScript in one Vercel app?
 - [ ] Your Sleeper username + league ID and a public ESPN league ID for real-data demos.
