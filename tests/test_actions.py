@@ -155,3 +155,38 @@ def test_the_quiet_week_footer_counts_the_rosters_it_actually_read(league, n_tea
     assert not [a for a in feed["actions"] if a["type"] != "hold"], \
         f"scenario is not quiet: {[a['type'] for a in feed['actions']]}"
     assert expected in feed["footer"], feed["footer"]
+
+
+# ------------------------------------------------------- the face of the card (S-4) ---
+
+
+def test_cta_labels_are_short_enough_for_one_action_row(league):
+    """The card's action row is `Make the call · <cta> · Why? · feedback`, and it has to fit
+    320px without wrapping. The labels are the part the engine controls, so they are the
+    part that has to be short. Locked CTAs keep their longer "Unlock …" — they are the sell."""
+    ros, byes = _ros(league)
+    feed = actions.build(league, league.team("2"), ros, byes,
+                         entitlements={"my_team", "waivers", "trade_lab"})
+    for a in feed["actions"]:
+        label = a["cta"]["label"]
+        if label.startswith("Unlock"):
+            continue
+        assert len(label) <= 12, f"{a['type']}: {label!r} is {len(label)} chars"
+
+
+def test_nothing_cut_from_the_card_face_is_actually_lost(league):
+    """Everything trimmed off the front of a card has to still be reachable behind Why?.
+    The trade subtitle used to read `to {team} · {headline}`, and the headline was already
+    the first `why` line — so the subtitle was repeating it, not carrying it."""
+    ros, byes = _ros(league)
+    feed = actions.build(league, league.team("2"), ros, byes,
+                         entitlements={"my_team", "waivers", "trade_lab"})
+    trades = [a for a in feed["actions"] if a["type"] == "trade" and not a["locked"]]
+    for a in trades:
+        assert a["subtitle"].startswith("to "), a["subtitle"]
+        assert "·" not in a["subtitle"], "the headline should have moved off the subtitle"
+        assert a["why"], "a trade card with nothing behind Why? has lost its argument"
+        assert a["why"][0], "why[0] is the partner headline the subtitle used to duplicate"
+        # The long form of the benefit lives in `why`, not on the face.
+        assert a["benefit"].endswith("ROS"), a["benefit"]
+        assert any("rest-of-season" in line for line in a["why"])

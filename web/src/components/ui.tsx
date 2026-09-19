@@ -14,7 +14,7 @@ import {
   verdictClass,
 } from "@/lib/format";
 import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitPhase } from "@/lib/wait";
-import { IconCheck, IconChevron, IconClock, IconMoon, IconSun } from "./icons";
+import { IconCheck, IconChevron, IconClock, IconMoon, IconSun, IconThumbDown, IconThumbUp } from "./icons";
 
 export function Card({
   children,
@@ -717,17 +717,19 @@ export function Why({ lines, label = "Why?" }: { lines: string[]; label?: string
   const [open, setOpen] = useState(false);
   if (!lines.length) return null;
   return (
-    <div className="mt-2">
+    <>
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="inline-flex min-h-0 items-center gap-1 text-[13px] font-bold text-lean"
+        className="inline-flex min-h-[32px] items-center gap-1 text-[13px] font-bold text-lean"
       >
         {open ? "Hide" : label}
         <IconChevron size={13} strokeWidth={2.6} className={`transition-transform ${open ? "rotate-90" : ""}`} />
       </button>
+      {/* `basis-full` so inside the card's wrapping action row the panel takes a line of
+          its own underneath, rather than squeezing in beside the buttons. */}
       {open && (
-        <ul className="mt-2 grid gap-1.5 rounded-xl bg-soft p-3 text-[13px] leading-relaxed">
+        <ul className="mt-2 grid basis-full gap-1.5 rounded-xl bg-soft p-3 text-[13px] leading-relaxed">
           {lines.map((l) => (
             <li key={l} className="flex gap-2">
               <span aria-hidden className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-muted" />
@@ -736,7 +738,7 @@ export function Why({ lines, label = "Why?" }: { lines: string[]; label?: string
           ))}
         </ul>
       )}
-    </div>
+    </>
   );
 }
 
@@ -746,13 +748,13 @@ export function Feedback({ onSend }: { onSend: (verdict: "helpful" | "wrong", re
   const [state, setState] = useState<"idle" | "wrong" | "done">("idle");
   if (state === "done")
     return (
-      <div className="mt-3 flex items-center gap-1.5 text-xs font-bold text-start">
-        <IconCheck size={13} strokeWidth={3} /> Thanks — noted.
-      </div>
+      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-start">
+        <IconCheck size={13} strokeWidth={3} /> Noted
+      </span>
     );
   if (state === "wrong")
     return (
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="flex basis-full flex-wrap gap-1.5">
         {WRONG_REASONS.map((r) => (
           <button
             key={r}
@@ -760,29 +762,38 @@ export function Feedback({ onSend }: { onSend: (verdict: "helpful" | "wrong", re
               void onSend("wrong", r);
               setState("done");
             }}
-            className="min-h-0 rounded-full border border-line-2 px-2.5 py-1 text-xs font-bold hover:bg-soft"
+            className="min-h-[32px] rounded-full border border-line-2 px-2.5 py-1 text-xs font-bold hover:bg-soft"
           >
             {r}
           </button>
         ))}
       </div>
     );
+  // Two marks, no label. "Useful?" plus Yes and No was three elements and a line of its
+  // own on a card that has to fit a phone; the question is carried by the aria-label and
+  // by the fact that a thumb is a thumb. 32px of hit area inside a 28px mark.
   return (
-    <div className="mt-3 flex items-center gap-2 text-xs text-muted">
-      <span>Useful?</span>
+    <span className="ml-auto inline-flex items-center gap-0.5 text-muted">
       <button
         onClick={() => {
           void onSend("helpful");
           setState("done");
         }}
-        className="min-h-0 rounded-full border border-line-2 px-2.5 py-1 font-bold text-ink hover:bg-soft"
+        aria-label="This call was useful"
+        title="This call was useful"
+        className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-soft hover:text-start"
       >
-        Yes
+        <IconThumbUp size={16} />
       </button>
-      <button onClick={() => setState("wrong")} className="min-h-0 rounded-full border border-line-2 px-2.5 py-1 font-bold text-ink hover:bg-soft">
-        No
+      <button
+        onClick={() => setState("wrong")}
+        aria-label="This call was wrong"
+        title="This call was wrong"
+        className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-soft hover:text-sit"
+      >
+        <IconThumbDown size={16} />
       </button>
-    </div>
+    </span>
   );
 }
 

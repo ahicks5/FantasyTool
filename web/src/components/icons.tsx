@@ -82,3 +82,12 @@ export const IconGreaseCheck = (p: P) => (
     <path d="M3.5 12.8 9 18.4 20.8 4.6" pathLength={1} />
   </Svg>
 );
+
+/* A verdict on a call we made. Deliberately a thumb rather than a star or a heart:
+   the question is "was this right", not "did you enjoy it". */
+export const IconThumbUp = (p: P) => (
+  <Svg {...p}><path d="M7 20V10l4.5-6a2 2 0 0 1 3.3 2.1L13.5 9H19a2 2 0 0 1 2 2.3l-1 6A2 2 0 0 1 18 19H7Z" /><rect x="3" y="10" width="4" height="10" rx="1" /></Svg>
+);
+export const IconThumbDown = (p: P) => (
+  <Svg {...p}><path d="M7 4v10l4.5 6a2 2 0 0 0 3.3-2.1L13.5 15H19a2 2 0 0 0 2-2.3l-1-6A2 2 0 0 0 18 5H7Z" /><rect x="3" y="4" width="4" height="10" rx="1" /></Svg>
+);

@@ -74,18 +74,18 @@ export function ActionCard({
             )}
           </div>
 
-          <div className="mt-4 flex items-start gap-3.5">
+          <div className="mt-3 flex items-start gap-3">
             {a.locked ? (
-              <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-soft text-muted" aria-hidden>
-                <IconLock size={22} />
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-soft text-muted" aria-hidden>
+                <IconLock size={18} />
               </span>
             ) : a.type === "hold" ? (
-              <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-start-soft text-start" aria-hidden>
-                <IconCheck size={24} strokeWidth={2.6} />
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-start-soft text-start" aria-hidden>
+                <IconCheck size={19} strokeWidth={2.6} />
               </span>
             ) : primary ? (
-              <span className="relative shrink-0 pr-3">
-                <Avatar name={primary.name} photo={primary.photo} teamLogo={primary.team_logo} size="lg" ring={a.type === "start" ? "start" : undefined} />
+              <span className="relative shrink-0 pr-2.5">
+                <Avatar name={primary.name} photo={primary.photo} teamLogo={primary.team_logo} size="md" ring={a.type === "start" ? "start" : undefined} />
                 {secondary && (
                   <span className="absolute -bottom-1 right-0 rounded-full ring-2 ring-[var(--color-paper)]">
                     <Avatar name={secondary.name} photo={secondary.photo} size="sm" className="opacity-75 grayscale" />
@@ -95,24 +95,46 @@ export function ActionCard({
             ) : null}
 
             <div className="min-w-0 flex-1">
-              <h3 className="display text-[19px] leading-[1.2]">{a.title}</h3>
-              <p className="mt-1 text-[13px] leading-snug text-muted">{a.subtitle}</p>
-              {/* A hold has no gain to shout about; its benefit is a quiet note, not a headline. */}
-              <p
-                className={`tnum mt-2 ${
-                  a.type === "hold"
-                    ? "text-[13px] font-semibold text-muted"
-                    : `text-[15px] font-black ${a.locked ? "text-muted" : "text-start"}`
-                }`}
-              >
-                {a.benefit}
-              </p>
+              {/* Two lines of title, hard stop. "Offer Alec Pierce for Travis Kelce" ran to six
+                  lines at 320px and the card with it. */}
+              <h3 className="display line-clamp-2 text-[19px] leading-[1.2]">{a.title}</h3>
+              {/* The benefit pairs with the subtitle rather than the title: it used to be a
+                  third stacked line of its own, and putting it beside the title meant a
+                  wrapping title and a wrapping number interleaving — "Vikings" and "ROS" on
+                  the same line. The number never wraps and the subtitle yields to it, because
+                  the number is the thing you are being sold and the subtitle repeats detail
+                  the reason line already carries. */}
+              <div className="mt-1 flex flex-wrap items-baseline gap-x-2.5">
+                {/* The subtitle keeps at least half the line, so it never gets crushed to a
+                    single letter by a wide number — "B" was what "Bid $6–10 · Drop Dontayvion
+                    Wicks" became at 320px. If the number then does not fit beside it, it wraps
+                    to its own line and sits right; it does not shrink and it does not truncate,
+                    because a half-printed number is worse than a second line. */}
+                <p className="min-w-0 flex-1 basis-[55%] truncate text-[13px] leading-snug text-muted">{a.subtitle}</p>
+                <span
+                  className={`tnum ml-auto shrink-0 whitespace-nowrap ${
+                    a.type === "hold"
+                      ? "text-[12px] font-semibold text-muted"
+                      : `text-[14px] font-black ${a.locked ? "text-muted" : "text-start"}`
+                  }`}
+                >
+                  {a.benefit}
+                </span>
+              </div>
             </div>
           </div>
 
-          <p className={`mt-3.5 text-[14px] leading-relaxed ${a.locked ? "text-muted" : "text-ink-2"}`}>{a.reason}</p>
+          {/* Two lines, then stop. The full text is already the first thing behind Why?, which
+              is where someone who wants the argument goes looking. */}
+          <p className={`mt-3 line-clamp-2 text-[14px] leading-relaxed ${a.locked ? "text-muted" : "text-ink-2"}`}>
+            {a.reason}
+          </p>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+          {/* The two things you might actually do share the first line — each takes half the
+              card, so they pair up at 320px instead of stacking. Why? and the verdict marks
+              follow on the next line; they are what you reach for after the decision, not
+              before it. Four controls will not fit one 211px line at any readable size. */}
+          <div className="mt-3.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
             {callable &&
               // Keyed so React mounts a fresh node on each flip — that is what lets
               // the stamp land, rather than silently swapping a className.
@@ -122,7 +144,7 @@ export function ActionCard({
                   onClick={onCall}
                   aria-pressed
                   aria-label="Called — tap to undo"
-                  className="stamp slam min-h-0 cursor-pointer text-[11px] text-start"
+                  className="stamp slam min-h-[36px] flex-1 basis-[40%] cursor-pointer justify-center text-[11px] text-start"
                 >
                   <span className="grease" aria-hidden>
                     <IconGreaseCheck size={13} />
@@ -134,14 +156,14 @@ export function ActionCard({
                   key="call"
                   onClick={onCall}
                   aria-pressed={false}
-                  className="btn inline-flex min-h-0 items-center rounded-xl bg-ink px-3.5 py-2 text-[13px] font-bold text-paper hover:opacity-90"
+                  className="btn inline-flex min-h-[36px] flex-1 basis-[40%] items-center justify-center rounded-xl bg-ink px-3 py-2 text-[13px] font-bold text-paper hover:opacity-90"
                 >
                   Make the call
                 </button>
               ))}
             <Link
               href={a.cta.href}
-              className={`btn inline-flex min-h-0 items-center gap-1 rounded-xl px-3.5 py-2 text-[13px] font-bold ${
+              className={`btn inline-flex min-h-[36px] flex-1 basis-[40%] items-center justify-center gap-1 rounded-xl px-3 py-2 text-[13px] font-bold ${
                 a.locked ? "bg-ink text-paper" : "bg-soft text-ink hover:bg-line"
               }`}
             >
@@ -149,9 +171,10 @@ export function ActionCard({
               <IconChevron size={13} strokeWidth={2.8} />
             </Link>
             {!a.locked && <Why lines={a.why} />}
+            {/* One row: make the call, go deeper, ask why, say if it was wrong. The feedback
+                pushes itself to the right end rather than claiming a line of its own. */}
+            {!a.locked && a.type !== "hold" && <Feedback onSend={onFeedback} />}
           </div>
-
-          {!a.locked && a.type !== "hold" && <Feedback onSend={onFeedback} />}
         </div>
       </div>
     </article>

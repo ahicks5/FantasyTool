@@ -15,11 +15,17 @@ FEATURE_FOR = {"start": "my_team", "waiver": "waivers", "trade": "trade_lab", "h
 
 
 def _gain_text(weekly: float, ros: float) -> str:
+    """The number on the face of the card, which sits on the title line and cannot wrap.
+
+    Short on purpose: "+5.3 wk · +1 ROS" rather than "+5.3 this week · +1 rest of season".
+    The long form was wider than a 320px card and forced the whole sheet to scroll
+    sideways. The full wording is in `why`, where there is room for it.
+    """
     bits = []
     if weekly > 0:
-        bits.append(f"+{weekly:.1f} this week")
+        bits.append(f"+{weekly:.1f} wk")
     if ros > 0:
-        bits.append(f"+{ros:.0f} rest of season")
+        bits.append(f"+{ros:.0f} ROS")
     return " · ".join(bits) or "Depth"
 
 
@@ -53,13 +59,13 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
             "type": "start", "feature": "my_team", "locked": False,
             "title": f"Start {ch.in_.name} over {out_name}",
             "subtitle": f"{ch.slot} · {ch.in_.position} {ch.in_.nfl_team or ''}".strip(),
-            "benefit": f"+{ch.gain:.1f} projected points", "benefit_value": ch.gain,
+            "benefit": f"+{ch.gain:.1f} pts", "benefit_value": ch.gain,
             "confidence": ch.confidence, "reason": ch.reason,
             "why": [f"{ch.in_.name} projects {effective(ch.in_):.1f}.",
                     (f"{ch.out.name} projects {effective(ch.out):.1f}" + (f" and is {ch.out.injury_status}." if ch.out.injury_status else ".")) if ch.out else "The slot is empty.",
                     f"{ch.confidence}: margins this size were right {int(lineup_mod.HIT_RATE[ch.confidence] * 100)}% of the time last week."],
             "players": [report.player_dict(ch.in_), report.player_dict(ch.out)],
-            "cta": {"label": "See lineup", "href": "/team"},
+            "cta": {"label": "Depth chart", "href": "/team"},
             # Lineup fixes expire at kickoff, so they carry a deadline bonus on top of their size.
             # A big trade can still outrank a trivial swap.
             "score": ch.gain * 6 + DEADLINE_BONUS,
@@ -70,7 +76,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
     if "waivers" in entitlements:
         for i, c in enumerate(plan.claims):
             bid = c.bid.get("amount")
-            sub = (f"Bid ${c.bid['range'][0]}–{c.bid['range'][1]}" if bid else "Claim in priority order")
+            sub = (f"Bid ${c.bid['range'][0]}–{c.bid['range'][1]}" if bid else "Priority order")
             if c.drop:
                 sub += f" · Drop {c.drop.name}"
             if i:
@@ -92,7 +98,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                 "confidence": "Lock" if c.net >= 3 else ("Lean" if c.net >= 1 else "Coin flip"),
                 "reason": c.reason, "why": why,
                 "players": [report.player_dict(c.add), report.player_dict(c.drop)],
-                "cta": {"label": "View waiver plan", "href": "/waivers"},
+                "cta": {"label": "Waiver plan", "href": "/waivers"},
                 "score": (2.5 * c.net) - i * 0.5,
             })
     if not plan.claims and plan.hold_reason:
@@ -100,7 +106,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
             "id": "waiver:hold", "type": "hold", "feature": "my_team", "locked": False,
             "title": "No waiver claim worth making",
             "subtitle": "Hold your budget" if league.waiver_type == "faab" else "Keep your waiver priority",
-            "benefit": "Save your FAAB" if league.waiver_type == "faab" else "Stay at the front of the queue",
+            "benefit": "Save FAAB" if league.waiver_type == "faab" else "Keep your spot",
             "benefit_value": 0.0, "confidence": None,
             "reason": plan.hold_reason, "why": [], "players": [],
             "cta": {"label": "See the wire", "href": "/waivers"}, "score": 0.05,
@@ -130,8 +136,8 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                 "id": f"trade:{partner['team_id']}:{'-'.join(o['give'])}:{'-'.join(o['get'])}",
                 "type": "trade", "feature": "trade_lab", "locked": False,
                 "title": f"Offer {' + '.join(o['give_names'])} for {' + '.join(o['get_names'])}",
-                "subtitle": f"to {partner['team_name']} · {partner['headline']}",
-                "benefit": f"+{trade_finder._r0(o['my_gain_ros'])} rest-of-season lineup points",
+                "subtitle": f"to {partner['team_name']}",
+                "benefit": f"+{trade_finder._r0(o['my_gain_ros'])} ROS",
                 "benefit_value": o["my_gain_ros"],
                 "confidence": "Lean", "reason": o["why"],
                 "why": [partner["headline"],
@@ -139,7 +145,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                         f"theirs gains {trade_finder._r0(o['their_gain_ros'])}.",
                         f"Asset value is {round(o['fairness'] * 100)}% balanced, so it is not an insult."],
                 "players": o["give_players"][:1] + o["get_players"][:1],
-                "cta": {"label": "Open in Trade Lab",
+                "cta": {"label": "Trade Lab",
                         "href": f"/trade?their={partner['team_id']}&give={','.join(o['give'])}&get={','.join(o['get'])}"},
                 "score": 0.6 * o["my_gain_ros"],
             })
@@ -148,7 +154,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                 "id": "trade:locked", "type": "trade", "feature": "trade_lab", "locked": True,
                 "title": f"A trade with {partner['team_name']} improves both teams",
                 "subtitle": partner["headline"],
-                "benefit": f"+{trade_finder._r0(o['my_gain_ros'])} rest-of-season lineup points",
+                "benefit": f"+{trade_finder._r0(o['my_gain_ros'])} ROS",
                 "benefit_value": o["my_gain_ros"],
                 "confidence": None,
                 "reason": "Unlock Trade Lab to see the offer, the other manager's habits, and a counter.",

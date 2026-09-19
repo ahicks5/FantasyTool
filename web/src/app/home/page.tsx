@@ -127,9 +127,12 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
   return (
     <div>
       <Sheet feed={feed} called={calledCount} total={callable.length} animate={animate} />
-      <ol className="mt-4 grid gap-3.5">
+      {/* `min-w-0` on the items: a grid track defaults to `min-width: auto`, and the clamped
+          title is a `-webkit-box` whose min-content width is the whole string — so without
+          this one card stretches the sheet sideways. */}
+      <ol className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3.5">
         {feed.actions.map((a, i) => (
-          <li key={a.id}>
+          <li key={a.id} className="min-w-0">
             <ActionCard
               a={a}
               n={i + 1}
