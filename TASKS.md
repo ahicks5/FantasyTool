@@ -524,3 +524,40 @@ call on §8 of docs/MARKETING.md before any of this is built.
       viral share card must not re-bill on every view.
 - [ ] Dashboard: cost per click, per league connected, per purchase, and the League/Team mix.
       The mix is the kill signal — ads buying $7 passes instead of $39 collapse the CAC ceiling.
+
+
+## Consolidating the abandoned branches (this round)
+Eight branches had never been merged and never been pushed anywhere that builds — 32 commits.
+All eight are now in, and the branches themselves can be deleted.
+- [x] Straightforward merges: the call sheet v2 UI, the call-sheet v2 spec, the marketing doc,
+      and the 21-league ESPN corpus.
+- [x] Business function: risk register, legal pages, unit economics, the accuracy programme.
+- [x] Confidence recalibrated over a full season. **Lock was advertised at ~80% and measures
+      75.1%**, with a 95% interval (74.6–75.6) that never touches the claim. Lean and Coin flip
+      are honest. CLAUDE.md now states the measured numbers; see docs/CALIBRATION.md.
+- [x] Launch readiness: Postgres behind the store contract, rate limits, refunds that revoke
+      access, the Stripe return-URL origin check, Terms and Privacy, CI, the weekly email
+      sender, and the accessibility pass. This branch predated the rebrand, so every web
+      surface collided with it; the Penthouse versions won and the functional work was grafted
+      in. Details in the merge commit.
+- [x] Free Lock shares. Sharing used to need Trade Lab ($5); a start/sit card now needs only
+      `my_team`, which is free. The pre-rebrand visual work on that branch (the flare accent,
+      the old wordmark) was dropped — superseded by Penthouse — so the Lock card is drawn in
+      the current identity rather than ported.
+
+### Found while merging, fixed here
+- [x] `PostgresStore` had no `export_user`/`delete_user`. The privacy policy promises both, and
+      the backend missing them is the one that holds a paying customer's rows.
+- [x] `--color-start-fill` was used by three components and defined nowhere.
+- [x] Two branches each shipped their own legal pages. Kept `/terms` + `/privacy` (configurable
+      refund window, `missingLegalConfig()` launch blocker, already in the sitemap); dropped
+      `/legal/*`.
+- [x] Every user-facing "Edge" string in `web/src` now reads Penthouse. `X-Edge-User`, `EDGE_*`
+      and the `booth.*` storage keys deliberately stay.
+
+### Not done
+- [ ] `docs/BRAND.md` from the visual-direction branch was left behind on purpose: it documents
+      the pre-rebrand flare look, so landing it would describe an identity the app no longer has.
+      The live brand rules are in CLAUDE.md.
+- [ ] The e2e Playwright smoke test and the Postgres half of the store contract suite have not
+      been run here — they need a browser and a live Postgres. CI now runs both.

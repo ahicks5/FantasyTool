@@ -1,4 +1,4 @@
-from edge.graphics import COLORS, verdict_card_html
+from edge.graphics import CONFIDENCE_COLORS, COLORS, card_html, lock_card_html, verdict_card_html
 
 
 def test_card_html_contains_verdict_players_and_colors():
@@ -88,3 +88,46 @@ def test_a_face_that_will_not_load_is_simply_left_out(tmp_path, monkeypatch):
          "get_players": []},
         "", "", None)
     assert "<img" not in h and "A" in h, "no broken image, but the player is still named"
+
+
+# --- the free card: a start/sit call -------------------------------------------------
+
+LOCK = {"start": {"name": "Jahmyr Gibbs", "position": "RB", "nfl_team": "DET", "photo": None},
+        "bench": {"name": "D'Andre Swift", "position": "RB", "nfl_team": "CHI", "photo": None},
+        "gain": 4.2, "confidence": "Lock", "slot": "FLEX",
+        "note": "Gibbs has out-touched him every week since the bye."}
+
+
+def test_the_lock_card_stamps_the_call_the_players_and_the_margin():
+    h = lock_card_html(LOCK, "The Megalabowl", 2)
+    assert "LOCK" in h and "Jahmyr Gibbs" in h
+    assert "D&#x27;Andre Swift" in h, "an apostrophe in a name is escaped, not dropped"
+    assert CONFIDENCE_COLORS["Lock"] in h, "the tag carries the colour the app uses for it"
+    assert "+4.2" in h, "the margin is the number being sold"
+    assert "Week 2" in h and "FLEX" in h
+
+
+def test_the_lock_card_wears_the_penthouse_identity_not_the_old_one():
+    """The card is marketing, so it is the one place the brand must not drift."""
+    h = lock_card_html(LOCK)
+    assert "PENTHOUSE" in h and "Own the week." in h
+    assert "#d6f94a" not in h, "the flare accent predates the rebrand and is not coming back"
+
+
+def test_a_lock_card_escapes_a_name_and_survives_a_missing_bench():
+    h = lock_card_html({**LOCK, "bench": None, "start": {"name": "<script>", "photo": None}})
+    assert "&lt;script&gt;" in h and "<script>" not in h
+    assert "over " not in h, "no bench, no 'over X' line"
+
+
+def test_a_lock_card_without_a_photo_still_shows_a_face():
+    h = lock_card_html(LOCK)
+    assert ">JG<" in h, "initials stand in for a headshot rather than leaving a hole"
+
+
+def test_card_html_sends_each_snapshot_to_its_own_card():
+    lock = card_html({**LOCK, "kind": "lock", "league_name": "L", "week": 2})
+    trade = card_html({"kind": "trade", "verdict": "Accept", "give": ["A"], "get": ["B"],
+                       "fairness": 0.9, "explanation": "Take it.", "league_name": "L", "week": 2})
+    assert "Start / sit" in lock and "ACCEPT" not in lock
+    assert "ACCEPT" in trade and "Start / sit" not in trade

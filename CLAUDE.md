@@ -247,9 +247,15 @@ recorded fixtures still work).
 - Data requests are shipped: `GET /api/me/data`, `DELETE /api/me?confirm=delete`.
 
 ## Distribution
-- `edge/api/share.py` + `/api/share` — a verdict becomes a public `/s/{id}` page that opens with
+- `edge/api/share.py` + `/api/share` — a call becomes a public `/s/{id}` page that opens with
   no account and unfurls with a rendered card at `/api/share/{id}/card.png` (cached on disk).
   Snapshots are display-only: never an email, a league id or a roster.
+  **Two kinds, and the free one is the point.** `KIND_FEATURE` maps `trade` to `trade_lab`
+  (paid, rare, dramatic) and `lock` to `my_team`, which is free — so a start/sit card can be
+  posted by someone who has never paid and never signed in. Gating all sharing behind the $5
+  Trade Lab switched the loop off for almost everyone: a paying user posts a handful of trade
+  verdicts a season, while every user has one or three Locks every single week. Making Lock
+  free must never open Trade Lab as a side effect; `test_the_paid_card_is_still_paid` pins that.
 - `edge/delivery/weekly_email.py` — the same call sheet as an email. Tables and inline styles
   only (Gmail strips `<style>`), absolute links, a plain-text alternative, and a test proving a
   free recipient never receives paid content. Render with `python -m edge.cli email`.

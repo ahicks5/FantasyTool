@@ -126,6 +126,8 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
               delay={i + 1}
               animate={animate}
               called={called.includes(a.id)}
+              leagueName={feed.league}
+              week={feed.week}
               onCall={isCallable(a) ? () => toggle(a.id) : undefined}
               onFeedback={(verdict, reason) =>
                 sendFeedback({
