@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import secrets
 
+from edge import graphics
+
 ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"   # no i/l/o/0/1: a link should survive being read aloud
 PUBLIC_FIELDS = ("verdict", "give", "get", "my_delta_ros", "their_delta_ros", "fairness", "style")
 
@@ -31,4 +33,10 @@ def snapshot(graphic: dict, explanation: str, league_name: str, week: int,
 
 
 def _player(p: dict) -> dict:
-    return {k: p.get(k) for k in ("name", "position", "nfl_team", "photo", "team_logo")}
+    out = {k: p.get(k) for k in ("name", "position", "nfl_team", "photo", "team_logo")}
+    if not graphics.photos_enabled():
+        # The legal kill-switch (see edge.graphics.photos_enabled) has to reach the snapshot,
+        # not just the PNG: the public /s/{id} page renders faces from these fields, and a
+        # snapshot is stored once and served for the rest of the season.
+        out["photo"] = None
+    return out

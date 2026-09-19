@@ -48,6 +48,35 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
   `/api` itself, so that value 404s every call while the page still renders. Corrected.
 
 ## Decisions needed from Andrew
+- [ ] Rollout + marketing plan: `launch/ROLLOUT_PLAN.md` (phases, materials, research, 7 decisions at the end).
+      First action: email Sleeper about API licensing (their docs say commercial use needs a conversation).
+- [ ] **Launch with player photos on or off?** `EDGE_CARD_PHOTOS=0` is built and costs us nothing
+      visually (the card still reads well on initials). Recommend OFF until a lawyer says otherwise.
+      Risk L1 in `docs/RISK_REGISTER.md`.
+- [ ] **Business entity** (LLC or sole trader) before the first live payment. Risk L5.
+- [ ] Review the drafted `/legal/terms`, `/legal/privacy`, `/legal/refunds` — accurate to the code,
+      not reviewed by a lawyer. 14 questions ready in `docs/LEGAL_CHECKLIST.md`.
+- [ ] Confirm the refund policy as drafted: 7 days, no questions. Costs ~nothing (see unit economics).
+
+## Business function (this round)
+- [x] Risk register with owners and status (`docs/RISK_REGISTER.md`) — 3 items block launch
+- [x] Legal checklist + the one-hour lawyer question list (`docs/LEGAL_CHECKLIST.md`)
+- [x] Data inventory: every stored field, every recipient, retention (`docs/DATA_INVENTORY.md`)
+- [x] Terms / privacy / refunds pages, written against the code, linked from the landing footer
+- [x] Player-photo kill-switch `EDGE_CARD_PHOTOS=0` — card, stored snapshot and public page
+- [x] Sleeper attribution carried by the provider, served by `/api/products`, shown in the footer
+- [x] Data export + deletion (`GET /api/me/data`, `DELETE /api/me?confirm=delete`)
+- [x] Unit-economics model + CLI + tests (`edge/business/economics.py`, `docs/UNIT_ECONOMICS.md`)
+- [x] Accuracy programme defined (`docs/ACCURACY_PROGRAM.md`)
+- [ ] **`scripts/score_runs.py`** — pair `runs` with next week's actuals. Until this exists we
+      measure projection separation, NOT our own recommendations, and the marketing claim
+      ("our Locks are right ~80%") is not yet substantiated. Highest-value item here.
+- [ ] `/accuracy` page + weekly job + accuracy card (G5), on top of score_runs
+- [ ] Per-account daily cap on Claude-explained verdicts + billing alert (risk P2, unbounded cost)
+- [ ] Retention job: delete `runs`/`feedback` older than one season — the privacy page promises it
+- [ ] Nightly backup of the SQLite file; document replaying purchases from Stripe (risk O2)
+- [ ] Verify the Tank01 stat mapping against one live response before we need it (risk P1)
+- [ ] Measure a real trade explanation's token usage; `max_tokens=600` must cover thinking + answer
 - [ ] Confirm stack: Python engine (FastAPI) + Next.js web, or all-TypeScript in one Vercel app?
 - [ ] Your Sleeper username + league ID and a public ESPN league ID for real-data demos.
 - [ ] Where is the existing ESPN ingestion / manager-profiling code? Port it or rebuild from Sleeper transactions?

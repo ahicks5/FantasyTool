@@ -253,14 +253,24 @@ export default function Landing() {
 
       <Pricing />
 
+      {/* The credit line is not decoration: Sleeper's API docs ask for attribution on the
+          trending data the action feed uses. edge/data/providers.py carries the canonical
+          string; if the projection vendor ever changes, change it there and here together. */}
       <footer className="mt-12 border-t border-line pt-5">
         <div className="flex items-center gap-2.5">
           <Wordmark className="text-[16px]" lamp={false} />
           <span className="text-[12px] font-bold text-muted">Own the week.</span>
         </div>
         <p className="mt-3 text-[12px] leading-relaxed text-muted">
-          Projections from Sleeper, re-scored to your league&rsquo;s settings. Headshots via Sleeper and ESPN. Not
-          affiliated with any league platform.
+          Projections and trending data from Sleeper, re-scored to your league&rsquo;s settings. Headshots via
+          Sleeper and ESPN. Not affiliated with the NFL, the NFLPA, Sleeper, ESPN, or Yahoo.
+        </p>
+        <p className="mt-2 text-[12px] leading-relaxed text-muted">
+          <Link href="/legal/terms" className="underline">Terms</Link>
+          {" · "}
+          <Link href="/legal/privacy" className="underline">Privacy</Link>
+          {" · "}
+          <Link href="/legal/refunds" className="underline">Refunds</Link>
         </p>
       </footer>
     </div>

@@ -92,7 +92,14 @@ def _team(b: service.Bundle, team_id: str):
 
 @app.get("/api/products")
 def get_products():
-    return {"products": products.PRODUCTS}
+    """Pricing, plus the data credit the UI is required to show.
+
+    Attribution rides along here because every page already loads this, and a credit line
+    that only renders on one page is not a credit line.
+    """
+    from edge.data import providers
+
+    return {"products": products.PRODUCTS, "attribution": providers.attribution_line()}
 
 
 @app.get("/api/me")
@@ -103,6 +110,24 @@ def me(email: str | None = Depends(optional_user)):
             "entitlements": sorted(products.features_for(skus)),
             "leagues_allowed": products.leagues_allowed(skus),
             "leagues": store.leagues(email) if email else []}
+
+
+@app.get("/api/me/data")
+def export_my_data(email: str = Depends(current_user)):
+    """Everything we hold about this account. Signed in only — it is the account's own data."""
+    return store.export_user(email)
+
+
+@app.delete("/api/me")
+def delete_my_data(confirm: str = "", email: str = Depends(current_user)):
+    """Erase this account. Requires ?confirm=delete so a stray request cannot do it.
+
+    This revokes any season pass the account bought, which the caller is told up front rather
+    than discovering next Sunday. Public share links survive: they carry no email.
+    """
+    if confirm != "delete":
+        raise HTTPException(400, "add ?confirm=delete — this erases your purchases too")
+    return {"ok": True, "deleted": store.delete_user(email)}
 
 
 class ConnectIn(BaseModel):

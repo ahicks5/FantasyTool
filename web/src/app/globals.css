@@ -478,3 +478,21 @@ button, a.btn, select, input { min-height: 44px; }
   .demote { opacity: 0.55; }
   .stamp { transform: rotate(-3.5deg); opacity: 0.92; }
 }
+
+/* Legal pages: long-form prose, the only place in the app with running text.
+   Readability over density — these are read once, carefully, usually when someone is
+   annoyed or about to spend money. */
+.legal { line-height: 1.65; }
+.legal p, .legal ul { color: var(--color-muted); }
+.legal h1, .legal h2 { color: var(--color-ink); }
+.legal strong { color: var(--color-ink); font-weight: 700; }
+.legal a { color: var(--color-ink); }
+.legal ul { list-style: disc; padding-left: 1.15rem; }
+.legal li::marker { color: var(--color-line-2); }
+.legal code {
+  font-size: 0.86em;
+  background: var(--color-soft);
+  border-radius: 5px;
+  padding: 0.1em 0.35em;
+  word-break: break-word;
+}

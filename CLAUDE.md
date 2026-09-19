@@ -229,6 +229,23 @@ league's own scoring re-scores them. Connectors still take raw Sleeper-shaped di
 `providers.to_raw()` converts any provider's output into that shape (dicts pass through, so
 recorded fixtures still work).
 
+## Business function (risk, money, quality)
+- `docs/RISK_REGISTER.md` — what can stop us. Three things block launch: Sleeper commercial
+  licensing, the player-photo decision, and terms/entity. Reviewed each rollout phase.
+- `docs/LEGAL_CHECKLIST.md` — pre-launch list plus the 14 questions to put to a lawyer in one hour.
+- `docs/DATA_INVENTORY.md` — every field we store, who receives it, retention. **Source of truth
+  for `/legal/privacy`**; if they disagree the inventory is right and the page is stale.
+- `docs/UNIT_ECONOMICS.md` + `edge/business/economics.py` — margin per SKU, per-sale LLM cost,
+  cohort P&L. Run `python -m edge.cli economics --scenarios`. Headline: ~85% margins, break-even
+  at five buyers, so volume is the only variable that matters and paid acquisition does not work
+  at this price.
+- `docs/ACCURACY_PROGRAM.md` — the quality function. Note the gap it names: `scripts/backtest.py`
+  measures *projection separation*, not *our recommendations*. Don't make the second claim in
+  public until `scripts/score_runs.py` exists.
+- **`EDGE_CARD_PHOTOS=0`** strips player headshots from cards, share snapshots and the public page
+  (initials instead). A legal kill-switch, not a style option — see risk L1.
+- Data requests are shipped: `GET /api/me/data`, `DELETE /api/me?confirm=delete`.
+
 ## Distribution
 - `edge/api/share.py` + `/api/share` — a verdict becomes a public `/s/{id}` page that opens with
   no account and unfurls with a rendered card at `/api/share/{id}/card.png` (cached on disk).

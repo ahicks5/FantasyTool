@@ -128,13 +128,19 @@ def to_raw(projections: Iterable[PlayerProjection | dict]) -> list[dict]:
 # ---- providers ----
 
 class SleeperProvider:
-    """Sleeper's free Rotowire-sourced projections. No auth, no attribution required.
+    """Sleeper's free Rotowire-sourced projections. No auth, but credit is not optional.
+
+    Sleeper's API docs ask for attribution when you use their trending-adds data, which the
+    action feed does ("{n} managers added him in the last 48 hours"), and the same docs say
+    the API is free for *non-commercial* use — we charge money, so licensing is an open
+    question, tracked in docs/RISK_REGISTER.md. Carrying the credit line is the cheap half of
+    being a good citizen here; asking them is the other half.
 
     Already the canonical id + stat vocabulary, so this is a straight field mapping.
     """
 
     name = "sleeper"
-    attribution = None
+    attribution = "Projections and trending data from Sleeper"
 
     def weekly(self, season: int, week: int, positions: list[str] | None = None) -> list[PlayerProjection]:
         return [from_sleeper(r, self.name) for r in api.projections(season, week, positions)]
@@ -228,6 +234,22 @@ PROVIDERS: dict[str, type] = {
     "tank01": Tank01Provider,
 }
 DEFAULT_PROVIDER = "sleeper"
+
+
+def attribution_line(name: str | None = None) -> str | None:
+    """The credit line the active vendor requires, for the UI footer and the weekly email.
+
+    Resolved without constructing the provider, so a vendor that needs an API key we do not
+    have still tells us what it would want credited. A provider that requires no credit
+    returns None and the UI renders nothing.
+    """
+    key = (name or os.environ.get("EDGE_PROJECTION_PROVIDER") or DEFAULT_PROVIDER).strip().lower()
+    cls = PROVIDERS.get(key)
+    if cls is None:
+        raise ValueError(
+            f"unknown projection provider {key!r}; valid names: {', '.join(sorted(PROVIDERS))}"
+        )
+    return getattr(cls, "attribution", None)
 
 
 def get_provider(name: str | None = None) -> ProjectionProvider:
