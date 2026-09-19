@@ -123,6 +123,41 @@ export interface LineupChange {
   reason: string;
 }
 
+/** The thirteen letters the engine grades on, worst to best. */
+export type Grade = "F" | "D-" | "D" | "D+" | "C-" | "C" | "C+" | "B-" | "B" | "B+" | "A-" | "A" | "A+";
+
+/** How stocked a spot is *against what this league starts there* — not against your own starters. */
+export type Depth = "deep" | "ok" | "thin";
+
+export interface PositionGrade {
+  position: string;
+  grade: Grade;
+  /** 0..1, where 0.5 is the league mean. Plus or minus three quarters of a starter spans the scale. */
+  percentile: number;
+  /** What the lineup effectively starts here — FLEX folded in, so it can beat the dedicated slots. */
+  starters: number;
+  rank: number;
+  league_size: number;
+  depth: Depth;
+  starter_names: string[];
+  /** Null when there is nobody behind the starters. */
+  next_man: string | null;
+  note: string;
+}
+
+/**
+ * The scorecard on a lineup. `rank` and `grade` answer different questions on
+ * purpose: rank is where you stand, the grade is what that standing is worth.
+ */
+export interface Grades {
+  overall: Grade;
+  overall_percentile: number;
+  overall_rank: number;
+  league_size: number;
+  note: string;
+  positions: PositionGrade[];
+}
+
 export interface Lineup {
   week: number;
   projected_total: number;
@@ -131,6 +166,8 @@ export interface Lineup {
   bench: BenchEntry[];
   changes: LineupChange[];
   confidence_hit_rate?: Record<Confidence, number>;
+  /** Optional: older API builds and compact embeds ship a lineup without it. */
+  grades?: Grades;
 }
 
 export interface Bid {

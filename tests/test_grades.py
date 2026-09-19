@@ -182,3 +182,19 @@ def test_a_one_team_league_does_not_pretend_to_rank(league):
     assert card.overall_rank == 1
     assert card.overall == grades.letter(0.5), "with nobody to compare against, average"
     assert "No other teams" in card.note
+
+
+def test_an_espn_league_grades_cleanly(espn_league):
+    lg = espn_league
+    # ESPN leagues carry K and D/ST slots Sleeper's test league does not, plus its own
+    # flex names — the scorecard has to cover whatever the league actually starts.
+    ros = {p.id: float(p.projected or 0.0) * 14 for t in lg.teams for p in t.players}
+    starts = set(grades.starters_required(lg.starting_slots))
+    for t in lg.teams:
+        card = grades.grade_team(lg, t, ros)
+        assert card.overall in grades.SCALE
+        assert {p.position for p in card.positions} == starts
+        for pg in card.positions:
+            assert pg.grade in grades.SCALE
+            assert 1 <= pg.rank <= lg.num_teams
+        json.dumps(card.to_dict())
