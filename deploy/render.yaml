@@ -20,3 +20,9 @@ services:
         sync: false
       - key: EDGE_WEB_URL
         value: https://YOUR-VERCEL-DOMAIN.vercel.app
+      # Opens every paid feature for anyone, signed in or not. For clicking through a demo.
+      # A real paywall bypass — unset it before anyone can be charged.
+      - key: EDGE_DEMO_UNLOCK
+        value: "0"
+      # EDGE_DEV is deliberately absent. It makes the API accept an X-Edge-User header as
+      # proof of identity, so any caller can claim to be any email. Never set it here.

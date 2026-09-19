@@ -33,7 +33,8 @@ Tests: `uv run pytest -q` (offline, fixtures) and `cd web && npm test && npm run
 | full_report | $7 / season | Full Booth: everything + the weekly film, 5 leagues |
 
 ## Deploy notes
-Live: **https://fantasy-tool-alpha.vercel.app** (Vercel, root dir `web/`) + Railway for the API.
+Live: **https://fantasy-tool-alpha.vercel.app** (Vercel, root dir `web/`) + **https://edge-api-gi8d.onrender.com** (Render) for the API.
+The web app talks to that API in production; it is not on mock data.
 Production branch is `claude/edge-fantasy-app-launch-alo0rr`; there is no `main`. See **docs/DEPLOY.md**.
 
 The share card (`GET /api/share/{id}/card.png`, the image a `/s/{id}` link unfurls with) is

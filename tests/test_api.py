@@ -1,3 +1,4 @@
+import os
 import json
 from pathlib import Path
 
@@ -229,3 +230,33 @@ def test_every_team_in_the_league_can_be_graded_over_the_api(client, league):
         assert "grades" in body, t.name
         seen.add(body["grades"]["overall_rank"])
     assert seen == set(range(1, 13)), "the twelve teams should occupy the twelve ranks"
+
+
+def test_demo_unlock_opens_every_paid_route(client, league, monkeypatch):
+    """The switch that lets a demo deployment be clicked through without buying anything.
+    It is a real paywall bypass, so its blast radius is pinned down here."""
+    tid = league.teams[0].id
+    # Off by default: the free tier, exactly as every other test in this file assumes.
+    assert client.get(f"{LG}/team/{tid}/waivers/plan").status_code == 402
+    assert client.get("/api/me").json()["entitlements"] == ["my_team"]
+
+    monkeypatch.setenv("EDGE_DEMO_UNLOCK", "1")
+    me = client.get("/api/me").json()
+    assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"}
+    assert me["leagues_allowed"] == 5
+    for path in ("waivers/plan", "trades/find", "waivers", "report"):
+        assert client.get(f"{LG}/team/{tid}/{path}").status_code == 200, path
+    # Anonymous too: a demo visitor has no account to attach a purchase to.
+    assert client.get("/api/me").json()["signed_in"] is False
+
+    monkeypatch.setenv("EDGE_DEMO_UNLOCK", "0")
+    assert client.get(f"{LG}/team/{tid}/waivers/plan").status_code == 402, "only '1' turns it on"
+
+
+def test_demo_unlock_is_not_implied_by_dev_auth(client, league, monkeypatch):
+    """EDGE_DEV relaxes who you are; it must never relax what you have bought. The whole
+    test suite runs with EDGE_DEV=1 and still expects 402s, which is the point."""
+    monkeypatch.delenv("EDGE_DEMO_UNLOCK", raising=False)
+    assert os.environ.get("EDGE_DEV") == "1"
+    tid = league.teams[0].id
+    assert client.get(f"{LG}/team/{tid}/waivers/plan", headers=H).status_code == 402

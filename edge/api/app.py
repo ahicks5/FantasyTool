@@ -29,7 +29,20 @@ def _season() -> int:
     return int(os.environ.get("EDGE_SEASON", "2026"))
 
 
+def _demo_unlock() -> bool:
+    """`EDGE_DEMO_UNLOCK=1` hands every caller every paid feature.
+
+    For clicking through a demo deployment without buying anything. It is a real paywall
+    bypass, so it is explicit, off unless the value is exactly "1", and deliberately NOT
+    implied by `EDGE_DEV` — that flag only relaxes *authentication*, and the two should not
+    be confused. Turn it off before anyone is charged.
+    """
+    return os.environ.get("EDGE_DEMO_UNLOCK") == "1"
+
+
 def _skus(email: str | None) -> list[str]:
+    if _demo_unlock():
+        return [p["sku"] for p in products.PRODUCTS if p["price_cents"] > 0]
     return store.skus(email, _season()) if email else []
 
 

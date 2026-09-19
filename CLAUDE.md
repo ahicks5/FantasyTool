@@ -73,7 +73,10 @@ user-visible gain before launch. Env vars (`EDGE_DEV`, `EDGE_DB`, `X-Edge-User`)
 a *user* reads says The Booth; browser storage keys are namespaced `booth.*`.
 
 ## Deployed at
-**Web: https://fantasy-tool-alpha.vercel.app (Vercel) · API: Railway.**
+**Web: https://fantasy-tool-alpha.vercel.app (Vercel) · API: https://edge-api-gi8d.onrender.com (Render).**
+The live web app **talks to that API** — it is not on mock data, so changing `web/src/lib/mocks.ts`
+changes nothing in production. To open the paywall for testing set `EDGE_DEMO_UNLOCK=1` on Render;
+the web's `?unlock=1` only affects the mock path used by `npm run dev`.
 **There is no `main` branch** — production is `claude/edge-fantasy-app-launch-alo0rr`, and
 Vercel builds from it, so shipping the web app means `git push origin HEAD:claude/edge-fantasy-app-launch-alo0rr`.
 Vercel's Root Directory is `web/`. Full detail, env vars and rollback: **docs/DEPLOY.md** — read

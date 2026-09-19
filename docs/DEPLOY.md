@@ -2,49 +2,56 @@
 
 The short version, so nobody has to ask again.
 
-## Current state (verified 2026-09-19)
+## Current state (verified 2026-09-19, corrected)
 
-The web app is live and serving The Booth. **It is running entirely on mock data.**
-`NEXT_PUBLIC_API_URL` is not set on the Vercel project, so every league, player and number
-on the live site comes from `web/src/lib/mocks.ts`. It looks like a working product and none
-of it is real. Two checks that prove it, either of which you can re-run any time:
+The web app is live **and it talks to a real API**, not to mock data.
+`NEXT_PUBLIC_API_URL` is set on the Vercel project and points at
+`https://edge-api-gi8d.onrender.com/api`, which is up and serving current code.
 
-```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://fantasy-tool-alpha.vercel.app/s/anything
-# 404 for every id — the share page needs the API, so this is 404 until one is wired up
-```
+An earlier version of this file said the opposite. That was wrong, and it was wrong in a way
+worth remembering: the evidence for "it runs on mocks" was that `/s/{id}` 404s and no backend
+origin appeared in the chunks the landing page loads. Both were true and neither implied the
+conclusion. The way to actually tell is to union the chunks across **every** route and look
+for the compiled API base, or simply `curl` the API. A mock-only build also contains the
+strings `booth.mock.entitlements` and `Mock checkout`; a real-API build has neither, because
+the whole mock branch is compiled out.
 
-and no backend origin appears in any client bundle. Connecting a league on the live site
-therefore cannot work against a real Sleeper or ESPN league yet.
-
-**To make it real:** deploy the API (Railway, from the repo `Dockerfile`), then set
-`NEXT_PUBLIC_API_URL` to its URL in the Vercel project and redeploy. It is inlined at build
-time, so the redeploy is required, not optional.
+Practical consequence: **anything that only changes `web/src/lib/mocks.ts` or the mock branch
+of `api.ts` has no effect on the deployed site.** Entitlements, leagues and every number come
+from the API.
 
 | Piece | Where | Notes |
 |---|---|---|
 | Web (Next.js) | **https://fantasy-tool-alpha.vercel.app** | Vercel. Root Directory must be `web/`, not the repo root. |
-| API (FastAPI) | Railway | Container from the repo `Dockerfile`. Configs in `deploy/`. |
+| API (FastAPI) | **https://edge-api-gi8d.onrender.com** (Render, not Railway) | Container from the repo `Dockerfile`. Blueprint in `deploy/render.yaml`. |
 | Production branch | `claude/edge-fantasy-app-launch-alo0rr` | **There is no `main` in this repo.** Every branch is a `claude/*` branch. |
 
 ## Clicking through the live demo
 
-While the site runs on mock data, **every paid feature is unlocked by default** so it can be
-walked end to end without hitting a paywall over numbers that are not real. Two sticky
-switches, either appended to any page:
+Entitlements are decided by the **API**, so opening the paywall is a server-side switch.
 
-| URL | What you get |
-|---|---|
-| `…/home?lock=1` | the real free tier: start/sit only, so you can see the locked states and the upsell |
-| `…/home?unlock=1` | everything open again |
+Set `EDGE_DEMO_UNLOCK=1` in the Render service's environment. Every caller then owns every
+paid feature, signed in or not. Unset it (or set anything other than `1`) to restore normal
+gating. It is a genuine paywall bypass: turn it off before anyone can be charged.
 
-The choice is remembered in the browser until you flip it back.
+`EDGE_DEV` does **not** do this, deliberately. That flag only relaxes authentication; the
+whole test suite runs with `EDGE_DEV=1` and still expects 402s.
 
-**This cannot weaken real billing.** It all sits inside `USE_MOCKS`, which is only true while
-`NEXT_PUBLIC_API_URL` is unset. Point the site at a real API and entitlements come from
-`GET /api/me`, with the server returning 402 on every paid route — nothing in the web bundle
-can open a paid feature against a real backend. Once the API is wired up, drop the default in
-`mockExtraEntitlements` back to `[]` if you still want the mock build to start locked.
+The web build also has `?lock=1` / `?unlock=1` switches, but those only affect the mock path
+and therefore do nothing on the deployed site. They are for `npm run dev` with no API.
+
+### Security: EDGE_DEV is currently on in production
+
+The live API honours an `X-Edge-User` header as proof of identity, which means anyone can
+claim to be any email by setting a header. Right now nobody owns anything so the impact is
+limited to reading a free-tier response, but the moment real purchases exist this lets a
+stranger read a paying user's leagues and entitlements. **Unset `EDGE_DEV` on Render before
+launch.** Verify with:
+
+```bash
+curl -s -H "X-Edge-User: someone@example.com" https://edge-api-gi8d.onrender.com/api/me
+# want: signed_in false. If it says true, EDGE_DEV is still set.
+```
 
 ## How a deploy happens
 
