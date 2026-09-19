@@ -303,6 +303,24 @@ kickoff. Named it **The Booth** and rebuilt the shell around a coaching call she
 - [ ] Trend: "your RB room was a B two weeks ago". Needs grades written to the `runs` table
       week over week; nothing stores them yet.
 
+## Call sheet v2 — specced 2026-09-19, see docs/SPEC-CALLSHEET-V2.md
+Build in this order; each is its own commit.
+- [ ] S-1 The call sheet gets a title. `hideTitle` goes away and the title band is fixed-height,
+      so flipping tabs stops jolting the page up and down.
+- [ ] S-2 One loader per screen (the narrated opening currently flashes then downgrades to the
+      quiet skeleton), loader shaped like the page it replaces, count-up and countdown reserve
+      their width, tighter print stagger, font-swap check.
+- [ ] S-3 Matchup moves to the top of the call-sheet hero as a scoreboard row linking to a new
+      `/matchup` breakdown page (`edge/engine/matchup.py` + endpoint, free tier).
+- [ ] S-4 Action cards fit one phone screen: benefit on the title row, reason clamped to two
+      lines, one action row with shortened CTA labels, feedback as icons.
+- [ ] S-5 Depth-chart player dropdown becomes a labelled panel, not free text. Needs `margin`
+      on `LineupSlot` and `opponent`/`ros` out of `report.player_dict`.
+- [ ] S-6 Injury protocol per player: cost, the chain (who moves, does FLEX shuffle), handcuff
+      and who holds him, the wire if it happens, teammate effects. `edge/engine/protocol.py`.
+- [ ] S-7 Grades rank-anchored with a packed-league damper — deliberate reversal of the
+      starter-only scale; `grades.py` docstring and the CLAUDE.md bullet get rewritten with it.
+
 ## Blueprint items still open
 - [x] Weekly action email — HTML + plain text renderer, `python -m edge.cli email <league> <team>`.
       Sending still needs a Resend key; everything up to the send is built and tested.
