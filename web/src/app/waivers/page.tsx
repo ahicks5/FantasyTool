@@ -43,7 +43,7 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
         <section>
           <button onClick={() => setShowBoard((s) => !s)} aria-expanded={showBoard} className="min-h-0 w-full text-left">
             <H2 className="flex items-center justify-between gap-3">
-              <span>The whole wire</span>
+              <span>Every free agent</span>
               <span className="text-[13px] font-bold text-lean">{showBoard ? "Hide" : `Show all ${board.picks.length}`}</span>
             </H2>
           </button>
@@ -60,7 +60,7 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
 
 export default function WaiversPage() {
   return (
-    <AppShell title="The wire">
+    <AppShell title="Scouting">
       {(s) =>
         s.has("waivers") ? (
           <WaiversBody c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />

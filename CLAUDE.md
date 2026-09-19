@@ -19,8 +19,11 @@ moves you make before kickoff. That difference is the whole brand.
 - **Name** The Booth. **Tagline** "Three moves. By Sunday. We keep score."
 - **Voice** the coordinator in your headset: confident, clipped, verb first, plural staff ("we").
   Never hedge on a call the engine is confident about; say plainly when it's a coin flip.
-- **Vocabulary** call sheet (home) · depth chart (team) · the wire (waivers) · trade lab · the film
-  (weekly report) · "make the call" · "board's set" · "sheet's clean".
+- **Vocabulary — sections:** call sheet (home) · depth chart (team) · scouting (waivers) ·
+  GM's Office (trade) · the film (weekly report). Verbs: "make the call", "board's set",
+  "sheet's clean". **What you buy keeps its product name** — Wire Pass, Trade Lab, Full
+  Booth — so the nav names a room and the pricing table names a pass. "The wire" stays
+  valid in body copy: it is what managers already call the free-agent pool.
 - **Look** clean sideline, not neon dashboard: printed call sheet, heavy tabular Archivo numerals,
   one dark surface per screen, warm paper behind it. Game-feel motion on top (see below).
 - **ON AIR lamp** (`--color-signal`) is brand chrome only — wordmark, call-sheet band, ON AIR chip.

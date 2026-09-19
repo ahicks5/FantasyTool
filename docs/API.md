@@ -68,7 +68,7 @@ the same league bundle.
   position — not against the team's own starters. `next_man` is null when nobody is behind.
 - `starters` folds FLEX in, so a 2-RB + 2-FLEX league reports ~3 RB starters.
 
-## The wire (feature: waivers)
+## Scouting (feature: waivers)
 
 Ranked pickups with the bid and the drop. Wire name stays `waivers`.
 `GET /api/league/{platform}/{league_id}/team/{team_id}/waivers` →

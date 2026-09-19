@@ -48,7 +48,7 @@ const FEATURES = [
   },
   {
     href: "/waivers",
-    title: "The wire",
+    title: "Scouting",
     tag: "$3",
     Icon: IconWire,
     tone: "bg-lean-soft text-lean",
@@ -56,7 +56,7 @@ const FEATURES = [
   },
   {
     href: "/trade",
-    title: "Trade lab",
+    title: "GM's Office",
     tag: "$5",
     Icon: IconTrade,
     tone: "bg-soft text-ink",

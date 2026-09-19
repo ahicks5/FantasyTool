@@ -425,7 +425,7 @@ function TradeBodyKeyed({ c, refresh, signedIn }: { c: Connection; refresh: () =
 
 export default function TradePage() {
   return (
-    <AppShell title="Trade Lab">
+    <AppShell title="GM's Office">
       {(s) => (
         <Suspense fallback={<SkeletonList rows={3} />}>
           {s.has("trade_lab") ? (

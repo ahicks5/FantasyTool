@@ -47,7 +47,7 @@ function ReportBody({ c }: { c: Connection }) {
       </section>
 
       <section>
-        <H2>The wire</H2>
+        <H2>Scouting</H2>
         <div className="mt-2">
           {data.waiver_plan ? <WaiverPlanView plan={data.waiver_plan} compact /> : <WaiversView waivers={data.waivers} compact />}
         </div>

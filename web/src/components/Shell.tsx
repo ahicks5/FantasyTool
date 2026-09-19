@@ -5,13 +5,15 @@ import { useSession, type Session } from "@/lib/session";
 import { IconFilm, IconSheet, IconTeam, IconTrade, IconWire } from "./icons";
 import { BoothOpening, LinkButton, OnAir, ThemeToggle, Wordmark } from "./ui";
 
-// Coach vocabulary, but every label still says what the screen is. "Wire" is what
-// a manager already calls the waiver wire; "Film" is the weekly recap.
+// Coach vocabulary, and every label still says what the screen is: scouting is the
+// free-agent pool, the GM's office is where deals get made, film is the weekly recap.
+// These are section names. What you *buy* keeps its product name — Wire Pass, Trade
+// Lab, Full Booth — which is what the pricing table lists.
 const TABS = [
   { href: "/home", label: "Call sheet", Icon: IconSheet },
   { href: "/team", label: "Depth", Icon: IconTeam },
-  { href: "/waivers", label: "Wire", Icon: IconWire },
-  { href: "/trade", label: "Trades", Icon: IconTrade },
+  { href: "/waivers", label: "Scouting", Icon: IconWire },
+  { href: "/trade", label: "GM's Office", Icon: IconTrade },
   { href: "/report", label: "Film", Icon: IconFilm },
 ];
 
