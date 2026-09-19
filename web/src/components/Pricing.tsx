@@ -19,7 +19,7 @@ function Badge({ sku }: { sku: Product["sku"] }) {
   if (sku === "free") return null;
   if (sku === "full_report")
     return (
-      <span className="inline-flex rounded-full bg-start px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white">
+      <span className="inline-flex rounded-full bg-start-fill px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white">
         Best value
       </span>
     );

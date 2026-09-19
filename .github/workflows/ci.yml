@@ -1,0 +1,138 @@
+name: CI
+
+# Runs what CLAUDE.md says to run before pushing, so "we ran the tests" stops being a
+# thing anyone has to remember. Every job is offline: the Python suite plays against
+# recorded fixtures, the web build falls back to src/lib/mocks.ts whenever
+# NEXT_PUBLIC_API_URL is unset, and the browser smoke test drives a local fixture
+# server. No secret is needed and none is referenced here.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+# A new push supersedes the run in flight for the same branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    name: engine (pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      # The store has two backends and they drift apart silently, so the contract suite
+      # runs against a real Postgres rather than only the SQLite half.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: edge
+          POSTGRES_PASSWORD: edge
+          POSTGRES_DB: edge_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U edge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Tests
+        # The suite is offline: every test reads tests/fixtures/, and no test may reach
+        # for a live API. The only network here is the Postgres service above.
+        env:
+          TEST_DATABASE_URL: postgresql://edge:edge@127.0.0.1:5432/edge_test
+        run: uv run --frozen pytest -q
+
+  web:
+    name: web (lint, build, unit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          # Browsers are the e2e job's business; this job never launches one.
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        # Unset API URL on purpose: this proves the build stands up without a deployed
+        # API, which is also what the static demo relies on.
+        run: npm run build
+
+      - name: Static demo build
+        # The demo export has its own failure modes (a route with no static params, a
+        # path a static host rejects), so it is built and packed here rather than
+        # discovered to be broken the next time someone wants a link to share.
+        run: |
+          npm run demo
+          npm run demo:pack
+
+  e2e:
+    name: browser smoke test (375px)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+        working-directory: web
+        env:
+          # The next step installs the browser (and its system deps) explicitly.
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+
+      - run: npx playwright install --with-deps chromium
+        working-directory: web
+
+      # Boots scripts/serve_fixtures.py (the API, served from recorded fixtures) and a
+      # production Next build pointed at it, then drives every page at 375px.
+      - run: npm run test:e2e
+        working-directory: web
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: web/test-results/
+          retention-days: 7

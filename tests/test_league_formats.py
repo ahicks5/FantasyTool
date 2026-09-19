@@ -36,6 +36,8 @@ VALID_POSITIONS = {
 
 # slug -> what the live league really is. Asserted, so a re-record that silently changes a
 # league (a commissioner flips a setting) fails loudly instead of quietly weakening the test.
+# Names are the normalized form: two of these leagues were named with a trailing
+# space, which models.clean_name strips so it cannot reach a sentence.
 EXPECTED = {
     "standard_ppr": dict(
         league_id="1336879711460028416", name="Special Teams Dynasty League", num_teams=12,
@@ -43,12 +45,12 @@ EXPECTED = {
         waiver_type="faab", faab_budget=2500, scoring={"rec": 1.0, "pass_td": 6.0},
     ),
     "superflex": dict(
-        league_id="1383855689968934912", name="Chopped Koopa troopas ", num_teams=10,
+        league_id="1383855689968934912", name="Chopped Koopa troopas", num_teams=10,
         starting_slots=["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "FLEX", "SUPER_FLEX", "K", "DEF"],
         waiver_type="faab", faab_budget=200, scoring={"rec": 0.5, "pass_td": 4.0},
     ),
     "multiflex_te_premium": dict(
-        league_id="1312115646644912128", name="D201: History of a Decade of Dynasty! ", num_teams=14,
+        league_id="1312115646644912128", name="D201: History of a Decade of Dynasty!", num_teams=14,
         starting_slots=["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "FLEX", "FLEX"],
         waiver_type="priority", faab_budget=None, scoring={"rec": 0.0, "bonus_rec_te": 1.0},
     ),

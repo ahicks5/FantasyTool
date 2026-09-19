@@ -248,10 +248,33 @@ league's own scoring re-scores them. Connectors still take raw Sleeper-shaped di
 `providers.to_raw()` converts any provider's output into that shape (dicts pass through, so
 recorded fixtures still work).
 
+## Business function (risk, money, quality)
+- `docs/RISK_REGISTER.md` — what can stop us. Three things block launch: Sleeper commercial
+  licensing, the player-photo decision, and terms/entity. Reviewed each rollout phase.
+- `docs/LEGAL_CHECKLIST.md` — pre-launch list plus the 14 questions to put to a lawyer in one hour.
+- `docs/DATA_INVENTORY.md` — every field we store, who receives it, retention. **Source of truth
+  for `/legal/privacy`**; if they disagree the inventory is right and the page is stale.
+- `docs/UNIT_ECONOMICS.md` + `edge/business/economics.py` — margin per SKU, per-sale LLM cost,
+  cohort P&L. Run `python -m edge.cli economics --scenarios`. Headline: ~85% margins, break-even
+  at five buyers, so volume is the only variable that matters and paid acquisition does not work
+  at this price.
+- `docs/ACCURACY_PROGRAM.md` — the quality function. Note the gap it names: `scripts/backtest.py`
+  measures *projection separation*, not *our recommendations*. Don't make the second claim in
+  public until `scripts/score_runs.py` exists.
+- **`EDGE_CARD_PHOTOS=0`** strips player headshots from cards, share snapshots and the public page
+  (initials instead). A legal kill-switch, not a style option — see risk L1.
+- Data requests are shipped: `GET /api/me/data`, `DELETE /api/me?confirm=delete`.
+
 ## Distribution
-- `edge/api/share.py` + `/api/share` — a verdict becomes a public `/s/{id}` page that opens with
+- `edge/api/share.py` + `/api/share` — a call becomes a public `/s/{id}` page that opens with
   no account and unfurls with a rendered card at `/api/share/{id}/card.png` (cached on disk).
   Snapshots are display-only: never an email, a league id or a roster.
+  **Two kinds, and the free one is the point.** `KIND_FEATURE` maps `trade` to `trade_lab`
+  (paid, rare, dramatic) and `lock` to `my_team`, which is free — so a start/sit card can be
+  posted by someone who has never paid and never signed in. Gating all sharing behind the $5
+  Trade Lab switched the loop off for almost everyone: a paying user posts a handful of trade
+  verdicts a season, while every user has one or three Locks every single week. Making Lock
+  free must never open Trade Lab as a side effect; `test_the_paid_card_is_still_paid` pins that.
 - `edge/delivery/weekly_email.py` — the same call sheet as an email. Tables and inline styles
   only (Gmail strips `<style>`), absolute links, a plain-text alternative, and a test proving a
   free recipient never receives paid content. Render with `python -m edge.cli email`.
@@ -268,13 +291,27 @@ TASKS.md            backlog / in progress / done — keep it current
 .cache/             runtime cache, gitignored
 ```
 
-## Confidence tags (validated)
-Lock ≥ 4 pts margin (~80% right), Lean 1.5–4 (~62%), Coin flip < 1.5 (~51%). See docs/BACKTEST.md;
-adjust thresholds only with data. Below 1.5 points the higher projection wins barely half the
-time, so `lineup.stabilize` **holds the incumbent** rather than recommending the swap — week 1
-priced 48 such swaps at −28 points, including "bench Josh Allen for Stafford" over 0.55.
+## Confidence tags (measured over a full season)
+Shipping today: Lock ≥ 4 pts margin, Lean 1.5–4, Coin flip < 1.5. Graded over 2025 weeks 1–17
+(85,006 within-position pairs, `scripts/calibrate.py`, docs/CALIBRATION.md): **Lock 75.1%**,
+Lean 61.7%, Coin flip 52.5%. Lean and Coin flip are honest. **Lock is not — it was advertised
+at ~80% and its 95% interval (74.6–75.6) never touches it.** You need a margin near 7 points
+before a call is right four times in five.
+
+A margin also means different things to different players: projection error grows with the
+projection, so 4 points wins 78.7% between two tight ends and 68.1% between two quarterbacks.
+`edge/calibration.py` replaces the margin with P(a beats b) and each tag then delivers what it
+promises (Lock 81.0%, Lean 66.9%, Coin flip 53.9%), but **it is not wired into `lineup.py` yet**
+— that changes what users see and is Andrew's call. Adjust thresholds only with data.
+
+Below 1.5 points the higher projection wins barely half the time, so `lineup.stabilize`
+**holds the incumbent** rather than recommending the swap — week 1 priced 48 such swaps at
+−28 points, including "bench Josh Allen for Stafford" over 0.55.
 
 ## Weekly ritual
+Automated: `scripts/weekly.py freeze|grade|health`, on a schedule in `.github/workflows/weekly.yml`
+(Thursday freeze, Tuesday grade, daily live-data health check). Results arrive as a pull request.
+Run by hand any time — every subcommand is safe to run twice.
 - Thursday morning: `uv run python scripts/freeze_projections.py` — freezes this week's
   projections so next week's backtest grades what we actually showed, not a revised number.
 - Tuesday: `uv run python scripts/backtest.py <week>` — projection accuracy *and* decision

@@ -130,13 +130,15 @@ export default function Landing() {
           <ThemeToggle />
           <Link
             href="/home"
-            className="btn hidden min-h-0 items-center gap-1 whitespace-nowrap rounded-full border border-line-2 px-3.5 py-2 text-[13px] font-bold hover:bg-soft min-[512px]:inline-flex"
+            className="btn hidden min-h-11 items-center gap-1 whitespace-nowrap rounded-full border border-line-2 px-4 text-[13px] font-bold hover:bg-soft min-[512px]:inline-flex"
           >
             Open the Penthouse
             <IconChevron size={13} strokeWidth={2.8} />
           </Link>
         </div>
       </header>
+
+      <main id="content">
 
       <section className="pt-7 rise">
         <Eyebrow>Sleeper · ESPN public and private leagues</Eyebrow>
@@ -267,15 +269,28 @@ export default function Landing() {
 
       <Pricing />
 
+      </main>
+
+      {/* The credit line is not decoration: Sleeper's API docs ask for attribution on the
+          trending data the action feed uses. edge/data/providers.py carries the canonical
+          string; if the projection vendor ever changes, change it there and here together. */}
       <footer className="mt-12 border-t border-line pt-5">
         <div className="flex items-center gap-2.5">
           <Wordmark className="text-[16px]" lamp={false} />
           <span className="text-[12px] font-bold text-muted">{LINES.tagline}</span>
         </div>
         <p className="mt-3 text-[12px] leading-relaxed text-muted">
-          Projections from Sleeper, re-scored to your league&rsquo;s settings. Headshots via Sleeper and ESPN. Not
-          affiliated with any league platform.
+          Projections and trending data from Sleeper, re-scored to your league&rsquo;s settings. Headshots via
+          Sleeper and ESPN. Not affiliated with the NFL, the NFLPA, Sleeper, ESPN, or Yahoo.
         </p>
+        <div className="-ml-3 mt-1 flex gap-1 text-[12px] font-bold text-muted">
+          <Link href="/terms" className="flex min-h-11 items-center px-3 hover:text-ink">
+            Terms
+          </Link>
+          <Link href="/privacy" className="flex min-h-11 items-center px-3 hover:text-ink">
+            Privacy
+          </Link>
+        </div>
       </footer>
     </div>
   );

@@ -2,10 +2,11 @@
 import { useCallback, useMemo, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";
-import { Countdown, ErrorBox, Eyebrow, OnAirLive, Opening, SplitMeter, Stamp, useHeldWait } from "@/components/ui";
+import { Countdown, ErrorBox, Eyebrow, OnAirLive, Opening, Stamp, useHeldWait } from "@/components/ui";
+import { MatchupCell } from "@/components/MatchupCell";
 import { getActions, sendFeedback } from "@/lib/api";
 import { useCached } from "@/lib/cache";
-import { calledKey, pct, sheetStatus, signed } from "@/lib/format";
+import { calledKey, sheetStatus, signed } from "@/lib/format";
 import { loadCalled, saveCalled, type Connection } from "@/lib/storage";
 import type { Action, ActionFeed } from "@/lib/types";
 
@@ -21,11 +22,13 @@ const isCallable = (a: Action) => !a.locked && a.type !== "hold";
  * The call sheet header. The one dark surface on the screen, printed with a
  * ruled grid, carrying the three things you need before kickoff: what week it
  * is, how long you have, and how much of the sheet you have worked through.
+ *
+ * The matchup used to hang off the bottom of this panel, which buried the week's
+ * scoreline below three folds of hero. It is its own cell above the sheet now
+ * (`MatchupCell`), where it is the first thing under the title.
  */
 function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: number; total: number; animate: boolean }) {
   const delta = feed.projected_total - feed.current_total;
-  const m = feed.matchup;
-  const showMatchup = m && m.opponent && m.win_prob !== null && m.their_proj !== null;
   const done = total > 0 && called >= total;
 
   return (
@@ -75,27 +78,6 @@ function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: num
           </div>
         )}
       </div>
-
-      {showMatchup && (
-        <div className="border-t border-white/10 bg-black/20 px-6 py-5">
-          <Eyebrow>Matchup</Eyebrow>
-          <div className="mt-1 truncate text-[13px] font-bold text-white/85">vs {m.opponent}</div>
-          <div className="display tnum mt-1.5 text-[34px] leading-none text-white">
-            {m.my_proj.toFixed(1)}
-            <span className="mx-1.5 text-white/35">–</span>
-            <span className="text-white/55">{m.their_proj!.toFixed(1)}</span>
-          </div>
-          <div className="mt-3.5">
-            <SplitMeter
-              left={m.win_prob!}
-              right={1 - m.win_prob!}
-              leftLabel={`${pct(m.win_prob!)} to win`}
-              rightLabel={pct(1 - m.win_prob!)}
-              onHero
-            />
-          </div>
-        </div>
-      )}
     </section>
   );
 }
@@ -126,6 +108,11 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
 
   return (
     <div>
+      {feed.matchup && (
+        <div className="mb-3.5">
+          <MatchupCell m={feed.matchup} animate={animate} />
+        </div>
+      )}
       <Sheet feed={feed} called={calledCount} total={callable.length} animate={animate} />
       {/* `min-w-0` on the items: a grid track defaults to `min-width: auto`, and the clamped
           title is a `-webkit-box` whose min-content width is the whole string — so without
@@ -139,6 +126,8 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
               delay={i + 1}
               animate={animate}
               called={called.includes(a.id)}
+              leagueName={feed.league}
+              week={feed.week}
               onCall={isCallable(a) ? () => toggle(a.id) : undefined}
               onFeedback={(verdict, reason) =>
                 sendFeedback({

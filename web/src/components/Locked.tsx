@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { checkout, getProducts } from "@/lib/api";
 import { formatCents } from "@/lib/format";
@@ -35,7 +36,8 @@ export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku
     }
     setBusy(true);
     try {
-      const { url } = await checkout(s);
+      // Come back to the page they were on, not whatever the API defaults to.
+      const { url } = await checkout(s, pathname);
       if (url) window.location.href = url;
       else onUnlocked?.();
     } catch (e) {
@@ -91,6 +93,16 @@ export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku
       <p className="mt-3.5 text-center text-[12px] leading-relaxed text-white/55">
         One payment for the rest of the season. No subscription.
         {!signedIn && " You'll sign in at checkout so your purchase follows you."}
+      </p>
+      {/* Stripe's review expects these reachable from the point of purchase, not just the footer. */}
+      <p className="mt-2 text-center text-[12px] text-white/45">
+        <Link href="/terms" className="inline-flex min-h-11 items-center px-2 underline hover:text-white/70">
+          Terms
+        </Link>
+        <span aria-hidden className="px-1.5">·</span>
+        <Link href="/privacy" className="inline-flex min-h-11 items-center px-2 underline hover:text-white/70">
+          Privacy
+        </Link>
       </p>
     </div>
   );

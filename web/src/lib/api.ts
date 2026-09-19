@@ -2,6 +2,7 @@
 // served from src/lib/mocks.ts; when set, it fetches `${NEXT_PUBLIC_API_URL}/api/...`.
 import type {
   ActionFeed,
+  ShareKind,
   ShareResponse,
   TradeFinderResponse,
   WaiverPlanResponse,
@@ -25,6 +26,7 @@ import type {
 } from "./types";
 import * as mocks from "./mocks";
 import { espnAuthHeaders } from "./espnAuth";
+import { HttpError } from "./errors";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 export const USE_MOCKS = API_URL === "";
@@ -93,8 +95,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (res.status === 403 && d && typeof d === "object" && "needs_espn_auth" in d) {
       throw new EspnAuthError(d.error, d.needs_espn_auth !== false);
     }
-    if (res.status === 401) throw new Error("Sign in to continue.");
-    throw new Error(typeof d === "string" ? d : (body?.error ?? `HTTP ${res.status}`));
+    if (res.status === 401) throw new HttpError(401, "Sign in to continue.");
+    throw new HttpError(res.status, typeof d === "string" ? d : (body?.error ?? `HTTP ${res.status}`));
   }
   return body;
 }
@@ -149,7 +151,12 @@ export async function getMe(): Promise<Me> {
 }
 
 /** Mock: alerts, then grants the product's features locally so the page can be viewed. */
-export async function checkout(sku: Sku): Promise<CheckoutResponse> {
+/**
+ * Open Stripe Checkout. `returnTo` is the path the buyer should come back to — normally
+ * the page they were on, so a waiver pass does not land them on the lineup. Stripe gets
+ * it with `?paid=<sku>` appended, which the app shell uses to wait for the entitlement.
+ */
+export async function checkout(sku: Sku, returnTo?: string): Promise<CheckoutResponse> {
   if (USE_MOCKS) {
     const product = mocks.PRODUCTS.find((p) => p.sku === sku);
     window.alert(`Mock checkout: ${product?.name ?? sku}. In production this opens Stripe Checkout.`);
@@ -161,7 +168,14 @@ export async function checkout(sku: Sku): Promise<CheckoutResponse> {
     }
     return { url: "" };
   }
-  return request<CheckoutResponse>("/checkout", { method: "POST", body: JSON.stringify({ sku }) });
+  const body: { sku: Sku; success_url?: string; cancel_url?: string } = { sku };
+  if (returnTo && typeof window !== "undefined") {
+    const origin = window.location.origin;
+    const sep = returnTo.includes("?") ? "&" : "?";
+    body.success_url = `${origin}${returnTo}${sep}paid=${encodeURIComponent(sku)}`;
+    body.cancel_url = `${origin}${returnTo}${sep}canceled=1`;
+  }
+  return request<CheckoutResponse>("/checkout", { method: "POST", body: JSON.stringify(body) });
 }
 
 export async function getSleeperLeagues(username: string): Promise<SleeperLeagueRef[]> {
@@ -195,7 +209,12 @@ export async function sendFeedback(req: FeedbackRequest): Promise<void> {
 export async function getRoster(platform: Platform, leagueId: string, teamId: string): Promise<Roster> {
   if (USE_MOCKS) {
     const l = mocks.lineupFor(teamId);
-    const players = [...l.slots.map((s) => s.player), ...l.bench.map((b) => b.player)].filter((p): p is NonNullable<typeof p> => !!p);
+    // `ros` is part of the real roster payload (`report.player_dict | {"ros": ...}`), and
+    // the trade table weighs both sides with it. The mock used to leave it off, so every
+    // player in the picker read "0 ROS" and the table's tally never moved.
+    const players = [...l.slots.map((s) => s.player), ...l.bench.map((b) => b.player)]
+      .filter((p): p is NonNullable<typeof p> => !!p)
+      .map((p) => ({ ...p, ros: p.ros ?? mocks.rosValue(p) }));
     return { team: { id: teamId, name: mocks.LEAGUE.teams.find((t) => t.id === teamId)?.name ?? teamId }, players, starters: [] };
   }
   return request<Roster>(`/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/roster`);
@@ -222,12 +241,15 @@ export async function findTrades(platform: Platform, leagueId: string, teamId: s
 }
 
 export async function createShare(body: {
-  graphic: unknown;
-  explanation: string;
+  /** Omitted means "trade", which is what every share was before Lock cards. */
+  kind?: ShareKind;
   league_name: string;
   week: number;
-  give_players: unknown[];
-  get_players: unknown[];
+  graphic?: unknown;
+  explanation?: string;
+  give_players?: unknown[];
+  get_players?: unknown[];
+  call?: unknown;
 }): Promise<ShareResponse> {
   if (USE_MOCKS) return { id: "demo1234", url: `${window.location.origin}/s/demo1234` };
   return request<ShareResponse>("/share", { method: "POST", body: JSON.stringify(body) });

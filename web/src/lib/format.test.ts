@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  article,
   calledKey,
   confidenceClass,
   confidenceInk,
@@ -16,6 +17,7 @@ import {
   signed,
   URGENCY_LABEL,
   verdictClass,
+  withArticle,
 } from "./format.ts";
 
 test("confidence colors", () => {
@@ -172,4 +174,29 @@ test("COUNTDOWN_CH is wide enough for every clock the next kickoff can show", ()
 test("the real gap to kickoff never needs more room than we reserve", () => {
   const now = new Date("2026-09-19T12:00:00Z");
   assert.ok(countdown(nextKickoff(now) - now.getTime()).length <= COUNTDOWN_CH);
+});
+
+test("article picks by sound, not by spelling", () => {
+  // the manager-style vocabulary this actually serves
+  assert.equal(article("active dealer"), "an");
+  assert.equal(article("occasional trader"), "an");
+  assert.equal(article("rare trader"), "a");
+  assert.equal(article("quiet"), "a", "the bug that shipped: 'is an quiet'");
+  assert.equal(article("FAAB spender"), "a");
+
+  // the cases the vowel-letter shortcut gets wrong
+  assert.equal(article("hour"), "an");
+  assert.equal(article("honest broker"), "an");
+  assert.equal(article("user"), "a");
+  assert.equal(article("unique roster"), "a");
+  assert.equal(article("European"), "a");
+  assert.equal(article("one-for-one"), "a");
+
+  // and the ordinary ones
+  assert.equal(article("aggressive bidder"), "an");
+  assert.equal(article("underrated flex"), "an", "'un' before a consonant is a real vowel sound");
+  assert.equal(article("trader"), "a");
+  assert.equal(article(""), "a");
+  assert.equal(article("   "), "a");
+  assert.equal(withArticle("active dealer"), "an active dealer");
 });

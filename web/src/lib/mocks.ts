@@ -1,5 +1,6 @@
 // Mock data matching docs/API.md exactly. Player names, rosters and week-2
 // half-PPR projections come from tests/fixtures/sleeper/* ("The Megalabowl").
+import { withArticle } from "./format";
 import type {
   Action,
   ActionFeed,
@@ -19,6 +20,8 @@ import type {
   PositionGrade,
   Product,
   Report,
+  SharedPlayer,
+  SharedVerdict,
   SleeperLeagueRef,
   TeamSummary,
   Tendencies,
@@ -573,7 +576,7 @@ export const WAIVERS: Waivers = {
 
 const TENDENCIES: Record<string, typeof DEFAULT_TENDENCIES> = {
   "4": { trades: 2, waiver_claims: 9, avg_bid: 14, favorite_positions: ["RB"], style: "active dealer" },
-  "9": { trades: 0, waiver_claims: 3, avg_bid: 6, favorite_positions: ["WR", "TE"], style: "sits on his roster" },
+  "9": { trades: 0, waiver_claims: 3, avg_bid: 6, favorite_positions: ["WR", "TE"], style: "roster sitter" },
   "12": { trades: 3, waiver_claims: 12, avg_bid: 21, favorite_positions: ["RB", "WR"], style: "FAAB spender" },
 };
 
@@ -625,7 +628,7 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
 
   const explanation =
     verdict === "Accept"
-      ? `You send out ${value_out.toFixed(1)} of rest-of-season value and get ${value_in.toFixed(1)} back. ${names(get)} improves your lineup by ${signed(weekIn - weekOut)} this week and roughly ${signed((value_in - value_out) / 8)} a week after that. ${theirName} is an ${tend.style}, so take the deal before they rethink it.`
+      ? `You send out ${value_out.toFixed(1)} of rest-of-season value and get ${value_in.toFixed(1)} back. ${names(get)} improves your lineup by ${signed(weekIn - weekOut)} this week and roughly ${signed((value_in - value_out) / 8)} a week after that. ${theirName} is ${withArticle(tend.style ?? "quiet manager")}, so take the deal before they rethink it.`
       : verdict === "Fair"
         ? `This is close to even: ${value_out.toFixed(1)} out, ${value_in.toFixed(1)} in. The week-2 swing is ${signed(weekIn - weekOut)}. Do it if you need the positional balance, otherwise there is no urgency. ${theirName} has made ${tend.trades} trades this year and tends to favor ${tend.favorite_positions.join("/")}.`
         : `You would give up ${value_out.toFixed(1)} of value for ${value_in.toFixed(1)}, a ${Math.round((1 - ratio) * 100)}% haircut. ${theirName} (${tend.style}) has ${tend.waiver_claims} waiver claims at an average bid of $${tend.avg_bid}, so they value depth. The counter below keeps your best piece in play without insulting them.`;
@@ -808,7 +811,7 @@ export function actionsFor(teamId: string, entitlements: Feature[]): ActionFeed 
     week: WEEK, team: rosterFor(teamId).name, league: LEAGUE.name,
     projected_total: lineup.projected_total, current_total: lineup.current_total,
     summary: `${actions.length} moves worth making`, all_clear: false, footer: "Everything else looks fine.",
-    matchup: { opponent: "Wait, another league?", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
+    matchup: { opponent: "Wait, another league?", opponent_id: "9", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
     actions, entitlements, synced_at: Date.now() / 1000 - 120,
   };
 }
@@ -847,7 +850,7 @@ export function reportFor(teamId: string): Report {
         why: "philking has six RBs and sits on his roster. Hubbard's role is safer than Swift's in CHI; ask, don't chase.",
       },
     ],
-    matchup: { opponent: "Wait, another league?", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
+    matchup: { opponent: "Wait, another league?", opponent_id: "9", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
     waiver_plan: WAIVER_PLAN,
     trade_finder: TRADE_FINDER,
     html: "",
@@ -869,4 +872,54 @@ function round2(n: number): number {
 function signed(n: number): string {
   const s = n.toFixed(1);
   return n > 0 ? `+${s}` : s;
+}
+
+/** The id the static demo (`npm run demo`) publishes its one share page under. */
+export const SHARE_DEMO_ID = "demo";
+
+/**
+ * A public trade-verdict snapshot, graded by the same evaluateTrade() the Trade Lab
+ * calls. Only the static demo uses it: with no API there is no /api/share to read, and
+ * a share page is the one screen a stranger sees first, so the demo should show a real
+ * one rather than a 404. Players are picked by value rather than hardcoded id, so this
+ * keeps working if the recorded rosters are re-recorded.
+ */
+export function sharedVerdictDemo(): SharedVerdict {
+  const theirTeamId = ROSTERS.find((r) => r.id !== MY_TEAM_ID)?.id ?? ROSTERS[0].id;
+  const bestAt = (teamId: string, position: string): Player =>
+    allPlayers(teamId)
+      .filter((p) => p.position === position)
+      .sort((a, b) => rosValue(b) - rosValue(a))[0] ?? allPlayers(teamId)[0];
+
+  const giveP = bestAt(MY_TEAM_ID, "WR");
+  const getP = bestAt(theirTeamId, "RB");
+  const res = evaluateTrade({
+    my_team_id: MY_TEAM_ID,
+    their_team_id: theirTeamId,
+    give: [giveP.id],
+    get: [getP.id],
+  });
+
+  const toShared = (p: Player): SharedPlayer => ({
+    name: p.name,
+    position: p.position,
+    nfl_team: p.nfl_team ?? "",
+    photo: p.photo ?? null,
+    team_logo: p.team_logo ?? null,
+  });
+
+  return {
+    verdict: res.verdict,
+    give: [giveP.name],
+    get: [getP.name],
+    my_delta_ros: res.me.lineup_delta_ros,
+    their_delta_ros: res.them.lineup_delta_ros,
+    fairness: res.fairness,
+    style: res.their_tendencies.style ?? null,
+    explanation: res.explanation,
+    league_name: LEAGUE.name,
+    week: WEEK,
+    give_players: [toShared(giveP)],
+    get_players: [toShared(getP)],
+  };
 }

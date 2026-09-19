@@ -11,7 +11,8 @@ from pydantic import BaseModel
 from edge import products
 from edge.api import service, share as share_mod
 from edge.api.auth import current_user, optional_user
-from edge.api.store import Store
+from edge.api.limits import RateLimitMiddleware, cors_origins, validate_id, validate_platform
+from edge.api.store import open_store
 from edge.connectors import sleeper
 from edge.engine import grades
 from edge.engine import lineup as lineup_mod
@@ -20,9 +21,11 @@ from edge.engine import report, trade, trade_finder, waiver_plan, waivers
 from edge.engine.explain import explain
 
 app = FastAPI(title="Penthouse API", version="0.1")
-app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("EDGE_CORS", "*").split(","),
+app.add_middleware(CORSMiddleware, allow_origins=cors_origins(),
                    allow_methods=["*"], allow_headers=["*"])
-store = Store()
+# Outermost, so a refused request costs a dict lookup rather than an upstream fetch.
+app.add_middleware(RateLimitMiddleware)
+store = open_store()
 
 
 def _season() -> int:
@@ -68,6 +71,10 @@ def espn_auth(x_espn_s2: str | None = Header(default=None),
 
 def _bundle(platform: str, league_id: str, auth=None) -> service.Bundle:
     from edge.data.espn_api import EspnLeagueNotFound, EspnPrivateLeague
+    # Every league route funnels through here, so this is the one place identifiers from
+    # the URL have to be checked before they are built into an upstream request.
+    validate_platform(platform)
+    validate_id(league_id, "league id")
     try:
         return service.get_bundle(platform, league_id, auth=auth)
     except EspnPrivateLeague as e:
@@ -92,7 +99,14 @@ def _team(b: service.Bundle, team_id: str):
 
 @app.get("/api/products")
 def get_products():
-    return {"products": products.PRODUCTS}
+    """Pricing, plus the data credit the UI is required to show.
+
+    Attribution rides along here because every page already loads this, and a credit line
+    that only renders on one page is not a credit line.
+    """
+    from edge.data import providers
+
+    return {"products": products.PRODUCTS, "attribution": providers.attribution_line()}
 
 
 @app.get("/api/me")
@@ -103,6 +117,24 @@ def me(email: str | None = Depends(optional_user)):
             "entitlements": sorted(products.features_for(skus)),
             "leagues_allowed": products.leagues_allowed(skus),
             "leagues": store.leagues(email) if email else []}
+
+
+@app.get("/api/me/data")
+def export_my_data(email: str = Depends(current_user)):
+    """Everything we hold about this account. Signed in only — it is the account's own data."""
+    return store.export_user(email)
+
+
+@app.delete("/api/me")
+def delete_my_data(confirm: str = "", email: str = Depends(current_user)):
+    """Erase this account. Requires ?confirm=delete so a stray request cannot do it.
+
+    This revokes any season pass the account bought, which the caller is told up front rather
+    than discovering next Sunday. Public share links survive: they carry no email.
+    """
+    if confirm != "delete":
+        raise HTTPException(400, "add ?confirm=delete — this erases your purchases too")
+    return {"ok": True, "deleted": store.delete_user(email)}
 
 
 class ConnectIn(BaseModel):
@@ -157,10 +189,22 @@ async def stripe_webhook(request: Request):
     from edge.api import payments
     payload = await request.body()
     sig = request.headers.get("stripe-signature", "")
-    grant = payments.parse_webhook(payload, sig)
-    if grant:
-        store.grant(grant["email"], grant["sku"], grant["season"], source="stripe", ref=grant["ref"])
-    return {"received": True, "granted": bool(grant)}
+    event = payments.parse_webhook(payload, sig)
+    if not event:
+        return {"received": True, "granted": False, "revoked": 0, "restored": 0}
+
+    if event["action"] == "grant":
+        store.grant(event["email"], event["sku"], event["season"], source="stripe",
+                    ref=event["ref"], payment_ref=event.get("payment_ref", ""))
+        return {"received": True, "granted": True, "revoked": 0, "restored": 0}
+
+    # A refund or chargeback withdraws access; a dispute we win gives it back.
+    if event["action"] == "revoke":
+        n = store.revoke(event["payment_ref"])
+        return {"received": True, "granted": False, "revoked": n, "restored": 0, "reason": event.get("reason")}
+
+    n = store.restore(event["payment_ref"])
+    return {"received": True, "granted": False, "revoked": 0, "restored": n, "reason": event.get("reason")}
 
 
 # ---- leagues ----
@@ -331,23 +375,43 @@ def full_report(platform: str, league_id: str, team_id: str, email: str | None =
 
 
 class ShareIn(BaseModel):
-    graphic: dict
-    explanation: str
+    kind: str = "trade"
     league_name: str = ""
     week: int | None = None
+    # kind="trade": a Trade Lab verdict
+    graphic: dict | None = None
+    explanation: str = ""
     give_players: list[dict] | None = None
     get_players: list[dict] | None = None
+    # kind="lock": a start/sit call
+    call: dict | None = None
 
 
 @app.post("/api/share")
 def create_share(body: ShareIn, email: str | None = Depends(optional_user)):
-    """Turn a verdict into a public link. That link is the cheapest marketing we have."""
-    if not products.can(_skus(email), "trade_lab"):
-        raise HTTPException(402, detail={"error": "trade_lab requires a purchase", "feature": "trade_lab",
-                                         "teaser": None, "upsell": products.upsell(_skus(email), "trade_lab")})
+    """Turn a call into a public link. That link is the cheapest marketing we have.
+
+    A start/sit share needs only `my_team`, which is free — so a user who has never paid us,
+    and never even signed in, can still post a Lock card. That is deliberate: the trade card
+    is the dramatic one, but the free one is the one there are thousands of.
+    """
+    kind = body.kind or "trade"
+    if kind not in share_mod.KINDS:
+        raise HTTPException(422, f"unknown share kind {kind!r}")
+    feature = share_mod.KIND_FEATURE[kind]
+    if not products.can(_skus(email), feature):
+        raise HTTPException(402, detail={"error": f"{feature} requires a purchase", "feature": feature,
+                                         "teaser": None, "upsell": products.upsell(_skus(email), feature)})
+    if kind == "lock":
+        call = body.call or {}
+        if not (call.get("start") or {}).get("name"):
+            raise HTTPException(422, "a start/sit share needs the player to start")
+        snap = share_mod.lock_snapshot(call, body.league_name, body.week or 0)
+    else:
+        snap = share_mod.snapshot(body.graphic or {}, body.explanation, body.league_name,
+                                  body.week or 0, body.give_players, body.get_players)
     sid = share_mod.new_id()
-    store.put_share(sid, share_mod.snapshot(body.graphic, body.explanation, body.league_name,
-                                            body.week or 0, body.give_players, body.get_players))
+    store.put_share(sid, snap)
     base = os.environ.get("EDGE_WEB_URL", "http://localhost:3000").rstrip("/")
     return {"id": sid, "url": f"{base}/s/{sid}"}
 
@@ -367,9 +431,13 @@ def _share_image(share_id: str, shape: str):
     suffix = "" if shape == "square" else f".{shape}"
     out = cache_dir / f"{share_id}{suffix}.png"
     if not out.exists():
-        html = graphics.verdict_card_html(snap, snap.get("explanation", ""), snap.get("league_name", ""),
-                                          snap.get("week") or None, shape=shape)
-        width, height = graphics.SHAPES[shape]
+        # One door: `card_html` picks the verdict or the Lock layout off the snapshot, so
+        # this never branches on kind. It also decides the shape it can honour — a Lock has
+        # no story layout yet and falls back to square — so the viewport is sized from what
+        # comes back, not from what was asked for, or a Lock story would render letterboxed
+        # into 1080x1920 with 840px of empty plate under it.
+        html = graphics.card_html(snap, shape=shape)
+        width, height = graphics.SHAPES[graphics.card_shape(snap, shape)]
         try:
             graphics.render_png(html, out, width=width, height=height)
         except Exception as e:  # noqa: BLE001 — no browser on this host, or a render failure

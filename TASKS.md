@@ -19,7 +19,23 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       dead-even table is unreachable by its own formula (regenerated from the code), the
       pseudocode divides by a starter unit that is legitimately 0.0, and ties needed a mid-rank
       or a league of clones would grade everyone A. `edge_starters` carries the margin.
-- [ ] **S-3** Matchup on the call-sheet header + `/matchup` breakdown page and endpoint.
+- [x] **S-3** Matchup is its own cell directly under the call sheet's title (`MatchupCell`) and
+      opens `/home/matchup`: scoreline, win meter, the read on the game, and every starting slot
+      set against the slot opposite it. **No new endpoint** — the breakdown is two calls to the
+      existing free `/lineup` route (yours and the opponent's), so the engine still owns the
+      flex-aware lineups and the page works against the API already on Render. The pairing and
+      the "even" band live in `web/src/lib/matchup.ts`, pure and covered by 10 node tests.
+      It is a sub-route of `/home` on purpose, so the call sheet tab stays lit.
+- [x] **S-8** League and team came out of the top bar and became a nameplate ribbon riveted to
+      the top edge of the tab bar. Names are capped in `ch` rather than left to flex-shrink —
+      shrink gave a long league name and a short team name the same haircut and produced "H…".
+- [x] **S-9** GM's Office reworked. Partner cards open and shut (best fit starts open, the rest
+      preview their top offer in one line); the hero headline is a derived short phrase so it
+      cannot wrap into a five-line block of display type; every figure strip is a grid rather
+      than inline spans; the two halves of "Grade an offer" became one table with a live ROS
+      tally between them; the wait is the hero's own frame with a one-line label instead of a
+      stack of skeletons that jumped when the answer landed. Also fixed the mock roster, which
+      omitted `ros` and made every player in the picker read "0 ROS".
 - [ ] **S-5** Depth-chart player panel: structured stats, not free text. Needs `opponent`/`ros`
       on `report.player_dict` and `margin` on the web's `LineupSlot`.
 - [ ] **S-6** Injury Protocol (`edge/engine/protocol.py`, endpoint, bottom sheet). Biggest piece,
@@ -65,6 +81,35 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
   `/api` itself, so that value 404s every call while the page still renders. Corrected.
 
 ## Decisions needed from Andrew
+- [ ] Rollout + marketing plan: `launch/ROLLOUT_PLAN.md` (phases, materials, research, 7 decisions at the end).
+      First action: email Sleeper about API licensing (their docs say commercial use needs a conversation).
+- [ ] **Launch with player photos on or off?** `EDGE_CARD_PHOTOS=0` is built and costs us nothing
+      visually (the card still reads well on initials). Recommend OFF until a lawyer says otherwise.
+      Risk L1 in `docs/RISK_REGISTER.md`.
+- [ ] **Business entity** (LLC or sole trader) before the first live payment. Risk L5.
+- [ ] Review the drafted `/legal/terms`, `/legal/privacy`, `/legal/refunds` — accurate to the code,
+      not reviewed by a lawyer. 14 questions ready in `docs/LEGAL_CHECKLIST.md`.
+- [ ] Confirm the refund policy as drafted: 7 days, no questions. Costs ~nothing (see unit economics).
+
+## Business function (this round)
+- [x] Risk register with owners and status (`docs/RISK_REGISTER.md`) — 3 items block launch
+- [x] Legal checklist + the one-hour lawyer question list (`docs/LEGAL_CHECKLIST.md`)
+- [x] Data inventory: every stored field, every recipient, retention (`docs/DATA_INVENTORY.md`)
+- [x] Terms / privacy / refunds pages, written against the code, linked from the landing footer
+- [x] Player-photo kill-switch `EDGE_CARD_PHOTOS=0` — card, stored snapshot and public page
+- [x] Sleeper attribution carried by the provider, served by `/api/products`, shown in the footer
+- [x] Data export + deletion (`GET /api/me/data`, `DELETE /api/me?confirm=delete`)
+- [x] Unit-economics model + CLI + tests (`edge/business/economics.py`, `docs/UNIT_ECONOMICS.md`)
+- [x] Accuracy programme defined (`docs/ACCURACY_PROGRAM.md`)
+- [ ] **`scripts/score_runs.py`** — pair `runs` with next week's actuals. Until this exists we
+      measure projection separation, NOT our own recommendations, and the marketing claim
+      ("our Locks are right ~80%") is not yet substantiated. Highest-value item here.
+- [ ] `/accuracy` page + weekly job + accuracy card (G5), on top of score_runs
+- [ ] Per-account daily cap on Claude-explained verdicts + billing alert (risk P2, unbounded cost)
+- [ ] Retention job: delete `runs`/`feedback` older than one season — the privacy page promises it
+- [ ] Nightly backup of the SQLite file; document replaying purchases from Stripe (risk O2)
+- [ ] Verify the Tank01 stat mapping against one live response before we need it (risk P1)
+- [ ] Measure a real trade explanation's token usage; `max_tokens=600` must cover thinking + answer
 - [ ] Confirm stack: Python engine (FastAPI) + Next.js web, or all-TypeScript in one Vercel app?
 - [ ] Your Sleeper username + league ID and a public ESPN league ID for real-data demos.
 - [ ] Where is the existing ESPN ingestion / manager-profiling code? Port it or rebuild from Sleeper transactions?
@@ -120,9 +165,28 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] UI overhaul: Inter/Inter Tight, cards, skeletons, Why? disclosures, Helpful/Wrong feedback (stored), bottom-sheet trade picker, prefilled trades from cards, headshot share card, new landing
 - [x] Exact flex-aware optimizer (Hungarian) for overlapping flex/superflex, brute-force tested
 - [x] Full Report priced at $7; teaser text in 402 responses
-- [x] Browser e2e at 375px re-verified (all pages, no overflow, photos loading)
+- [x] Browser e2e at 375px re-verified (all pages, no overflow, photos loading) — now automated
+      in CI, see `web/e2e/smoke.spec.ts`
 
 ## Next up
+- [x] Wire web to the real API end-to-end in a browser (headless Chromium, 375px, live league, 0
+      console errors) — now runs on every push rather than by hand
+- [x] Weekly email can actually send: Resend behind EDGE_EMAIL_PROVIDER, with a dry run
+      as the default and `--send` required on top of it. Needs a verified domain and a
+      RESEND_API_KEY to go live.
+- [x] Post-checkout unlock: the app waits for the Stripe webhook's grant instead of
+      showing a buyer the page they just paid to unlock, still locked. Checkout return
+      URLs are now origin-checked (they were an open redirect).
+- [x] Terms + Privacy pages, linked from the landing footer and the paywall. Stripe's
+      live-mode review asks for both. Needs NEXT_PUBLIC_SUPPORT_EMAIL and
+      NEXT_PUBLIC_LEGAL_EFFECTIVE set before launch — `missingLegalConfig()` lists them.
+- [x] CI (.github/workflows/ci.yml): pytest, web lint/test/build, and the demo export,
+      all offline. `.env.example` in both packages documents every variable the code reads.
+- [x] Static demo build (`npm run demo` + `npm run demo:pack`): the real app exported to
+      static files, driven by the recorded Megalabowl fixtures, with a league pre-connected
+      so the link opens on the action feed. Lets the app be handed to a phone or a group
+      chat before the API is deployed. Player headshots are the one thing it loses on a
+      host that blocks third-party images; the Avatar initials underneath cover it.
 - [x] Wire web to the real API end-to-end in a browser (headless Chromium, 375px, live league, 0 console errors)
 - [~] Supabase magic-link login: /login page + JWT header wired; untested against a real Supabase project (needs your keys)
 - [ ] Real Stripe test-mode checkout run (needs STRIPE_SECRET_KEY / webhook secret)
@@ -136,6 +200,19 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       (~3% of live ESPN leagues are public). Ran the whole engine on 6 drafted ones and recorded
       league 521131 as a fixture. Five bugs fixed — see below.
 - [ ] Weekly email of the Full Report (Resend free tier) — retention lever
+- [x] CI: `.github/workflows/ci.yml` runs pytest, web lint/build/unit tests and a Playwright
+      browser pass on every push. Nothing ran on push before.
+- [x] Browser smoke test at 375px for all seven pages, against a fixture-backed API
+      (`scripts/serve_fixtures.py`) — replaces the manual pass. Found that the obvious overflow
+      assertion was toothless (body{overflow-x:hidden} hides it) and that an unset
+      NEXT_PUBLIC_API_URL silently serves mocks, so the whole suite could pass without the engine.
+- [x] Action feed 12x faster (0.32s -> 0.028s a team; suite 107s -> 15s). The hot spot was
+      `player_fits`, called 379,294 times for one feed. `tests/test_feed_performance.py` guards it.
+- [x] The weekly ritual runs itself: `scripts/weekly.py` (freeze / grade / health) on a schedule
+      in `.github/workflows/weekly.yml`, results arriving as a pull request.
+- [x] **Backtest the paid advice** — `scripts/backtest_moves.py`, 2025 weeks 2-17 over five real
+      leagues: 777 waiver plans, 119 holds, 175 priced bids, 36 sides of real trades.
+      See docs/BACKTEST_MOVES.md.
 - [x] Decision backtest: `scripts/backtest.py <week>` now replays 6 real leagues (66 teams, every
       format) and grades Edge's lineup against the one the manager actually started. Week 1:
       +2.02 pts/team, 82% of teams helped. It found and priced a real bug — see below.
@@ -143,8 +220,10 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       worst was "bench Josh Allen for Stafford" (-35.6). Holding the incumbent took teams-made-
       worse from 30% to 18%. `tests/test_evaluate.py` replays all six leagues offline.
 - [x] `scripts/freeze_projections.py` — Thursday snapshot so a backtest grades what we showed.
-- [ ] Re-run `scripts/backtest.py 2` once week 2 actuals land (Tuesday). Watch **Lean**: 50% on
-      n=20 real calls against an advertised 62%. Three more weeks decide whether the tag survives.
+- [x] **Lean survives.** Answered properly instead of waiting three weeks: `scripts/calibrate.py`
+      graded a whole season (2025 weeks 1-17, 85,006 within-position pairs). Lean is 61.7%
+      against an advertised 62%; the 50%-on-n=20 scare was noise. **Lock is the one that was
+      wrong** — advertised ~80%, delivers 75.1% (CI 74.6-75.6). See docs/CALIBRATION.md.
 - [x] Waivers: add/drop pair valuation + fallback claims ("if X is gone, add Z")
 - [x] Trade Finder: surplus/need matching across the league (blueprint P1)
 - [x] RecommendationRun log with algorithm version (learning loop)
@@ -320,15 +399,208 @@ kickoff. Named it **The Booth** and rebuilt the shell around a coaching call she
 - [ ] Trend: "your RB room was a B two weeks ago". Needs grades written to the `runs` table
       week over week; nothing stores them yet.
 
+## Call sheet v2 — specced 2026-09-19, see docs/SPEC-CALLSHEET-V2.md
+Build in this order; each is its own commit.
+- [ ] S-1 The call sheet gets a title. `hideTitle` goes away and the title band is fixed-height,
+      so flipping tabs stops jolting the page up and down.
+- [ ] S-2 One loader per screen (the narrated opening currently flashes then downgrades to the
+      quiet skeleton), loader shaped like the page it replaces, count-up and countdown reserve
+      their width, tighter print stagger, font-swap check.
+- [ ] S-3 Matchup moves to the top of the call-sheet hero as a scoreboard row linking to a new
+      `/matchup` breakdown page (`edge/engine/matchup.py` + endpoint, free tier).
+- [ ] S-4 Action cards fit one phone screen: benefit on the title row, reason clamped to two
+      lines, one action row with shortened CTA labels, feedback as icons.
+- [ ] S-5 Depth-chart player dropdown becomes a labelled panel, not free text. Needs `margin`
+      on `LineupSlot` and `opponent`/`ros` out of `report.player_dict`.
+- [ ] S-6 Injury protocol per player: cost, the chain (who moves, does FLEX shuffle), handcuff
+      and who holds him, the wire if it happens, teammate effects. `edge/engine/protocol.py`.
+- [ ] S-7 Grades rank-anchored with a packed-league damper — deliberate reversal of the
+      starter-only scale; `grades.py` docstring and the CLAUDE.md bullet get rewritten with it.
+## ESPN league corpus (21 real public leagues)
+- [x] 21 public ESPN 2026 leagues recorded as offline fixtures: `scripts/record_espn_corpus.py`
+      (+ `scripts/espn_corpus.py` for the trim/load rules, now shared with the single-league
+      recorder). 301 KB gzipped for all 21. Ids came from published sources only — espn-api
+      issues, the fflr/ffscrapr docs, hobby repos — never by scanning ESPN's id space.
+- [x] `scripts/survey_leagues.py` runs the whole engine over every one of them and writes
+      `docs/LEAGUE_SURVEY.md` + `docs/league_survey.json`: 218 teams, 651 trade offers,
+      552 feed actions. Re-run it after any engine change to see what moved.
+- [x] Formats now covered: 4-12 teams, full/half/standard PPR, 4/5/6-point passing TDs, FAAB
+      ($100-$1000) and priority waivers, 5 superflex leagues, 4 with no K, 3 with no D/ST,
+      one all-FLEX lineup, bench depth 4-13.
+
+## Findings from the corpus — worth fixing before charging for Trade Lab
+- [ ] **`lineup.stabilize` is not transitive, and it can advise a lineup worse than the one the
+      manager already set.** Verified on 114052 "Raleigh Silly Nannies": his own lineup projects
+      106.88, the optimum is 106.97, and we recommend **106.56**. The only change we show him is
+      "Start Bucky Irving (12.4) over D'Andre Swift (10.6), +1.89" — but protecting Jaylen Warren
+      at RB2 pushes Swift out of the lineup entirely and Blake Corum (10.2) into the FLEX, so the
+      displayed gain is not what he gets. The guard is per-slot and does not cascade: when the
+      incumbent it protects at one slot is the player the optimizer had placed at another, the
+      second slot restores its own incumbent and the protected player falls out. 13 teams across
+      8 leagues show a sub-noise swap surviving this way (1241838 +0.11, 21575912 +0.10,
+      467985 +0.26, 252353 +0.47, 690481 +0.45/+0.80, 550501 +0.72, 730841 +0.64/+0.82,
+      358793 +1.48). `stabilize`'s docstring says this cannot happen. This is the free headline
+      feature, so it outranks everything below.
+- [ ] **The trade finder proposes offers the other manager has no reason to accept.**
+      130 of 173 best offers (75%) leave the other roster at exactly +0.0 ROS points while we
+      gain a median +15.6; 56 gain us 20+ while they gain nothing. It is the majority case in
+      17 of the 20 leagues where the finder offers anything at all. `trade_finder.MIN_THEIR_GAIN`
+      is 0.0, so indifference passes as "improves both sides". Worst real examples: "two D/STs
+      for D'Andre Swift" (+47.9/+0.0, fairness 1.0), "Malik Willis for D'Andre Swift" (+41.4/+0.0).
+      Fix the floor, and stop treating fungible streaming assets (D/ST, K) as tradeable value.
+- [ ] **`_fairness` is min/max of season ROS points, so it says 1.0 to two defenses for a
+      starting RB.** It needs positional scarcity — points above replacement at that position,
+      not raw projected points.
+- [ ] **ESPN TQB leagues are silently broken** (league 899513, 10 teams): ESPN's team-quarterback
+      pseudo-player has no Sleeper equivalent, so 17/152 rostered players are unpriced and every
+      QB in the league is invisible to the engine. Its lineup is 5x FLEX + DEF + K. Detect TQB
+      at connect time and say we cannot advise on this format, rather than advising badly.
+      Worse than unpriced players: that league *starts* a TQB slot (lineupSlotId 1) which
+      `LINEUP_SLOTS` drops, so we build 7 of its 8 starting slots and ignore ~18 points a week.
+- [ ] **An unpriced player who can never fill a slot still blocks waiver claims** (league
+      21575912 rosters 12 punters). `waiver_plan._drop_candidates` excludes every `unpriced`
+      player, which is right for a name-match miss but wrong for a punter in a league with no
+      P slot — he is unstartable, not unknown, and should be the first drop offered.
+- [ ] **19 of 21 leagues score at least one stat id our ESPN map ignores** — this is not an
+      exotic-format problem, it is the common case. Frequency across the corpus:
+      `125` in 18 leagues (-3 to -10 pts; ours is a *deliberate* gap, but at this frequency it
+      deserves revisiting), `206` in 15 (2-4 pts), `209` in 14 (1-2 pts), `214` and `121` in 4
+      each, and a `161`-`166` ladder worth 10/8/6/4/2/1 pts in 2 leagues. Identify 206 and 209
+      first — they are worth real points in two thirds of the corpus. League 358793 carries 7
+      ignored ids and also has the worst projection error (median 2.82 pts vs ESPN's own,
+      ratio 0.875), which is the kind of correlation to chase.
+      `docs/LEAGUE_SURVEY.md` lists every ignored id per league.
+- [ ] **Kickers lose ~7 points a week in leagues that score field goals by the yard.** ESPN
+      statId 214 ("points per FG yard") is unmapped, and 4 of 21 leagues score kickers *only*
+      that way (164483, 252353, 358793, 899513 — all 214 = 0.1, no FG-made bucket at all).
+      Measured median K projection in those leagues: 2.31-2.50 against ESPN's own 9.44-9.86.
+      Leagues with a mapped FG id sit at 6.1-7.3 against 8.2-9.7. Sleeper ships a FG-yardage
+      stat, so this is mappable — but the corpus's trimmed projection slice drops keys outside
+      today's map, so a fix needs a re-record of the fixtures.
+- [ ] **A team with $0 FAAB is told to bid $1.** `waiver_plan.build` re-derives
+      `amount = max(1, round(amount * discount))` after `suggest_bid` already clamped to
+      `faab_remaining`, and rebuilds the range as [0.7x, 1.3x] without re-clamping: $0 gives
+      `amount 1, range [1,1]`, $2 gives `range [1,3]`. No corpus team is broke enough to hit it
+      today, so it is covered by a directed strict-xfail test that forces the budget.
+- [ ] Not a bug, do not "fix" it: ESPN reports a negative `acquisitionBudgetSpent` when managers
+      trade FAAB, so `faab_remaining` can legitimately exceed the league budget (467985 has 105
+      of 100, 1707014 has 300 of 250). The corpus test asserts `>= 0` only, deliberately.
+- [ ] League 690481 is abandoned (still on scoringPeriodId 1, nobody set a lineup), which is why
+      it shows 131 points on the table across 12 teams. Harmless as test data, but it skews any
+      aggregate — worth a "stale league" signal in the product too.
+- [x] `tests/test_espn_corpus.py` — the whole engine over all 21 leagues: builds, scoring vs
+      ESPN's own projections (per league and per position), name mapping, the unpriced guard
+      (ghost players injected into every format), lineup legality, waiver claims, finder-vs-
+      evaluator agreement, and the action feed's teaser rules. The findings above are strict
+      xfails carrying their measured numbers, so they surface in `pytest -rx` and fail loudly
+      the day someone fixes them.
+## What the moves backtest found (docs/BACKTEST_MOVES.md)
+- [ ] **Lower `CLAIM_THRESHOLD`.** On the 31 holds where a manager overruled us, their move was
+      worth +1.60 pts/week — we were right 36% of the time. A wrong hold is invisible: the user
+      does nothing, nothing happens, nobody complains. Most expensive finding.
+- [ ] **Rank waiver claims by roster need, not board value.** Our claim is worth +2.01 pts/week
+      and the manager's own move +2.27; we pick better 47% of the time, which is a coin flip
+      against the person we charge $3 to advise. A manager adds because their starter limped off;
+      the ranker picks the best player on a static board. Wrong question, not bad data.
+- [ ] **Recalibrate the market-clearing bid.** We bid 6.8% of budget where the market clears at
+      3.6% — about 2x, consistently, in all three FAAB leagues. Winning 82% of contested claims
+      is worth keeping; exhausting a budget twice as fast as the league is not.
+- [x] Trade verdicts hold up: the side we said would gain actually gained 72% of the time (n=29).
+      Leave it alone and let the sample grow.
+
 ## Blueprint items still open
 - [x] Weekly action email — HTML + plain text renderer, `python -m edge.cli email <league> <team>`.
       Sending still needs a Resend key; everything up to the send is built and tested.
 - [x] Shareable public trade-verdict URLs with a rendered social card (organic loop)
-- [ ] Uncertainty-aware confidence: P(a > b) from projection error by position, not raw margin
-      (blueprint says do NOT build this before multi-week backtesting exists)
+- [~] Uncertainty-aware confidence: **built and validated, not yet wired in.** The blueprint
+      said not before multi-week backtesting existed; it now does. `edge/calibration.py` models
+      P(a beats b) from measured projection error, which grows with the projection (SD 2.9 at 2
+      points, 8.0 at 21) — so 4 points wins 78.7% between two tight ends and 68.1% between two
+      quarterbacks, and the margin bands were selling every position the same tag for a
+      different promise. Tagged on probability: Lock 81.0%, Lean 66.9%, Coin flip 53.9%, and
+      calibrated on held-out 2026 week 1. **Decision for Andrew:** switching `lineup.py` to it
+      changes what users see (Lock becomes rarer and truer, the hold band scales from a flat
+      1.5 points to 1.74 off a 5-point starter and 3.75 off a 20-point one).
 - [ ] Commissioner league pack, creator affiliate codes (growth, after launch)
 - [ ] A Penthouse Pro tier — deliberately not launched yet
 
 ## Later (not v1)
 - [ ] Private ESPN leagues (espn_s2 / SWID)
 - [ ] Yahoo
+
+## Go-to-market — team/league access (plan: docs/MARKETING.md)
+Proposed pivot: entitlement keyed to the **team**, not the email. Kills the login, kills the
+Supabase blocker, and makes a pasted link work inside a league group chat. Awaiting Andrew's
+call on §8 of docs/MARKETING.md before any of this is built.
+- [ ] Re-key `purchases` to `(platform, league_id, team_id)`; `team_id = '*'` is the League Pass.
+      `_skus()` takes the league/team instead of the email; the email column stays for receipts.
+- [ ] Public league board `/l/{platform}/{league_id}` — no login, 12 slots, unlocked state,
+      "9 of 12 unlocked", a buy button per slot and one for the league. This is the growth loop.
+- [ ] Buy a pass for another team (the gift) — same checkout, different `team_id`.
+- [ ] Prices: Team Pass $7, League Pass $39, Playoff Push $19 from ~week 12. Wire Pass and
+      Trade Lab come off the pricing table (stay in products.py).
+- [ ] Public `/scoreboard` — docs/BACKTEST.md as a page, losses included. The one claim no
+      competitor can copy, currently invisible.
+- [ ] Shareable free call sheet, not only paid verdicts (`/api/share` is gated on `trade_lab`).
+- [ ] Send the weekly film (Resend free tier) to the Stripe email; unsubscribe + postal address.
+- [ ] Board analytics: connects, board views, board → checkout.
+- [ ] Re-render `launch/cards/` — stale wordmark, un-stamped verdicts. Blocks every launch post.
+
+### Paid acquisition prerequisites (docs/MARKETING.md §9)
+- [ ] Install Meta / Reddit / Google / GA4 pixels **before the soft open**, firing a custom event
+      on connect-a-league, so the free-tier period builds the retargeting audience.
+- [ ] Carry a UTM/board ref through `CheckoutIn` into the Stripe session metadata
+      (`edge/api/payments.py:23` sets email/sku/season today). Without it, revenue is unattributable.
+- [ ] Server-side conversions: hashed Stripe email to Meta CAPI + Google offline conversions.
+      Browser pixels lose a large share of conversions; this is what teaches the algorithm.
+- [ ] Cache the Claude trade explanation per trade — it is the only per-view variable cost, and a
+      viral share card must not re-bill on every view.
+- [ ] Dashboard: cost per click, per league connected, per purchase, and the League/Team mix.
+      The mix is the kill signal — ads buying $7 passes instead of $39 collapse the CAC ceiling.
+
+
+## Consolidating the abandoned branches (this round)
+Eight branches had never been merged and never been pushed anywhere that builds — 32 commits.
+All eight are now in, and the branches themselves can be deleted.
+- [x] Straightforward merges: the call sheet v2 UI, the call-sheet v2 spec, the marketing doc,
+      and the 21-league ESPN corpus.
+- [x] Business function: risk register, legal pages, unit economics, the accuracy programme.
+- [x] Confidence recalibrated over a full season. **Lock was advertised at ~80% and measures
+      75.1%**, with a 95% interval (74.6–75.6) that never touches the claim. Lean and Coin flip
+      are honest. CLAUDE.md now states the measured numbers; see docs/CALIBRATION.md.
+- [x] Launch readiness: Postgres behind the store contract, rate limits, refunds that revoke
+      access, the Stripe return-URL origin check, Terms and Privacy, CI, the weekly email
+      sender, and the accessibility pass. This branch predated the rebrand, so every web
+      surface collided with it; the Penthouse versions won and the functional work was grafted
+      in. Details in the merge commit.
+- [x] Free Lock shares. Sharing used to need Trade Lab ($5); a start/sit card now needs only
+      `my_team`, which is free. The pre-rebrand visual work on that branch (the flare accent,
+      the old wordmark) was dropped — superseded by Penthouse — so the Lock card is drawn in
+      the current identity rather than ported.
+
+### Found while merging, fixed here
+- [x] `PostgresStore` had no `export_user`/`delete_user`. The privacy policy promises both, and
+      the backend missing them is the one that holds a paying customer's rows.
+- [x] `--color-start-fill` was used by three components and defined nowhere.
+- [x] Two branches each shipped their own legal pages. Kept `/terms` + `/privacy` (configurable
+      refund window, `missingLegalConfig()` launch blocker, already in the sitemap); dropped
+      `/legal/*`.
+- [x] Every user-facing "Edge" string in `web/src` now reads Penthouse. `X-Edge-User`, `EDGE_*`
+      and the `booth.*` storage keys deliberately stay.
+
+### Not done
+- [ ] `docs/BRAND.md` from the visual-direction branch was left behind on purpose: it documents
+      the pre-rebrand flare look, so landing it would describe an identity the app no longer has.
+      The live brand rules are in CLAUDE.md.
+
+      That branch (`claude/app-design-visual-direction-ikclwx`) was the one merged selectively
+      rather than wholesale, and it has been deleted along with the others. Its tip is
+      **eaa9793c236a829d860888ac7f2f2204768188ce** — written down here because a deleted branch
+      is only recoverable while someone still has the sha. `git show` any of these:
+        eaa9793  Write the visual direction down so it survives the next session  (docs/BRAND.md)
+        4a50958  Web: the flare accent, a wordmark that means something
+        692be77  Redraw the share cards, and stop charging for the one that spreads
+      The sharing change from the third is in; the flare accent and old wordmark are not, and
+      should not come back without a deliberate decision to leave Penthouse.
+- [ ] The e2e Playwright smoke test and the Postgres half of the store contract suite have not
+      been run here — they need a browser and a live Postgres. CI now runs both.

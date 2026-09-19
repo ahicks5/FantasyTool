@@ -1,9 +1,21 @@
 "use client";
 import Link from "next/link";
-import type { Action } from "@/lib/types";
+import type { Action, LockCall, Player, SharedPlayer } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { IconCheck, IconChevron, IconGreaseCheck, IconLock } from "./icons";
+import { ShareLock } from "./ShareLock";
 import { ConfidenceStamp, Eyebrow, Feedback, Why } from "./ui";
+
+/** The display fields a share card prints. Ids and projections never travel. */
+function shared(p: Player): SharedPlayer {
+  return {
+    name: p.name,
+    position: p.position ?? "",
+    nfl_team: p.nfl_team ?? "",
+    photo: p.photo ?? null,
+    team_logo: p.team_logo ?? null,
+  };
+}
 
 const LABEL: Record<Action["type"], string> = { start: "Start", waiver: "Claim", trade: "Trade", hold: "Hold" };
 // A call sheet numbers its plays in the margin and colours the rule beside them.
@@ -27,6 +39,8 @@ export function ActionCard({
   animate = true,
   onCall,
   onFeedback,
+  leagueName = "",
+  week = 0,
   delay = 0,
 }: {
   a: Action;
@@ -37,11 +51,27 @@ export function ActionCard({
   animate?: boolean;
   onCall?: () => void;
   onFeedback: (verdict: "helpful" | "wrong", reason?: string) => void | Promise<void>;
+  /** Printed on the shared card. Without them a Lock still shares, just unlabelled. */
+  leagueName?: string;
+  week?: number;
   delay?: number;
 }) {
   const [primary, secondary] = a.players;
   // A hold is not a call you make, and a locked teaser is not one you can make.
   const callable = !a.locked && a.type !== "hold" && !!onCall;
+  // Every start/sit call is shareable by anyone, paid or not — that is the loop. Built as
+  // a value rather than a boolean so `confidence` narrows here instead of needing a `!`.
+  const lockCall: LockCall | null =
+    !a.locked && a.type === "start" && a.confidence && primary
+      ? {
+          start: shared(primary),
+          bench: secondary ? shared(secondary) : null,
+          gain: a.benefit_value,
+          confidence: a.confidence,
+          slot: "",
+          note: a.reason,
+        }
+      : null;
   return (
     <article
       className={`card relative min-w-0 overflow-hidden ${animate ? `print print-${Math.min(delay, 5)}` : ""} ${
@@ -175,6 +205,8 @@ export function ActionCard({
                 pushes itself to the right end rather than claiming a line of its own. */}
             {!a.locked && a.type !== "hold" && <Feedback onSend={onFeedback} />}
           </div>
+
+          {lockCall && <ShareLock call={lockCall} leagueName={leagueName} week={week} />}
         </div>
       </div>
     </article>

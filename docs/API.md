@@ -11,9 +11,11 @@ The package, the env vars and the header keep the `edge`/`EDGE_` spelling on pur
 user reads says Penthouse. Wire names below are the contract; `web/src/lib/types.ts` mirrors them.
 
 ## Products / entitlements
-`GET /api/products` →
+`GET /api/products` → pricing plus `attribution`, the credit line the active projection vendor
+requires (Sleeper's docs ask for it on trending data). The UI must render it.
 ```json
-{"products":[
+{"attribution":"Projections and trending data from Sleeper",
+ "products":[
   {"sku":"free","name":"Free","price_cents":0,"features":["my_team"],"leagues":1,"kind":"free","blurb":"Start/sit calls for one team, every week."},
   {"sku":"waivers","name":"Wire Pass","price_cents":300,"features":["waivers"],"leagues":1,"kind":"a_la_carte","blurb":"The wire, ranked for your roster, with the bid and the drop. Rest of season."},
   {"sku":"trade_lab","name":"Trade Lab","price_cents":500,"features":["trade_lab"],"leagues":1,"kind":"a_la_carte","blurb":"Trade verdicts and counters tuned to the other manager. Rest of season."},
@@ -24,6 +26,16 @@ user reads says Penthouse. Wire names below are the contract; `web/src/lib/types
 
 `POST /api/checkout {"sku":"full_report"}` → `{"url":"https://checkout.stripe.com/..."}`
 `POST /api/stripe/webhook` (Stripe only)
+
+## Data subject requests
+Signed in only — an account acting on its own data. See `docs/DATA_INVENTORY.md`.
+
+`GET /api/me/data` → `{"email":"...","data":{"purchases":[...],"leagues":[...],"runs":[...],"feedback":[...]}}`
+`DELETE /api/me?confirm=delete` → `{"ok":true,"deleted":{"purchases":1,"leagues":2,"runs":9,"feedback":0}}`
+
+Deletion revokes the season pass along with the data — that is the honest consequence and the
+`confirm` parameter exists so it cannot happen by accident. Public share links survive: they carry
+no email (`edge/api/share.py`).
 
 ## Leagues
 `GET /api/sleeper/leagues?username=X` → `[{"league_id","name","status","total_rosters"}]`

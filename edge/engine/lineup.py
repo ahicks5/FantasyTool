@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import lru_cache
 
-from edge.models import FLEX_SLOTS, League, Player, Team, player_fits
+from edge.models import FLEX_SLOTS, League, Player, Team, player_fits, slot_accepts
 
 LOCK, LEAN, FLIP = "Lock", "Lean", "Coin flip"
 # Measured on 2026 week 1 (docs/BACKTEST.md): how often the higher projection actually scored more.
@@ -24,20 +25,67 @@ def effective(p: Player, values: dict[str, float] | None = None) -> float:
     return p.projected or 0.0
 
 
-def _slot_order(slots: list[str]) -> list[int]:
-    """Fill dedicated slots first, then flex slots from most to least restrictive."""
+# ---------------------------------------------------------------------------
+# Eligibility, answered once instead of a few million times.
+#
+# `player_fits(slot, player)` depends on exactly two things: the slot's name and the set of
+# positions the player may be started at. Both are small, fixed vocabularies -- a dozen slot
+# names against a couple of dozen position tuples -- so the honest answer is a lookup table,
+# not a loop. Profiling the action feed on the recorded 12-team ESPN league found 4.5M calls
+# to `player_fits` under `optimize`, 70% of the feed's entire runtime, all of them re-deriving
+# the same handful of booleans. These caches are keyed on immutable values only (strings and
+# tuples of strings) and the rules they encode are module constants, so they can never go
+# stale the way a cache on a mutable Player would.
+# ---------------------------------------------------------------------------
+
+def _pos_key(p: Player) -> tuple[str, ...]:
+    """Everything about a player that decides where he may line up."""
+    return tuple(p.positions)
+
+
+@lru_cache(maxsize=None)
+def fits_key(slot: str, positions: tuple[str, ...]) -> bool:
+    """`player_fits` for a player whose eligibility is `positions`."""
+    return any(slot_accepts(slot, pos) for pos in positions)
+
+
+@lru_cache(maxsize=None)
+def _layout(slots: tuple[str, ...]) -> tuple[tuple[int, ...], tuple[str, ...], int]:
+    """(fill order, distinct dedicated slots, number of flex types) for a starting lineup.
+
+    Fill dedicated slots first, then flex slots from most to least restrictive. Depends only
+    on the slot list, which is the same for every team in a league and every call all season.
+    """
     def key(i):
         s = slots[i]
         return (1, len(FLEX_SLOTS[s])) if s in FLEX_SLOTS else (0, 0)
-    return sorted(range(len(slots)), key=key)
+    order = tuple(sorted(range(len(slots)), key=key))
+    dedicated = tuple(s for s in dict.fromkeys(slots) if s not in FLEX_SLOTS)
+    flex_types = len({s for s in slots if s in FLEX_SLOTS})
+    return order, dedicated, flex_types
 
 
-def _greedy(pool: list[Player], slots: list[str], values) -> list[Player | None]:
+@lru_cache(maxsize=None)
+def _contested(dedicated: tuple[str, ...], positions: tuple[str, ...]) -> bool:
+    """True when one player is eligible for two different dedicated slots, which is what
+    makes greedy filling inexact (Sleeper lists rush ends as ["DL", "LB"])."""
+    return sum(1 for s in dedicated if fits_key(s, positions)) > 1
+
+
+def _slot_order(slots: list[str]) -> list[int]:
+    """Fill dedicated slots first, then flex slots from most to least restrictive."""
+    return list(_layout(tuple(slots))[0])
+
+
+def _greedy(pool: list[Player], slots: list[str], values,
+            keys: list[tuple[str, ...]] | None = None) -> list[Player | None]:
+    keys = keys if keys is not None else [_pos_key(p) for p in pool]
     used: set[str] = set()
     out: list[Player | None] = [None] * len(slots)
-    for i in _slot_order(slots):
-        for p in pool:
-            if p.id in used or not player_fits(slots[i], p):
+    for i in _layout(tuple(slots))[0]:
+        slot = slots[i]
+        for j, p in enumerate(pool):
+            if p.id in used or not fits_key(slot, keys[j]):
                 continue
             out[i] = p
             used.add(p.id)
@@ -60,7 +108,7 @@ def _shortlist(pool: list[Player], slots: list[str]) -> list[Player]:
     for p in pool:
         key = tuple(sorted(p.positions))   # players with identical eligibility compete for the same slots
         if key not in room:
-            room[key] = sum(1 for s in slots if player_fits(s, p))
+            room[key] = sum(1 for s in slots if fits_key(s, key))
         n = seen.get(key, 0)
         if n < room[key]:
             seen[key] = n + 1
@@ -75,9 +123,12 @@ def _assign_exact(pool: list[Player], slots: list[str], values) -> list[Player |
     BIG = 10**6
     # cost = -value; ineligible = BIG; padded rows/cols = 0
     cost = [[0.0] * n for _ in range(n)]
+    keys = [_pos_key(p) for p in pool]
+    vals = [effective(p, values) for p in pool]
     for i, slot in enumerate(slots):
-        for j, p in enumerate(pool):
-            cost[i][j] = -effective(p, values) if player_fits(slot, p) else BIG
+        row = cost[i]
+        for j in range(len(pool)):
+            row[j] = -vals[j] if fits_key(slot, keys[j]) else BIG
     # Hungarian algorithm (e-maxx formulation)
     u = [0.0] * (n + 1); v = [0.0] * (n + 1); pmatch = [0] * (n + 1); way = [0] * (n + 1)
     for i in range(1, n + 1):
@@ -119,14 +170,16 @@ def optimize(players: list[Player], slots: list[str], values: dict[str, float] |
     with overlapping flex types we solve the assignment exactly."""
     # healthy zero-projection players before injured ones, so an IR guy never "starts" by default
     pool = sorted(players, key=lambda p: (-effective(p, values), p.is_out))
-    flex_types = {s for s in slots if s in FLEX_SLOTS}
+    keys = [_pos_key(p) for p in pool]
+    _order, dedicated, flex_types = _layout(tuple(slots))
     # Greedy fills dedicated slots first, which is only exact while those slots are disjoint.
     # A multi-eligible player (Sleeper lists rush ends as ["DL", "LB"]) makes two dedicated
-    # slots compete for the same man, so fall through to the exact assignment.
-    dedicated = [s for s in dict.fromkeys(slots) if s not in FLEX_SLOTS]
-    contested = any(sum(1 for s in dedicated if player_fits(s, p)) > 1 for p in pool)
-    if len(flex_types) <= 1 and not contested:
-        return _greedy(pool, slots, values)
+    # slots compete for the same man, so fall through to the exact assignment. Asked once per
+    # distinct eligibility rather than once per player: the answer cannot differ between two
+    # players who are eligible for the same positions.
+    contested = any(_contested(dedicated, k) for k in set(keys))
+    if flex_types <= 1 and not contested:
+        return _greedy(pool, slots, values, keys)
     return _assign_exact(_shortlist(pool, slots), slots, values)
 
 

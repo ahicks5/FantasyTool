@@ -29,6 +29,7 @@ def test_snapshot_carries_the_card_and_nothing_private():
     assert '"id"' not in blob and "projected" not in blob, "only display fields travel"
     assert snap["verdict"] == "Accept" and snap["explanation"] == "Take it."
     assert snap["give_players"][0]["photo"] == "u"
+    assert snap["kind"] == "trade"
 
 
 @pytest.fixture()
@@ -98,6 +99,64 @@ def test_card_image_is_rendered_once_and_cached(client, tmp_path, monkeypatch):
     assert {s["id"]: s["views"] for s in app_mod.store.share_stats()}[sid] == 0
 
 
+LOCK_BODY = {"kind": "lock", "league_name": "Test League", "week": 2,
+             "call": {"start": {"name": "Jahmyr Gibbs", "position": "RB", "nfl_team": "DET",
+                                "photo": "https://cdn/g.jpg", "team_logo": "https://cdn/det.png",
+                                "id": "9221", "projected": 18.4},
+                      "bench": {"name": "D'Andre Swift", "position": "RB", "nfl_team": "CHI",
+                                "photo": None, "team_logo": None, "id": "5849", "projected": 14.2},
+                      "gain": 4.2, "confidence": "Lock", "slot": "FLEX",
+                      "note": "Margins this size have been right about three times in four."}}
+
+
+def test_a_lock_share_costs_nothing_and_needs_no_account(client):
+    """This is the growth loop. Gating it behind the $5 Trade Lab meant almost nobody could
+    post anything — a free user has one or three of these every single week."""
+    r = client.post("/api/share", json=LOCK_BODY)          # no headers: not even signed in
+    assert r.status_code == 200, r.text
+    snap = client.get(f"/api/share/{r.json()['id']}").json()
+    assert snap["kind"] == "lock"
+    assert snap["start"]["name"] == "Jahmyr Gibbs" and snap["bench"]["name"] == "D'Andre Swift"
+    assert snap["gain"] == 4.2 and snap["confidence"] == "Lock"
+
+
+def test_a_lock_share_leaks_no_more_than_a_trade_share_does(client):
+    sid = client.post("/api/share", json=LOCK_BODY).json()["id"]
+    blob = json.dumps(client.get(f"/api/share/{sid}").json())
+    assert "9221" not in blob and "5849" not in blob, "player ids are not display data"
+    assert "projected" not in blob, "only what is printed on the card travels"
+
+
+def test_a_lock_share_needs_a_player_and_a_known_kind(client):
+    assert client.post("/api/share", json={"kind": "lock", "call": {}}).status_code == 422
+    assert client.post("/api/share", json={"kind": "nonsense", "call": {}}).status_code == 422
+
+
+def test_the_paid_card_is_still_paid(client):
+    """Making start/sit free must not have opened the Trade Lab up as a side effect."""
+    assert client.post("/api/share", json=BODY).status_code == 402
+    assert client.post("/api/share", headers=H, json=BODY).status_code == 402, "no grant yet"
+
+
+def test_a_lock_share_renders_the_lock_card_not_the_trade_card(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("EDGE_CACHE_DIR", str(tmp_path))
+    rendered = []
+    import edge.graphics as g
+
+    def fake_render(html, out, **kw):
+        rendered.append(html)
+        from pathlib import Path
+        Path(out).parent.mkdir(parents=True, exist_ok=True)
+        Path(out).write_bytes(b"\x89PNG\r\n\x1a\n")
+        return out
+
+    monkeypatch.setattr(g, "render_png", fake_render)
+    sid = client.post("/api/share", json=LOCK_BODY).json()["id"]
+    assert client.get(f"/api/share/{sid}/card.png").status_code == 200
+    assert "LOCK" in rendered[0] and "Jahmyr Gibbs" in rendered[0]
+    assert "verdict" not in rendered[0].lower(), "that is the trade card"
+
+
 def test_the_story_image_is_a_separate_render_with_its_own_cache_key(client, tmp_path, monkeypatch):
     """1080x1920 for a phone story. The two shapes must not share a cache file — keyed on
     the id alone, whichever was rendered first would be served as both."""
@@ -123,3 +182,23 @@ def test_the_story_image_is_a_separate_render_with_its_own_cache_key(client, tmp
     assert client.get(f"/api/share/{sid}/story.png").status_code == 200
     assert len(sizes) == 2
     assert client.get("/api/share/nope/story.png").status_code == 404
+
+
+def test_a_lock_story_falls_back_to_the_square_rather_than_letterboxing(client, tmp_path, monkeypatch):
+    """The Lock card has no story layout yet. Asking for one must render the square at
+    square size, not the square HTML into a 1080x1920 viewport with 840px of empty plate."""
+    monkeypatch.setenv("EDGE_CACHE_DIR", str(tmp_path))
+    sizes = []
+    import edge.graphics as g
+
+    def fake_render(html, out, width=1080, height=1080):
+        sizes.append((width, height))
+        from pathlib import Path
+        Path(out).parent.mkdir(parents=True, exist_ok=True)
+        Path(out).write_bytes(b"\x89PNG\r\n\x1a\n")
+        return out
+
+    monkeypatch.setattr(g, "render_png", fake_render)
+    sid = client.post("/api/share", json=LOCK_BODY).json()["id"]
+    assert client.get(f"/api/share/{sid}/story.png").status_code == 200
+    assert sizes == [(1080, 1080)], "a Lock story renders at square size"

@@ -260,3 +260,187 @@ def test_demo_unlock_is_not_implied_by_dev_auth(client, league, monkeypatch):
     assert os.environ.get("EDGE_DEV") == "1"
     tid = league.teams[0].id
     assert client.get(f"{LG}/team/{tid}/waivers/plan", headers=H).status_code == 402
+
+
+def test_checkout_return_urls_must_be_our_own_origin():
+    """The client picks where Stripe returns the buyer, so that value is untrusted."""
+    from edge.api.payments import same_origin
+
+    base = "https://edge.example.com"
+    assert same_origin("https://edge.example.com/waivers?paid=waivers", base) is not None
+    assert same_origin("https://edge.example.com/", base) is not None
+
+    # Anything that would send a paying customer somewhere else is dropped.
+    assert same_origin("https://evil.example/steal", base) is None
+    assert same_origin("https://edge.example.com.evil.test/x", base) is None
+    assert same_origin("http://edge.example.com/x", base) is None, "scheme downgrade"
+    assert same_origin("//evil.example/x", base) is None, "protocol-relative"
+    assert same_origin("javascript:alert(1)", base) is None
+    assert same_origin("/waivers", base) is None, "no origin to compare"
+    assert same_origin(None, base) is None
+    assert same_origin("", base) is None
+
+
+def test_checkout_falls_back_to_the_default_when_a_return_url_is_rejected(monkeypatch):
+    """A rejected URL must not reach Stripe: the session gets our own default instead."""
+    from edge.api import payments
+
+    captured = {}
+
+    class FakeSession:
+        @staticmethod
+        def create(**kwargs):
+            captured.update(kwargs)
+            return type("S", (), {"url": "https://checkout.stripe.test/c/abc"})()
+
+    import stripe
+    monkeypatch.setattr(stripe.checkout, "Session", FakeSession)
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
+    monkeypatch.setenv("EDGE_WEB_URL", "https://edge.example.com")
+
+    url = payments.create_checkout(
+        "a@b.c", "trade_lab", 2026,
+        success_url="https://evil.example/thanks",
+        cancel_url="https://evil.example/no",
+    )
+    assert url == "https://checkout.stripe.test/c/abc"
+    assert captured["success_url"].startswith("https://edge.example.com/")
+    assert captured["cancel_url"].startswith("https://edge.example.com/")
+    assert "evil.example" not in captured["success_url"] + captured["cancel_url"]
+
+    payments.create_checkout(
+        "a@b.c", "trade_lab", 2026,
+        success_url="https://edge.example.com/trade?paid=trade_lab",
+        cancel_url=None,
+    )
+    assert captured["success_url"] == "https://edge.example.com/trade?paid=trade_lab"
+
+
+def _stripe_event(monkeypatch, event: dict):
+    """Install a webhook verifier that returns `event`, as Stripe's would."""
+    class FakeWebhook:
+        @staticmethod
+        def construct_event(payload, sig, secret):
+            return event
+    import stripe
+    monkeypatch.setattr(stripe, "Webhook", FakeWebhook)
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+
+
+def _post_webhook(client):
+    return client.post("/api/stripe/webhook", content=b"{}", headers={"stripe-signature": "t=1,v1=fake"})
+
+
+def _session_completed(email="Andrew@Example.com", sku="trade_lab", pi="pi_1"):
+    return {"type": "checkout.session.completed",
+            "data": {"object": {"id": f"cs_{pi}", "payment_status": "paid", "payment_intent": pi,
+                                "customer_details": {"email": email},
+                                "metadata": {"sku": sku, "season": "2026"}}}}
+
+
+def test_a_refunded_pass_stops_working(client, monkeypatch):
+    """Otherwise a $7 pass is refundable into a free season."""
+    _stripe_event(monkeypatch, _session_completed())
+    assert _post_webhook(client).json()["granted"] is True
+    assert "trade_lab" in client.get("/api/me", headers=H).json()["skus"]
+
+    _stripe_event(monkeypatch, {"type": "charge.refunded",
+                                "data": {"object": {"payment_intent": "pi_1", "amount": 500,
+                                                    "amount_refunded": 500}}})
+    r = _post_webhook(client)
+    assert r.json()["revoked"] == 1 and r.json()["reason"] == "refunded"
+    assert "trade_lab" not in client.get("/api/me", headers=H).json()["skus"]
+
+
+def test_a_partial_refund_does_not_take_the_pass_away(client, monkeypatch):
+    """A goodwill partial refund should not cost someone what they still mostly paid for."""
+    _stripe_event(monkeypatch, _session_completed(sku="waivers", pi="pi_partial"))
+    assert _post_webhook(client).json()["granted"] is True
+
+    _stripe_event(monkeypatch, {"type": "charge.refunded",
+                                "data": {"object": {"payment_intent": "pi_partial", "amount": 300,
+                                                    "amount_refunded": 100}}})
+    assert _post_webhook(client).json()["revoked"] == 0
+    assert "waivers" in client.get("/api/me", headers=H).json()["skus"]
+
+
+def test_a_chargeback_revokes_and_winning_the_dispute_restores(client, monkeypatch):
+    _stripe_event(monkeypatch, _session_completed(sku="full_report", pi="pi_disputed"))
+    assert _post_webhook(client).json()["granted"] is True
+
+    _stripe_event(monkeypatch, {"type": "charge.dispute.created",
+                                "data": {"object": {"payment_intent": "pi_disputed", "status": "needs_response"}}})
+    assert _post_webhook(client).json()["revoked"] == 1
+    assert "full_report" not in client.get("/api/me", headers=H).json()["skus"]
+
+    _stripe_event(monkeypatch, {"type": "charge.dispute.closed",
+                                "data": {"object": {"payment_intent": "pi_disputed", "status": "won"}}})
+    assert _post_webhook(client).json()["restored"] == 1
+    assert "full_report" in client.get("/api/me", headers=H).json()["skus"]
+
+    _stripe_event(monkeypatch, {"type": "charge.dispute.closed",
+                                "data": {"object": {"payment_intent": "pi_disputed", "status": "lost"}}})
+    assert _post_webhook(client).json()["revoked"] == 1
+    assert "full_report" not in client.get("/api/me", headers=H).json()["skus"]
+
+
+def test_a_delayed_payment_still_grants(client, monkeypatch):
+    """Some payment methods settle after the redirect; that event grants too."""
+    e = _session_completed(sku="waivers", pi="pi_async")
+    e["type"] = "checkout.session.async_payment_succeeded"
+    _stripe_event(monkeypatch, e)
+    assert _post_webhook(client).json()["granted"] is True
+    assert "waivers" in client.get("/api/me", headers=H).json()["skus"]
+
+
+def test_webhooks_are_idempotent(client, monkeypatch):
+    """Stripe retries. A redelivery must not double-grant or double-revoke."""
+    _stripe_event(monkeypatch, _session_completed(sku="waivers", pi="pi_retry"))
+    _post_webhook(client)
+    assert _post_webhook(client).json()["granted"] is True
+    rows = app_mod.store.db.execute(
+        "SELECT COUNT(*) FROM purchases WHERE payment_ref='pi_retry'").fetchone()[0]
+    assert rows == 1
+
+    _stripe_event(monkeypatch, {"type": "charge.refunded",
+                                "data": {"object": {"payment_intent": "pi_retry", "amount": 300,
+                                                    "amount_refunded": 300}}})
+    assert _post_webhook(client).json()["revoked"] == 1
+    assert _post_webhook(client).json()["revoked"] == 0, "already revoked"
+
+
+def test_an_unrelated_event_is_acknowledged_and_ignored(client, monkeypatch):
+    _stripe_event(monkeypatch, {"type": "invoice.paid", "data": {"object": {}}})
+    r = _post_webhook(client)
+    assert r.status_code == 200 and r.json() == {"received": True, "granted": False, "revoked": 0, "restored": 0}
+
+
+def test_a_refund_we_cannot_match_revokes_nothing(client, monkeypatch):
+    """No payment intent, nothing to revoke — and certainly not everyone's pass."""
+    before = app_mod.store.db.execute("SELECT COUNT(*) FROM purchases WHERE revoked IS NOT NULL").fetchone()[0]
+    _stripe_event(monkeypatch, {"type": "charge.refunded",
+                                "data": {"object": {"amount": 700, "amount_refunded": 700}}})
+    assert _post_webhook(client).json()["revoked"] == 0
+    after = app_mod.store.db.execute("SELECT COUNT(*) FROM purchases WHERE revoked IS NOT NULL").fetchone()[0]
+    assert after == before
+
+
+def test_an_old_database_gains_the_new_columns(tmp_path):
+    """A store created before refunds existed must keep working after the upgrade."""
+    import sqlite3
+    from edge.api.store import Store
+
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)
+    old.executescript(
+        "CREATE TABLE purchases (email TEXT, sku TEXT, season INTEGER, source TEXT, ref TEXT, created REAL,"
+        " UNIQUE(email, sku, season, ref));")
+    old.execute("INSERT INTO purchases VALUES ('a@b.c','full_report',2026,'stripe','cs_old',1.0)")
+    old.commit()
+    old.close()
+
+    store = Store(str(path))
+    assert store.skus("a@b.c", 2026) == ["full_report"], "an existing purchase survives the migration"
+    store.grant("d@e.f", "waivers", 2026, ref="cs_new", payment_ref="pi_new")
+    assert store.revoke("pi_new") == 1
+    assert store.skus("d@e.f", 2026) == []

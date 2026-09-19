@@ -2,41 +2,61 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IconArrowUp, IconCheck } from "@/components/icons";
-import { Eyebrow, LinkButton, OnAir, Stamp, Stat, StatusMeter, Wordmark } from "@/components/ui";
+import { ConfidencePill, Eyebrow, LinkButton, OnAir, Stamp, Stat, StatusMeter, Wordmark } from "@/components/ui";
 import { signed, verdictBlurb } from "@/lib/format";
-import type { SharedVerdict } from "@/lib/types";
+import { isSharedLock, type SharedLock, type SharedSnapshot, type SharedVerdict } from "@/lib/types";
 import { LINES } from "@/lib/vocab";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
+/** The static demo (`npm run demo`) has no API to read a snapshot from. */
+const DEMO = process.env.EDGE_DEMO_EXPORT === "1";
 
-async function load(id: string): Promise<SharedVerdict | null> {
+async function load(id: string): Promise<SharedSnapshot | null> {
+  // Imported lazily so the mock rosters stay out of the real server bundle.
+  if (DEMO) return (await import("@/lib/mocks")).sharedVerdictDemo();
   if (!API) return null;
   try {
     const res = await fetch(`${API}/api/share/${encodeURIComponent(id)}`, { next: { revalidate: 300 } });
     if (!res.ok) return null;
-    return (await res.json()) as SharedVerdict;
+    return (await res.json()) as SharedSnapshot;
   } catch {
     return null;
   }
+}
+
+/**
+ * Real share ids are minted at runtime, so none exist at build time and pages render on
+ * demand (dynamicParams defaults to true). `output: "export"` refuses an empty list, so
+ * the static demo pre-renders its one sample verdict instead.
+ */
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  return DEMO ? [{ id: "demo" }] : [];
 }
 
 /** Unfurls in a league chat, a subreddit or a Discord — that is the whole point of the page. */
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const v = await load(id);
-  if (!v) return { title: "Penthouse · trade verdict" };
-  const title = `${v.verdict}: ${v.give.join(" + ")} for ${v.get.join(" + ")}`;
+  // Prod's wording, not "trade verdict": a snapshot can be a Lock now, and the middot
+  // is the app's separator.
+  if (!v) return { title: "Penthouse · a call worth sharing" };
   const image = `${API}/api/share/${encodeURIComponent(id)}/card.png`;
+  const title = isSharedLock(v)
+    ? `${v.confidence}: start ${v.start.name}${v.bench ? ` over ${v.bench.name}` : ""}`
+    : `${v.verdict}: ${v.give.join(" + ")} for ${v.get.join(" + ")}`;
+  const description = isSharedLock(v)
+    ? v.note || `Worth ${signed(v.gain, 1)} projected points in that league's scoring.`
+    : v.explanation;
   return {
     title: `${title} · Penthouse`,
-    description: v.explanation,
+    description,
     openGraph: {
       title,
-      description: v.explanation,
+      description,
       type: "article",
       images: [{ url: image, width: 1080, height: 1080, alt: title }],
     },
-    twitter: { card: "summary_large_image", title, description: v.explanation, images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 
@@ -134,29 +154,69 @@ function Side({
   );
 }
 
-export default async function SharePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const v = await load(id);
-  if (!v) notFound();
-  const tone = TONE[v.verdict] ?? { text: "text-ink", bar: "bg-ink" };
-
+/**
+ * A free start/sit call, shared. Same two surfaces as a verdict — the stamp on the hero,
+ * the detail on paper — because someone arriving from a group chat should not be able to
+ * tell which of our cards they landed on, only which call it carries.
+ */
+function LockBody({ v }: { v: SharedLock }) {
   return (
-    <main className="mx-auto w-full max-w-lg px-4 pb-16">
-      <header className="flex h-16 items-center justify-between gap-3">
-        <Link href="/" aria-label="Penthouse home">
-          <Wordmark className="text-[26px]" />
-        </Link>
-        <span className="min-w-0 truncate text-right text-[12px] font-bold text-muted">
-          {v.league_name}
-          {v.week ? (
-            <>
-              {" · Week "}
-              <span className="tnum">{v.week}</span>
-            </>
-          ) : null}
-        </span>
-      </header>
+    <>
+      <article className="hero callsheet overflow-hidden rise">
+        <span aria-hidden className="block h-[3px] w-full bg-start" />
+        <div className="px-6 pb-6 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <OnAir className="text-white/70" />
+            <Eyebrow>Start / sit{v.slot ? ` · ${v.slot}` : ""}</Eyebrow>
+          </div>
 
+          {/* Inked white for the same reason the verdict is: status green vanishes on the
+              dark hero in light mode. The word carries the meaning, never the colour. */}
+          <h1 className="mt-5 leading-none">
+            <span className="sr-only">Start/sit call: </span>
+            <Stamp size="xl" ink="text-white" slam className="text-[clamp(30px,10vw,52px)]">
+              {v.confidence}
+            </Stamp>
+          </h1>
+
+          <p className="display mt-5 text-[22px] leading-[1.12] text-white">
+            Start {v.start.name}
+            {v.bench && <span className="block text-white/60">over {v.bench.name}</span>}
+          </p>
+          <p className="mt-3 text-[14px] leading-relaxed text-white/65">
+            Somebody ran their lineup through Penthouse. Every projection re-scored to that league&rsquo;s own
+            scoring, then one call: start him, or sit him.
+          </p>
+        </div>
+      </article>
+
+      <article className="card mt-3 overflow-hidden rise rise-1">
+        <div className="px-6 pb-6 pt-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <Eyebrow>The call</Eyebrow>
+            <ConfidencePill value={v.confidence} />
+          </div>
+
+          <div className="mt-3 grid gap-2.5">
+            <Side label="Start" names={[v.start.name]} players={[v.start]} accent="bg-start" />
+            {v.bench && <Side label="Sit" names={[v.bench.name]} players={[v.bench]} accent="bg-sit" />}
+          </div>
+
+          <div className="mt-6 border-t border-line pt-5">
+            <Stat label="Worth" value={signed(v.gain, 1)} sub="projected points" tone={v.gain >= 0 ? "start" : "sit"} />
+          </div>
+
+          {v.note && <p className="mt-5 text-[15px] leading-relaxed text-ink-2">{v.note}</p>}
+        </div>
+      </article>
+    </>
+  );
+}
+
+function TradeBody({ v }: { v: SharedVerdict }) {
+  const tone = TONE[v.verdict] ?? { text: "text-ink", bar: "bg-ink" };
+  return (
+    <>
       {/* The one dark surface: the verdict, stamped, exactly as it unfurled in the chat. */}
       <article className="hero callsheet overflow-hidden rise">
         {/* Keys the card to its verdict at a glance. 3px, the same weight as the call
@@ -232,7 +292,35 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         </div>
       </article>
 
-      {/* The way in. Paper, not hero: the verdict above is this screen's one dark surface. */}
+    </>
+  );
+}
+
+export default async function SharePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const v = await load(id);
+  if (!v) notFound();
+
+  return (
+    <main className="mx-auto w-full max-w-lg px-4 pb-16">
+      <header className="flex h-16 items-center justify-between gap-3">
+        <Link href="/" aria-label="Penthouse home" className="flex min-h-11 items-center">
+          <Wordmark className="text-[26px]" />
+        </Link>
+        <span className="min-w-0 truncate text-right text-[12px] font-bold text-muted">
+          {v.league_name}
+          {v.week ? (
+            <>
+              {" · Week "}
+              <span className="tnum">{v.week}</span>
+            </>
+          ) : null}
+        </span>
+      </header>
+
+      {isSharedLock(v) ? <LockBody v={v} /> : <TradeBody v={v} />}
+
+      {/* The way in. Paper, not hero: the card above is this screen's one dark surface. */}
       <section className="card mt-3 p-6 text-center rise rise-2">
         <Eyebrow>Your turn</Eyebrow>
         <p className="display mx-auto mt-2 max-w-[16rem] text-[27px] leading-[1.08]">Get your own league upstairs</p>

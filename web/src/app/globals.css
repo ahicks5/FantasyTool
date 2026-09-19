@@ -59,6 +59,10 @@
 
   --color-start: #22a468;      /* good — start, gain, accept */
   --color-start-soft: #10281d;
+  /* An accent used as a fill behind white text cannot be the value used as text on
+     near-black: one must be dark enough for white to read on it, the other light
+     enough to read on the plane. White on #0e7a4b is 5.4:1; on #22a468 it is 3.2:1. */
+  --color-start-fill: #0e7a4b;
   --color-sit: #e2554e;        /* critical — sit, loss, reject */
   --color-sit-soft: #2d1614;
   --color-lean: #5b8def;       /* info — lean, waiver */
@@ -123,6 +127,7 @@
 
   --color-start: #0b7a4b;
   --color-start-soft: #e4f2ea;
+  --color-start-fill: #0b7a4b;
   --color-sit: #c02b23;
   --color-sit-soft: #fbe9e7;
   --color-lean: #1e4fd8;
@@ -268,6 +273,25 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   --bevel: inset 0 1px 0 0 rgb(255 255 255 / 0.07);
 }
 .hero .eyebrow { color: rgb(247 246 243 / 0.55); }
+
+/* ----------------------------------------------------------------- ribbon ---
+   The league nameplate above the tab bar. A small plate that spans only the words
+   it holds: card surface, a hairline on three sides, open at the bottom where it
+   meets the bar, and the chrome rail along its top edge (`.rail`) so it reads as
+   metal screwed onto metal rather than as one more strip of UI.
+
+   Translucent with the same blur as the bar below it, so the page scrolls *under*
+   the plate instead of stopping dead at it.                                       */
+
+.ribbon {
+  border-radius: 11px 11px 0 0;
+  background: color-mix(in srgb, var(--color-paper) 86%, transparent);
+  border: 1px solid var(--color-line);
+  border-bottom: 0;
+  box-shadow: var(--bevel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
 
 /* ------------------------------------------------------------ the call sheet ---
    The sheet is the hero with a printed grid laid over it: faint rules the eye
@@ -476,4 +500,22 @@ button, a.btn, select, input { min-height: 44px; }
   .grease path { stroke-dashoffset: 0; }
   .demote { opacity: 0.55; }
   .stamp { transform: rotate(-3.5deg); opacity: 0.92; }
+}
+
+/* Legal pages: long-form prose, the only place in the app with running text.
+   Readability over density — these are read once, carefully, usually when someone is
+   annoyed or about to spend money. */
+.legal { line-height: 1.65; }
+.legal p, .legal ul { color: var(--color-muted); }
+.legal h1, .legal h2 { color: var(--color-ink); }
+.legal strong { color: var(--color-ink); font-weight: 700; }
+.legal a { color: var(--color-ink); }
+.legal ul { list-style: disc; padding-left: 1.15rem; }
+.legal li::marker { color: var(--color-line-2); }
+.legal code {
+  font-size: 0.86em;
+  background: var(--color-soft);
+  border-radius: 5px;
+  padding: 0.1em 0.35em;
+  word-break: break-word;
 }
