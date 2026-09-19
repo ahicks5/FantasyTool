@@ -62,7 +62,7 @@ the value is visible and the names are not.
 | A screen | `web/src/app/<route>/page.tsx` plus its view in `web/src/components/` | check both themes; `npm run build` |
 | Any word a user reads | `web/src/lib/vocab.ts` — never inline a section name or a tagline | `npm test` |
 | Colour, type, elevation, motion | `web/src/app/globals.css` (the tokens) | docs/BRAND.md; check light **and** dark |
-| The mark | all **three** copies in one commit: `web/src/app/icon.svg`, `IconMark` in `web/src/components/icons.tsx`, `MARK_PATH` in `edge/graphics.py` | `uv run python scripts/render_brand_assets.py` |
+| The mark | all **four** copies in one commit: `web/src/app/icon.svg`, `IconMark` in `web/src/components/icons.tsx`, `MARK_PATH` in `edge/graphics.py`, and the inlined path in `web/src/components/ShareCard.tsx` (a still image in a feed cannot fetch an icon) | `uv run python scripts/render_brand_assets.py` |
 | Anything about hosting, env vars or shipping | nothing in code — `docs/DEPLOY.md` | |
 
 ## Which doc answers what
@@ -83,8 +83,15 @@ the value is visible and the names are not.
 ## Commands
 
 ```bash
+# The five gates in .github/workflows/ci.yml. Run all of them before pushing.
 uv run pytest -q                                  # the whole engine, offline, against fixtures
-cd web && npm test && npm run build               # node:test unit tests, then the real build
+cd web && npm run lint && npm test && npm run build
+cd web && npm run demo && npm run demo:pack       # the static export breaks on its own
+cd web && npm run test:e2e                        # browser smoke at 375px, needs a Chromium
+
+uv run pytest tests/test_lineup.py -q             # one file; -k <name> for one test
+cd web && node --test src/lib/format.test.ts      # one web test file
+# 17 store-contract tests skip unless TEST_DATABASE_URL points at a scratch Postgres.
 uv run python scripts/gen_map.py                  # after adding or renaming a module
 
 EDGE_DEV=1 uv run uvicorn edge.api.app:app --reload --port 8000

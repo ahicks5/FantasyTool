@@ -18,7 +18,7 @@ dark by default — with every screen rebuilt around that, deployed and live.
 | Web | https://fantasy-tool-alpha.vercel.app (Vercel, Root Directory `web/`) |
 | API | https://edge-api-gi8d.onrender.com (Render) |
 | Production branch | `claude/edge-fantasy-app-launch-alo0rr` — **there is no `main`** |
-| Tests | 310 pytest, 26 node |
+| Tests | 854 pytest (+44 skipped: 17 want a Postgres in `TEST_DATABASE_URL`), 85 node |
 
 Shipping the web app is a push to the production branch. Rolling back is the same push aimed
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
