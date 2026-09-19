@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Confidence, Verdict } from "@/lib/types";
 import { confidenceClass, confidenceInk, countdown, kickoffUrgency, nextKickoff, URGENCY_LABEL, verdictClass } from "@/lib/format";
 import { claimFirstOpen, hasOpened } from "@/lib/cache";
@@ -241,11 +241,14 @@ export function Stat({
 export function Countdown({ onHero = false, className = "" }: { onHero?: boolean; className?: string }) {
   // Rendered empty on the server and filled on the client: the deadline depends
   // on the reader's current time, so server HTML would hydrate mismatched.
-  const [left, setLeft] = useState<number | null>(null);
+  // Resolved on the first client render rather than in an effect: going "—" then a time was
+  // a second visible paint on every screen that carries a clock. Still null on the server,
+  // where there is no reader's clock to read.
+  const [left, setLeft] = useState<number | null>(() =>
+    typeof window === "undefined" ? null : nextKickoff() - Date.now(),
+  );
   useEffect(() => {
-    const update = () => setLeft(nextKickoff() - Date.now());
-    update();
-    const id = setInterval(update, 1000);
+    const id = setInterval(() => setLeft(nextKickoff() - Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -292,31 +295,33 @@ export function useKickoffBand(): "open" | "soon" | "final" {
  * later changes. Returns a string so callers keep control of formatting.
  * Honours reduced motion by showing the final value immediately.
  */
-export function useCountUp(value: number, digits = 1, ms = 620): string {
-  const [shown, setShown] = useState(value);
-  const started = useRef(false);
+export function useCountUp(value: number, digits = 1, animate = true, ms = 620): string {
+  // Whether this mount counts is decided once, before the first paint, and the state starts
+  // at the value it will paint. The earlier version initialised to the final number and then
+  // animated up from zero in an effect, so every screen showed the real total, snapped back
+  // to nothing and raced up again — which read as the page loading a second time.
+  const [count] = useState(
+    () => animate && !(typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches),
+  );
+  const [shown, setShown] = useState(0);
+
   useEffect(() => {
-    const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce || started.current) {
-      setShown(value);
-      started.current = true;
-      return;
-    }
-    started.current = true;
-    const from = 0;
+    if (!count) return;
     const t0 = performance.now();
     let raf = 0;
     const step = (t: number) => {
       const p = Math.min(1, (t - t0) / ms);
       // Ease out: fast start, soft landing, like a scoreboard settling.
       const eased = 1 - Math.pow(1 - p, 3);
-      setShown(from + (value - from) * eased);
+      setShown(value * eased);
       if (p < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [value, ms]);
-  return shown.toFixed(digits);
+  }, [value, ms, count]);
+
+  // Not counting means the value is the truth on every render, state bypassed entirely.
+  return (count ? shown : value).toFixed(digits);
 }
 
 /* ------------------------------------------------------------- pre-snap ---- */

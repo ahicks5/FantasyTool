@@ -181,7 +181,7 @@ export function Scorecard({ grades, week, animate = true }: { grades: Grades; we
 
       <section className="min-w-0">
         <H2>By position</H2>
-        <p className="mt-1 text-[13px] text-muted">Where we&rsquo;re stacked, where we&rsquo;re thin.</p>
+        
         {grades.positions.length === 0 ? (
           <p className="card mt-2.5 p-4 text-[13px] text-muted">No position read this week.</p>
         ) : (
@@ -194,9 +194,8 @@ export function Scorecard({ grades, week, animate = true }: { grades: Grades; we
       </section>
 
       <p className="card p-4 text-[12px] leading-relaxed text-muted">
-        Read it like this: C is dead average — no edge either way, not a failure. The mark in the middle of every bar is
-        the rest of the room. Rank says where you sit; the grade says what that standing is worth. Depth measures the
-        spot against what this league starts there, not against your own starters.
+        C is average, not a failure. The mark is the rest of the room. Rank is where you sit; the grade is what that
+        is worth. Depth is measured against what the league starts there.
       </p>
     </div>
   );

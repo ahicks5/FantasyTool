@@ -24,7 +24,7 @@ const isCallable = (a: Action) => !a.locked && a.type !== "hold";
  */
 function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: number; total: number; animate: boolean }) {
   const delta = feed.projected_total - feed.current_total;
-  const projected = useCountUp(feed.projected_total, 1);
+  const projected = useCountUp(feed.projected_total, 1, animate);
   const m = feed.matchup;
   const showMatchup = m && m.opponent && m.win_prob !== null && m.their_proj !== null;
   const done = total > 0 && called >= total;

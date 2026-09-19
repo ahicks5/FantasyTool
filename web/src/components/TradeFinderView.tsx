@@ -149,7 +149,7 @@ export function TradeFinderView({ found }: { found: TradeFinderResponse }) {
       </section>
       {found.partners.length > 0 && (
         <p className="text-[13px] leading-relaxed text-muted">
-          Lines the booth spotted, best fit first. Each one is scored on both rosters, not just yours.
+          Best fit first. Both sides scored.
         </p>
       )}
       <ol className="grid gap-3.5">

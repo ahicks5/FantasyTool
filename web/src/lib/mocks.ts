@@ -33,10 +33,10 @@ export const MY_TEAM_ID = "8";
 export const WEEK = 2;
 
 export const PRODUCTS: Product[] = [
-  { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 1, blurb: "Start/sit for one team" },
-  { sku: "waivers", name: "Waiver Wire Pass", price_cents: 300, features: ["waivers"], leagues: 1, blurb: "Top pickups + FAAB bids, rest of season" },
-  { sku: "trade_lab", name: "Trade Lab", price_cents: 500, features: ["trade_lab"], leagues: 1, blurb: "Trade verdicts + counteroffers, rest of season" },
-  { sku: "full_report", name: "Full Report", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, blurb: "Everything, every week, up to 5 leagues" },
+  { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 1, blurb: "Start/sit for one team." },
+  { sku: "waivers", name: "Wire Pass", price_cents: 300, features: ["waivers"], leagues: 1, blurb: "The wire, ranked. Bid and drop included." },
+  { sku: "trade_lab", name: "Trade Lab", price_cents: 500, features: ["trade_lab"], leagues: 1, blurb: "Verdicts and counters, rest of season." },
+  { sku: "full_report", name: "Full Booth", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, blurb: "The whole booth. Five leagues." },
 ];
 
 export const SLEEPER_LEAGUES: SleeperLeagueRef[] = [
@@ -777,7 +777,15 @@ export function actionsFor(teamId: string, entitlements: Feature[]): ActionFeed 
       title: `Offer ${t.give_names[0]} for ${t.get_names[0]}`, subtitle: `to ${t.their_team_name} · both teams improve`,
       benefit: `+${t.my_gain_ros.toFixed(0)} ROS lineup points`, benefit_value: t.my_gain_ros, confidence: "Lean", reason: t.why,
       why: [`Your lineup gains ${t.my_gain_ros.toFixed(0)} rest-of-season points.`, `Theirs gains ${t.their_gain_ros.toFixed(0)}, so it is askable.`],
-      players: [withPhoto(allPlayers(teamId).find((p) => p.id === t.give[0])!), withPhoto(allPlayers(t.their_team_id).find((p) => p.id === t.get[0])!)],
+      // Resolved defensively. This was two `find(...)!` non-null assertions, and the
+      // assertion was a lie: the target's give id belongs to MY_TEAM_ID, so for every other
+      // team `find` returned undefined and the whole call sheet crashed on
+      // `undefined.nfl_team` the moment Trade Lab was unlocked. A missing face is fine —
+      // ActionCard already renders without one.
+      players: [
+        allPlayers(teamId).find((p) => p.id === t.give[0]),
+        allPlayers(t.their_team_id).find((p) => p.id === t.get[0]),
+      ].filter((p): p is Player => !!p).map(withPhoto),
       cta: { label: "Open in Trade Lab", href: `/trade?their=${t.their_team_id}&give=${t.give[0]}&get=${t.get[0]}` },
     });
   } else {

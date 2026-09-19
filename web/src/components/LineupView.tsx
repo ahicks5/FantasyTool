@@ -3,10 +3,9 @@ import { useState } from "react";
 import type { Lineup, LineupSlot } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
-import { PlayerLine } from "./Players";
 import { Scorecard } from "./Scorecard";
-import { IconArrowUp, IconCheck } from "./icons";
-import { ConfidencePill, ConfidenceStamp, Countdown, Eyebrow, H2, OnAirLive, Stamp, useCountUp, Why } from "./ui";
+import { IconArrowUp, IconCheck, IconChevron } from "./icons";
+import { ConfidenceStamp, Countdown, Eyebrow, H2, InjuryTag, OnAirLive, Stamp, useCountUp } from "./ui";
 
 const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
 
@@ -15,37 +14,70 @@ type View = "board" | "scorecard";
 const VIEWS: View[] = ["board", "scorecard"];
 const VIEW_LABEL: Record<View, string> = { board: "The board", scorecard: "Scorecard" };
 
-/** One tile on the board: slot in the margin, player on the tile, number on the right. */
-function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
+/** Short enough to sit inline beside a name. "Coin flip" is two words and never fitted. */
+const SHORT: Record<string, string> = { Lock: "Lock", Lean: "Lean", "Coin flip": "Flip" };
+const INK: Record<string, string> = { Lock: "text-start", Lean: "text-lean", "Coin flip": "text-flip" };
+
+/** The three-bar meter at row scale. Always shipped with its word — never bars alone. */
+function Bars({ value }: { value: string }) {
+  const filled = value === "Lock" ? 3 : value === "Lean" ? 2 : 1;
   return (
-    <li className={`min-w-0 px-4 py-3 ${s.change ? "bg-start-soft" : ""}`}>
-      <div className="flex min-w-0 items-center gap-3">
-        <span className="slug w-[34px] shrink-0 text-[10px] uppercase tracking-[0.08em] text-muted">{s.slot}</span>
+    <span className="flex items-center gap-[2px]" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <span key={i} className={`h-[8px] w-[2px] rounded-[1px] ${i < filled ? "bg-current" : "bg-current opacity-25"}`} />
+      ))}
+    </span>
+  );
+}
+
+/**
+ * One line on the board. It used to take two: the player on top, then the confidence tag and
+ * a "Why?" link underneath, which made a nine-man lineup scroll like a document. Now the row
+ * is a single line and tapping it opens the reasoning — tight to scan, evidence on demand.
+ */
+function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
+  const [open, setOpen] = useState(false);
+  const why = [
+    s.reason,
+    hit !== undefined ? `${s.confidence}: margins this size were right about ${Math.round(hit * 100)}% of the time last week.` : "",
+  ].filter(Boolean);
+
+  return (
+    <li className={`min-w-0 ${s.change ? "bg-start-soft" : ""}`}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full min-w-0 items-center gap-2.5 px-4 py-2 text-left"
+      >
+        <span className="slug w-[26px] shrink-0 text-[10px] uppercase tracking-[0.06em] text-muted">{s.slot}</span>
         {s.player ? (
-          <PlayerLine p={s.player} avatar="md" ring={RING[s.confidence]} />
+          <Avatar name={s.player.name} photo={s.player.photo} teamLogo={s.player.team_logo} size="sm" ring={RING[s.confidence]} />
         ) : (
-          <span className="flex flex-1 items-center gap-3">
-            <Avatar name="?" size="md" />
-            <span className="text-sm text-muted">Empty</span>
-          </span>
+          <Avatar name="?" size="sm" />
         )}
-        {/* Only the number sits beside the name. The confidence tag is wide, so it moves to
-            its own row rather than eating the name column down to an ellipsis. */}
-        <span className="display tnum shrink-0 text-[22px] leading-none">{(s.player?.projected ?? 0).toFixed(1)}</span>
-      </div>
-      <div className="mt-2 flex items-center justify-between gap-3 pl-[46px]">
-        {/* Dense list: a pill, not a stamp. Stamps are for calls you have to make. */}
-        <ConfidencePill value={s.confidence} hit={hit} />
-        <Why
-          lines={[
-            s.reason,
-            hit !== undefined
-              ? `${s.confidence}: margins this size were right about ${Math.round(hit * 100)}% of the time last week.`
-              : "",
-          ].filter(Boolean)}
-          label="Why?"
-        />
-      </div>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] font-bold leading-tight">
+            {s.player?.name ?? "Empty"}
+            <InjuryTag status={s.player?.injury_status ?? null} />
+          </span>
+          <span className={`mt-px flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide ${INK[s.confidence]}`}>
+            <Bars value={s.confidence} />
+            {SHORT[s.confidence] ?? s.confidence}
+            <span className="text-muted">
+              · {s.player?.position ?? "—"} {s.player?.nfl_team ?? ""}
+            </span>
+          </span>
+        </span>
+        <span className="display tnum shrink-0 text-[19px] leading-none">{(s.player?.projected ?? 0).toFixed(1)}</span>
+        <IconChevron size={12} strokeWidth={2.6} className={`shrink-0 text-muted transition-transform ${open ? "rotate-90" : ""}`} />
+      </button>
+      {open && why.length > 0 && (
+        <ul className="grid gap-1 px-4 pb-2.5 pl-[74px] text-[12px] leading-relaxed text-ink-2">
+          {why.map((l) => (
+            <li key={l}>{l}</li>
+          ))}
+        </ul>
+      )}
     </li>
   );
 }
@@ -61,7 +93,7 @@ export function LineupView({
   animate?: boolean;
 }) {
   const delta = lineup.projected_total - lineup.current_total;
-  const projected = useCountUp(lineup.projected_total, 1);
+  const projected = useCountUp(lineup.projected_total, 1, animate);
   const set = delta <= 0.05;
 
   const grades = lineup.grades;
@@ -106,10 +138,7 @@ export function LineupView({
 
       {lineup.changes.length > 0 && (
         <section className="min-w-0">
-          <H2>Move these tiles</H2>
-          <p className="mt-1 text-[13px] text-muted">
-            {lineup.changes.length === 1 ? "One change" : `${lineup.changes.length} changes`} the staff wants on the board.
-          </p>
+          <H2>{lineup.changes.length === 1 ? "One swap" : `${lineup.changes.length} swaps`}</H2>
           <ul className="mt-2.5 grid gap-2.5">
             {lineup.changes.map((c, i) => (
               <li key={i} className={`card border-start/35 bg-start-soft p-4 ${animate ? `print print-${Math.min(i + 1, 5)}` : ""}`}>
@@ -151,12 +180,18 @@ export function LineupView({
           <H2>On the bench</H2>
           <ul className="card mt-2.5 min-w-0 divide-y divide-line overflow-hidden p-0">
             {lineup.bench.map((b, i) => (
-              <li key={i} className="px-4 py-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <PlayerLine p={b.player} avatar="md" />
-                  <span className="display tnum shrink-0 text-[19px] text-muted">{b.player.projected.toFixed(1)}</span>
-                </div>
-                <p className="mt-1.5 text-[12px] leading-snug text-muted">{b.reason}</p>
+              <li key={i} className="flex min-w-0 items-center gap-2.5 px-4 py-2" title={b.reason}>
+                <Avatar name={b.player.name} photo={b.player.photo} teamLogo={b.player.team_logo} size="sm" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-bold leading-tight">
+                    {b.player.name}
+                    <InjuryTag status={b.player.injury_status} />
+                  </span>
+                  <span className="mt-px block truncate text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    {b.player.position} {b.player.nfl_team ?? ""}
+                  </span>
+                </span>
+                <span className="display tnum shrink-0 text-[17px] text-muted">{b.player.projected.toFixed(1)}</span>
               </li>
             ))}
           </ul>

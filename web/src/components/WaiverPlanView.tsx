@@ -3,7 +3,7 @@ import type { WaiverClaim, WaiverPlanResponse } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { IconArrowUp } from "./icons";
-import { Countdown, Eyebrow, H2, InjuryTag, OnAir, Stamp, useCountUp, Why } from "./ui";
+import { Countdown, Eyebrow, H2, InjuryTag, OnAir, Stamp, Why } from "./ui";
 
 /**
  * One signing, printed as one: who comes in at the top, who gets cut and what we
@@ -122,7 +122,10 @@ export function WaiverPlanView({ plan, compact = false }: { plan: WaiverPlanResp
   const claims = [plan.primary, ...plan.fallbacks].filter((c): c is WaiverClaim => !!c);
   // Counts up on arrival, then snaps. `?? 0` keeps the hook unconditional; a priority
   // league never shows the number.
-  const budget = useCountUp(plan.faab_remaining ?? 0, 0);
+  // No count-up on a budget. A projected total racing upward reads as a scoreboard
+  // settling; a FAAB balance doing it shows "$4" and "$19" on the way to $100, which are
+  // wrong numbers presented as real ones — and it made the wire look like it loaded twice.
+  const budget = String(plan.faab_remaining ?? 0);
 
   return (
     <div className="grid min-w-0 gap-3.5">
@@ -171,10 +174,7 @@ export function WaiverPlanView({ plan, compact = false }: { plan: WaiverPlanResp
         <section className="min-w-0">
           {!compact && (
             <>
-              <H2>Make these claims</H2>
-              <p className="mt-1 text-[13px] leading-relaxed text-muted">
-                They run in order. Lose the first one and the next is already priced.
-              </p>
+              <H2>Claims, in order</H2>
             </>
           )}
           <ol className={`grid gap-3.5 ${compact ? "" : "mt-2.5"}`}>
