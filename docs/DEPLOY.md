@@ -43,7 +43,11 @@ whole test suite runs with `EDGE_DEV=1` and still expects 402s.
 The web build also has `?lock=1` / `?unlock=1` switches, but those only affect the mock path
 and therefore do nothing on the deployed site. They are for `npm run dev` with no API.
 
-### EDGE_WEB_URL is not set on Render, and three things depend on it
+### EDGE_WEB_URL is not set on Render — and it is why the live site is down
+
+**This is the whole outage.** With neither `EDGE_CORS` nor `EDGE_WEB_URL` set, the API allows
+only localhost origins, so every call the browser makes from the live site is discarded and
+the app shows "Cannot reach Penthouse". The API itself is healthy; only browsers are blocked.
 
 Verified live on 2026-09-19 by creating a share against the deployed API:
 
@@ -53,19 +57,31 @@ curl -s -X POST https://edge-api-gi8d.onrender.com/api/share \
 # {"id":"m7vwfrje","url":"http://localhost:3000/s/m7vwfrje"}
 ```
 
-`deploy/render.yaml` ships it as the placeholder `https://YOUR-VERCEL-DOMAIN.vercel.app`,
+`deploy/render.yaml` shipped it as the placeholder `https://YOUR-VERCEL-DOMAIN.vercel.app`,
 which was never filled in, so the service falls back to the localhost default in the code.
+(The blueprint now carries the real domain, but the running service still needs it set by hand.)
 Nothing errors. Three things quietly point at a machine the user does not have:
 
 | What | Where | What breaks |
 |---|---|---|
 | Share links | `app.py` `/api/share` | The copy-link button hands the user `http://localhost:3000/s/...`. `ShareLock.tsx` uses the API's `url` verbatim. **The whole organic loop is dead** — the Lock card exists to be pasted, and the link it comes with goes nowhere. |
 | Stripe redirect | `payments.py` | `same_origin()` pins the success and cancel URLs to that base, so a customer who pays is sent to localhost. |
-| CORS | `limits.py` | Falls back to localhost origins — masked today because `EDGE_CORS` is set separately. |
+| CORS | `limits.py` | Falls back to `localhost:3000` / `127.0.0.1:3000`. **The site is dead for every real visitor.** A preflight from the live origin answers `400 Disallowed CORS origin`; a simple GET answers 200 with no `access-control-allow-origin`, so the browser throws `TypeError: Failed to fetch` and `errors.ts` renders "Cannot reach Penthouse". |
 
 **Fix:** set `EDGE_WEB_URL=https://fantasy-tool-alpha.vercel.app` in the Render service's
-environment (and update the placeholder in `deploy/render.yaml`). The API reads it per
-request, so a restart is enough; no rebuild needed.
+environment. `deploy/render.yaml` now carries the real domain, but Render does not re-read a
+blueprint for a service that already exists — the variable has to be set on the service. The
+API reads it per request, so a restart is enough; no rebuild needed.
+
+Check it from anywhere, without a browser:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' -X OPTIONS \
+  https://edge-api-gi8d.onrender.com/api/health \
+  -H 'Origin: https://fantasy-tool-alpha.vercel.app' \
+  -H 'Access-Control-Request-Method: GET'
+# 400 = still broken. 200 = fixed.
+```
 
 The share *page* and its unfurl are fine — `/s/{id}` renders on Vercel and its `og:image`
 points at the real API host, because the web builds those from `NEXT_PUBLIC_SITE_URL`

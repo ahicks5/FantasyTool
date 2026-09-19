@@ -13,7 +13,7 @@ services:
       - key: EDGE_TRUST_PROXY
         value: "1"
       - key: EDGE_CORS
-        value: https://YOUR-VERCEL-DOMAIN.vercel.app
+        value: https://fantasy-tool-alpha.vercel.app
       - key: DATABASE_URL
         sync: false
       - key: SUPABASE_JWT_SECRET
@@ -23,7 +23,7 @@ services:
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
       - key: EDGE_WEB_URL
-        value: https://YOUR-VERCEL-DOMAIN.vercel.app
+        value: https://fantasy-tool-alpha.vercel.app
       # Opens every paid feature for anyone, signed in or not. For clicking through a demo.
       # A real paywall bypass — unset it before anyone can be charged.
       - key: EDGE_DEMO_UNLOCK
