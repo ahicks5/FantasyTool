@@ -107,7 +107,7 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (38 modules, 7,452 lines)
+### `edge/` — the Python engine and API (38 modules, 7,460 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
@@ -132,7 +132,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/data/sleeper_api.py` | Thin HTTP layer for Sleeper. Everything public, no auth. Cached players file on disk. | evaluate_moves, league_formats +2 | 106 |
 | `edge/delivery/send.py` | Actually putting the weekly email in someone's inbox. | send | 126 |
 | `edge/delivery/weekly_email.py` | The weekly email: the call sheet, delivered before the user thinks to open the app. | weekly_email, send | 298 |
-| `edge/engine/actions.py` | The Action feed: everything the engine knows, ranked as a short list of moves worth making. | actions, copy +6 | 192 |
+| `edge/engine/actions.py` | The Action feed: everything the engine knows, ranked as a short list of moves worth making. | actions, copy +6 | 200 |
 | `edge/engine/copy.py` | Small helpers for prose the user actually reads. | copy | 37 |
 | `edge/engine/explain.py` | Trade explanation text. Template by default (free). Claude API when EDGE_USE_CLAUDE=1 and | trade | 76 |
 | `edge/engine/grades.py` | Letter grades for a roster, position by position — the draft-grade idea, kept live. | grades | 287 |
@@ -189,7 +189,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Scorecard.tsx` | A grade is a read on the roster, not a call the user has to make, so it never | 204 |
 | `web/src/components/ShareCard.tsx` | The marketing asset: a 1080x1080 card rendered at full size and scaled to fit. It is | 175 |
 | `web/src/components/ShareLock.tsx` | Turns a start/sit call into a public link — free, no account, no purchase. | 65 |
-| `web/src/components/SheetGroup.tsx` | One bench on the call sheet: the tab that owns these calls, its status, and the calls. | 116 |
+| `web/src/components/SheetGroup.tsx` | One bench on the call sheet: the tab that owns these calls, its status, and the calls. | 127 |
 | `web/src/components/Shell.tsx` | The room itself: top bar, league ribbon, tab bar, and the shell every page mounts. | 213 |
 | `web/src/components/TradeFinderView.tsx` | The board. Who to call, what to offer, and what it is worth to each side. | 327 |
 | `web/src/components/Unlocking.tsx` | The gap between a cleared card and a written entitlement, made visible instead of confusing. | 131 |
@@ -218,7 +218,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/supabase.ts` | Supabase magic-link auth. Only active when both public env vars are set. | 43 |
 | `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 480 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 113 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 118 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 174 |
 
 <!-- END GENERATED -->

@@ -169,10 +169,18 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
         a.pop("score", None)
     moves = [a for a in actions if a["type"] != "hold"]
     n_real = sum(1 for a in moves if not a["locked"])
-    if not actions:
-        summary = "Board's set. Nothing to call."
-    elif not moves:
-        summary = "Quiet week. Nothing urgent."
+    if not moves:
+        # One line, and it validates rather than reports. This was two sentences
+        # ("Quiet week. Nothing urgent.") which wrapped to two lines in the hero and
+        # spent them both telling someone what is *absent*. A quiet week is the product
+        # working, so the headline should read like the staff signing off on it.
+        #
+        # The empty board and the we-looked-and-there-is-nothing week used to say
+        # different things here. `moves` excludes holds, so an empty `actions` already
+        # lands in this branch, and the two read identically to whoever is holding the
+        # phone. What actually separates them is the footer, which still says whether
+        # we read the other rosters.
+        summary = "All settled."
     else:
         summary = f"{len(moves)} move{'s' if len(moves) != 1 else ''} worth making"
     # How many rosters we actually read, rather than a hard-coded 11: this line is the

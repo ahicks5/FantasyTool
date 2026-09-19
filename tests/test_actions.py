@@ -190,3 +190,33 @@ def test_nothing_cut_from_the_card_face_is_actually_lost(league):
         # The long form of the benefit lives in `why`, not on the face.
         assert a["benefit"].endswith("ROS"), a["benefit"]
         assert any("rest-of-season" in line for line in a["why"])
+
+
+def test_a_quiet_week_gets_one_short_validating_line(league, monkeypatch):
+    """No moves means the hero signs off on the week, in one line.
+
+    It read "Quiet week. Nothing urgent." — two sentences, which wrapped to two lines in
+    the 30px display hero on a phone and spent both of them naming what is *absent*. A
+    quiet week is the product working, so the one headline the screen gets should read
+    like the staff confirming it.
+
+    The fixture league always has a move, so the branch is unreachable without forcing
+    it: no free agents worth anything, a lineup already optimal, and no trade partner.
+    """
+    ros, byes = _ros(league)
+    t = league.team("2")
+    saved = league.free_agents
+    for p in league.free_agents:
+        p.projected = 0.0
+    league.free_agents = []
+    monkeypatch.setattr(actions.trade_finder, "find", lambda *a, **k: {"partners": []})
+    from edge.engine.lineup import optimize
+    t.starters = [p.id if p else "0" for p in optimize(t.players, league.starting_slots)]
+    feed = actions.build(league, t, ros, byes, entitlements={"my_team", "waivers", "trade_lab"})
+    league.free_agents = saved
+
+    assert not [a for a in feed["actions"] if a["type"] != "hold"], \
+        "this test is meaningless unless the week really has no moves in it"
+    assert feed["summary"] == "All settled."
+    # The constraint that broke the old copy: one short line, not two sentences.
+    assert "." not in feed["summary"][:-1], f"two sentences again: {feed['summary']!r}"
