@@ -32,7 +32,16 @@ Then only what you need:
 
 - **Nothing is done without a test or a working demo.** Tests run offline against fixtures.
   Live-API checks go in `edge/cli.py` demo commands, not in tests.
-- Run before pushing: `uv run pytest -q`, and `cd web && npm test && npm run build`.
+- Run before pushing — CI gates on all five (`.github/workflows/ci.yml`), not two:
+  `uv run pytest -q` · `cd web && npm run lint && npm test && npm run build` ·
+  `npm run demo && npm run demo:pack` (the static export fails in ways the normal build
+  does not) · `npm run test:e2e` (browser smoke at 375px; Playwright boots
+  `scripts/serve_fixtures.py` and its own Next build, so it needs a Chromium).
+  One test: `uv run pytest tests/test_lineup.py -q`, or `-k stabilize`;
+  `cd web && node --test src/lib/format.test.ts`.
+- **17 store-contract tests skip silently unless `TEST_DATABASE_URL` is set**, so a green
+  `pytest -q` proves the SQLite half only. Before touching either store:
+  `TEST_DATABASE_URL=postgresql://... uv run pytest -q tests/test_store_contract.py`.
 - Everything downstream of a connector is platform-agnostic: connectors map into
   `edge/models.py` and nothing after that knows which platform it came from.
 - Scoring is always computed from the league's own scoring settings. **Never assume PPR.**
