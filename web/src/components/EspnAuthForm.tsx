@@ -3,10 +3,10 @@
  * The two ESPN cookies a private league needs, asked for in the shape of a form rather than
  * a lecture.
  *
- * It renders as soon as ESPN is the chosen platform, because "is your league private" is a
- * question the user can answer faster than we can. `status` is the only thing a failed
- * request changes: one line above the fields saying we need them, or that the ones we have
- * stopped working. Same form either way.
+ * It only mounts once a request has come back saying the league is private, so a public
+ * league never meets it. That is also why `status` is required rather than nullable: there
+ * is always a failure to name above the fields — either we need the two values, or the ones
+ * we have stopped working. Same form either way.
  *
  * The honesty line below the fields is a disclosure, not copy. Both halves of it are true of
  * what the code does and neither can be cut: the values never leave this browser, and they
@@ -26,12 +26,12 @@ const DISCLOSURE = "min-h-11 text-left text-[14px] font-semibold text-ink underl
 const CODE = "font-mono text-[13px] text-ink";
 
 export function EspnAuthForm({
-  status = null,
+  status,
   onSaved,
   busy = false,
 }: {
-  /** null until a request fails. `expired` picks which one sentence to show. */
-  status?: { expired: boolean } | null;
+  /** The failure that opened this form. `expired` picks which one sentence to show. */
+  status: { expired: boolean };
   onSaved: () => void;
   busy?: boolean;
 }) {
@@ -57,13 +57,14 @@ export function EspnAuthForm({
         </div>
       </div>
 
-      {status && (
-        <p role="status" className="mt-3 rounded-xl bg-sit-soft px-3.5 py-2.5 text-[13px] font-semibold leading-snug text-sit">
-          {status.expired
-            ? "Those two stopped working. ESPN rotates them every few weeks. Paste fresh ones."
-            : "That league is private. Paste the two values below."}
-        </p>
-      )}
+      <p
+        role="status"
+        className="mt-3 rounded-xl bg-sit-soft px-3.5 py-2.5 text-[13px] font-semibold leading-snug text-sit"
+      >
+        {status.expired
+          ? "Those two stopped working. ESPN rotates them every few weeks. Paste fresh ones."
+          : "That league is private. Paste the two values below."}
+      </p>
 
       <div className="mt-4 space-y-3">
         <label className="block">

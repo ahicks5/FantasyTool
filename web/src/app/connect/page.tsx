@@ -7,6 +7,7 @@ import { EspnAuthError, connect, getLeague, getSleeperLeagues } from "@/lib/api"
 import { resolveSleeperInput } from "@/lib/leagueInput";
 import { saveConnection } from "@/lib/storage";
 import { EspnAuthForm } from "@/components/EspnAuthForm";
+import { clearEspnAuth, useEspnAuth } from "@/lib/espnAuth";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck } from "@/components/icons";
 import { Button, Countdown, ErrorBox, Eyebrow, ThemeToggle, Wordmark } from "@/components/ui";
@@ -50,6 +51,9 @@ export default function ConnectPage() {
   // first time or telling them the ones they gave have expired.
   const [espnAuthNeeded, setEspnAuthNeeded] = useState<{ expired: boolean } | null>(null);
   const [lastLeagueId, setLastLeagueId] = useState("");
+  // Only to offer the wipe below. The cookies themselves ride on requests from
+  // `espnAuthHeaders`, which reads storage directly and never comes through here.
+  const storedEspn = useEspnAuth();
 
   async function run<T>(fn: () => Promise<T>): Promise<T | undefined> {
     setBusy(true);
@@ -162,7 +166,7 @@ export default function ConnectPage() {
 
       <div className="mt-4 rise">
         <Eyebrow>
-          Step <span className="tnum">1</span> of <span className="tnum">2</span> · Your league
+          Step <span className="tnum">1</span> of <span className="tnum">2</span> · Connect
         </Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">{LINES.threshold}</h1>
         {/* The on-ramp is only urgent if it says how long there is. Its own row, so a long
@@ -173,40 +177,62 @@ export default function ConnectPage() {
       </div>
 
       {/* Two words, no sublabels. Whatever a platform needs is asked for after it is picked,
-          which is why the page opens with nothing selected. */}
-      <div className="mt-6 grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="Platform">
-        {(["sleeper", "espn"] as Platform[]).map((p) => {
-          const on = platform === p;
-          return (
-            <button
-              key={p}
-              role="radio"
-              aria-checked={on}
-              onClick={() => {
-                if (on) return;
-                setPlatform(p);
-                setInput("");
-                setLeagues(null);
-                setLeague(null);
-                setTeamId("");
-                setError(null);
-                setEspnAuthNeeded(null);
-                setLastLeagueId("");
-              }}
-              className={`min-h-11 rounded-[var(--radius-card)] border px-4 py-4 text-left transition-colors ${
-                on ? "border-ink bg-ink text-paper" : "border-line-2 bg-paper text-ink hover:bg-soft"
-              }`}
-            >
-              <span className="display block text-[19px] leading-tight">{p === "sleeper" ? "Sleeper" : "ESPN"}</span>
-            </button>
-          );
-        })}
+          which is why the page opens with nothing selected.
+
+          Three across would leave ~98px a button at 320px, which truncates the 19px display
+          type, so the two live platforms keep the two-column row and Yahoo sits under them. */}
+      <div className="mt-6">
+        <div className="eyebrow" id="platform-label">
+          Select your league
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2.5" role="radiogroup" aria-labelledby="platform-label">
+          {(["sleeper", "espn"] as Platform[]).map((p) => {
+            const on = platform === p;
+            return (
+              <button
+                key={p}
+                role="radio"
+                aria-checked={on}
+                onClick={() => {
+                  if (on) return;
+                  setPlatform(p);
+                  setInput("");
+                  setLeagues(null);
+                  setLeague(null);
+                  setTeamId("");
+                  setError(null);
+                  setEspnAuthNeeded(null);
+                  setLastLeagueId("");
+                }}
+                className={`min-h-11 rounded-[var(--radius-card)] border px-4 py-4 text-left transition-colors ${
+                  on ? "border-ink bg-ink text-paper" : "border-line-2 bg-paper text-ink hover:bg-soft"
+                }`}
+              >
+                <span className="display block text-[19px] leading-tight">{p === "sleeper" ? "Sleeper" : "ESPN"}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* There is no Yahoo connector in edge/, so this is a roadmap marker and has to be
+            impossible to pick: disabled, outside the radio group so a screen reader never
+            offers it as a third choice, and drawn dashed and unfilled so it does not read
+            as a live button that ignores the tap. */}
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          className="mt-2.5 flex min-h-11 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-[var(--radius-card)] border border-dashed border-line-2 bg-transparent px-4 py-3 text-muted"
+        >
+          <span className="display text-[17px] leading-tight">Yahoo</span>
+          <span className="eyebrow rounded-full border border-line-2 px-2 py-0.5">Soon</span>
+        </button>
       </div>
 
       {platform === "sleeper" && (
         <section className="mt-7">
           <label className="eyebrow block" htmlFor="sleeper-input">
-            Your league
+            Paste a username or ID
           </label>
           <div className="mt-2 flex gap-2">
             <input
@@ -291,16 +317,31 @@ export default function ConnectPage() {
         </div>
       ) : null}
 
-      {/* Up front, not sprung after a failed request: the form is two fields and "is my league
-          private" is a question the user answers faster than we can. A rejected request only
-          changes the line above them. It stays once a league has loaded only if something
-          still wants cookies, so a connected league is not read over a form. */}
-      {platform === "espn" && (!league || espnAuthNeeded) && (
-        <EspnAuthForm
-          status={espnAuthNeeded}
-          busy={busy}
-          onSaved={() => pickLeague(lastLeagueId || input)}
-        />
+      {/* Only once a request has come back saying the league is private. Showing two cookie
+          fields to someone whose league is public is a wall in front of the one case that
+          needs nothing, so a public ID loads straight through and this never appears. */}
+      {platform === "espn" && espnAuthNeeded && (
+        <EspnAuthForm status={espnAuthNeeded} busy={busy} onSaved={() => pickLeague(lastLeagueId || input)} />
+      )}
+
+      {/* The one way back out, and it has to live here rather than in the form.
+          "Forget these" is a button inside `EspnAuthForm`, and the form now only mounts
+          when a request has failed — so once the cookies work, the control to delete them
+          disappears with it and does not return until they expire. These are a read session
+          for someone's whole ESPN account, on what may be a shared phone, so "you can wipe
+          them any time" has to stay true on the screen where they were handed over.
+          Nothing shows for the public-league case, which never stored anything. */}
+      {platform === "espn" && storedEspn && !espnAuthNeeded && (
+        <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted">
+          ESPN sign-in saved on this device.
+          <button
+            type="button"
+            onClick={() => clearEspnAuth()}
+            className="min-h-11 font-semibold text-ink underline underline-offset-4"
+          >
+            Forget it
+          </button>
+        </p>
       )}
 
       {league && (
@@ -309,11 +350,7 @@ export default function ConnectPage() {
             Step <span className="tnum">2</span> of <span className="tnum">2</span> · {league.name} · week{" "}
             <span className="tnum">{league.week}</span>
           </Eyebrow>
-          <h2 className="display mt-2 text-[28px] leading-[1.06]">Which team is yours?</h2>
-          <p className="mt-2 text-[14px] leading-relaxed text-muted">
-            Pick it and we write this week&rsquo;s call sheet for that roster. Nothing gets written back to
-            your league. Not ever.
-          </p>
+          <h2 className="display mt-2 text-[28px] leading-[1.06]">Select your team</h2>
           <ul className="mt-4 grid gap-2">
             {league.teams.map((t) => {
               const on = teamId === t.id;
