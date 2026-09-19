@@ -559,5 +559,15 @@ All eight are now in, and the branches themselves can be deleted.
 - [ ] `docs/BRAND.md` from the visual-direction branch was left behind on purpose: it documents
       the pre-rebrand flare look, so landing it would describe an identity the app no longer has.
       The live brand rules are in CLAUDE.md.
+
+      That branch (`claude/app-design-visual-direction-ikclwx`) was the one merged selectively
+      rather than wholesale, and it has been deleted along with the others. Its tip is
+      **eaa9793c236a829d860888ac7f2f2204768188ce** — written down here because a deleted branch
+      is only recoverable while someone still has the sha. `git show` any of these:
+        eaa9793  Write the visual direction down so it survives the next session  (docs/BRAND.md)
+        4a50958  Web: the flare accent, a wordmark that means something
+        692be77  Redraw the share cards, and stop charging for the one that spreads
+      The sharing change from the third is in; the flare accent and old wordmark are not, and
+      should not come back without a deliberate decision to leave Penthouse.
 - [ ] The e2e Playwright smoke test and the Postgres half of the store contract suite have not
       been run here — they need a browser and a live Postgres. CI now runs both.
