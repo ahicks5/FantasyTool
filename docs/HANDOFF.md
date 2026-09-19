@@ -8,8 +8,9 @@ backlog in `TASKS.md`. Keep those three current and this file stays short.
 
 ## Where things stand
 
-The app is **The Booth**: a coaching booth that hands you a call sheet of three moves before
-kickoff. Rebranded from "Edge", every screen rebuilt around that, deployed and live.
+The app is **Penthouse**: the owner's box, where the staff hands you a call sheet of three moves
+before kickoff. Rebranded from "Edge" to "The Booth" and then to Penthouse — black and chrome,
+dark by default — with every screen rebuilt around that, deployed and live.
 
 | | |
 |---|---|
@@ -80,7 +81,7 @@ Every one of these was a real mistake in this repo, not a hypothetical.
 ## The prompt
 
 ```
-You are picking up THE BOOTH, a paid fantasy football web app. Read CLAUDE.md first —
+You are picking up PENTHOUSE, a paid fantasy football web app. Read CLAUDE.md first —
 it holds the brand rules, the engine map and the non-negotiables — then docs/DEPLOY.md
 for hosting and docs/HANDOFF.md for the traps that have already cost time. TASKS.md is
 the backlog; keep it current.
@@ -98,7 +99,7 @@ Ground rules that matter most here:
 - Before pushing: uv run pytest -q, and in web/ npm test && npx eslint && npm run build.
 - Report failures plainly. If something is unverified, say so before saying anything else.
 
-Brand, in one line: the booth is a coaching staff handing you a call sheet — confident,
+Brand, in one line: the owner's box, where the staff hands you a call sheet — confident,
 clipped, verb first, fewest words possible. Stamps are for decisions only. Colour never
 carries meaning alone. All motion collapses under prefers-reduced-motion except the
 loading ring, which slows instead of stopping.

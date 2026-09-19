@@ -5,7 +5,7 @@ clients block nothing but render inconsistently, so everything here is tables an
 styles. The rule that matters: an email must be readable with images off and must never
 contain anything the recipient has not paid for.
 
-The booth's devices, translated for 1998-era HTML:
+The app's devices, translated for 1998-era HTML:
   * the margin numbers (01, 02, 03) are a narrow table cell, not a counter;
   * the coloured rule beside them is a 4px cell with a background, not a border;
   * the confidence *stamp* is a bordered cell with letterspaced uppercase text — the web
@@ -31,10 +31,13 @@ SIT = "#b3261e"
 LEAN = "#1d4ed8"
 FLIP = "#7a4f00"
 SIGNAL = "#e02d1b"   # the ON AIR lamp — brand chrome only, never a status
-TAGLINE = "Three moves. By Sunday. We keep score."
+# Chrome, flattened. The wordmark is a gradient everywhere else; email clients render
+# neither gradients nor webfonts, so upstairs arrives as silver capitals or not at all.
+METAL = "#dde1e6"
+TAGLINE = "Own the week."
 
 TYPE_COLOR = {"start": START, "waiver": LEAN, "trade": INK, "hold": MUTED}
-# What the booth calls each play. The raw feed type ("waiver") is a data word, not a
+# What the call sheet calls each play. The raw feed type ("waiver") is a data word, not a
 # spoken one; the call sheet says "Claim".
 TYPE_LABEL = {"start": "Start", "waiver": "Claim", "trade": "Trade", "hold": "Hold"}
 CONFIDENCE_COLOR = {"Lock": START, "Lean": LEAN, "Coin flip": FLIP}
@@ -173,7 +176,7 @@ def _action_row(a: dict, n: int, base_url: str) -> str:
       </td></tr>"""
 
 
-def render_html(feed: dict, base_url: str = "https://thebooth.example", unsubscribe_url: str = "") -> str:
+def render_html(feed: dict, base_url: str = "https://penthouse.example", unsubscribe_url: str = "") -> str:
     m = feed.get("matchup") or {}
     actions = (feed.get("actions") or [])[:MAX_ACTIONS]
     matchup_block = ""
@@ -214,10 +217,8 @@ def render_html(feed: dict, base_url: str = "https://thebooth.example", unsubscr
       <tr><td bgcolor="{INK}" style="background:{INK};padding:12px 20px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr>
-            <td valign="middle" style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;">
-              <span style="font-size:10px;letter-spacing:2px;color:#ffffff;opacity:0.65;
-                    font-weight:700;">THE</span>
-              BOOTH<span style="color:{SIGNAL};">&#9679;</span></td>
+            <td valign="middle" style="font-size:18px;font-weight:800;color:{METAL};letter-spacing:0.5px;">
+              PENTHOUSE<span style="color:{SIGNAL};">&#9679;</span></td>
             <td valign="middle" align="right" style="font-size:10px;font-weight:700;letter-spacing:1.6px;
                 text-transform:uppercase;color:#ffffff;">ON AIR</td>
           </tr>
@@ -250,13 +251,13 @@ def render_html(feed: dict, base_url: str = "https://thebooth.example", unsubscr
 </body></html>"""
 
 
-def render_text(feed: dict, base_url: str = "https://thebooth.example") -> str:
+def render_text(feed: dict, base_url: str = "https://penthouse.example") -> str:
     """Plain-text alternative. Some clients show only this, and spam filters want it to exist.
 
     It carries the same margin numbers as the HTML, so a reply quoting "02" means the same
     call in either version.
     """
-    lines = ["THE BOOTH — CALL SHEET",
+    lines = ["PENTHOUSE — CALL SHEET",
              f"Week {feed.get('week')} · {feed.get('team')}",
              feed.get("summary", ""), ""]
     m = feed.get("matchup") or {}
@@ -281,7 +282,7 @@ def render_text(feed: dict, base_url: str = "https://thebooth.example") -> str:
     return "\n".join(lines)
 
 
-def build(feed: dict, base_url: str = "https://thebooth.example", unsubscribe_url: str = "") -> dict:
+def build(feed: dict, base_url: str = "https://penthouse.example", unsubscribe_url: str = "") -> dict:
     return {
         "subject": subject(feed),
         "preheader": preheader(feed),

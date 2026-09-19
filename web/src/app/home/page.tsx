@@ -2,7 +2,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";
-import { BoothOpening, Countdown, ErrorBox, Eyebrow, OnAirLive, SplitMeter, Stamp, useHeldWait } from "@/components/ui";
+import { Countdown, ErrorBox, Eyebrow, OnAirLive, Opening, SplitMeter, Stamp, useHeldWait } from "@/components/ui";
 import { getActions, sendFeedback } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { calledKey, pct, sheetStatus, signed } from "@/lib/format";
@@ -165,7 +165,7 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
 
 function HomeBody({ c }: { c: Connection }) {
   // Cached for the session, so coming back to this tab paints the sheet on the
-  // first frame instead of opening the booth all over again.
+  // first frame instead of opening the room all over again.
   const { data: feed, error, instant, reload } = useCached<ActionFeed>(
     `actions:${c.platform}:${c.league_id}:${c.team_id}`,
     () => getActions(c.platform, c.league_id, c.team_id),
@@ -175,7 +175,7 @@ function HomeBody({ c }: { c: Connection }) {
   const waiting = useHeldWait(!!feed);
 
   if (error) return <ErrorBox message={error} onRetry={reload} />;
-  if (waiting || !feed) return <BoothOpening />;
+  if (waiting || !feed) return <Opening />;
 
   // Per league and per week, so a new week always starts with a clean sheet.
   const key = calledKey(c.league_id, feed.week);

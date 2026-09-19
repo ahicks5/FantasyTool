@@ -1,4 +1,4 @@
-# Launch posts — THE BOOTH
+# Launch posts — PENTHOUSE
 
 Three legs to every post, in this order where it fits:
 1. **Not an encyclopedia.** Everyone else gives you a library to browse. We give you three moves
@@ -17,7 +17,7 @@ doesn't go in a post — leave the TODO.
 
 Body:
 
-Every fantasy site hands you a wall of rankings and lets you sort out what it means. The Booth
+Every fantasy site hands you a wall of rankings and lets you sort out what it means. Penthouse
 does the opposite. Connect a Sleeper or ESPN league and you get a **call sheet**: three moves,
 by Sunday. Who starts. Who to claim, and the bid. What to offer, and to whom. Each call gets a
 confidence stamp and one line of why.
@@ -37,7 +37,7 @@ actually on screen, abandoned teams excluded, actual points taken from Sleeper's
 rather than ours.
 
 Free: the depth chart — start/sit for one team, every week. Wire Pass $3, Trade Lab $5, or the
-Full Booth for $7 — everything, every week, up to 5 leagues. Season pass. No subscription.
+The Penthouse for $7 — everything, every week, up to 5 leagues. Season pass. No subscription.
 
 [stamped verdict graphic] — a real trade out of a 12-team half-PPR league. Post a league ID and
 a trade and I'll run yours in the comments.
@@ -51,7 +51,7 @@ a trade and I'll run yours in the comments.
 
 1/ Fantasy sites give you an encyclopedia. You still have to do the reading.
 
-The Booth gives you three moves. By Sunday. That's the whole product.
+Penthouse gives you three moves. By Sunday. That's the whole product.
 
 2/ [stamped verdict graphic]
 
@@ -64,7 +64,7 @@ Week 1, 66 teams, 6 leagues: **+2.02 pts a team. 82% of teams helped.** Locks hi
 
 We publish the weeks we lose too.
 
-4/ Free depth chart for one team. $3 the wire. $5 trade lab. $7 the Full Booth.
+4/ Free depth chart for one team. $3 the wire. $5 trade lab. $7 the whole Penthouse.
 
 Season pass, not a subscription. Link in bio.
 
@@ -85,7 +85,7 @@ stamped verdict.
 
 ## One-liners (bio, Product Hunt tagline, reply-guy fodder)
 
-- Three moves. By Sunday. We keep score.
+- Own the week.
 - Not a rankings page. A call sheet.
 - Every other tool tells you who's good. We tell you what to do, and then we tell you whether
   we were right.

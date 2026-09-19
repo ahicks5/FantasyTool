@@ -51,9 +51,23 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
         }}
       >
         <div className="flex items-center justify-between" style={{ fontSize: 30 }}>
-          <span style={{ display: "inline-flex", alignItems: "baseline", gap: 9, fontWeight: 900, fontSize: 46, letterSpacing: "-0.04em" }}>
-            <span style={{ fontSize: 23, letterSpacing: "0.2em", opacity: 0.55 }}>THE</span>
-            <span>BOOTH</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 11, fontWeight: 900, fontSize: 44, letterSpacing: "-0.02em" }}>
+            {/* The crown, inlined. A still image posted into a feed cannot depend on
+                the page's chrome gradient, so the silver is spelled out here. */}
+            <svg width={40} height={40} viewBox="0 0 24 24" fill="url(#ph-card-chrome)" aria-hidden>
+              <defs>
+                <linearGradient id="ph-card-chrome" x1="0" y1="0" x2="0.08" y2="1">
+                  <stop offset="0" stopColor="#ffffff" />
+                  <stop offset="0.38" stopColor="#9aa1ac" />
+                  <stop offset="0.52" stopColor="#f2f4f7" />
+                  <stop offset="0.7" stopColor="#7d858f" />
+                  <stop offset="1" stopColor="#ffffff" />
+                </linearGradient>
+              </defs>
+              <path d="M2.6 18 4.2 5 8.2 11 12 3.2 15.8 11 19.8 5 21.4 18Z" />
+              <path d="M3.4 19.4h17.2v2.2H3.4z" />
+            </svg>
+            <span style={{ transform: "skewX(-7deg)", display: "inline-block" }}>PENTHOUSE</span>
             {/* The lamp, drawn rather than animated: this is a still image. */}
             <span style={{ display: "inline-block", width: 13, height: 13, borderRadius: 99, background: "#ff4d3a", marginLeft: 3 }} />
           </span>
@@ -63,7 +77,7 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
         </div>
 
         <div style={{ marginTop: 44, fontSize: 26, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(247,246,243,0.45)", fontWeight: 700 }}>
-          The booth&rsquo;s verdict
+          Penthouse&rsquo;s verdict
         </div>
         {/* The signature: the verdict is stamped, not typeset. Same device as the app. */}
         <div style={{ marginTop: 18, paddingLeft: 10 }}>
@@ -103,7 +117,7 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
             <div style={{ width: `${fair}%`, height: "100%", borderRadius: 99, background: fair >= 90 ? "#22a468" : fair >= 75 ? "#f0b429" : "#e2554e" }} />
           </div>
           <div style={{ marginTop: 34, fontSize: 28, color: "rgba(247,246,243,0.45)" }}>
-            Three moves. By Sunday. We keep score.
+            Own the week.
           </div>
         </div>
       </div>

@@ -130,6 +130,7 @@ curl -sI https://<api-host>/api/share/<some-id>/card.png   # want 200 image/png,
 - **Email sending.** `edge/delivery/weekly_email.py` renders; nothing sends. Pick a provider
   (Resend's free tier) and add the key.
 - **Stripe** has only been exercised against a fake webhook event, never a real test-mode run.
-- **Domain.** `thebooth.com`, `.app` and `.io` are all taken. Verified available:
-  `callthebooth.com` (recommended), `theboothfantasy.com`, `boothcalls.com`, `theboothnfl.com`,
-  `thebooth.football`. Code uses `thebooth.example` as a placeholder.
+- **Domain.** Not picked yet, and nothing has been checked for availability under the new name.
+  Code uses `penthouse.example` as a placeholder — one-line change in `edge/cli.py` and
+  `edge/delivery/weekly_email.py` once Andrew chooses. `NEXT_PUBLIC_SITE_URL` sets the web's
+  `metadataBase`, which is what makes the unfurl card resolve to an absolute URL.

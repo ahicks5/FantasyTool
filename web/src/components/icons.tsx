@@ -54,7 +54,23 @@ export const IconChevron = (p: P) => (
   <Svg {...p}><path d="M9 5.5 15.5 12 9 18.5" /></Svg>
 );
 
-/* The booth's own set: a call sheet, a depth-chart board, the wire, the film. */
+/**
+ * The crown. The mark itself, traced from the logo: three sharp peaks over a
+ * flared body and a separate band beneath it.
+ *
+ * Filled rather than stroked, unlike everything else here, because the logo is a
+ * solid silhouette and a hairline outline of it turns to mush below ~20px. It
+ * inks in `currentColor`, so it takes the chrome gradient from a parent with
+ * `.chrome-type` exactly like the letters do.
+ */
+export const IconCrown = ({ className = "", size = 22 }: { className?: string; size?: number | string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+    <path d="M2.6 18 4.2 5 8.2 11 12 3.2 15.8 11 19.8 5 21.4 18Z" />
+    <path d="M3.4 19.4h17.2v2.2H3.4z" />
+  </svg>
+);
+
+/* The section set: a call sheet, a depth-chart board, the wire, the film. */
 
 export const IconSheet = (p: P) => (
   <Svg {...p}><rect x="4.5" y="3.5" width="15" height="17" rx="2" /><path d="M9 3.5V6h6V3.5" /><path d="M8.5 11h7M8.5 15h4.5" /></Svg>

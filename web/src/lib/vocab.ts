@@ -1,9 +1,11 @@
 /**
  * Every section name the app says out loud, in one place.
  *
- * The booth's vocabulary is the brand: the nav names a room (call sheet, depth chart,
- * scouting, the GM's Office, the film) while what you *buy* keeps its product name
- * (Wire Pass, Trade Lab, Full Booth) — those live in `edge/products.py`, not here.
+ * Coach vocabulary, and it survives the rebrand on purpose: the penthouse is where the
+ * sheet is *read*, not a reason to rename the sheet. The nav names a room (call sheet,
+ * depth chart, scouting, the GM's Office, the film) while what you *buy* keeps its
+ * product name (Wire Pass, Trade Lab, The Penthouse) — those live in `edge/products.py`,
+ * not here.
  *
  * It is one module rather than strings scattered across five pages and a tab bar
  * because renaming a section otherwise means a sweep through the app and its tests,

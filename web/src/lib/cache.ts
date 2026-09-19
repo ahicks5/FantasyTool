@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
    Without it, every tab switch remounts the page, refetches, and replays the
    whole opening sequence — so the app reads as if it reloaded itself each time
-   you touch the tab bar. The booth should feel like it stayed on while you
+   you touch the tab bar. The room should feel like it stayed on while you
    looked away.
 
    Deliberately module-level and not persisted: it lives as long as the JS
@@ -150,6 +150,7 @@ export function useCached<T>(key: string | null, fetcher: () => Promise<T>): Cac
 }
 
 /* ------------------------------------------------------------- the opening ---
-   Which wait narrates moved to `lib/wait.ts`, together with the "only one loader
-   on screen" registry it has to agree with — two modules holding the same flag is
-   how they drift apart. Import it from there; this module is the read cache only. */
+   The room only opens once, and only one loader is ever on screen. Both of those
+   moved to `lib/wait.ts`, because they are one question and two modules holding the
+   same flag is how they drift apart. Import it from there; this module is the read
+   cache only. */

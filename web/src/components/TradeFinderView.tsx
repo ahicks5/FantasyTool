@@ -48,7 +48,7 @@ function PlayerRow({ label, players, names, tone }: { label: string; players: Pl
 
 function PartnerCard({ p, index }: { p: TradePartner; index: number }) {
   return (
-    // Coming off the printer, not rising: this list is the booth's board.
+    // Coming off the printer, not rising: this list is the board.
     <li className={`card min-w-0 overflow-hidden p-0 print print-${Math.min(index + 1, 5)}`}>
       <div className="flex min-w-0">
         {/* The margin, same as the call sheet: the line number over a rule. */}

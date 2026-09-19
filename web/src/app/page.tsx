@@ -122,7 +122,7 @@ export default function Landing() {
             href="/home"
             className="inline-flex min-h-0 items-center gap-1 rounded-full border border-line-2 px-3.5 py-2 text-[13px] font-bold hover:bg-soft"
           >
-            Open the booth
+            Open the Penthouse
             <IconChevron size={13} strokeWidth={2.8} />
           </Link>
         </div>
@@ -131,17 +131,17 @@ export default function Landing() {
       <section className="pt-7 rise">
         <Eyebrow>Sleeper · ESPN public and private leagues</Eyebrow>
         <h1 className="display mt-3 text-[43px] leading-[0.98]">
-          Three moves.
+          Own
           <br />
-          By Sunday.
+          the week.
         </h1>
         <p className="mt-4 max-w-[24rem] text-[17px] leading-relaxed text-ink-2">
-          Take the headset. Connect your league and the booth writes this week&rsquo;s call sheet — who starts, who to
-          claim, what to offer. One line of why on every call, and the number under it.
+          Take the top floor. Connect your league and we write this week&rsquo;s call sheet — three moves, by Sunday:
+          who starts, who to claim, what to offer. One line of why on every call, and the number under it.
         </p>
         <div className="mt-6 grid gap-2.5">
           <LinkButton href="/connect" variant="start" className="w-full">
-            Open the booth — free
+            Open the Penthouse — free
           </LinkButton>
           <a
             href="#pricing"
@@ -246,7 +246,7 @@ export default function Landing() {
           </div>
           <p className="mt-3.5 text-[14px] leading-relaxed text-ink-2">
             Every stamp is graded against what actually happened, and we publish the result. We only move the thresholds
-            when the data says to — and when a call is too close to matter, the booth tells you to leave it alone.
+            when the data says to — and when a call is too close to matter, we tell you to leave it alone.
           </p>
         </div>
       </section>
@@ -256,7 +256,7 @@ export default function Landing() {
       <footer className="mt-12 border-t border-line pt-5">
         <div className="flex items-center gap-2.5">
           <Wordmark className="text-[16px]" lamp={false} />
-          <span className="text-[12px] font-bold text-muted">Three moves. By Sunday. We keep score.</span>
+          <span className="text-[12px] font-bold text-muted">Own the week.</span>
         </div>
         <p className="mt-3 text-[12px] leading-relaxed text-muted">
           Projections from Sleeper, re-scored to your league&rsquo;s settings. Headshots via Sleeper and ESPN. Not

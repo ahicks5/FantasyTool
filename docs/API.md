@@ -1,4 +1,4 @@
-# The Booth API contract (v1)
+# Penthouse API contract (v1)
 
 FastAPI app in `edge/api/app.py`, served at `/api`. All responses JSON. Errors: `{"error": "message"}` with 4xx. Two shapes carry more:
 - **402** — the feature needs a purchase: `{"error","feature","teaser","upsell":[product,...]}`.
@@ -8,7 +8,7 @@ FastAPI app in `edge/api/app.py`, served at `/api`. All responses JSON. Errors: 
 Auth: `Authorization: Bearer <supabase jwt>` (optional in dev; `X-Edge-User: <email>` accepted when `EDGE_DEV=1`).
 
 The package, the env vars and the header keep the `edge`/`EDGE_` spelling on purpose — only what a
-user reads says The Booth. Wire names below are the contract; `web/src/lib/types.ts` mirrors them.
+user reads says Penthouse. Wire names below are the contract; `web/src/lib/types.ts` mirrors them.
 
 ## Products / entitlements
 `GET /api/products` →
@@ -17,7 +17,7 @@ user reads says The Booth. Wire names below are the contract; `web/src/lib/types
   {"sku":"free","name":"Free","price_cents":0,"features":["my_team"],"leagues":1,"kind":"free","blurb":"Start/sit calls for one team, every week."},
   {"sku":"waivers","name":"Wire Pass","price_cents":300,"features":["waivers"],"leagues":1,"kind":"a_la_carte","blurb":"The wire, ranked for your roster, with the bid and the drop. Rest of season."},
   {"sku":"trade_lab","name":"Trade Lab","price_cents":500,"features":["trade_lab"],"leagues":1,"kind":"a_la_carte","blurb":"Trade verdicts and counters tuned to the other manager. Rest of season."},
-  {"sku":"full_report","name":"Full Booth","price_cents":700,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","blurb":"The whole booth, every week, up to 5 leagues."}
+  {"sku":"full_report","name":"The Penthouse","price_cents":700,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","blurb":"The whole booth, every week, up to 5 leagues."}
 ]}
 ```
 `GET /api/me` → `{"email":"...","entitlements":["my_team","waivers"],"leagues_allowed":1,"leagues":[{"platform":"sleeper","league_id":"...","name":"...","team_id":"3"}]}`
@@ -103,5 +103,5 @@ Ranked pickups with the bid and the drop. Wire name stays `waivers`.
 
 ## The film (feature: full_report)
 
-The weekly write-up that ships with the Full Booth bundle. Wire name stays `full_report`.
+The weekly write-up that ships with The Penthouse bundle. Wire name stays `full_report`.
 `GET /api/league/{platform}/{league_id}/team/{team_id}/report` → `{"week":2,"lineup":{...},"waivers":{...},"trade_targets":[{"their_team_id":"4","give":[...],"get":[...],"verdict":"Fair","why":"..."}],"matchup":{"opponent":"...","my_proj":131.4,"their_proj":118.2,"win_prob":0.61},"html":"<...>"}`

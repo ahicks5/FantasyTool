@@ -3,7 +3,7 @@ import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
 import { IconFilm, IconSheet, IconTeam, IconTrade, IconWire } from "./icons";
-import { BoothOpening, LinkButton, OnAir, Spinner, ThemeToggle, Wordmark } from "./ui";
+import { LinkButton, OnAir, Opening, Spinner, ThemeToggle, Wordmark } from "./ui";
 import { SECTIONS, TAB_ORDER, type SectionKey } from "@/lib/vocab";
 
 // Coach vocabulary, and every label still says what the screen is: scouting is the
@@ -24,8 +24,8 @@ export function TopBar({ session }: { session: Session }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4">
-        <Link href="/" aria-label="The Booth home" className="shrink-0">
-          <Wordmark className="text-[20px]" />
+        <Link href="/" aria-label="Penthouse home" className="shrink-0">
+          <Wordmark className="text-[20px]" markOnlyOnTiny />
         </Link>
         <Link href="/connect" className="min-w-0 flex-1 text-right leading-tight">
           <div className="truncate text-[13px] font-bold">{c ? c.league_name : "No league"}</div>
@@ -129,18 +129,18 @@ export function AppShell({
           {aside}
         </div>
         {needsMe && session.loading ? (
-          <BoothOpening />
+          <Opening />
         ) : session.connection ? (
           children(session)
         ) : (
           <div className="hero callsheet p-7 text-center">
             <OnAir className="text-white/45" label="Off air" />
-            <div className="display mt-3 text-[26px] leading-tight">Booth&rsquo;s empty</div>
+            <div className="display mt-3 text-[26px] leading-tight">The room&rsquo;s empty</div>
             <p className="mx-auto mb-6 mt-2 max-w-[17rem] text-[15px] leading-relaxed text-white/70">
               Hook up a Sleeper or ESPN league and {gate} shows up here. No account, no password.
             </p>
             <LinkButton href="/connect" variant="onHero" className="w-full">
-              Put me in the booth
+              Take me upstairs
             </LinkButton>
           </div>
         )}

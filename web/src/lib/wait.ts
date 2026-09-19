@@ -4,7 +4,7 @@
    Two rules, and they exist because breaking either one made the app look like it
    loaded twice:
 
-   1. **The booth opens once.** The staged "pulling film / re-scoring" sequence is a
+   1. **The room opens once.** The staged "pulling film / re-scoring" sequence is a
       good first impression and an irritation the fourth time, so after the first one
       every wait is a quiet skeleton.
 
@@ -27,7 +27,7 @@ let narratedAt = 0;
 
 /**
  * Take the screen for a wait. The first caller of the session narrates; anyone who
- * claims while another wait is already up gets a skeleton, whether or not the booth
+ * claims while another wait is already up gets a skeleton, whether or not the room
  * has opened. Pair every call with `releaseWait`.
  */
 export function claimWait(): WaitPhase {

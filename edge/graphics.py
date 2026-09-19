@@ -17,6 +17,18 @@ INK = "#0e1116"
 PAPER = "rgba(247,246,243,"
 COLORS = {"Accept": "#22a468", "Reject": "#e2554e", "Counter": "#f0b429", "Fair": "#5b8def"}
 SIGNAL = "#ff4d3a"  # the ON AIR lamp — brand chrome only, never a status colour
+TAGLINE = "Own the week."
+# The crown, inlined as SVG with its own gradient: this card is rendered from an HTML
+# string with no origin and no stylesheet, so it cannot reach the app's chrome token.
+CROWN = (
+    '<svg width="40" height="40" viewBox="0 0 24 24" fill="url(#phc)" aria-hidden="true">'
+    '<defs><linearGradient id="phc" x1="0" y1="0" x2="0.08" y2="1">'
+    '<stop offset="0" stop-color="#ffffff"/><stop offset="0.38" stop-color="#9aa1ac"/>'
+    '<stop offset="0.52" stop-color="#f2f4f7"/><stop offset="0.7" stop-color="#7d858f"/>'
+    '<stop offset="1" stop-color="#ffffff"/></linearGradient></defs>'
+    '<path d="M2.6 18 4.2 5 8.2 11 12 3.2 15.8 11 19.8 5 21.4 18Z"/>'
+    '<path d="M3.4 19.4h17.2v2.2H3.4z"/></svg>'
+)
 # The text-safe steps for the same four, used where a word sits on the light strip.
 COLORS_TEXT = {"Accept": "#0b7a4b", "Reject": "#c02b23", "Counter": "#b57500", "Fair": "#1e4fd8"}
 
@@ -112,11 +124,11 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
   .card{{width:1080px;height:1080px;box-sizing:border-box;padding:72px;display:flex;flex-direction:column}}
 </style></head><body><div class="card">
   <div style="display:flex;align-items:center;justify-content:space-between;font-size:30px">
-    <span style="display:inline-flex;align-items:baseline;gap:9px;font-weight:900;font-size:46px;letter-spacing:-.04em"><span style="font-size:23px;letter-spacing:.2em;opacity:.55">THE</span><span>BOOTH</span><span style="display:inline-block;width:13px;height:13px;border-radius:99px;background:{SIGNAL};margin-left:3px"></span></span>
+    <span style="display:inline-flex;align-items:center;gap:11px;font-weight:900;font-size:44px;letter-spacing:-.02em">{CROWN}<span style="display:inline-block;transform:skewX(-7deg)">PENTHOUSE</span><span style="display:inline-block;width:13px;height:13px;border-radius:99px;background:{SIGNAL};margin-left:3px"></span></span>
     <span style="color:{PAPER}.5);max-width:560px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{sub}</span>
   </div>
 
-  <div style="margin-top:40px;font-size:26px;letter-spacing:.16em;text-transform:uppercase;color:{PAPER}.45);font-weight:700">The booth&rsquo;s verdict</div>
+  <div style="margin-top:40px;font-size:26px;letter-spacing:.16em;text-transform:uppercase;color:{PAPER}.45);font-weight:700">Penthouse&rsquo;s verdict</div>
   <div style="margin-top:16px;padding-left:10px">
     <span style="display:inline-block;transform:rotate(-3.5deg);border:11px solid {colour};border-radius:22px;
       padding:14px 34px 20px;color:{colour};font-size:132px;font-weight:900;line-height:1;letter-spacing:.04em;
@@ -143,7 +155,7 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
     <div style="margin-top:14px;height:18px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden">
       <div style="width:{fair}%;height:100%;border-radius:99px;background:{bar}"></div>
     </div>
-    <div style="margin-top:34px;font-size:28px;color:{PAPER}.45)">Three moves. By Sunday. We keep score.</div>
+    <div style="margin-top:34px;font-size:28px;color:{PAPER}.45)">{TAGLINE}</div>
   </div>
 </div></body></html>"""
 

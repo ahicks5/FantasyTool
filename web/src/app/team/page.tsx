@@ -1,7 +1,7 @@
 "use client";
 import { AppShell } from "@/components/Shell";
 import { LineupView } from "@/components/LineupView";
-import { BoothOpening, useHeldWait, ErrorBox } from "@/components/ui";
+import { ErrorBox, Opening, useHeldWait } from "@/components/ui";
 import { getLineup } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import type { Connection } from "@/lib/storage";
@@ -15,7 +15,7 @@ function TeamBody({ c }: { c: Connection }) {
   const waiting = useHeldWait(!!data);
 
   if (error) return <ErrorBox message={error} onRetry={reload} />;
-  if (waiting || !data) return <BoothOpening />;
+  if (waiting || !data) return <Opening />;
   return <LineupView lineup={data} animate={!instant} />;
 }
 

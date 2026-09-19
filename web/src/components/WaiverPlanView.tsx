@@ -164,7 +164,7 @@ export function WaiverPlanView({ plan, compact = false }: { plan: WaiverPlanResp
               Hold
             </Stamp>
           ) : (
-            <Eyebrow className="mb-2">Also from the booth</Eyebrow>
+            <Eyebrow className="mb-2">Also on the board</Eyebrow>
           )}
           <p className="mx-auto max-w-sm text-[15px] leading-relaxed text-ink-2">{plan.hold_reason}</p>
         </div>

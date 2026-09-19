@@ -2,7 +2,7 @@
 
 Public leagues need no auth. Private ones answer 401 and need the caller's `espn_s2` and
 `SWID` cookies, passed in as `EspnAuth`. Those cookies are a read session for that person's
-whole ESPN account, so the Booth treats them as borrowed, not owned: they arrive on the request
+whole ESPN account, so Penthouse treats them as borrowed, not owned: they arrive on the request
 that needs them, they are used for that call, and nothing here writes them anywhere. See
 `EspnAuth` for why there is no `store` function in this module.
 
@@ -46,7 +46,7 @@ class EspnLeagueNotFound(EspnError):
 class EspnAuth:
     """One person's ESPN read session: the `espn_s2` and `SWID` cookies from their browser.
 
-    Deliberately not persisted anywhere in the Booth. These two values are enough to read that
+    Deliberately not persisted anywhere in Penthouse. These two values are enough to read that
     person's entire ESPN account, they cannot be scoped to one league, and ESPN gives us no
     way to revoke just ours — so the only way to be sure we never leak them is to never hold
     them. They ride in on the request that needs them (the browser keeps them in its own
@@ -106,7 +106,7 @@ def _get(url: str, params: list[tuple[str, str]] | None = None, headers: dict | 
             )
         raise EspnPrivateLeague(
             "This ESPN league is private (%d: %s). Private leagues need the espn_s2 and SWID cookies "
-            "from a browser signed in to ESPN. The Booth uses them for this request only and never stores "
+            "from a browser signed in to ESPN. Penthouse uses them for this request only and never stores "
             "them. You can also make the league public in ESPN's league settings."
             % (r.status_code, _message(r))
         )
@@ -120,7 +120,7 @@ def league(season: int, league_id: str | int, views: tuple[str, ...] = DEFAULT_V
            auth: EspnAuth | None = None) -> dict:
     """League JSON with the requested views merged (teams, rosters, settings, schedule)."""
     if int(season) < MIN_SEASON:
-        raise EspnError(f"ESPN seasons before {MIN_SEASON} use the history API, which the Booth doesn't support.")
+        raise EspnError(f"ESPN seasons before {MIN_SEASON} use the history API, which Penthouse doesn't support.")
     url = f"{BASE}/seasons/{int(season)}/segments/0/leagues/{league_id}"
     return _get(url, params=[("view", v) for v in views], auth=auth)
 

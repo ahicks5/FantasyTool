@@ -1,11 +1,11 @@
-# The Booth — three moves, by Sunday
+# Penthouse — own the week
 
-Take the headset. Connect a Sleeper or ESPN league and the booth writes this week's **call sheet**:
+Take the top floor. Connect a Sleeper or ESPN league and we write this week's **call sheet**:
 who starts, who to claim, what to offer. Each call carries a confidence stamp, one line of why, and
 the number under it — and we publish our own hit rate every week.
 
 The Python package is still `edge/` (renaming it would touch every import for no user-visible gain).
-Anything a user reads says The Booth.
+Anything a user reads says Penthouse.
 
 ## Run it
 ```bash
@@ -30,7 +30,7 @@ Tests: `uv run pytest -q` (offline, fixtures) and `cd web && npm test && npm run
 | free | $0 | Depth chart start/sit, 1 league |
 | waivers | $3 / season | Wire Pass |
 | trade_lab | $5 / season | Trade Lab |
-| full_report | $7 / season | Full Booth: everything + the weekly film, 5 leagues |
+| full_report | $7 / season | The Penthouse: everything + the weekly film, 5 leagues |
 
 ## Deploy notes
 Live: **https://fantasy-tool-alpha.vercel.app** (Vercel, root dir `web/`) + **https://edge-api-gi8d.onrender.com** (Render) for the API.

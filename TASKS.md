@@ -164,7 +164,38 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [ ] ESPN's free-agent list is the top 250 by percent owned. Ample for a top-5 waiver list;
       raise the limit (600 works) if a deep-league user ever reports a missing name.
 
-## The Booth — rebrand (this round)
+## Penthouse — rebrand (this round)
+Andrew's call: move from The Booth to **Penthouse**, the owner's box. Black and polished chrome,
+taken from the app icons he supplied. Section vocabulary stays coach on purpose — the penthouse is
+where the call sheet gets read, not a reason to rename the sheet.
+- [x] Tokens rebuilt dark-first in `globals.css`. Dark is the default and is **not** keyed to
+      `prefers-color-scheme`: that query also matches "no preference", which is most desktops, so
+      keying light off it would have shown light to the majority of first-time visitors. Light now
+      lives only under `[data-theme="light"]` and still has its own validated steps.
+- [x] Hierarchy re-derived for black: plane < paper < hero by elevation, each with a `--bevel`
+      chrome hairline. The old "one dark surface on warm paper" device does not exist on a dark app.
+- [x] Chrome as a gradient token (`--chrome`, `--chrome-rail`, `--color-metal`), `.chrome-type`,
+      `.wordmark-type`, `.rail`. `.sweep` repurposed as the sheen rather than adding a motion verb.
+- [x] The mark: `IconCrown` + `web/src/app/icon.svg` as the source of truth, with
+      `scripts/render_brand_assets.py` rasterising favicon/apple-icon/opengraph-image through
+      Chromium. No image library added.
+- [x] Copy pass: Penthouse everywhere a user reads, tagline **"Own the week."**, bundle renamed
+      Full Booth → **The Penthouse**, "Take me upstairs" on the on-ramps. Wire Pass and Trade Lab
+      keep their names.
+- [x] Off-app surfaces: both share-card renderers, the `/s/{id}` page, the weekly email (flat
+      silver capitals — Outlook renders no gradient and no SVG), and `launch/posts.md`.
+- [x] `booth.*` storage keys and the `edge/` package deliberately unchanged. Renaming the keys
+      signs every existing user out of their league, theme and ticked calls for no visible gain.
+- [ ] Domain: nothing checked for availability under the new name. Code uses `penthouse.example`
+      as the placeholder — one line in `edge/cli.py` and `edge/delivery/weekly_email.py` once
+      Andrew picks, plus `NEXT_PUBLIC_SITE_URL` on Vercel so the unfurl card resolves.
+- [ ] The two supplied app icons (crown and football) are 1024px PNGs. Only the crown is traced
+      into SVG; if the football lockup is ever wanted for social, it needs the same treatment.
+- [ ] Re-run the data-viz palette checker against the new surfaces. The dark status steps were
+      already validated at `#14171c`, which is still the card colour, so this is a confirmation
+      rather than a re-tune — but it has not been re-run.
+
+## The Booth — rebrand (shipped, now superseded by Penthouse)
 Andrew's call: ffwrapped is an encyclopedia you browse; we are three moves you make before
 kickoff. Named it **The Booth** and rebuilt the shell around a coaching call sheet.
 - [x] Brand system in `web/src/app/globals.css`: ON AIR lamp token (`--color-signal`, chrome only),
@@ -197,9 +228,6 @@ kickoff. Named it **The Booth** and rebuilt the shell around a coaching call she
 - [x] **Dockerfile installs headless Chromium.** The `playwright` package ships no browser, so
       the deployed API answered 503 for `/api/share/{id}/card.png` — every share link would have
       unfurled broken. Verified end to end: 503 without a browser, 200 and a 124KB PNG with one.
-- [ ] Domain: `thebooth.com`, `.app` and `.io` are all taken. Verified available: **callthebooth.com**
-      (recommended), theboothfantasy.com, boothcalls.com, theboothnfl.com, boothff.com,
-      thebooth.football. Placeholder in code is `thebooth.example` — one-line change once Andrew picks.
 - [ ] "We keep score" needs a public scorecard page to point at. Today the only published hit
       rate is `docs/BACKTEST.md` in the repo, and the launch posts have a TODO where its URL goes.
 - [ ] Only week 1 is backtested, so no post claims a multi-week record. Lean's measured hit rate
@@ -257,7 +285,7 @@ kickoff. Named it **The Booth** and rebuilt the shell around a coaching call she
 - [ ] Uncertainty-aware confidence: P(a > b) from projection error by position, not raw margin
       (blueprint says do NOT build this before multi-week backtesting exists)
 - [ ] Commissioner league pack, creator affiliate codes (growth, after launch)
-- [ ] A Booth Pro tier — deliberately not launched yet
+- [ ] A Penthouse Pro tier — deliberately not launched yet
 
 ## Later (not v1)
 - [ ] Private ESPN leagues (espn_s2 / SWID)

@@ -92,7 +92,7 @@ export function Pricing() {
 
       <div className="mt-6">
         <LinkButton href="/connect" variant="start" className="w-full">
-          Put me in the booth
+          Take me upstairs
         </LinkButton>
         <p className="mt-2.5 text-center text-[12px] text-muted">
           Start free on one team. Pay only when you want the rest.

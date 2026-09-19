@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- The mark: chrome crown on a black squircle, the app icon reduced to what
+       still reads at 16px. Self-contained (no CSS, no external font) because a
+       favicon is fetched without the page around it. -->
+  <defs>
+    <linearGradient id="ph-plate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3d43"/>
+      <stop offset="0.12" stop-color="#17191d"/>
+      <stop offset="0.82" stop-color="#0a0b0d"/>
+      <stop offset="1" stop-color="#26282d"/>
+    </linearGradient>
+    <linearGradient id="ph-chrome" x1="0" y1="0" x2="0.08" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.18" stop-color="#e6e9ee"/>
+      <stop offset="0.38" stop-color="#9aa1ac"/>
+      <stop offset="0.52" stop-color="#f2f4f7"/>
+      <stop offset="0.70" stop-color="#7d858f"/>
+      <stop offset="0.88" stop-color="#d7dbe1"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#ph-plate)"/>
+  <rect x="0.5" y="0.5" width="63" height="63" rx="13.5" fill="none" stroke="#ffffff" stroke-opacity="0.10"/>
+  <g transform="translate(8 7.2) scale(2)" fill="url(#ph-chrome)">
+    <path d="M2.6 18 4.2 5 8.2 11 12 3.2 15.8 11 19.8 5 21.4 18Z"/>
+    <path d="M3.4 19.4h17.2v2.2H3.4z"/>
+  </g>
+</svg>

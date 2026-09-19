@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cacheClear, cacheGet, cacheSet, once } from "./cache.ts";
 
-// "The booth opens once per session" moved to `wait.test.ts` along with the flag
+// "The room opens once per session" moved to `wait.test.ts` along with the flag
 // itself, where it is tested against the one-loader-on-screen registry it has to
 // agree with. This file is the read cache.
 

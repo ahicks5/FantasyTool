@@ -3,7 +3,7 @@
 Two questions, re-run every Tuesday with `uv run python scripts/backtest.py <week>`.
 
 1. **Are the projections any good?** Pairwise, within position, over every projected player.
-2. **Did the advice make anyone money?** Replay six real leagues: the lineup the Booth
+2. **Did the advice make anyone money?** Replay six real leagues: the lineup Penthouse
    recommends against the lineup the manager actually started, scored on what really happened.
 
 Question 2 is the one that matters. A projection can be accurate and the product still
@@ -44,17 +44,17 @@ So the tags are honest: **Coin flip** (< 1.5) is a coin flip, **Lean** (1.5–4)
 | | |
 |---|---|
 | Manager average | 131.20 |
-| Booth average | **133.22** |
+| Penthouse average | **133.22** |
 | Gain | **+2.02 points a team** |
-| Booth ≥ manager | **82%** |
-| Booth better | 33% |
-| Booth worse | 18% |
+| Penthouse ≥ manager | **82%** |
+| Penthouse better | 33% |
+| Penthouse worse | 18% |
 
 Per league: superflex +9.24, TE-premium +5.24, IDP +2.59, standard PPR −1.59, WR/RB flex
 −2.65, half PPR −0.61. The spread is the point — one league is not a sample, and the two
-leagues the Booth lost are why the offline test replays all six.
+leagues Penthouse lost are why the offline test replays all six.
 
-Start/sit calls the Booth actually recommended (a much smaller set than the pairwise table, and
+Start/sit calls Penthouse actually recommended (a much smaller set than the pairwise table, and
 the only one a subscriber sees):
 
 | Tag | Right | Points per call | n |
@@ -75,7 +75,7 @@ worst was *bench Josh Allen for Matthew Stafford* over 0.55 projected points, wh
 None of the 48 involved a starter who could not play, so nothing was protecting an injury.
 
 `edge.engine.lineup.stabilize` now holds the incumbent when the upgrade is inside the noise
-band, so the Booth recommends the optimum only where the optimum is real. The call sheet
+band, so Penthouse recommends the optimum only where the optimum is real. The call sheet
 (`edge/engine/actions.py`) already did this; the depth chart did not.
 
 | | Before | After |
