@@ -97,6 +97,15 @@ Engine modules, in the order the feed uses them:
 - `engine/trade_finder.py` — positional surplus/need per roster, complementary partners,
   1-for-1 and 2-for-1 offers that improve both sides.
 - `engine/trade.py` — grades a trade the user proposes, plus a counteroffer.
+- `engine/grades.py` — the live scorecard: a letter per position group plus an overall, free
+  tier, delivered on the lineup payload. Two rules keep it honest. Everything is relative to
+  **this** league, because an absolute points total means nothing across scoring settings. And
+  the letter measures **how much your standing is worth, not what it is** — it is denominated in
+  starters (±0.75 of a starter from the league mean spans F to A+), with rank reported
+  separately. A league where every QB is identical grades everyone C, including rank 12, because
+  nobody has an edge. Do not replace this with a rank-percentile or a position-in-range blend:
+  both hand out an A+ and an F in every league however tightly packed, which is the bug the
+  module docstring exists to prevent coming back.
 - Every recommendation is written to the `runs` table with its `algo_version`; user Helpful/Wrong
   votes land in `feedback`. Pair them with next week's actuals to know if a version was right.
 

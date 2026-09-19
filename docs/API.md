@@ -44,9 +44,29 @@ The start/sit call sheet for one team. Wire name stays `my_team`.
  "slots":[{"slot":"RB","player":{"id":"4866","name":"Jahmyr Gibbs","position":"RB","nfl_team":"DET","injury_status":null,"projected":26.1,"opponent":"BUF"},
            "confidence":"Lock","reason":"Top RB projection this week (26.1). Nobody on your bench is close.","change":false}],
  "bench":[{"player":{...},"reason":"Sit: 11.2 proj, 4.1 behind your last FLEX."}],
- "changes":[{"slot":"FLEX","out":{"id":"...","name":"Stefon Diggs"},"in":{"id":"...","name":"MarShawn Lloyd"},"gain":1.0,"confidence":"Coin flip","reason":"..."}]}
+ "changes":[{"slot":"FLEX","out":{"id":"...","name":"Stefon Diggs"},"in":{"id":"...","name":"MarShawn Lloyd"},"gain":1.0,"confidence":"Coin flip","reason":"..."}],
+ "grades":{"overall":"A-","overall_percentile":0.83,"overall_rank":1,"league_size":12,
+           "note":"1st of 12 on rest-of-season starting value.",
+           "positions":[{"position":"RB","grade":"C+","percentile":0.52,"starters":3,"rank":8,
+                         "league_size":12,"depth":"thin","starter_names":["Saquon Barkley","David Montgomery"],
+                         "next_man":"Aaron Jones","note":"8th of 12 at RB. Aaron Jones is the drop-off..."}]}}
 ```
 Confidence stamp: `Lock` (margin ≥ 4), `Lean` (≥ 1.5), `Coin flip` (< 1.5).
+
+**The scorecard** (`grades`, free tier — `edge/engine/grades.py`) rides along here rather than
+getting its own endpoint, because the page that shows it already fetches this and grading needs
+the same league bundle.
+
+- `grade` is one of `F D- D D+ C- C C+ B- B B+ A- A A+`.
+- `percentile` is 0..1 where **0.5 is league average**. It is measured in *starters*: ±0.75 of a
+  starter above or below the league mean spans the whole scale. A `C` therefore means "no edge
+  either way", not "bad".
+- `rank` is reported separately from `grade` on purpose. Rank is where you stand; the grade is
+  how much that standing is worth. In a league where every QB is identical, rank 12 still grades
+  `C`, because nobody has an edge.
+- `depth` is `deep | ok | thin`, measured against what this league actually starts at that
+  position — not against the team's own starters. `next_man` is null when nobody is behind.
+- `starters` folds FLEX in, so a 2-RB + 2-FLEX league reports ~3 RB starters.
 
 ## The wire (feature: waivers)
 

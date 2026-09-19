@@ -196,3 +196,36 @@ def test_every_recommendation_is_logged_with_its_algorithm_version(client, leagu
     for r in runs:
         assert r["algo_version"] and r["algo_version"] != "?"
         assert r["week"] == 2 and r["team_id"] == tid
+
+
+def test_the_scorecard_rides_along_with_the_depth_chart_and_is_free(client, league):
+    """Grades are a free-tier hook, so a signed-out visitor must get them. They also have to
+    arrive on the lineup payload — the depth chart page fetches nothing else."""
+    tid = league.teams[0].id
+    body = client.get(f"{LG}/team/{tid}/lineup").json()  # no auth header on purpose
+    g = body["grades"]
+    assert g["overall"] and g["league_size"] == 12
+    assert 1 <= g["overall_rank"] <= 12
+    assert g["positions"], "a scorecard with no positions is not a scorecard"
+
+    starts = {p["position"] for p in g["positions"]}
+    assert {"QB", "RB", "WR", "TE"} <= starts
+
+    for p in g["positions"]:
+        assert p["grade"] in ("F", "D-", "D", "D+", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+")
+        assert p["depth"] in ("deep", "ok", "thin")
+        assert 0.0 <= p["percentile"] <= 1.0
+        assert 1 <= p["rank"] <= p["league_size"]
+        assert p["note"]
+        # next_man is nullable and must stay JSON-clean either way.
+        assert p["next_man"] is None or isinstance(p["next_man"], str)
+
+
+def test_every_team_in_the_league_can_be_graded_over_the_api(client, league):
+    """One broken roster must not take the depth chart down for the team that owns it."""
+    seen = set()
+    for t in league.teams:
+        body = client.get(f"{LG}/team/{t.id}/lineup").json()
+        assert "grades" in body, t.name
+        seen.add(body["grades"]["overall_rank"])
+    assert seen == set(range(1, 13)), "the twelve teams should occupy the twelve ranks"

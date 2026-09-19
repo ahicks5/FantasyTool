@@ -187,6 +187,25 @@ kickoff. Named it **The Booth** and rebuilt the shell around a coaching call she
       seconds; the tab bar's active marker sliding between tabs (needs the shell hoisted into a
       route-group layout so it stops remounting); drag-to-move tiles on the depth chart.
 
+## Live scorecard (Andrew's ask: draft grades, kept live)
+- [x] `edge/engine/grades.py` — a letter per position group plus an overall, graded against the
+      teams you actually play. Free tier, delivered on the lineup payload so the depth chart
+      needs no extra request. 15 tests.
+- [x] The scale is denominated in **starters**, not in rank: ±0.75 of a starter from the league
+      mean spans F to A+. Rank is reported alongside because that is what people ask, but the
+      letter answers the harder question of whether the position is actually winning you games.
+      A league where every QB is identical now grades everyone C, including 12th of 12.
+- [x] Caught and fixed a real flaw mid-build: the first version blended rank with position-in-range,
+      which *looks* principled but always puts the top team at 1.0 and the bottom at 0.0 — so it
+      handed out an A+ and an F in every league however tightly packed. The test suite had
+      encoded that behaviour as correct; both the design and the tests were replaced.
+- [x] Depth reads against what the league starts at that position, not against your own starters,
+      so a room of equally mediocre players grades thin rather than deep.
+- [ ] Grades are a natural share graphic (a scorecard card for the group chat) — reuse
+      `edge/graphics.py` the way the verdict card does. Not built.
+- [ ] Trend: "your RB room was a B two weeks ago". Needs grades written to the `runs` table
+      week over week; nothing stores them yet.
+
 ## Blueprint items still open
 - [x] Weekly action email — HTML + plain text renderer, `python -m edge.cli email <league> <team>`.
       Sending still needs a Resend key; everything up to the send is built and tested.

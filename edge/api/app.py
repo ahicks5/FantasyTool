@@ -13,6 +13,7 @@ from edge.api import service, share as share_mod
 from edge.api.auth import current_user, optional_user
 from edge.api.store import Store
 from edge.connectors import sleeper
+from edge.engine import grades
 from edge.engine import lineup as lineup_mod
 from edge.engine import actions as actions_mod
 from edge.engine import report, trade, trade_finder, waiver_plan, waivers
@@ -182,7 +183,12 @@ def roster(platform: str, league_id: str, team_id: str, auth=Depends(espn_auth))
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/lineup")
 def lineup(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     b = _bundle(platform, league_id, auth)
-    return report.lineup_dict(lineup_mod.advise(b.league, _team(b, team_id)))
+    team = _team(b, team_id)
+    out = report.lineup_dict(lineup_mod.advise(b.league, team))
+    # The scorecard rides along with the depth chart rather than getting its own endpoint:
+    # the page that shows it already fetches this, and grading needs the same league bundle.
+    out["grades"] = grades.grade_team(b.league, team, b.ros).to_dict()
+    return out
 
 
 def _teaser(b: service.Bundle, t, feature: str) -> str | None:
