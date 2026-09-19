@@ -32,19 +32,19 @@ export const metadata: Metadata = {
   // export metadata, so the only page that would ever hit a template is /s/[id] — and it
   // builds its own absolute title ending in "— Penthouse", which a template would turn
   // into "... — Penthouse · Penthouse — ...". One plain title is the honest version.
-  title: "Penthouse — own the week",
+  title: "Penthouse · own the week",
   description:
-    "Take the top floor. Penthouse writes your fantasy football call sheet every week: three moves before kickoff — who starts, who to claim, what to offer.",
+    "Take the top floor. Penthouse writes your fantasy football call sheet every week: three moves before kickoff: who starts, who to claim, what to offer.",
   applicationName: "Penthouse",
   openGraph: {
     type: "website",
     siteName: "Penthouse",
-    title: "Penthouse — fantasy football call sheet",
+    title: "Penthouse · fantasy football call sheet",
     description: "Three moves before kickoff: who starts, who to claim, what to offer. Own the week.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Penthouse — fantasy football call sheet",
+    title: "Penthouse · fantasy football call sheet",
     description: "Three moves before kickoff: who starts, who to claim, what to offer. Own the week.",
   },
 };

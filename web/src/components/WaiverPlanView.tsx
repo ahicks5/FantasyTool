@@ -95,7 +95,7 @@ function ClaimCard({ c, index }: { c: WaiverClaim; index: number }) {
           )}
           {c.bid.note
             ? <div className="mt-1 text-[11px] leading-snug text-muted">{c.bid.note}</div>
-            : c.bid.amount === null && <div className="mt-1 text-[11px] leading-snug text-muted">No money here — claims run in order.</div>}
+            : c.bid.amount === null && <div className="mt-1 text-[11px] leading-snug text-muted">No money here. Claims run in order.</div>}
         </div>
       </div>
 

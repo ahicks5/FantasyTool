@@ -39,8 +39,8 @@ missing — title tags, app-store listing, social bios, the first email — and 
 becomes part of the name.
 
 ```
-<title>          Penthouse — own the week
-og:title         Penthouse — fantasy football call sheet
+<title>          Penthouse · own the week
+og:title         Penthouse · fantasy football call sheet
 social bio       Penthouse. Fantasy football, three moves before kickoff.
 handle           penthousefootball  (not penthousefantasy)
 ```
@@ -72,6 +72,15 @@ table names a pass.
 | Say plainly when it's a coin flip | *That one's a coin flip. Your call.* | *Slight lean toward…* |
 | Numbers are nouns, not adjectives | *+4.1 over Pollard.* | *Significantly better than Pollard.* |
 | No exclamation marks | *Sheet's clean.* | *You're all set!* |
+| No em dashes in copy | *No money here. Claims run in order.* | *No money here — claims run in order.* |
+
+The em dash rule is not a stylistic preference, it is the voice rule applied. An em dash
+buys a second clause, and a second clause is the opposite of clipped. Almost every one in
+this app was a full stop wearing a disguise: *"No money here — claims run in order"* is two
+sentences pretending to be one. Where a real separator is wanted (a title, a label, a price),
+use the middot the app already uses everywhere else: `Penthouse · own the week`,
+`Open the Penthouse · free`. A lone `—` as the *no value yet* glyph (an empty countdown, a
+missing opponent) is not copy and stays.
 
 The coin-flip line matters more than it looks. A brand that says "we don't know" in its
 own voice is the one thing an encyclopedia cannot do — it has no voice to say it in.

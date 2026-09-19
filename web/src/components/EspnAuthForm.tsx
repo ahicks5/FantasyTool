@@ -41,8 +41,8 @@ export function EspnAuthForm({
           </h2>
           <p className="mt-2 text-[15px] leading-relaxed text-muted">
             {expired
-              ? "The two values you gave us stopped working — ESPN rotates them every few weeks. Grab fresh ones from your browser and you are straight back in."
-              : "ESPN only opens a private league to someone signed in. Paste two values from your own browser and we can read it — we only ever read with them, and never post, join or change anything in your league."}
+              ? "The two values you gave us stopped working. ESPN rotates them every few weeks. Grab fresh ones from your browser and you are straight back in."
+              : "ESPN only opens a private league to someone signed in. Paste two values from your own browser and we can read it. We only ever read with them, and never post, join or change anything in your league."}
           </p>
         </div>
       </div>
@@ -55,16 +55,16 @@ export function EspnAuthForm({
         <ul className="mt-2 grid gap-2 text-[13px] leading-relaxed text-muted">
           <li>
             <b className="text-ink">They stay in this browser.</b> They ride along as headers on your own league
-            requests and the server never writes them down — nothing of yours is sitting on our side to leak.
+            requests and the server never writes them down. Nothing of yours is sitting on our side to leak.
           </li>
           <li>
             <b className="text-ink">They are a read session for your whole ESPN account.</b> ESPN gives no way to
-            limit them to one league, and we cannot revoke them — which is exactly why they live with you and not
+            limit them to one league, and we cannot revoke them. That is exactly why they live with you and not
             with us.
           </li>
           <li>
             <b className="text-ink">Yours to wipe, any time.</b> &ldquo;Forget these&rdquo; clears them from this
-            device. Never paste them into a chat, an email or a bug report — pull fresh ones from your browser
+            device. Never paste them into a chat, an email or a bug report. Pull fresh ones from your browser
             instead.
           </li>
           <li>
@@ -119,7 +119,7 @@ export function EspnAuthForm({
             spellCheck={false}
           />
           <span className="mt-1.5 block text-[12px] leading-relaxed text-muted">
-            With the curly braces or without them — we tidy it up either way.
+            With the curly braces or without them. We tidy it up either way.
           </span>
         </label>
       </div>

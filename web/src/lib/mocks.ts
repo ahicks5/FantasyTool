@@ -471,7 +471,7 @@ function gradesFor(r: MockRoster): Grades {
           : row.depth === "thin"
             ? `${place}. Nothing behind the starter if he sits.`
             : row.position === "DEF"
-              ? `${place}. Stream it — the wire fixes this one cheap.`
+              ? `${place}. Stream it. The wire fixes this one cheap.`
               : `${place}. Covered, not stacked.`;
     return {
       position: row.position,
@@ -647,7 +647,7 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
     fairness,
     their_tendencies: tend,
     counter,
-    notes: ratio > 1.4 ? ["Lopsided in your favor — they are unlikely to accept as-is."] : [],
+    notes: ratio > 1.4 ? ["Lopsided in your favor. They are unlikely to accept as-is."] : [],
     explanation,
     explanation_source: "template",
     graphic,

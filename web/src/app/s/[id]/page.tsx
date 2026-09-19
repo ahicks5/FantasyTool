@@ -24,11 +24,11 @@ async function load(id: string): Promise<SharedVerdict | null> {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const v = await load(id);
-  if (!v) return { title: "Penthouse — trade verdict" };
+  if (!v) return { title: "Penthouse · trade verdict" };
   const title = `${v.verdict}: ${v.give.join(" + ")} for ${v.get.join(" + ")}`;
   const image = `${API}/api/share/${encodeURIComponent(id)}/card.png`;
   return {
-    title: `${title} — Penthouse`,
+    title: `${title} · Penthouse`,
     description: v.explanation,
     openGraph: {
       title,
@@ -240,7 +240,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
           {[
             "Start/sit calls free, forever",
             "Every projection re-scored to your league's scoring",
-            "No account, no password — hook up a league and look",
+            "No account, no password. Hook up a league and look",
           ].map((l) => (
             <li key={l} className="flex items-start gap-2">
               <IconCheck size={14} strokeWidth={3} className="mt-[3px] shrink-0 text-start" />
@@ -249,7 +249,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
           ))}
         </ul>
         <LinkButton href="/connect" variant="start" className="mt-6 w-full">
-          Take me upstairs — free
+          Take me upstairs · free
         </LinkButton>
         <p className="mt-3.5 text-[12px] font-bold text-muted">{LINES.tagline}</p>
       </section>

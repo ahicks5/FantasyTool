@@ -143,7 +143,7 @@ export function ActionCard({
                   key="called"
                   onClick={onCall}
                   aria-pressed
-                  aria-label="Called — tap to undo"
+                  aria-label="Called. Tap to undo"
                   className="stamp slam min-h-[36px] flex-1 basis-[40%] cursor-pointer justify-center text-[11px] text-start"
                 >
                   <span className="grease" aria-hidden>

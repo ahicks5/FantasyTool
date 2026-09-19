@@ -127,7 +127,7 @@ export default function ConnectPage() {
         </Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">{LINES.threshold}</h1>
         <p className="mt-2 text-[15px] leading-relaxed text-muted">
-          Hook up your league — Sleeper, or ESPN public and private. Two steps and the room is on air: no account, no
+          Hook up your league. Sleeper, or ESPN public and private. Two steps and the room is on air: no account, no
           password, nothing to sign.
         </p>
         {/* The on-ramp is only urgent if it says how long there is. Its own row, so a long
@@ -189,7 +189,7 @@ export default function ConnectPage() {
             <ul className="mt-3 grid gap-2">
               {leagues.length === 0 && (
                 <li className="rounded-xl bg-soft px-4 py-3 text-[14px] leading-relaxed text-muted">
-                  Nobody home under that username. Check the spelling — it is the Sleeper display name — or paste the
+                  Nobody home under that username. Check the spelling (it is the Sleeper display name), or paste the
                   league ID below instead.
                 </li>
               )}
@@ -274,7 +274,7 @@ export default function ConnectPage() {
           <h2 className="display mt-2 text-[28px] leading-[1.06]">Which team is yours?</h2>
           <p className="mt-2 text-[14px] leading-relaxed text-muted">
             Pick it and we write this week&rsquo;s call sheet for that roster. Nothing gets written back to
-            your league — ever.
+            your league. Not ever.
           </p>
           <ul className="mt-4 grid gap-2">
             {league.teams.map((t) => {

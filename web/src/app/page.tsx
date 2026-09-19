@@ -53,7 +53,7 @@ const FEATURES = [
     tag: "$3",
     Icon: IconWire,
     tone: "bg-lean-soft text-lean",
-    body: "Every free agent ranked by how much he actually moves your lineup — with a bid and the name to drop.",
+    body: "Every free agent ranked by how much he actually moves your lineup. With a bid and the name to drop.",
   },
   {
     href: "/trade",
@@ -67,7 +67,7 @@ const FEATURES = [
 
 const STEPS = [
   { n: "1", title: "Hook up your league", body: "A Sleeper username or a league ID. No password, nothing to sign." },
-  { n: "2", title: "We re-score everything", body: "Every projection re-scored to your league's own settings — never assumed PPR." },
+  { n: "2", title: "We re-score everything", body: "Every projection re-scored to your league's own settings. Never assumed PPR." },
   { n: "3", title: "You get a call sheet", body: "Ranked moves for the week, each with one line of why. Tick them off as you make them." },
 ];
 
@@ -150,12 +150,12 @@ export default function Landing() {
           before kickoff.
         </h1>
         <p className="mt-4 max-w-[24rem] text-[17px] leading-relaxed text-ink-2">
-          {LINES.heroSub} Connect your league and we write this week&rsquo;s — who starts, who to claim, what to
+          {LINES.heroSub} Connect your league and we write this week&rsquo;s: who starts, who to claim, what to
           offer, by Sunday. One line of why on every call, and the number under it.
         </p>
         <div className="mt-6 grid gap-2.5">
           <LinkButton href="/connect" variant="start" className="w-full">
-            Open the Penthouse — free
+            Open the Penthouse · free
           </LinkButton>
           <a
             href="#pricing"
@@ -175,7 +175,7 @@ export default function Landing() {
           </div>
 
           <div className="px-5 pt-5">
-            <div className="eyebrow">Week 2 — The Megalabowl</div>
+            <div className="eyebrow">Week 2 · The Megalabowl</div>
             <div className="display mt-1 text-[27px] leading-tight">
               <span className="tnum">3</span> moves worth making
             </div>
@@ -260,7 +260,7 @@ export default function Landing() {
           </div>
           <p className="mt-3.5 text-[14px] leading-relaxed text-ink-2">
             Every stamp is graded against what actually happened, and we publish the result. We only move the thresholds
-            when the data says to — and when a call is too close to matter, we tell you to leave it alone.
+            when the data says to. When a call is too close to matter, we tell you to leave it alone.
           </p>
         </div>
       </section>

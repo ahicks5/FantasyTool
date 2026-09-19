@@ -376,7 +376,7 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      setError("Could not copy — select the link and copy it by hand.");
+      setError("Could not copy. Select the link and copy it by hand.");
     }
   }
 
