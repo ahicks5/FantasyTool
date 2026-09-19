@@ -233,3 +233,21 @@ kickoff. Named it **The Booth** and rebuilt the shell around a coaching call she
 ## Later (not v1)
 - [ ] Private ESPN leagues (espn_s2 / SWID)
 - [ ] Yahoo
+
+## Go-to-market — team/league access (plan: docs/MARKETING.md)
+Proposed pivot: entitlement keyed to the **team**, not the email. Kills the login, kills the
+Supabase blocker, and makes a pasted link work inside a league group chat. Awaiting Andrew's
+call on §8 of docs/MARKETING.md before any of this is built.
+- [ ] Re-key `purchases` to `(platform, league_id, team_id)`; `team_id = '*'` is the League Pass.
+      `_skus()` takes the league/team instead of the email; the email column stays for receipts.
+- [ ] Public league board `/l/{platform}/{league_id}` — no login, 12 slots, unlocked state,
+      "9 of 12 unlocked", a buy button per slot and one for the league. This is the growth loop.
+- [ ] Buy a pass for another team (the gift) — same checkout, different `team_id`.
+- [ ] Prices: Team Pass $7, League Pass $39, Playoff Push $19 from ~week 12. Wire Pass and
+      Trade Lab come off the pricing table (stay in products.py).
+- [ ] Public `/scoreboard` — docs/BACKTEST.md as a page, losses included. The one claim no
+      competitor can copy, currently invisible.
+- [ ] Shareable free call sheet, not only paid verdicts (`/api/share` is gated on `trade_lab`).
+- [ ] Send the weekly film (Resend free tier) to the Stripe email; unsubscribe + postal address.
+- [ ] Board analytics: connects, board views, board → checkout.
+- [ ] Re-render `launch/cards/` — stale wordmark, un-stamped verdicts. Blocks every launch post.
