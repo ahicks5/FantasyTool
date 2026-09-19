@@ -175,6 +175,18 @@ kickoff. Named it **The Booth** and rebuilt the shell around a coaching call she
 - [ ] Drag-to-move tiles on the depth chart, and the manager dossier wall in Trade Lab — the two
       "video game" ideas worth doing after launch, not before.
 
+## Feel pass (Andrew's feedback)
+- [x] Flipping tabs no longer reloads. Root cause was two stacked loaders: `useSession` reset to
+      loading on every mount, then each page refetched. Both are cached for the session now; a
+      lap round the tab bar shows no loading state at all, measured at 40–120ms per tab.
+- [x] The opening sequence plays once, then quiet skeletons. 5 unit tests in `lib/cache.test.ts`.
+- [x] Kickoff urgency: the clock and the lamp tighten inside 24h and again inside 2h, with the
+      label changing too so colour is never the only cue. Boundaries unit-tested both sides.
+- [x] Grease-pencil tick on a made call, drawn rather than printed.
+- [ ] Next creative swings, in rough order of payoff: a split-flap tick on the countdown's
+      seconds; the tab bar's active marker sliding between tabs (needs the shell hoisted into a
+      route-group layout so it stops remounting); drag-to-move tiles on the depth chart.
+
 ## Blueprint items still open
 - [x] Weekly action email — HTML + plain text renderer, `python -m edge.cli email <league> <team>`.
       Sending still needs a Resend key; everything up to the send is built and tested.

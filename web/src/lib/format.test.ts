@@ -7,10 +7,12 @@ import {
   countdown,
   formatBid,
   formatCents,
+  kickoffUrgency,
   nextKickoff,
   pct,
   sheetStatus,
   signed,
+  URGENCY_LABEL,
   verdictClass,
 } from "./format.ts";
 
@@ -113,4 +115,25 @@ test("sheet status line", () => {
   assert.equal(sheetStatus(2, 3), "2 of 3 called");
   assert.equal(sheetStatus(3, 3), "Sheet's clean");
   assert.equal(sheetStatus(0, 0), "Nothing to call");
+});
+
+test("the booth tightens as kickoff approaches", () => {
+  const MIN = 60e3;
+  assert.equal(kickoffUrgency(6 * 24 * 60 * MIN), "open");
+  assert.equal(kickoffUrgency(25 * 60 * MIN), "open");
+  // Both boundaries are exclusive: "inside 24 hours" is strictly under 24 hours.
+  assert.equal(kickoffUrgency(24 * 60 * MIN), "open", "exactly a day out is not yet inside a day");
+  assert.equal(kickoffUrgency(24 * 60 * MIN - MIN), "soon");
+  assert.equal(kickoffUrgency(3 * 60 * MIN), "soon");
+  assert.equal(kickoffUrgency(120 * MIN), "soon", "the final band opens strictly under two hours");
+  assert.equal(kickoffUrgency(119 * MIN), "final");
+  assert.equal(kickoffUrgency(0), "final");
+  assert.equal(kickoffUrgency(-5000), "final", "a passed deadline is not suddenly calm");
+});
+
+test("every urgency band ships a word, so colour never carries it alone", () => {
+  for (const band of ["open", "soon", "final"] as const) {
+    assert.ok(URGENCY_LABEL[band] && URGENCY_LABEL[band].length > 2, band);
+  }
+  assert.notEqual(URGENCY_LABEL.final, URGENCY_LABEL.soon, "the tense state must read differently");
 });

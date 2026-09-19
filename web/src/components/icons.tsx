@@ -71,3 +71,14 @@ export const IconHeadset = (p: P) => (
 export const IconClock = (p: P) => (
   <Svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5.2l3.2 2" /></Svg>
 );
+
+/**
+ * The check a coach makes by hand, not the one a form prints: a slightly
+ * off-axis tick with an overshoot on the long stroke. `pathLength="1"` lets the
+ * `.grease` class draw it with resolution-independent dash maths.
+ */
+export const IconGreaseCheck = (p: P) => (
+  <Svg {...p} strokeWidth={p.strokeWidth ?? 3}>
+    <path d="M3.5 12.8 9 18.4 20.8 4.6" pathLength={1} />
+  </Svg>
+);

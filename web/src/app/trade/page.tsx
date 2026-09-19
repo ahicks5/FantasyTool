@@ -8,6 +8,7 @@ import { Avatar } from "@/components/Avatar";
 import { PlayerLine } from "@/components/Players";
 import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, Stamp, StatusMeter, Why } from "@/components/ui";
 import { createShare, evaluateTrade, findTrades, getLeague, getRoster, PaywallError } from "@/lib/api";
+import { once } from "@/lib/cache";
 import { TradeFinderView } from "@/components/TradeFinderView";
 import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
@@ -88,7 +89,10 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   const [tab, setTab] = useState<"find" | "grade">(params.get("give") ? "grade" : "find");
 
   useEffect(() => {
-    Promise.all([getLeague(c.platform, c.league_id), getRoster(c.platform, c.league_id, c.team_id)])
+    Promise.all([
+      once(`league:${c.platform}:${c.league_id}`, () => getLeague(c.platform, c.league_id)),
+      once(`roster:${c.platform}:${c.league_id}:${c.team_id}`, () => getRoster(c.platform, c.league_id, c.team_id)),
+    ])
       .then(([l, roster]) => {
         setLeague(l);
         setMine(sortRoster(roster.players));
@@ -99,7 +103,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
   useEffect(() => {
     let alive = true;
-    findTrades(c.platform, c.league_id, c.team_id)
+    once(`findTrades:${c.platform}:${c.league_id}:${c.team_id}`, () => findTrades(c.platform, c.league_id, c.team_id))
       .then((f) => alive && setFound(f))
       .catch(() => undefined);
     return () => {
@@ -110,7 +114,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   useEffect(() => {
     if (!theirId) return;
     let alive = true;
-    getRoster(c.platform, c.league_id, theirId)
+    once(`roster:${c.platform}:${c.league_id}:${theirId}`, () => getRoster(c.platform, c.league_id, theirId))
       .then((r) => alive && setTheirs(sortRoster(r.players)))
       .catch((e: Error) => alive && setError(e.message));
     return () => {

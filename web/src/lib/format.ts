@@ -141,6 +141,33 @@ export function nextKickoff(now: Date = new Date(), zone: string = ZONE): number
 }
 
 /**
+ * How tense the booth should be. A call sheet three days out is reference; a
+ * call sheet ninety minutes out is a deadline, and the room should feel like it.
+ *
+ * - `open`   more than a day to go. Calm.
+ * - `soon`   inside 24 hours. The clock starts carrying colour.
+ * - `final`  inside 2 hours. Lamp quickens, clock goes to the brand's red.
+ *
+ * Bands are wide on purpose: they change a handful of times a week, not on a
+ * schedule anyone has to watch.
+ */
+export type Urgency = "open" | "soon" | "final";
+
+export function kickoffUrgency(msRemaining: number): Urgency {
+  const mins = Math.max(0, msRemaining) / 60000;
+  if (mins < 120) return "final";
+  if (mins < 24 * 60) return "soon";
+  return "open";
+}
+
+/** The word beside the clock, so the colour is never carrying the meaning alone. */
+export const URGENCY_LABEL: Record<Urgency, string> = {
+  open: "Kickoff",
+  soon: "Kickoff",
+  final: "Locks in",
+};
+
+/**
  * "2d 04:11" or "04:11:32" inside the last day. Clamped at zero, because a
  * countdown that goes negative looks broken rather than urgent.
  */

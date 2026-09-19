@@ -311,6 +311,24 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 @keyframes tick { 0% { transform: translateY(6px); opacity: 0; } 100% { transform: none; opacity: 1; } }
 .tick { animation: tick 0.24s ease-out both; }
 
+/* Inside the last two hours the lamp beats faster. Nothing else changes shape —
+   the room just gets tenser. The word beside it changes too, so this is never
+   the only signal. */
+.lamp-fast { animation-duration: 0.9s; }
+
+/* A call ticked off is marked by hand, not printed: the check draws itself the
+   way a grease pencil crosses a play off a laminated sheet. `pathLength="1"`
+   on the path makes the dash maths resolution-independent. */
+@keyframes grease {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+.grease path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: grease 0.34s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
 /* The booth coming on: a light sweeps the band once while the plan loads. */
 @keyframes sweep { from { transform: translateX(-120%); } to { transform: translateX(320%); } }
 .sweep::after {
@@ -328,9 +346,11 @@ button, a.btn, select, input { min-height: 44px; }
 /* Everything above degrades to a plain, instant layout. The lamp keeps its glow
    and loses its pulse; nothing else moves. */
 @media (prefers-reduced-motion: reduce) {
-  .rise, .skeleton, .print, .promote, .demote, .tick, .slam, .lamp, .sweep::after {
+  .rise, .skeleton, .print, .promote, .demote, .tick, .slam, .lamp, .sweep::after,
+  .grease path {
     animation: none;
   }
+  .grease path { stroke-dashoffset: 0; }
   .demote { opacity: 0.55; }
   .stamp { transform: rotate(-3.5deg); opacity: 0.92; }
 }

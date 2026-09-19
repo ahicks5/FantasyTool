@@ -1,9 +1,10 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";
-import { BoothOpening, Countdown, ErrorBox, Eyebrow, OnAir, SplitMeter, Stamp, useCountUp } from "@/components/ui";
+import { BoothOpening, Countdown, ErrorBox, Eyebrow, OnAirLive, SplitMeter, Stamp, useCountUp } from "@/components/ui";
 import { getActions, sendFeedback } from "@/lib/api";
+import { useCached } from "@/lib/cache";
 import { calledKey, pct, sheetStatus, signed } from "@/lib/format";
 import { loadCalled, saveCalled, type Connection } from "@/lib/storage";
 import type { Action, ActionFeed } from "@/lib/types";
@@ -21,7 +22,7 @@ const isCallable = (a: Action) => !a.locked && a.type !== "hold";
  * ruled grid, carrying the three things you need before kickoff: what week it
  * is, how long you have, and how much of the sheet you have worked through.
  */
-function Sheet({ feed, called, total }: { feed: ActionFeed; called: number; total: number }) {
+function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: number; total: number; animate: boolean }) {
   const delta = feed.projected_total - feed.current_total;
   const projected = useCountUp(feed.projected_total, 1);
   const m = feed.matchup;
@@ -29,9 +30,9 @@ function Sheet({ feed, called, total }: { feed: ActionFeed; called: number; tota
   const done = total > 0 && called >= total;
 
   return (
-    <section className="hero callsheet rise">
+    <section className={`hero callsheet ${animate ? "rise" : ""}`}>
       <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
-        <OnAir className="text-white/70" />
+        <OnAirLive className="text-white/70" />
         <Countdown onHero />
       </div>
 
@@ -101,7 +102,7 @@ function Sheet({ feed, called, total }: { feed: ActionFeed; called: number; tota
  * different league) remounts this with its own ticks read once, in the initialiser —
  * rather than syncing local state to a prop inside an effect.
  */
-function CallSheet({ feed, c, storageKey }: { feed: ActionFeed; c: Connection; storageKey: string }) {
+function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Connection; storageKey: string; animate: boolean }) {
   const [called, setCalled] = useState<string[]>(() => loadCalled(storageKey));
 
   const toggle = useCallback(
@@ -122,7 +123,7 @@ function CallSheet({ feed, c, storageKey }: { feed: ActionFeed; c: Connection; s
 
   return (
     <div>
-      <Sheet feed={feed} called={calledCount} total={callable.length} />
+      <Sheet feed={feed} called={calledCount} total={callable.length} animate={animate} />
       <ol className="mt-4 grid gap-3.5">
         {feed.actions.map((a, i) => (
           <li key={a.id}>
@@ -130,6 +131,7 @@ function CallSheet({ feed, c, storageKey }: { feed: ActionFeed; c: Connection; s
               a={a}
               n={i + 1}
               delay={i + 1}
+              animate={animate}
               called={called.includes(a.id)}
               onCall={isCallable(a) ? () => toggle(a.id) : undefined}
               onFeedback={(verdict, reason) =>
@@ -148,38 +150,27 @@ function CallSheet({ feed, c, storageKey }: { feed: ActionFeed; c: Connection; s
           </li>
         ))}
       </ol>
-      <p className="mx-auto mt-7 max-w-[19rem] text-center text-[13px] leading-relaxed text-muted rise rise-5">{feed.footer}</p>
+      <p className={`mx-auto mt-7 max-w-[19rem] text-center text-[13px] leading-relaxed text-muted ${animate ? "rise rise-5" : ""}`}>
+        {feed.footer}
+      </p>
     </div>
   );
 }
 
 function HomeBody({ c }: { c: Connection }) {
-  const [feed, setFeed] = useState<ActionFeed | null>(null);
-  const [error, setError] = useState("");
-  const [tick, setTick] = useState(0);
+  // Cached for the session, so coming back to this tab paints the sheet on the
+  // first frame instead of opening the booth all over again.
+  const { data: feed, error, instant, reload } = useCached<ActionFeed>(
+    `actions:${c.platform}:${c.league_id}:${c.team_id}`,
+    () => getActions(c.platform, c.league_id, c.team_id),
+  );
 
-  useEffect(() => {
-    let alive = true;
-    getActions(c.platform, c.league_id, c.team_id)
-      .then((f) => alive && setFeed(f))
-      .catch((e: Error) => alive && setError(e.message));
-    return () => {
-      alive = false;
-    };
-  }, [c.platform, c.league_id, c.team_id, tick]);
-
-  const load = () => {
-    setError("");
-    setFeed(null);
-    setTick((t) => t + 1);
-  };
-
-  if (error) return <ErrorBox message={error} onRetry={load} />;
+  if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (!feed) return <BoothOpening />;
 
   // Per league and per week, so a new week always starts with a clean sheet.
   const key = calledKey(c.league_id, feed.week);
-  return <CallSheet key={key} storageKey={key} feed={feed} c={c} />;
+  return <CallSheet key={key} storageKey={key} feed={feed} c={c} animate={!instant} />;
 }
 
 export default function HomePage() {

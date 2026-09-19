@@ -2,7 +2,7 @@
 import Link from "next/link";
 import type { Action } from "@/lib/types";
 import { Avatar } from "./Avatar";
-import { IconCheck, IconChevron, IconLock } from "./icons";
+import { IconCheck, IconChevron, IconGreaseCheck, IconLock } from "./icons";
 import { ConfidenceStamp, Eyebrow, Feedback, Why } from "./ui";
 
 const LABEL: Record<Action["type"], string> = { start: "Start", waiver: "Claim", trade: "Trade", hold: "Hold" };
@@ -24,6 +24,7 @@ export function ActionCard({
   a,
   n,
   called = false,
+  animate = true,
   onCall,
   onFeedback,
   delay = 0,
@@ -32,6 +33,8 @@ export function ActionCard({
   /** Position on the sheet, printed in the margin. */
   n: number;
   called?: boolean;
+  /** False when this card came from the session cache: it is already "on screen". */
+  animate?: boolean;
   onCall?: () => void;
   onFeedback: (verdict: "helpful" | "wrong", reason?: string) => void | Promise<void>;
   delay?: number;
@@ -41,16 +44,17 @@ export function ActionCard({
   const callable = !a.locked && a.type !== "hold" && !!onCall;
   return (
     <article
-      className={`card relative min-w-0 overflow-hidden print print-${Math.min(delay, 5)} ${a.locked ? "border-dashed" : ""} ${
-        called ? "opacity-80" : ""
-      }`}
+      className={`card relative min-w-0 overflow-hidden ${animate ? `print print-${Math.min(delay, 5)}` : ""} ${
+        a.locked ? "border-dashed" : ""
+      } ${called ? "opacity-80" : ""}`}
     >
       <div className="flex min-w-0">
         {/* The margin: play number over a rule in the action's colour. */}
         <div className="flex w-[40px] shrink-0 flex-col items-center border-r border-line bg-soft pt-5">
           {called ? (
-            <span className="tick flex h-[18px] w-[18px] items-center justify-center rounded-full bg-start text-white" aria-hidden>
-              <IconCheck size={11} strokeWidth={3.5} />
+            // Crossed off by hand: the stroke draws itself across the margin.
+            <span className="grease text-start" aria-hidden>
+              <IconGreaseCheck size={19} />
             </span>
           ) : (
             <span className="slug text-[14px] leading-none text-muted">{String(n).padStart(2, "0")}</span>
@@ -120,7 +124,9 @@ export function ActionCard({
                   aria-label="Called — tap to undo"
                   className="stamp slam min-h-0 cursor-pointer text-[11px] text-start"
                 >
-                  <IconCheck size={12} strokeWidth={3.5} />
+                  <span className="grease" aria-hidden>
+                    <IconGreaseCheck size={13} />
+                  </span>
                   Called
                 </button>
               ) : (

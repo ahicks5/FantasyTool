@@ -40,6 +40,21 @@ moves you make before kickoff. That difference is the whole brand.
   (`calledKey`, `booth.called.<league>.<week>` in localStorage). It is a checklist, not a lineup
   submission — we never write back to Sleeper or ESPN. When every call is ticked the sheet stamps
   itself clean.
+- **Nothing reloads when you flip tabs.** Every page mounts its own `AppShell`, so without a
+  cache each tab switch refetched and replayed the opening — the app read as if it reloaded
+  itself. `lib/cache.ts` holds the session's reads (`useCached` for a page's main resource,
+  `once()` for screens whose effects are tangled with local state), and `useSession` caches
+  `me` the same way. A cached page paints on the first frame and passes `animate={false}` so
+  it does not play its entry animation again. Deliberately in memory only: a hard reload still
+  gets fresh numbers, because projections move during the week.
+- **The booth opens once.** The narrated "pulling film / re-scoring" sequence is a good first
+  impression and an irritation the fourth time, so `claimFirstOpen()` gates it and every later
+  wait is a quiet skeleton.
+- **The room tightens toward kickoff** (`kickoffUrgency`): calm over a day out, the clock takes
+  colour inside 24h, and inside 2h it goes to the brand red, the label reads "Locks in" and the
+  ON AIR lamp beats faster (`OnAirLive`, `.lamp-fast`). The words always change with the colour.
+- **A made call is crossed off by hand**, not printed: `IconGreaseCheck` + `.grease` draws the
+  tick with a `pathLength="1"` dash, like a grease pencil on a laminated sheet.
 - **Kickoff countdown** (`nextKickoff`) is the next Sunday 1:00 PM ET slate, computed via `Intl`
   against `America/New_York` so it stays right across the November DST change. Tested both sides.
 

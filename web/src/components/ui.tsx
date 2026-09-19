@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Confidence, Verdict } from "@/lib/types";
-import { confidenceClass, confidenceInk, countdown, nextKickoff, verdictClass } from "@/lib/format";
+import { confidenceClass, confidenceInk, countdown, kickoffUrgency, nextKickoff, URGENCY_LABEL, verdictClass } from "@/lib/format";
+import { claimFirstOpen, hasOpened } from "@/lib/cache";
 import { IconCheck, IconChevron, IconClock, IconMoon, IconSun } from "./icons";
 
 export function Card({
@@ -49,6 +50,21 @@ export function OnAir({ className = "", label = "On air" }: { className?: string
     <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] ${className}`}>
       <span className="lamp" aria-hidden />
       {label}
+    </span>
+  );
+}
+
+/**
+ * The ON AIR chip on a live call sheet. Inside the last two hours the lamp beats
+ * faster and the words change with it, so the tempo is never the only cue.
+ */
+export function OnAirLive({ className = "" }: { className?: string }) {
+  const band = useKickoffBand();
+  const final = band === "final";
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] ${className}`}>
+      <span className={`lamp ${final ? "lamp-fast" : ""}`} aria-hidden />
+      {final ? "Last call" : "On air"}
     </span>
   );
 }
@@ -217,7 +233,11 @@ export function Stat({
 /* ------------------------------------------------------------------ clock ---
    The sheet is only urgent if it says how long you have.                       */
 
-/** Live time to the next Sunday 1pm ET slate. Ticks once a second inside the last day. */
+/**
+ * Live time to the next Sunday 1pm ET slate, and the booth's tension with it.
+ * Three days out it is reference; ninety minutes out it is a deadline, and the
+ * clock says so in colour while the label says so in words.
+ */
 export function Countdown({ onHero = false, className = "" }: { onHero?: boolean; className?: string }) {
   // Rendered empty on the server and filled on the client: the deadline depends
   // on the reader's current time, so server HTML would hydrate mismatched.
@@ -228,17 +248,43 @@ export function Countdown({ onHero = false, className = "" }: { onHero?: boolean
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
   }, []);
+
+  const band = left === null ? "open" : kickoffUrgency(left);
   const muted = onHero ? "text-white/55" : "text-muted";
-  const bright = onHero ? "text-white" : "text-ink";
+  // On the dark band the tense colours are the light steps; on paper, the text-safe ones.
+  const clock =
+    band === "final"
+      ? "text-signal"
+      : band === "soon"
+        ? onHero
+          ? "text-flip-fill"
+          : "text-flip"
+        : onHero
+          ? "text-white"
+          : "text-ink";
   return (
     <span className={`inline-flex items-center gap-1.5 ${className}`}>
-      <IconClock size={13} strokeWidth={2.2} className={muted} />
-      <span className={`text-[10px] font-black uppercase tracking-[0.14em] ${muted}`}>Kickoff</span>
-      <span className={`tnum text-[13px] font-black ${bright}`} suppressHydrationWarning>
+      <IconClock size={13} strokeWidth={2.2} className={band === "final" ? "text-signal" : muted} />
+      <span className={`text-[10px] font-black uppercase tracking-[0.14em] ${band === "final" ? "text-signal" : muted}`}>
+        {URGENCY_LABEL[band]}
+      </span>
+      <span className={`tnum text-[13px] font-black ${clock}`} suppressHydrationWarning>
         {left === null ? "—" : countdown(left)}
       </span>
     </span>
   );
+}
+
+/** True inside the last two hours before kickoff. Drives the lamp's tempo. */
+export function useKickoffBand(): "open" | "soon" | "final" {
+  const [left, setLeft] = useState<number | null>(null);
+  useEffect(() => {
+    const update = () => setLeft(nextKickoff() - Date.now());
+    update();
+    const id = setInterval(update, 30_000);
+    return () => clearInterval(id);
+  }, []);
+  return left === null ? "open" : kickoffUrgency(left);
 }
 
 /**
@@ -286,15 +332,29 @@ const OPENING = [
  * The booth coming on while the feed loads. These are the real phases the API
  * goes through; the ticks advance on a timer rather than on measured progress,
  * the way a loading sequence normally does.
+ *
+ * It only narrates once. The staged sequence is a good first impression and an
+ * irritation the fourth time, so every later wait is a quiet skeleton — the
+ * booth is already on, it is just fetching.
  */
 export function BoothOpening() {
+  // `hasOpened` is a pure read, so a double-invoked initialiser is harmless;
+  // the flag is claimed in an effect, which is idempotent.
+  const [full] = useState(() => !hasOpened());
   const [step, setStep] = useState(0);
   useEffect(() => {
+    claimFirstOpen();
+  }, []);
+  useEffect(() => {
+    if (!full) return;
     const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) return;
     const id = setInterval(() => setStep((s) => Math.min(s + 1, OPENING.length)), 420);
     return () => clearInterval(id);
-  }, []);
+  }, [full]);
+
+  if (!full) return <QuietWait />;
+
   return (
     <div className="hero callsheet sweep relative p-6" aria-busy="true" aria-label="Opening the booth">
       <OnAir className="text-white/70" />
@@ -317,6 +377,20 @@ export function BoothOpening() {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+/** Every wait after the first: the shape of the page, no narration. */
+function QuietWait() {
+  return (
+    <div aria-busy="true" aria-label="Loading">
+      <div className="hero callsheet sweep relative overflow-hidden p-6">
+        <Skeleton className="h-3 w-24 opacity-25" />
+        <Skeleton className="mt-3 h-8 w-52 opacity-25" />
+        <Skeleton className="mt-3 h-3 w-36 opacity-25" />
+      </div>
+      <SkeletonList rows={2} tall />
     </div>
   );
 }

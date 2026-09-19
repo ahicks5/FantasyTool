@@ -6,38 +6,34 @@ import { WaiverPlanView } from "@/components/WaiverPlanView";
 import { WaiversView } from "@/components/WaiversView";
 import { BoothOpening, ErrorBox, H2 } from "@/components/ui";
 import { getWaiverPlan, getWaivers, PaywallError } from "@/lib/api";
+import { once, useCached } from "@/lib/cache";
 import type { Connection } from "@/lib/storage";
 import type { WaiverPlanResponse, Waivers } from "@/lib/types";
 
 function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => void; signedIn: boolean }) {
-  const [plan, setPlan] = useState<WaiverPlanResponse | null>(null);
   const [board, setBoard] = useState<Waivers | null>(null);
-  const [paywall, setPaywall] = useState<PaywallError | null>(null);
-  const [error, setError] = useState("");
   const [showBoard, setShowBoard] = useState(false);
-  const [tick, setTick] = useState(0);
+
+  // Cached for the session: coming back to the wire paints on the first frame
+  // rather than flashing a loading state for one render.
+  const { data: plan, error, cause, reload } = useCached<WaiverPlanResponse>(
+    `waiverPlan:${c.platform}:${c.league_id}:${c.team_id}`,
+    () => getWaiverPlan(c.platform, c.league_id, c.team_id),
+  );
 
   useEffect(() => {
     let alive = true;
-    getWaiverPlan(c.platform, c.league_id, c.team_id)
-      .then((p) => alive && setPlan(p))
-      .catch((e: Error) => alive && (e instanceof PaywallError ? setPaywall(e) : setError(e.message)));
-    getWaivers(c.platform, c.league_id, c.team_id)
+    once(`waivers:${c.platform}:${c.league_id}:${c.team_id}`, () => getWaivers(c.platform, c.league_id, c.team_id))
       .then((b) => alive && setBoard(b))
       .catch(() => undefined);
     return () => {
       alive = false;
     };
-  }, [c.platform, c.league_id, c.team_id, tick]);
+  }, [c.platform, c.league_id, c.team_id]);
 
-  const load = () => {
-    setError("");
-    setPlan(null);
-    setTick((t) => t + 1);
-  };
-
-  if (paywall) return <Locked signedIn={signedIn} sku="waivers" what="Waiver Wire Pass" teaser={paywall.teaser} onUnlocked={refresh} />;
-  if (error) return <ErrorBox message={error} onRetry={load} />;
+  if (cause instanceof PaywallError)
+    return <Locked signedIn={signedIn} sku="waivers" what="Wire Pass" teaser={cause.teaser} onUnlocked={refresh} />;
+  if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (!plan) return <BoothOpening />;
 
   return (
@@ -70,7 +66,7 @@ export default function WaiversPage() {
           <WaiversBody c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
         ) : (
           <Locked signedIn={s.signedIn} sku="waivers"
-            what="Waiver Wire Pass"
+            what="Wire Pass"
             teaser="The booth prices every add against the player you would drop, tells you what to bid, and lines up a fallback claim for when you lose the first one."
             onUnlocked={s.refresh}
           />

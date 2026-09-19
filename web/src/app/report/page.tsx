@@ -1,5 +1,4 @@
 "use client";
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";
@@ -9,17 +8,17 @@ import { WaiverPlanView } from "@/components/WaiverPlanView";
 import { TradeFinderView } from "@/components/TradeFinderView";
 import { BoothOpening, ErrorBox, Eyebrow, H2, SplitMeter, VerdictWord } from "@/components/ui";
 import { getReport } from "@/lib/api";
+import { useCached } from "@/lib/cache";
 import { pct } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { Report } from "@/lib/types";
 
 function ReportBody({ c }: { c: Connection }) {
-  const [data, setData] = useState<Report | null>(null);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    getReport(c.platform, c.league_id, c.team_id).then(setData).catch((e: Error) => setError(e.message));
-  }, [c.platform, c.league_id, c.team_id]);
-  if (error) return <ErrorBox message={error} />;
+  const { data, error, reload } = useCached<Report>(
+    `report:${c.platform}:${c.league_id}:${c.team_id}`,
+    () => getReport(c.platform, c.league_id, c.team_id),
+  );
+  if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (!data) return <BoothOpening />;
 
   const m = data.matchup;

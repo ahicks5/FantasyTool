@@ -4,7 +4,7 @@ import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { PlayerLine } from "./Players";
 import { IconArrowUp, IconCheck } from "./icons";
-import { ConfidencePill, ConfidenceStamp, Countdown, Eyebrow, H2, OnAir, Stamp, useCountUp, Why } from "./ui";
+import { ConfidencePill, ConfidenceStamp, Countdown, Eyebrow, H2, OnAirLive, Stamp, useCountUp, Why } from "./ui";
 
 const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
 
@@ -43,7 +43,16 @@ function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
   );
 }
 
-export function LineupView({ lineup, compact = false }: { lineup: Lineup; compact?: boolean }) {
+export function LineupView({
+  lineup,
+  compact = false,
+  animate = true,
+}: {
+  lineup: Lineup;
+  compact?: boolean;
+  /** False when this came from the session cache: the board is already on screen. */
+  animate?: boolean;
+}) {
   const delta = lineup.projected_total - lineup.current_total;
   const projected = useCountUp(lineup.projected_total, 1);
   const set = delta <= 0.05;
@@ -52,7 +61,7 @@ export function LineupView({ lineup, compact = false }: { lineup: Lineup; compac
     <div className="grid min-w-0 gap-6">
       <section className="hero callsheet">
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
-          <OnAir className="text-white/70" />
+          <OnAirLive className="text-white/70" />
           <Countdown onHero />
         </div>
         <div className="flex items-end justify-between gap-4 p-5">
@@ -63,7 +72,7 @@ export function LineupView({ lineup, compact = false }: { lineup: Lineup; compac
           <div className="shrink-0 text-right">
             {set ? (
               // Inked white: the hero is dark in both themes, where status green would vanish.
-              <Stamp ink="text-white" slam>
+              <Stamp ink="text-white" slam={animate}>
                 <IconCheck size={12} strokeWidth={3.4} />
                 Board&rsquo;s set
               </Stamp>
@@ -87,7 +96,7 @@ export function LineupView({ lineup, compact = false }: { lineup: Lineup; compac
           </p>
           <ul className="mt-2.5 grid gap-2.5">
             {lineup.changes.map((c, i) => (
-              <li key={i} className={`card border-start/35 bg-start-soft p-4 print print-${Math.min(i + 1, 5)}`}>
+              <li key={i} className={`card border-start/35 bg-start-soft p-4 ${animate ? `print print-${Math.min(i + 1, 5)}` : ""}`}>
                 <div className="flex items-center justify-between gap-2">
                   <Eyebrow>{c.slot}</Eyebrow>
                   <ConfidenceStamp value={c.confidence} />
@@ -95,10 +104,10 @@ export function LineupView({ lineup, compact = false }: { lineup: Lineup; compac
                 {/* The swap, played as a swap: the benched name drops, the starter rises. */}
                 <div className="mt-2.5 flex min-w-0 items-center gap-2.5">
                   <span className="min-w-0 flex-1">
-                    <span className="demote block truncate text-[13px] font-bold text-sit line-through decoration-2">
+                    <span className={`${animate ? "demote" : "opacity-55"} block truncate text-[13px] font-bold text-sit line-through decoration-2`}>
                       {c.out?.name ?? "Empty"}
                     </span>
-                    <span className="promote mt-0.5 flex items-center gap-1 text-[15px] font-black text-start">
+                    <span className={`${animate ? "promote" : ""} mt-0.5 flex items-center gap-1 text-[15px] font-black text-start`}>
                       <IconArrowUp size={14} strokeWidth={3} />
                       <span className="truncate">{c.in.name}</span>
                     </span>
