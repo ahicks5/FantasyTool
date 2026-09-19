@@ -5,9 +5,11 @@ import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";
 import { Countdown, ErrorBox, Eyebrow, OnAirLive, Opening, Stamp, useHeldWait } from "@/components/ui";
 import { MatchupCell } from "@/components/MatchupCell";
+import { SheetGroup } from "@/components/SheetGroup";
 import { getActions, sendFeedback } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { calledKey, sheetStatus, signed } from "@/lib/format";
+import { groupActions, groupStatus } from "@/lib/sheet";
 import { loadCalled, saveCalled, type Connection } from "@/lib/storage";
 import type { Action, ActionFeed } from "@/lib/types";
 
@@ -106,6 +108,9 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
   // this week's feed — a stale id left in storage must not inflate the count.
   const callable = useMemo(() => feed.actions.filter(isCallable).map((a) => a.id), [feed]);
   const calledCount = useMemo(() => callable.filter((id) => called.includes(id)).length, [callable, called]);
+  // Grouped by the tab that owns each call, but numbered by the server's ranking across
+  // the whole sheet — `lib/sheet.ts` carries both halves and the reason.
+  const groups = useMemo(() => groupActions(feed.actions), [feed]);
 
   return (
     <div>
@@ -115,34 +120,47 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
         </div>
       )}
       <Sheet feed={feed} called={calledCount} total={callable.length} animate={animate} />
-      {/* `min-w-0` on the items: a grid track defaults to `min-width: auto`, and the clamped
-          title is a `-webkit-box` whose min-content width is the whole string — so without
-          this one card stretches the sheet sideways. */}
+      {/* Three benches, in tab order, always all three — the empty one is the point.
+          `min-w-0` on the items: a grid track defaults to `min-width: auto`, and a
+          clamped card title is a `-webkit-box` whose min-content width is the whole
+          string, so without this one card stretches the sheet sideways. */}
       <ol className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3.5">
-        {feed.actions.map((a, i) => (
-          <li key={a.id} className="min-w-0">
-            <ActionCard
-              a={a}
-              n={i + 1}
-              delay={i + 1}
+        {groups.map((g, gi) => (
+          <li key={g.key} className="min-w-0">
+            <SheetGroup
+              group={g.key}
+              status={groupStatus(g.key, g.items)}
+              count={g.items.length}
               animate={animate}
-              called={called.includes(a.id)}
-              leagueName={feed.league}
-              week={feed.week}
-              onCall={isCallable(a) ? () => toggle(a.id) : undefined}
-              onFeedback={(verdict, reason) =>
-                sendFeedback({
-                  platform: c.platform,
-                  league_id: c.league_id,
-                  team_id: c.team_id,
-                  action_id: a.id,
-                  action_type: a.type,
-                  verdict,
-                  reason,
-                  week: feed.week,
-                }).catch(() => undefined)
-              }
-            />
+              delay={gi + 1}
+            >
+              {g.items.map(({ action: a, n }) => (
+                <li key={a.id} className="min-w-0">
+                  <ActionCard
+                    a={a}
+                    n={n}
+                    delay={n}
+                    animate={animate}
+                    called={called.includes(a.id)}
+                    leagueName={feed.league}
+                    week={feed.week}
+                    onCall={isCallable(a) ? () => toggle(a.id) : undefined}
+                    onFeedback={(verdict, reason) =>
+                      sendFeedback({
+                        platform: c.platform,
+                        league_id: c.league_id,
+                        team_id: c.team_id,
+                        action_id: a.id,
+                        action_type: a.type,
+                        verdict,
+                        reason,
+                        week: feed.week,
+                      }).catch(() => undefined)
+                    }
+                  />
+                </li>
+              ))}
+            </SheetGroup>
           </li>
         ))}
       </ol>
