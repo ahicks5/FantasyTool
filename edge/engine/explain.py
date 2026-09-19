@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 
+from edge.engine.copy import with_article
 from edge.engine.trade import ACCEPT, COUNTER, REJECT, Verdict
 
 MODEL = os.environ.get("EDGE_CLAUDE_MODEL", "claude-opus-5")
@@ -45,8 +46,7 @@ def template(v: Verdict) -> str:
     s += f" Their lineup moves {them.lineup_delta_ros:+.0f}."
     style = v.their_tendencies.get("style")
     if style:
-        article = "an" if style[0] in "aeiou" else "a"
-        s += f" This manager is {article} {style}."
+        s += f" This manager is {with_article(style)}."
     if v.counter:
         s += f" Counter: {', '.join(v.counter['give_names'])} for {', '.join(v.counter['get_names'])}. {v.counter['why']}"
     return s

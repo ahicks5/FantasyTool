@@ -11,7 +11,8 @@ from pydantic import BaseModel
 from edge import products
 from edge.api import service, share as share_mod
 from edge.api.auth import current_user, optional_user
-from edge.api.store import Store
+from edge.api.limits import RateLimitMiddleware, cors_origins, validate_id, validate_platform
+from edge.api.store import open_store
 from edge.connectors import sleeper
 from edge.engine import grades
 from edge.engine import lineup as lineup_mod
@@ -20,9 +21,11 @@ from edge.engine import report, trade, trade_finder, waiver_plan, waivers
 from edge.engine.explain import explain
 
 app = FastAPI(title="Penthouse API", version="0.1")
-app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("EDGE_CORS", "*").split(","),
+app.add_middleware(CORSMiddleware, allow_origins=cors_origins(),
                    allow_methods=["*"], allow_headers=["*"])
-store = Store()
+# Outermost, so a refused request costs a dict lookup rather than an upstream fetch.
+app.add_middleware(RateLimitMiddleware)
+store = open_store()
 
 
 def _season() -> int:
@@ -68,6 +71,10 @@ def espn_auth(x_espn_s2: str | None = Header(default=None),
 
 def _bundle(platform: str, league_id: str, auth=None) -> service.Bundle:
     from edge.data.espn_api import EspnLeagueNotFound, EspnPrivateLeague
+    # Every league route funnels through here, so this is the one place identifiers from
+    # the URL have to be checked before they are built into an upstream request.
+    validate_platform(platform)
+    validate_id(league_id, "league id")
     try:
         return service.get_bundle(platform, league_id, auth=auth)
     except EspnPrivateLeague as e:
@@ -182,10 +189,22 @@ async def stripe_webhook(request: Request):
     from edge.api import payments
     payload = await request.body()
     sig = request.headers.get("stripe-signature", "")
-    grant = payments.parse_webhook(payload, sig)
-    if grant:
-        store.grant(grant["email"], grant["sku"], grant["season"], source="stripe", ref=grant["ref"])
-    return {"received": True, "granted": bool(grant)}
+    event = payments.parse_webhook(payload, sig)
+    if not event:
+        return {"received": True, "granted": False, "revoked": 0, "restored": 0}
+
+    if event["action"] == "grant":
+        store.grant(event["email"], event["sku"], event["season"], source="stripe",
+                    ref=event["ref"], payment_ref=event.get("payment_ref", ""))
+        return {"received": True, "granted": True, "revoked": 0, "restored": 0}
+
+    # A refund or chargeback withdraws access; a dispute we win gives it back.
+    if event["action"] == "revoke":
+        n = store.revoke(event["payment_ref"])
+        return {"received": True, "granted": False, "revoked": n, "restored": 0, "reason": event.get("reason")}
+
+    n = store.restore(event["payment_ref"])
+    return {"received": True, "granted": False, "revoked": 0, "restored": n, "reason": event.get("reason")}
 
 
 # ---- leagues ----

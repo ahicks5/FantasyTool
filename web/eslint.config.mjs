@@ -10,6 +10,8 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
+    // `npm run demo:pack` output — generated, and a copy of out/ at that.
+    "outpub/**",
     "build/**",
     "next-env.d.ts",
   ]),

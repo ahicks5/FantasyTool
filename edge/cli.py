@@ -116,6 +116,31 @@ def cmd_email(args):
     print("Preview:", mail["preheader"])
     print("Wrote   ", out / "weekly.html", "and", out / "weekly.txt")
 
+    if not args.to:
+        return
+    from edge.delivery.send import DryRunSender, SendError, sender_from_env
+
+    try:
+        sender = sender_from_env()
+    except SendError as e:
+        raise SystemExit(f"error: {e}")
+
+    # Two locks, not one: the environment has to name a real provider *and* --send has to
+    # be passed. Sending is the only thing here that cannot be taken back.
+    if not args.send:
+        sender = DryRunSender()
+        print("Dry run  — add --send to deliver this for real.")
+    elif isinstance(sender, DryRunSender):
+        print("Dry run  — set EDGE_EMAIL_PROVIDER=resend (with RESEND_API_KEY and "
+              "EDGE_EMAIL_FROM) to deliver this for real.")
+
+    try:
+        result = sender.send(to=args.to, subject=mail["subject"], html=mail["html"], text=mail["text"])
+    except SendError as e:
+        raise SystemExit(f"error: {e}")
+    print(f"{'Would send' if result.dry_run else 'Sent'} to {result.to} via {result.provider}"
+          + (f" (id {result.id})" if result.id else ""))
+
 
 def cmd_economics(args):
     """Print the unit-economics decision table. No network: pure model, explicit assumptions."""
@@ -162,6 +187,9 @@ def main(argv: list[str] | None = None):
     s = sub.add_parser("email", help="render this week's email for a team")
     s.add_argument("league_id"); s.add_argument("team_id", help="roster id or owner name")
     s.add_argument("--platform", default="sleeper"); s.add_argument("--out", default="launch/email")
+    s.add_argument("--to", help="email address to deliver to (renders only if omitted)")
+    s.add_argument("--send", action="store_true",
+                   help="actually deliver it; without this --to is a dry run")
     s.add_argument("--base-url", default="https://penthouse.example")
     s.add_argument("--features", default="", help="comma list, e.g. my_team to preview the free version")
     s.set_defaults(fn=cmd_email)

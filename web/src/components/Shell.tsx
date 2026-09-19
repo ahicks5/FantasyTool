@@ -3,6 +3,7 @@ import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
 import { IconFilm, IconSheet, IconTeam, IconTrade, IconWire } from "./icons";
+import { UnlockingBanner, useUnlockOnReturn } from "./Unlocking";
 import { LinkButton, OnAir, Opening, Spinner, ThemeToggle, Wordmark } from "./ui";
 import { SECTIONS, TAB_ORDER, type SectionKey, type TabKey } from "@/lib/vocab";
 
@@ -37,7 +38,7 @@ export function TopBar({ session }: { session: Session }) {
         <ThemeToggle />
         <Link
           href="/login"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line-2 text-[11px] font-black uppercase text-ink-2 hover:bg-soft"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-2 text-[11px] font-black uppercase text-ink-2 hover:bg-soft"
           title={email ?? "Sign in"}
           aria-label={email ? `Account ${email}` : "Sign in"}
         >
@@ -176,6 +177,9 @@ export function AppShell({
 }) {
   const session = useSession();
   const { title, gate } = SECTIONS[section];
+  // Someone returning from Stripe lands on one of these pages, so the wait for the
+  // entitlement belongs here rather than in each one.
+  const unlock = useUnlockOnReturn(session.refresh);
   return (
     <div className="flex min-h-screen flex-col">
       <TopBar session={session} />
@@ -184,6 +188,7 @@ export function AppShell({
           <h1 className="truncate text-[26px]">{title}</h1>
           {aside}
         </div>
+        <UnlockingBanner state={unlock} />
         {needsMe && session.loading ? (
           <Opening />
         ) : session.connection ? (

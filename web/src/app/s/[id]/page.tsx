@@ -7,8 +7,12 @@ import { signed, verdictBlurb } from "@/lib/format";
 import type { SharedVerdict } from "@/lib/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
+/** The static demo (`npm run demo`) has no API to read a snapshot from. */
+const DEMO = process.env.EDGE_DEMO_EXPORT === "1";
 
 async function load(id: string): Promise<SharedVerdict | null> {
+  // Imported lazily so the mock rosters stay out of the real server bundle.
+  if (DEMO) return (await import("@/lib/mocks")).sharedVerdictDemo();
   if (!API) return null;
   try {
     const res = await fetch(`${API}/api/share/${encodeURIComponent(id)}`, { next: { revalidate: 300 } });
@@ -17,6 +21,15 @@ async function load(id: string): Promise<SharedVerdict | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Real share ids are minted at runtime, so none exist at build time and pages render on
+ * demand (dynamicParams defaults to true). `output: "export"` refuses an empty list, so
+ * the static demo pre-renders its one sample verdict instead.
+ */
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  return DEMO ? [{ id: "demo" }] : [];
 }
 
 /** Unfurls in a league chat, a subreddit or a Discord — that is the whole point of the page. */
@@ -142,7 +155,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href="/" aria-label="Penthouse home">
+        <Link href="/" aria-label="Penthouse home" className="flex min-h-11 items-center">
           <Wordmark className="text-[26px]" />
         </Link>
         <span className="min-w-0 truncate text-right text-[12px] font-bold text-muted">

@@ -51,6 +51,10 @@
 
   --color-start: #22a468;      /* good — start, gain, accept */
   --color-start-soft: #10281d;
+  /* An accent used as a fill behind white text cannot be the value used as text on
+     near-black: one must be dark enough for white to read on it, the other light
+     enough to read on the plane. White on #0e7a4b is 5.4:1; on #22a468 it is 3.2:1. */
+  --color-start-fill: #0e7a4b;
   --color-sit: #e2554e;        /* critical — sit, loss, reject */
   --color-sit-soft: #2d1614;
   --color-lean: #5b8def;       /* info — lean, waiver */
@@ -115,6 +119,7 @@
 
   --color-start: #0b7a4b;
   --color-start-soft: #e4f2ea;
+  --color-start-fill: #0b7a4b;
   --color-sit: #c02b23;
   --color-sit-soft: #fbe9e7;
   --color-lean: #1e4fd8;

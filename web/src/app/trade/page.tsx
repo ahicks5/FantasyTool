@@ -154,7 +154,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   const [sheet, setSheet] = useState<"give" | "get" | null>(null);
   const [result, setResult] = useState<TradeResult | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const [paywall, setPaywall] = useState<PaywallError | null>(null);
   const [found, setFound] = useState<TradeFinderResponse | null>(null);
   const [tab, setTab] = useState<"find" | "grade">(params.get("give") ? "grade" : "find");
@@ -169,7 +169,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
         setMine(sortRoster(roster.players));
         setTheirId((cur) => cur || l.teams.find((t) => t.id !== c.team_id)?.id || "");
       })
-      .catch((e: Error) => setError(e.message));
+      .catch((e: unknown) => setError(e));
   }, [c.platform, c.league_id, c.team_id]);
 
   useEffect(() => {
@@ -187,7 +187,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
     let alive = true;
     once(`roster:${c.platform}:${c.league_id}:${theirId}`, () => getRoster(c.platform, c.league_id, theirId))
       .then((r) => alive && setTheirs(sortRoster(r.players)))
-      .catch((e: Error) => alive && setError(e.message));
+      .catch((e: unknown) => alive && setError(e));
     return () => {
       alive = false;
     };
@@ -205,14 +205,14 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
   async function submit() {
     setBusy(true);
-    setError("");
+    setError(null);
     try {
       const r = await evaluateTrade(c.platform, c.league_id, { my_team_id: c.team_id, their_team_id: theirId, give, get });
       setResult(r);
       setTimeout(() => document.getElementById("verdict")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     } catch (e) {
       if (e instanceof PaywallError) setPaywall(e);
-      else setError((e as Error).message);
+      else setError(e);
     } finally {
       setBusy(false);
     }
@@ -232,7 +232,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   }, [mine.length, theirs.length, autoRan]);
 
   if (paywall) return <Locked signedIn={signedIn} sku="trade_lab" what="Trade Lab" teaser={paywall.teaser} onUnlocked={refresh} />;
-  if (error && !league) return <ErrorBox message={error} />;
+  if (error && !league) return <ErrorBox error={error} />;
   if (!league) return <SkeletonList rows={3} />;
 
   return (
@@ -316,7 +316,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
           {busy ? "Grading it…" : `Grade ${give.length}-for-${get.length}`}
         </Button>
       </div>
-      {error && <ErrorBox message={error} />}
+      {error && <ErrorBox error={error} />}
 
       {result && (
         <div id="verdict" className="grid gap-4 scroll-mt-16">
@@ -418,11 +418,11 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
 
   async function make() {
     setBusy(true);
-    setError("");
+    setError(null);
     try {
       const r = await createShare({
         graphic: result.graphic,
@@ -434,7 +434,7 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
       });
       setUrl(r.url);
     } catch (e) {
-      setError((e as Error).message);
+      setError(e);
     } finally {
       setBusy(false);
     }
@@ -456,7 +456,7 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
         <Button variant="secondary" onClick={make} busy={busy} className="w-full">
           {busy ? "Making the link…" : "Make a share link"}
         </Button>
-        {error && <p className="mt-2 text-sm text-sit">{error}</p>}
+        {error ? <ErrorBox error={error} /> : null}
       </>
     );
 

@@ -138,6 +138,23 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 ## Next up
 - [x] Wire web to the real API end-to-end in a browser (headless Chromium, 375px, live league, 0
       console errors) — now runs on every push rather than by hand
+- [x] Weekly email can actually send: Resend behind EDGE_EMAIL_PROVIDER, with a dry run
+      as the default and `--send` required on top of it. Needs a verified domain and a
+      RESEND_API_KEY to go live.
+- [x] Post-checkout unlock: the app waits for the Stripe webhook's grant instead of
+      showing a buyer the page they just paid to unlock, still locked. Checkout return
+      URLs are now origin-checked (they were an open redirect).
+- [x] Terms + Privacy pages, linked from the landing footer and the paywall. Stripe's
+      live-mode review asks for both. Needs NEXT_PUBLIC_SUPPORT_EMAIL and
+      NEXT_PUBLIC_LEGAL_EFFECTIVE set before launch — `missingLegalConfig()` lists them.
+- [x] CI (.github/workflows/ci.yml): pytest, web lint/test/build, and the demo export,
+      all offline. `.env.example` in both packages documents every variable the code reads.
+- [x] Static demo build (`npm run demo` + `npm run demo:pack`): the real app exported to
+      static files, driven by the recorded Megalabowl fixtures, with a league pre-connected
+      so the link opens on the action feed. Lets the app be handed to a phone or a group
+      chat before the API is deployed. Player headshots are the one thing it loses on a
+      host that blocks third-party images; the Avatar initials underneath cover it.
+- [x] Wire web to the real API end-to-end in a browser (headless Chromium, 375px, live league, 0 console errors)
 - [~] Supabase magic-link login: /login page + JWT header wired; untested against a real Supabase project (needs your keys)
 - [ ] Real Stripe test-mode checkout run (needs STRIPE_SECRET_KEY / webhook secret)
 - [x] Deploy: web on Vercel, API on Render (https://edge-api-gi8d.onrender.com). Both live,

@@ -11,7 +11,7 @@ function LoginInner() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const [current, setCurrent] = useState<string | null>(null);
   const configured = supabaseConfigured();
   const dev = process.env.NEXT_PUBLIC_DEV_USER;
@@ -23,12 +23,12 @@ function LoginInner() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setError("");
+    setError(null);
     try {
       await sendMagicLink(email.trim(), next);
       setSent(true);
     } catch (err) {
-      setError((err as Error).message);
+      setError(err);
     } finally {
       setBusy(false);
     }
@@ -37,7 +37,7 @@ function LoginInner() {
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between">
-        <Link href="/" aria-label="Penthouse home">
+        <Link href="/" aria-label="Penthouse home" className="flex min-h-11 items-center">
           <Wordmark className="text-[26px]" />
         </Link>
         <ThemeToggle />
@@ -111,7 +111,7 @@ function LoginInner() {
             <Button type="submit" className="w-full" busy={busy} disabled={!email}>
               {busy ? "Sending…" : "Email me a sign-in link"}
             </Button>
-            {error && <ErrorBox message={error} />}
+            {error ? <ErrorBox error={error} /> : null}
           </form>
         )}
       </div>

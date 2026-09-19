@@ -13,6 +13,7 @@ import {
   URGENCY_LABEL,
   verdictClass,
 } from "@/lib/format";
+import { describeError, isOnline } from "@/lib/errors";
 import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitPhase } from "@/lib/wait";
 import { IconCheck, IconChevron, IconClock, IconCrown, IconMoon, IconSun, IconThumbDown, IconThumbUp } from "./icons";
 
@@ -583,7 +584,7 @@ const VARIANTS = {
   primary: "bg-ink text-paper hover:opacity-90 shadow-[var(--shadow-card)]",
   secondary: "bg-paper text-ink border border-line-2 hover:bg-soft",
   ghost: "bg-transparent text-ink hover:bg-soft",
-  start: "bg-start text-white hover:brightness-110 shadow-[var(--shadow-card)]",
+  start: "bg-start-fill text-white hover:brightness-110 shadow-[var(--shadow-card)]",
   // `text-ink` flips to near-white in dark mode, so a white button would vanish. The hero
   // surface colour is dark in both modes, which is exactly what this needs.
   onHero: "bg-white text-hero hover:opacity-90",
@@ -660,7 +661,7 @@ export function ThemeToggle() {
     <button
       onClick={flip}
       aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      className="flex h-9 w-9 min-h-0 items-center justify-center rounded-full text-muted hover:bg-soft hover:text-ink"
+      className="flex h-11 w-11 min-h-0 items-center justify-center rounded-full text-muted hover:bg-soft hover:text-ink"
     >
       {theme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
     </button>
@@ -723,12 +724,15 @@ export function LoadingBar({ className = "" }: { className?: string }) {
   );
 }
 
-export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void }) {
+export function ErrorBox({ error, message, onRetry }: { error?: unknown; message?: string; onRetry?: () => void }) {
+  // navigator.onLine is read at render: a dropped connection explains every other
+  // symptom, and "you are offline" beats "Penthouse is having a problem" when it is a tunnel.
+  const copy = describeError(error ?? message, { online: isOnline() });
   return (
-    <div className="rounded-[var(--radius-card)] border border-sit bg-sit-soft p-4 text-sit">
-      <div className="font-bold">Something went wrong</div>
-      <div className="mt-0.5 text-sm">{message}</div>
-      {onRetry && (
+    <div role="alert" className="rounded-[var(--radius-card)] border border-sit bg-sit-soft p-4 text-sit">
+      <div className="font-bold">{copy.title}</div>
+      <div className="mt-0.5 text-sm">{copy.detail}</div>
+      {onRetry && copy.canRetry && (
         <button onClick={onRetry} className="mt-2 min-h-0 text-sm font-bold underline">
           Try again
         </button>
