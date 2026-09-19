@@ -1,4 +1,5 @@
 "use client";
+/** GM's Office: the Trade Finder board, and the Trade Lab verdict on a trade you propose. */
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/Shell";

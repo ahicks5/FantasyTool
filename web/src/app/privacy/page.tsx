@@ -1,3 +1,4 @@
+/** The privacy policy. docs/DATA_INVENTORY.md is the source of truth; if they disagree this page is stale. */
 import type { Metadata } from "next";
 import { Bullets, LegalPage, Section } from "@/components/LegalPage";
 import { LEGAL } from "@/lib/legal";

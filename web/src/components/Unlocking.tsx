@@ -1,4 +1,5 @@
 "use client";
+/** The gap between a cleared card and a written entitlement, made visible instead of confusing. */
 import { useEffect, useRef, useState } from "react";
 import { getMe, getProducts } from "@/lib/api";
 import { PRODUCTS as FALLBACK } from "@/lib/mocks";

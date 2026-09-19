@@ -1,3 +1,4 @@
+/** What the browser remembers: the connected league, and the calls already ticked off. */
 import { useSyncExternalStore } from "react";
 import type { Platform } from "./types";
 

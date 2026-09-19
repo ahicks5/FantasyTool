@@ -1,5 +1,3 @@
-import type { Feature, Me, Product, Sku } from "./types";
-
 /**
  * Waiting for a purchase to take effect.
  *
@@ -11,6 +9,8 @@ import type { Feature, Me, Product, Sku } from "./types";
  *
  * So the page that receives the buyer waits for the grant instead of assuming it.
  */
+
+import type { Feature, Me, Product, Sku } from "./types";
 
 export interface PollOptions {
   /** How many times to ask before giving up. */

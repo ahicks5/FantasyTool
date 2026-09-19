@@ -1,7 +1,4 @@
 "use client";
-import type { Depth, Grade, Grades, PositionGrade } from "@/lib/types";
-import { Eyebrow, H2 } from "./ui";
-
 /* ------------------------------------------------------------- the device ---
    A grade is a read on the roster, not a call the user has to make, so it never
    gets a stamp — stamps are reserved for decisions. It gets its own device: a
@@ -13,6 +10,9 @@ import { Eyebrow, H2 } from "./ui";
    more resolution than the colour does (Loaded / Strong / Even / Soft / Hole
    across three tones), so the scale still reads with the colour stripped out.
    The tones are the validated status colours — nothing new is mixed here.      */
+
+import type { Depth, Grade, Grades, PositionGrade } from "@/lib/types";
+import { Eyebrow, H2 } from "./ui";
 
 type Tone = "start" | "flip" | "sit";
 

@@ -1,9 +1,4 @@
 "use client";
-import { useState } from "react";
-import { createShare } from "@/lib/api";
-import type { LockCall } from "@/lib/types";
-import { Button, ErrorBox } from "./ui";
-
 /**
  * Turns a start/sit call into a public link — free, no account, no purchase.
  *
@@ -14,6 +9,12 @@ import { Button, ErrorBox } from "./ui";
  * It sits on its own line under the card's controls rather than joining them: that row is
  * already tuned to pair up at 320px, and a fifth control will not fit a 211px line.
  */
+
+import { useState } from "react";
+import { createShare } from "@/lib/api";
+import type { LockCall } from "@/lib/types";
+import { Button, ErrorBox } from "./ui";
+
 export function ShareLock({ call, leagueName, week }: { call: LockCall; leagueName: string; week: number }) {
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);

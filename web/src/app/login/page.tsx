@@ -1,4 +1,5 @@
 "use client";
+/** Sign in with a magic link, or run as NEXT_PUBLIC_DEV_USER when Supabase is not configured. */
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";

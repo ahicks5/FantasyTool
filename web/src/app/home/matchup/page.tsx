@@ -1,4 +1,14 @@
 "use client";
+/**
+ * The full read on this week's opponent: the scoreline, the win meter, and every
+ * starting slot set against the slot opposite it.
+ *
+ * Built from two calls to the free `/lineup` endpoint — yours and theirs — so it is
+ * the engine's own flex-aware lineups being compared, and it needs no API this app is
+ * not already shipping against. The maths lives in `lib/matchup.ts`, which is pure and
+ * tested; this file only lays it out.
+ */
+
 import Link from "next/link";
 import { AppShell } from "@/components/Shell";
 import { Avatar } from "@/components/Avatar";
@@ -10,16 +20,6 @@ import { EVEN_MARGIN, matchupCall, printProj, splitMatchup, type SlotDuel } from
 import type { Connection } from "@/lib/storage";
 import type { ActionFeed, Lineup, Player } from "@/lib/types";
 import { IconChevron } from "@/components/icons";
-
-/**
- * The full read on this week's opponent: the scoreline, the win meter, and every
- * starting slot set against the slot opposite it.
- *
- * Built from two calls to the free `/lineup` endpoint — yours and theirs — so it is
- * the engine's own flex-aware lineups being compared, and it needs no API this app is
- * not already shipping against. The maths lives in `lib/matchup.ts`, which is pure and
- * tested; this file only lays it out.
- */
 
 /**
  * One slot, both sides, stacked.

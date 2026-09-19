@@ -1,4 +1,5 @@
 "use client";
+/** Scouting: the waiver plan over the ranked free-agent board. */
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";

@@ -1,4 +1,5 @@
 "use client";
+/** The kit: the shared devices every screen is built from — cards, stamps, meters, waits, the wordmark. */
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import type { Confidence, Verdict } from "@/lib/types";

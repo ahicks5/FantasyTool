@@ -1,8 +1,9 @@
+/** Shared chrome and typography for /terms and /privacy. Plain, readable, no app shell. */
+
 import Link from "next/link";
 import { Wordmark } from "./ui";
 import { LEGAL } from "@/lib/legal";
 
-/** Shared chrome and typography for /terms and /privacy. Plain, readable, no app shell. */
 export function LegalPage({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-16">

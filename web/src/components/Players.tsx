@@ -1,8 +1,9 @@
+/** Name over position/team, with a headshot. The name column always gets the slack. */
+
 import type { Player } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { InjuryTag } from "./ui";
 
-/** Name over position/team, with a headshot. The name column always gets the slack. */
 export function PlayerLine({
   p,
   big = false,

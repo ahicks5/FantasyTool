@@ -1,4 +1,5 @@
 "use client";
+/** Connect a league: Sleeper by username, ESPN by id, and the cookie form a private ESPN league needs. */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
