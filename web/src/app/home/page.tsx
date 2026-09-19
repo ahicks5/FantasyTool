@@ -50,10 +50,25 @@ function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: num
             eases from 0.0 to 121.4 re-wraps the whole paragraph while it climbs — the
             reserved width stops the reflow but not the reading. The scoreboard number
             below is the one that gets to animate. */}
+        {/* "Projected 103.6 +0.1 if you make every call" was sixty-one characters on a
+            forty-five character line, so it wrapped and took a third of the hero. The
+            upside reads as where-to-where instead: two numbers and an arrow say the same
+            thing in five characters, and say it better, because the old form printed the
+            *finished* total and then a gain you could not locate against it. The arrow is
+            decorative to a screen reader, which gets the word instead. */}
         <p className="mt-2.5 text-[13px] text-white/60">
           Synced {ago(feed.synced_at)} · Projected{" "}
-          <span className="tnum font-bold text-white">{feed.projected_total.toFixed(1)}</span>
-          {delta > 0.05 && <span className="tnum font-bold text-start"> {signed(delta)} if you make every call</span>}
+          {delta > 0.05 ? (
+            <>
+              <span className="tnum">{feed.current_total.toFixed(1)}</span>
+              <span aria-hidden> → </span>
+              <span className="sr-only"> rising to </span>
+              <span className="tnum font-bold text-start">{feed.projected_total.toFixed(1)}</span>
+              <span className="sr-only"> if you make every call</span>
+            </>
+          ) : (
+            <span className="tnum font-bold text-white">{feed.projected_total.toFixed(1)}</span>
+          )}
         </p>
 
         {total > 0 && (
@@ -131,6 +146,11 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
               group={g.key}
               status={groupStatus(g.key, g.items)}
               count={g.items.length}
+              // Collapsed is the default, so a group that is fully worked through has to
+              // say so on the row itself. Otherwise the greyed-out cards proving it are
+              // behind a tap and the sheet looks the same at 0 of 3 as at 3 of 3.
+              done={g.items.filter(({ action }) => isCallable(action) && called.includes(action.id)).length}
+              total={g.items.filter(({ action }) => isCallable(action)).length}
               animate={animate}
               delay={gi + 1}
             >

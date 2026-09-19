@@ -22,6 +22,8 @@ export function SheetGroup({
   group,
   status,
   count,
+  done = 0,
+  total = 0,
   animate = true,
   delay = 0,
   children,
@@ -31,6 +33,10 @@ export function SheetGroup({
   status: string | null;
   /** How many cards are folded underneath. Nothing to open means nothing to toggle. */
   count: number;
+  /** Calls on this bench already ticked off, out of `total` that can be ticked at all. */
+  done?: number;
+  /** Callable calls here. A hold is not one, so a bench of holds is never "worked". */
+  total?: number;
   /** False when this came from the session cache: it is already "on screen". */
   animate?: boolean;
   delay?: number;
@@ -40,17 +46,33 @@ export function SheetGroup({
   const panelId = useId();
   const section = SECTIONS[group];
   const expandable = count > 0;
+  // Every call on this bench is made. The row recedes to match the cards underneath it,
+  // so scanning the sheet answers "what is left" without opening anything.
+  const worked = total > 0 && done >= total;
 
   const head = (
     <>
       {/* `min-w-0` or the truncating status line sets this track's min-content width to
           the whole string and pushes the arrow off a 320px screen. */}
       <span className="min-w-0 flex-1">
-        <span className="display block truncate text-[17px] leading-tight">{section.title}</span>
+        {/* The title recedes rather than the whole row. Fading the `<section>` was the
+            obvious move and the wrong one: the arrow beside it is a 44px navigation
+            target, and dropping a control to 55% opacity to say something about the text
+            next to it is how a link ends up under its contrast floor. */}
+        <span
+          className={`display block truncate text-[17px] leading-tight transition-colors ${
+            worked ? "text-muted" : ""
+          }`}
+        >
+          {section.title}
+        </span>
         <span
           className={`mt-1 block truncate text-[12px] font-semibold leading-tight text-muted ${status ? "tnum" : ""}`}
         >
           {status ?? GROUPS[group].clear}
+          {/* Opacity alone is not a channel a screen reader or a greyscale eye can read,
+              and "all of them" is the one number worth saying out loud. */}
+          {worked && <span className="text-start"> · all called</span>}
         </span>
       </span>
       {/* Pinned top-right rather than trailing the sentence it belongs to.
