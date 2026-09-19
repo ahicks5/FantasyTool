@@ -1,4 +1,12 @@
 "use client";
+/**
+ * Asks for the two ESPN cookies a private league needs, and says plainly what happens to them.
+ *
+ * `expired` switches the copy: the first time we are asking for something they have not given
+ * us, the second time we are telling them what they gave us has stopped working. Same form,
+ * different sentence, and the difference is the whole of the user's problem.
+ */
+
 import { useState } from "react";
 import { clearEspnAuth, saveEspnAuth, useEspnAuth } from "@/lib/espnAuth";
 import { IconLock } from "@/components/icons";
@@ -7,13 +15,6 @@ import { Button } from "@/components/ui";
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 font-mono text-[13px] text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
 
-/**
- * Asks for the two ESPN cookies a private league needs, and says plainly what happens to them.
- *
- * `expired` switches the copy: the first time we are asking for something they have not given
- * us, the second time we are telling them what they gave us has stopped working. Same form,
- * different sentence, and the difference is the whole of the user's problem.
- */
 export function EspnAuthForm({
   expired = false,
   onSaved,

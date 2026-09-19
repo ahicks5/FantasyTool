@@ -7,6 +7,9 @@ the number under it — and we publish our own hit rate every week.
 The Python package is still `edge/` (renaming it would touch every import for no user-visible gain).
 Anything a user reads says Penthouse.
 
+Working on this? `CLAUDE.md` is the rules and **`docs/MAP.md`** is where everything lives —
+including a routing table from "I want to change X" to the files and the test that cover it.
+
 ## Run it
 ```bash
 # API (Python 3.11, uv)

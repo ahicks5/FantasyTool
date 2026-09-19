@@ -1,4 +1,5 @@
 "use client";
+/** Who is signed in, which league they are looking at, and what they have paid for. */
 import { useEffect, useState } from "react";
 import { useConnection, type Connection } from "./storage";
 import { getMe } from "./api";

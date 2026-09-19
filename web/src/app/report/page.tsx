@@ -1,4 +1,5 @@
 "use client";
+/** The film: the whole week in one payload, for The Penthouse bundle. */
 import Link from "next/link";
 import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";

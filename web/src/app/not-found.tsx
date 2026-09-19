@@ -1,3 +1,4 @@
+/** The 404 page, deliberately not indexed. */
 import Link from "next/link";
 import { LinkButton, Wordmark } from "@/components/ui";
 

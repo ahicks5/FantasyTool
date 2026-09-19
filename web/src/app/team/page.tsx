@@ -1,4 +1,5 @@
 "use client";
+/** The depth chart: the week's lineup, the start/sit calls and the scorecard. Free tier. */
 import { AppShell } from "@/components/Shell";
 import { LineupView } from "@/components/LineupView";
 import { ErrorBox, Opening, useHeldWait } from "@/components/ui";

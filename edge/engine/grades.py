@@ -33,6 +33,10 @@ Two rules make these mean something rather than just look like something:
    useful. The margin it measured is kept: it is on the payload as `edge_starters` and in
    every note, so the letter says where you are and the note says by how much.
 
+A known consequence of anchoring on rank: a league of seven or fewer has fewer ranks than
+the scale has steps, so nobody in it can reach A+ or F. That is a property, not a bug —
+`test_a_small_league_cannot_reach_the_ends_of_the_scale` pins it so it stops being a surprise.
+
 Grades are a read on the roster, not a call to make, so they never get a stamp in the UI.
 """
 from __future__ import annotations

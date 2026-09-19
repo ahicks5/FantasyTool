@@ -1,4 +1,5 @@
 "use client";
+/** One call on the call sheet: the move, the reason, the stamp, and the tick that crosses it off. */
 import Link from "next/link";
 import type { Action, LockCall, Player, SharedPlayer } from "@/lib/types";
 import { Avatar } from "./Avatar";

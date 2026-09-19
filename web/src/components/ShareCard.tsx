@@ -1,4 +1,10 @@
 "use client";
+/**
+ * The marketing asset: a 1080x1080 card rendered at full size and scaled to fit. It is
+ * deliberately hard-coded to the light palette — it gets posted to Reddit and X, where it has
+ * to read the same for everyone regardless of their theme.
+ */
+
 import { useEffect, useRef, useState } from "react";
 import type { Player, TradeResult } from "@/lib/types";
 import { signed } from "@/lib/format";
@@ -12,11 +18,6 @@ const TONE: Record<string, { ink: string; soft: string }> = {
   Fair: { ink: "#1e4fd8", soft: "#e6ecfc" },
 };
 
-/**
- * The marketing asset: a 1080x1080 card rendered at full size and scaled to fit. It is
- * deliberately hard-coded to the light palette — it gets posted to Reddit and X, where it has
- * to read the same for everyone regardless of their theme.
- */
 export function ShareCard({ result, give, get, leagueName }: { result: TradeResult; give: Player[]; get: Player[]; leagueName: string }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.3);

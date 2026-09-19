@@ -1,13 +1,14 @@
 "use client";
-import { useEffect } from "react";
-import Link from "next/link";
-import { Button, ErrorBox, Wordmark } from "@/components/ui";
-
 /**
  * The boundary for anything a page throws while rendering. Without it Next shows its own
  * blank error screen, which on a paid product reads as the whole app having fallen over.
  * `reset` re-renders the segment, which is usually all a transient failure needs.
  */
+
+import { useEffect } from "react";
+import Link from "next/link";
+import { Button, ErrorBox, Wordmark } from "@/components/ui";
+
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     // Nothing is wired to collect these yet, so at least leave them where a phone's

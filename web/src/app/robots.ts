@@ -1,3 +1,4 @@
+/** robots.txt, built from the indexable paths in lib/site.ts. */
 import type { MetadataRoute } from "next";
 
 // Written once at build time. Required explicitly for `output: "export"`, and

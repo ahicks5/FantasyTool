@@ -1,4 +1,9 @@
 "use client";
+/**
+ * Premium teaser, not a wall: says what we found, then offers the pass or the bundle.
+ * `teaser` should be a concrete, name-free sentence from the engine.
+ */
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -13,10 +18,6 @@ import { LINES } from "@/lib/vocab";
 const BTN =
   "btn inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-bold transition-[transform,background-color] duration-150 active:scale-[0.985] disabled:opacity-50 disabled:active:scale-100";
 
-/**
- * Premium teaser, not a wall: says what we found, then offers the pass or the bundle.
- * `teaser` should be a concrete, name-free sentence from the engine.
- */
 export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku: Sku; what: string; teaser?: string | null; signedIn?: boolean; onUnlocked?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();

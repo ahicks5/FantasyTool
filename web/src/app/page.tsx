@@ -1,3 +1,4 @@
+/** The landing page: the pitch, one worked example and the pricing table. Indexable. */
 import Link from "next/link";
 import { Pricing } from "@/components/Pricing";
 import { IconChevron, IconHeadset, IconTeam, IconTrade, IconWire } from "@/components/icons";

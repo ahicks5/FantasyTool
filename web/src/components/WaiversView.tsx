@@ -1,15 +1,16 @@
 "use client";
-import type { Waivers } from "@/lib/types";
-import { signed } from "@/lib/format";
-import { Avatar } from "./Avatar";
-import { Eyebrow, InjuryTag, Why } from "./ui";
-
 /**
  * The board: every free agent worth a claim, ranked. This is a long scannable
  * list, not a set of calls, so nothing here is stamped — rank numeral, plain
  * numbers and the same Cut / Bid strip the plan uses, so a row on the board
  * reads like a signing the moment you decide to make it.
  */
+
+import type { Waivers } from "@/lib/types";
+import { signed } from "@/lib/format";
+import { Avatar } from "./Avatar";
+import { Eyebrow, InjuryTag, Why } from "./ui";
+
 export function WaiversView({ waivers, compact = false }: { waivers: Waivers; compact?: boolean }) {
   return (
     <div className="grid min-w-0 gap-3">

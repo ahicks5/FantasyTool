@@ -194,7 +194,9 @@ Now:  PENTHOUSE   (Archivo 800, upright, tracking +0.08em, all caps)
 ```
 
 - Upright. The skew is gone. `.wordmark-type` in `globals.css` carries no `transform`.
-- Wide-tracked, which is what makes caps read as engraved rather than shouted.
+- Wide-tracked, which is what makes caps read as engraved rather than shouted. `.wordmark-type`
+  carries a `margin-right: -0.08em` to cancel the sidebearing tracking adds after the final E,
+  which otherwise pushes the lamp off the end of the word.
 - Still `.chrome-type`, and that class stays on the element **holding the glyphs** —
   `background-clip: text` on a wrapper paints nothing while the transparent fill still
   inherits down, and the word disappears.

@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
+import { SECTIONS } from "../src/lib/vocab";
 
 /**
  * Every page of the app at 375px, against the fixture API (`scripts/serve_fixtures.py`).
@@ -102,7 +103,10 @@ test.beforeEach(async ({ context, page }) => {
         /* blocked storage: the test will fail on content instead */
       }
     },
-    ["edge.connection", JSON.stringify(CONNECTION)] as const,
+    // Must match `KEY` in web/src/lib/storage.ts. It was `edge.connection` before the
+    // rebrand and this seed was not carried over, so every page below rendered the connect
+    // gate and the suite went dark on six of its eight tests without anyone being told.
+    ["booth.connection", JSON.stringify(CONNECTION)] as const,
   );
   page.setDefaultTimeout(15_000);
 });
@@ -119,7 +123,10 @@ const PAGES: PageCase[] = [
     name: "landing",
     check: async (page) => {
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      await expect(page.getByRole("link", { name: /connect/i }).first()).toBeVisible();
+      // By destination, not by label: the CTA's words live in vocab.ts and have already
+      // changed once ("Connect your league" -> "Open the Penthouse · free"), which left
+      // this assertion looking for a link that no longer existed.
+      await expect(page.locator('a[href="/connect"]').first()).toBeVisible();
     },
   },
   {
@@ -158,10 +165,13 @@ const PAGES: PageCase[] = [
     path: "/waivers",
     name: "waiver plan",
     check: async (page) => {
-      // Paid page, unlocked for this user: the FAAB hero, then either claims or an
+      // Paid page, unlocked for this user: the budget hero, then either claims or an
       // explained hold. A paywall or an error box here means the smoke test failed.
-      await expect(page.getByText(/FAAB remaining|Waiver order/i).first()).toBeVisible();
-      await expect(page.getByText(/Claim this|Hold this week/i).first()).toBeVisible();
+      // Both words, because the hero reads one or the other off `plan.waiver_type`.
+      await expect(page.getByText(/Budget left|Waiver order/i).first()).toBeVisible();
+      // Either the first claim's CTA, or the Hold stamp a quiet week gets instead.
+      // Anchored, so the word "hold" inside a sentence of prose does not satisfy it.
+      await expect(page.getByText(/^(Claim him|Hold)$/).first()).toBeVisible();
       await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
     },
   },
@@ -170,7 +180,7 @@ const PAGES: PageCase[] = [
     name: "trade lab",
     check: async (page) => {
       await expect(page.getByRole("tab", { name: /find a trade/i })).toBeVisible();
-      await expect(page.getByRole("tab", { name: /grade a trade/i })).toBeVisible();
+      await expect(page.getByRole("tab", { name: /grade an offer/i })).toBeVisible();
       await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
     },
   },
@@ -178,8 +188,10 @@ const PAGES: PageCase[] = [
     path: "/report",
     name: "full report",
     check: async (page) => {
-      await expect(page.getByRole("heading", { name: "Lineup" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Waivers" })).toBeVisible();
+      // The film is every section in one payload. Its waiver section is named from
+      // vocab, so take it from there rather than typing the word twice.
+      await expect(page.getByRole("heading", { name: "On the field" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: SECTIONS.waivers.title })).toBeVisible();
       await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
     },
   },

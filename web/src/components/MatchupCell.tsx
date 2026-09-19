@@ -1,10 +1,4 @@
 "use client";
-import Link from "next/link";
-import type { Matchup } from "@/lib/types";
-import { pct } from "@/lib/format";
-import { IconChevron } from "./icons";
-import { SECTIONS } from "@/lib/vocab";
-
 /**
  * The week's scoreboard, directly under the page title: you, them, and the door
  * through to the full breakdown.
@@ -19,6 +13,13 @@ import { SECTIONS } from "@/lib/vocab";
  * them, and the read on the game. Both names truncate — a long team name is common and
  * must not be allowed to push the plate taller.
  */
+
+import Link from "next/link";
+import type { Matchup } from "@/lib/types";
+import { pct } from "@/lib/format";
+import { IconChevron } from "./icons";
+import { SECTIONS } from "@/lib/vocab";
+
 export function MatchupCell({ m, animate = false }: { m: Matchup; animate?: boolean }) {
   // Without an opponent there is no cell: a bye week, or a league whose matchups the
   // connector could not read. The call sheet is the same page either way.

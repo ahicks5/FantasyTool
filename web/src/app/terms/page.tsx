@@ -1,3 +1,4 @@
+/** The terms of service. The facts it cannot work out for itself live in lib/legal.ts. */
 import type { Metadata } from "next";
 import { Bullets, LegalPage, Section } from "@/components/LegalPage";
 import { LEGAL } from "@/lib/legal";

@@ -1,4 +1,5 @@
 "use client";
+/** The waiver plan: the claim we are asking for, its bid, and the backup claims under it. */
 import type { WaiverClaim, WaiverPlanResponse } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";

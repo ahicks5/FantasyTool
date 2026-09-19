@@ -1,4 +1,5 @@
 "use client";
+/** The call sheet: this week's ranked moves, each one checkable. The app's home screen. */
 import { useCallback, useMemo, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";

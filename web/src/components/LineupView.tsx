@@ -1,4 +1,6 @@
 "use client";
+/** Two reads on the same team: this week's board, and how the roster grades out. */
+
 import { useState } from "react";
 import type { Lineup, LineupSlot } from "@/lib/types";
 import { signed } from "@/lib/format";
@@ -9,7 +11,6 @@ import { ConfidenceStamp, Countdown, CountUp, Eyebrow, H2, InjuryTag, OnAirLive,
 
 const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
 
-/** Two reads on the same team: this week's board, and how the roster grades out. */
 type View = "board" | "scorecard";
 const VIEWS: View[] = ["board", "scorecard"];
 const VIEW_LABEL: Record<View, string> = { board: "The board", scorecard: "Scorecard" };

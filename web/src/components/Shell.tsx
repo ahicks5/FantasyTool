@@ -1,4 +1,5 @@
 "use client";
+/** The room itself: top bar, league ribbon, tab bar, and the shell every page mounts. */
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";

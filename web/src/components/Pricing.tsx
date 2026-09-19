@@ -1,4 +1,6 @@
 "use client";
+/** What each entitlement actually buys, in the user's words rather than the API's. */
+
 import { useEffect, useState } from "react";
 import { getProducts } from "@/lib/api";
 import { formatCents } from "@/lib/format";
@@ -7,7 +9,6 @@ import { IconCheck } from "./icons";
 import { Eyebrow, LinkButton, Skeleton } from "./ui";
 import { LINES } from "@/lib/vocab";
 
-/** What each entitlement actually buys, in the user's words rather than the API's. */
 const UNLOCKS: Record<Feature, string> = {
   my_team: "Start/sit calls, stamped with confidence",
   waivers: "The wire: claims, the bid, and the drop",

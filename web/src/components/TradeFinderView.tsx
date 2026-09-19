@@ -1,11 +1,4 @@
 "use client";
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import type { FinderOffer, Player, TradeFinderResponse, TradePartner } from "@/lib/types";
-import { Avatar } from "./Avatar";
-import { IconChevron, IconTrade } from "./icons";
-import { Eyebrow, Skeleton, Spinner, Why } from "./ui";
-
 /**
  * The board. Who to call, what to offer, and what it is worth to each side.
  *
@@ -19,6 +12,13 @@ import { Eyebrow, Skeleton, Spinner, Why } from "./ui";
  *    `truncate`d or given its own column, because a control that breaks onto a second
  *    line drags the whole card taller and reads as a mistake rather than as a layout.
  */
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import type { FinderOffer, Player, TradeFinderResponse, TradePartner } from "@/lib/types";
+import { Avatar } from "./Avatar";
+import { IconChevron, IconTrade } from "./icons";
+import { Eyebrow, Skeleton, Spinner, Why } from "./ui";
 
 function PosChips({ label, map, tone, max = 3 }: { label: string; map: Record<string, number>; tone: "start" | "sit"; max?: number }) {
   const entries = Object.keys(map).slice(0, max);

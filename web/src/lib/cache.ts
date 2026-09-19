@@ -1,6 +1,4 @@
 "use client";
-import { useEffect, useState } from "react";
-
 /* ---------------------------------------------------------------------------
    A tiny in-memory cache for the session's fetched data.
 
@@ -13,6 +11,8 @@ import { useEffect, useState } from "react";
    context, so a hard reload still gets fresh numbers. Projections move during
    the week and stale advice is worse than a spinner.
 --------------------------------------------------------------------------- */
+
+import { useEffect, useState } from "react";
 
 const store = new Map<string, unknown>();
 const inflight = new Map<string, Promise<unknown>>();

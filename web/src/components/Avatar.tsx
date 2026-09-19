@@ -1,4 +1,9 @@
 "use client";
+/**
+ * A player headshot. Initials are painted underneath rather than swapped in on error, so a
+ * slow or missing image never leaves an empty circle.
+ */
+
 import { useState } from "react";
 
 const SIZES = { sm: "h-9 w-9 text-[11px]", md: "h-12 w-12 text-xs", lg: "h-[52px] w-[52px] text-sm", xl: "h-20 w-20 text-lg" };
@@ -9,10 +14,6 @@ function initials(name: string): string {
   return ((parts[0]?.[0] ?? "") + (parts[parts.length - 1]?.[0] ?? "")).toUpperCase();
 }
 
-/**
- * A player headshot. Initials are painted underneath rather than swapped in on error, so a
- * slow or missing image never leaves an empty circle.
- */
 export function Avatar({
   name,
   photo,

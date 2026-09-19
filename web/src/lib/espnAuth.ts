@@ -1,6 +1,4 @@
 "use client";
-import { useSyncExternalStore } from "react";
-
 /**
  * A private ESPN league needs two cookies from the user's own browser: `espn_s2` and `SWID`.
  *
@@ -12,6 +10,9 @@ import { useSyncExternalStore } from "react";
  * localStorage, not sessionStorage: ESPN rotates these every few weeks, and asking for them
  * in every new tab would be worse than the risk it avoids. "Forget these" clears them.
  */
+
+import { useSyncExternalStore } from "react";
+
 export interface EspnCredentials {
   s2: string;
   swid: string;

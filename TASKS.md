@@ -2,6 +2,30 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Onboarding a session (docs/MAP.md)
+- [x] **M-1** `docs/MAP.md`: the spine, a routing table from "I want to change X" to the files
+      and the test that cover it, an index of which doc answers what, and a generated inventory
+      of every module with its own first line and the tests that import it.
+- [x] **M-2** `scripts/gen_map.py` generates that inventory from the tree; `tests/test_docs_map.py`
+      fails if it drifts, if the hand-written half points at a file that no longer exists, or if
+      any module has no first line to quote.
+- [x] **M-3** Every file in `web/src` now opens with a one-line header, the way `edge/` already
+      did — 18 lifted from a few lines below the imports, 22 new. That is what makes the
+      inventory generated rather than maintained.
+- [x] **M-4** `CLAUDE.md` cut 341 -> 132 lines (27 KB -> 8 KB), which is context every session
+      pays for. The brand build-summary was already in `docs/BRAND.md`; the frontend traps moved
+      to `docs/WEB.md` and the data sources to `docs/DATA.md`, both new. No fact dropped.
+- [x] **M-6** The browser smoke test had been dark since the rebrand — 7 of its 8 tests
+      failing on production, three separate causes, all in the harness rather than the app.
+      It seeded `edge.connection` while the app reads `booth.connection`, so every page
+      rendered the connect gate; the fixture API's CORS allowlist is localhost:3000 and the
+      suite serves the app on 3123, so every fetch was blocked; and four assertions still
+      looked for pre-rebrand copy ("FAAB remaining", "grade a trade", a "Lineup" heading, a
+      link named /connect/). Assertions now key off destinations and `vocab.ts` where they
+      can. 8/8 pass. **Nothing was wrong with the app.**
+- [ ] **M-5** Repo-local skills in `.claude/skills/` (shipping, engine, brand, weekly) so the
+      deep detail loads only when a task touches it. Next step after living with the above.
+
 ## Call sheet v2 (docs/SPEC-CALLSHEET-V2.md)
 - [x] **S-1** Every tab renders a fixed-height title band; `hideTitle` gone. Content sits at the
       same Y on all five tabs at 320 and 420px, loading or loaded. Section names centralised in

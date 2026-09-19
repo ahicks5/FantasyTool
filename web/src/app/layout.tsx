@@ -1,3 +1,4 @@
+/** The root layout: the two type families, every metadata tag, and the theme boot script. */
 import type { Metadata, Viewport } from "next";
 import { Archivo, Inter } from "next/font/google";
 import "./globals.css";

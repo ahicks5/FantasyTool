@@ -1,3 +1,4 @@
+/** The public share snapshot: opens with no account, unfurls with a rendered card. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
