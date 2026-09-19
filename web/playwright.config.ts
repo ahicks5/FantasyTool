@@ -41,6 +41,11 @@ export default defineConfig({
       url: `${API_URL}/api/products`,
       timeout: 180_000,
       reuseExistingServer: !process.env.CI,
+      // The API's CORS default is localhost:3000 — deliberately not a wildcard, because a
+      // wildcard on the deployed API would let any page make a browser call with a visitor's
+      // ESPN cookies attached. The suite serves the app on its own port, so it has to say so,
+      // or every fetch the pages make is blocked and every page renders empty.
+      env: { EDGE_CORS: BASE_URL },
       stdout: "pipe",
       stderr: "pipe",
     },
