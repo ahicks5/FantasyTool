@@ -138,9 +138,32 @@ const PAGES: PageCase[] = [
       const sleeper = page.getByRole("radio", { name: "Sleeper" });
       await expect(sleeper).toBeVisible();
       await expect(page.getByRole("radio", { name: "ESPN" })).toBeVisible();
+      // Yahoo is a roadmap marker with no connector behind it in edge/. It must be visible
+      // and unpickable: never offered as a third radio, and disabled if it is reached.
+      await expect(page.getByRole("radio", { name: /yahoo/i })).toHaveCount(0);
+      const yahoo = page.getByRole("button", { name: /yahoo/i });
+      await expect(yahoo).toBeVisible();
+      await expect(yahoo).toBeDisabled();
       await expect(page.locator("#sleeper-input")).toHaveCount(0);
       await sleeper.click();
       await expect(page.locator("#sleeper-input")).toBeVisible();
+
+      // The wipe stays reachable while the saved cookies still work. "Forget these" lives
+      // inside EspnAuthForm, and that form only mounts once a request has come back saying
+      // the league is private — so without a second control, someone whose cookies work has
+      // no way to delete them until they expire. They are a read session for a whole ESPN
+      // account on what may be a shared phone, so this one is a promise, not a convenience.
+      // Must match KEY in web/src/lib/espnAuth.ts.
+      await page.evaluate(() =>
+        localStorage.setItem("booth.espn.auth", JSON.stringify({ s2: "fixture-s2", swid: "{fixture-swid}" })),
+      );
+      await page.reload();
+      await page.getByRole("radio", { name: "ESPN" }).click();
+      const forget = page.getByRole("button", { name: /forget it/i });
+      await expect(forget).toBeVisible();
+      await forget.click();
+      await expect(forget).toHaveCount(0);
+      expect(await page.evaluate(() => localStorage.getItem("booth.espn.auth"))).toBeNull();
     },
   },
   {
