@@ -4,8 +4,9 @@ The one page that says what the brand is, so nobody has to guess it from a folde
 PNGs. `CLAUDE.md` carries the build rules; this carries the *why* and the rules a
 designer needs that never touch code. Where the two disagree, this file is wrong — fix it.
 
-Status of each section is marked **shipping** (in the app today), **change** (decided,
-not built) or **decide** (needs Andrew).
+Status of each section is marked **shipping** (in the app today) or **decide** (needs
+Andrew). Everything marked "change" in the first draft of this file has now been built —
+see §12 for what landed and what is left.
 
 ---
 
@@ -94,21 +95,30 @@ reason to rename the sheet.
 Verbs: *make the call · board's set · sheet's clean · we'd start him*.
 "The wire" stays valid in body copy — it's what managers already call the free-agent pool.
 
-### Copy lines — **change**, to be added to `vocab.ts` as a `LINES` export
+### Copy lines — **shipping**, `LINES` in `web/src/lib/vocab.ts`
 
-One tagline. Every other line has one job and one home.
+One tagline. Every other line has one job and one home. They are not interchangeable:
+`hero` does competitive work, `threshold` does welcoming work, and swapping them makes
+the landing page sound like a lobby.
 
-| Slot | Line | Where |
+| Key | Line | Where |
 |---|---|---|
-| **Tagline** | **Own the week.** | Under the wordmark, OG image, email footer. Locked. |
-| Hero | Three moves before kickoff. | Marketing page h1 |
-| Hero alt | Everyone else hands you a database. We hand you a call sheet. | Marketing page, second beat |
-| Threshold | Welcome to the owner's box. | `/login`, `/connect`, first email subject |
-| Threshold alt | Take the top floor. | Meta description (shipping) |
-| Paywall | The rest of the building. | The Penthouse bundle card |
-| Paywall | Unlock the floor. | Any single-pass lock |
-| Stamp | CALLED FROM THE PENTHOUSE | Share card footer |
-| Stamp | WE SAID SO — WEEK {n} | Share card, post-result |
+| `tagline` | **Own the week.** | Landing footer, share card, OG image, email. Locked. |
+| `hero` | Three moves before kickoff. | Landing h1 |
+| `heroSub` | Everyone else hands you a database. We hand you a call sheet. | Landing, second beat |
+| `threshold` | Welcome to the owner's box. | `/login` eyebrow, `/connect` h1 |
+| `thresholdShort` | Take the top floor. | Meta description |
+| `paywallBundle` | The rest of the building. | The Penthouse card in `Pricing` |
+| `paywallBundleCta` | Take the rest of the building | The bundle button in `Locked` |
+| `paywallPass` | Unlock the floor. | Any single-pass lock |
+
+A button takes `paywallBundleCta`, not `paywallBundle`: controls are verb first, and a
+full stop reads badly against the price that follows it ("The rest of the building. ·
+$7"). Prose keeps the full stop.
+
+Still **to write**, and not in `LINES` until they have a surface: the post-result stamp
+lines (*CALLED FROM THE PENTHOUSE*, *WE SAID SO — WEEK {n}*). They need a "how last
+week's calls landed" card to sit on, which does not exist yet.
 
 **Retired:** *Fantasy builds legends · Strategy fuels legacy · Live the fantasy football
 high life · Fantasy football re-imagined.* They sell luxury or novelty; we sell command.
@@ -118,36 +128,40 @@ Any of them could be a sportsbook's.
 
 ## 4. The mark
 
-### Where it is — **shipping**
+### What shipped — **shipping**
 
-A chrome crown on a black plate. `web/src/app/icon.svg` is the source of truth;
-`IconCrown` in `web/src/components/icons.tsx` is the same path for the app; everything
-else is rasterised from the SVG by `scripts/render_brand_assets.py`.
+**The ball and the box.** A football stood upright, with its top floor lit: three panes
+punched across the upper third, which read as laces at size and as a lit window band
+small. The building's one lit floor and the ball are the same drawing — that dual read
+is the whole idea, and it is what the crown could not do and the kit's plain football
+could not do either.
 
-The crown says *top*. It does not say *football*, which is the one thing the name needs
-said beside it.
+It replaced a chrome crown. The crown said *top* and said nothing about football, which
+is the one thing this name needs said beside it.
 
-### Where it's going — **decide**
+Three directions were drawn and rejected before this one, which is worth recording so
+they are not re-proposed:
 
-The kit's chrome football says *football* and nothing else — it is the category's
-default mark and it encodes none of the positioning. We want a mark that says **the
-ball and the box** at once. Two directions, in preference order:
+1. **Ball horizontally on a plinth** — a flying saucer. A wide lens over a flaring stem
+   is a tractor beam; there is no fixing it.
+2. **Stepped art-deco tower** — a wedding cake, and the lit window died below 32px.
+3. **Cantilevered box on a shaft** — a hammer at every size.
 
-1. **The lit box.** A dark stand in silhouette, one rectangle high on it lit chrome —
-   the owner's box, the one window that's on. Add a small lace mark inside the lit
-   window and it reads as football without a football.
-2. **Laces as windows.** A football silhouette whose laces are a column of lit windows
-   on a tower. Closer to the kit, easier to sell, less ownable.
+Detail lives in the **outer silhouette** on purpose: at 16px interior drawing turns to
+mush, so the pointed oval identifies the mark and the panes degrade to a single notch.
+That is also why the kit's bevelled, glowing renders cannot be the mark — they are
+marketing renders *of* it. The mark is a **flat silhouette that takes `--chrome`**, so
+it flips to graphite on paper.
 
-Either way the mark is a **flat silhouette that takes `--chrome`**, never a traced glow.
-It has to flip to graphite on paper, survive 16px in a tab, and print in one colour on a
-plain-text email's cousin. The kit's bevelled, glowing renders are *marketing renders of*
-the mark, not the mark.
+Rules:
 
-Rules that hold whichever mark ships:
-
-- `icon.svg` and `IconCrown` (rename when the mark does) are redrawn **together, in one
-  commit**. A half-applied mark is worse than either.
+- The path exists **three times** — `web/src/app/icon.svg`, `IconMark` in
+  `web/src/components/icons.tsx`, and `MARK_PATH` in `edge/graphics.py` (the share card
+  is rendered from an HTML string with no stylesheet to reach) — plus a fourth inline
+  copy in `web/src/components/ShareCard.tsx`, the in-app preview of that card. Redraw
+  them **together, in one commit**. A half-applied mark is worse than either.
+- `fill-rule="evenodd"` is what makes the lit band a hole and the two mullions solid
+  again inside it. Drop it and the mark fills in solid.
 - Re-run `uv run python scripts/render_brand_assets.py` in the same commit — favicon,
   apple-icon and OG image come from the SVG.
 - The favicon PNG is rendered *with* alpha on purpose; Next's ICO decoder rejects RGB.
@@ -158,12 +172,7 @@ Rules that hold whichever mark ships:
 
 ## 5. The wordmark
 
-### Where it is — **shipping**
-
-`PENTHOUSE` set in Archivo 900, skewed −7°, filled with the chrome gradient via
-`.chrome-type`, the crown to its left, the ON AIR lamp as the full stop.
-
-### Where it's going — **change**
+### What shipped — **shipping**
 
 **Nameplate, not jersey.** The kit's wordmark leans forward with a swoosh underline.
 That is the visual language of speed — of a jersey number, a sports-car badge. The brand
@@ -171,11 +180,11 @@ is the opposite: above the noise, still, decides. A penthouse has a **nameplate 
 door**: upright, heavy, wide-tracked, engraved in metal.
 
 ```
-Current:   PENTHOUSE   (Archivo 900, skewX −7°, tracking −0.02em)
-Change to: PENTHOUSE   (Archivo 800, upright, tracking +0.08em, all caps)
+Was:  PENTHOUSE   (Archivo 900, skewX −7°, tracking −0.02em)
+Now:  PENTHOUSE   (Archivo 800, upright, tracking +0.08em, all caps)
 ```
 
-- Upright. The skew goes. `.wordmark-type` in `globals.css` drops the `transform`.
+- Upright. The skew is gone. `.wordmark-type` in `globals.css` carries no `transform`.
 - Wide-tracked, which is what makes caps read as engraved rather than shouted.
 - Still `.chrome-type`, and that class stays on the element **holding the glyphs** —
   `background-clip: text` on a wrapper paints nothing while the transparent fill still
@@ -325,37 +334,50 @@ first frame with `animate={false}`.
 
 ---
 
-## 10. Templates — **change**
+## 10. Templates — **shipping**
 
-The kit's post (1254²) and story (941×1672) templates are a dark stage with a logo.
-Our marketing is **stamped verdict graphics**, so the template's job is the payload, not
-the logo.
+The kit's post (1254²) and story (941×1672) templates are a dark stage with a logo. Our
+marketing is **stamped verdict graphics**, so the template's job is the payload, not the
+logo. Both shapes are built:
 
-**Share card** (`/api/share/{id}/card.png`, 1:1, and a new 9:16):
+| Shape | Size | Endpoint | For |
+|---|---|---|---|
+| square | 1080×1080 | `/api/share/{id}/card.png` | link unfurls, feed posts |
+| story | 1080×1920 | `/api/share/{id}/story.png` | Instagram / TikTok vertical |
 
 ```
 ┌──────────────────────────────┐
-│ ● ON AIR              WEEK 3 │   lamp top-left, week top-right, both small
-│                              │
-│   JOSH JACOBS        RB      │   player, Archivo 800, the largest thing
-│   vs DET · 18.4 proj         │   one line of numbers, tabular
-│                              │
-│   ┌──────────┐               │
-│   │  START   │  Lock         │   the stamp, slammed, with its word
-│   └──────────┘               │
-│   We'd start him. +4.1       │   one line, staff voice
-│   over Pollard.              │
-│                              │
-│ ▲ PENTHOUSE   Own the week.  │   mark + nameplate + tagline, small
+│ ● ON AIR   Week 3 · Megalabowl│  lamp left, week+league right
+│ PENTHOUSE'S VERDICT           │
+│ ┌───────────────────────────┐ │
+│ │      C O U N T E R        │ │  the stamp — the largest thing
+│ └───────────────────────────┘ │
+│ ┌───────────┐ ┌─────────────┐ │
+│ │ YOU GIVE  │ │  YOU GET    │ │  side by side; stacked on story
+│ └───────────┘ └─────────────┘ │
+│ Your lineup −11 ROS  Theirs +12│
+│ One line of why, staff voice.  │
+│ Fairness 78% ▓▓▓▓▓▓▓▓░░░       │
+│ ─────────────────────────────  │
+│ ◆ PENTHOUSE •    OWN THE WEEK. │  signature: mark + nameplate + tagline
 └──────────────────────────────┘
 ```
 
-- The verdict is the hero. The logo is the signature in the corner.
+- **The verdict is the hero; the logo is the signature at the foot.** The old card
+  opened with a 44px wordmark, which made the most-shared thing we own an advert for
+  ourselves. What travels is the *call* — someone pastes this to win an argument.
+- **The stamp is sized from the word**, never pinned. A fixed 176px "COUNTER" ran off
+  the story card's right edge.
+- **The story's payload is centred**, not top-aligned: a phone's story UI covers the top
+  and bottom of the frame, and top-aligning left 500px of dead black above the signature.
 - Snapshots are display-only: never an email, a league id or a roster.
 - The kit's background pattern is allowed here at ≤4% opacity, never in-product.
+- The in-app preview (`web/src/components/ShareCard.tsx`) mirrors this layout and holds
+  a fourth copy of the mark. It moves with the Python card.
 
 **Loading screen.** The kit's is emblem + progress bar, which is what `WaitHero` already
-frames. Put the mark in the `Opening` frame; keep the narrated checklist.
+frames. Putting the mark in the `Opening` frame is still to do — the narrated checklist
+stays either way.
 
 **Email cannot be chrome.** Gmail strips `<style>`; Outlook renders no gradients, no
 `background-clip`, no SVG. The email is flat silver capitals (`METAL` in
@@ -381,23 +403,43 @@ enforces it. The kit's glows are not a bug in the email; they are just not possi
 
 ---
 
-## 12. Build order
+## 12. What shipped, and what is left
 
-Each step is one commit, each ships on its own, each is checked in both themes at
-390px and desktop before it goes to `claude/edge-fantasy-app-launch-alo0rr`.
+All eight build steps landed in one pass, checked at every width from 300px to 1300px in
+both themes (606 automated overflow checks), `uv run pytest -q` green at 320, `npm run
+build`, `npm run lint` and `npm test` green.
 
-| # | Change | Files | Gate |
-|---|---|---|---|
-| 1 | `--color-paper` → `#1B1D21` | `globals.css` | both themes |
-| 2 | Wordmark goes upright and wide-tracked | `globals.css` `.wordmark-type`, `ui.tsx` | 320px top bar still fits the league name |
-| 3 | `LINES` export; wire threshold + paywall lines | `vocab.ts`, `/login`, `/connect`, `Pricing.tsx` | copy review |
-| 4 | Title/OG/description carry the descriptor, never "Penthouse Fantasy" | `layout.tsx` | view-source |
-| 5 | Trademark screen | — | **Andrew** |
-| 6 | New mark: `icon.svg` + icon component together, re-render assets | `icon.svg`, `icons.tsx`, `render_brand_assets.py` | 16px tab, both themes, OG unfurl |
-| 7 | Share card rebuilt around the verdict; add 9:16 | `edge/api/share.py`, `edge/graphics.py` | a real `/s/{id}` |
-| 8 | Marketing hero: "Three moves before kickoff." | `app/page.tsx` | mobile first |
+| # | Change | Where |
+|---|---|---|
+| 1 | `--color-paper` → Executive Charcoal `#1b1d21`, **and the hero re-seated to `#23272f`** | `globals.css` |
+| 2 | Nameplate wordmark: upright, Archivo 800, +0.08em | `globals.css`, `ui.tsx` |
+| 3 | `LINES` export, wired into `/login`, `/connect`, `Pricing`, `Locked`, landing footer | `vocab.ts` + 5 surfaces |
+| 4 | Title/OG/Twitter carry the descriptor; no bare "Penthouse Fantasy" | `layout.tsx` |
+| 6 | The ball-and-the-box mark, all four copies, assets re-rendered | `icon.svg`, `icons.tsx`, `graphics.py`, `ShareCard.tsx` |
+| 7 | Share card rebuilt around the verdict + a 9:16 story at `/api/share/{id}/story.png` | `graphics.py`, `api/app.py`, `cli.py` |
+| 8 | Landing h1 → "Three moves before kickoff." | `app/page.tsx` |
 
-Steps 1–4 are a half day and carry no risk. Step 6 waits on 5.
+Three things the build taught us, recorded so they are not undone:
 
-When the mark lands, update the **mark** line in `CLAUDE.md` in the same commit. That
-file says "the mark is a crown" today, and it should never be a commit behind the SVG.
+- **The elevation steps are a ladder.** Lifting paper to the kit's charcoal pulled it
+  toward the hero and the paper→hero contrast fell from 1.127 to 1.059 — near enough to
+  nothing that a lit panel stopped reading as lifted. Hero moved the same distance to
+  hold the rung. Move one of the three and you must re-measure the other two; the
+  *ratios*, not the hexes, are the design.
+- **Measure the row, do not guess the word.** The landing header wanted 448px between
+  the nameplate, the toggle and the CTA pill, so it scrolled sideways on every phone.
+  Shortening the label was worse — it brought the pill back at 420px where the row still
+  needed 480. The pill now appears at 512px, the page's own max width. A six-width spot
+  check passed this twice before a full sweep found two broken bands (360–379, 420–479).
+- **The stamp is sized from the word.** A fixed 176px "COUNTER" ran off the story card.
+  It is computed from the verdict's length now, and a test pins it for every verdict on
+  both shapes.
+
+### Left for Andrew
+
+1. **The trademark screen** (§2) — a USPTO check on "Penthouse" in class 9/41/42. It
+   does not block the mark (that is a drawing, not the name), but it does gate spending
+   on the name and it should happen before launch.
+2. **The post-result stamp lines** (§3) — *CALLED FROM THE PENTHOUSE* and *WE SAID SO —
+   WEEK {n}* need a "how last week's calls landed" surface before they mean anything.
+3. **The kit's raw PNGs stay out of git.** 23MB of 1.5MB renders; derivatives only.

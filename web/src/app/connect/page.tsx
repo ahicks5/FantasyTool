@@ -8,6 +8,7 @@ import { EspnAuthForm } from "@/components/EspnAuthForm";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck } from "@/components/icons";
 import { Button, Countdown, ErrorBox, Eyebrow, ThemeToggle, Wordmark } from "@/components/ui";
+import { LINES } from "@/lib/vocab";
 
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
@@ -124,10 +125,10 @@ export default function ConnectPage() {
         <Eyebrow>
           Step <span className="tnum">1</span> of <span className="tnum">2</span> · Your league
         </Eyebrow>
-        <h1 className="display mt-2 text-[34px] leading-[1.04]">Hook up your league</h1>
+        <h1 className="display mt-2 text-[34px] leading-[1.04]">{LINES.threshold}</h1>
         <p className="mt-2 text-[15px] leading-relaxed text-muted">
-          Sleeper, or ESPN public and private. Two steps and the room is on air — no account, no password, nothing to
-          sign.
+          Hook up your league — Sleeper, or ESPN public and private. Two steps and the room is on air: no account, no
+          password, nothing to sign.
         </p>
         {/* The on-ramp is only urgent if it says how long there is. Its own row, so a long
             clock never crowds the wordmark on a small phone. */}

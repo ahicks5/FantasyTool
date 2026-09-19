@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { IconCheck } from "@/components/icons";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton, ThemeToggle, Wordmark } from "@/components/ui";
 import { getUserEmail, sendMagicLink, signOut, supabaseConfigured } from "@/lib/supabase";
+import { LINES } from "@/lib/vocab";
 
 function LoginInner() {
   const next = useSearchParams().get("next") || "/home";
@@ -44,7 +45,7 @@ function LoginInner() {
       </header>
 
       <div className="pt-8 rise">
-        <Eyebrow>Penthouse pass</Eyebrow>
+        <Eyebrow>{LINES.threshold}</Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">Sign in</h1>
         <p className="mt-2 max-w-[22rem] text-[15px] leading-relaxed text-muted">
           No password to remember. One link in your inbox signs you in and brings every pass you&rsquo;ve bought with

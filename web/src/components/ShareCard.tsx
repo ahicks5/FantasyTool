@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Player, TradeResult } from "@/lib/types";
 import { signed } from "@/lib/format";
+import { LINES } from "@/lib/vocab";
 
 const SIZE = 1080;
 const TONE: Record<string, { ink: string; soft: string }> = {
@@ -44,34 +45,23 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
           height: SIZE,
           transform: `scale(${scale})`,
           transformOrigin: "top left",
-          background: "#0e1116",
+          background: "radial-gradient(120% 78% at 50% 0%,#23272f 0%,#08090b 62%)",
           color: "#f7f6f3",
           padding: 72,
           fontFamily: "var(--font-archivo), system-ui, sans-serif",
         }}
       >
-        <div className="flex items-center justify-between" style={{ fontSize: 30 }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 11, fontWeight: 900, fontSize: 44, letterSpacing: "-0.02em" }}>
-            {/* The crown, inlined. A still image posted into a feed cannot depend on
-                the page's chrome gradient, so the silver is spelled out here. */}
-            <svg width={40} height={40} viewBox="0 0 24 24" fill="url(#ph-card-chrome)" aria-hidden>
-              <defs>
-                <linearGradient id="ph-card-chrome" x1="0" y1="0" x2="0.08" y2="1">
-                  <stop offset="0" stopColor="#ffffff" />
-                  <stop offset="0.38" stopColor="#9aa1ac" />
-                  <stop offset="0.52" stopColor="#f2f4f7" />
-                  <stop offset="0.7" stopColor="#7d858f" />
-                  <stop offset="1" stopColor="#ffffff" />
-                </linearGradient>
-              </defs>
-              <path d="M2.6 18 4.2 5 8.2 11 12 3.2 15.8 11 19.8 5 21.4 18Z" />
-              <path d="M3.4 19.4h17.2v2.2H3.4z" />
-            </svg>
-            <span style={{ transform: "skewX(-7deg)", display: "inline-block" }}>PENTHOUSE</span>
-            {/* The lamp, drawn rather than animated: this is a still image. */}
-            <span style={{ display: "inline-block", width: 13, height: 13, borderRadius: 99, background: "#ff4d3a", marginLeft: 3 }} />
+        {/* The band: the lamp and the league, the same two things the call sheet puts at
+            its top. The lockup used to open the card at 44px, which made the most-shared
+            thing we own an advert for ourselves — it is a signature at the foot now. */}
+        <div className="flex items-center justify-between" style={{ fontSize: 27 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 12, fontWeight: 900, letterSpacing: "0.18em", color: "rgba(247,246,243,0.62)" }}>
+            {/* The lamp, drawn rather than animated: this is a still image. It never
+                carries meaning alone, so the words ride beside it. */}
+            <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: 99, background: "#ff4d3a", boxShadow: "0 0 28px 5px rgba(255,77,58,0.5)" }} />
+            ON AIR
           </span>
-          <span style={{ color: "rgba(247,246,243,0.5)", maxWidth: 520, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ color: "rgba(247,246,243,0.55)", fontWeight: 700, maxWidth: 560, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {leagueName}
           </span>
         </div>
@@ -116,8 +106,35 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
           <div style={{ marginTop: 14, height: 18, borderRadius: 99, background: "rgba(255,255,255,0.14)", overflow: "hidden" }}>
             <div style={{ width: `${fair}%`, height: "100%", borderRadius: 99, background: fair >= 90 ? "#22a468" : fair >= 75 ? "#f0b429" : "#e2554e" }} />
           </div>
-          <div style={{ marginTop: 34, fontSize: 28, color: "rgba(247,246,243,0.45)" }}>
-            Own the week.
+          {/* The signature. Small, in the corner, where a maker's plate goes. */}
+          <div
+            className="flex items-center justify-between"
+            style={{ marginTop: 34, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.12)" }}
+          >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 10, fontSize: 30, fontWeight: 800 }}>
+              {/* The mark, inlined. A still image posted into a feed cannot depend on the
+                  page's chrome gradient, so the silver is spelled out here. Same path as
+                  `icon.svg`, `IconMark` and `MARK_PATH` in edge/graphics.py. */}
+              <svg width={35} height={35} viewBox="0 0 24 24" fill="url(#ph-card-chrome)" fillRule="evenodd" aria-hidden>
+                <defs>
+                  <linearGradient id="ph-card-chrome" x1="0" y1="0" x2="0.08" y2="1">
+                    <stop offset="0" stopColor="#ffffff" />
+                    <stop offset="0.38" stopColor="#9aa1ac" />
+                    <stop offset="0.52" stopColor="#f2f4f7" />
+                    <stop offset="0.7" stopColor="#7d858f" />
+                    <stop offset="1" stopColor="#ffffff" />
+                  </linearGradient>
+                </defs>
+                <path d="M12 2.2C16.6 6.4 17.8 9.5 17.8 12c0 2.5-1.2 5.6-5.8 9.8C7.4 17.6 6.2 14.5 6.2 12c0-2.5 1.2-5.6 5.8-9.8ZM8.2 7.6h7.6v1.8H8.2Zm2 0h.8v1.8h-.8Zm2.8 0h.8v1.8H13Z" />
+              </svg>
+              {/* Nameplate: upright and tracked out. `marginRight` cancels the sidebearing
+                  the tracking adds after the final E, or the lamp floats off the word. */}
+              <span style={{ letterSpacing: "0.08em", marginRight: "-0.08em", color: "#cdd2d9" }}>PENTHOUSE</span>
+              <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 99, background: "#ff4d3a", marginLeft: 3 }} />
+            </span>
+            <span style={{ fontSize: 24, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(247,246,243,0.45)" }}>
+              {LINES.tagline}
+            </span>
           </div>
         </div>
       </div>

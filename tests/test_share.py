@@ -96,3 +96,30 @@ def test_card_image_is_rendered_once_and_cached(client, tmp_path, monkeypatch):
     assert client.get("/api/share/nope/card.png").status_code == 404
     # viewing the image is a crawler, not a human: it must not inflate the view count
     assert {s["id"]: s["views"] for s in app_mod.store.share_stats()}[sid] == 0
+
+
+def test_the_story_image_is_a_separate_render_with_its_own_cache_key(client, tmp_path, monkeypatch):
+    """1080x1920 for a phone story. The two shapes must not share a cache file — keyed on
+    the id alone, whichever was rendered first would be served as both."""
+    monkeypatch.setenv("EDGE_CACHE_DIR", str(tmp_path))
+    app_mod.store.grant("andrew@example.com", "trade_lab", 2026, source="test")
+    sid = client.post("/api/share", headers=H, json=BODY).json()["id"]
+
+    sizes = []
+    import edge.graphics as g
+
+    def fake_render(html, out, width=1080, height=1080):
+        sizes.append((width, height))
+        from pathlib import Path
+        Path(out).parent.mkdir(parents=True, exist_ok=True)
+        Path(out).write_bytes(b"\x89PNG\r\n\x1a\n")
+        return out
+
+    monkeypatch.setattr(g, "render_png", fake_render)
+    assert client.get(f"/api/share/{sid}/card.png").status_code == 200
+    assert client.get(f"/api/share/{sid}/story.png").status_code == 200
+    assert sizes == [(1080, 1080), (1080, 1920)], "each shape renders at its own size"
+    # and each is then served from its own file
+    assert client.get(f"/api/share/{sid}/story.png").status_code == 200
+    assert len(sizes) == 2
+    assert client.get("/api/share/nope/story.png").status_code == 404

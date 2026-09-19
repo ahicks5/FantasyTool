@@ -24,8 +24,29 @@ export const metadata: Metadata = {
   // `opengraph-image.png`, which Next picks up by file convention. metadataBase is
   // what turns it into the absolute URL a scraper needs.
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://fantasy-tool-alpha.vercel.app"),
+  // The name is one word. The descriptor — "fantasy football call sheet" — rides beside
+  // it wherever context is missing, and never fuses into it: "Penthouse Fantasy" as a
+  // bare string reads as something else entirely in search, and sharpens a collision with
+  // a mark we do not want to argue with. See docs/BRAND.md §2.
+  // No `template` here on purpose. Every section page is a client component and cannot
+  // export metadata, so the only page that would ever hit a template is /s/[id] — and it
+  // builds its own absolute title ending in "— Penthouse", which a template would turn
+  // into "... — Penthouse · Penthouse — ...". One plain title is the honest version.
   title: "Penthouse — own the week",
-  description: "Take the top floor. Penthouse writes your fantasy football call sheet every week: who starts, who to claim, what to offer.",
+  description:
+    "Take the top floor. Penthouse writes your fantasy football call sheet every week: three moves before kickoff — who starts, who to claim, what to offer.",
+  applicationName: "Penthouse",
+  openGraph: {
+    type: "website",
+    siteName: "Penthouse",
+    title: "Penthouse — fantasy football call sheet",
+    description: "Three moves before kickoff: who starts, who to claim, what to offer. Own the week.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Penthouse — fantasy football call sheet",
+    description: "Three moves before kickoff: who starts, who to claim, what to offer. Own the week.",
+  },
 };
 
 export const viewport: Viewport = {

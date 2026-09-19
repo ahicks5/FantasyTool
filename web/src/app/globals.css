@@ -19,6 +19,14 @@
    than the last, each with a 1px chrome bevel along its top edge. That bevel is
    the whole trick — it is what makes a surface read as machined rather than flat.
 
+   The three steps are a *ladder*, so they move together or not at all. When paper
+   went to the kit's Executive Charcoal (#14171c -> #1b1d21) it climbed toward the
+   hero and the paper->hero contrast fell from 1.127 to 1.059 — near enough to
+   nothing that a lit panel stopped reading as lifted. Hero moved up the same
+   distance to hold the rung (1.127), and hero-2 with it. Raise one of these and
+   you have to re-measure the other two; the numbers, not the hexes, are the
+   design.
+
    Status colours (start / sit / lean / flip) were validated with the data-viz
    palette checker against the real card surfaces in both modes: lightness band,
    chroma floor, colour-blind separation, normal-vision separation and contrast.
@@ -43,11 +51,11 @@
   --color-muted: #9a9892;      /* tertiary text */
   --color-line: #262a31;       /* hairline */
   --color-line-2: #333840;     /* stronger divider */
-  --color-paper: #14171c;      /* card surface — the step the palette was validated against */
+  --color-paper: #1b1d21;      /* card surface — Executive Charcoal, the kit's own step */
   --color-plane: #08090b;      /* the page behind the cards: near-black, like the icon */
   --color-soft: #1b1f26;       /* inset wells */
-  --color-hero: #1e222a;       /* the lit panel: lifted ABOVE paper, not below it */
-  --color-hero-2: #2a2f38;
+  --color-hero: #23272f;       /* the lit panel: lifted ABOVE paper, not below it */
+  --color-hero-2: #2f343d;
 
   --color-start: #22a468;      /* good — start, gain, accept */
   --color-start-soft: #10281d;
@@ -192,18 +200,28 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   .chrome-type { -webkit-text-fill-color: transparent; }
 }
 
-/* The wordmark leans forward. Only the letters skew — the crown and the lamp
-   stay square, or the lamp turns into an ellipse. */
+/* The wordmark is a nameplate, not a jersey.
+
+   It used to lean forward at -7deg with the letters tightened to -0.02em, which is
+   the visual language of speed — a jersey number, a car badge, the kit's own swoosh
+   lettering. The brand is the opposite of speed: it is the floor above the noise,
+   and it decides. A penthouse has a plate on the door, so the word stands upright,
+   drops to 800 (900 at this tracking goes from engraved to shouted) and opens up to
+   +0.08em, because tracked-out caps are what reads as machined into metal.
+
+   `margin-right` cancels the trailing sidebearing that letter-spacing adds after the
+   final E. Without it the lamp sits 0.08em too far right and the lockup looks loose
+   on its right edge only. */
 .wordmark-type {
   display: inline-block;
-  transform: skewX(-7deg);
-  font-weight: 900;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-right: -0.08em;
 }
 
-/* The top bar keeps the crown and drops the word below 360px. "PENTHOUSE" is half
+/* The top bar keeps the mark and drops the word below 360px. "PENTHOUSE" is half
    again as wide as the old wordmark, and on a 320px phone it left the league label
-   8px — "The Megalabowl" rendered as a single "T". The crown is still the mark and
+   8px — "The Megalabowl" rendered as a single "T". The mark is still the mark and
    the link keeps its aria-label, so nothing is lost but the letters.
 
    It lives here rather than as a `max-[359px]:hidden` utility because `.wordmark-type`

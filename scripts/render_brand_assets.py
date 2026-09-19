@@ -2,7 +2,7 @@
 
     uv run python scripts/render_brand_assets.py
 
-`web/src/app/icon.svg` is the source of truth: the crown, the chrome gradient and
+`web/src/app/icon.svg` is the source of truth: the mark, the chrome gradient and
 the black plate live there, and everything a browser or a social card needs is
 rasterised from it here rather than drawn a second time by hand.
 
@@ -34,7 +34,7 @@ TAGLINE = "Own the week."
 def _page_html(body: str, bg: str = "#08090b") -> str:
     return f"""<!doctype html><html><head><meta charset="utf-8">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>html,body{{margin:0;padding:0;background:{bg};
   font-family:Archivo,-apple-system,system-ui,'Segoe UI',Helvetica,Arial,sans-serif}}</style>
 </head><body>{body}</body></html>"""
@@ -105,21 +105,25 @@ def main() -> None:
         tmp.unlink()
         print(f"  {(APP / 'favicon.ico').relative_to(ROOT)}  48x48 (ico)")
 
-        # The unfurl card. Crown over the wordmark, the way the app icon stacks
-        # them — there is room for the real lockup at this size.
+        # The unfurl card. Mark over the nameplate, the way the app icon stacks them —
+        # there is room for the real lockup at this size. The word is upright and
+        # tracked out to +0.08em: a nameplate on a door, not a jersey. `margin-right`
+        # cancels the sidebearing tracking adds after the final E, so the lamp does
+        # not float away from the word (same trick as `.wordmark-type`).
         og = _page_html(f"""
 <div style="width:1200px;height:630px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:34px;
-  background:radial-gradient(120% 90% at 50% 0%,#1b1e24 0%,#08090b 62%)">
+  align-items:center;justify-content:center;gap:40px;
+  background:radial-gradient(120% 90% at 50% 0%,#23272f 0%,#08090b 62%)">
   {sized(150)}
-  <div style="display:flex;align-items:center;gap:18px">
-    <span style="font-size:116px;font-weight:900;letter-spacing:-.02em;transform:skewX(-7deg);
+  <div style="display:flex;align-items:center;gap:22px">
+    <span style="font-size:104px;font-weight:800;letter-spacing:.08em;margin-right:-.08em;
       background-image:linear-gradient(177deg,#fff 0%,#e6e9ee 18%,#9aa1ac 38%,#f2f4f7 52%,#7d858f 70%,#d7dbe1 88%,#fff 100%);
       -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">PENTHOUSE</span>
     <span style="width:20px;height:20px;border-radius:99px;background:#ff4d3a;
       box-shadow:0 0 22px 3px rgba(255,77,58,.55)"></span>
   </div>
-  <div style="font-size:38px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#9a9892">{TAGLINE}</div>
+  <div style="font-size:34px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#9a9892">{TAGLINE}</div>
+  <div style="font-size:26px;font-weight:600;letter-spacing:.06em;color:#6b7078">Fantasy football call sheet</div>
 </div>""")
         _shot(page, og, 1200, 630, APP / "opengraph-image.png")
 

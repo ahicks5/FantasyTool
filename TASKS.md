@@ -25,6 +25,39 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [ ] **S-6** Injury Protocol (`edge/engine/protocol.py`, endpoint, bottom sheet). Biggest piece,
       own PR. Gating decision still open: plan free, named waiver adds behind Wire Pass.
 
+## Brand (docs/BRAND.md)
+- [x] **B-1** Brand guide written: positioning, name rules, voice, copy lines, mark, wordmark,
+      colour, devices, motion, templates, don'ts. One page so nobody guesses it from a folder
+      of PNGs. `CLAUDE.md`'s brand section points at it.
+- [x] **B-2** `--color-paper` to the kit's Executive Charcoal `#1b1d21`. The lift pulled paper
+      toward the hero and killed the elevation step (1.127 -> 1.059 contrast), so `--color-hero`
+      moved to `#23272f` to hold the rung. Every status colour re-checked against the new
+      surface; all still clear 4.5:1.
+- [x] **B-3** Nameplate wordmark — upright, Archivo 800, +0.08em. The -7deg skew is gone: that
+      is the language of speed, and the brand is the floor above the noise.
+- [x] **B-4** `LINES` in `web/src/lib/vocab.ts`, wired into `/login`, `/connect`, `Pricing`,
+      `Locked` and the landing footer. The kit's four taglines retired.
+- [x] **B-5** Title/OG/Twitter carry "fantasy football call sheet"; "Penthouse Fantasy" never
+      ships as a bare string. No `title.template` — every section page is a client component,
+      so the only page it could reach is `/s/[id]`, which builds its own absolute title.
+- [x] **B-6** New mark: the ball and the box — a football stood upright with its top floor lit.
+      All four copies redrawn together (`icon.svg`, `IconMark`, `MARK_PATH`, `ShareCard.tsx`),
+      favicon/apple-icon/OG re-rendered. Three earlier directions rejected on sight; recorded
+      in BRAND.md §4 so they are not re-proposed.
+- [x] **B-7** Share card rebuilt around the verdict, logo demoted to a corner signature, plus a
+      9:16 story at `/api/share/{id}/story.png`. Stamp is sized from the word so a long verdict
+      cannot run off the edge. `python -m edge.cli card --shape story` renders one.
+- [x] **B-8** Landing h1 -> "Three moves before kickoff." The tagline keeps the footer.
+- [x] **B-9** Landing header no longer scrolls sideways. It wanted 448px of min-content on a
+      320px phone. A 6-width spot check passed it twice; a full 300-1300px sweep found two
+      broken bands. Now swept at every 10px in both themes.
+- [ ] **B-10** Trademark screen on "Penthouse" (class 9/41/42) — **Andrew**. Does not block the
+      mark; does gate spending on the name. See BRAND.md §2.
+- [ ] **B-11** Post-result stamp lines (CALLED FROM THE PENTHOUSE / WE SAID SO — WEEK n). They
+      need a "how last week's calls landed" surface to sit on, which does not exist yet.
+- [ ] **B-12** Put the mark in the `Opening` frame (the kit's loading screen is emblem + bar,
+      which `WaitHero` already frames).
+
 ## Deviations worth Andrew's eye
 - Rank-anchored grades mean a league of 7 or fewer can never reach A+ or F — including Andrew's
   own 6-team ESPN league. Pinned by `test_a_small_league_cannot_reach_the_ends_of_the_scale`.

@@ -88,3 +88,51 @@ def test_a_face_that_will_not_load_is_simply_left_out(tmp_path, monkeypatch):
          "get_players": []},
         "", "", None)
     assert "<img" not in h and "A" in h, "no broken image, but the player is still named"
+
+
+def test_the_verdict_is_the_largest_thing_and_the_logo_is_a_signature():
+    """The card is rebuilt around the call, not the brand. The old one opened with a 44px
+    wordmark, which made the most-shared thing we own an advert for ourselves."""
+    g = {"verdict": "Accept", "give": ["A"], "get": ["B"], "my_delta_ros": 9.0, "fairness": 0.95}
+    h = verdict_card_html(g, "Take it.", "League", 4)
+    stamp = h.index("ACCEPT")
+    plate = h.index("PENTHOUSE<")          # the nameplate span, not the eyebrow
+    assert stamp < plate, "the verdict comes before the lockup"
+    # the lamp never carries meaning alone — the words ride beside it
+    assert "ON AIR" in h
+
+
+def test_the_stamp_is_sized_so_a_long_verdict_cannot_run_off_the_card():
+    """A fixed stamp size overflowed the story card at 'COUNTER'. The size is computed
+    from the word, so the longest verdict still fits inside the padding."""
+    from edge.graphics import SHAPES
+
+    def stamp_px(html_str):
+        i = html_str.index("font-size:", html_str.index("border:11px solid"))
+        return int(html_str[i + 10: html_str.index("px", i)])
+
+    for shape in SHAPES:
+        width = SHAPES[shape][0]
+        pad = 76 if shape == "story" else 68
+        for verdict in ("Fair", "Accept", "Reject", "Counter", "Counteroffer"):
+            g = {"verdict": verdict, "give": [], "get": [], "my_delta_ros": 0, "fairness": 0.5}
+            size = stamp_px(verdict_card_html(g, "", "", 1, shape=shape))
+            drawn = 0.718 * len(verdict) * size + 0.061 * size + 95
+            assert drawn <= width - 2 * pad, f"{verdict} overflows the {shape} card"
+            assert size > 40, f"{verdict} shrank to {size}px, which is not a stamp"
+
+
+def test_the_story_shape_stacks_the_deal_and_keeps_every_number():
+    """1080x1920 for a phone story: one column, and nothing dropped."""
+    from edge.graphics import SHAPES
+
+    assert SHAPES["story"] == (1080, 1920) and SHAPES["square"] == (1080, 1080)
+    g = {"verdict": "Reject", "give": ["A"], "get": ["B"], "my_delta_ros": -6.0,
+         "their_delta_ros": 6.0, "fairness": 0.4, "style": "hoarder"}
+    tall = verdict_card_html(g, "No.", "League", 5, shape="story")
+    assert "grid-template-columns:1fr;" in tall, "the two sides stack on a story"
+    assert "1080px" in tall and "1920px" in tall
+    for fragment in ("REJECT", "Your lineup -6 ROS", "Theirs +6", "Fairness 40%", "Week 5", "ON AIR"):
+        assert fragment in tall, fragment
+    wide = verdict_card_html(g, "No.", "League", 5)
+    assert "grid-template-columns:1fr 1fr;" in wide, "the square card sets them side by side"

@@ -55,18 +55,20 @@ export const IconChevron = (p: P) => (
 );
 
 /**
- * The crown. The mark itself, traced from the logo: three sharp peaks over a
- * flared body and a separate band beneath it.
+ * The mark: the ball and the box. A football stood upright with its top floor lit —
+ * three panes punched across the upper third, laces at size and a lit window band
+ * small. This is the same drawing as `web/src/app/icon.svg`; the two are redrawn
+ * together or not at all, because one is the browser's copy and one is the app's.
  *
- * Filled rather than stroked, unlike everything else here, because the logo is a
- * solid silhouette and a hairline outline of it turns to mush below ~20px. It
- * inks in `currentColor`, so it takes the chrome gradient from a parent with
- * `.chrome-type` exactly like the letters do.
+ * One path with `fillRule="evenodd"`: the outer oval fills, the band cuts a hole in
+ * it, and the two mullions inside the hole fill again. Filled rather than stroked,
+ * unlike everything else here, because the logo is a solid silhouette and a hairline
+ * outline of it turns to mush below ~20px. It inks in `currentColor`, so it takes
+ * the chrome gradient from a parent with `.chrome-type` exactly like the letters do.
  */
-export const IconCrown = ({ className = "", size = 22 }: { className?: string; size?: number | string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
-    <path d="M2.6 18 4.2 5 8.2 11 12 3.2 15.8 11 19.8 5 21.4 18Z" />
-    <path d="M3.4 19.4h17.2v2.2H3.4z" />
+export const IconMark = ({ className = "", size = 22 }: { className?: string; size?: number | string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" className={className} aria-hidden>
+    <path d="M12 2.2C16.6 6.4 17.8 9.5 17.8 12c0 2.5-1.2 5.6-5.8 9.8C7.4 17.6 6.2 14.5 6.2 12c0-2.5 1.2-5.6 5.8-9.8ZM8.2 7.6h7.6v1.8H8.2Zm2 0h.8v1.8h-.8Zm2.8 0h.8v1.8H13Z" />
   </svg>
 );
 

@@ -5,6 +5,7 @@ import { formatCents } from "@/lib/format";
 import type { Feature, Product } from "@/lib/types";
 import { IconCheck } from "./icons";
 import { Eyebrow, LinkButton, Skeleton } from "./ui";
+import { LINES } from "@/lib/vocab";
 
 /** What each entitlement actually buys, in the user's words rather than the API's. */
 const UNLOCKS: Record<Feature, string> = {
@@ -54,6 +55,7 @@ export function Pricing() {
               className={`card p-5 ${everything ? "border-start shadow-[var(--shadow-lift)] ring-1 ring-start" : ""}`}
             >
               <Badge sku={p.sku} />
+              {everything && <p className="mt-3 text-[13px] font-bold text-start">{LINES.paywallBundle}</p>}
               <div className={`flex items-baseline justify-between gap-3 ${p.sku === "free" ? "" : "mt-3"}`}>
                 <h3 className="display min-w-0 text-[21px] leading-tight">{p.name}</h3>
                 <div className={`display tnum shrink-0 text-[34px] leading-none ${everything ? "text-start" : ""}`}>

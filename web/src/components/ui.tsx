@@ -14,7 +14,7 @@ import {
   verdictClass,
 } from "@/lib/format";
 import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitPhase } from "@/lib/wait";
-import { IconCheck, IconChevron, IconClock, IconCrown, IconMoon, IconSun, IconThumbDown, IconThumbUp } from "./icons";
+import { IconCheck, IconChevron, IconClock, IconMark, IconMoon, IconSun, IconThumbDown, IconThumbUp } from "./icons";
 
 export function Card({
   children,
@@ -38,13 +38,13 @@ export function Eyebrow({ children, className = "" }: { children: React.ReactNod
 }
 
 /**
- * PENTHOUSE. The crown, the word cut in chrome and leaning forward, and the ON
- * AIR lamp as the terminal. `lamp={false}` for surfaces where the pulse would be
+ * PENTHOUSE. The mark, the word cut in chrome and standing upright, and the ON
+ * AIR lamp as the full stop. `lamp={false}` for surfaces where the pulse would be
  * noise — a footer, a print card.
  *
- * Only the letters skew: the crown and the lamp stay square, or the lamp turns
- * into an ellipse. The crown sits beside the word rather than above it the way
- * the app icon stacks them, because stacked marks do not survive a 56px header.
+ * A nameplate, not a jersey: upright and tracked out rather than leaning forward
+ * (see `.wordmark-type`). The mark sits beside the word rather than above it the
+ * way the app icon stacks them, because stacked marks do not survive a 56px header.
  */
 export function Wordmark({
   className = "",
@@ -54,19 +54,23 @@ export function Wordmark({
   className?: string;
   lamp?: boolean;
   /**
-   * Drop the word below 360px and keep the crown. Only the top bar asks for this:
+   * Drop the word below 360px and keep the mark. Only the top bar asks for this:
    * "PENTHOUSE" is half again as wide as the old wordmark, and on a 320px phone it
    * left the league label about 14px — enough to render "The Megalabowl" as "T".
-   * The crown alone is still the mark, and the link keeps its aria-label.
+   * The mark alone is still the mark, and the link keeps its aria-label.
+   *
+   * The landing page does NOT use this. Its header carries a third element, so it
+   * needs 448px rather than this bar's budget, and it drops the CTA pill instead —
+   * on that page the wordmark is the pitch and has to survive every width.
    */
   markOnlyOnTiny?: boolean;
 }) {
   return (
-    <span className={`display inline-flex items-center gap-[0.22em] ${markOnlyOnTiny ? "wordmark-mark-only" : ""} ${className}`} style={{ fontWeight: 900 }}>
-      {/* The crown takes the flat `metal` colour: background-clip:text clips to an
+    <span className={`display inline-flex items-center gap-[0.26em] ${markOnlyOnTiny ? "wordmark-mark-only" : ""} ${className}`} style={{ fontWeight: 800 }}>
+      {/* The mark takes the flat `metal` colour: background-clip:text clips to an
           element's own glyphs, and a seven-stop gradient would not read inside a
           20px silhouette anyway. */}
-      <IconCrown size="0.92em" className="shrink-0 -translate-y-[0.04em] text-metal" />
+      <IconMark size="0.92em" className="shrink-0 -translate-y-[0.04em] text-metal" />
       {/* `chrome-type` sits on the span that actually holds the letters. On the
           wrapper it paints nothing — the clip has no glyphs of its own to clip to —
           while the transparent text fill still inherits down, which renders the

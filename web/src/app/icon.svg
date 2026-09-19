@@ -1,7 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- The mark: chrome crown on a black squircle, the app icon reduced to what
-       still reads at 16px. Self-contained (no CSS, no external font) because a
-       favicon is fetched without the page around it. -->
+  <!-- The mark: the ball and the box. A football in chrome on a black plate, with the
+       top floor lit — three panes punched across the upper third, which read as laces
+       at size and as a lit window band small. That dual read is the whole idea: the
+       building's one lit floor and the ball are the same drawing.
+
+       It replaced a crown. The crown said "top" and said nothing about football, and a
+       name like this one needs the sport said beside it. Earlier attempts put the ball
+       horizontally on a plinth (a flying saucer), stepped the tower like a ziggurat (a
+       wedding cake) and cantilevered the box off a shaft (a hammer) — the vertical ball
+       is the only one of the four that survives being looked at.
+
+       Detail lives in the OUTER silhouette on purpose. At 16px interior drawing turns to
+       mush, so the pointed oval does the identifying and the panes degrade to one notch.
+
+       Self-contained — no CSS, no external font — because a favicon is fetched without
+       the page around it. `fill-rule="evenodd"` is what makes the band a hole and the two
+       mullions solid again inside it. -->
   <defs>
     <linearGradient id="ph-plate" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#3a3d43"/>
@@ -21,8 +35,9 @@
   </defs>
   <rect width="64" height="64" rx="14" fill="url(#ph-plate)"/>
   <rect x="0.5" y="0.5" width="63" height="63" rx="13.5" fill="none" stroke="#ffffff" stroke-opacity="0.10"/>
-  <g transform="translate(8 7.2) scale(2)" fill="url(#ph-chrome)">
-    <path d="M2.6 18 4.2 5 8.2 11 12 3.2 15.8 11 19.8 5 21.4 18Z"/>
-    <path d="M3.4 19.4h17.2v2.2H3.4z"/>
-  </g>
+  <path transform="translate(7.4 7.4) scale(2.05)" fill="url(#ph-chrome)" fill-rule="evenodd"
+        d="M12 2.2 C16.6 6.4 17.8 9.5 17.8 12 C17.8 14.5 16.6 17.6 12 21.8 C7.4 17.6 6.2 14.5 6.2 12 C6.2 9.5 7.4 6.4 12 2.2 Z
+           M8.2 7.6 H15.8 V9.4 H8.2 Z
+           M10.2 7.6 H11.0 V9.4 H10.2 Z
+           M13.0 7.6 H13.8 V9.4 H13.0 Z"/>
 </svg>

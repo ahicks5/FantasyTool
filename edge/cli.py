@@ -66,7 +66,7 @@ def cmd_card(args):
     from edge.api import service
     from edge.engine import trade
     from edge.engine.explain import explain
-    from edge.graphics import render_png, verdict_card_html
+    from edge.graphics import SHAPES, render_png, verdict_card_html
 
     b = service.get_bundle("sleeper", args.league_id)
     me, them = b.league.team(args.my_team_id), b.league.team(args.their_team_id)
@@ -81,12 +81,15 @@ def cmd_card(args):
          "give_players": [player_dict(p) for p in v.me.give], "get_players": [player_dict(p) for p in v.me.get],
          "my_delta_ros": v.me.lineup_delta_ros, "their_delta_ros": v.them.lineup_delta_ros,
          "fairness": v.fairness, "style": v.their_tendencies.get("style")}
-    html_str = verdict_card_html(g, text, b.league.name, b.league.week)
+    html_str = verdict_card_html(g, text, b.league.name, b.league.week, shape=args.shape)
     Path(args.out).mkdir(parents=True, exist_ok=True)
-    out = Path(args.out) / f"{v.verdict.lower()}_{'-'.join(args.give.split(','))}_for_{'-'.join(args.get.split(','))}.png"
+    suffix = "" if args.shape == "square" else f".{args.shape}"
+    stem = f"{v.verdict.lower()}_{'-'.join(args.give.split(','))}_for_{'-'.join(args.get.split(','))}{suffix}"
+    out = Path(args.out) / f"{stem}.png"
     out.with_suffix(".html").write_text(html_str)
     if not args.html_only:
-        render_png(html_str, out)
+        width, height = SHAPES[args.shape]
+        render_png(html_str, out, width=width, height=height)
     print(v.verdict, "->", out)
     print(text)
 
@@ -126,6 +129,7 @@ def main(argv: list[str] | None = None):
     s.add_argument("--season", type=int); s.add_argument("--week", type=int); s.set_defaults(fn=cmd_espn)
     s = sub.add_parser("card"); s.add_argument("league_id"); s.add_argument("my_team_id"); s.add_argument("their_team_id")
     s.add_argument("give"); s.add_argument("get"); s.add_argument("--out", default="launch/cards"); s.add_argument("--html-only", action="store_true")
+    s.add_argument("--shape", default="square", choices=("square", "story"), help="1080x1080 feed card, or 1080x1920 for a story")
     s.set_defaults(fn=cmd_card)
     s = sub.add_parser("email", help="render this week's email for a team")
     s.add_argument("league_id"); s.add_argument("team_id", help="roster id or owner name")

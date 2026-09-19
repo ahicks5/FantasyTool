@@ -352,27 +352,43 @@ def create_share(body: ShareIn, email: str | None = Depends(optional_user)):
     return {"id": sid, "url": f"{base}/s/{sid}"}
 
 
-@app.get("/api/share/{share_id}/card.png")
-def share_card(share_id: str):
-    """The image a link unfurls to. Rendered once, then served from disk — a social crawler
-    hitting this a thousand times must not spin up a browser a thousand times."""
+def _share_image(share_id: str, shape: str):
+    """Render a share card once, then serve it from disk — a social crawler hitting this a
+    thousand times must not spin up a browser a thousand times. The cache key carries the
+    shape, or the square card and the story would overwrite each other."""
     from fastapi.responses import FileResponse
+    from edge import graphics
 
     snap = store.get_share(share_id, count_view=False)
     if not snap:
         raise HTTPException(404, "no such share")
     cache_dir = Path(os.environ.get("EDGE_CACHE_DIR", ".cache")) / "cards"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    out = cache_dir / f"{share_id}.png"
+    suffix = "" if shape == "square" else f".{shape}"
+    out = cache_dir / f"{share_id}{suffix}.png"
     if not out.exists():
-        from edge import graphics
         html = graphics.verdict_card_html(snap, snap.get("explanation", ""), snap.get("league_name", ""),
-                                          snap.get("week") or None)
+                                          snap.get("week") or None, shape=shape)
+        width, height = graphics.SHAPES[shape]
         try:
-            graphics.render_png(html, out)
+            graphics.render_png(html, out, width=width, height=height)
         except Exception as e:  # noqa: BLE001 — no browser on this host, or a render failure
             raise HTTPException(503, f"card rendering unavailable: {e}")
     return FileResponse(out, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/api/share/{share_id}/card.png")
+def share_card(share_id: str):
+    """The 1080x1080 image a link unfurls to, and what gets posted to a feed."""
+    return _share_image(share_id, "square")
+
+
+@app.get("/api/share/{share_id}/story.png")
+def share_story(share_id: str):
+    """The same verdict at 1080x1920, for an Instagram or TikTok story. Same card, with
+    the two sides of the deal stacked and the payload in the middle third where a phone's
+    story UI does not cover it."""
+    return _share_image(share_id, "story")
 
 
 @app.get("/api/share/{share_id}")

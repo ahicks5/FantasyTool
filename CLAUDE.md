@@ -20,7 +20,11 @@ a **call sheet** but you are the one who owns the building. Competitors (ffwrapp
 encyclopedias you browse; we are three moves you make before kickoff. That difference is the whole
 brand, and the room is what makes it feel earned.
 
-- **Name** Penthouse. **Tagline** "Own the week."
+- **Name** Penthouse — **one word**, everywhere a user reads it. The descriptor "fantasy football
+  call sheet" rides beside it where context is missing (title tags, OG, social bios) and never
+  fuses into it: "Penthouse Fantasy" as a bare string reads as something else entirely in search.
+  **Tagline** "Own the week." Every line the brand says lives in `web/src/lib/vocab.ts` (`LINES`),
+  for the same reason the section names do. Full guide: **docs/BRAND.md**.
 - **Voice** the staff in your ear: confident, clipped, verb first, plural ("we"). Never hedge on a
   call the engine is confident about; say plainly when it's a coin flip.
 - **Vocabulary — sections:** call sheet (home) · depth chart (team) · scouting (waivers) ·
@@ -31,7 +35,14 @@ brand, and the room is what makes it feel earned.
   "The wire" stays valid in body copy: it is what managers already call the free-agent pool.
 - **Look** black and polished chrome: machined graphite panels floating on near-black, a silver
   bevel on every lit edge, heavy tabular Archivo numerals. Never a neon dashboard — the metal is
-  the only decoration. Game-feel motion on top (see below).
+  the only decoration. Game-feel motion on top (see below). **Two type families, not three** —
+  Archivo for display and numerals, Inter for body. Oxanium (the kit's display face) is
+  deliberately not adopted: it is a squared HUD face and reads as *gaming*, which is the register
+  the owner's box is above. If display type needs more authority, use Archivo's width axis.
+- **The wordmark is a nameplate, not a jersey.** Upright, Archivo 800, tracked out to +0.08em,
+  the lamp as its full stop. It used to lean forward at -7deg with tight letters, which is the
+  language of speed; the brand is the floor above the noise, and it decides. `.wordmark-type`
+  carries a `margin-right:-0.08em` to cancel the sidebearing tracking adds after the final E.
 - **Dark is the default, and it is not a preference we read off the OS.** `prefers-color-scheme:
   light` also matches a machine with *no* stated preference, which is most desktops, so keying the
   light theme off it would mean most first-time visitors never see the brand. Light lives only
@@ -49,12 +60,17 @@ brand, and the room is what makes it feel earned.
   glyphs** — `background-clip: text` clips to an element's *own* text, so on a wrapper it paints
   nothing while the transparent text fill still inherits down, and the wordmark disappears. The
   `.hero` pins `--chrome` to the silver cut, because it is dark in both modes.
-- **The mark is a crown.** `web/src/app/icon.svg` is the source of truth — the crown, the chrome
-  gradient and the black plate. `uv run python scripts/render_brand_assets.py` rasterises it into
-  `favicon.ico`, `apple-icon.png` and `opengraph-image.png` via Chromium (no image library). The
-  favicon's PNG is rendered *with* an alpha channel on purpose: Next's ICO decoder rejects a
-  non-RGBA PNG outright. Redraw the crown in `icon.svg` and `IconCrown` together — they are the
-  same path twice, once for the browser and once for the app.
+- **The mark is the ball and the box** — a football stood upright with its top floor lit: three
+  panes punched across the upper third, which read as laces at size and as a lit window band
+  small. It replaced a crown, which said "top" but never said football. `web/src/app/icon.svg` is
+  the source of truth — the mark, the chrome gradient and the black plate. `uv run python
+  scripts/render_brand_assets.py` rasterises it into `favicon.ico`, `apple-icon.png` and
+  `opengraph-image.png` via Chromium (no image library). The favicon's PNG is rendered *with* an
+  alpha channel on purpose: Next's ICO decoder rejects a non-RGBA PNG outright. The path exists
+  **three** times — `icon.svg`, `IconMark` in `components/icons.tsx`, and `MARK_PATH` in
+  `edge/graphics.py` for the share card, which is rendered from an HTML string with no stylesheet
+  to reach. Redraw all three in one commit. `fill-rule="evenodd"` is what makes the lit band a
+  hole and the two mullions solid again inside it; drop it and the mark fills in.
 - **ON AIR lamp** (`--color-signal`) is brand chrome only — wordmark, call-sheet band, ON AIR chip.
   It is deliberately NOT in the status scale, never appears on a player row or a verdict, and always
   has the words "ON AIR" beside it. Status red (`sit`) never appears on the chrome. Different

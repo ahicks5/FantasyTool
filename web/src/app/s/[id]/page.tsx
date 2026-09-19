@@ -5,6 +5,7 @@ import { IconArrowUp, IconCheck } from "@/components/icons";
 import { Eyebrow, LinkButton, OnAir, Stamp, Stat, StatusMeter, Wordmark } from "@/components/ui";
 import { signed, verdictBlurb } from "@/lib/format";
 import type { SharedVerdict } from "@/lib/types";
+import { LINES } from "@/lib/vocab";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -250,7 +251,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         <LinkButton href="/connect" variant="start" className="mt-6 w-full">
           Take me upstairs — free
         </LinkButton>
-        <p className="mt-3.5 text-[12px] font-bold text-muted">Own the week.</p>
+        <p className="mt-3.5 text-[12px] font-bold text-muted">{LINES.tagline}</p>
       </section>
 
       <p className="mt-6 text-center text-[12px] leading-relaxed text-muted">

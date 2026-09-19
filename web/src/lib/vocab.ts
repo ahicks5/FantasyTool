@@ -36,3 +36,37 @@ export type SectionKey = keyof typeof SECTIONS;
 
 /** Tab order, left to right. The call sheet is first because it is the whole product. */
 export const TAB_ORDER: SectionKey[] = ["home", "team", "waivers", "trade", "report"];
+
+/**
+ * The lines the brand says out loud, in one place for the same reason the section
+ * names are: a copy change that lands on three of four surfaces is worse than one
+ * that lands nowhere.
+ *
+ * One tagline, and every other line has exactly one job. They are not
+ * interchangeable — `hero` does competitive work, `threshold` does welcoming work,
+ * and swapping them makes the landing page sound like a lobby.
+ *
+ * Voice: verb first, plural, no hedge, no exclamation marks. See docs/BRAND.md §3.
+ */
+export const LINES = {
+  /** Under the wordmark, on the unfurl card, at the foot of the email. Locked. */
+  tagline: "Own the week.",
+
+  /** The marketing h1. Its whole job is the contrast with an encyclopedia. */
+  hero: "Three moves before kickoff.",
+  /** The second beat, where the contrast is said out loud. */
+  heroSub: "Everyone else hands you a database. We hand you a call sheet.",
+
+  /** Crossing the threshold: /login, /connect, the first email subject. */
+  threshold: "Welcome to the owner\u2019s box.",
+  /** The same move where the line has to be shorter. */
+  thresholdShort: "Take the top floor.",
+
+  /** The bundle, as a sentence — it sits above the price on the pricing card. */
+  paywallBundle: "The rest of the building.",
+  /** The same idea as a control. Buttons are verb first, and a full stop reads badly
+   *  next to the price that follows it ("The rest of the building. · $7"). */
+  paywallBundleCta: "Take the rest of the building",
+  /** Any single pass, as a sentence. */
+  paywallPass: "Unlock the floor.",
+} as const;
