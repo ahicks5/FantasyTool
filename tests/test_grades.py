@@ -38,49 +38,109 @@ def test_every_cutoff_maps_to_its_own_step():
 # ------------------------------------------------------------- the percentile ---
 
 
-def test_a_packed_position_grades_everyone_average():
-    """The bug this replaced: blending rank with position-in-range always handed the top
-    team a 1.0 and the bottom a 0.0, so a league where every QB is identical still produced
-    an A+ and an F. If nobody has an edge, nobody should be graded as having one."""
+def test_a_packed_position_compresses_but_still_separates():
+    """Rank sets the letter, so a packed league still says who is ahead — but the whole
+    scale is pulled toward the middle, so nobody is told they have an edge they do not
+    have. The old design graded this room C+ top to bottom, which was true and useless."""
     packed = [341.0, 339.0, 338.0, 337.0]
     unit = 339.0  # one starting QB is worth about this much here
-    for v in packed:
-        s = grades.standing(v, packed, unit)
-        assert 0.45 < s < 0.55, f"{v} -> {s}"
-        assert grades.letter(s) in ("C", "C+", "B-"), grades.letter(s)
+    spread = grades.spread_in_starters(packed, unit)
+    assert spread < 0.05, "this league really is dead even"
+
+    got = [grades.letter(grades.standing(grades.rank_position(v, packed), len(packed), spread=spread))
+           for v in packed]
+    assert len(set(got)) > 1, "a packed league must still separate first from last"
+    assert grades.SCALE.index(got[0]) - grades.SCALE.index(got[-1]) >= 2, got
+
+    # Twelve teams is the case that matters, and it is the number in the docstring.
+    even = [grades.letter(grades.standing(r, 12, spread=0.0)) for r in range(1, 13)]
+    assert grades.SCALE.index(even[0]) - grades.SCALE.index(even[-1]) >= 5, even
+    assert grades.SCALE.index(even[0]) >= grades.SCALE.index("B-"), "rank 1 is never worse than B-"
+    assert grades.SCALE.index(even[-1]) <= grades.SCALE.index("C"), "and last is never flattered"
+
+
+def test_a_league_of_literal_clones_grades_everyone_the_middle():
+    """The case the whole module exists for. Identical rosters share one rank, so the
+    mid-rank puts every one of them at 0.5 — nobody has an edge, nobody is graded as if
+    they did. `1 + count(better)` would rank all twelve first and hand out twelve A's."""
+    same = [100.0] * 12
+    got = {grades.letter(grades.standing(grades.rank_position(v, same), 12,
+                                         spread=grades.spread_in_starters(same, 40.0)))
+           for v in same}
+    assert got == {grades.letter(0.5)}, got
 
 
 def test_a_genuinely_broken_room_still_earns_its_F():
     """The other half: when the gap is real, the scale must not soften it."""
-    spread = [250.0, 240.0, 230.0, 27.0]
+    vals = [250.0, 240.0, 230.0, 220.0, 215.0, 210.0, 205.0, 200.0, 195.0, 190.0, 185.0, 27.0]
     unit = 120.0  # a starting TE is worth ~120 here, so 27 is most of a starter short
-    assert grades.standing(27.0, spread, unit) == 0.0
-    assert grades.letter(grades.standing(27.0, spread, unit)) == "F"
-    # The top three rooms here are within 8% of each other, so the best of them is clearly
-    # good without being untouchable — an A-, not an A+. Only a real gap earns the top step.
-    assert grades.SCALE.index(grades.letter(grades.standing(250.0, spread, unit))) >= grades.SCALE.index("A-")
-    assert grades.letter(grades.standing(250.0, [250.0, 120.0, 118.0, 115.0], unit)) == "A+"
+    sp = grades.spread_in_starters(vals, unit)
+    assert sp > 1.5, "this league is genuinely spread out"
+    worst = grades.standing(grades.rank_position(27.0, vals), len(vals), spread=sp)
+    assert grades.letter(worst) == "F"
+    best = grades.standing(grades.rank_position(250.0, vals), len(vals), spread=sp)
+    assert grades.letter(best) == "A+"
 
 
-def test_the_scale_is_measured_in_starters():
-    """Three quarters of a starter above the mean is the top of the range, and below it
-    the bottom — which is what makes the letter comparable across positions."""
-    others = [100.0, 100.0, 100.0, 100.0]
-    unit = 40.0
-    mean = 100.0
-    assert grades.standing(mean, others, unit) == pytest.approx(0.5)
-    assert grades.standing(mean + 0.75 * unit, others, unit) == pytest.approx(1.0, abs=0.02)
-    assert grades.standing(mean - 0.75 * unit, others, unit) == pytest.approx(0.0, abs=0.02)
-    # Half a starter clear is good but not perfect.
-    mid = grades.standing(mean + 0.375 * unit, others, unit)
-    assert 0.7 < mid < 0.8, mid
+def test_a_small_league_cannot_reach_the_ends_of_the_scale():
+    """A property of rank-anchoring worth stating rather than discovering: the best rank in
+    a league of n sits at 1 - 0.5/n, so a six-team league tops out below A+ and bottoms out
+    above F however lopsided it is. Being best of six is a smaller claim than best of twelve,
+    which is the honest reading — but it means small leagues never see the end steps, and
+    Andrew's own six-team ESPN league is one of them."""
+    for n, top, bottom in [(6, "A", "D-"), (4, "A-", "D-"), (12, "A+", "F")]:
+        best = grades.letter(grades.standing(1, n, spread=99.0))
+        worst = grades.letter(grades.standing(n, n, spread=99.0))
+        assert best == top, f"{n} teams: best is {best}, expected {top}"
+        assert worst == bottom, f"{n} teams: worst is {worst}, expected {bottom}"
+
+
+def test_the_damper_only_pulls_toward_the_middle():
+    """Widening the league's spread moves a fixed rank away from the middle, monotonically,
+    and never past what rank alone would give. The margin can damp a grade; it can never
+    inflate one. That one-directionality is what stops this becoming the old rank-plus-range
+    blend, which put the best team at the top of the range in every league."""
+    mid = 0.5
+    for rank in (1, 3, 10, 12):
+        seen = [grades.standing(rank, 12, spread=s / 10) for s in range(0, 31)]
+        dist = [abs(v - mid) for v in seen]
+        assert dist == sorted(dist), f"rank {rank} must move outward monotonically: {dist}"
+        cap = grades.standing(rank, 12, spread=99.0)  # rank alone, fully undamped
+        assert all(abs(v - mid) <= abs(cap - mid) + 1e-9 for v in seen), f"rank {rank} overshot"
+        # And a wider spread never flips which side of the middle you are on.
+        assert all((v - mid) * (cap - mid) >= 0 for v in seen)
+
+
+def test_a_normal_league_uses_the_whole_scale_without_jumping():
+    """An ordinary twelve: the best room is an A+, the worst an F, and the steps between
+    are orderly — a scorecard that skips three letters between neighbours is not a scale."""
+    got = [grades.letter(grades.standing(r, 12, spread=2.0)) for r in range(1, 13)]
+    assert grades.SCALE.index(got[0]) >= grades.SCALE.index("A-"), got
+    assert grades.SCALE.index(got[-1]) <= grades.SCALE.index("D-"), got
+    idx = [grades.SCALE.index(g) for g in got]
+    assert idx == sorted(idx, reverse=True), "a better rank must never grade worse"
+    assert max(idx[i] - idx[i + 1] for i in range(11)) <= 2, f"a jump bigger than two steps: {got}"
 
 
 def test_standing_edges():
-    assert grades.standing(5.0, [5.0], 10.0) == 0.5, "nobody to compare against is average"
-    assert grades.standing(5.0, [5.0, 5.0, 5.0], 10.0) == 0.5, "an identical league is all average"
-    assert grades.standing(5.0, [1.0, 9.0], 0.0) == 0.5, "no scale to measure on is average"
-    assert grades.standing(5.0, [1.0, 9.0], -3.0) == 0.5, "a negative unit cannot invert the grade"
+    assert grades.standing(1, 1, spread=2.0) == 0.5, "nobody to compare against is average"
+    assert grades.standing(6.5, 12, spread=0.0) == 0.5, "the middle rank of a dead-even league"
+    # The guard the spec's pseudocode was missing: `unit` is an average starter's value and
+    # is legitimately 0.0 for a position nobody starts, or one where every projection is 0.
+    # Dividing by it crashes a live page.
+    assert grades.spread_in_starters([1.0, 9.0], 0.0) == 0.0, "no scale to measure on"
+    assert grades.spread_in_starters([1.0, 9.0], -3.0) == 0.0, "a negative unit cannot invert it"
+    assert grades.spread_in_starters([], 10.0) == 0.0
+    assert grades.edge_in_starters(5.0, [1.0, 9.0], 0.0) == 0.0
+    # And the whole path holds up with a zero unit rather than raising.
+    assert 0.0 <= grades.standing(3, 12, spread=grades.spread_in_starters([0.0] * 12, 0.0)) <= 1.0
+
+
+def test_the_margin_is_reported_even_though_rank_sets_the_letter():
+    others = [100.0, 100.0, 100.0, 100.0]
+    assert grades.edge_in_starters(100.0, others, 40.0) == pytest.approx(0.0)
+    assert grades.edge_in_starters(130.0, others, 40.0) == pytest.approx(0.75)
+    assert grades.edge_in_starters(70.0, others, 40.0) == pytest.approx(-0.75)
 
 
 # --------------------------------------------------------------- the scorecard ---
@@ -110,7 +170,7 @@ def test_the_league_is_actually_ranked_not_all_graded_the_same(league):
     """A scorecard that hands every team a B is decoration, not information."""
     ros = _ros(league)
     cards = {t.id: grades.grade_team(league, t, ros) for t in league.teams}
-    assert len({c.overall for c in cards.values()}) >= 4, "overall grades should spread"
+    assert len({c.overall for c in cards.values()}) >= 8, "overall grades should spread"
     ranks = sorted(c.overall_rank for c in cards.values())
     assert ranks == list(range(1, league.num_teams + 1)), "ranks must be a clean 1..N"
 

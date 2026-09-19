@@ -5,8 +5,11 @@ The short version, so nobody has to ask again.
 ## Current state (verified 2026-09-19, corrected)
 
 The web app is live **and it talks to a real API**, not to mock data.
-`NEXT_PUBLIC_API_URL` is set on the Vercel project and points at
-`https://edge-api-gi8d.onrender.com/api`, which is up and serving current code.
+`NEXT_PUBLIC_API_URL` is set on the Vercel project to the API's **origin**, with no path:
+`https://edge-api-gi8d.onrender.com`. `web/src/lib/api.ts` appends `/api/...` itself, so a
+value ending in `/api` produces `/api/api/league/...` and every call 404s while the page
+still renders — it looks like a dead backend rather than a typo. Verified against the live
+site, which requests `https://edge-api-gi8d.onrender.com/api/league/sleeper/{id}`.
 
 An earlier version of this file said the opposite. That was wrong, and it was wrong in a way
 worth remembering: the evidence for "it runs on mocks" was that `/s/{id}` 404s and no backend
@@ -86,7 +89,7 @@ Web (Vercel project settings → Environment Variables):
 
 | Name | Value | Why |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | the Railway API's URL | **Unset means the whole site runs on mock data from `web/src/lib/mocks.ts`.** It looks fine and is entirely fake. |
+| `NEXT_PUBLIC_API_URL` | the API origin, **no `/api` suffix** | **Unset means the whole site runs on mock data from `web/src/lib/mocks.ts`.** It looks fine and is entirely fake. A trailing `/api` double-prefixes every call and 404s. |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Magic-link sign-in; without it `/login` says sign-in is not wired up. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | Same. |
 

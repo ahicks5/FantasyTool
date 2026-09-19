@@ -194,8 +194,10 @@ export function Scorecard({ grades, week, animate = true }: { grades: Grades; we
       </section>
 
       <p className="card p-4 text-[12px] leading-relaxed text-muted">
-        C is average, not a failure. The mark is the rest of the room. Rank is where you sit; the grade is what that
-        is worth. Depth is measured against what the league starts there.
+        A is the best room in this league, F is the worst — the mark is always the rest of the room, never a points
+        total. When the league is packed everyone drifts toward the middle, and the note says by how much: it reads
+        in starters, so &ldquo;half a starter clear&rdquo; means what it sounds like. Depth is measured against what
+        the league starts there.
       </p>
     </div>
   );

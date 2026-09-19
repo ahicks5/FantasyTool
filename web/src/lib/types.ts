@@ -132,13 +132,18 @@ export type Depth = "deep" | "ok" | "thin";
 export interface PositionGrade {
   position: string;
   grade: Grade;
-  /** 0..1, where 0.5 is the league mean. Plus or minus three quarters of a starter spans the scale. */
+  /** 0..1, where 0.5 is the league mean. Set by rank, then damped toward the middle when
+   *  the league is packed — so the meter reads "where you sit, and how much that is worth". */
   percentile: number;
   /** What the lineup effectively starts here — FLEX folded in, so it can beat the dedicated slots. */
   starters: number;
   rank: number;
   league_size: number;
   depth: Depth;
+  /** Starters above (+) or below (-) the league mean here. The letter says where, this says by
+   *  how much. Optional: an API deployed before the grade rework does not send it, and the
+   *  web ships ahead of the API. The note already carries the margin in words. */
+  edge_starters?: number;
   starter_names: string[];
   /** Null when there is nobody behind the starters. */
   next_man: string | null;
@@ -153,6 +158,7 @@ export interface Grades {
   overall: Grade;
   overall_percentile: number;
   overall_rank: number;
+  overall_edge_starters?: number;
   league_size: number;
   note: string;
   positions: PositionGrade[];

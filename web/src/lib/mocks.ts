@@ -446,12 +446,12 @@ export function lineupFor(teamId: string): Lineup {
    pulled off whichever roster is being graded. `starters` folds FLEX in: this
    league starts 2 RB + 2 WR + 2 FLEX, which in practice is 3 and 3.            */
 
-const GRADE_ROWS: { position: string; grade: Grade; percentile: number; rank: number; starters: number; depth: Depth }[] = [
-  { position: "RB", grade: "A-", percentile: 0.86, rank: 2, starters: 3, depth: "deep" },
-  { position: "WR", grade: "C+", percentile: 0.54, rank: 7, starters: 3, depth: "ok" },
-  { position: "QB", grade: "B", percentile: 0.68, rank: 5, starters: 1, depth: "thin" },
-  { position: "TE", grade: "D+", percentile: 0.24, rank: 10, starters: 1, depth: "thin" },
-  { position: "DEF", grade: "F", percentile: 0.07, rank: 12, starters: 1, depth: "ok" },
+const GRADE_ROWS: { position: string; grade: Grade; percentile: number; rank: number; starters: number; depth: Depth; edge: number }[] = [
+  { position: "RB", grade: "A-", percentile: 0.86, rank: 2, starters: 3, depth: "deep", edge: 0.52 },
+  { position: "WR", grade: "C+", percentile: 0.54, rank: 7, starters: 3, depth: "ok", edge: 0.02 },
+  { position: "QB", grade: "B", percentile: 0.68, rank: 5, starters: 1, depth: "thin", edge: 0.21 },
+  { position: "TE", grade: "D+", percentile: 0.24, rank: 10, starters: 1, depth: "thin", edge: -0.34 },
+  { position: "DEF", grade: "F", percentile: 0.07, rank: 12, starters: 1, depth: "ok", edge: -0.61 },
 ];
 
 const ORDINAL = ["", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
@@ -481,6 +481,7 @@ function gradesFor(r: MockRoster): Grades {
       rank: row.rank,
       league_size: size,
       depth: row.depth,
+      edge_starters: row.edge,
       starter_names: names,
       next_man,
       note,
@@ -490,6 +491,7 @@ function gradesFor(r: MockRoster): Grades {
     overall: "B+",
     overall_percentile: 0.74,
     overall_rank: 3,
+    overall_edge_starters: 0.38,
     league_size: size,
     note: `3rd of ${size} on rest-of-season starting value. The backs carry it; tight end and defense are the leaks.`,
     positions,

@@ -7,22 +7,31 @@ Two rules make these mean something rather than just look like something:
    league and a bad one in another. Every comparison here is against the teams you actually
    play, which is the only comparison that decides anything.
 
-2. **The letter measures how much your standing is worth, not what it is.** Ranking is
-   reported separately ("3rd of 12") because that is what people ask; the grade answers the
-   harder question of whether that position is actually winning or losing you games. Finishing
-   first at QB by three points out of three hundred is not an A+, and finishing last by the
-   same margin is not an F — in a league where everyone's quarterback is the same, nobody has
-   an edge and everybody should read as average.
+2. **Rank sets the letter. The margin can only damp it.** Where you finish is what people
+   ask and what they can check, so that is what the grade answers: in an ordinary league
+   the best room is an A+ and the worst is an F. What rank cannot say on its own is whether
+   finishing third is worth anything, so the size of the league's spread — measured in
+   starters — decides how much of the scale is in play. A league whose best and worst rooms
+   are a starter and a half apart gets all of it; one where everybody is the same gets a
+   compressed scale centred on C. See `standing`.
 
-   So the scale is measured in **starters**: how far above or below the league mean you are,
-   divided by what one starter at that position is worth here. Plus or minus three quarters of
-   a starter spans the whole scale. That keeps a packed position clustered around C, lets a
-   genuinely broken room earn its F, and cannot be gamed by the league's spread.
+   The damper is one-directional on purpose: a wide spread never pushes a grade further out
+   than its rank has earned, it only stops a narrow one from pretending. A dead-even twelve
+   still separates first from last by five letter steps, and a league where every roster is
+   literally identical grades everyone the middle of the scale, because they all share one
+   rank (see `rank_position`). The middle of these thirteen steps is C+, not C.
 
-   An earlier version blended rank with where a team sat between the league's worst and best.
-   It looked principled and was not: the best team is always at the top of that range and the
-   worst always at the bottom, so it handed out an A+ and an F in every league no matter how
-   tightly packed. That is the bug this note exists to prevent coming back.
+   **What is still forbidden**, and why this docstring is long: an earlier version blended
+   rank with where a team sat between the league's worst and best. It looked principled and
+   was not — the best team is by definition at the top of that range and the worst at the
+   bottom, so it handed out an A+ and an F in every league no matter how tightly packed. Do
+   not reintroduce that blend. The distinction is that the spread here scales the *whole*
+   league's range toward the middle; it never positions an individual team inside it.
+
+   This replaced a purely starter-denominated scale (±0.75 of a starter spanning F to A+),
+   which was honest but read as "C+ across the board" in most real leagues — true, and not
+   useful. The margin it measured is kept: it is on the payload as `edge_starters` and in
+   every note, so the letter says where you are and the note says by how much.
 
 Grades are a read on the roster, not a call to make, so they never get a stamp in the UI.
 """
@@ -54,23 +63,81 @@ def letter(pct: float) -> str:
     return out
 
 
-# How far above the league mean, in starters, earns the top of the scale.
-FULL_SCALE_STARTERS = 0.75
+# A league whose best and worst rooms are this many starters apart is "normal", and gets
+# the full A+ to F spread. Anything tighter is compressed toward C in proportion.
+FULL_SPREAD_STARTERS = 1.5
+# How much of the scale a perfectly packed league keeps. At 0.45 a dead-even twelve still
+# separates first from last by five letter steps, which is the point of the rework: an
+# honest "you are 4th" beats everyone reading C+.
+PACKED_FLOOR = 0.45
 
 
-def standing(mine: float, others: list[float], unit: float) -> float:
-    """0 worst, 0.5 league-average, 1 best — measured in starters, not in rank.
+def rank_position(mine: float, others: list[float]) -> float:
+    """Where this value sits, 1 = best, with ties sharing the places they occupy.
 
-    `others` is every team's value at this thing, including mine. `unit` is what one starter
-    at this position is worth in this league, which is what turns a raw points gap into
-    something a manager can feel.
+    Mid-rank rather than competition rank, and the difference matters at exactly the
+    case this module exists to get right. `1 + count(better)` gives every tied team the
+    *best* of the places they share, so a league where all twelve rooms are identical
+    makes all twelve rank 1 — and a rank-anchored grade would then hand every one of
+    them an A. Splitting the tied block puts them all at the middle place instead, which
+    is 0.5, which is a C. Nobody has an edge, so nobody is graded as if they did.
+
+    With distinct values this is exactly the rank people expect, so the ordinary case is
+    unchanged. The rank *reported* to the user stays the competition rank ("3rd of 12"),
+    because that is the number they would count themselves.
     """
-    n = len(others)
-    if n <= 1 or unit <= 0:
-        return 0.5  # nothing to compare against, or no scale to measure on
-    mean = sum(others) / n
-    edge = (mine - mean) / unit  # in starters: +1.0 means a whole extra starter's worth
-    return min(1.0, max(0.0, 0.5 + 0.5 * edge / FULL_SCALE_STARTERS))
+    better = sum(1 for v in others if v > mine)
+    tied = sum(1 for v in others if v == mine)  # includes `mine` itself
+    return better + (tied + 1) / 2
+
+
+def spread_in_starters(values: list[float], unit: float) -> float:
+    """How far apart the best and worst rooms are, measured in starters.
+
+    Zero when there is no scale to measure on. The guard is the point: `unit` is an
+    average starter's value and it is legitimately 0.0 for a position nobody in the
+    league starts, or one where every projection is zero. Dividing by it is a crash on
+    a live page, and "no scale" is not the same as "no spread" only in the sense that
+    both should collapse the grade toward C — which is what returning 0.0 does.
+    """
+    if unit <= 0 or not values:
+        return 0.0
+    return (max(values) - min(values)) / unit
+
+
+def standing(rank: float, n: int, *, spread: float) -> float:
+    """0 worst, 0.5 league-average, 1 best. Rank sets the letter; spread only damps it.
+
+    `rank` is a `rank_position` (1 = best, possibly fractional across ties), `n` the
+    number of teams, `spread` the league's range at this thing in starters.
+
+    Rank alone would give the same A+ and F in every league however tightly packed —
+    which is the bug the old starter-denominated scale existed to prevent, and it is
+    still a bug. So the full spread is earned: a league whose rooms are genuinely far
+    apart gets the whole scale, and one where everybody is the same gets a compressed
+    one centred on C. The margin can only ever pull a grade toward the middle, never
+    push it away from it, which is what keeps this from being the old rank-plus-range
+    blend that put the best team at 1.0 in every league.
+    """
+    if n <= 1:
+        return 0.5  # nothing to compare against
+    rank_pct = 1 - (rank - 0.5) / n
+    tight = min(1.0, max(0.0, spread / FULL_SPREAD_STARTERS))
+    keep = PACKED_FLOOR + (1 - PACKED_FLOOR) * tight
+    return min(1.0, max(0.0, 0.5 + (rank_pct - 0.5) * keep))
+
+
+def edge_in_starters(mine: float, others: list[float], unit: float) -> float:
+    """How far above or below the league mean this room is, in starters.
+
+    Kept on the payload and put in the note, because the letter now answers "where do
+    you sit" and this answers "by how much" — and without it a B+ in a league decided
+    by half a point reads like an edge the manager does not actually have.
+    """
+    if unit <= 0 or not others:
+        return 0.0
+    mean = sum(others) / len(others)
+    return (mine - mean) / unit
 
 
 @dataclass
@@ -82,6 +149,7 @@ class PositionGrade:
     rank: int                # 1 = best room in the league
     league_size: int
     depth: str               # "deep" | "ok" | "thin"
+    edge_starters: float     # starters above (+) or below (-) the league mean at this position
     starter_names: list[str]
     next_man: str | None     # the first name off the bench at this position
     note: str
@@ -90,8 +158,8 @@ class PositionGrade:
         return {
             "position": self.position, "grade": self.grade, "percentile": round(self.percentile, 3),
             "starters": self.starters, "rank": self.rank, "league_size": self.league_size,
-            "depth": self.depth, "starter_names": self.starter_names, "next_man": self.next_man,
-            "note": self.note,
+            "depth": self.depth, "edge_starters": round(self.edge_starters, 2),
+            "starter_names": self.starter_names, "next_man": self.next_man, "note": self.note,
         }
 
 
@@ -100,6 +168,7 @@ class Scorecard:
     overall: str
     overall_percentile: float
     overall_rank: int
+    overall_edge_starters: float
     league_size: int
     positions: list[PositionGrade] = field(default_factory=list)
     note: str = ""
@@ -107,7 +176,9 @@ class Scorecard:
     def to_dict(self) -> dict:
         return {
             "overall": self.overall, "overall_percentile": round(self.overall_percentile, 3),
-            "overall_rank": self.overall_rank, "league_size": self.league_size,
+            "overall_rank": self.overall_rank,
+            "overall_edge_starters": round(self.overall_edge_starters, 2),
+            "league_size": self.league_size,
             "note": self.note, "positions": [p.to_dict() for p in self.positions],
         }
 
@@ -139,12 +210,14 @@ def grade_team(league: League, team: Team, ros: dict[str, float]) -> Scorecard:
     mine_total = _lineup_value(league, team, ros)
     n_slots = max(1, len(league.starting_slots))
     slot_unit = (sum(totals) / len(totals)) / n_slots if totals else 0.0
-    overall_pct = standing(mine_total, totals, slot_unit)
+    overall_pct = standing(rank_position(mine_total, totals), size,
+                           spread=spread_in_starters(totals, slot_unit))
     overall_rank = 1 + sum(1 for v in totals if v > mine_total)
+    overall_edge = edge_in_starters(mine_total, totals, slot_unit)
 
     card = Scorecard(
         overall=letter(overall_pct), overall_percentile=overall_pct,
-        overall_rank=overall_rank, league_size=size,
+        overall_rank=overall_rank, overall_edge_starters=overall_edge, league_size=size,
         note=(f"{_ordinal(overall_rank)} of {size} on rest-of-season starting value."
               if size > 1 else "No other teams to compare against."),
     )
@@ -160,8 +233,10 @@ def grade_team(league: League, team: Team, ros: dict[str, float]) -> Scorecard:
         league_starters = baseline.get(pos) or [0.0]
         avg_starter = sum(league_starters) / len(league_starters)
 
-        pct = standing(strength, everyone, avg_starter)
+        pct = standing(rank_position(strength, everyone), size,
+                       spread=spread_in_starters(everyone, avg_starter))
         rank = 1 + sum(1 for v in everyone if v > strength)
+        edge = edge_in_starters(strength, everyone, avg_starter)
 
         # Depth is the first name off the bench, measured against what this league
         # actually starts at the position — not against your own starters.
@@ -173,16 +248,31 @@ def grade_team(league: League, team: Team, ros: dict[str, float]) -> Scorecard:
             (p for p in team.players if p.position == pos), key=lambda p: -ros.get(p.id, 0.0))]
         card.positions.append(PositionGrade(
             position=pos, grade=letter(pct), percentile=pct, starters=line, rank=rank,
-            league_size=size, depth=depth,
+            league_size=size, depth=depth, edge_starters=edge,
             starter_names=names[:line], next_man=names[line] if len(names) > line else None,
-            note=_note(pos, rank, size, depth, names[line] if len(names) > line else None),
+            note=_note(pos, rank, size, depth, edge, names[line] if len(names) > line else None),
         ))
     return card
 
 
-def _note(pos: str, rank: int, size: int, depth: str, next_man: str | None) -> str:
+def _margin(edge: float) -> str:
+    """"about 0.6 of a starter clear of the room" — the honesty beside the letter.
+
+    Rank sets the grade now, so the note has to carry the size of the gap, or a B+ in a
+    league decided by half a point reads like an edge the manager does not have. It is
+    also what makes an unflattering letter fair: last of twelve at QB is a D+, and this
+    is the clause that adds "by a tenth of a starter".
+    """
+    if abs(edge) < 0.05:
+        return "level with the room"
+    if edge > 0:
+        return f"about {edge:.1f} of a starter clear of the room"
+    return f"about {abs(edge):.1f} of a starter behind the room"
+
+
+def _note(pos: str, rank: int, size: int, depth: str, edge: float, next_man: str | None) -> str:
     """One plain sentence. Says the standing, then what happens if someone goes down."""
-    where = f"{_ordinal(rank)} of {size} at {pos}" if size > 1 else f"Your {pos} room"
+    where = f"{_ordinal(rank)} of {size} at {pos}, {_margin(edge)}" if size > 1 else f"Your {pos} room"
     if next_man is None:
         return f"{where}, with nobody behind them — an injury here costs you the slot."
     tail = {

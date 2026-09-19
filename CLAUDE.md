@@ -117,12 +117,17 @@ Engine modules, in the order the feed uses them:
 - `engine/grades.py` — the live scorecard: a letter per position group plus an overall, free
   tier, delivered on the lineup payload. Two rules keep it honest. Everything is relative to
   **this** league, because an absolute points total means nothing across scoring settings. And
-  the letter measures **how much your standing is worth, not what it is** — it is denominated in
-  starters (±0.75 of a starter from the league mean spans F to A+), with rank reported
-  separately. A league where every QB is identical grades everyone C, including rank 12, because
-  nobody has an edge. Do not replace this with a rank-percentile or a position-in-range blend:
-  both hand out an A+ and an F in every league however tightly packed, which is the bug the
-  module docstring exists to prevent coming back.
+  **rank sets the letter; the spread can only damp it** — in an ordinary league the best room is
+  an A+ and the worst an F, but how much of that scale is in play depends on how far apart the
+  league's best and worst actually are, measured in starters (1.5 starters apart earns the full
+  range; a dead-even twelve still separates first from last by five steps). A league of literal
+  clones grades everyone the middle step, because ties share one mid-rank. The margin is kept
+  beside the letter as `edge_starters` and in every note, so the grade says *where* you are and
+  the note says *by how much*. Do not replace this with a rank-plus-position-in-range blend:
+  that puts the best team at the top of the range in every league however tightly packed, which
+  is the bug the module docstring exists to prevent coming back. Note that rank-anchoring means
+  a league of 7 or fewer can never reach A+ or F — `test_a_small_league_cannot_reach_the_ends_of_the_scale`
+  pins that so it is a known property, not a surprise.
 - Every recommendation is written to the `runs` table with its `algo_version`; user Helpful/Wrong
   votes land in `feedback`. Pair them with next week's actuals to know if a version was right.
 
