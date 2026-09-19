@@ -82,3 +82,32 @@ export const LINES = {
   /** Any single pass, as a sentence. */
   paywallPass: "Unlock the floor.",
 } as const;
+
+/**
+ * The call sheet's three benches, and what each one says when it has nothing to call.
+ *
+ * The sheet used to be one flat ranked list of cards, which answers "what is the single
+ * biggest move" and nothing else. Grouped under the tab that owns each call, it answers
+ * the question people actually arrive with — is my lineup set, is anything on the wire,
+ * is there a deal — and it answers it *even when the answer is no*, which a list of cards
+ * structurally cannot: a settled lineup contributes no card, so a quiet week used to read
+ * as a broken screen.
+ *
+ * `clear` is a status, not a boast. `lineup.advise` holds any swap inside the 1.5-point
+ * noise band (`NOISE_MARGIN`), so "set" has to mean *nothing worth calling* and never
+ * "provably optimal" — see the confidence section of CLAUDE.md for why that distinction
+ * is the difference between a true claim and a false one.
+ *
+ * Keyed by `TabKey` so the group and the tab its arrow points at can never drift apart;
+ * `report` and `home` have no calls of their own, which is why this is a subset.
+ */
+export const GROUPS = {
+  team: { clear: "Lineup's set", stamp: "All set" },
+  waivers: { clear: "Nothing worth a bid", stamp: "Standing pat" },
+  trade: { clear: "No deal worth making", stamp: "Quiet" },
+} as const satisfies Partial<Record<TabKey, { clear: string; stamp: string }>>;
+
+export type GroupKey = keyof typeof GROUPS;
+
+/** Left to right on the sheet: lineup first, because it expires at kickoff. */
+export const GROUP_ORDER = ["team", "waivers", "trade"] as const satisfies readonly GroupKey[];
