@@ -266,13 +266,27 @@ TASKS.md            backlog / in progress / done — keep it current
 .cache/             runtime cache, gitignored
 ```
 
-## Confidence tags (validated)
-Lock ≥ 4 pts margin (~80% right), Lean 1.5–4 (~62%), Coin flip < 1.5 (~51%). See docs/BACKTEST.md;
-adjust thresholds only with data. Below 1.5 points the higher projection wins barely half the
-time, so `lineup.stabilize` **holds the incumbent** rather than recommending the swap — week 1
-priced 48 such swaps at −28 points, including "bench Josh Allen for Stafford" over 0.55.
+## Confidence tags (measured over a full season)
+Shipping today: Lock ≥ 4 pts margin, Lean 1.5–4, Coin flip < 1.5. Graded over 2025 weeks 1–17
+(85,006 within-position pairs, `scripts/calibrate.py`, docs/CALIBRATION.md): **Lock 75.1%**,
+Lean 61.7%, Coin flip 52.5%. Lean and Coin flip are honest. **Lock is not — it was advertised
+at ~80% and its 95% interval (74.6–75.6) never touches it.** You need a margin near 7 points
+before a call is right four times in five.
+
+A margin also means different things to different players: projection error grows with the
+projection, so 4 points wins 78.7% between two tight ends and 68.1% between two quarterbacks.
+`edge/calibration.py` replaces the margin with P(a beats b) and each tag then delivers what it
+promises (Lock 81.0%, Lean 66.9%, Coin flip 53.9%), but **it is not wired into `lineup.py` yet**
+— that changes what users see and is Andrew's call. Adjust thresholds only with data.
+
+Below 1.5 points the higher projection wins barely half the time, so `lineup.stabilize`
+**holds the incumbent** rather than recommending the swap — week 1 priced 48 such swaps at
+−28 points, including "bench Josh Allen for Stafford" over 0.55.
 
 ## Weekly ritual
+Automated: `scripts/weekly.py freeze|grade|health`, on a schedule in `.github/workflows/weekly.yml`
+(Thursday freeze, Tuesday grade, daily live-data health check). Results arrive as a pull request.
+Run by hand any time — every subcommand is safe to run twice.
 - Thursday morning: `uv run python scripts/freeze_projections.py` — freezes this week's
   projections so next week's backtest grades what we actually showed, not a revised number.
 - Tuesday: `uv run python scripts/backtest.py <week>` — projection accuracy *and* decision

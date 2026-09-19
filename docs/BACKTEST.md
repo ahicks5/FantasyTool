@@ -91,3 +91,26 @@ The 4 that remain are slots where the incumbent was entangled elsewhere in the l
 `tests/test_evaluate.py` replays all six leagues offline from
 `tests/fixtures/sleeper/replay_week1/` and asserts these numbers, including that the hold
 still beats the raw optimum. Re-record with `scripts/record_replay_fixture.py <week>`.
+
+## How much the freeze is worth, measured
+
+Week 1 predates the freeze and was graded from the live API. Re-running that exact backtest
+two weeks later, against the projections Sleeper serves for week 1 *now*:
+
+| | graded at the time | re-graded later |
+|---|---|---|
+| Edge average | 133.22 | 132.65 |
+| Gain per team | **+2.02** | **+1.45** |
+| Teams helped or unchanged | 82% | 80% |
+| Lean calls found | 20 | 19 |
+
+Same code, same week, same actual points — **28% of the headline number moved** because the
+vendor's projections for a finished week are not the ones that were on screen before it. The
+table above is why `scripts/freeze_projections.py` exists and why week 2 onward is graded from
+the freeze. Neither column is a lie, but the left one is the honest answer to "did the advice
+help", because it is closer to the numbers a user actually saw.
+
+The numbers in this document, and the ones `tests/test_evaluate.py` asserts, are the
+graded-at-the-time column; the recorded fixtures preserve the projections as they stood. Do
+not refresh `docs/backtest_week1.json` by re-running it — that overwrites a measurement with a
+worse one.

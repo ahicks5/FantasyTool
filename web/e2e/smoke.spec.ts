@@ -1,0 +1,208 @@
+import { expect, test, type Page, type Route } from "@playwright/test";
+import { DEV_USER } from "../playwright.config";
+
+/**
+ * Every page of the app at 375px, against the fixture API (`scripts/serve_fixtures.py`).
+ *
+ * This replaces the one-off manual browser pass recorded in TASKS.md. Each page must:
+ *   1. answer HTTP 200,
+ *   2. log no console errors and throw no uncaught exception,
+ *   3. not scroll sideways (the whole app is mobile-first),
+ *   4. actually render its content — a skeleton or a "connect a league" gate is a failure.
+ *
+ * Assertions are structural, never about particular numbers: the engine's output moves
+ * week to week and version to version, and a smoke test that pins numbers is a tripwire,
+ * not a test.
+ */
+
+/** The fixture league, as the browser would have stored it after /connect. */
+const CONNECTION = {
+  platform: "sleeper",
+  league_id: "1403186749361901568",
+  league_name: "The Megalabowl",
+  team_id: "5",
+  team_name: "GoldenPP",
+  week: 2,
+};
+
+/** Headshots and team logos live on Sleeper's CDN. Offline test: serve a 1x1 PNG instead. */
+const PNG_1X1 = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+  "base64",
+);
+
+function isLocal(url: string): boolean {
+  const { hostname } = new URL(url);
+  return hostname === "127.0.0.1" || hostname === "localhost";
+}
+
+async function stubExternal(route: Route): Promise<void> {
+  const req = route.request();
+  if (isLocal(req.url())) return route.continue();
+  if (req.resourceType() === "image") return route.fulfill({ contentType: "image/png", body: PNG_1X1 });
+  return route.fulfill({ status: 200, contentType: "text/plain", body: "" });
+}
+
+interface Visit {
+  status: number;
+  problems: string[];
+}
+
+async function visit(page: Page, path: string): Promise<Visit> {
+  const problems: string[] = [];
+  page.on("console", (m) => m.type() === "error" && problems.push(`console: ${m.text()}`));
+  page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
+  page.on("requestfailed", (r) => problems.push(`requestfailed: ${r.url()} ${r.failure()?.errorText ?? ""}`));
+  const res = await page.goto(path, { waitUntil: "domcontentloaded" });
+  return { status: res?.status() ?? 0, problems };
+}
+
+/**
+ * The page itself must not scroll sideways at 375px.
+ *
+ * `body { overflow-x: hidden }` in globals.css means the document's scrollWidth never grows,
+ * so measuring it as-is would pass no matter how far content stuck out — the bar would be
+ * "the overflow is hidden", not "there is none". So un-clip the body for the measurement,
+ * read the real scrollWidth, and put it back. Inner scrollers (overflow-x on a child) still
+ * clip their own content, so a deliberate horizontal strip does not fail this.
+ */
+async function assertNoHorizontalOverflow(page: Page): Promise<void> {
+  const box = await page.evaluate(() => {
+    const d = document.documentElement;
+    const previous = document.body.style.overflowX;
+    document.body.style.overflowX = "visible";
+    void d.offsetWidth; // force reflow before reading
+    const scrollWidth = d.scrollWidth;
+    const clientWidth = d.clientWidth;
+    // Name the widest visible element, so a failure points at the culprit.
+    let worst = { tag: "", right: 0 };
+    for (const el of Array.from(document.body.querySelectorAll<HTMLElement>("*"))) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0 && r.right > worst.right) {
+        worst = { tag: `${el.tagName.toLowerCase()}.${el.className}`.slice(0, 140), right: r.right };
+      }
+    }
+    document.body.style.overflowX = previous;
+    return { scrollWidth, clientWidth, worst };
+  });
+  expect(
+    box.scrollWidth,
+    `horizontal overflow: scrollWidth ${box.scrollWidth} > clientWidth ${box.clientWidth}; widest element right edge ${Math.round(box.worst.right)} (${box.worst.tag})`,
+  ).toBeLessThanOrEqual(box.clientWidth + 1);
+}
+
+test.beforeEach(async ({ context, page }) => {
+  await context.route("**/*", stubExternal);
+  // Seed the stored league before any app script runs, so the pages skip the connect gate.
+  await context.addInitScript(
+    ([key, value]) => {
+      try {
+        window.localStorage.setItem(key, value);
+      } catch {
+        /* blocked storage: the test will fail on content instead */
+      }
+    },
+    ["edge.connection", JSON.stringify(CONNECTION)] as const,
+  );
+  page.setDefaultTimeout(15_000);
+});
+
+interface PageCase {
+  path: string;
+  name: string;
+  check: (page: Page) => Promise<void>;
+}
+
+const PAGES: PageCase[] = [
+  {
+    path: "/",
+    name: "landing",
+    check: async (page) => {
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.getByRole("link", { name: /connect/i }).first()).toBeVisible();
+    },
+  },
+  {
+    path: "/connect",
+    name: "connect",
+    check: async (page) => {
+      await expect(page.getByText(/Sleeper username/i)).toBeVisible();
+      await expect(page.locator("#username")).toBeVisible();
+    },
+  },
+  {
+    path: "/home",
+    name: "action feed",
+    check: async (page) => {
+      // The hero names the week and team once the feed has loaded.
+      await expect(page.getByText(`Week ${CONNECTION.week}`).first()).toBeVisible();
+      await expect(page.getByText(CONNECTION.team_name).first()).toBeVisible();
+      // At least one action card, and cards are <article>, not skeletons.
+      const cards = page.locator("main article");
+      await expect(cards.first()).toBeVisible();
+      expect(await cards.count()).toBeGreaterThan(0);
+    },
+  },
+  {
+    path: "/team",
+    name: "lineup",
+    check: async (page) => {
+      await expect(page.getByText(/Projected/i).first()).toBeVisible();
+      // A full lineup: one row per starting slot (9 in this league), each naming its slot.
+      const slots = page.locator("main li", { hasText: /^(QB|RB|WR|TE|FLEX|DEF|K)/ });
+      await expect(slots.first()).toBeVisible();
+      expect(await slots.count()).toBeGreaterThanOrEqual(9);
+    },
+  },
+  {
+    path: "/waivers",
+    name: "waiver plan",
+    check: async (page) => {
+      // Paid page, unlocked for this user: the FAAB hero, then either claims or an
+      // explained hold. A paywall or an error box here means the smoke test failed.
+      await expect(page.getByText(/FAAB remaining|Waiver order/i).first()).toBeVisible();
+      await expect(page.getByText(/Claim this|Hold this week/i).first()).toBeVisible();
+      await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
+    },
+  },
+  {
+    path: "/trade",
+    name: "trade lab",
+    check: async (page) => {
+      await expect(page.getByRole("tab", { name: /find a trade/i })).toBeVisible();
+      await expect(page.getByRole("tab", { name: /grade a trade/i })).toBeVisible();
+      await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
+    },
+  },
+  {
+    path: "/report",
+    name: "full report",
+    check: async (page) => {
+      await expect(page.getByRole("heading", { name: "Lineup" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Waivers" })).toBeVisible();
+      await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
+    },
+  },
+];
+
+for (const p of PAGES) {
+  test(`${p.path} (${p.name}) renders clean at 375px`, async ({ page }) => {
+    const { status, problems } = await visit(page, p.path);
+    expect(status, `${p.path} should answer 200`).toBe(200);
+    await p.check(page);
+    await assertNoHorizontalOverflow(page);
+    expect(problems, `${p.path} logged browser errors`).toEqual([]);
+  });
+}
+
+test("the API really is the fixture server, not mocks", async ({ page }) => {
+  // If NEXT_PUBLIC_API_URL were unset the app would quietly serve src/lib/mocks.ts and the
+  // whole suite would pass without ever touching the engine. Catch that here.
+  const seen: string[] = [];
+  page.on("request", (r) => r.url().includes("/api/") && seen.push(r.url()));
+  await page.goto("/home");
+  await expect(page.locator("main article").first()).toBeVisible();
+  expect(seen.some((u) => u.includes("/actions")), `no API calls seen: ${seen.join(", ")}`).toBe(true);
+  expect(DEV_USER).toContain("@");
+});
+

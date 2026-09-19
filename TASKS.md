@@ -132,10 +132,12 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [x] UI overhaul: Inter/Inter Tight, cards, skeletons, Why? disclosures, Helpful/Wrong feedback (stored), bottom-sheet trade picker, prefilled trades from cards, headshot share card, new landing
 - [x] Exact flex-aware optimizer (Hungarian) for overlapping flex/superflex, brute-force tested
 - [x] Full Report priced at $7; teaser text in 402 responses
-- [x] Browser e2e at 375px re-verified (all pages, no overflow, photos loading)
+- [x] Browser e2e at 375px re-verified (all pages, no overflow, photos loading) — now automated
+      in CI, see `web/e2e/smoke.spec.ts`
 
 ## Next up
-- [x] Wire web to the real API end-to-end in a browser (headless Chromium, 375px, live league, 0 console errors)
+- [x] Wire web to the real API end-to-end in a browser (headless Chromium, 375px, live league, 0
+      console errors) — now runs on every push rather than by hand
 - [~] Supabase magic-link login: /login page + JWT header wired; untested against a real Supabase project (needs your keys)
 - [ ] Real Stripe test-mode checkout run (needs STRIPE_SECRET_KEY / webhook secret)
 - [x] Deploy: web on Vercel, API on Render (https://edge-api-gi8d.onrender.com). Both live,
@@ -148,6 +150,19 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       (~3% of live ESPN leagues are public). Ran the whole engine on 6 drafted ones and recorded
       league 521131 as a fixture. Five bugs fixed — see below.
 - [ ] Weekly email of the Full Report (Resend free tier) — retention lever
+- [x] CI: `.github/workflows/ci.yml` runs pytest, web lint/build/unit tests and a Playwright
+      browser pass on every push. Nothing ran on push before.
+- [x] Browser smoke test at 375px for all seven pages, against a fixture-backed API
+      (`scripts/serve_fixtures.py`) — replaces the manual pass. Found that the obvious overflow
+      assertion was toothless (body{overflow-x:hidden} hides it) and that an unset
+      NEXT_PUBLIC_API_URL silently serves mocks, so the whole suite could pass without the engine.
+- [x] Action feed 12x faster (0.32s -> 0.028s a team; suite 107s -> 15s). The hot spot was
+      `player_fits`, called 379,294 times for one feed. `tests/test_feed_performance.py` guards it.
+- [x] The weekly ritual runs itself: `scripts/weekly.py` (freeze / grade / health) on a schedule
+      in `.github/workflows/weekly.yml`, results arriving as a pull request.
+- [x] **Backtest the paid advice** — `scripts/backtest_moves.py`, 2025 weeks 2-17 over five real
+      leagues: 777 waiver plans, 119 holds, 175 priced bids, 36 sides of real trades.
+      See docs/BACKTEST_MOVES.md.
 - [x] Decision backtest: `scripts/backtest.py <week>` now replays 6 real leagues (66 teams, every
       format) and grades Edge's lineup against the one the manager actually started. Week 1:
       +2.02 pts/team, 82% of teams helped. It found and priced a real bug — see below.
@@ -155,8 +170,10 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
       worst was "bench Josh Allen for Stafford" (-35.6). Holding the incumbent took teams-made-
       worse from 30% to 18%. `tests/test_evaluate.py` replays all six leagues offline.
 - [x] `scripts/freeze_projections.py` — Thursday snapshot so a backtest grades what we showed.
-- [ ] Re-run `scripts/backtest.py 2` once week 2 actuals land (Tuesday). Watch **Lean**: 50% on
-      n=20 real calls against an advertised 62%. Three more weeks decide whether the tag survives.
+- [x] **Lean survives.** Answered properly instead of waiting three weeks: `scripts/calibrate.py`
+      graded a whole season (2025 weeks 1-17, 85,006 within-position pairs). Lean is 61.7%
+      against an advertised 62%; the 50%-on-n=20 scare was noise. **Lock is the one that was
+      wrong** — advertised ~80%, delivers 75.1% (CI 74.6-75.6). See docs/CALIBRATION.md.
 - [x] Waivers: add/drop pair valuation + fallback claims ("if X is gone, add Z")
 - [x] Trade Finder: surplus/need matching across the league (blueprint P1)
 - [x] RecommendationRun log with algorithm version (learning loop)
@@ -427,13 +444,33 @@ Build in this order; each is its own commit.
       evaluator agreement, and the action feed's teaser rules. The findings above are strict
       xfails carrying their measured numbers, so they surface in `pytest -rx` and fail loudly
       the day someone fixes them.
+## What the moves backtest found (docs/BACKTEST_MOVES.md)
+- [ ] **Lower `CLAIM_THRESHOLD`.** On the 31 holds where a manager overruled us, their move was
+      worth +1.60 pts/week — we were right 36% of the time. A wrong hold is invisible: the user
+      does nothing, nothing happens, nobody complains. Most expensive finding.
+- [ ] **Rank waiver claims by roster need, not board value.** Our claim is worth +2.01 pts/week
+      and the manager's own move +2.27; we pick better 47% of the time, which is a coin flip
+      against the person we charge $3 to advise. A manager adds because their starter limped off;
+      the ranker picks the best player on a static board. Wrong question, not bad data.
+- [ ] **Recalibrate the market-clearing bid.** We bid 6.8% of budget where the market clears at
+      3.6% — about 2x, consistently, in all three FAAB leagues. Winning 82% of contested claims
+      is worth keeping; exhausting a budget twice as fast as the league is not.
+- [x] Trade verdicts hold up: the side we said would gain actually gained 72% of the time (n=29).
+      Leave it alone and let the sample grow.
 
 ## Blueprint items still open
 - [x] Weekly action email — HTML + plain text renderer, `python -m edge.cli email <league> <team>`.
       Sending still needs a Resend key; everything up to the send is built and tested.
 - [x] Shareable public trade-verdict URLs with a rendered social card (organic loop)
-- [ ] Uncertainty-aware confidence: P(a > b) from projection error by position, not raw margin
-      (blueprint says do NOT build this before multi-week backtesting exists)
+- [~] Uncertainty-aware confidence: **built and validated, not yet wired in.** The blueprint
+      said not before multi-week backtesting existed; it now does. `edge/calibration.py` models
+      P(a beats b) from measured projection error, which grows with the projection (SD 2.9 at 2
+      points, 8.0 at 21) — so 4 points wins 78.7% between two tight ends and 68.1% between two
+      quarterbacks, and the margin bands were selling every position the same tag for a
+      different promise. Tagged on probability: Lock 81.0%, Lean 66.9%, Coin flip 53.9%, and
+      calibrated on held-out 2026 week 1. **Decision for Andrew:** switching `lineup.py` to it
+      changes what users see (Lock becomes rarer and truer, the hold band scales from a flat
+      1.5 points to 1.74 off a 5-point starter and 3.75 off a 20-point one).
 - [ ] Commissioner league pack, creator affiliate codes (growth, after launch)
 - [ ] A Penthouse Pro tier — deliberately not launched yet
 

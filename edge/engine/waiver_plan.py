@@ -135,14 +135,18 @@ def _next3_values(ros: dict[str, float], league: League, byes: dict[str, int]) -
 
 
 def drop_opportunity_cost(team: Team, drop: Player, slots: list[str], ros: dict[str, float],
-                          weeks_left: int) -> float:
+                          weeks_left: int, base_ros: float | None = None) -> float:
     """Per-week cost of losing this player: what your rest-of-season lineup gives up.
 
     A deep bench player who never cracks the lineup costs ~0. Your handcuff RB who would start
     once the bye weeks land costs real points — this measures that without guessing.
+
+    `base_ros` is the roster's untouched rest-of-season lineup total, which `build` already
+    has; passing it in saves re-optimising the same unchanged lineup for every pair.
     """
     without = [p for p in team.players if p.id != drop.id]
-    lost = lineup_total(team.players, slots, ros) - lineup_total(without, slots, ros)
+    full = base_ros if base_ros is not None else lineup_total(team.players, slots, ros)
+    lost = full - lineup_total(without, slots, ros)
     return round(max(0.0, lost) / weeks_left, 3)
 
 
@@ -272,8 +276,13 @@ def _reason(add: Player, drop: Player | None, weekly: float, ros_gain: float, co
 
 def evaluate_pair(league: League, team: Team, add: Player, drop: Player | None,
                   ros: dict[str, float], next3: dict[str, float], byes: dict[str, int],
-                  pool: list[Player], base: dict) -> Claim | None:
-    """Score one ADD/DROP pair. Returns None if the pair is illegal (dropping the add's own slot)."""
+                  pool: list[Player], base: dict, drop_costs: dict[str, float] | None = None) -> Claim | None:
+    """Score one ADD/DROP pair. Returns None if the pair is illegal (dropping the add's own slot).
+
+    `drop_costs` is what each candidate drop costs this roster, keyed by player id. It depends
+    on the drop alone, never on the add, so `build` works it out once per candidate instead of
+    once per (add, drop) pair — ten times over on a normal week.
+    """
     slots = league.starting_slots
     weeks_left = max(1, FANTASY_LAST_WEEK - league.week + 1)
     roster_after = [p for p in team.players if not (drop and p.id == drop.id)] + [add]
@@ -293,7 +302,12 @@ def evaluate_pair(league: League, team: Team, add: Player, drop: Player | None,
         drop_cost = 0.0
         codes.append("weekly_streamer")
     else:
-        drop_cost = drop_opportunity_cost(team, drop, slots, ros, weeks_left) if drop else 0.0
+        if not drop:
+            drop_cost = 0.0
+        elif drop_costs is not None and drop.id in drop_costs:
+            drop_cost = drop_costs[drop.id]
+        else:
+            drop_cost = drop_opportunity_cost(team, drop, slots, ros, weeks_left, base.get("ros"))
         bye_v, bye_note = bye_cover_value(team, add, league.week, byes, weeks_left, ros)
         inj_v, inj_note = injury_insurance_value(team, add, ros, weeks_left)
         dep_v, dep_note = depth_option_value(team, add, ros, weeks_left)
@@ -350,10 +364,13 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
         reverse=True,
     )[:adds_to_pair]
     drops = _drop_candidates(team, slots, ros)
+    # What a drop costs you depends only on the drop, so price each one once for the whole grid.
+    drop_costs = {d.id: drop_opportunity_cost(team, d, slots, ros, weeks_left, base["ros"]) for d in drops}
 
     best_by_add: dict[str, Claim] = {}
     for add in shortlist:
-        options = [evaluate_pair(league, team, add, d, ros, next3, byes, pool, base) for d in drops] or []
+        options = [evaluate_pair(league, team, add, d, ros, next3, byes, pool, base, drop_costs)
+                   for d in drops] or []
         options = [c for c in options if c]
         if not options:
             continue
