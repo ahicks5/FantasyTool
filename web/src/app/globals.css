@@ -258,6 +258,54 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   box-shadow: var(--bevel), var(--shadow-card);
 }
 
+/* ------------------------------------------------------- a call's two states ---
+   The call sheet's whole job is "what is left to do", and the only thing that used
+   to separate a ticked call from an open one was `opacity-80` and a tick in the
+   margin. Across a room, or on a phone held at arm's length, that is no difference
+   at all: the sheet read as one undifferentiated stack.
+
+   So the two states now sit on opposite sides of the elevation ladder. An open call
+   is the loudest thing on the page — it climbs a rung, takes the start green and
+   wears a ring. A ticked one falls off the ladder: it sinks toward the page behind
+   it, loses its bevel and its shadow, and the colour drains out of it.
+
+   Only a call you can actually make gets either. A hold and a locked teaser stay
+   neutral — dressing a paywalled card in the same green as a to-do sells a purchase
+   by pretending it is work you owe yourself.
+
+   Neither state changes the card's outer box. The green edge is a 1px border plus a
+   1px box-shadow ring rather than a 2px border, because a shadow takes no layout and
+   cannot push a 320px sheet sideways; the mute is opacity and saturation, not a size. */
+.card-open {
+  border-color: var(--color-start);
+  box-shadow: var(--bevel), 0 0 0 1px color-mix(in srgb, var(--color-start) 45%, transparent), var(--shadow-lift);
+}
+
+/* The mute is deliberately gentle on alpha and hard on everything else. Crushing the
+   alpha far enough to read as "done" on its own took the 13px muted subtitle under
+   3:1 in both themes; sinking the surface and draining the chroma costs the text
+   nothing, because the text falls with its own background. `saturate` also takes the
+   player photo down with it, which is the same move the benched avatar already makes.
+
+   The fade is `opacity()` inside the filter rather than the `opacity` property, and
+   that is load-bearing: a card printing onto the sheet is still carrying `.print`,
+   whose `both` fill-mode pins the animation's final `opacity: 1` over any declaration
+   here. The old `opacity-80` lost that fight on every uncached load — a call ticked
+   last week came back at full strength until you navigated away and returned. */
+.card-done {
+  background: color-mix(in srgb, var(--color-paper) 40%, var(--color-plane));
+  border-color: color-mix(in srgb, var(--color-line) 60%, transparent);
+  box-shadow: none;
+  filter: saturate(0.35) opacity(0.72);
+}
+
+/* Ticking a call is a small, deliberate change of state, not an entrance. Short enough
+   that the stamp still lands on top of it. */
+.card-open, .card-done {
+  transition: background-color 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease,
+    filter 0.22s ease;
+}
+
 /* The lit panel. On black it is the brightest surface on screen; on paper it is
    the one dark one. Either way it is the step above a card, and the text on it
    is light in both modes. */
@@ -494,6 +542,8 @@ button, a.btn, select, input { min-height: 44px; }
   .grease path {
     animation: none;
   }
+  /* The card still changes state, it just arrives there already changed. */
+  .card-open, .card-done { transition: none; }
   /* Deliberately still moving — see the note on .spinner. Slower, not stopped. */
   .spinner { animation-duration: 1.8s; }
   .crawl { animation-duration: 2.4s; }

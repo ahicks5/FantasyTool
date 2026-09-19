@@ -60,6 +60,10 @@ export function ActionCard({
   const [primary, secondary] = a.players;
   // A hold is not a call you make, and a locked teaser is not one you can make.
   const callable = !a.locked && a.type !== "hold" && !!onCall;
+  // Which is also why only these two wear the sheet's open/ticked dressing: a hold and a
+  // locked teaser stay neutral, so green on this page only ever means "you, now".
+  const outstanding = callable && !called;
+  const done = callable && called;
   // Every start/sit call is shareable by anyone, paid or not — that is the loop. Built as
   // a value rather than a boolean so `confidence` narrows here instead of needing a `!`.
   const lockCall: LockCall | null =
@@ -77,7 +81,7 @@ export function ActionCard({
     <article
       className={`card relative min-w-0 overflow-hidden ${animate ? `print print-${Math.min(delay, 5)}` : ""} ${
         a.locked ? "border-dashed" : ""
-      } ${called ? "opacity-80" : ""}`}
+      } ${outstanding ? "card-open" : ""} ${done ? "card-done" : ""}`}
     >
       <div className="flex min-w-0">
         {/* The margin: play number over a rule in the action's colour. */}
@@ -90,7 +94,13 @@ export function ActionCard({
           ) : (
             <span className="slug text-[14px] leading-none text-muted">{String(n).padStart(2, "0")}</span>
           )}
-          <span aria-hidden className={`mt-2.5 w-[3px] flex-1 ${called ? "bg-start opacity-45" : RAIL[a.type]}`} />
+          {/* The rule is the third channel, after the border and the tick: an open call runs
+              a wider, full-strength rail down the margin, a ticked one a thin grey one. It
+              is inside the fixed 40px margin, so the extra pixel costs the card nothing. */}
+          <span
+            aria-hidden
+            className={`mt-2.5 flex-1 ${done ? "w-[3px] bg-line-2" : `${outstanding ? "w-[4px]" : "w-[3px]"} ${RAIL[a.type]}`}`}
+          />
         </div>
 
         <div className="min-w-0 flex-1 p-5">

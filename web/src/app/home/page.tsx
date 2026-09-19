@@ -8,7 +8,7 @@ import { MatchupCell } from "@/components/MatchupCell";
 import { SheetGroup } from "@/components/SheetGroup";
 import { getActions, sendFeedback } from "@/lib/api";
 import { useCached } from "@/lib/cache";
-import { calledKey, sheetStatus, signed } from "@/lib/format";
+import { calledKey, sheetStatus } from "@/lib/format";
 import { groupActions, groupStatus } from "@/lib/sheet";
 import { loadCalled, saveCalled, type Connection } from "@/lib/storage";
 import type { Action, ActionFeed } from "@/lib/types";
