@@ -242,7 +242,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       <PickerSheet open={sheet === "get"} onClose={() => setSheet(null)} title={`${theirTeam?.name ?? "Their"} roster`} players={theirs} selected={get} onToggle={(id) => toggle(get, setGet, id)} tone="start" />
 
       <div className="sticky bottom-20 z-[5]">
-        <Button variant="start" className="w-full shadow-[var(--shadow-float)]" onClick={submit} disabled={busy || give.length === 0 || get.length === 0}>
+        <Button variant="start" className="w-full shadow-[var(--shadow-float)]" onClick={submit} busy={busy} disabled={give.length === 0 || get.length === 0}>
           {busy ? "Grading it…" : `Grade ${give.length}-for-${get.length}`}
         </Button>
       </div>
@@ -383,7 +383,7 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
   if (!url)
     return (
       <>
-        <Button variant="secondary" onClick={make} disabled={busy} className="w-full">
+        <Button variant="secondary" onClick={make} busy={busy} className="w-full">
           {busy ? "Making the link…" : "Make a share link"}
         </Button>
         {error && <p className="mt-2 text-sm text-sit">{error}</p>}

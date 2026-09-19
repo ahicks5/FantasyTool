@@ -1,9 +1,9 @@
 "use client";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
 import { IconFilm, IconSheet, IconTeam, IconTrade, IconWire } from "./icons";
-import { BoothOpening, LinkButton, OnAir, ThemeToggle, Wordmark } from "./ui";
+import { BoothOpening, LinkButton, OnAir, Spinner, ThemeToggle, Wordmark } from "./ui";
 
 // Coach vocabulary, and every label still says what the screen is: scouting is the
 // free-agent pool, the GM's office is where deals get made, film is the weekly recap.
@@ -44,6 +44,19 @@ export function TopBar({ session }: { session: Session }) {
   );
 }
 
+/**
+ * The tapped tab turns while its route is still arriving. `useLinkStatus` only
+ * reports pending inside a Link, which is why this is its own component.
+ *
+ * Without it, tapping a tab whose chunk is not cached does nothing visible until
+ * the page swaps — which reads as a dead tap on a stalled app.
+ */
+function TabIcon({ Icon, active }: { Icon: (p: { size?: number; strokeWidth?: number }) => React.ReactElement; active: boolean }) {
+  const { pending } = useLinkStatus();
+  if (pending) return <Spinner size={21} label="Loading" />;
+  return <Icon size={21} strokeWidth={active ? 2.3 : 1.8} />;
+}
+
 export function TabBar() {
   const path = usePathname();
   return (
@@ -65,7 +78,7 @@ export function TabBar() {
                   aria-hidden
                   className={`absolute top-0 h-[3px] w-8 rounded-b-full bg-start transition-opacity ${active ? "opacity-100" : "opacity-0"}`}
                 />
-                <Icon size={21} strokeWidth={active ? 2.3 : 1.8} />
+                <TabIcon Icon={Icon} active={active} />
                 {label}
               </Link>
             </li>

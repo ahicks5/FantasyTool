@@ -108,7 +108,7 @@ function LoginInner() {
               className="w-full rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none"
               placeholder="you@example.com"
             />
-            <Button type="submit" className="w-full" disabled={busy || !email}>
+            <Button type="submit" className="w-full" busy={busy} disabled={!email}>
               {busy ? "Sending…" : "Email me a sign-in link"}
             </Button>
             {error && <ErrorBox message={error} />}

@@ -179,7 +179,7 @@ export default function ConnectPage() {
               onChange={(e) => setUsername(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && lookup()}
             />
-            <Button onClick={lookup} disabled={busy || !username.trim()} className="shrink-0">
+            <Button onClick={lookup} busy={busy} disabled={!username.trim()} className="shrink-0">
               Find
             </Button>
           </div>
@@ -239,7 +239,7 @@ export default function ConnectPage() {
             onChange={(e) => setLeagueIdInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && pickLeague(leagueIdInput)}
           />
-          <Button variant="secondary" onClick={() => pickLeague(leagueIdInput)} disabled={busy || !leagueIdInput.trim()} className="shrink-0">
+          <Button variant="secondary" onClick={() => pickLeague(leagueIdInput)} busy={busy} disabled={!leagueIdInput.trim()} className="shrink-0">
             Load
           </Button>
         </div>
@@ -305,7 +305,7 @@ export default function ConnectPage() {
           </ul>
 
           <div className="sticky bottom-0 -mx-4 mt-5 border-t border-line bg-[color-mix(in_srgb,var(--color-plane)_92%,transparent)] px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-md">
-            <Button variant="start" className="w-full" onClick={submit} disabled={busy || !teamId}>
+            <Button variant="start" className="w-full" onClick={submit} busy={busy} disabled={!teamId}>
               {busy ? "Wiring you in…" : teamId ? "Put me in the booth" : "Pick your team"}
             </Button>
           </div>

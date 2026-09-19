@@ -6,7 +6,7 @@ import { formatCents } from "@/lib/format";
 import type { Product, Sku } from "@/lib/types";
 import { PRODUCTS as FALLBACK } from "@/lib/mocks";
 import { IconLock } from "./icons";
-import { Button } from "./ui";
+import { Button, Spinner } from "./ui";
 
 const BTN =
   "btn inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-bold transition-[transform,background-color] duration-150 active:scale-[0.985] disabled:opacity-50 disabled:active:scale-100";
@@ -57,7 +57,7 @@ export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku
       {teaser && product?.blurb && <p className="mt-2 text-[14px] leading-relaxed text-white/60">{product.blurb}</p>}
 
       <div className="mt-6 grid gap-2.5">
-        <Button variant="start" className="w-full" onClick={() => buy(sku)} disabled={busy}>
+        <Button variant="start" className="w-full" onClick={() => buy(sku)} busy={busy}>
           {busy ? (
             "Opening checkout…"
           ) : (
@@ -76,8 +76,10 @@ export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku
           <button
             onClick={() => buy("full_report")}
             disabled={busy}
+            aria-busy={busy || undefined}
             className={`${BTN} border border-white/25 text-white hover:bg-white/10`}
           >
+            {busy && <Spinner size={15} label={null} />}
             Or take the whole booth
             <span aria-hidden className="opacity-50">·</span>
             <span className="tnum">{formatCents(full.price_cents)}</span>

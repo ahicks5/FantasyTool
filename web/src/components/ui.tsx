@@ -386,16 +386,23 @@ export function BoothOpening() {
   );
 }
 
-/** Every wait after the first: the shape of the page, no narration. */
+/**
+ * Every wait after the first: the shape of the page, no narration. The ring is
+ * the point — a skeleton on its own is ambiguous between "loading" and "broken",
+ * and something that is turning is never mistaken for something that has stalled.
+ */
 function QuietWait() {
   return (
     <div aria-busy="true" aria-label="Loading">
       <div className="hero callsheet sweep relative overflow-hidden p-6">
-        <Skeleton className="h-3 w-24 opacity-25" />
+        <div className="flex items-center gap-2 text-white/70">
+          <Spinner size={15} label={null} />
+          <span className="text-[10px] font-black uppercase tracking-[0.18em]">Loading</span>
+        </div>
         <Skeleton className="mt-3 h-8 w-52 opacity-25" />
         <Skeleton className="mt-3 h-3 w-36 opacity-25" />
       </div>
-      <SkeletonList rows={2} tall />
+      <SkeletonList rows={2} tall quiet />
     </div>
   );
 }
@@ -422,9 +429,28 @@ const VARIANTS = {
   onHero: "bg-white text-hero hover:opacity-90",
 };
 
-export function Button({ children, variant = "primary", size = "md", className = "", ...rest }: BtnProps & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+/**
+ * `busy` is the whole reason this wrapper exists: every async control in the app
+ * gets the same spinner and the same disabled-while-working behaviour, instead of
+ * each call site inventing its own "…" suffix and hoping the user waits.
+ */
+export function Button({
+  children,
+  variant = "primary",
+  size = "md",
+  className = "",
+  busy = false,
+  disabled,
+  ...rest
+}: BtnProps & { busy?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button className={`${BTN} ${SIZE[size]} ${VARIANTS[variant]} ${className}`} {...rest}>
+    <button
+      className={`${BTN} ${SIZE[size]} ${VARIANTS[variant]} ${className}`}
+      disabled={disabled || busy}
+      aria-busy={busy || undefined}
+      {...rest}
+    >
+      {busy && <Spinner size={15} label={null} />}
       {children}
     </button>
   );
@@ -480,9 +506,15 @@ export function Skeleton({ className = "" }: { className?: string }) {
   return <div aria-hidden className={`skeleton ${className}`} />;
 }
 
-export function SkeletonList({ rows = 4, tall = false }: { rows?: number; tall?: boolean }) {
+export function SkeletonList({ rows = 4, tall = false, quiet = false }: { rows?: number; tall?: boolean; quiet?: boolean }) {
   return (
     <div className="grid gap-3" aria-busy="true" aria-label="Loading">
+      {!quiet && (
+        <div className="flex items-center gap-2 text-muted">
+          <Spinner size={14} label={null} />
+          <span className="text-[10px] font-black uppercase tracking-[0.18em]">Loading</span>
+        </div>
+      )}
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="card flex items-center gap-3 p-4">
           <Skeleton className="h-12 w-12 rounded-full" />
@@ -498,9 +530,30 @@ export function SkeletonList({ rows = 4, tall = false }: { rows?: number; tall?:
   );
 }
 
-export function Spinner({ label = "Loading…" }: { label?: string }) {
-  void label;
-  return <SkeletonList rows={3} />;
+/**
+ * A turning ring. This used to render a skeleton list and ignore its own label,
+ * which meant nothing in the app ever actually showed that work was in flight —
+ * a page waiting on a request just looked stalled.
+ *
+ * `label` is announced to screen readers; pass null inside a control that already
+ * says what it is doing, so it is not read out twice.
+ */
+export function Spinner({ size = 16, label = "Loading…", className = "" }: { size?: number; label?: string | null; className?: string }) {
+  return (
+    <span className={`inline-flex items-center ${className}`} role={label ? "status" : undefined}>
+      <span className="spinner" style={{ width: size, height: size, borderWidth: Math.max(2, Math.round(size / 8)) }} aria-hidden />
+      {label && <span className="sr-only">{label}</span>}
+    </span>
+  );
+}
+
+/** An indeterminate bar. For a wait that belongs to a whole surface, not one control. */
+export function LoadingBar({ className = "" }: { className?: string }) {
+  return (
+    <span className={`block h-[2px] w-full overflow-hidden bg-line ${className}`} role="status" aria-label="Loading">
+      <span className="crawl block h-full w-1/3 bg-start" />
+    </span>
+  );
 }
 
 export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void }) {

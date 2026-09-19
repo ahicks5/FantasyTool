@@ -34,6 +34,13 @@ moves you make before kickoff. That difference is the whole brand.
   have, so it is reserved for a decision the user is being asked to make — a call sheet card, a swap
   card, a verdict. Dense scannable lists keep `<ConfidencePill>`; stamping every row is confetti.
   On the dark hero, ink a stamp `text-white` — status green/amber vanish there in light mode.
+- **Nothing ever looks stalled.** Every wait shows a turning ring: `<Spinner>` on its own,
+  `<Button busy>` for any async control, the shape of the page plus a ring for a page-level
+  wait, and the tapped tab swapping its icon for one while a route arrives (`useLinkStatus`,
+  which only reports pending inside a `<Link>` and only fires when the route was not already
+  prefetched). The ring is the **one exception** to the reduced-motion rule below: it slows
+  rather than stopping, because a frozen spinner says "stalled", which is the exact thing it
+  exists to deny.
 - **Motion vocabulary**, and that is all of it: `rise` (arriving), `print` (a call sheet row coming
   off the printer), `promote`/`demote` (a depth-chart tile changing places), `slam` (a stamp
   landing), `tick` (a number that changed), `lamp` (the ON AIR pulse). Everything is CSS — no

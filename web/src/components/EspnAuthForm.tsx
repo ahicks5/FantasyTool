@@ -126,7 +126,8 @@ export function EspnAuthForm({
 
       <div className="mt-4 flex items-center gap-3">
         <Button
-          disabled={!ready || busy}
+          busy={busy}
+          disabled={!ready}
           onClick={() => {
             saveEspnAuth(s2, swid);
             setS2("");
