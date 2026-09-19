@@ -4,18 +4,19 @@ import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
 import { IconFilm, IconSheet, IconTeam, IconTrade, IconWire } from "./icons";
 import { BoothOpening, LinkButton, OnAir, Spinner, ThemeToggle, Wordmark } from "./ui";
+import { SECTIONS, TAB_ORDER, type SectionKey } from "@/lib/vocab";
 
 // Coach vocabulary, and every label still says what the screen is: scouting is the
 // free-agent pool, the GM's office is where deals get made, film is the weekly recap.
-// These are section names. What you *buy* keeps its product name — Wire Pass, Trade
-// Lab, Full Booth — which is what the pricing table lists.
-const TABS = [
-  { href: "/home", label: "Call sheet", Icon: IconSheet },
-  { href: "/team", label: "Depth", Icon: IconTeam },
-  { href: "/waivers", label: "Scouting", Icon: IconWire },
-  { href: "/trade", label: "GM's Office", Icon: IconTrade },
-  { href: "/report", label: "Film", Icon: IconFilm },
-];
+// The words themselves live in `lib/vocab.ts` so a rename is one file; this only
+// pairs them with their icons.
+const TAB_ICONS: Record<SectionKey, (p: { size?: number; strokeWidth?: number }) => React.ReactElement> = {
+  home: IconSheet,
+  team: IconTeam,
+  waivers: IconWire,
+  trade: IconTrade,
+  report: IconFilm,
+};
 
 export function TopBar({ session }: { session: Session }) {
   const c = session.connection;
@@ -62,7 +63,9 @@ export function TabBar() {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-[color-mix(in_srgb,var(--color-plane)_92%,transparent)] pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
       <ul className="mx-auto grid max-w-lg grid-cols-5">
-        {TABS.map(({ href, label, Icon }) => {
+        {TAB_ORDER.map((key) => {
+          const { href, label } = SECTIONS[key];
+          const Icon = TAB_ICONS[key];
           const active = path === href || path.startsWith(href + "/");
           return (
             <li key={href}>
@@ -89,23 +92,43 @@ export function TabBar() {
   );
 }
 
-/** Top bar, bottom tabs, and the gate that asks for a league before anything else. */
+/**
+ * Top bar, bottom tabs, and the gate that asks for a league before anything else.
+ *
+ * Every tab renders its title, and the title row is a fixed-height band: it used to be
+ * optional (the call sheet hid it), so moving between tabs shifted everything below by
+ * the height of an h1 and the whole page appeared to jump. A band that is always there,
+ * always the same height, and painted *before* the data arrives cannot be the thing
+ * that moves.
+ *
+ * `needsMe` is for screens whose first paint depends on entitlements. Everything else
+ * mounts as soon as the connection is known — that comes from localStorage and is
+ * synchronous — so the page's own loader is the only wait on screen rather than the
+ * second of two.
+ */
 export function AppShell({
-  title,
+  section,
   children,
-  hideTitle = false,
+  aside,
+  needsMe = false,
 }: {
-  title: string;
+  section: SectionKey;
   children: (s: Session) => React.ReactNode;
-  hideTitle?: boolean;
+  /** Right-hand slot on the title row: a week chip, a back chevron. One line, no wrap. */
+  aside?: React.ReactNode;
+  needsMe?: boolean;
 }) {
   const session = useSession();
+  const { title, gate } = SECTIONS[section];
   return (
     <div className="flex min-h-screen flex-col">
       <TopBar session={session} />
       <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">
-        {!hideTitle && <h1 className="mb-4 text-[26px]">{title}</h1>}
-        {session.loading ? (
+        <div className="mb-4 flex min-h-[34px] items-center justify-between gap-3">
+          <h1 className="truncate text-[26px]">{title}</h1>
+          {aside}
+        </div>
+        {needsMe && session.loading ? (
           <BoothOpening />
         ) : session.connection ? (
           children(session)
@@ -114,7 +137,7 @@ export function AppShell({
             <OnAir className="text-white/45" label="Off air" />
             <div className="display mt-3 text-[26px] leading-tight">Booth&rsquo;s empty</div>
             <p className="mx-auto mb-6 mt-2 max-w-[17rem] text-[15px] leading-relaxed text-white/70">
-              Hook up a Sleeper or ESPN league and {title.toLowerCase()} shows up here. No account, no password.
+              Hook up a Sleeper or ESPN league and {gate} shows up here. No account, no password.
             </p>
             <LinkButton href="/connect" variant="onHero" className="w-full">
               Put me in the booth

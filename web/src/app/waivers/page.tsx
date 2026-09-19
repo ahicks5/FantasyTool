@@ -4,7 +4,7 @@ import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";
 import { WaiverPlanView } from "@/components/WaiverPlanView";
 import { WaiversView } from "@/components/WaiversView";
-import { BoothOpening, ErrorBox, H2 } from "@/components/ui";
+import { BoothOpening, useHeldWait, ErrorBox, H2 } from "@/components/ui";
 import { getWaiverPlan, getWaivers, PaywallError } from "@/lib/api";
 import { once, useCached } from "@/lib/cache";
 import type { Connection } from "@/lib/storage";
@@ -31,10 +31,12 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
     };
   }, [c.platform, c.league_id, c.team_id]);
 
+  const waiting = useHeldWait(!!plan);
+
   if (cause instanceof PaywallError)
     return <Locked signedIn={signedIn} sku="waivers" what="Wire Pass" teaser={cause.teaser} onUnlocked={refresh} />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
-  if (!plan) return <BoothOpening />;
+  if (waiting || !plan) return <BoothOpening />;
 
   return (
     <div className="grid gap-6">
@@ -60,7 +62,7 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
 
 export default function WaiversPage() {
   return (
-    <AppShell title="Scouting">
+    <AppShell section="waivers" needsMe>
       {(s) =>
         s.has("waivers") ? (
           <WaiversBody c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />

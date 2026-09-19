@@ -2,7 +2,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";
-import { BoothOpening, Countdown, ErrorBox, Eyebrow, OnAirLive, SplitMeter, Stamp, useCountUp } from "@/components/ui";
+import { BoothOpening, Countdown, ErrorBox, Eyebrow, OnAirLive, SplitMeter, Stamp, useHeldWait } from "@/components/ui";
 import { getActions, sendFeedback } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { calledKey, pct, sheetStatus, signed } from "@/lib/format";
@@ -24,7 +24,6 @@ const isCallable = (a: Action) => !a.locked && a.type !== "hold";
  */
 function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: number; total: number; animate: boolean }) {
   const delta = feed.projected_total - feed.current_total;
-  const projected = useCountUp(feed.projected_total, 1, animate);
   const m = feed.matchup;
   const showMatchup = m && m.opponent && m.win_prob !== null && m.their_proj !== null;
   const done = total > 0 && called >= total;
@@ -41,9 +40,13 @@ function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: num
           Week {feed.week} · {feed.team}
         </Eyebrow>
         <h1 className="display mt-2 text-[30px] leading-[1.08] text-white">{feed.summary}</h1>
+        {/* The total does not count up here. It sits inside a sentence, and a figure that
+            eases from 0.0 to 121.4 re-wraps the whole paragraph while it climbs — the
+            reserved width stops the reflow but not the reading. The scoreboard number
+            below is the one that gets to animate. */}
         <p className="mt-2.5 text-[13px] text-white/60">
           Synced {ago(feed.synced_at)} · Projected{" "}
-          <span className="tnum font-bold text-white">{projected}</span>
+          <span className="tnum font-bold text-white">{feed.projected_total.toFixed(1)}</span>
           {delta > 0.05 && <span className="tnum font-bold text-start"> {signed(delta)} if you make every call</span>}
         </p>
 
@@ -165,8 +168,11 @@ function HomeBody({ c }: { c: Connection }) {
     () => getActions(c.platform, c.league_id, c.team_id),
   );
 
+  // Held so a warm API cannot cut the opening off mid-sentence; zero cost once it has played.
+  const waiting = useHeldWait(!!feed);
+
   if (error) return <ErrorBox message={error} onRetry={reload} />;
-  if (!feed) return <BoothOpening />;
+  if (waiting || !feed) return <BoothOpening />;
 
   // Per league and per week, so a new week always starts with a clean sheet.
   const key = calledKey(c.league_id, feed.week);
@@ -175,7 +181,7 @@ function HomeBody({ c }: { c: Connection }) {
 
 export default function HomePage() {
   return (
-    <AppShell title="the call sheet" hideTitle>
+    <AppShell section="home">
       {(s) => <HomeBody c={s.connection!} />}
     </AppShell>
   );

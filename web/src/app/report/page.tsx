@@ -6,7 +6,7 @@ import { LineupView } from "@/components/LineupView";
 import { WaiversView } from "@/components/WaiversView";
 import { WaiverPlanView } from "@/components/WaiverPlanView";
 import { TradeFinderView } from "@/components/TradeFinderView";
-import { BoothOpening, ErrorBox, Eyebrow, H2, SplitMeter, VerdictWord } from "@/components/ui";
+import { BoothOpening, useHeldWait, ErrorBox, Eyebrow, H2, SplitMeter, VerdictWord } from "@/components/ui";
 import { getReport } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { pct } from "@/lib/format";
@@ -18,8 +18,10 @@ function ReportBody({ c }: { c: Connection }) {
     `report:${c.platform}:${c.league_id}:${c.team_id}`,
     () => getReport(c.platform, c.league_id, c.team_id),
   );
+  const waiting = useHeldWait(!!data);
+
   if (error) return <ErrorBox message={error} onRetry={reload} />;
-  if (!data) return <BoothOpening />;
+  if (waiting || !data) return <BoothOpening />;
 
   const m = data.matchup;
   return (
@@ -94,7 +96,7 @@ function ReportBody({ c }: { c: Connection }) {
 
 export default function ReportPage() {
   return (
-    <AppShell title="The film">
+    <AppShell section="report" needsMe>
       {(s) => (s.has("full_report") ? <ReportBody c={s.connection!} /> : <Locked signedIn={s.signedIn} sku="full_report" what="Full Report" onUnlocked={s.refresh} />)}
     </AppShell>
   );
