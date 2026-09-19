@@ -13,6 +13,8 @@ export interface Product {
   features: Feature[];
   leagues: number;
   blurb: string;
+  /** `edge/products.py` has always sent this; the Pricing badge infers it from `sku` instead. */
+  kind?: "free" | "a_la_carte" | "bundle";
 }
 
 export interface ProductsResponse {

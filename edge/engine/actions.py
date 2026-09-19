@@ -164,18 +164,23 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
     moves = [a for a in actions if a["type"] != "hold"]
     n_real = sum(1 for a in moves if not a["locked"])
     if not actions:
-        summary = "Nothing to do. Your lineup is set."
+        summary = "Board's set. Nothing to call."
     elif not moves:
-        summary = "Nothing urgent this week"
+        summary = "Quiet week. Nothing urgent."
     else:
         summary = f"{len(moves)} move{'s' if len(moves) != 1 else ''} worth making"
+    # How many rosters we actually read, rather than a hard-coded 11: this line is the
+    # product's proof that a quiet week means we looked, so it has to be true in a
+    # 10-team league and a 14-team one alike.
+    others = max(0, league.num_teams - 1)
+    checked = (f"We checked your lineup, the wire and all {others} other roster"
+               f"{'s' if others != 1 else ''}. Nothing needs you this week.")
     return {
         "week": league.week, "team": team.name, "league": league.name,
         "projected_total": adv.projected_total, "current_total": adv.current_total,
         "matchup": report.matchup(league, team, matchups_raw),
         "summary": summary, "all_clear": n_real == 0 and not any(a["locked"] for a in actions),
-        "footer": ("Everything else looks fine." if moves
-                   else "We checked your lineup, the wire and all 11 other rosters. Nothing needs you this week."),
+        "footer": ("Everything else on your roster is fine. Go enjoy your Sunday." if moves else checked),
         "actions": actions,
         "algo_version": ALGO_VERSION,
     }

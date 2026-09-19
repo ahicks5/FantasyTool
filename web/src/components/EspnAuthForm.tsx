@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { clearEspnAuth, saveEspnAuth, useEspnAuth } from "@/lib/espnAuth";
+import { IconLock } from "@/components/icons";
 import { Button } from "@/components/ui";
 
 const FIELD =
@@ -30,19 +31,47 @@ export function EspnAuthForm({
 
   return (
     <div className="card mt-5 p-5">
-      <h2 className="display text-[21px] leading-tight">
-        {expired ? "ESPN needs you to sign in again" : "This league is private"}
-      </h2>
-      <p className="mt-2 text-[15px] leading-relaxed text-muted">
-        {expired
-          ? "The cookies you gave us stopped working. ESPN rotates them every few weeks — paste fresh ones and you are back in."
-          : "ESPN only shows a private league to someone signed in. Paste two values from your own browser and the booth can read it."}
-      </p>
+      <div className="flex items-start gap-3">
+        <span aria-hidden className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-soft text-ink-2">
+          <IconLock size={20} strokeWidth={2} />
+        </span>
+        <div className="min-w-0">
+          <h2 className="display text-[21px] leading-tight">
+            {expired ? "ESPN wants a fresh sign-in" : "That league is private"}
+          </h2>
+          <p className="mt-2 text-[15px] leading-relaxed text-muted">
+            {expired
+              ? "The two values you gave us stopped working — ESPN rotates them every few weeks. Grab fresh ones from your browser and you are straight back in."
+              : "ESPN only opens a private league to someone signed in. Paste two values from your own browser and the booth can read it — we only ever read with them, and never post, join or change anything in your league."}
+          </p>
+        </div>
+      </div>
 
-      <p className="mt-3 rounded-xl bg-soft px-4 py-3 text-[13px] leading-relaxed text-muted">
-        These stay on this device. They go out with your requests and the server never saves
-        them — so nothing to leak from our side, and you can wipe them here any time.
-      </p>
+      {/* The trust moment. Every sentence here is literally true of what the code does —
+          the cookies never leave the browser except as headers on the user's own requests,
+          and nothing about them can be softened without making it a lie. */}
+      <div className="mt-4 rounded-xl bg-soft px-4 py-3.5">
+        <div className="eyebrow">What happens to these</div>
+        <ul className="mt-2 grid gap-2 text-[13px] leading-relaxed text-muted">
+          <li>
+            <b className="text-ink">They stay in this browser.</b> They ride along as headers on your own league
+            requests and the server never writes them down — nothing of yours is sitting on our side to leak.
+          </li>
+          <li>
+            <b className="text-ink">They are a read session for your whole ESPN account.</b> ESPN gives no way to
+            limit them to one league, and we cannot revoke them — which is exactly why they live with you and not
+            with us.
+          </li>
+          <li>
+            <b className="text-ink">Yours to wipe, any time.</b> &ldquo;Forget these&rdquo; clears them from this
+            device. Never paste them into a chat, an email or a bug report — pull fresh ones from your browser
+            instead.
+          </li>
+          <li>
+            The honest trade-off: because we keep nothing, the weekly email cannot read a private league.
+          </li>
+        </ul>
+      </div>
 
       <button
         type="button"
@@ -54,15 +83,15 @@ export function EspnAuthForm({
       </button>
       {open && (
         <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-[14px] leading-relaxed text-muted">
-          <li>Open fantasy.espn.com in a browser where you are signed in.</li>
+          <li>On a computer, open fantasy.espn.com in the browser where you are already signed in.</li>
           <li>
             Open developer tools (<span className="font-mono text-[13px]">F12</span>), then{" "}
-            <b className="text-ink">Application</b> → <b className="text-ink">Cookies</b> →{" "}
-            <span className="font-mono text-[13px]">espn.com</span>.
+            <b className="text-ink">Application</b> (<b className="text-ink">Storage</b> in Firefox) →{" "}
+            <b className="text-ink">Cookies</b> → <span className="font-mono text-[13px]">espn.com</span>.
           </li>
           <li>
             Copy the values of <span className="font-mono text-[13px]">espn_s2</span> and{" "}
-            <span className="font-mono text-[13px]">SWID</span>.
+            <span className="font-mono text-[13px]">SWID</span>, and paste them below. Takes about a minute.
           </li>
         </ol>
       )}
@@ -89,6 +118,9 @@ export function EspnAuthForm({
             autoComplete="off"
             spellCheck={false}
           />
+          <span className="mt-1.5 block text-[12px] leading-relaxed text-muted">
+            With the curly braces or without them — we tidy it up either way.
+          </span>
         </label>
       </div>
 
@@ -102,7 +134,7 @@ export function EspnAuthForm({
             onSaved();
           }}
         >
-          {busy ? "Checking…" : "Unlock this league"}
+          {busy ? "Checking with ESPN…" : "Open this league"}
         </Button>
         {stored && (
           <button

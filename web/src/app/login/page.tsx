@@ -44,10 +44,11 @@ function LoginInner() {
       </header>
 
       <div className="pt-8 rise">
-        <Eyebrow>Account</Eyebrow>
+        <Eyebrow>Booth pass</Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">Sign in</h1>
         <p className="mt-2 max-w-[22rem] text-[15px] leading-relaxed text-muted">
-          No password. A link in your inbox signs you in and carries anything you&rsquo;ve bought.
+          No password to remember. One link in your inbox signs you in and brings every pass you&rsquo;ve bought with
+          it.
         </p>
       </div>
 
@@ -61,7 +62,7 @@ function LoginInner() {
             </p>
             <div className="mt-5 grid gap-2.5">
               <LinkButton href={next} className="w-full">
-                Continue
+                Back to the booth
               </LinkButton>
               {!dev && (
                 <Button variant="secondary" className="w-full" onClick={() => signOut().then(() => setCurrent(null))}>
@@ -74,7 +75,7 @@ function LoginInner() {
           <Card>
             <Eyebrow>Not configured</Eyebrow>
             <p className="mt-1.5 text-[14px] leading-relaxed text-ink-2">
-              Login isn&rsquo;t configured on this deployment. Set{" "}
+              Sign-in isn&rsquo;t wired up on this deployment. Set{" "}
               <code className="rounded bg-soft px-1 py-0.5 text-[12px]">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
               <code className="rounded bg-soft px-1 py-0.5 text-[12px]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, or{" "}
               <code className="rounded bg-soft px-1 py-0.5 text-[12px]">NEXT_PUBLIC_DEV_USER</code> for local dev.
@@ -85,10 +86,10 @@ function LoginInner() {
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-start-soft text-start">
               <IconCheck size={22} strokeWidth={2.6} />
             </span>
-            <p className="display mt-4 text-[21px] leading-tight">Check your email</p>
+            <p className="display mt-4 text-[21px] leading-tight">Link&rsquo;s on its way</p>
             <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
-              We sent a sign-in link to <span className="font-bold text-ink break-words">{email}</span>. Open it on this
-              device.
+              Sent to <span className="font-bold text-ink break-words">{email}</span>. Open it on this device and
+              you&rsquo;re in. Check spam if it is slow.
             </p>
           </Card>
         ) : (
@@ -116,7 +117,7 @@ function LoginInner() {
       </div>
 
       <p className="mt-6 text-center text-[12px] leading-relaxed text-muted">
-        You only need an account to buy or to keep a league. Looking is free.
+        You only need an account to buy a pass or keep a league on file. Looking is always free.
       </p>
     </main>
   );

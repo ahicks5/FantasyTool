@@ -300,6 +300,20 @@ export const ROSTERS: MockRoster[] = [
 export const STARTING_SLOTS = ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "FLEX", "DEF"];
 
 // Free headshots / logos, same URLs the API emits.
+/**
+ * A mock offer's player records and its name list must describe the same two players —
+ * the engine derives both from one list (`trade_finder.py`), so a mock that pairs a
+ * hard-coded name with an unrelated roster slot shows a trade nobody proposed.
+ */
+function offerSide(teamId: string, ids: string[]): { players: Player[]; names: string[] } {
+  const players = ids.map((id) => {
+    const found = allPlayers(teamId).find((p) => p.id === id);
+    if (!found) throw new Error(`mock offer references ${id}, which is not on team ${teamId}`);
+    return withPhoto(found);
+  });
+  return { players, names: players.map((p) => p.name) };
+}
+
 function withPhoto(p: Player): Player {
   const team = (p.nfl_team ?? "").toLowerCase();
   const team_logo = team ? `https://sleepercdn.com/images/team_logos/nfl/${team}.png` : null;
@@ -627,8 +641,8 @@ export const TRADE_FINDER: TradeFinderResponse = {
         {
           their_team_id: "4", their_team_name: "FxxxKroenke",
           give: ["2449"], get: ["7526"],
-          give_names: ["Stefon Diggs"], get_names: ["Jaylen Waddle"],
-          give_players: [withPhoto(allPlayers(MY_TEAM_ID)[3])], get_players: [withPhoto(allPlayers("4")[2])],
+          give_names: offerSide(MY_TEAM_ID, ["2449"]).names, get_names: offerSide("4", ["7526"]).names,
+          give_players: offerSide(MY_TEAM_ID, ["2449"]).players, get_players: offerSide("4", ["7526"]).players,
           my_gain_ros: 21, their_gain_ros: 6, my_gain_week: 1.4,
           fairness: 0.91, verdict: "Fair", score: 27.4,
           why: "You gain 21 rest-of-season lineup points, they gain 6. Value is 91% balanced. This manager has acquired WRs in 3 of their last 5 moves.",
@@ -644,8 +658,8 @@ export const TRADE_FINDER: TradeFinderResponse = {
         {
           their_team_id: "9", their_team_name: "philking",
           give: ["6790"], get: ["7594"],
-          give_names: ["D'Andre Swift"], get_names: ["Chuba Hubbard"],
-          give_players: [withPhoto(allPlayers(MY_TEAM_ID)[1])], get_players: [withPhoto(allPlayers("9")[1])],
+          give_names: offerSide(MY_TEAM_ID, ["6790"]).names, get_names: offerSide("9", ["7594"]).names,
+          give_players: offerSide(MY_TEAM_ID, ["6790"]).players, get_players: offerSide("9", ["7594"]).players,
           my_gain_ros: 11, their_gain_ros: 4, my_gain_week: 0.6,
           fairness: 0.95, verdict: "Fair", score: 17.2,
           why: "You gain 11 rest-of-season lineup points, they gain 4. Value is 95% balanced.",

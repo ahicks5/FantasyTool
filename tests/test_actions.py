@@ -1,5 +1,7 @@
+import copy
 import json
 from pathlib import Path
+import pytest
 
 from edge.data.schedule import bye_weeks
 from edge.engine import actions
@@ -123,3 +125,33 @@ def test_a_quiet_week_still_shows_the_matchup_and_says_we_checked(league):
     assert not any(a["locked"] for a in holds)
     if not [a for a in feed["actions"] if a["type"] != "hold"]:
         assert "Nothing needs you this week" in feed["footer"]
+
+
+@pytest.mark.parametrize("n_teams, expected", [(12, "all 11 other rosters."), (10, "all 9 other rosters."),
+                                               (2, "all 1 other roster.")])
+def test_the_quiet_week_footer_counts_the_rosters_it_actually_read(league, n_teams, expected):
+    """The 'we checked everyone' line is the product's proof that a quiet week is real, so the
+    count has to come from the league. Hard-coding 11 is wrong in every league that isn't 12.
+
+    The `league` fixture is session-scoped, so this works on a deep copy — trimming the shared
+    league in place would quietly corrupt every test that runs after it.
+    """
+    from edge.engine.lineup import optimize
+
+    ros, byes = _ros(league)
+    lg = copy.deepcopy(league)
+    t = lg.team("2")
+    # Force a genuinely quiet week: an already-optimal lineup and an empty wire, so the only
+    # actions left are holds.
+    lg.free_agents = []
+    t.starters = [p.id if p else "0" for p in optimize(t.players, lg.starting_slots)]
+    lg.teams = ([t] + [x for x in lg.teams if x.id != t.id])[:n_teams]
+    assert lg.num_teams == n_teams
+
+    # Flat rest-of-season values mean no trade improves either side either, so the only
+    # actions left are holds — which is the one state that renders the footer under test.
+    flat = dict.fromkeys(ros, 0.0)
+    feed = actions.build(lg, t, flat, byes, entitlements={"my_team", "waivers", "trade_lab"})
+    assert not [a for a in feed["actions"] if a["type"] != "hold"], \
+        f"scenario is not quiet: {[a['type'] for a in feed['actions']]}"
+    assert expected in feed["footer"], feed["footer"]

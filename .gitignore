@@ -7,3 +7,6 @@ __pycache__/
 .venv/
 node_modules/
 web/.next/
+
+# Card render intermediates (the CLI writes the HTML beside each PNG for debugging).
+launch/cards/*.html

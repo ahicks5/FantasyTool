@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IconArrowUp, IconCheck } from "@/components/icons";
-import { Eyebrow, LinkButton, Stat, StatusMeter, Wordmark } from "@/components/ui";
-import { signed } from "@/lib/format";
+import { Eyebrow, LinkButton, OnAir, Stamp, Stat, StatusMeter, Wordmark } from "@/components/ui";
+import { signed, verdictBlurb } from "@/lib/format";
 import type { SharedVerdict } from "@/lib/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -46,12 +46,22 @@ const TONE: Record<string, { text: string; bar: string }> = {
   Fair: { text: "text-lean", bar: "bg-lean" },
 };
 
-const BLURB: Record<string, string> = {
-  Accept: "This one is worth taking.",
-  Reject: "Don't take this one.",
-  Counter: "Close — but ask for more.",
-  Fair: "Even money either way.",
-};
+/**
+ * The verdict, stamped — the same device as the 1080 card people just saw in the group
+ * chat (`components/ShareCard.tsx`). Local to this page rather than a shared primitive:
+ * `<Stamp>` is sized for a card badge, and this one has to carry a whole screen.
+ * Inked white because it sits on the dark hero, where status green and amber vanish in
+ * light mode; the verdict word itself carries the meaning, never the colour.
+ */
+function VerdictStamp({ verdict }: { verdict: string }) {
+  // Sized off the viewport so the longest verdict ("COUNTER") still fits on a 320px phone.
+  // `stamp-xl` carries the rule and padding in em, so they track whatever size lands here.
+  return (
+    <Stamp size="xl" ink="text-white" slam className="text-[clamp(30px,10vw,52px)]">
+      {verdict}
+    </Stamp>
+  );
+}
 
 function initials(name: string): string {
   const parts = name.replace(/[^A-Za-z' .-]/g, "").split(/\s+/).filter(Boolean);
@@ -146,15 +156,40 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         </span>
       </header>
 
-      <article className="card overflow-hidden rise">
-        <span aria-hidden className={`block h-1.5 w-full ${tone.bar}`} />
+      {/* The one dark surface: the verdict, stamped, exactly as it unfurled in the chat. */}
+      <article className="hero callsheet overflow-hidden rise">
+        {/* Keys the card to its verdict at a glance. 3px, the same weight as the call
+            sheet's rail — at 6px an amber Counter reads as a caution banner. */}
+        <span aria-hidden className={`block h-[3px] w-full ${tone.bar}`} />
 
+        <div className="px-6 pb-6 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <OnAir className="text-white/70" />
+            <Eyebrow>The booth&rsquo;s verdict</Eyebrow>
+          </div>
+
+          <h1 className="mt-5 leading-none">
+            <span className="sr-only">Trade verdict: </span>
+            <VerdictStamp verdict={v.verdict} />
+          </h1>
+          <p className="display mt-5 text-[20px] leading-snug text-white">{verdictBlurb(v.verdict)}</p>
+          <p className="mt-2 text-[14px] leading-relaxed text-white/65">
+            Somebody ran this trade through The Booth. Every projection re-scored to that league&rsquo;s own scoring,
+            then one call: take it, counter it, or walk.
+          </p>
+        </div>
+      </article>
+
+      <article className="card mt-3 overflow-hidden rise rise-1">
         <div className="px-6 pb-6 pt-5">
-          <Eyebrow>Trade verdict</Eyebrow>
-          <h1 className={`display mt-1.5 text-[60px] uppercase leading-[0.9] ${tone.text}`}>{v.verdict}</h1>
-          <p className="mt-2.5 text-[15px] font-bold text-ink-2">{BLURB[v.verdict] ?? ""}</p>
+          {/* On paper the status colour is legible, so the verdict is echoed here in ink —
+              always with the word, never the colour on its own. */}
+          <div className="flex items-baseline justify-between gap-3">
+            <Eyebrow>The trade</Eyebrow>
+            <span className={`display text-[13px] uppercase tracking-wider ${tone.text}`}>{v.verdict}</span>
+          </div>
 
-          <div className="mt-6 grid gap-2.5">
+          <div className="mt-3 grid gap-2.5">
             <Side label="You send" names={v.give} players={v.give_players} accent="bg-sit" />
             <div className="flex items-center gap-3" aria-hidden>
               <span className="h-px flex-1 bg-line" />
@@ -196,22 +231,26 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         </div>
       </article>
 
-      <section className="hero mt-4 p-6 text-center rise rise-2">
+      {/* The way in. Paper, not hero: the verdict above is this screen's one dark surface. */}
+      <section className="card mt-3 p-6 text-center rise rise-2">
         <Eyebrow>Your turn</Eyebrow>
-        <p className="display mx-auto mt-2 max-w-[15rem] text-[27px] leading-[1.08]">Run this on your own league</p>
-        <ul className="mx-auto mt-4 grid max-w-[17rem] gap-2 text-left text-[13px] leading-snug text-white/70">
-          {["Start/sit calls free, forever", "Projections rescored to your scoring", "No account needed to look"].map(
-            (l) => (
-              <li key={l} className="flex items-start gap-2">
-                <IconCheck size={14} strokeWidth={3} className="mt-[3px] shrink-0 text-white" />
-                {l}
-              </li>
-            ),
-          )}
+        <p className="display mx-auto mt-2 max-w-[16rem] text-[27px] leading-[1.08]">Get your own league in the booth</p>
+        <ul className="mx-auto mt-4 grid max-w-[18rem] gap-2 text-left text-[13px] leading-snug text-ink-2">
+          {[
+            "Start/sit calls free, forever",
+            "Every projection re-scored to your league's scoring",
+            "No account, no password — hook up a league and look",
+          ].map((l) => (
+            <li key={l} className="flex items-start gap-2">
+              <IconCheck size={14} strokeWidth={3} className="mt-[3px] shrink-0 text-start" />
+              {l}
+            </li>
+          ))}
         </ul>
-        <LinkButton href="/connect" variant="onHero" className="mt-6 w-full text-hero!">
-          Connect your league — free
+        <LinkButton href="/connect" variant="start" className="mt-6 w-full">
+          Put me in the booth — free
         </LinkButton>
+        <p className="mt-3.5 text-[12px] font-bold text-muted">Three moves. By Sunday. We keep score.</p>
       </section>
 
       <p className="mt-6 text-center text-[12px] leading-relaxed text-muted">

@@ -7,7 +7,7 @@ import { saveConnection } from "@/lib/storage";
 import { EspnAuthForm } from "@/components/EspnAuthForm";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck } from "@/components/icons";
-import { Button, ErrorBox, Eyebrow, ThemeToggle, Wordmark } from "@/components/ui";
+import { Button, Countdown, ErrorBox, Eyebrow, ThemeToggle, Wordmark } from "@/components/ui";
 
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
@@ -124,10 +124,16 @@ export default function ConnectPage() {
         <Eyebrow>
           Step <span className="tnum">1</span> of <span className="tnum">2</span> · Your league
         </Eyebrow>
-        <h1 className="display mt-2 text-[34px] leading-[1.04]">Connect your league</h1>
+        <h1 className="display mt-2 text-[34px] leading-[1.04]">Hook up your league</h1>
         <p className="mt-2 text-[15px] leading-relaxed text-muted">
-          Sleeper, or ESPN public and private. No account needed to see your first moves.
+          Sleeper, or ESPN public and private. Two steps and the booth is on air — no account, no password, nothing to
+          sign.
         </p>
+        {/* The on-ramp is only urgent if it says how long there is. Its own row, so a long
+            clock never crowds the wordmark on a small phone. */}
+        <div className="mt-3">
+          <Countdown />
+        </div>
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="Platform">
@@ -150,7 +156,7 @@ export default function ConnectPage() {
             >
               <span className="display block text-[17px] leading-tight">{p === "sleeper" ? "Sleeper" : "ESPN"}</span>
               <span className={`mt-0.5 block text-[12px] leading-snug ${on ? "text-paper/65" : "text-muted"}`}>
-                {p === "sleeper" ? "Username or ID" : "League ID"}
+                {p === "sleeper" ? "Username or league ID" : "League ID · public or private"}
               </span>
             </button>
           );
@@ -181,8 +187,9 @@ export default function ConnectPage() {
           {leagues && (
             <ul className="mt-3 grid gap-2">
               {leagues.length === 0 && (
-                <li className="rounded-xl bg-soft px-4 py-3 text-[14px] text-muted">
-                  No leagues found for that username.
+                <li className="rounded-xl bg-soft px-4 py-3 text-[14px] leading-relaxed text-muted">
+                  Nobody home under that username. Check the spelling — it is the Sleeper display name — or paste the
+                  league ID below instead.
                 </li>
               )}
               {leagues.map((l) => {
@@ -236,6 +243,11 @@ export default function ConnectPage() {
             Load
           </Button>
         </div>
+        <p className="mt-2 text-[13px] leading-relaxed text-muted">
+          {platform === "sleeper"
+            ? "The long number in your Sleeper league URL."
+            : "The number after leagueId= in your ESPN league URL. If the league is private we ask for two values from your own browser, right here."}
+        </p>
       </section>
 
       {error && (
@@ -259,6 +271,10 @@ export default function ConnectPage() {
             <span className="tnum">{league.week}</span>
           </Eyebrow>
           <h2 className="display mt-2 text-[28px] leading-[1.06]">Which team is yours?</h2>
+          <p className="mt-2 text-[14px] leading-relaxed text-muted">
+            Pick it and the booth writes this week&rsquo;s call sheet for that roster. Nothing gets written back to
+            your league — ever.
+          </p>
           <ul className="mt-4 grid gap-2">
             {league.teams.map((t) => {
               const on = teamId === t.id;
@@ -290,7 +306,7 @@ export default function ConnectPage() {
 
           <div className="sticky bottom-0 -mx-4 mt-5 border-t border-line bg-[color-mix(in_srgb,var(--color-plane)_92%,transparent)] px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-md">
             <Button variant="start" className="w-full" onClick={submit} disabled={busy || !teamId}>
-              {busy ? "Connecting…" : teamId ? "Connect and see my moves" : "Pick your team"}
+              {busy ? "Wiring you in…" : teamId ? "Put me in the booth" : "Pick your team"}
             </Button>
           </div>
         </section>

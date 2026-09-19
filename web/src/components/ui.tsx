@@ -58,6 +58,18 @@ export function OnAir({ className = "", label = "On air" }: { className?: string
    reserved for a call the user is being asked to make — never for a row in a
    list, which would turn a scannable table into confetti.                     */
 
+const STAMP_SIZE = {
+  md: "text-[11px]",
+  lg: "stamp-lg",
+  /**
+   * Display size, for the single verdict a screen exists to deliver. One per screen.
+   * `xl` carries no font-size of its own — pass one via `className` (a fixed `text-[34px]`
+   * inside a card, something fluid on a full-screen hero). Its rule and padding are in em,
+   * so the proportions hold at whatever size you choose.
+   */
+  xl: "stamp-xl",
+} as const;
+
 export function Stamp({
   children,
   ink = "text-ink",
@@ -67,13 +79,13 @@ export function Stamp({
 }: {
   children: React.ReactNode;
   ink?: string;
-  size?: "md" | "lg";
+  size?: keyof typeof STAMP_SIZE;
   /** Animate it landing. Use once per screen, on the thing that just resolved. */
   slam?: boolean;
   className?: string;
 }) {
   return (
-    <span className={`stamp ${size === "lg" ? "stamp-lg text-[15px]" : "text-[11px]"} ${ink} ${slam ? "slam" : ""} ${className}`}>
+    <span className={`stamp ${STAMP_SIZE[size]} ${ink} ${slam ? "slam" : ""} ${className}`}>
       {children}
     </span>
   );

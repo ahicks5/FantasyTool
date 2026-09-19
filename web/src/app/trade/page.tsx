@@ -6,10 +6,10 @@ import { Locked } from "@/components/Locked";
 import { ShareCard } from "@/components/ShareCard";
 import { Avatar } from "@/components/Avatar";
 import { PlayerLine } from "@/components/Players";
-import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, StatusMeter, VerdictWord, Why } from "@/components/ui";
+import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, Stamp, StatusMeter, Why } from "@/components/ui";
 import { createShare, evaluateTrade, findTrades, getLeague, getRoster, PaywallError } from "@/lib/api";
 import { TradeFinderView } from "@/components/TradeFinderView";
-import { signed } from "@/lib/format";
+import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { LeagueSummary, Player, TradeFinderResponse, TradeResult } from "@/lib/types";
 
@@ -162,7 +162,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
   return (
     <div className="grid gap-5">
-      <div className="grid grid-cols-2 gap-1 rounded-2xl border border-line bg-soft p-1" role="tablist" aria-label="Trade mode">
+      <div className="grid grid-cols-2 gap-1 rounded-2xl border border-line bg-soft p-1" role="tablist" aria-label="Trade lab mode">
         {(["find", "grade"] as const).map((t) => (
           <button
             key={t}
@@ -173,7 +173,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
               tab === t ? "bg-paper text-ink shadow-[var(--shadow-card)]" : "text-muted"
             }`}
           >
-            {t === "find" ? "Find a trade" : "Grade a trade"}
+            {t === "find" ? "Find a trade" : "Grade an offer"}
           </button>
         ))}
       </div>
@@ -189,7 +189,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       <>
       <section className="card p-4">
         <label htmlFor="their-team" className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
-          Trade with
+          Across the table
         </label>
         <select
           id="their-team"
@@ -212,25 +212,25 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
       <section className="card p-4">
         <div className="flex items-center justify-between">
-          <Eyebrow>You give</Eyebrow>
+          <Eyebrow>You send</Eyebrow>
           <button onClick={() => setSheet("give")} className="min-h-0 rounded-full border border-line-2 bg-soft px-3 py-1.5 text-[13px] font-bold hover:bg-line">
             + Add
           </button>
         </div>
         <div className="mt-2">
-          <Chips players={givePlayers} tone="sit" onRemove={(id) => toggle(give, setGive, id)} empty="Tap + Add to pick from your roster." />
+          <Chips players={givePlayers} tone="sit" onRemove={(id) => toggle(give, setGive, id)} empty="Tap + Add to put someone on the table." />
         </div>
       </section>
 
       <section className="card p-4">
         <div className="flex items-center justify-between">
-          <Eyebrow>You get from {theirTeam?.name ?? "them"}</Eyebrow>
+          <Eyebrow>You get back from {theirTeam?.name ?? "them"}</Eyebrow>
           <button onClick={() => setSheet("get")} className="min-h-0 rounded-full border border-line-2 bg-soft px-3 py-1.5 text-[13px] font-bold hover:bg-line">
             + Add
           </button>
         </div>
         <div className="mt-2">
-          <Chips players={getPlayers} tone="start" onRemove={(id) => toggle(get, setGet, id)} empty="Tap + Add to pick from their roster." />
+          <Chips players={getPlayers} tone="start" onRemove={(id) => toggle(get, setGet, id)} empty="Tap + Add to name what you want back." />
         </div>
       </section>
 
@@ -239,7 +239,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
       <div className="sticky bottom-20 z-[5]">
         <Button variant="start" className="w-full shadow-[var(--shadow-float)]" onClick={submit} disabled={busy || give.length === 0 || get.length === 0}>
-          {busy ? "Evaluating…" : `Evaluate ${give.length}-for-${get.length}`}
+          {busy ? "Grading it…" : `Grade ${give.length}-for-${get.length}`}
         </Button>
       </div>
       {error && <ErrorBox message={error} />}
@@ -247,12 +247,23 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       {result && (
         <div id="verdict" className="grid gap-4 scroll-mt-16">
           <Card className="overflow-hidden p-0 rise">
-            <div className="hero rounded-none px-5 pb-5 pt-5">
-              <Eyebrow>Verdict</Eyebrow>
-              <VerdictWord value={result.verdict} className="mt-1 block text-[64px] leading-[0.95]" />
+            {/* The moment. Same device as the share card: the call is stamped, not typeset.
+                The hero is dark in both themes, where the status inks vanish in light mode,
+                so the stamp goes white here and the verdict colour carries the line below. */}
+            <div className="hero callsheet rounded-none px-5 pb-6 pt-5">
+              <Eyebrow>The booth&rsquo;s verdict</Eyebrow>
+              <div className="mt-3.5 pl-1">
+                <Stamp size="xl" slam ink="text-white" className="text-[34px]">
+                  {result.verdict}
+                </Stamp>
+              </div>
+              <p className="mt-4 text-[13px] leading-snug text-white/60">
+                Your {give.length}-for-{get.length} with {theirTeam?.name ?? "them"}, scored on both rosters.
+              </p>
             </div>
             <div className="p-5">
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <p className={`display text-[19px] leading-snug ${verdictClass(result.verdict)}`}>{verdictBlurb(result.verdict)}</p>
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                 <SideBox label="You" side={result.me} />
                 <SideBox label={theirTeam?.name ?? "Them"} side={result.them} />
               </div>
@@ -277,8 +288,9 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
           </Card>
 
           <Card className="rise rise-1">
-            <Eyebrow>{theirTeam?.name ?? "Their"} tendencies</Eyebrow>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <Eyebrow>The read on {theirTeam?.name ?? "them"}</Eyebrow>
+            <p className="mt-1 text-[13px] leading-snug text-muted">How this manager has actually traded and bid this season.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
               {(result.their_tendencies.style
                 ? [
                     result.their_tendencies.style,
@@ -288,7 +300,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
                     ...(result.their_tendencies.favorite_positions ?? []).map((p) => `acquires ${p}s`),
                     ...(result.their_tendencies.hoards ?? []).map((p) => `hoards ${p}s`),
                   ]
-                : ["No transaction history yet"]
+                : ["No moves on record yet"]
               ).map((t) => (
                 <span key={t} className="rounded-full border border-line bg-soft px-2.5 py-1 text-[12px] font-bold">
                   {t}
@@ -299,18 +311,18 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
           {result.counter && (
             <Card className="border-flip/40 bg-flip-soft rise rise-2">
-              <Eyebrow className="text-flip">Counteroffer</Eyebrow>
-              <div className="mt-1 text-base">
-                <span className="font-bold text-sit">Give</span> {result.counter.give_names.join(" + ") || "nothing"}
+              <Eyebrow className="text-flip">What we&rsquo;d send back</Eyebrow>
+              <div className="mt-1.5 text-base">
+                <span className="font-bold text-sit">Send</span> {result.counter.give_names.join(" + ") || "nothing"}
                 <br />
-                <span className="font-bold text-start">Get</span> {result.counter.get_names.join(" + ") || "nothing"}
+                <span className="font-bold text-start">Ask for</span> {result.counter.get_names.join(" + ") || "nothing"}
               </div>
               <p className="mt-2 text-sm">{result.counter.why}</p>
             </Card>
           )}
 
           <section className="rise rise-3">
-            <H2>Share this verdict</H2>
+            <H2>Send it to the league</H2>
             <p className="mb-2 text-sm text-muted">
               A public link anyone can open, with no account. Long-press the card to save the image.
             </p>
@@ -368,7 +380,7 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
     return (
       <>
         <Button variant="secondary" onClick={make} disabled={busy} className="w-full">
-          {busy ? "Creating link…" : "Create a share link"}
+          {busy ? "Making the link…" : "Make a share link"}
         </Button>
         {error && <p className="mt-2 text-sm text-sit">{error}</p>}
       </>

@@ -145,7 +145,27 @@ kickoff. Named it **The Booth** and rebuilt the shell around a coaching call she
       `edge/graphics.py`) — rendered three real PNGs through Playwright to check the frame.
 - [x] Copy pass in the booth voice across web, the weekly email, Stripe line items and ESPN errors.
       Product names: Wire Pass ($3), Trade Lab ($5), Full Booth ($7).
-- [ ] Domain: check `thebooth.*` / `boothfantasy.*` availability — placeholder is `thebooth.example`.
+- [x] Every screen brought into the booth: Trade Lab (verdict stamped, film-room voice), the
+      wire (claims read as signings: in, out, bid), the on-ramp, the public `/s/{id}` page, and
+      the weekly email (call-sheet structure faked with tables so it survives Outlook).
+- [x] Shared primitives the screens needed: `Stamp size="xl"` (`.stamp-xl`, em-based so the
+      rule tracks the type at any size) and `verdictBlurb()` — both were duplicated per page.
+- [x] Quiet-week footer counts the rosters we actually read instead of a hard-coded 11. It was
+      wrong in every league that is not 12 teams, and that line is our proof we looked.
+- [x] Launch cards regenerated from live Sleeper data, stamped, **with headshots** — the CLI was
+      passing names only, so its cards looked worse than what a user posts from the app.
+- [x] `docs/API.md` corrected: the `graphic` shape was documented as `{title, lines}`, which
+      exists nowhere in the code; 402/403 error shapes and the `kind` field were undocumented.
+- [x] **Dockerfile installs headless Chromium.** The `playwright` package ships no browser, so
+      the deployed API answered 503 for `/api/share/{id}/card.png` — every share link would have
+      unfurled broken. Verified end to end: 503 without a browser, 200 and a 124KB PNG with one.
+- [ ] Domain: `thebooth.com`, `.app` and `.io` are all taken. Verified available: **callthebooth.com**
+      (recommended), theboothfantasy.com, boothcalls.com, theboothnfl.com, boothff.com,
+      thebooth.football. Placeholder in code is `thebooth.example` — one-line change once Andrew picks.
+- [ ] "We keep score" needs a public scorecard page to point at. Today the only published hit
+      rate is `docs/BACKTEST.md` in the repo, and the launch posts have a TODO where its URL goes.
+- [ ] Only week 1 is backtested, so no post claims a multi-week record. Lean's measured hit rate
+      (50% on 20 calls) is well under its advertised ~62%; needs weeks 2–4 before it is quoted.
 - [ ] Sound on the stamp (off by default). Deliberately not built: it is the first thing that would
       make the app feel cheap if it were even slightly wrong.
 - [ ] Drag-to-move tiles on the depth chart, and the manager dossier wall in Trade Lab — the two

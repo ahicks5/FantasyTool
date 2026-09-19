@@ -33,6 +33,22 @@ export function verdictClass(v: Verdict): string {
   return VERDICT_TEXT_CLASSES[v] ?? "text-ink";
 }
 
+/**
+ * The line under a stamped verdict, in the booth's voice. The stamp is one word, so this
+ * is what turns it into an instruction. Canonical here rather than per page: the in-app
+ * verdict and the public share page must not tell the same trade two different things.
+ */
+export const VERDICT_BLURB: Record<Verdict, string> = {
+  Accept: "Take it. This one's worth doing.",
+  Reject: "Turn it down.",
+  Counter: "Close. Ask for more before you sign.",
+  Fair: "Even money either way. Your call.",
+};
+
+export function verdictBlurb(v: Verdict | string): string {
+  return VERDICT_BLURB[v as Verdict] ?? "";
+}
+
 /** "$12 (range $8–$15, 12% of budget)" */
 export function formatBid(bid: Bid): string {
   if (bid.amount === null || !bid.range) return bid.note ?? "Priority waivers — claim in order";

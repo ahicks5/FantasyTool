@@ -32,6 +32,13 @@ Tests: `uv run pytest -q` (offline, fixtures) and `cd web && npm test && npm run
 | trade_lab | $5 / season | Trade Lab |
 | full_report | $7 / season | Full Booth: everything + the weekly film, 5 leagues |
 
+## Deploy notes
+The share card (`GET /api/share/{id}/card.png`, the image a `/s/{id}` link unfurls with) is
+rendered by headless Chromium. The `playwright` package ships no browser, so the API image
+installs one — see the `Dockerfile`. Without it that endpoint answers **503** and every share
+link unfurls broken, which kills the organic loop quietly. If your host cannot spare the
+~400MB, point `EDGE_CHROMIUM` at a Chromium already on the box instead.
+
 ## Layout
 `edge/` engine + API · `web/` Next.js app · `docs/API.md` contract · `tests/` offline tests ·
 `launch/` posts and sample verdict cards · `deploy/` Railway/Render configs · `Dockerfile` API image.

@@ -73,7 +73,12 @@ def cmd_card(args):
     v = trade.evaluate(b.league, me, them, args.give.split(","), args.get.split(","), b.ros,
                        their_profile=b.profiles.get(them.id), hoarded=b.hoarded(them.id))
     text, _ = explain(v)
+    # Headshots make the card, and the web share button already sends them — a launch asset
+    # rendered without faces would look worse than what a user posts from the app.
+    from edge.engine.report import player_dict
+
     g = {"verdict": v.verdict, "title": v.verdict, "give": [p.name for p in v.me.give], "get": [p.name for p in v.me.get],
+         "give_players": [player_dict(p) for p in v.me.give], "get_players": [player_dict(p) for p in v.me.get],
          "my_delta_ros": v.me.lineup_delta_ros, "their_delta_ros": v.them.lineup_delta_ros,
          "fairness": v.fairness, "style": v.their_tendencies.get("style")}
     html_str = verdict_card_html(g, text, b.league.name, b.league.week)

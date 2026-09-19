@@ -243,6 +243,21 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   mask-image: repeating-linear-gradient(58deg, #000 0 7px, rgb(0 0 0 / 0.72) 7px 9px);
 }
 .stamp-lg { font-size: 15px; border-width: 3.5px; padding: 8px 12px 7px; border-radius: 8px; }
+/* Display size, for the one verdict a screen is actually about.
+
+   Deliberately sets no font-size: an in-app verdict sits inside a card and wants a fixed
+   size, while the public share page's verdict is the headline of the whole screen and has
+   to stay fluid so "COUNTER" still fits a 320px phone. Callers pass their own text utility.
+   Everything else is in em, so the rule thickens with the type and the ratio holds at any
+   size. The ink breaks on a coarser pitch here — the fine mask reads as stripes this big. */
+.stamp-xl {
+  border-width: 0.17em;
+  padding: 0.2em 0.36em 0.26em;
+  border-radius: 0.3em;
+  letter-spacing: 0.06em;
+  -webkit-mask-image: repeating-linear-gradient(58deg, #000 0 0.45em, rgb(0 0 0 / 0.82) 0.45em 0.56em);
+  mask-image: repeating-linear-gradient(58deg, #000 0 0.45em, rgb(0 0 0 / 0.82) 0.45em 0.56em);
+}
 
 /* The stamp landing. Overshoots, settles, like it was pressed down by hand. */
 @keyframes slam {
