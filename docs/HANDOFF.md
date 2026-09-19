@@ -1,8 +1,9 @@
 # Handoff
 
 Paste the block at the bottom into a fresh session. Everything above it is context for a
-human; the durable rules live in `CLAUDE.md`, the hosting facts in `docs/DEPLOY.md`, and the
-backlog in `TASKS.md`. Keep those three current and this file stays short.
+human; the durable rules live in `CLAUDE.md`, where everything *is* in `docs/MAP.md`, the
+hosting facts in `docs/DEPLOY.md`, and the backlog in `TASKS.md`. Keep those four current and
+this file stays short.
 
 ---
 
@@ -82,9 +83,10 @@ Every one of these was a real mistake in this repo, not a hypothetical.
 
 ```
 You are picking up PENTHOUSE, a paid fantasy football web app. Read CLAUDE.md first —
-it holds the brand rules, the engine map and the non-negotiables — then docs/DEPLOY.md
-for hosting and docs/HANDOFF.md for the traps that have already cost time. TASKS.md is
-the backlog; keep it current.
+it is short and holds the non-negotiables — then docs/MAP.md, which routes any change to
+the files and the test that cover it, and docs/HANDOFF.md for the traps that have already
+cost time. Read further docs only when the map points you at one. TASKS.md is the backlog;
+keep it current.
 
 Ground rules that matter most here:
 

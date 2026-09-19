@@ -1,341 +1,132 @@
 # PENTHOUSE — fantasy football weekly moves
 
-## Goal
-Paid fantasy football web app. Users connect a league and get this week's moves.
-Launch in 7 days; NFL 2026 season is already underway. Speed > polish.
+Paid fantasy football web app. Connect a league, get this week's moves. NFL 2026 is underway
+and launch is days out: **speed > polish**.
 
 1. **Depth chart** — start/sit calls with a confidence stamp and a one-line reason.
 2. **The wire** — top 5 pickups ranked by roster fit, with a suggested FAAB bid.
-3. **Trade Lab (paid)** — verdict on a proposed trade + counteroffer tuned to the
-   other manager's tendencies. Numbers from the engine; Claude API writes the explanation.
+3. **Trade Lab (paid)** — verdict on a proposed trade + a counteroffer tuned to the other
+   manager's tendencies. Numbers from the engine; the Claude API writes the explanation.
 
-Business: free for 1 team, $7 unlocks the season (Stripe). Marketing via stamped verdict graphics.
+Free for 1 team, $7 unlocks the season (Stripe). Marketing via stamped verdict graphics.
 
-## Brand — the penthouse
-**Full brand guide: docs/BRAND.md** — positioning, name rules, voice, copy lines, the mark, the
-nameplate wordmark, templates, don'ts and the build order. This section is the build summary.
+## Where things are
 
-The product is the **owner's box**: the top floor, above the noise, where the staff still hands you
-a **call sheet** but you are the one who owns the building. Competitors (ffwrapped and friends) are
-encyclopedias you browse; we are three moves you make before kickoff. That difference is the whole
-brand, and the room is what makes it feel earned.
+**`docs/MAP.md` — read it before your first change.** It has the spine, a routing table for
+"I want to change X → touch these files, run this test", and a generated inventory of every
+module with its own one-line description. It is a build artifact with a test, so it is true.
 
-- **Name** Penthouse — **one word**, everywhere a user reads it. The descriptor "fantasy football
-  call sheet" rides beside it where context is missing (title tags, OG, social bios) and never
-  fuses into it: "Penthouse Fantasy" as a bare string reads as something else entirely in search.
-  **Tagline** "Own the week." Every line the brand says lives in `web/src/lib/vocab.ts` (`LINES`),
-  for the same reason the section names do. Full guide: **docs/BRAND.md**.
-- **Voice** the staff in your ear: confident, clipped, verb first, plural ("we"). Never hedge on a
-  call the engine is confident about; say plainly when it's a coin flip.
-- **Vocabulary — sections:** call sheet (home) · depth chart (team) · scouting (waivers) ·
-  GM's Office (trade) · the film (weekly report). Verbs: "make the call", "board's set",
-  "sheet's clean". This is coach vocabulary on purpose and it stays: the penthouse is where the
-  sheet is *read*, not a reason to rename the sheet. **What you buy keeps its product name** —
-  Wire Pass, Trade Lab, The Penthouse — so the nav names a room and the pricing table names a pass.
-  "The wire" stays valid in body copy: it is what managers already call the free-agent pool.
-- **Look** black and polished chrome: machined graphite panels floating on near-black, a silver
-  bevel on every lit edge, heavy tabular Archivo numerals. Never a neon dashboard — the metal is
-  the only decoration. Game-feel motion on top (see below). **Two type families, not three** —
-  Archivo for display and numerals, Inter for body. Oxanium (the kit's display face) is
-  deliberately not adopted: it is a squared HUD face and reads as *gaming*, which is the register
-  the owner's box is above. If display type needs more authority, use Archivo's width axis.
-- **The wordmark is a nameplate, not a jersey.** Upright, Archivo 800, tracked out to +0.08em,
-  the lamp as its full stop. It used to lean forward at -7deg with tight letters, which is the
-  language of speed; the brand is the floor above the noise, and it decides. `.wordmark-type`
-  carries a `margin-right:-0.08em` to cancel the sidebearing tracking adds after the final E.
-- **Dark is the default, and it is not a preference we read off the OS.** `prefers-color-scheme:
-  light` also matches a machine with *no* stated preference, which is most desktops, so keying the
-  light theme off it would mean most first-time visitors never see the brand. Light lives only
-  under `:root[data-theme="light"]` — a switch the user throws in the top bar, which sticks in
-  `booth.theme`. Light is still first-class and validated; check both modes before shipping a
-  surface. `ThemeToggle` also rewrites `<meta name="theme-color">`, which is the only way a phone's
-  status bar can follow the switch.
-- **Hierarchy comes from elevation, not inversion.** On warm paper the hero worked by being the one
-  dark thing on screen; on black that device is dead. The steps are plane (page) < paper (card) <
-  hero (lit panel), each lighter than the last, each with a 1px chrome bevel (`--bevel`) along its
-  top edge. That bevel is what makes graphite read as machined rather than flat.
-- **Chrome is a gradient, not a colour.** `--chrome` (silver on dark, graphite on paper),
-  `--chrome-rail` for the `.rail` hairline, and `--color-metal` as the flat fallback for anything
-  too small for a gradient to read. **`.chrome-type` must sit on the element that holds the
-  glyphs** — `background-clip: text` clips to an element's *own* text, so on a wrapper it paints
-  nothing while the transparent text fill still inherits down, and the wordmark disappears. The
-  `.hero` pins `--chrome` to the silver cut, because it is dark in both modes.
-- **The mark is the ball and the box** — a football stood upright with its top floor lit: three
-  panes punched across the upper third, which read as laces at size and as a lit window band
-  small. It replaced a crown, which said "top" but never said football. `web/src/app/icon.svg` is
-  the source of truth — the mark, the chrome gradient and the black plate. `uv run python
-  scripts/render_brand_assets.py` rasterises it into `favicon.ico`, `apple-icon.png` and
-  `opengraph-image.png` via Chromium (no image library). The favicon's PNG is rendered *with* an
-  alpha channel on purpose: Next's ICO decoder rejects a non-RGBA PNG outright. The path exists
-  **three** times — `icon.svg`, `IconMark` in `components/icons.tsx`, and `MARK_PATH` in
-  `edge/graphics.py` for the share card, which is rendered from an HTML string with no stylesheet
-  to reach. Redraw all three in one commit. `fill-rule="evenodd"` is what makes the lit band a
-  hole and the two mullions solid again inside it; drop it and the mark fills in.
-- **ON AIR lamp** (`--color-signal`) is brand chrome only — wordmark, call-sheet band, ON AIR chip.
-  It is deliberately NOT in the status scale, never appears on a player row or a verdict, and always
-  has the words "ON AIR" beside it. Status red (`sit`) never appears on the chrome. Different
-  surfaces, so the two reds can't be confused — which matters *more* on black than it did on paper,
-  where the surface itself kept them apart.
-- **Stamps vs pills.** A stamp (`.stamp`, `<Stamp>`, `<ConfidenceStamp>`) is the loudest device we
-  have, so it is reserved for a decision the user is being asked to make — a call sheet card, a swap
-  card, a verdict. Dense scannable lists keep `<ConfidencePill>`; stamping every row is confetti.
-  On the dark hero, ink a stamp `text-white` — status green/amber vanish there in light mode.
-- **Nothing ever looks stalled.** Every wait shows a turning ring: `<Spinner>` on its own,
-  `<Button busy>` for any async control, the shape of the page plus a ring for a page-level
-  wait, and the tapped tab swapping its icon for one while a route arrives (`useLinkStatus`,
-  which only reports pending inside a `<Link>` and only fires when the route was not already
-  prefetched). The ring is the **one exception** to the reduced-motion rule below: it slows
-  rather than stopping, because a frozen spinner says "stalled", which is the exact thing it
-  exists to deny.
-- **Motion vocabulary**, and that is all of it: `rise` (arriving), `print` (a call sheet row coming
-  off the printer), `promote`/`demote` (a depth-chart tile changing places), `slam` (a stamp
-  landing), `tick` (a number that changed), `lamp` (the ON AIR pulse), `sweep` (the sheen crossing
-  polished metal while a plan loads — the same move the booth's light-across-the-band was, reused
-  rather than added to). Everything is CSS — no animation dependency. All of it collapses under
-  `prefers-reduced-motion`; the lamp keeps its glow and loses its pulse.
-- **The email cannot be chrome.** Gmail strips `<style>`, Outlook renders neither gradients nor
-  `background-clip: text` nor SVG, so upstairs arrives in the inbox as flat silver capitals
-  (`METAL` in `weekly_email.py`) and no crown. `tests/test_weekly_email.py` enforces this.
-- **The call sheet is checkable.** Each call has "Make the call", stored per league and per week
-  (`calledKey`, `booth.called.<league>.<week>` in localStorage). It is a checklist, not a lineup
-  submission — we never write back to Sleeper or ESPN. When every call is ticked the sheet stamps
-  itself clean.
-- **Nothing reloads when you flip tabs.** Every page mounts its own `AppShell`, so without a
-  cache each tab switch refetched and replayed the opening — the app read as if it reloaded
-  itself. `lib/cache.ts` holds the session's reads (`useCached` for a page's main resource,
-  `once()` for screens whose effects are tangled with local state), and `useSession` caches
-  `me` the same way. A cached page paints on the first frame and passes `animate={false}` so
-  it does not play its entry animation again. Deliberately in memory only: a hard reload still
-  gets fresh numbers, because projections move during the week.
-- **The room opens once, and only one wait is ever on screen.** `lib/wait.ts` owns both, because
-  they are one question: the narrated "pulling film / re-scoring" sequence is a good first
-  impression and an irritation the fourth time, so `claimWait()` hands it out once and every
-  later wait is a quiet skeleton. A second claim while one is already up is *always* quiet —
-  the shell and the page each used to render their own loader, and the page's downgraded itself,
-  so a cold start played the checklist, threw it away and showed a skeleton instead. Once the
-  narration starts it is owed `MIN_NARRATED_MS`, so a warm API cannot cut it off mid-sentence.
-  Both loaders render through the call sheet's own frame (`WaitHero`), so the swap to content
-  changes text and nothing else.
-- **The room tightens toward kickoff** (`kickoffUrgency`): calm over a day out, the clock takes
-  colour inside 24h, and inside 2h it goes to the brand red, the label reads "Locks in" and the
-  ON AIR lamp beats faster (`OnAirLive`, `.lamp-fast`). The words always change with the colour.
-- **A made call is crossed off by hand**, not printed: `IconGreaseCheck` + `.grease` draws the
-  tick with a `pathLength="1"` dash, like a grease pencil on a laminated sheet.
-- **Kickoff countdown** (`nextKickoff`) is the next Sunday 1:00 PM ET slate, computed via `Intl`
-  against `America/New_York` so it stays right across the November DST change. Tested both sides.
-  It renders `null` on the server *and* through hydration, and takes its first real value in a
-  layout effect. Resolving it in the state initialiser instead put the final string in the
-  hydration render, and the text node carries `suppressHydrationWarning` — which does not mean
-  "patch it quietly", it means React keeps the DOM and discards its own output. The string only
-  changes once a minute when kickoff is more than a day out, so the clock read "—" for up to a
-  full minute. Inside 24h the seconds tick and it healed in one, which is how it hid.
-- **Every tab renders a title, in a fixed-height band.** The call sheet used to hide its h1, so
-  moving to or from it shifted the page by the height of a heading. Section names live in
-  `web/src/lib/vocab.ts` — one file, so a rename cannot land half-applied.
+Then only what you need:
 
-**The package is still `edge/`.** Renaming it would touch every import, test and script for no
-user-visible gain before launch. Env vars (`EDGE_DEV`, `EDGE_DB`, `X-Edge-User`) stay too, and so do
-the `booth.*` browser storage keys — renaming those signs every existing user out of their league,
-their theme and their ticked calls, and `booth.mock.entitlements` is how `docs/DEPLOY.md` tells a
-mock build from a real one. Anything a *user* reads says Penthouse.
-
-## Deployed at
-**Web: https://fantasy-tool-alpha.vercel.app (Vercel) · API: https://edge-api-gi8d.onrender.com (Render).**
-The live web app **talks to that API** — it is not on mock data, so changing `web/src/lib/mocks.ts`
-changes nothing in production. To open the paywall for testing set `EDGE_DEMO_UNLOCK=1` on Render;
-the web's `?unlock=1` only affects the mock path used by `npm run dev`.
-**There is no `main` branch** — production is `claude/edge-fantasy-app-launch-alo0rr`, and
-Vercel builds from it, so shipping the web app means `git push origin HEAD:claude/edge-fantasy-app-launch-alo0rr`.
-Vercel's Root Directory is `web/`. Full detail, env vars and rollback: **docs/DEPLOY.md** — read
-it before asking Andrew anything about hosting. `vercel login` needs a browser and cannot run in
-a sandbox; a CLI deploy needs `VERCEL_TOKEN` in the environment.
-
-## Picking this up
-**docs/HANDOFF.md** — state of play, what is blocked on Andrew, and the mistakes that have
-already cost time in this repo. Read it before a first change.
-
-## Owner
-Andrew (self-taught Python/VBA/automation). Steers, doesn't type every line.
-Keep explanations short and plain. Visuals: light, high-contrast.
-
-## Stack (built; Andrew to confirm or redirect)
-- `edge/` — Python 3.11 engine + league connectors + FastAPI API. Andrew can read/tweak this.
-- `web/` — Next.js (App Router, TypeScript, Tailwind), mobile-first. Talks to the API.
-- Supabase — email magic-link auth + Postgres (users, leagues, entitlements).
-- Stripe Checkout + webhook — $7 season pass.
-- Hosting — Vercel (web), Railway or Render (API).
-- Claude API — optional. `EDGE_USE_CLAUDE=1` turns on LLM-written trade explanations (model from
-  `EDGE_CLAUDE_MODEL`, default `claude-opus-5`); otherwise free templates. Load the `claude-api` skill before touching SDK code.
-- Persistence today: SQLite via `edge/api/store.py` (zero setup). Swap to Supabase Postgres by re-implementing that file.
-
-## Product spine (from the blueprint Andrew shared)
-`platform connector → canonical League/Team/Player → provider data → engine → Action[] → API → UI`.
-The home screen is an **Action feed** (`edge/engine/actions.py`, `GET .../actions`): lineup swaps,
-waiver claims, trade opportunities, ranked; locked features appear as name-free teasers.
-The LLM may explain; it never ranks, values, or invents numbers.
-
-Engine modules, in the order the feed uses them:
-- `engine/lineup.py` — exact flex-aware optimizer + start/sit calls with confidence.
-- `engine/waiver_plan.py` — ADD/DROP **pairs** with fallback claims and a two-part bid
-  (value cap vs market-clearing price). A quiet week returns an explained hold.
-- `engine/trade_finder.py` — positional surplus/need per roster, complementary partners,
-  1-for-1 and 2-for-1 offers that improve both sides.
-- `engine/trade.py` — grades a trade the user proposes, plus a counteroffer.
-- `engine/grades.py` — the live scorecard: a letter per position group plus an overall, free
-  tier, delivered on the lineup payload. Two rules keep it honest. Everything is relative to
-  **this** league, because an absolute points total means nothing across scoring settings. And
-  **rank sets the letter; the spread can only damp it** — in an ordinary league the best room is
-  an A+ and the worst an F, but how much of that scale is in play depends on how far apart the
-  league's best and worst actually are, measured in starters (1.5 starters apart earns the full
-  range; a dead-even twelve still separates first from last by five steps). A league of literal
-  clones grades everyone the middle step, because ties share one mid-rank. The margin is kept
-  beside the letter as `edge_starters` and in every note, so the grade says *where* you are and
-  the note says *by how much*. Do not replace this with a rank-plus-position-in-range blend:
-  that puts the best team at the top of the range in every league however tightly packed, which
-  is the bug the module docstring exists to prevent coming back. Note that rank-anchoring means
-  a league of 7 or fewer can never reach A+ or F — `test_a_small_league_cannot_reach_the_ends_of_the_scale`
-  pins that so it is a known property, not a surprise.
-- Every recommendation is written to the `runs` table with its `algo_version`; user Helpful/Wrong
-  votes land in `feedback`. Pair them with next week's actuals to know if a version was right.
-
-## Data sources
-- **Projections: Sleeper's free projections endpoint** (Rotowire-sourced, weekly, no auth):
-  `https://api.sleeper.app/projections/nfl/{season}/{week}?season_type=regular&position[]=QB...&order_by=ppr`
-  Returns raw stat projections (rush_yd, rec, rec_td...) so we re-score to any league's scoring.
-- Actuals: `https://api.sleeper.app/stats/nfl/{season}/{week}` (same shape).
-- Players: `https://api.sleeper.app/v1/players/nfl` (14 MB, cache 24h on disk in `.cache/`).
-- League state: Sleeper v1 API (league, rosters, users, matchups, transactions).
-- Headshots: `https://sleepercdn.com/content/nfl/players/thumb/{sleeper_id}.jpg`,
-  ESPN: `https://a.espncdn.com/i/headshots/nfl/players/full/{espn_id}.png`,
-  team logos: `https://sleepercdn.com/images/team_logos/nfl/{abbr}.png` (all free, emitted as `photo`/`team_logo`).
-- ESPN public leagues: `lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{yr}/segments/0/leagues/{id}`.
-  Verified live against real public 2026 leagues; league **521131** is recorded as a fixture
-  (refresh with `scripts/record_espn_fixture.py`). Two ESPN scoring traps the tests now guard:
-  a category's value can live in `pointsOverrides` rather than `points` (every league does this
-  for D/ST), and yardage is often an "every N yards" stat id rather than a per-unit one.
-- **ESPN free agents come from ESPN** (`espn_api.free_agents`, `view=kona_player_info` +
-  `X-Fantasy-Filter` on `FREEAGENT`/`WAIVERS`), never from "Sleeper players nobody rosters".
-  Only ESPN knows who is free *in this league*, and a derived pool carries every K and D/ST
-  whether or not the league has a slot for one.
-- **Private ESPN leagues** work. The user's `espn_s2` + `SWID` cookies ride in as the
-  `X-ESPN-S2` / `X-ESPN-SWID` headers (`espn_api.EspnAuth`) and are **never stored** — they are
-  a read session for that person's whole ESPN account, cannot be scoped to one league, and we
-  cannot revoke them, so the browser keeps them (`web/src/lib/espnAuth.ts`) and the server
-  only borrows them. `EspnAuth.__repr__` prints a fingerprint, never the cookies. The bundle
-  cache is keyed by that fingerprint, so a private league is never served to a request that
-  did not prove it can read it. Accepted cost: a scheduled job (the weekly email) cannot read
-  a private league. A private league answers **403** with `needs_espn_auth` — true means "ask
-  for cookies", false means "the ones you gave expired"; the web turns each into a form.
-  Verified end to end on a real private league. **Never paste cookies into a chat or an issue**
-  — they cannot be scoped or revoked; grab them fresh from the browser each time.
-- **Name-match guard.** ESPN players reach projections by name match (`edge/data/player_map.py`).
-  A player we cannot map is marked `Player.unpriced`, which is not the same as projecting 0.0:
-  a free agent we cannot price is dropped from the pool, an unpriced rostered player is never
-  offered as a drop and never benched, and the connector logs a warning above 2% unmapped.
-  Measured 495/495 rostered and 250/250 free agents mapped across three live leagues.
-- Fallback if Sleeper projections ever break: Tank01 on RapidAPI ($10/mo).
-
-## Projection providers
-Projections are the one input we don't own (P0 licensing risk), so nothing outside
-`edge/data/providers.py` talks to a projection vendor. Switch with an env var:
-`EDGE_PROJECTION_PROVIDER=sleeper` (default) `| tank01` (stub, needs `TANK01_API_KEY`).
-A new provider is a class with `name`, `attribution` (credit line the vendor requires, or
-`None`), `weekly(season, week)` and `season(season)`, both returning `PlayerProjection`
-objects; register it in `PROVIDERS`. Two things stay canonical whatever the vendor: player
-ids are **Sleeper ids** (map yours with `edge/data/player_map.py`) and stats use **Sleeper's
-stat vocabulary** (`rush_yd`, `rec`, `pass_td`, ...) — raw stats only, never points, so each
-league's own scoring re-scores them. Connectors still take raw Sleeper-shaped dicts:
-`providers.to_raw()` converts any provider's output into that shape (dicts pass through, so
-recorded fixtures still work).
-
-## Business function (risk, money, quality)
-- `docs/RISK_REGISTER.md` — what can stop us. Three things block launch: Sleeper commercial
-  licensing, the player-photo decision, and terms/entity. Reviewed each rollout phase.
-- `docs/LEGAL_CHECKLIST.md` — pre-launch list plus the 14 questions to put to a lawyer in one hour.
-- `docs/DATA_INVENTORY.md` — every field we store, who receives it, retention. **Source of truth
-  for `/legal/privacy`**; if they disagree the inventory is right and the page is stale.
-- `docs/UNIT_ECONOMICS.md` + `edge/business/economics.py` — margin per SKU, per-sale LLM cost,
-  cohort P&L. Run `python -m edge.cli economics --scenarios`. Headline: ~85% margins, break-even
-  at five buyers, so volume is the only variable that matters and paid acquisition does not work
-  at this price.
-- `docs/ACCURACY_PROGRAM.md` — the quality function. Note the gap it names: `scripts/backtest.py`
-  measures *projection separation*, not *our recommendations*. Don't make the second claim in
-  public until `scripts/score_runs.py` exists.
-- **`EDGE_CARD_PHOTOS=0`** strips player headshots from cards, share snapshots and the public page
-  (initials instead). A legal kill-switch, not a style option — see risk L1.
-- Data requests are shipped: `GET /api/me/data`, `DELETE /api/me?confirm=delete`.
-
-## Distribution
-- `edge/api/share.py` + `/api/share` — a call becomes a public `/s/{id}` page that opens with
-  no account and unfurls with a rendered card at `/api/share/{id}/card.png` (cached on disk).
-  Snapshots are display-only: never an email, a league id or a roster.
-  **Two kinds, and the free one is the point.** `KIND_FEATURE` maps `trade` to `trade_lab`
-  (paid, rare, dramatic) and `lock` to `my_team`, which is free — so a start/sit card can be
-  posted by someone who has never paid and never signed in. Gating all sharing behind the $5
-  Trade Lab switched the loop off for almost everyone: a paying user posts a handful of trade
-  verdicts a season, while every user has one or three Locks every single week. Making Lock
-  free must never open Trade Lab as a side effect; `test_the_paid_card_is_still_paid` pins that.
-- `edge/delivery/weekly_email.py` — the same call sheet as an email. Tables and inline styles
-  only (Gmail strips `<style>`), absolute links, a plain-text alternative, and a test proving a
-  free recipient never receives paid content. Render with `python -m edge.cli email`.
-  Sending is deliberately not wired: pick a provider (Resend free tier) when you have a key.
-
-## Repo layout
-```
-edge/               Python package: connectors/, data/, engine/, api/
-  models.py         normalized League / Team / Player (platform-agnostic)
-  cli.py            demo commands (python -m edge.cli ...)
-tests/              pytest; fixtures/ holds recorded API JSON (no network in tests)
-web/                Next.js app: /home (action feed), /team, /waivers, /trade, /report, /connect, /login
-TASKS.md            backlog / in progress / done — keep it current
-.cache/             runtime cache, gitignored
-```
-
-## Confidence tags (measured over a full season)
-Shipping today: Lock ≥ 4 pts margin, Lean 1.5–4, Coin flip < 1.5. Graded over 2025 weeks 1–17
-(85,006 within-position pairs, `scripts/calibrate.py`, docs/CALIBRATION.md): **Lock 75.1%**,
-Lean 61.7%, Coin flip 52.5%. Lean and Coin flip are honest. **Lock is not — it was advertised
-at ~80% and its 95% interval (74.6–75.6) never touches it.** You need a margin near 7 points
-before a call is right four times in five.
-
-A margin also means different things to different players: projection error grows with the
-projection, so 4 points wins 78.7% between two tight ends and 68.1% between two quarterbacks.
-`edge/calibration.py` replaces the margin with P(a beats b) and each tag then delivers what it
-promises (Lock 81.0%, Lean 66.9%, Coin flip 53.9%), but **it is not wired into `lineup.py` yet**
-— that changes what users see and is Andrew's call. Adjust thresholds only with data.
-
-Below 1.5 points the higher projection wins barely half the time, so `lineup.stabilize`
-**holds the incumbent** rather than recommending the swap — week 1 priced 48 such swaps at
-−28 points, including "bench Josh Allen for Stafford" over 0.55.
-
-## Weekly ritual
-Automated: `scripts/weekly.py freeze|grade|health`, on a schedule in `.github/workflows/weekly.yml`
-(Thursday freeze, Tuesday grade, daily live-data health check). Results arrive as a pull request.
-Run by hand any time — every subcommand is safe to run twice.
-- Thursday morning: `uv run python scripts/freeze_projections.py` — freezes this week's
-  projections so next week's backtest grades what we actually showed, not a revised number.
-- Tuesday: `uv run python scripts/backtest.py <week>` — projection accuracy *and* decision
-  accuracy (Edge's lineup vs the lineup 66 real managers started, in 6 leagues, every format).
-  Append the result to docs/BACKTEST.md. Week 1: **+2.02 pts/team, 82% of teams helped**.
-- Re-record the offline replay fixtures with `scripts/record_replay_fixture.py <week>` when the
-  numbers in `tests/test_evaluate.py` need to move; never loosen them without a reason.
+| | |
+|---|---|
+| State of play, what is blocked, what has already cost time | `docs/HANDOFF.md` |
+| Hosting, env vars, how to ship and how to roll back | `docs/DEPLOY.md` |
+| Where every number comes from, and the cookie rules | `docs/DATA.md` |
+| How the web app is wired, and the traps in it | `docs/WEB.md` |
+| What the brand allows | `docs/BRAND.md` |
+| The API contract | `docs/API.md` |
+| Everything else (risk, legal, economics, accuracy) | the index at the end of `docs/MAP.md` |
 
 ## Rules
+
 - **Nothing is done without a test or a working demo.** Tests run offline against fixtures.
-  Live-API checks go in `edge/cli.py` demo commands, not tests.
-- Everything the engine outputs is platform-agnostic: connectors map into `edge/models.py`.
-- Scoring is always computed from the league's own scoring settings, never assumed PPR.
-- Keep secrets in `.env` (gitignored). Never commit keys.
-- Small commits with clear messages. Push to the working branch at end of each session.
-- Run before pushing: `uv run pytest -q` (and `npm run build` in `web/` once it exists).
+  Live-API checks go in `edge/cli.py` demo commands, not in tests.
+- Run before pushing: `uv run pytest -q`, and `cd web && npm test && npm run build`.
+- Everything downstream of a connector is platform-agnostic: connectors map into
+  `edge/models.py` and nothing after that knows which platform it came from.
+- Scoring is always computed from the league's own scoring settings. **Never assume PPR.**
+- Raw stats, never points, until `edge/data/scoring.py` says otherwise.
+- **The LLM explains; it never ranks, values or invents a number.**
+- Nothing outside `edge/data/providers.py` talks to a projection vendor.
+- `edge/products.py` is the only source of truth for what is free and what is paid.
+- Any word a user reads lives in `web/src/lib/vocab.ts`, never inline.
+- Keep secrets in `.env` (gitignored). Never commit keys, and never paste ESPN cookies
+  anywhere — see `docs/DATA.md`.
 - Don't add a dependency when the stdlib does the job.
-- End every session with: what's done, what's next, decisions needed from Andrew.
+- **Do not claim decision accuracy in public** until `scripts/score_runs.py` exists.
+  `scripts/backtest.py` measures projection separation, which is not the same claim —
+  `docs/ACCURACY_PROGRAM.md` names the gap.
+- Small commits with clear messages. Push to the working branch at the end of each session.
+- After adding or renaming a module: `uv run python scripts/gen_map.py`.
+- Keep `TASKS.md` current. End every session with: what's done, what's next, decisions needed
+  from Andrew.
 
-## Pricing / packages
-`edge/products.py` is the single source of truth: free (depth chart, 1 league), à la carte passes
-(Wire Pass $3, Trade Lab $5), The Penthouse bundle $7 (everything + the weekly film, 5 leagues).
-The API gates features with HTTP 402 + an `upsell` list; the web shows a locked state.
+## Facts that bite
 
-## Test league (public Sleeper)
-Use league **1403186749361901568** ("The Megalabowl", 12 teams, half PPR,
-FAAB $100, 2 FLEX, DEF, no K). Fixtures recorded 2026-09-16 (week 2).
+- **There is no `main` branch.** Production is `claude/edge-fantasy-app-launch-alo0rr`, and
+  Vercel builds from it, so shipping the web app is
+  `git push origin HEAD:claude/edge-fantasy-app-launch-alo0rr`. Vercel's Root Directory is
+  `web/`. Everything else about hosting: `docs/DEPLOY.md`.
+- Web **https://fantasy-tool-alpha.vercel.app** · API **https://edge-api-gi8d.onrender.com**.
+  The live web app talks to that API — it is **not** on mock data, so editing
+  `web/src/lib/mocks.ts` changes nothing in production. To open the paywall for testing, set
+  `EDGE_DEMO_UNLOCK=1` on Render.
+- **The package is still `edge/`.** Renaming it would touch every import, test and script for
+  no user-visible gain. The env vars (`EDGE_DEV`, `EDGE_DB`, `X-Edge-User`) and the `booth.*`
+  browser keys stay too — renaming those signs every existing user out of their league, their
+  theme and their ticked calls. Anything a *user* reads says Penthouse.
+- **The mark exists four times** (`icon.svg`, `IconMark`, `MARK_PATH`, `ShareCard.tsx`).
+  Redraw them in one commit and re-run `scripts/render_brand_assets.py`. See `docs/BRAND.md`.
+- **Making the Lock card free must never open Trade Lab as a side effect.** A start/sit card
+  is shareable by someone who has never paid and never signed in; that is the growth loop.
+  `test_the_paid_card_is_still_paid` pins the other half. Snapshots are display-only: never
+  an email, a league id or a roster.
+- **Grades are rank-anchored, and the spread only damps the scale.** Do not "improve" this
+  into a rank-plus-position-in-range blend — read the docstring in `edge/engine/grades.py`,
+  which exists to stop exactly that regression coming back.
+- **Check both themes** before shipping any surface. Dark is the default and is not read off
+  the OS; see `docs/WEB.md`.
+
+## Brand, in one paragraph
+
+The product is the **owner's box**: the top floor, above the noise, where the staff still
+hands you a **call sheet** but you own the building. Competitors are encyclopedias you browse;
+we are three moves you make before kickoff. **Penthouse** is one word, everywhere a user reads
+it. Tagline: **"Own the week."** Voice: the staff in your ear — confident, clipped, verb
+first, plural. Never hedge on a call the engine is confident about; say plainly when it is a
+coin flip. Look: black and polished chrome, two type families, the metal is the only
+decoration. Sections are **call sheet** (home) · **depth chart** (team) · **scouting**
+(waivers) · **GM's Office** (trade) · **the film** (report) — but what you *buy* keeps its
+product name: Wire Pass, Trade Lab, The Penthouse. Full guide: **`docs/BRAND.md`**; how it is
+actually built: **`docs/WEB.md`**.
+
+## Confidence tags — Lock is not honest yet
+
+Shipping today: Lock ≥ 4 pts margin, Lean 1.5–4, Coin flip < 1.5. Graded over 2025 weeks 1–17
+(85,006 within-position pairs): **Lock 75.1%**, Lean 61.7%, Coin flip 52.5%. Lean and Coin
+flip are honest. **Lock was advertised at ~80% and its 95% interval (74.6–75.6) never touches
+it** — you need a margin near 7 points before a call is right four times in five.
+
+`edge/calibration.py` replaces the margin with P(a beats b) and every tag then delivers what
+it promises (Lock 81.0%), but **it is not wired into `lineup.py`** — that changes what users
+see and is Andrew's call. Below 1.5 points `lineup.stabilize` holds the incumbent rather than
+recommending the swap; week 1 priced 48 such swaps at −28 points. Adjust thresholds only with
+data: `docs/CALIBRATION.md`, `docs/BACKTEST.md`.
+
+## The weekly ritual
+
+`scripts/weekly.py freeze|grade|health`, scheduled in `.github/workflows/weekly.yml` (Thursday
+freeze, Tuesday grade, daily health check) and delivered as a pull request. Safe to run twice,
+any time. Thursday's freeze cannot be recovered afterwards — it snapshots what we actually
+showed, so next week's backtest grades that rather than a revised number. Re-record the
+offline replay fixtures with `scripts/record_replay_fixture.py <week>` when the numbers in
+`tests/test_evaluate.py` need to move — never loosen them without a reason.
+
+## Stack
+
+- `edge/` — Python 3.11 engine, league connectors and the FastAPI API. Andrew can read/tweak.
+- `web/` — Next.js (App Router, TypeScript, Tailwind), mobile-first. Talks to the API.
+- Supabase (magic-link auth + Postgres) · Stripe Checkout + webhook · Vercel + Render.
+- Persistence today is SQLite (`edge/api/store.py`), with a Postgres twin (`store_pg.py`)
+  selected by `DATABASE_URL`. One contract, pinned by `tests/test_store_contract.py`.
+- Claude API is optional: `EDGE_USE_CLAUDE=1` turns on LLM-written trade explanations (model
+  from `EDGE_CLAUDE_MODEL`); otherwise free templates. **Load the `claude-api` skill before
+  touching SDK code.**
+- Test league: public Sleeper **1403186749361901568** ("The Megalabowl", 12 teams, half PPR,
+  FAAB $100, 2 FLEX, DEF, no K). Fixtures recorded 2026-09-16, week 2.
+
+## Owner
+
+Andrew (self-taught Python/VBA/automation). Steers, doesn't type every line. Keep explanations
+short and plain; any visual you make *for him* should be light and high-contrast.

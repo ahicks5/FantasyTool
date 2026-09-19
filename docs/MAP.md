@@ -34,6 +34,13 @@ Three properties hold all the way along, and every one of them has a test:
   own scoring settings turn them into points in `edge/data/scoring.py`. Never assume PPR.
 - **The LLM explains, it never decides.** Numbers and rankings come from the engine. `explain.py`
   is allowed to write prose about them and nothing else.
+- **Every recommendation is recorded.** The feed writes each one to the `runs` table with its
+  `algo_version`; Helpful/Wrong votes land in `feedback`. Pairing those with next week's
+  actuals is how we will know whether a version was right (`docs/ACCURACY_PROGRAM.md`).
+
+The home screen is that `Action[]` list, ranked: lineup swaps, waiver claims, trade
+opportunities. A feature the user has not paid for still appears — as a name-free teaser, so
+the value is visible and the names are not.
 
 ## I want to change…
 
@@ -83,7 +90,9 @@ uv run python scripts/gen_map.py                  # after adding or renaming a m
 EDGE_DEV=1 uv run uvicorn edge.api.app:app --reload --port 8000
 cd web && NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev   # omit the env var for mocks
 
-uv run python -m edge.cli sleeper <league_id>     # live demo, no UI
+uv run python -m edge.cli sleeper <league_id>     # live demo, no UI (see --help for the rest)
+uv run python -m edge.cli email                   # render this week's email
+uv run python -m edge.cli economics --scenarios   # margin per SKU, cohort P&L (offline)
 uv run python scripts/weekly.py freeze|grade|health
 ```
 
@@ -91,7 +100,7 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (38 modules, 7,432 lines)
+### `edge/` — the Python engine and API (38 modules, 7,436 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
@@ -119,7 +128,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/engine/actions.py` | The Action feed: everything the engine knows, ranked as a short list of moves worth making. | actions, copy +6 | 192 |
 | `edge/engine/copy.py` | Small helpers for prose the user actually reads. | copy | 37 |
 | `edge/engine/explain.py` | Trade explanation text. Template by default (free). Claude API when EDGE_USE_CLAUDE=1 and | trade | 76 |
-| `edge/engine/grades.py` | Letter grades for a roster, position by position — the draft-grade idea, kept live. | grades | 283 |
+| `edge/engine/grades.py` | Letter grades for a roster, position by position — the draft-grade idea, kept live. | grades | 287 |
 | `edge/engine/lineup.py` | Lineup optimizer + start/sit calls with confidence and one-line reasons. | lineup, actions +7 | 339 |
 | `edge/engine/report.py` | Full Report: everything for one team this week, in one payload (+ simple HTML). | report, espn_live_fixture | 142 |
 | `edge/engine/tendencies.py` | Manager tendency profiles from a league's transaction history (this season + last). | tendencies_products, api +2 | 141 |
