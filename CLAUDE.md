@@ -12,6 +12,9 @@ Launch in 7 days; NFL 2026 season is already underway. Speed > polish.
 Business: free for 1 team, $7 unlocks the season (Stripe). Marketing via stamped verdict graphics.
 
 ## Brand — the penthouse
+**Full brand guide: docs/BRAND.md** — positioning, name rules, voice, copy lines, the mark, the
+nameplate wordmark, templates, don'ts and the build order. This section is the build summary.
+
 The product is the **owner's box**: the top floor, above the noise, where the staff still hands you
 a **call sheet** but you are the one who owns the building. Competitors (ffwrapped and friends) are
 encyclopedias you browse; we are three moves you make before kickoff. That difference is the whole
