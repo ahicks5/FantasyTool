@@ -182,7 +182,12 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
         # we read the other rosters.
         summary = "All settled."
     else:
-        summary = f"{len(moves)} move{'s' if len(moves) != 1 else ''} worth making"
+        # Label-then-count, because it has to fit one line of a 30px display hero on a
+        # phone. "4 moves worth making" is twenty characters and the hero holds about
+        # eighteen, so it wrapped -- and the word it wrapped onto was "making", which
+        # carries nothing. The count is the only part that changes week to week, so it
+        # goes last where the eye lands, and the label in front of it stays put.
+        summary = f"Pending move{'s' if len(moves) != 1 else ''}: {len(moves)}"
     # How many rosters we actually read, rather than a hard-coded 11: this line is the
     # product's proof that a quiet week means we looked, so it has to be true in a
     # 10-team league and a 14-team one alike.

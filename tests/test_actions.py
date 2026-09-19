@@ -24,7 +24,7 @@ def test_free_user_sees_lineup_actions_and_locked_teasers(league):
     locked = [a for a in feed["actions"] if a["locked"]]
     assert locked and all(a["players"] == [] for a in locked), "teasers must not leak names"
     assert [a["priority"] for a in feed["actions"]] == list(range(1, len(feed["actions"]) + 1))
-    assert feed["summary"].endswith("worth making")
+    assert feed["summary"].startswith("Pending move")
     assert feed["algo_version"] == actions.ALGO_VERSION
     json.dumps(feed)
 
@@ -220,3 +220,21 @@ def test_a_quiet_week_gets_one_short_validating_line(league, monkeypatch):
     assert feed["summary"] == "All settled."
     # The constraint that broke the old copy: one short line, not two sentences.
     assert "." not in feed["summary"][:-1], f"two sentences again: {feed['summary']!r}"
+
+
+def test_the_hero_headline_fits_one_line_on_a_phone(league):
+    """Every summary the engine can emit has to fit the hero without wrapping.
+
+    The hero is 30px display type in a card that is ~295px wide at 375px, which is about
+    eighteen characters. "4 moves worth making" was twenty, so it wrapped -- and it wrapped
+    onto "making", a word carrying no information at all. This pins the budget rather than
+    any one phrasing, so the next rewrite cannot quietly reintroduce the wrap.
+    """
+    ros, byes = _ros(league)
+    seen = set()
+    for tm in league.teams:
+        for ents in ({"my_team"}, {"my_team", "waivers", "trade_lab"}):
+            seen.add(actions.build(league, tm, ros, byes, entitlements=ents)["summary"])
+    assert seen, "no summaries to check"
+    for line in seen:
+        assert len(line) <= 18, f"{line!r} is {len(line)} chars and will wrap the hero"
