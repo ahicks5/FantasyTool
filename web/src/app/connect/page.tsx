@@ -1,9 +1,10 @@
 "use client";
-/** Connect a league: Sleeper by username, ESPN by id, and the cookie form a private ESPN league needs. */
+/** Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, two cookies. */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { EspnAuthError, connect, getLeague, getSleeperLeagues } from "@/lib/api";
+import { resolveSleeperInput } from "@/lib/leagueInput";
 import { saveConnection } from "@/lib/storage";
 import { EspnAuthForm } from "@/components/EspnAuthForm";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
@@ -35,9 +36,11 @@ function initials(name: string): string {
 
 export default function ConnectPage() {
   const router = useRouter();
-  const [platform, setPlatform] = useState<Platform>("sleeper");
-  const [username, setUsername] = useState("");
-  const [leagueIdInput, setLeagueIdInput] = useState("");
+  // Nothing is chosen on arrival. The page is a question, not a filled-in form, and every
+  // field below is the answer to the platform button rather than something to scroll past.
+  const [platform, setPlatform] = useState<Platform | null>(null);
+  // One box per platform, so switching platform cannot carry a Sleeper username into ESPN.
+  const [input, setInput] = useState("");
   const [leagues, setLeagues] = useState<SleeperLeagueRef[] | null>(null);
   const [league, setLeague] = useState<LeagueSummary | null>(null);
   const [teamId, setTeamId] = useState("");
@@ -64,18 +67,51 @@ export default function ConnectPage() {
     }
   }
 
-  async function lookup() {
-    if (!username.trim()) return;
-    const ls = await run(() => getSleeperLeagues(username.trim()));
-    if (ls) {
-      setLeagues(ls);
-      setLeague(null);
-      setTeamId("");
+  /**
+   * The single Sleeper box. `resolveSleeperInput` guesses username or id and, when it
+   * guesses wrong, tries the other reading before anything reaches the error box — that
+   * fallback is the only reason one box is safe where two used to be.
+   */
+  async function findSleeper() {
+    if (!input.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const found = await resolveSleeperInput(input, {
+        byLeagueId: (id) => getLeague("sleeper", id),
+        byUsername: (username) => getSleeperLeagues(username),
+      });
+      if (found.league) {
+        setLastLeagueId(found.value);
+        setLeagues(null);
+        setLeague(found.league);
+        setTeamId("");
+      } else if (found.leagues) {
+        setLeagues(found.leagues);
+        setLeague(null);
+        setTeamId("");
+        if (found.leagues.length === 1) {
+          // One league under that username: a list of one is a tap that asks nothing.
+          const only = found.leagues[0];
+          try {
+            const l = await getLeague("sleeper", only.league_id);
+            setLastLeagueId(only.league_id);
+            setLeague(l);
+          } catch {
+            /* Leave the one-row list standing: tapping it runs the same call and shows why. */
+          }
+        }
+      }
+      setEspnAuthNeeded(null);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setBusy(false);
     }
   }
 
   async function pickLeague(id: string) {
-    if (!id.trim()) return;
+    if (!platform || !id.trim()) return;
     setLastLeagueId(id.trim());
     const l = await run(() => getLeague(platform, id.trim()));
     if (l) {
@@ -85,7 +121,7 @@ export default function ConnectPage() {
   }
 
   async function submit() {
-    if (!league || !teamId) return;
+    if (!platform || !league || !teamId) return;
     const team = league.teams.find((t) => t.id === teamId);
     const ok = await run(async () => {
       await connect({ platform, league_id: league.id, team_id: teamId });
@@ -129,10 +165,6 @@ export default function ConnectPage() {
           Step <span className="tnum">1</span> of <span className="tnum">2</span> · Your league
         </Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">{LINES.threshold}</h1>
-        <p className="mt-2 text-[15px] leading-relaxed text-muted">
-          Hook up your league. Sleeper, or ESPN public and private. Two steps and the room is on air: no account, no
-          password, nothing to sign.
-        </p>
         {/* The on-ramp is only urgent if it says how long there is. Its own row, so a long
             clock never crowds the wordmark on a small phone. */}
         <div className="mt-3">
@@ -140,6 +172,8 @@ export default function ConnectPage() {
         </div>
       </div>
 
+      {/* Two words, no sublabels. Whatever a platform needs is asked for after it is picked,
+          which is why the page opens with nothing selected. */}
       <div className="mt-6 grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="Platform">
         {(["sleeper", "espn"] as Platform[]).map((p) => {
           const on = platform === p;
@@ -149,19 +183,21 @@ export default function ConnectPage() {
               role="radio"
               aria-checked={on}
               onClick={() => {
+                if (on) return;
                 setPlatform(p);
+                setInput("");
                 setLeagues(null);
                 setLeague(null);
                 setTeamId("");
+                setError(null);
+                setEspnAuthNeeded(null);
+                setLastLeagueId("");
               }}
-              className={`rounded-[var(--radius-card)] border px-4 py-4 text-left transition-colors ${
+              className={`min-h-11 rounded-[var(--radius-card)] border px-4 py-4 text-left transition-colors ${
                 on ? "border-ink bg-ink text-paper" : "border-line-2 bg-paper text-ink hover:bg-soft"
               }`}
             >
-              <span className="display block text-[17px] leading-tight">{p === "sleeper" ? "Sleeper" : "ESPN"}</span>
-              <span className={`mt-0.5 block text-[12px] leading-snug ${on ? "text-paper/65" : "text-muted"}`}>
-                {p === "sleeper" ? "Username or league ID" : "League ID · public or private"}
-              </span>
+              <span className="display block text-[19px] leading-tight">{p === "sleeper" ? "Sleeper" : "ESPN"}</span>
             </button>
           );
         })}
@@ -169,33 +205,28 @@ export default function ConnectPage() {
 
       {platform === "sleeper" && (
         <section className="mt-7">
-          <label className="eyebrow block" htmlFor="username">
-            Sleeper username
+          <label className="eyebrow block" htmlFor="sleeper-input">
+            Your league
           </label>
           <div className="mt-2 flex gap-2">
             <input
-              id="username"
+              id="sleeper-input"
               className={FIELD}
-              placeholder="e.g. HusH"
-              value={username}
+              placeholder="Username or league ID"
+              value={input}
               autoCapitalize="none"
               autoCorrect="off"
-              onChange={(e) => setUsername(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && lookup()}
+              spellCheck={false}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && findSleeper()}
             />
-            <Button onClick={lookup} busy={busy} disabled={!username.trim()} className="shrink-0">
+            <Button onClick={findSleeper} busy={busy} disabled={!input.trim()} className="shrink-0">
               Find
             </Button>
           </div>
 
-          {leagues && (
+          {leagues && leagues.length > 0 && (
             <ul className="mt-3 grid gap-2">
-              {leagues.length === 0 && (
-                <li className="rounded-xl bg-soft px-4 py-3 text-[14px] leading-relaxed text-muted">
-                  Nobody home under that username. Check the spelling (it is the Sleeper display name), or paste the
-                  league ID below instead.
-                </li>
-              )}
               {leagues.map((l) => {
                 const on = league?.id === l.league_id;
                 return (
@@ -220,39 +251,39 @@ export default function ConnectPage() {
               })}
             </ul>
           )}
-
-          <div className="mt-6 flex items-center gap-3" aria-hidden>
-            <span className="h-px flex-1 bg-line" />
-            <span className="eyebrow">or</span>
-            <span className="h-px flex-1 bg-line" />
-          </div>
         </section>
       )}
 
-      <section className="mt-5">
-        <label className="eyebrow block" htmlFor="league-id">
-          Paste a league ID
-        </label>
-        <div className="mt-2 flex gap-2">
-          <input
-            id="league-id"
-            className={FIELD}
-            inputMode="numeric"
-            placeholder={platform === "sleeper" ? "1403186749361901568" : "ESPN league id"}
-            value={leagueIdInput}
-            onChange={(e) => setLeagueIdInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && pickLeague(leagueIdInput)}
-          />
-          <Button variant="secondary" onClick={() => pickLeague(leagueIdInput)} busy={busy} disabled={!leagueIdInput.trim()} className="shrink-0">
-            Load
-          </Button>
-        </div>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">
-          {platform === "sleeper"
-            ? "The long number in your Sleeper league URL."
-            : "The number after leagueId= in your ESPN league URL. If the league is private we ask for two values from your own browser, right here."}
-        </p>
-      </section>
+      {platform === "espn" && (
+        <section className="mt-7">
+          <label className="eyebrow block" htmlFor="league-id">
+            Paste a league ID
+          </label>
+          <div className="mt-2 flex gap-2">
+            <input
+              id="league-id"
+              className={FIELD}
+              inputMode="numeric"
+              placeholder="ESPN league ID"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && pickLeague(input)}
+            />
+            <Button
+              variant="secondary"
+              onClick={() => pickLeague(input)}
+              busy={busy}
+              disabled={!input.trim()}
+              className="shrink-0"
+            >
+              Load
+            </Button>
+          </div>
+          <p className="mt-2 text-[13px] leading-relaxed text-muted">
+            The number after leagueId= in your ESPN league URL.
+          </p>
+        </section>
+      )}
 
       {error ? (
         <div className="mt-4">
@@ -260,11 +291,15 @@ export default function ConnectPage() {
         </div>
       ) : null}
 
-      {espnAuthNeeded && (
+      {/* Up front, not sprung after a failed request: the form is two fields and "is my league
+          private" is a question the user answers faster than we can. A rejected request only
+          changes the line above them. It stays once a league has loaded only if something
+          still wants cookies, so a connected league is not read over a form. */}
+      {platform === "espn" && (!league || espnAuthNeeded) && (
         <EspnAuthForm
-          expired={espnAuthNeeded.expired}
+          status={espnAuthNeeded}
           busy={busy}
-          onSaved={() => pickLeague(lastLeagueId || leagueIdInput)}
+          onSaved={() => pickLeague(lastLeagueId || input)}
         />
       )}
 

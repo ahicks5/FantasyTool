@@ -1,10 +1,16 @@
 "use client";
 /**
- * Asks for the two ESPN cookies a private league needs, and says plainly what happens to them.
+ * The two ESPN cookies a private league needs, asked for in the shape of a form rather than
+ * a lecture.
  *
- * `expired` switches the copy: the first time we are asking for something they have not given
- * us, the second time we are telling them what they gave us has stopped working. Same form,
- * different sentence, and the difference is the whole of the user's problem.
+ * It renders as soon as ESPN is the chosen platform, because "is your league private" is a
+ * question the user can answer faster than we can. `status` is the only thing a failed
+ * request changes: one line above the fields saying we need them, or that the ones we have
+ * stopped working. Same form either way.
+ *
+ * The honesty line below the fields is a disclosure, not copy. Both halves of it are true of
+ * what the code does and neither can be cut: the values never leave this browser, and they
+ * are a session for the whole ESPN account. Everything else is behind a click.
  */
 
 import { useState } from "react";
@@ -15,86 +21,48 @@ import { Button } from "@/components/ui";
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 font-mono text-[13px] text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
 
+const DISCLOSURE = "min-h-11 text-left text-[14px] font-semibold text-ink underline underline-offset-4";
+
+const CODE = "font-mono text-[13px] text-ink";
+
 export function EspnAuthForm({
-  expired = false,
+  status = null,
   onSaved,
   busy = false,
 }: {
-  expired?: boolean;
+  /** null until a request fails. `expired` picks which one sentence to show. */
+  status?: { expired: boolean } | null;
   onSaved: () => void;
   busy?: boolean;
 }) {
   const stored = useEspnAuth();
   const [s2, setS2] = useState("");
   const [swid, setSwid] = useState("");
-  const [open, setOpen] = useState(false);
+  const [showFind, setShowFind] = useState(false);
+  const [showTrust, setShowTrust] = useState(false);
   const ready = s2.trim().length > 0 && swid.trim().length > 0;
 
   return (
-    <div className="card mt-5 p-5">
+    <section className="mt-7 rounded-[var(--radius-card)] border border-line-2 bg-paper p-4">
       <div className="flex items-start gap-3">
-        <span aria-hidden className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-soft text-ink-2">
-          <IconLock size={20} strokeWidth={2} />
+        <span
+          aria-hidden
+          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-soft text-ink-2"
+        >
+          <IconLock size={18} strokeWidth={2} />
         </span>
         <div className="min-w-0">
-          <h2 className="display text-[21px] leading-tight">
-            {expired ? "ESPN wants a fresh sign-in" : "That league is private"}
-          </h2>
-          <p className="mt-2 text-[15px] leading-relaxed text-muted">
-            {expired
-              ? "The two values you gave us stopped working. ESPN rotates them every few weeks. Grab fresh ones from your browser and you are straight back in."
-              : "ESPN only opens a private league to someone signed in. Paste two values from your own browser and we can read it. We only ever read with them, and never post, join or change anything in your league."}
-          </p>
+          <h2 className="display text-[18px] leading-tight">Private league only</h2>
+          <p className="mt-0.5 text-[13px] leading-snug text-muted">A public league needs nothing here.</p>
         </div>
       </div>
 
-      {/* The trust moment. Every sentence here is literally true of what the code does —
-          the cookies never leave the browser except as headers on the user's own requests,
-          and nothing about them can be softened without making it a lie. */}
-      <div className="mt-4 rounded-xl bg-soft px-4 py-3.5">
-        <div className="eyebrow">What happens to these</div>
-        <ul className="mt-2 grid gap-2 text-[13px] leading-relaxed text-muted">
-          <li>
-            <b className="text-ink">They stay in this browser.</b> They ride along as headers on your own league
-            requests and the server never writes them down. Nothing of yours is sitting on our side to leak.
-          </li>
-          <li>
-            <b className="text-ink">They are a read session for your whole ESPN account.</b> ESPN gives no way to
-            limit them to one league, and we cannot revoke them. That is exactly why they live with you and not
-            with us.
-          </li>
-          <li>
-            <b className="text-ink">Yours to wipe, any time.</b> &ldquo;Forget these&rdquo; clears them from this
-            device. Never paste them into a chat, an email or a bug report. Pull fresh ones from your browser
-            instead.
-          </li>
-          <li>
-            The honest trade-off: because we keep nothing, the weekly email cannot read a private league.
-          </li>
-        </ul>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="mt-4 text-[14px] font-semibold text-ink underline underline-offset-4"
-        aria-expanded={open}
-      >
-        {open ? "Hide" : "Where do I find these?"}
-      </button>
-      {open && (
-        <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-[14px] leading-relaxed text-muted">
-          <li>On a computer, open fantasy.espn.com in the browser where you are already signed in.</li>
-          <li>
-            Open developer tools (<span className="font-mono text-[13px]">F12</span>), then{" "}
-            <b className="text-ink">Application</b> (<b className="text-ink">Storage</b> in Firefox) →{" "}
-            <b className="text-ink">Cookies</b> → <span className="font-mono text-[13px]">espn.com</span>.
-          </li>
-          <li>
-            Copy the values of <span className="font-mono text-[13px]">espn_s2</span> and{" "}
-            <span className="font-mono text-[13px]">SWID</span>, and paste them below. Takes about a minute.
-          </li>
-        </ol>
+      {status && (
+        <p role="status" className="mt-3 rounded-xl bg-sit-soft px-3.5 py-2.5 text-[13px] font-semibold leading-snug text-sit">
+          {status.expired
+            ? "Those two stopped working. ESPN rotates them every few weeks. Paste fresh ones."
+            : "That league is private. Paste the two values below."}
+        </p>
       )}
 
       <div className="mt-4 space-y-3">
@@ -120,12 +88,56 @@ export function EspnAuthForm({
             spellCheck={false}
           />
           <span className="mt-1.5 block text-[12px] leading-relaxed text-muted">
-            With the curly braces or without them. We tidy it up either way.
+            Braces or no braces. We tidy it either way.
           </span>
         </label>
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
+      <p className="mt-3 text-[12px] leading-relaxed text-muted">
+        These stay in this browser and the server never writes them down. They are a read session for your whole ESPN
+        account, not just this league.
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1">
+        <button type="button" onClick={() => setShowFind((v) => !v)} className={DISCLOSURE} aria-expanded={showFind}>
+          {showFind ? "Hide" : "Where do I find these?"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowTrust((v) => !v)}
+          className={`${DISCLOSURE} font-normal text-muted`}
+          aria-expanded={showTrust}
+        >
+          {showTrust ? "Hide" : "Handling rules"}
+        </button>
+      </div>
+
+      {showFind && (
+        <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-[14px] leading-snug text-muted">
+          <li>
+            On a computer, open <span className={CODE}>fantasy.espn.com</span>, signed in.
+          </li>
+          <li>
+            Press <span className={CODE}>F12</span> → <b className="text-ink">Application</b> →{" "}
+            <b className="text-ink">Cookies</b> → <span className={CODE}>espn.com</span>. Firefox calls it{" "}
+            <b className="text-ink">Storage</b>.
+          </li>
+          <li>
+            Copy <span className={CODE}>espn_s2</span> and <span className={CODE}>SWID</span>. Paste them above.
+          </li>
+        </ol>
+      )}
+
+      {showTrust && (
+        <ul className="mt-2 grid gap-1.5 text-[13px] leading-relaxed text-muted">
+          <li>ESPN cannot scope them to one league, and we cannot revoke them. That is why they live with you.</li>
+          <li>Never paste them into a chat, an email or a bug report. Pull fresh ones instead.</li>
+          <li>&ldquo;Forget these&rdquo; wipes them from this device.</li>
+          <li>The trade-off: because we keep nothing, the weekly email cannot read a private league.</li>
+        </ul>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <Button
           busy={busy}
           disabled={!ready}
@@ -136,18 +148,19 @@ export function EspnAuthForm({
             onSaved();
           }}
         >
-          {busy ? "Checking with ESPN…" : "Open this league"}
+          {busy ? "Checking with ESPN…" : "Save these"}
         </Button>
         {stored && (
           <button
             type="button"
-            className="text-[14px] font-semibold text-muted underline underline-offset-4"
+            className="min-h-11 text-[14px] font-semibold text-muted underline underline-offset-4"
             onClick={() => clearEspnAuth()}
           >
             Forget these
           </button>
         )}
       </div>
-    </div>
+      {stored && <p className="mt-1 text-[12px] text-muted">Saved on this device.</p>}
+    </section>
   );
 }
