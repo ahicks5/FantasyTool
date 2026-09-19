@@ -99,12 +99,39 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body;
 }
 
+const ALL_FEATURES: Feature[] = ["my_team", "waivers", "trade_lab", "full_report"];
+
+/**
+ * What the demo build pretends you have bought.
+ *
+ * **Mock-path only.** Everything here runs inside `if (USE_MOCKS)`, which is only true when
+ * `NEXT_PUBLIC_API_URL` is unset. The moment a real API is configured, entitlements come from
+ * `GET /api/me` and the server gates every paid route with a 402 — nothing in this file can
+ * open a paid feature against a real backend.
+ *
+ * The demo defaults to **everything unlocked**, so the deployed site can be clicked through
+ * end to end without hitting a paywall over fake data. Two switches, both sticky:
+ *
+ *   ?lock=1    back to the free tier, to see the locked states and the upsell
+ *   ?unlock=1  everything again
+ */
 function mockExtraEntitlements(): Feature[] {
+  if (typeof window === "undefined") return ALL_FEATURES;
   try {
+    const q = new URLSearchParams(window.location.search);
+    if (q.has("lock")) {
+      window.localStorage.setItem(MOCK_ENTITLEMENTS_KEY, JSON.stringify([]));
+      return [];
+    }
+    if (q.has("unlock")) {
+      window.localStorage.setItem(MOCK_ENTITLEMENTS_KEY, JSON.stringify(ALL_FEATURES));
+      return ALL_FEATURES;
+    }
     const raw = window.localStorage.getItem(MOCK_ENTITLEMENTS_KEY);
-    return raw ? (JSON.parse(raw) as Feature[]) : [];
+    // A stored empty array is a deliberate ?lock=1, not an absence — respect it.
+    return raw ? (JSON.parse(raw) as Feature[]) : ALL_FEATURES;
   } catch {
-    return [];
+    return ALL_FEATURES;
   }
 }
 

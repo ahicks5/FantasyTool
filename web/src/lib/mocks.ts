@@ -359,7 +359,10 @@ export const LEAGUE: LeagueSummary = {
 
 export const ME: Me = {
   email: "you@example.com",
-  entitlements: ["my_team", "waivers"],
+  // The real free tier, per edge/products.py: start/sit only. This used to hand out the Wire
+  // Pass for free, which contradicted the product catalogue and made the wire impossible to
+  // see in its locked state. Everything above this comes from `mockExtraEntitlements`.
+  entitlements: ["my_team"],
   leagues_allowed: 1,
   leagues: [{ platform: "sleeper", league_id: LEAGUE_ID, name: "The Megalabowl", team_id: MY_TEAM_ID }],
 };

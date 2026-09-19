@@ -27,6 +27,25 @@ time, so the redeploy is required, not optional.
 | API (FastAPI) | Railway | Container from the repo `Dockerfile`. Configs in `deploy/`. |
 | Production branch | `claude/edge-fantasy-app-launch-alo0rr` | **There is no `main` in this repo.** Every branch is a `claude/*` branch. |
 
+## Clicking through the live demo
+
+While the site runs on mock data, **every paid feature is unlocked by default** so it can be
+walked end to end without hitting a paywall over numbers that are not real. Two sticky
+switches, either appended to any page:
+
+| URL | What you get |
+|---|---|
+| `…/home?lock=1` | the real free tier: start/sit only, so you can see the locked states and the upsell |
+| `…/home?unlock=1` | everything open again |
+
+The choice is remembered in the browser until you flip it back.
+
+**This cannot weaken real billing.** It all sits inside `USE_MOCKS`, which is only true while
+`NEXT_PUBLIC_API_URL` is unset. Point the site at a real API and entitlements come from
+`GET /api/me`, with the server returning 402 on every paid route — nothing in the web bundle
+can open a paid feature against a real backend. Once the API is wired up, drop the default in
+`mockExtraEntitlements` back to `[]` if you still want the mock build to start locked.
+
 ## How a deploy happens
 
 Vercel builds from the production branch listed above. To ship the web app, fast-forward
