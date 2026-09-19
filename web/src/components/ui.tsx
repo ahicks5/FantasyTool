@@ -1,9 +1,19 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import type { Confidence, Verdict } from "@/lib/types";
-import { confidenceClass, confidenceInk, countdown, kickoffUrgency, nextKickoff, URGENCY_LABEL, verdictClass } from "@/lib/format";
-import { claimFirstOpen, hasOpened } from "@/lib/cache";
+import {
+  confidenceClass,
+  confidenceInk,
+  countdown,
+  COUNTDOWN_CH,
+  kickoffUrgency,
+  nextKickoff,
+  reservedWidth,
+  URGENCY_LABEL,
+  verdictClass,
+} from "@/lib/format";
+import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitPhase } from "@/lib/wait";
 import { IconCheck, IconChevron, IconClock, IconMoon, IconSun } from "./icons";
 
 export function Card({
@@ -234,21 +244,42 @@ export function Stat({
    The sheet is only urgent if it says how long you have.                       */
 
 /**
+ * `useLayoutEffect`, except it does not warn during server rendering.
+ *
+ * Anything that reads the reader's own clock, locale or storage has to paint a neutral
+ * placeholder on the server and correct it in the browser. Doing that in `useEffect`
+ * puts the correction *after* paint, so the placeholder is visible for a frame; doing
+ * it in a layout effect puts it before paint, so it never is. React has nothing to
+ * flush before paint on the server, where it would just log a warning, so on the server
+ * this is the ordinary effect and never runs at all.
+ */
+const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+/**
  * Live time to the next Sunday 1pm ET slate, and the booth's tension with it.
  * Three days out it is reference; ninety minutes out it is a deadline, and the
  * clock says so in colour while the label says so in words.
  */
 export function Countdown({ onHero = false, className = "" }: { onHero?: boolean; className?: string }) {
-  // Rendered empty on the server and filled on the client: the deadline depends
-  // on the reader's current time, so server HTML would hydrate mismatched.
-  // Resolved on the first client render rather than in an effect: going "—" then a time was
-  // a second visible paint on every screen that carries a clock. Still null on the server,
-  // where there is no reader's clock to read.
-  const [left, setLeft] = useState<number | null>(() =>
-    typeof window === "undefined" ? null : nextKickoff() - Date.now(),
-  );
-  useEffect(() => {
-    const id = setInterval(() => setLeft(nextKickoff() - Date.now()), 1000);
+  // The deadline depends on the reader's clock, which the server does not have, so the
+  // server renders a dash and the browser fills it in.
+  //
+  // It starts null on the client too, deliberately. Resolving it in the state initialiser
+  // instead meant the hydration render already held the final string, and this text node
+  // carried `suppressHydrationWarning` — which does not mean "patch it quietly", it means
+  // React keeps the DOM and throws its own output away. Since the string only changes once
+  // a minute whenever kickoff is more than a day out, nothing then repainted and the clock
+  // read "—" for up to a full minute. Inside 24h the seconds tick, so it healed in one
+  // second and the bug hid from anyone testing near kickoff.
+  //
+  // Starting null means server and client agree at hydration, so there is no mismatch to
+  // suppress, and the first real value arrives in a layout effect — which commits before
+  // the browser paints, so the dash is never seen after hydration.
+  const [left, setLeft] = useState<number | null>(null);
+  useBeforePaint(() => {
+    const update = () => setLeft(nextKickoff() - Date.now());
+    update();
+    const id = setInterval(update, 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -271,7 +302,12 @@ export function Countdown({ onHero = false, className = "" }: { onHero?: boolean
       <span className={`text-[10px] font-black uppercase tracking-[0.14em] ${band === "final" ? "text-signal" : muted}`}>
         {URGENCY_LABEL[band]}
       </span>
-      <span className={`tnum text-[13px] font-black ${clock}`} suppressHydrationWarning>
+      {/* Reserved to the widest clock it can show, so ticking from "1d 11:07" to
+          "23:59:58" — or from the dash to either — moves nothing beside it. */}
+      <span
+        className={`tnum inline-block text-right text-[13px] font-black ${clock}`}
+        style={{ minWidth: `${COUNTDOWN_CH}ch` }}
+      >
         {left === null ? "—" : countdown(left)}
       </span>
     </span>
@@ -280,8 +316,10 @@ export function Countdown({ onHero = false, className = "" }: { onHero?: boolean
 
 /** True inside the last two hours before kickoff. Drives the lamp's tempo. */
 export function useKickoffBand(): "open" | "soon" | "final" {
+  // Same shape as `Countdown`: null through hydration, resolved before the first paint,
+  // so the lamp never beats at the wrong tempo for a visible frame.
   const [left, setLeft] = useState<number | null>(null);
-  useEffect(() => {
+  useBeforePaint(() => {
     const update = () => setLeft(nextKickoff() - Date.now());
     update();
     const id = setInterval(update, 30_000);
@@ -324,7 +362,60 @@ export function useCountUp(value: number, digits = 1, animate = true, ms = 620):
   return (count ? shown : value).toFixed(digits);
 }
 
+/**
+ * A counting number that holds its own width.
+ *
+ * `useCountUp` eases from zero, so the string grows — `0.0` to `121.4` is three extra
+ * characters. On the depth chart that shoved the stamp sitting beside it; on the call
+ * sheet the number is inline in a sentence, so the paragraph re-wrapped for the length
+ * of the animation. The box is sized from the destination, so it is the same on the
+ * first frame as the last, and nothing beside it moves.
+ *
+ * A number inside prose should pass `animate={false}` instead: reserving the width stops
+ * the re-wrap, but a figure that spins up mid-sentence is still hard to read past.
+ */
+export function CountUp({
+  value,
+  digits = 1,
+  animate = true,
+  className = "",
+}: {
+  value: number;
+  digits?: number;
+  animate?: boolean;
+  className?: string;
+}) {
+  const shown = useCountUp(value, digits, animate);
+  return (
+    <span
+      className={`tnum inline-block text-right ${className}`}
+      style={{ minWidth: `${reservedWidth(value, digits)}ch` }}
+    >
+      {shown}
+    </span>
+  );
+}
+
 /* ------------------------------------------------------------- pre-snap ---- */
+
+/**
+ * Keep a wait on screen until it has earned its exit.
+ *
+ * `ready` is the page's own "my data has landed". A warm API can answer while the
+ * narrated checklist is still on its second line, and a sequence that appears and
+ * vanishes inside 300ms reads as a glitch rather than as an opening — so once the
+ * narration has started it gets its floor. A quiet skeleton owes nothing and this
+ * returns `false` the instant the data is there, which is what keeps a cached tab
+ * painting on the first frame.
+ */
+export function useHeldWait(ready: boolean): boolean {
+  // Read through the store rather than off the clock: the snapshot has to be the same
+  // value on every render until the floor actually lifts, and a `Date.now()` subtraction
+  // in render is neither stable nor pure. Nothing narrated means this is already true,
+  // so a cached tab is never held for even a frame.
+  const passed = useSyncExternalStore(subscribeWaits, narratedFloorPassed, () => true);
+  return !ready || !passed;
+}
 
 const OPENING = [
   "Reading your league",
@@ -343,45 +434,84 @@ const OPENING = [
  * booth is already on, it is just fetching.
  */
 export function BoothOpening() {
-  // `hasOpened` is a pure read, so a double-invoked initialiser is harmless;
-  // the flag is claimed in an effect, which is idempotent.
-  const [full] = useState(() => !hasOpened());
+  // The phase is decided once, when this wait takes the screen, and released when it
+  // leaves — so a loader cannot mount beside another and downgrade it mid-wait, which
+  // is what made a cold start play the checklist, drop it, and show a skeleton instead.
+  //
+  // Claimed in a layout effect rather than a state initialiser: an initialiser can be
+  // double-invoked in Strict Mode and would burn the session's one narrated opening on
+  // a render React then throws away.
+  const [phase, setPhase] = useState<WaitPhase | null>(null);
   const [step, setStep] = useState(0);
-  useEffect(() => {
-    claimFirstOpen();
+  useBeforePaint(() => {
+    setPhase(claimWait());
+    return releaseWait;
   }, []);
   useEffect(() => {
-    if (!full) return;
+    if (phase !== "narrated") return;
     const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) return;
     const id = setInterval(() => setStep((s) => Math.min(s + 1, OPENING.length)), 420);
     return () => clearInterval(id);
-  }, [full]);
+  }, [phase]);
 
-  if (!full) return <QuietWait />;
+  // Until the claim lands, show the quiet shape. It is the geometry of the page either
+  // way, so resolving to the narrated version replaces text inside the same box.
+  if (phase !== "narrated") return <QuietWait />;
 
   return (
-    <div className="hero callsheet sweep relative p-6" aria-busy="true" aria-label="Opening the booth">
-      <OnAir className="text-white/70" />
-      <div className="display mt-3 text-[26px] leading-tight text-white">Opening the booth</div>
-      <ul className="mt-4 grid gap-2.5">
-        {OPENING.map((line, i) => {
-          const done = i < step;
-          return (
-            <li key={line} className={`flex items-center gap-2.5 text-[14px] ${done ? "text-white" : "text-white/40"}`}>
-              <span
-                aria-hidden
-                className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border ${
-                  done ? "border-start bg-start text-white" : "border-white/25"
-                }`}
-              >
-                {done && <IconCheck size={10} strokeWidth={3.5} />}
-              </span>
-              {line}
-            </li>
-          );
-        })}
-      </ul>
+    <div aria-busy="true" aria-label="Opening the booth">
+      <WaitHero>
+        <div className="display text-[30px] leading-[1.08] text-white">Opening the booth</div>
+        <ul className="mt-4 grid gap-2.5">
+          {OPENING.map((line, i) => {
+            const done = i < step;
+            return (
+              <li key={line} className={`flex items-center gap-2.5 text-[14px] ${done ? "text-white" : "text-white/40"}`}>
+                <span
+                  aria-hidden
+                  className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border ${
+                    done ? "border-start bg-start text-white" : "border-white/25"
+                  }`}
+                >
+                  {done && <IconCheck size={10} strokeWidth={3.5} />}
+                </span>
+                {line}
+              </li>
+            );
+          })}
+        </ul>
+      </WaitHero>
+    </div>
+  );
+}
+
+/**
+ * The call sheet's hero, empty and waiting.
+ *
+ * Both loaders render through this, and its geometry is the real hero's: the same
+ * ON AIR band at the same height with the same live clock in it, then the same `p-6`
+ * body. The loaders used to be a different shape from the page — a `p-6` box with a
+ * 26px line where the real thing has a band, a 30px headline and a pip row — so the
+ * page reflowed twice on a cold start, once between the two loaders and once when
+ * content landed. Sharing the frame means the only thing that ever changes inside it
+ * is the text.
+ */
+function WaitHero({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="hero callsheet sweep relative overflow-hidden">
+      {/* The ring, not the lamp: the booth is not on air yet, and a wait that is not
+          visibly turning is indistinguishable from one that has stalled. Same row,
+          same height and the same live clock as the real band, so nothing moves when
+          the lamp replaces it. */}
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
+        <span className="flex items-center gap-2 text-white/70">
+          <Spinner size={15} label={null} />
+          <span className="text-[10px] font-black uppercase tracking-[0.18em]">Coming up</span>
+        </span>
+        <Countdown onHero />
+      </div>
+      <div className="p-6">{children}</div>
     </div>
   );
 }
@@ -394,14 +524,20 @@ export function BoothOpening() {
 function QuietWait() {
   return (
     <div aria-busy="true" aria-label="Loading">
-      <div className="hero callsheet sweep relative overflow-hidden p-6">
-        <div className="flex items-center gap-2 text-white/70">
-          <Spinner size={15} label={null} />
-          <span className="text-[10px] font-black uppercase tracking-[0.18em]">Loading</span>
+      <WaitHero>
+        <Skeleton className="h-[14px] w-28 opacity-20" />
+        <Skeleton className="mt-2 h-[33px] w-56 opacity-25" />
+        <Skeleton className="mt-2.5 h-[17px] w-40 opacity-20" />
+        {/* The pip row, at its real height, so the swap to content does not nudge. */}
+        <div className="mt-5">
+          <Skeleton className="h-[26px] w-28 opacity-20" />
+          <div className="mt-2 flex gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="h-1.5 flex-1 rounded-full bg-white/15" />
+            ))}
+          </div>
         </div>
-        <Skeleton className="mt-3 h-8 w-52 opacity-25" />
-        <Skeleton className="mt-3 h-3 w-36 opacity-25" />
-      </div>
+      </WaitHero>
       <SkeletonList rows={2} tall quiet />
     </div>
   );

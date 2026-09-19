@@ -5,11 +5,13 @@ import {
   confidenceClass,
   confidenceInk,
   countdown,
+  COUNTDOWN_CH,
   formatBid,
   formatCents,
   kickoffUrgency,
   nextKickoff,
   pct,
+  reservedWidth,
   sheetStatus,
   signed,
   URGENCY_LABEL,
@@ -136,4 +138,38 @@ test("every urgency band ships a word, so colour never carries it alone", () => 
     assert.ok(URGENCY_LABEL[band] && URGENCY_LABEL[band].length > 2, band);
   }
   assert.notEqual(URGENCY_LABEL.final, URGENCY_LABEL.soon, "the tense state must read differently");
+});
+
+/* ------------------------------------------------ width reservation (S-2) --- */
+
+test("a counting number reserves the width of where it lands, not where it starts", () => {
+  for (const v of [0, 9.9, 121.4, 1000.0]) {
+    assert.equal(reservedWidth(v), v.toFixed(1).length, `${v} reserves its final length`);
+  }
+  // The reservation is a function of the destination, so every frame of the count-up
+  // reserves the same width. This is the property that stops the row moving.
+  const final = 121.4;
+  const widths = new Set([0, 12.7, 60.3, 119.9, final].map(() => reservedWidth(final)));
+  assert.equal(widths.size, 1, "the reserved width must not change while counting");
+  assert.equal(reservedWidth(7, 0), 1, "digits are honoured");
+  assert.equal(reservedWidth(-4.25, 2), 5, "a minus sign is part of the width");
+});
+
+test("COUNTDOWN_CH is wide enough for every clock the next kickoff can show", () => {
+  // Kickoff is at most one slate away, so walk a whole week a minute at a time and
+  // check nothing overflows the reservation.
+  let widest = "";
+  for (let ms = 0; ms <= 7 * 24 * 3600_000; ms += 60_000) {
+    const s = countdown(ms);
+    if (s.length > widest.length) widest = s;
+  }
+  assert.ok(widest.length <= COUNTDOWN_CH, `"${widest}" is ${widest.length} > ${COUNTDOWN_CH}`);
+  assert.equal(COUNTDOWN_CH, widest.length, "the reservation should be tight, not padded");
+  // And the placeholder fits in the same box as a real time.
+  assert.ok("—".length <= COUNTDOWN_CH);
+});
+
+test("the real gap to kickoff never needs more room than we reserve", () => {
+  const now = new Date("2026-09-19T12:00:00Z");
+  assert.ok(countdown(nextKickoff(now) - now.getTime()).length <= COUNTDOWN_CH);
 });

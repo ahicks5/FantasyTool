@@ -5,7 +5,7 @@ import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { Scorecard } from "./Scorecard";
 import { IconArrowUp, IconCheck, IconChevron } from "./icons";
-import { ConfidenceStamp, Countdown, Eyebrow, H2, InjuryTag, OnAirLive, Stamp, useCountUp } from "./ui";
+import { ConfidenceStamp, Countdown, CountUp, Eyebrow, H2, InjuryTag, OnAirLive, Stamp } from "./ui";
 
 const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
 
@@ -93,15 +93,18 @@ export function LineupView({
   animate?: boolean;
 }) {
   const delta = lineup.projected_total - lineup.current_total;
-  const projected = useCountUp(lineup.projected_total, 1, animate);
   const set = delta <= 0.05;
 
   const grades = lineup.grades;
   const [view, setView] = useState<View>("board");
-  /* A cached page paints without replaying its opening, but asking for the other
-     view is a deliberate arrival, so that one still gets its entry. */
-  const [flipped, setFlipped] = useState(false);
-  const entry = animate || flipped;
+  /* A cached page paints without replaying its opening, but asking for a view you have
+     not seen yet is a deliberate arrival, so that one still gets its entry.
+
+     Seen once, and only once: `flipped` used to latch true on the first tap and stay
+     true, so every later return to a panel replayed its whole entry animation — the
+     scorecard re-dealt its tiles each time you glanced at the board and came back. */
+  const [seen, setSeen] = useState<View[]>(() => (animate ? [] : ["board"]));
+  const entry = (v: View) => (animate && v === "board") || !seen.includes(v);
   // No toggle without a scorecard to toggle to, and never inside the report's compact embed.
   const toggle = !compact && !!grades;
 
@@ -115,7 +118,11 @@ export function LineupView({
         <div className="flex items-end justify-between gap-4 p-5">
           <div className="min-w-0">
             <Eyebrow>Projected · Week {lineup.week}</Eyebrow>
-            <div className="display tnum mt-1 text-[42px] leading-none text-white">{projected}</div>
+            <CountUp
+              value={lineup.projected_total}
+              animate={animate}
+              className="display mt-1 text-[42px] leading-none text-white"
+            />
           </div>
           <div className="shrink-0 text-right">
             {set ? (
@@ -214,7 +221,7 @@ export function LineupView({
             aria-selected={view === v}
             aria-controls={`depth-panel-${v}`}
             onClick={() => {
-              setFlipped(true);
+              setSeen((prev) => (prev.includes(view) ? prev : [...prev, view]));
               setView(v);
             }}
             className={`rounded-xl px-3 text-[13px] font-bold transition-colors ${
@@ -228,7 +235,7 @@ export function LineupView({
 
       {view === "scorecard" ? (
         <div id="depth-panel-scorecard" role="tabpanel" aria-labelledby="depth-tab-scorecard" className="min-w-0">
-          <Scorecard grades={grades} week={lineup.week} animate={entry} />
+          <Scorecard grades={grades} week={lineup.week} animate={entry("scorecard")} />
         </div>
       ) : (
         <div id="depth-panel-board" role="tabpanel" aria-labelledby="depth-tab-board" className="grid min-w-0 gap-6">

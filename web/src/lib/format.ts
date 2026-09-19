@@ -181,6 +181,32 @@ export function countdown(msRemaining: number): string {
   return days > 0 ? `${days}d ${pad(h)}:${pad(min)}` : `${pad(h)}:${pad(min)}:${pad(sec)}`;
 }
 
+/**
+ * The widest string `countdown` can return, in characters.
+ *
+ * Kickoff is never more than one slate away, so the day count is a single digit and
+ * `6d 23:59` is the longest shape — the same width as `04:11:32`. A clock that
+ * reserves this much never resizes when it ticks from one shape to the other, and
+ * the placeholder it shows before the reader's clock is known is the same width as
+ * the time that replaces it. Asserted in the tests rather than eyeballed.
+ */
+export const COUNTDOWN_CH = 8;
+
+/**
+ * How many characters a counting number will finally occupy.
+ *
+ * A count-up eases from 0 to its value, so `0.0` grows to `121.4` and everything
+ * beside it moves for the length of the animation — on the call sheet that number is
+ * inline in a sentence, so the whole paragraph re-wrapped. Reserving the final width
+ * up front costs nothing and the row is still.
+ *
+ * It is a function of the destination only, never of the value currently shown,
+ * which is the whole point: it cannot change while the number is counting.
+ */
+export function reservedWidth(value: number, digits = 1): number {
+  return value.toFixed(digits).length;
+}
+
 /* ------------------------------------------------------------- the sheet ---
    A call sheet you can check off. Which calls are made is per league and per
    week, so a new week always starts clean rather than inheriting last week's

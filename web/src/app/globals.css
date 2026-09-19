@@ -297,11 +297,14 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   to   { opacity: 1; transform: none; clip-path: inset(0 0 0 0); }
 }
 .print { animation: printin 0.5s cubic-bezier(0.22, 0.75, 0.3, 1) both; }
-.print-1 { animation-delay: 0.16s; }
-.print-2 { animation-delay: 0.30s; }
-.print-3 { animation-delay: 0.44s; }
-.print-4 { animation-delay: 0.58s; }
-.print-5 { animation-delay: 0.72s; }
+/* Halved, and capped after the third card. The old ramp was still printing the fifth
+   row 0.72s in — the page was moving after you had started reading it. A stagger is a
+   cue that the rows arrive in order, not a queue you wait out. */
+.print-1 { animation-delay: 0.05s; }
+.print-2 { animation-delay: 0.10s; }
+.print-3 { animation-delay: 0.15s; }
+.print-4 { animation-delay: 0.20s; }
+.print-5 { animation-delay: 0.25s; }
 
 @keyframes promote { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes demote  { from { transform: translateY(-12px); opacity: 0; } to { transform: none; opacity: 0.55; } }

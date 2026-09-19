@@ -1,14 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cacheClear, cacheGet, cacheSet, claimFirstOpen, hasOpened, once } from "./cache.ts";
+import { cacheClear, cacheGet, cacheSet, once } from "./cache.ts";
 
-test("the booth opens once per session", () => {
-  assert.equal(hasOpened(), false, "nothing has asked yet");
-  assert.equal(claimFirstOpen(), true, "the first caller gets the narrated opening");
-  assert.equal(claimFirstOpen(), false, "every later wait is a quiet skeleton");
-  assert.equal(claimFirstOpen(), false);
-  assert.equal(hasOpened(), true);
-});
+// "The booth opens once per session" moved to `wait.test.ts` along with the flag
+// itself, where it is tested against the one-loader-on-screen registry it has to
+// agree with. This file is the read cache.
 
 test("a read runs once and every later caller gets the same answer", async () => {
   let calls = 0;

@@ -150,19 +150,6 @@ export function useCached<T>(key: string | null, fetcher: () => Promise<T>): Cac
 }
 
 /* ------------------------------------------------------------- the opening ---
-   The booth only opens once. The staged "pulling film / re-scoring" sequence is
-   a nice first impression and an irritation the fourth time, so after the first
-   one this reports false and callers show a plain skeleton instead.            */
-
-let opened = false;
-
-/** True the first time it is asked in this session, false ever after. */
-export function claimFirstOpen(): boolean {
-  if (opened) return false;
-  opened = true;
-  return true;
-}
-
-export function hasOpened(): boolean {
-  return opened;
-}
+   Which wait narrates moved to `lib/wait.ts`, together with the "only one loader
+   on screen" registry it has to agree with — two modules holding the same flag is
+   how they drift apart. Import it from there; this module is the read cache only. */
