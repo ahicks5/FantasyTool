@@ -201,6 +201,16 @@ kickoff. Named it **The Booth** and rebuilt the shell around a coaching call she
       encoded that behaviour as correct; both the design and the tests were replaced.
 - [x] Depth reads against what the league starts at that position, not against your own starters,
       so a room of equally mediocre players grades thin rather than deep.
+- [x] Scorecard UI on the depth chart, behind a Board/Scorecard toggle. Grade tiles (a square
+      bordered mark, never a stamp — stamps are for decisions), a word beside every letter
+      (Loaded/Strong/Even/Soft/Hole) so colour never carries it, and a **centre-anchored** meter
+      so a C renders as level rather than half-empty. Reads at 320px.
+- [ ] Shared-primitive debt the scorecard exposed, all currently duplicated locally:
+      a `GradeTile`, a centre-anchored `ScaleBar` (both existing meters fill from the left,
+      which is wrong for a percentile whose midpoint is the mean), `ordinal()` (in
+      `Scorecard.tsx` and `mocks.ts`, and it belongs in `format.ts` where it is testable), and
+      a `Segmented` tabs primitive — Trade Lab and LineupView now hand-roll identical markup,
+      and the Trade Lab copy uses `min-h-0`, which undercuts the 44px target rule.
 - [ ] Grades are a natural share graphic (a scorecard card for the group chat) — reuse
       `edge/graphics.py` the way the verdict card does. Not built.
 - [ ] Trend: "your RB room was a B two weeks ago". Needs grades written to the `runs` table

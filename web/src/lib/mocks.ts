@@ -6,13 +6,17 @@ import type {
   TradeFinderResponse,
   WaiverPlanResponse,
   Confidence,
+  Depth,
   Feature,
+  Grade,
+  Grades,
   LeagueSummary,
   Lineup,
   LineupChange,
   LineupSlot,
   Me,
   Player,
+  PositionGrade,
   Product,
   Report,
   SleeperLeagueRef,
@@ -429,6 +433,63 @@ export function lineupFor(teamId: string): Lineup {
           : `Sit: ${p.projected.toFixed(1)} proj, ${Math.max(0, lastFlex - p.projected).toFixed(1)} behind your last FLEX.`,
     })),
     changes,
+    grades: gradesFor(r),
+  };
+}
+
+/* ---------- Scorecard ----------
+   A fixed spread of letters (one A-ish, one C-ish, one F, and a mix of depth
+   readings) so the scorecard design is exercised, with the names underneath
+   pulled off whichever roster is being graded. `starters` folds FLEX in: this
+   league starts 2 RB + 2 WR + 2 FLEX, which in practice is 3 and 3.            */
+
+const GRADE_ROWS: { position: string; grade: Grade; percentile: number; rank: number; starters: number; depth: Depth }[] = [
+  { position: "RB", grade: "A-", percentile: 0.86, rank: 2, starters: 3, depth: "deep" },
+  { position: "WR", grade: "C+", percentile: 0.54, rank: 7, starters: 3, depth: "ok" },
+  { position: "QB", grade: "B", percentile: 0.68, rank: 5, starters: 1, depth: "thin" },
+  { position: "TE", grade: "D+", percentile: 0.24, rank: 10, starters: 1, depth: "thin" },
+  { position: "DEF", grade: "F", percentile: 0.07, rank: 12, starters: 1, depth: "ok" },
+];
+
+const ORDINAL = ["", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
+
+function gradesFor(r: MockRoster): Grades {
+  const size = ROSTERS.length;
+  const positions: PositionGrade[] = GRADE_ROWS.map((row) => {
+    const names = r.starters.filter((p) => p.position === row.position).map((p) => p.name).slice(0, row.starters);
+    const behind = r.bench.filter((p) => p.position === row.position).sort((a, b) => b.projected - a.projected);
+    const next_man = behind[0]?.name ?? null;
+    const place = `${ORDINAL[row.rank] ?? `${row.rank}th`} of ${size} at ${row.position}`;
+    const note =
+      row.depth === "deep" && next_man
+        ? `${place}. ${next_man} is the next man up and he can start.`
+        : row.depth === "thin" && next_man
+          ? `${place}. ${next_man} is the drop-off, and it is a real one.`
+          : row.depth === "thin"
+            ? `${place}. Nothing behind the starter if he sits.`
+            : row.position === "DEF"
+              ? `${place}. Stream it — the wire fixes this one cheap.`
+              : `${place}. Covered, not stacked.`;
+    return {
+      position: row.position,
+      grade: row.grade,
+      percentile: row.percentile,
+      starters: row.starters,
+      rank: row.rank,
+      league_size: size,
+      depth: row.depth,
+      starter_names: names,
+      next_man,
+      note,
+    };
+  });
+  return {
+    overall: "B+",
+    overall_percentile: 0.74,
+    overall_rank: 3,
+    league_size: size,
+    note: `3rd of ${size} on rest-of-season starting value. The backs carry it; tight end and defense are the leaks.`,
+    positions,
   };
 }
 

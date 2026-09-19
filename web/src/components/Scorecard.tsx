@@ -167,9 +167,8 @@ export function Scorecard({ grades, week, animate = true }: { grades: Grades; we
             <div className="display tnum text-[21px] leading-none text-white">
               {ordinal(grades.overall_rank)} of {grades.league_size}
             </div>
-            <div className="mt-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-white/60">
-              {word} · rest-of-season starting value
-            </div>
+            {/* The word, not the colour, is what has to survive on the dark hero. */}
+            <div className="mt-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/70">{word}</div>
           </div>
         </div>
         <ScaleBar value={grades.overall_percentile} tone={tone} label="Roster value" onHero className="mt-4" />

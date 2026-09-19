@@ -1,12 +1,19 @@
 "use client";
+import { useState } from "react";
 import type { Lineup, LineupSlot } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { PlayerLine } from "./Players";
+import { Scorecard } from "./Scorecard";
 import { IconArrowUp, IconCheck } from "./icons";
 import { ConfidencePill, ConfidenceStamp, Countdown, Eyebrow, H2, OnAirLive, Stamp, useCountUp, Why } from "./ui";
 
 const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
+
+/** Two reads on the same team: this week's board, and how the roster grades out. */
+type View = "board" | "scorecard";
+const VIEWS: View[] = ["board", "scorecard"];
+const VIEW_LABEL: Record<View, string> = { board: "The board", scorecard: "Scorecard" };
 
 /** One tile on the board: slot in the margin, player on the tile, number on the right. */
 function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
@@ -57,8 +64,17 @@ export function LineupView({
   const projected = useCountUp(lineup.projected_total, 1);
   const set = delta <= 0.05;
 
-  return (
-    <div className="grid min-w-0 gap-6">
+  const grades = lineup.grades;
+  const [view, setView] = useState<View>("board");
+  /* A cached page paints without replaying its opening, but asking for the other
+     view is a deliberate arrival, so that one still gets its entry. */
+  const [flipped, setFlipped] = useState(false);
+  const entry = animate || flipped;
+  // No toggle without a scorecard to toggle to, and never inside the report's compact embed.
+  const toggle = !compact && !!grades;
+
+  const board = (
+    <>
       <section className="hero callsheet">
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
           <OnAirLive className="text-white/70" />
@@ -145,6 +161,44 @@ export function LineupView({
             ))}
           </ul>
         </section>
+      )}
+    </>
+  );
+
+  if (!toggle || !grades) return <div className="grid min-w-0 gap-6">{board}</div>;
+
+  return (
+    <div className="grid min-w-0 gap-6">
+      {/* Same segmented control as the Trade Lab: one row, two truths about the same team. */}
+      <div className="grid grid-cols-2 gap-1 rounded-2xl border border-line bg-soft p-1" role="tablist" aria-label="Depth chart view">
+        {VIEWS.map((v) => (
+          <button
+            key={v}
+            id={`depth-tab-${v}`}
+            role="tab"
+            aria-selected={view === v}
+            aria-controls={`depth-panel-${v}`}
+            onClick={() => {
+              setFlipped(true);
+              setView(v);
+            }}
+            className={`rounded-xl px-3 text-[13px] font-bold transition-colors ${
+              view === v ? "bg-paper text-ink shadow-[var(--shadow-card)]" : "text-muted"
+            }`}
+          >
+            {VIEW_LABEL[v]}
+          </button>
+        ))}
+      </div>
+
+      {view === "scorecard" ? (
+        <div id="depth-panel-scorecard" role="tabpanel" aria-labelledby="depth-tab-scorecard" className="min-w-0">
+          <Scorecard grades={grades} week={lineup.week} animate={entry} />
+        </div>
+      ) : (
+        <div id="depth-panel-board" role="tabpanel" aria-labelledby="depth-tab-board" className="grid min-w-0 gap-6">
+          {board}
+        </div>
       )}
     </div>
   );
