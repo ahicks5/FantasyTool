@@ -186,6 +186,15 @@ where the call sheet gets read, not a reason to rename the sheet.
       silver capitals — Outlook renders no gradient and no SVG), and `launch/posts.md`.
 - [x] `booth.*` storage keys and the `edge/` package deliberately unchanged. Renaming the keys
       signs every existing user out of their league, theme and ticked calls for no visible gain.
+- [x] Merged into the call sheet v2 work (S-1/S-2/S-4/S-7). Eight conflicts, all in files those
+      specs had rewritten: brand won the copy and the names, the specs won the mechanisms.
+      Verified all six do-not-break items — no `prefers-color-scheme` rule, `.chrome-type` still
+      on the glyph span, favicon PNG is RGBA, `booth.*` keys and `edge/` untouched, email test
+      green, crown path still shared by `icon.svg` and `IconCrown`.
+- [x] Top bar at 320px: "PENTHOUSE" is half again as wide as "THE BOOTH" and left the league
+      label 8px, so "The Megalabowl" rendered as "T". Below 360px the word steps aside and the
+      crown carries the mark; the league reads in full again. The rule is in `globals.css`, not a
+      `max-[359px]:hidden` utility — `.wordmark-type` is unlayered and beats Tailwind's layer.
 - [ ] Domain: nothing checked for availability under the new name. Code uses `penthouse.example`
       as the placeholder — one line in `edge/cli.py` and `edge/delivery/weekly_email.py` once
       Andrew picks, plus `NEXT_PUBLIC_SITE_URL` on Vercel so the unfurl card resolves.
