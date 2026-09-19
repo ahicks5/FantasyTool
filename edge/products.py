@@ -1,4 +1,4 @@
-"""Product catalog: free tier, à la carte passes, and the Full Booth bundle. Prices in cents.
+"""Product catalog: free tier, à la carte passes, and The Penthouse bundle. Prices in cents.
 Change prices here only; everything else reads this."""
 from __future__ import annotations
 
@@ -11,9 +11,9 @@ PRODUCTS = [
      "kind": "a_la_carte", "blurb": "The wire, ranked for your roster, with the bid and the drop. Rest of season."},
     {"sku": "trade_lab", "name": "Trade Lab", "price_cents": 500, "features": ["trade_lab"], "leagues": 1,
      "kind": "a_la_carte", "blurb": "Trade verdicts and counters tuned to the other manager. Rest of season."},
-    {"sku": "full_report", "name": "Full Booth", "price_cents": 700,
+    {"sku": "full_report", "name": "The Penthouse", "price_cents": 700,
      "features": ["my_team", "waivers", "trade_lab", "full_report"], "leagues": 5,
-     "kind": "bundle", "blurb": "The whole booth, every week, up to 5 leagues."},
+     "kind": "bundle", "blurb": "The whole Penthouse, every week, up to 5 leagues."},
 ]
 BY_SKU = {p["sku"]: p for p in PRODUCTS}
 

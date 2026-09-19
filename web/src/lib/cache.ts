@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
    Without it, every tab switch remounts the page, refetches, and replays the
    whole opening sequence — so the app reads as if it reloaded itself each time
-   you touch the tab bar. The booth should feel like it stayed on while you
+   you touch the tab bar. The room should feel like it stayed on while you
    looked away.
 
    Deliberately module-level and not persisted: it lives as long as the JS
@@ -150,7 +150,7 @@ export function useCached<T>(key: string | null, fetcher: () => Promise<T>): Cac
 }
 
 /* ------------------------------------------------------------- the opening ---
-   The booth only opens once. The staged "pulling film / re-scoring" sequence is
+   The room only opens once. The staged "pulling film / re-scoring" sequence is
    a nice first impression and an irritation the fourth time, so after the first
    one this reports false and callers show a plain skeleton instead.            */
 

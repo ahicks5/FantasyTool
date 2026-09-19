@@ -36,7 +36,7 @@ export const PRODUCTS: Product[] = [
   { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 1, blurb: "Start/sit for one team." },
   { sku: "waivers", name: "Wire Pass", price_cents: 300, features: ["waivers"], leagues: 1, blurb: "The wire, ranked. Bid and drop included." },
   { sku: "trade_lab", name: "Trade Lab", price_cents: 500, features: ["trade_lab"], leagues: 1, blurb: "Verdicts and counters, rest of season." },
-  { sku: "full_report", name: "Full Booth", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, blurb: "The whole booth. Five leagues." },
+  { sku: "full_report", name: "The Penthouse", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, blurb: "The whole Penthouse. Five leagues." },
 ];
 
 export const SLEEPER_LEAGUES: SleeperLeagueRef[] = [

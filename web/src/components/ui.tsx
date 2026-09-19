@@ -4,7 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Confidence, Verdict } from "@/lib/types";
 import { confidenceClass, confidenceInk, countdown, kickoffUrgency, nextKickoff, URGENCY_LABEL, verdictClass } from "@/lib/format";
 import { claimFirstOpen, hasOpened } from "@/lib/cache";
-import { IconCheck, IconChevron, IconClock, IconMoon, IconSun } from "./icons";
+import { IconCheck, IconChevron, IconClock, IconCrown, IconMoon, IconSun } from "./icons";
 
 export function Card({
   children,
@@ -28,18 +28,27 @@ export function Eyebrow({ children, className = "" }: { children: React.ReactNod
 }
 
 /**
- * THE BOOTH. "THE" is a small tracked-out label sitting on the same baseline as
- * the heavy word, with the ON AIR lamp as the terminal. `lamp={false}` for
- * surfaces where the pulse would be noise — a footer, a print card.
+ * PENTHOUSE. The crown, the word cut in chrome and leaning forward, and the ON
+ * AIR lamp as the terminal. `lamp={false}` for surfaces where the pulse would be
+ * noise — a footer, a print card.
+ *
+ * Only the letters skew: the crown and the lamp stay square, or the lamp turns
+ * into an ellipse. The crown sits beside the word rather than above it the way
+ * the app icon stacks them, because stacked marks do not survive a 56px header.
  */
 export function Wordmark({ className = "", lamp = true }: { className?: string; lamp?: boolean }) {
   return (
-    <span className={`display inline-flex items-baseline gap-[0.2em] ${className}`} style={{ fontWeight: 900, letterSpacing: "-0.04em" }}>
-      <span className="opacity-55" style={{ fontSize: "0.5em", letterSpacing: "0.2em" }}>
-        THE
-      </span>
-      <span>BOOTH</span>
-      {lamp && <span className="lamp ml-[0.06em]" aria-hidden />}
+    <span className={`display inline-flex items-center gap-[0.22em] ${className}`} style={{ fontWeight: 900 }}>
+      {/* The crown takes the flat `metal` colour: background-clip:text clips to an
+          element's own glyphs, and a seven-stop gradient would not read inside a
+          20px silhouette anyway. */}
+      <IconCrown size="0.92em" className="shrink-0 -translate-y-[0.04em] text-metal" />
+      {/* `chrome-type` sits on the span that actually holds the letters. On the
+          wrapper it paints nothing — the clip has no glyphs of its own to clip to —
+          while the transparent text fill still inherits down, which renders the
+          wordmark invisible. */}
+      <span className="wordmark-type chrome-type">PENTHOUSE</span>
+      {lamp && <span className="lamp ml-[0.1em]" aria-hidden />}
     </span>
   );
 }
@@ -234,7 +243,7 @@ export function Stat({
    The sheet is only urgent if it says how long you have.                       */
 
 /**
- * Live time to the next Sunday 1pm ET slate, and the booth's tension with it.
+ * Live time to the next Sunday 1pm ET slate, and the room's tension with it.
  * Three days out it is reference; ninety minutes out it is a deadline, and the
  * clock says so in colour while the label says so in words.
  */
@@ -334,15 +343,15 @@ const OPENING = [
 ];
 
 /**
- * The booth coming on while the feed loads. These are the real phases the API
+ * The room coming on while the feed loads. These are the real phases the API
  * goes through; the ticks advance on a timer rather than on measured progress,
  * the way a loading sequence normally does.
  *
  * It only narrates once. The staged sequence is a good first impression and an
  * irritation the fourth time, so every later wait is a quiet skeleton — the
- * booth is already on, it is just fetching.
+ * room is already on, it is just fetching.
  */
-export function BoothOpening() {
+export function Opening() {
   // `hasOpened` is a pure read, so a double-invoked initialiser is harmless;
   // the flag is claimed in an effect, which is idempotent.
   const [full] = useState(() => !hasOpened());
@@ -361,9 +370,9 @@ export function BoothOpening() {
   if (!full) return <QuietWait />;
 
   return (
-    <div className="hero callsheet sweep relative p-6" aria-busy="true" aria-label="Opening the booth">
+    <div className="hero callsheet sweep relative p-6" aria-busy="true" aria-label="Opening the Penthouse">
       <OnAir className="text-white/70" />
-      <div className="display mt-3 text-[26px] leading-tight text-white">Opening the booth</div>
+      <div className="display mt-3 text-[26px] leading-tight text-white">Opening the Penthouse</div>
       <ul className="mt-4 grid gap-2.5">
         {OPENING.map((line, i) => {
           const done = i < step;
@@ -471,17 +480,24 @@ function subscribeTheme(cb: () => void) {
   themeListeners.add(cb);
   return () => themeListeners.delete(cb);
 }
+/* Dark is the room, not a preference we read off the OS — see the note in
+   globals.css. So the only thing that makes this app light is the user throwing
+   the switch, and the answer here is whatever `data-theme` says. */
 function currentTheme(): "light" | "dark" {
-  if (document.documentElement.dataset.theme === "dark") return "dark";
-  if (document.documentElement.dataset.theme === "light") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
 
 export function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribeTheme, currentTheme, () => "light" as const);
+  const theme = useSyncExternalStore(subscribeTheme, currentTheme, () => "dark" as const);
   function flip() {
     const next = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
+    // The status bar on a phone is painted from <meta name="theme-color">, which is
+    // static HTML and cannot know about a toggle. Without this the bar stays black
+    // over a warm page.
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", next === "dark" ? "#08090b" : "#f6f5f2");
     try {
       localStorage.setItem("booth.theme", next);
     } catch {

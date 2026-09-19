@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cacheClear, cacheGet, cacheSet, claimFirstOpen, hasOpened, once } from "./cache.ts";
 
-test("the booth opens once per session", () => {
+test("the room opens once per session", () => {
   assert.equal(hasOpened(), false, "nothing has asked yet");
   assert.equal(claimFirstOpen(), true, "the first caller gets the narrated opening");
   assert.equal(claimFirstOpen(), false, "every later wait is a quiet skeleton");

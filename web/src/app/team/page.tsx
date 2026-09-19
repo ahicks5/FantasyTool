@@ -1,7 +1,7 @@
 "use client";
 import { AppShell } from "@/components/Shell";
 import { LineupView } from "@/components/LineupView";
-import { BoothOpening, ErrorBox } from "@/components/ui";
+import { Opening, ErrorBox } from "@/components/ui";
 import { getLineup } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import type { Connection } from "@/lib/storage";
@@ -13,7 +13,7 @@ function TeamBody({ c }: { c: Connection }) {
     () => getLineup(c.platform, c.league_id, c.team_id),
   );
   if (error) return <ErrorBox message={error} onRetry={reload} />;
-  if (!data) return <BoothOpening />;
+  if (!data) return <Opening />;
   return <LineupView lineup={data} animate={!instant} />;
 }
 

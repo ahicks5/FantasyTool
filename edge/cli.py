@@ -130,7 +130,7 @@ def main(argv: list[str] | None = None):
     s = sub.add_parser("email", help="render this week's email for a team")
     s.add_argument("league_id"); s.add_argument("team_id", help="roster id or owner name")
     s.add_argument("--platform", default="sleeper"); s.add_argument("--out", default="launch/email")
-    s.add_argument("--base-url", default="https://thebooth.example")
+    s.add_argument("--base-url", default="https://penthouse.example")
     s.add_argument("--features", default="", help="comma list, e.g. my_team to preview the free version")
     s.set_defaults(fn=cmd_email)
     args = ap.parse_args(argv)

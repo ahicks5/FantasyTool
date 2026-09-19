@@ -41,7 +41,7 @@ def test_subject_leads_with_the_most_useful_thing(league, ros_byes):
 
 
 def test_subject_and_preheader_keep_the_fact_in_front_of_the_voice(league, ros_byes):
-    """Booth voice is the tail of these two lines, never the thing that displaces the fact."""
+    """House voice is the tail of these two lines, never the thing that displaces the fact."""
     feed = _feed(league, league.teams[1], {"my_team", "waivers", "trade_lab"}, ros_byes)
     s, pre = em.subject(feed), em.preheader(feed)
     moves = [a for a in feed["actions"] if a["type"] != "hold"]
@@ -97,8 +97,11 @@ def test_html_is_email_safe(league, ros_byes):
         assert 'alt=' in img, "decorative images still need alt for screen readers"
 
 
-def test_the_booth_look_is_faked_with_things_email_clients_render(league, ros_byes):
-    """The web call sheet's devices are CSS Outlook has never heard of. None may sneak in."""
+def test_the_house_look_is_faked_with_things_email_clients_render(league, ros_byes):
+    """The web call sheet's devices are CSS Outlook has never heard of. None may sneak in.
+
+    The chrome wordmark is the newest way this could go wrong: a gradient clipped to text
+    renders as nothing at all in Outlook, so the email spells the mark in flat silver."""
     feed = _feed(league, league.teams[1], {"my_team", "waivers", "trade_lab"}, ros_byes)
     h = em.render_html(feed, base_url="https://edge.example").lower()
     for banned in ("display:grid", "display:flex", "var(--", "mask-image", "rotate(",
@@ -142,14 +145,16 @@ def test_every_link_in_the_plain_text_is_absolute(league, ros_byes):
         assert ln.startswith("https://edge.example/"), f"relative link {ln} is dead in an inbox"
 
 
-def test_the_framing_copy_uses_booth_vocabulary(league, ros_byes):
+def test_the_framing_copy_uses_house_vocabulary(league, ros_byes):
     feed = _feed(league, league.teams[1], {"my_team", "waivers", "trade_lab"}, ros_byes)
     built = em.build(feed, base_url="https://edge.example")
     visible = " ".join(em.visible_text(built["html"]).split())
-    for phrase in ("THE BOOTH", "ON AIR", f"Call sheet · Week {feed['week']}", em.TAGLINE,
+    for phrase in ("PENTHOUSE", "ON AIR", f"Call sheet · Week {feed['week']}", em.TAGLINE,
                    "Open the call sheet"):
         assert phrase in visible, f"missing {phrase!r}"
-    assert "CALL SHEET" in built["text"] and em.TAGLINE in built["text"]
+    assert "PENTHOUSE — CALL SHEET" in built["text"] and em.TAGLINE in built["text"]
+    # The mark is never a gradient here: background-clip:text is invisible in Outlook.
+    assert "background-clip" not in built["html"], "the email wordmark must be flat colour"
     # A waiver claim is called a claim on the sheet, not by its data-model name.
     for a in feed["actions"][: em.MAX_ACTIONS]:
         label = em.TYPE_LABEL[a["type"]].upper()

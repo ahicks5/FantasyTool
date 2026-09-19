@@ -6,7 +6,7 @@ import { LineupView } from "@/components/LineupView";
 import { WaiversView } from "@/components/WaiversView";
 import { WaiverPlanView } from "@/components/WaiverPlanView";
 import { TradeFinderView } from "@/components/TradeFinderView";
-import { BoothOpening, ErrorBox, Eyebrow, H2, SplitMeter, VerdictWord } from "@/components/ui";
+import { Opening, ErrorBox, Eyebrow, H2, SplitMeter, VerdictWord } from "@/components/ui";
 import { getReport } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { pct } from "@/lib/format";
@@ -19,7 +19,7 @@ function ReportBody({ c }: { c: Connection }) {
     () => getReport(c.platform, c.league_id, c.team_id),
   );
   if (error) return <ErrorBox message={error} onRetry={reload} />;
-  if (!data) return <BoothOpening />;
+  if (!data) return <Opening />;
 
   const m = data.matchup;
   return (

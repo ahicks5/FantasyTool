@@ -34,7 +34,7 @@ export function verdictClass(v: Verdict): string {
 }
 
 /**
- * The line under a stamped verdict, in the booth's voice. The stamp is one word, so this
+ * The line under a stamped verdict, in the house voice. The stamp is one word, so this
  * is what turns it into an instruction. Canonical here rather than per page: the in-app
  * verdict and the public share page must not tell the same trade two different things.
  */
@@ -141,7 +141,7 @@ export function nextKickoff(now: Date = new Date(), zone: string = ZONE): number
 }
 
 /**
- * How tense the booth should be. A call sheet three days out is reference; a
+ * How tense the room should be. A call sheet three days out is reference; a
  * call sheet ninety minutes out is a deadline, and the room should feel like it.
  *
  * - `open`   more than a day to go. Calm.

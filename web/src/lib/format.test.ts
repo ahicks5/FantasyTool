@@ -117,7 +117,7 @@ test("sheet status line", () => {
   assert.equal(sheetStatus(0, 0), "Nothing to call");
 });
 
-test("the booth tightens as kickoff approaches", () => {
+test("the room tightens as kickoff approaches", () => {
   const MIN = 60e3;
   assert.equal(kickoffUrgency(6 * 24 * 60 * MIN), "open");
   assert.equal(kickoffUrgency(25 * 60 * MIN), "open");

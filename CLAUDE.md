@@ -1,4 +1,4 @@
-# THE BOOTH — fantasy football weekly moves
+# PENTHOUSE — fantasy football weekly moves
 
 ## Goal
 Paid fantasy football web app. Users connect a league and get this week's moves.
@@ -11,25 +11,52 @@ Launch in 7 days; NFL 2026 season is already underway. Speed > polish.
 
 Business: free for 1 team, $7 unlocks the season (Stripe). Marketing via stamped verdict graphics.
 
-## Brand — the booth
-The product is a **coaching booth**: you sit upstairs with a headset and the staff hands you a
-**call sheet**. Competitors (ffwrapped and friends) are encyclopedias you browse; we are three
-moves you make before kickoff. That difference is the whole brand.
+## Brand — the penthouse
+The product is the **owner's box**: the top floor, above the noise, where the staff still hands you
+a **call sheet** but you are the one who owns the building. Competitors (ffwrapped and friends) are
+encyclopedias you browse; we are three moves you make before kickoff. That difference is the whole
+brand, and the room is what makes it feel earned.
 
-- **Name** The Booth. **Tagline** "Three moves. By Sunday. We keep score."
-- **Voice** the coordinator in your headset: confident, clipped, verb first, plural staff ("we").
-  Never hedge on a call the engine is confident about; say plainly when it's a coin flip.
+- **Name** Penthouse. **Tagline** "Own the week."
+- **Voice** the staff in your ear: confident, clipped, verb first, plural ("we"). Never hedge on a
+  call the engine is confident about; say plainly when it's a coin flip.
 - **Vocabulary — sections:** call sheet (home) · depth chart (team) · scouting (waivers) ·
   GM's Office (trade) · the film (weekly report). Verbs: "make the call", "board's set",
-  "sheet's clean". **What you buy keeps its product name** — Wire Pass, Trade Lab, Full
-  Booth — so the nav names a room and the pricing table names a pass. "The wire" stays
-  valid in body copy: it is what managers already call the free-agent pool.
-- **Look** clean sideline, not neon dashboard: printed call sheet, heavy tabular Archivo numerals,
-  one dark surface per screen, warm paper behind it. Game-feel motion on top (see below).
+  "sheet's clean". This is coach vocabulary on purpose and it stays: the penthouse is where the
+  sheet is *read*, not a reason to rename the sheet. **What you buy keeps its product name** —
+  Wire Pass, Trade Lab, The Penthouse — so the nav names a room and the pricing table names a pass.
+  "The wire" stays valid in body copy: it is what managers already call the free-agent pool.
+- **Look** black and polished chrome: machined graphite panels floating on near-black, a silver
+  bevel on every lit edge, heavy tabular Archivo numerals. Never a neon dashboard — the metal is
+  the only decoration. Game-feel motion on top (see below).
+- **Dark is the default, and it is not a preference we read off the OS.** `prefers-color-scheme:
+  light` also matches a machine with *no* stated preference, which is most desktops, so keying the
+  light theme off it would mean most first-time visitors never see the brand. Light lives only
+  under `:root[data-theme="light"]` — a switch the user throws in the top bar, which sticks in
+  `booth.theme`. Light is still first-class and validated; check both modes before shipping a
+  surface. `ThemeToggle` also rewrites `<meta name="theme-color">`, which is the only way a phone's
+  status bar can follow the switch.
+- **Hierarchy comes from elevation, not inversion.** On warm paper the hero worked by being the one
+  dark thing on screen; on black that device is dead. The steps are plane (page) < paper (card) <
+  hero (lit panel), each lighter than the last, each with a 1px chrome bevel (`--bevel`) along its
+  top edge. That bevel is what makes graphite read as machined rather than flat.
+- **Chrome is a gradient, not a colour.** `--chrome` (silver on dark, graphite on paper),
+  `--chrome-rail` for the `.rail` hairline, and `--color-metal` as the flat fallback for anything
+  too small for a gradient to read. **`.chrome-type` must sit on the element that holds the
+  glyphs** — `background-clip: text` clips to an element's *own* text, so on a wrapper it paints
+  nothing while the transparent text fill still inherits down, and the wordmark disappears. The
+  `.hero` pins `--chrome` to the silver cut, because it is dark in both modes.
+- **The mark is a crown.** `web/src/app/icon.svg` is the source of truth — the crown, the chrome
+  gradient and the black plate. `uv run python scripts/render_brand_assets.py` rasterises it into
+  `favicon.ico`, `apple-icon.png` and `opengraph-image.png` via Chromium (no image library). The
+  favicon's PNG is rendered *with* an alpha channel on purpose: Next's ICO decoder rejects a
+  non-RGBA PNG outright. Redraw the crown in `icon.svg` and `IconCrown` together — they are the
+  same path twice, once for the browser and once for the app.
 - **ON AIR lamp** (`--color-signal`) is brand chrome only — wordmark, call-sheet band, ON AIR chip.
   It is deliberately NOT in the status scale, never appears on a player row or a verdict, and always
   has the words "ON AIR" beside it. Status red (`sit`) never appears on the chrome. Different
-  surfaces, so the two reds can't be confused.
+  surfaces, so the two reds can't be confused — which matters *more* on black than it did on paper,
+  where the surface itself kept them apart.
 - **Stamps vs pills.** A stamp (`.stamp`, `<Stamp>`, `<ConfidenceStamp>`) is the loudest device we
   have, so it is reserved for a decision the user is being asked to make — a call sheet card, a swap
   card, a verdict. Dense scannable lists keep `<ConfidencePill>`; stamping every row is confetti.
@@ -43,9 +70,13 @@ moves you make before kickoff. That difference is the whole brand.
   exists to deny.
 - **Motion vocabulary**, and that is all of it: `rise` (arriving), `print` (a call sheet row coming
   off the printer), `promote`/`demote` (a depth-chart tile changing places), `slam` (a stamp
-  landing), `tick` (a number that changed), `lamp` (the ON AIR pulse). Everything is CSS — no
-  animation dependency. All of it collapses under `prefers-reduced-motion`; the lamp keeps its glow
-  and loses its pulse.
+  landing), `tick` (a number that changed), `lamp` (the ON AIR pulse), `sweep` (the sheen crossing
+  polished metal while a plan loads — the same move the booth's light-across-the-band was, reused
+  rather than added to). Everything is CSS — no animation dependency. All of it collapses under
+  `prefers-reduced-motion`; the lamp keeps its glow and loses its pulse.
+- **The email cannot be chrome.** Gmail strips `<style>`, Outlook renders neither gradients nor
+  `background-clip: text` nor SVG, so upstairs arrives in the inbox as flat silver capitals
+  (`METAL` in `weekly_email.py`) and no crown. `tests/test_weekly_email.py` enforces this.
 - **The call sheet is checkable.** Each call has "Make the call", stored per league and per week
   (`calledKey`, `booth.called.<league>.<week>` in localStorage). It is a checklist, not a lineup
   submission — we never write back to Sleeper or ESPN. When every call is ticked the sheet stamps
@@ -57,7 +88,7 @@ moves you make before kickoff. That difference is the whole brand.
   `me` the same way. A cached page paints on the first frame and passes `animate={false}` so
   it does not play its entry animation again. Deliberately in memory only: a hard reload still
   gets fresh numbers, because projections move during the week.
-- **The booth opens once.** The narrated "pulling film / re-scoring" sequence is a good first
+- **The room opens once.** The narrated "pulling film / re-scoring" sequence is a good first
   impression and an irritation the fourth time, so `claimFirstOpen()` gates it and every later
   wait is a quiet skeleton.
 - **The room tightens toward kickoff** (`kickoffUrgency`): calm over a day out, the clock takes
@@ -69,8 +100,10 @@ moves you make before kickoff. That difference is the whole brand.
   against `America/New_York` so it stays right across the November DST change. Tested both sides.
 
 **The package is still `edge/`.** Renaming it would touch every import, test and script for no
-user-visible gain before launch. Env vars (`EDGE_DEV`, `EDGE_DB`, `X-Edge-User`) stay too. Anything
-a *user* reads says The Booth; browser storage keys are namespaced `booth.*`.
+user-visible gain before launch. Env vars (`EDGE_DEV`, `EDGE_DB`, `X-Edge-User`) stay too, and so do
+the `booth.*` browser storage keys — renaming those signs every existing user out of their league,
+their theme and their ticked calls, and `booth.mock.entitlements` is how `docs/DEPLOY.md` tells a
+mock build from a real one. Anything a *user* reads says Penthouse.
 
 ## Deployed at
 **Web: https://fantasy-tool-alpha.vercel.app (Vercel) · API: https://edge-api-gi8d.onrender.com (Render).**
@@ -224,7 +257,7 @@ priced 48 such swaps at −28 points, including "bench Josh Allen for Stafford" 
 
 ## Pricing / packages
 `edge/products.py` is the single source of truth: free (depth chart, 1 league), à la carte passes
-(Wire Pass $3, Trade Lab $5), Full Booth bundle $7 (everything + the weekly film, 5 leagues).
+(Wire Pass $3, Trade Lab $5), The Penthouse bundle $7 (everything + the weekly film, 5 leagues).
 The API gates features with HTTP 402 + an `upsell` list; the web shows a locked state.
 
 ## Test league (public Sleeper)

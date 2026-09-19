@@ -23,11 +23,11 @@ async function load(id: string): Promise<SharedVerdict | null> {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const v = await load(id);
-  if (!v) return { title: "The Booth — trade verdict" };
+  if (!v) return { title: "Penthouse — trade verdict" };
   const title = `${v.verdict}: ${v.give.join(" + ")} for ${v.get.join(" + ")}`;
   const image = `${API}/api/share/${encodeURIComponent(id)}/card.png`;
   return {
-    title: `${title} — The Booth`,
+    title: `${title} — Penthouse`,
     description: v.explanation,
     openGraph: {
       title,
@@ -142,7 +142,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href="/" aria-label="The Booth home">
+        <Link href="/" aria-label="Penthouse home">
           <Wordmark className="text-[26px]" />
         </Link>
         <span className="min-w-0 truncate text-right text-[12px] font-bold text-muted">
@@ -165,7 +165,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         <div className="px-6 pb-6 pt-4">
           <div className="flex items-center justify-between gap-3">
             <OnAir className="text-white/70" />
-            <Eyebrow>The booth&rsquo;s verdict</Eyebrow>
+            <Eyebrow>Penthouse&rsquo;s verdict</Eyebrow>
           </div>
 
           <h1 className="mt-5 leading-none">
@@ -174,7 +174,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
           </h1>
           <p className="display mt-5 text-[20px] leading-snug text-white">{verdictBlurb(v.verdict)}</p>
           <p className="mt-2 text-[14px] leading-relaxed text-white/65">
-            Somebody ran this trade through The Booth. Every projection re-scored to that league&rsquo;s own scoring,
+            Somebody ran this trade through Penthouse. Every projection re-scored to that league&rsquo;s own scoring,
             then one call: take it, counter it, or walk.
           </p>
         </div>
@@ -234,7 +234,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
       {/* The way in. Paper, not hero: the verdict above is this screen's one dark surface. */}
       <section className="card mt-3 p-6 text-center rise rise-2">
         <Eyebrow>Your turn</Eyebrow>
-        <p className="display mx-auto mt-2 max-w-[16rem] text-[27px] leading-[1.08]">Get your own league in the booth</p>
+        <p className="display mx-auto mt-2 max-w-[16rem] text-[27px] leading-[1.08]">Get your own league upstairs</p>
         <ul className="mx-auto mt-4 grid max-w-[18rem] gap-2 text-left text-[13px] leading-snug text-ink-2">
           {[
             "Start/sit calls free, forever",
@@ -248,9 +248,9 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
           ))}
         </ul>
         <LinkButton href="/connect" variant="start" className="mt-6 w-full">
-          Put me in the booth — free
+          Take me upstairs — free
         </LinkButton>
-        <p className="mt-3.5 text-[12px] font-bold text-muted">Three moves. By Sunday. We keep score.</p>
+        <p className="mt-3.5 text-[12px] font-bold text-muted">Own the week.</p>
       </section>
 
       <p className="mt-6 text-center text-[12px] leading-relaxed text-muted">

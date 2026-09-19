@@ -255,7 +255,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
                 The hero is dark in both themes, where the status inks vanish in light mode,
                 so the stamp goes white here and the verdict colour carries the line below. */}
             <div className="hero callsheet rounded-none px-5 pb-6 pt-5">
-              <Eyebrow>The booth&rsquo;s verdict</Eyebrow>
+              <Eyebrow>The verdict</Eyebrow>
               <div className="mt-3.5 pl-1">
                 <Stamp size="xl" slam ink="text-white" className="text-[34px]">
                   {result.verdict}
@@ -431,7 +431,7 @@ export default function TradePage() {
           {s.has("trade_lab") ? (
             <TradeBodyKeyed c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
           ) : (
-            <Locked signedIn={s.signedIn} sku="trade_lab" what="Trade Lab" teaser="Propose any trade. The booth grades it, then drafts a counter tuned to how that manager actually behaves." onUnlocked={s.refresh} />
+            <Locked signedIn={s.signedIn} sku="trade_lab" what="Trade Lab" teaser="Propose any trade. We grade it, then draft a counter tuned to how that manager actually behaves." onUnlocked={s.refresh} />
           )}
         </Suspense>
       )}

@@ -37,14 +37,14 @@ function LoginInner() {
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between">
-        <Link href="/" aria-label="The Booth home">
+        <Link href="/" aria-label="Penthouse home">
           <Wordmark className="text-[26px]" />
         </Link>
         <ThemeToggle />
       </header>
 
       <div className="pt-8 rise">
-        <Eyebrow>Booth pass</Eyebrow>
+        <Eyebrow>Penthouse pass</Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">Sign in</h1>
         <p className="mt-2 max-w-[22rem] text-[15px] leading-relaxed text-muted">
           No password to remember. One link in your inbox signs you in and brings every pass you&rsquo;ve bought with
@@ -62,7 +62,7 @@ function LoginInner() {
             </p>
             <div className="mt-5 grid gap-2.5">
               <LinkButton href={next} className="w-full">
-                Back to the booth
+                Back upstairs
               </LinkButton>
               {!dev && (
                 <Button variant="secondary" className="w-full" onClick={() => signOut().then(() => setCurrent(null))}>

@@ -4,7 +4,7 @@ import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";
 import { WaiverPlanView } from "@/components/WaiverPlanView";
 import { WaiversView } from "@/components/WaiversView";
-import { BoothOpening, ErrorBox, H2 } from "@/components/ui";
+import { Opening, ErrorBox, H2 } from "@/components/ui";
 import { getWaiverPlan, getWaivers, PaywallError } from "@/lib/api";
 import { once, useCached } from "@/lib/cache";
 import type { Connection } from "@/lib/storage";
@@ -34,7 +34,7 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
   if (cause instanceof PaywallError)
     return <Locked signedIn={signedIn} sku="waivers" what="Wire Pass" teaser={cause.teaser} onUnlocked={refresh} />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
-  if (!plan) return <BoothOpening />;
+  if (!plan) return <Opening />;
 
   return (
     <div className="grid gap-6">
@@ -67,7 +67,7 @@ export default function WaiversPage() {
         ) : (
           <Locked signedIn={s.signedIn} sku="waivers"
             what="Wire Pass"
-            teaser="The booth prices every add against the player you would drop, tells you what to bid, and lines up a fallback claim for when you lose the first one."
+            teaser="We price every add against the player you would drop, tell you what to bid, and line up a fallback claim for when you lose the first one."
             onUnlocked={s.refresh}
           />
         )

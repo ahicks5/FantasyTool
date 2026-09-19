@@ -107,7 +107,7 @@ export default function ConnectPage() {
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between">
-        <Link href="/" aria-label="The Booth home">
+        <Link href="/" aria-label="Penthouse home">
           <Wordmark className="text-[26px]" />
         </Link>
         <ThemeToggle />
@@ -126,7 +126,7 @@ export default function ConnectPage() {
         </Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">Hook up your league</h1>
         <p className="mt-2 text-[15px] leading-relaxed text-muted">
-          Sleeper, or ESPN public and private. Two steps and the booth is on air — no account, no password, nothing to
+          Sleeper, or ESPN public and private. Two steps and the room is on air — no account, no password, nothing to
           sign.
         </p>
         {/* The on-ramp is only urgent if it says how long there is. Its own row, so a long
@@ -272,7 +272,7 @@ export default function ConnectPage() {
           </Eyebrow>
           <h2 className="display mt-2 text-[28px] leading-[1.06]">Which team is yours?</h2>
           <p className="mt-2 text-[14px] leading-relaxed text-muted">
-            Pick it and the booth writes this week&rsquo;s call sheet for that roster. Nothing gets written back to
+            Pick it and we write this week&rsquo;s call sheet for that roster. Nothing gets written back to
             your league — ever.
           </p>
           <ul className="mt-4 grid gap-2">
@@ -306,7 +306,7 @@ export default function ConnectPage() {
 
           <div className="sticky bottom-0 -mx-4 mt-5 border-t border-line bg-[color-mix(in_srgb,var(--color-plane)_92%,transparent)] px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-md">
             <Button variant="start" className="w-full" onClick={submit} busy={busy} disabled={!teamId}>
-              {busy ? "Wiring you in…" : teamId ? "Put me in the booth" : "Pick your team"}
+              {busy ? "Wiring you in…" : teamId ? "Take me upstairs" : "Pick your team"}
             </Button>
           </div>
         </section>

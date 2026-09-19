@@ -3,12 +3,12 @@ import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
 import { IconFilm, IconSheet, IconTeam, IconTrade, IconWire } from "./icons";
-import { BoothOpening, LinkButton, OnAir, Spinner, ThemeToggle, Wordmark } from "./ui";
+import { LinkButton, OnAir, Opening, Spinner, ThemeToggle, Wordmark } from "./ui";
 
 // Coach vocabulary, and every label still says what the screen is: scouting is the
 // free-agent pool, the GM's office is where deals get made, film is the weekly recap.
 // These are section names. What you *buy* keeps its product name — Wire Pass, Trade
-// Lab, Full Booth — which is what the pricing table lists.
+// Lab, The Penthouse — which is what the pricing table lists.
 const TABS = [
   { href: "/home", label: "Call sheet", Icon: IconSheet },
   { href: "/team", label: "Depth", Icon: IconTeam },
@@ -23,7 +23,7 @@ export function TopBar({ session }: { session: Session }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4">
-        <Link href="/" aria-label="The Booth home" className="shrink-0">
+        <Link href="/" aria-label="Penthouse home" className="shrink-0">
           <Wordmark className="text-[20px]" />
         </Link>
         <Link href="/connect" className="min-w-0 flex-1 text-right leading-tight">
@@ -106,18 +106,18 @@ export function AppShell({
       <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">
         {!hideTitle && <h1 className="mb-4 text-[26px]">{title}</h1>}
         {session.loading ? (
-          <BoothOpening />
+          <Opening />
         ) : session.connection ? (
           children(session)
         ) : (
           <div className="hero callsheet p-7 text-center">
             <OnAir className="text-white/45" label="Off air" />
-            <div className="display mt-3 text-[26px] leading-tight">Booth&rsquo;s empty</div>
+            <div className="display mt-3 text-[26px] leading-tight">The room&rsquo;s empty</div>
             <p className="mx-auto mb-6 mt-2 max-w-[17rem] text-[15px] leading-relaxed text-white/70">
               Hook up a Sleeper or ESPN league and {title.toLowerCase()} shows up here. No account, no password.
             </p>
             <LinkButton href="/connect" variant="onHero" className="w-full">
-              Put me in the booth
+              Take me upstairs
             </LinkButton>
           </div>
         )}
