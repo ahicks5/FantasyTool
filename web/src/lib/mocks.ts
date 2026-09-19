@@ -808,7 +808,7 @@ export function actionsFor(teamId: string, entitlements: Feature[]): ActionFeed 
     week: WEEK, team: rosterFor(teamId).name, league: LEAGUE.name,
     projected_total: lineup.projected_total, current_total: lineup.current_total,
     summary: `${actions.length} moves worth making`, all_clear: false, footer: "Everything else looks fine.",
-    matchup: { opponent: "Wait, another league?", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
+    matchup: { opponent: "Wait, another league?", opponent_id: "9", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
     actions, entitlements, synced_at: Date.now() / 1000 - 120,
   };
 }
@@ -847,7 +847,7 @@ export function reportFor(teamId: string): Report {
         why: "philking has six RBs and sits on his roster. Hubbard's role is safer than Swift's in CHI; ask, don't chase.",
       },
     ],
-    matchup: { opponent: "Wait, another league?", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
+    matchup: { opponent: "Wait, another league?", opponent_id: "9", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
     waiver_plan: WAIVER_PLAN,
     trade_finder: TRADE_FINDER,
     html: "",

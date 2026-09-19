@@ -9,7 +9,7 @@ import { PlayerLine } from "@/components/Players";
 import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, Stamp, StatusMeter, Why } from "@/components/ui";
 import { createShare, evaluateTrade, findTrades, getLeague, getRoster, PaywallError } from "@/lib/api";
 import { once } from "@/lib/cache";
-import { TradeFinderView } from "@/components/TradeFinderView";
+import { TradeFinderView, TradeFinderWait } from "@/components/TradeFinderView";
 import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { LeagueSummary, Player, TradeFinderResponse, TradeResult } from "@/lib/types";
@@ -69,6 +69,77 @@ function Chips({ players, tone, onRemove, empty }: { players: Player[]; tone: "s
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Rest-of-season value of a side of the table. Zero for a player we could not price. */
+function rosOf(players: Player[]): number {
+  return players.reduce((n, p) => n + (p.ros ?? 0), 0);
+}
+
+/** One half of the table: its chips, and the control that adds to it. */
+function TableSide({
+  label,
+  tone,
+  players,
+  onAdd,
+  onRemove,
+  empty,
+}: {
+  label: string;
+  tone: "sit" | "start";
+  players: Player[];
+  onAdd: () => void;
+  onRemove: (id: string) => void;
+  empty: string;
+}) {
+  return (
+    <div className="p-4">
+      <div className="flex items-center justify-between gap-3">
+        <Eyebrow className="min-w-0 truncate">{label}</Eyebrow>
+        <button
+          onClick={onAdd}
+          className="min-h-0 shrink-0 rounded-full border border-line-2 bg-soft px-3 py-1.5 text-[13px] font-bold hover:bg-line"
+        >
+          + Add
+        </button>
+      </div>
+      <div className="mt-2.5">
+        <Chips players={players} tone={tone} onRemove={onRemove} empty={empty} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The bar between the two halves: what each side is worth and which way it leans.
+ *
+ * Deliberately not a verdict. Asset value alone says nothing about whether a trade
+ * helps your lineup — that needs both rosters scored, which is what the Grade button
+ * is for — so this labels itself "value" and stays quiet until both sides have a
+ * player on them.
+ */
+function TableBalance({ out, in: inValue, live }: { out: number; in: number; live: boolean }) {
+  const net = inValue - out;
+  const total = out + inValue;
+  const left = total > 0 ? Math.max(6, Math.min(94, Math.round((out / total) * 100))) : 50;
+  return (
+    <div className="border-y border-line bg-soft px-4 py-2.5">
+      <div className="flex items-center gap-3">
+        <span className={`tnum shrink-0 text-[13px] font-black ${out > 0 ? "text-sit" : "text-muted"}`}>{out.toFixed(0)}</span>
+        {/* Grey until there is something to weigh: a red and green bar over two zeroes
+            looks like a reading, and there is nothing to read yet. */}
+        <span aria-hidden className="flex h-[3px] min-w-0 flex-1 overflow-hidden rounded-full">
+          <span className={`h-full rounded-l-full ${total > 0 ? "bg-sit" : "bg-line-2"}`} style={{ width: `${left}%` }} />
+          <span className="h-full w-[2px] shrink-0 bg-soft" />
+          <span className={`h-full flex-1 rounded-r-full ${total > 0 ? "bg-start" : "bg-line-2"}`} />
+        </span>
+        <span className={`tnum shrink-0 text-[13px] font-black ${inValue > 0 ? "text-start" : "text-muted"}`}>{inValue.toFixed(0)}</span>
+      </div>
+      <p className="mt-1.5 truncate text-center text-[11px] font-bold uppercase tracking-[0.1em] text-muted">
+        {live ? `ROS value · ${signed(net, 0)} to you` : "ROS value on the table"}
+      </p>
+    </div>
   );
 }
 
@@ -182,12 +253,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
         ))}
       </div>
 
-      {tab === "find" &&
-        (found ? (
-          <TradeFinderView found={found} />
-        ) : (
-          <SkeletonList rows={3} tall />
-        ))}
+      {tab === "find" && (found ? <TradeFinderView found={found} /> : <TradeFinderWait />)}
 
       {tab === "grade" && (
       <>
@@ -214,34 +280,38 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
         </select>
       </section>
 
-      <section className="card p-4">
-        <div className="flex items-center justify-between">
-          <Eyebrow>You send</Eyebrow>
-          <button onClick={() => setSheet("give")} className="min-h-0 rounded-full border border-line-2 bg-soft px-3 py-1.5 text-[13px] font-bold hover:bg-line">
-            + Add
-          </button>
-        </div>
-        <div className="mt-2">
-          <Chips players={givePlayers} tone="sit" onRemove={(id) => toggle(give, setGive, id)} empty="Tap + Add to put someone on the table." />
-        </div>
-      </section>
+      {/* One table rather than two cards. The two sides of a trade are one object, and
+          splitting them into separate panels meant nothing on screen ever showed the
+          offer as a whole — you built each half blind and only learned what it was worth
+          after a round trip to the API. The tally between them is rest-of-season value
+          off the roster you already have in memory, so it moves the instant you add a
+          player: not a verdict, which is the engine's job, but enough to stop you
+          sending a ticket you did not mean to. */}
+      <section className="card overflow-hidden p-0">
+        <TableSide
+          label="You send"
+          tone="sit"
+          players={givePlayers}
+          onAdd={() => setSheet("give")}
+          onRemove={(id) => toggle(give, setGive, id)}
+          empty="Tap Add to put someone on the table."
+        />
+        <TableBalance out={rosOf(givePlayers)} in={rosOf(getPlayers)} live={give.length > 0 && get.length > 0} />
 
-      <section className="card p-4">
-        <div className="flex items-center justify-between">
-          <Eyebrow>You get back from {theirTeam?.name ?? "them"}</Eyebrow>
-          <button onClick={() => setSheet("get")} className="min-h-0 rounded-full border border-line-2 bg-soft px-3 py-1.5 text-[13px] font-bold hover:bg-line">
-            + Add
-          </button>
-        </div>
-        <div className="mt-2">
-          <Chips players={getPlayers} tone="start" onRemove={(id) => toggle(get, setGet, id)} empty="Tap + Add to name what you want back." />
-        </div>
+        <TableSide
+          label={`You get from ${theirTeam?.name ?? "them"}`}
+          tone="start"
+          players={getPlayers}
+          onAdd={() => setSheet("get")}
+          onRemove={(id) => toggle(get, setGet, id)}
+          empty="Tap Add to name what you want back."
+        />
       </section>
 
       <PickerSheet open={sheet === "give"} onClose={() => setSheet(null)} title="Your roster" players={mine} selected={give} onToggle={(id) => toggle(give, setGive, id)} tone="sit" />
       <PickerSheet open={sheet === "get"} onClose={() => setSheet(null)} title={`${theirTeam?.name ?? "Their"} roster`} players={theirs} selected={get} onToggle={(id) => toggle(get, setGet, id)} tone="start" />
 
-      <div className="sticky bottom-20 z-[5]">
+      <div className="sticky bottom-24 z-[5]">
         <Button variant="start" className="w-full shadow-[var(--shadow-float)]" onClick={submit} busy={busy} disabled={give.length === 0 || get.length === 0}>
           {busy ? "Grading it…" : `Grade ${give.length}-for-${get.length}`}
         </Button>

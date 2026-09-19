@@ -30,9 +30,21 @@ export const SECTIONS = {
   waivers: { href: "/waivers", label: "Scouting", title: "Scouting", gate: "the wire" },
   trade: { href: "/trade", label: "GM's Office", title: "GM's Office", gate: "the trade board" },
   report: { href: "/report", label: "Film", title: "The film", gate: "the film" },
+  /** A room off the call sheet, not a tab of its own: it lives under `/home/` so the
+   *  call sheet tab stays lit while you are reading the week's opponent. */
+  matchup: { href: "/home/matchup", label: "Matchup", title: "Matchup", gate: "this week's matchup" },
 } as const satisfies Record<string, Section>;
 
 export type SectionKey = keyof typeof SECTIONS;
 
-/** Tab order, left to right. The call sheet is first because it is the whole product. */
-export const TAB_ORDER: SectionKey[] = ["home", "team", "waivers", "trade", "report"];
+/**
+ * Tab order, left to right. The call sheet is first because it is the whole product.
+ *
+ * Not every section is a tab — `matchup` is a room off the call sheet — so `TabKey` is
+ * narrower than `SectionKey`, and anything keyed by tab (the icon map) has to be
+ * exhaustive over the tabs only. Typing it the other way round meant adding a
+ * non-tab section demanded an icon for a tab that does not exist.
+ */
+export const TAB_ORDER = ["home", "team", "waivers", "trade", "report"] as const;
+
+export type TabKey = (typeof TAB_ORDER)[number];
