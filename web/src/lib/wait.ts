@@ -29,25 +29,71 @@ let narratedAt = 0;
  * Take the screen for a wait. The first caller of the session narrates; anyone who
  * claims while another wait is already up gets a skeleton, whether or not the room
  * has opened. Pair every call with `releaseWait`.
+ *
+ * Pass `animated: false` when the checklist will be painted already complete — under
+ * reduced motion — so the screen is not held for an animation that never runs.
  */
-export function claimWait(): WaitPhase {
+export function claimWait(animated = true): WaitPhase {
   const alone = onScreen === 0;
   onScreen += 1;
   if (!alone) return "quiet";
-  return claimFirstOpen() ? "narrated" : "quiet";
+  return claimFirstOpen(animated) ? "narrated" : "quiet";
 }
 
 /**
  * Take the session's one narrated opening, ignoring the screen registry.
  * True for the first caller, false ever after.
  */
-export function claimFirstOpen(): boolean {
+export function claimFirstOpen(animated = true): boolean {
   if (opened) return false;
   opened = true;
   narratedAt = Date.now();
-  startFloor();
+  // The floor is there to protect an animation. Under reduced motion there is no
+  // animation to protect — every line is ticked on the first frame — and holding the
+  // screen anyway would leave that reader staring at a finished list for two seconds.
+  if (animated) startFloor();
   return true;
 }
+
+/* ------------------------------------------------------------ the sequence ---
+   The lines, the tempo, and the floor they imply, in one place.
+
+   They were in two: `Opening` in `components/ui.tsx` ticked four lines at 420ms
+   while `MIN_NARRATED_MS` here said 900, so a warm API released the screen around
+   line two and the opening was cut off mid-sentence — the animation and the floor
+   protecting it were two numbers in two files with nothing tying them together, and
+   a fifth line would have re-broken it in silence. The floor is now computed from
+   the same values the animation runs on, and the test "the floor outlasts the checklist
+   it is protecting" fails the moment it cannot cover them.
+
+   The lines are words a user reads, which by the rule in CLAUDE.md puts them in
+   `lib/vocab.ts`. They are here because the floor has to be derived from their
+   count and `vocab.ts` has no business owning a timer; flagged for the lead rather
+   than settled here.                                                             */
+
+/** The phases the API really goes through, in the order the checklist ticks them. */
+export const OPENING_LINES = [
+  "Reading your league",
+  "Pulling this week's projections",
+  "Re-scoring to your settings",
+  "Writing the call sheet",
+] as const;
+
+/** How long a line sits unticked before its check lands. */
+export const OPENING_STEP_MS = 420;
+
+/**
+ * A beat after the last check, so the opening ends on a complete list instead of
+ * swapping to content in the same frame the final tick arrives.
+ */
+export const OPENING_TAIL_MS = 320;
+
+/**
+ * The narrated opening plays for at least this long once it has started: long enough
+ * for every line to tick, plus the tail beat. Derived, never typed by hand — a floor
+ * shorter than its own animation is the bug this constant used to be.
+ */
+export const MIN_NARRATED_MS = OPENING_LINES.length * OPENING_STEP_MS + OPENING_TAIL_MS;
 
 /* ---------------------------------------------------------------- the floor ---
    A warm API can answer while the checklist is still on its second line, and a
@@ -108,21 +154,21 @@ export function hasOpened(): boolean {
 }
 
 /**
- * Back to a cold session. Used by the tests so they do not depend on each other's
- * order, and by `cacheClear` when a purchase invalidates everything we remember.
+ * Back to a cold session: the room has not opened, nothing is on screen, and nothing
+ * is owed. Used by the tests so they do not depend on each other's order. Nothing in
+ * the app calls it today — `cacheClear` empties the read cache and leaves the room
+ * open, so a purchase does not replay the opening.
  */
 export function resetWaits(): void {
   opened = false;
   onScreen = 0;
   narratedAt = 0;
-  floorPassed = true;
   if (floorTimer) clearTimeout(floorTimer);
   floorTimer = null;
+  // Cancelling a floor in flight changes the snapshot from false to true, and a
+  // subscriber that is not told keeps rendering the loader it took the old snapshot
+  // for — the same reason the timer notifies when it fires.
+  const wasHolding = !floorPassed;
+  floorPassed = true;
+  if (wasHolding) listeners.forEach((l) => l());
 }
-
-/**
- * The narrated opening plays for at least this long once it has started. Without a
- * floor, a warm API answers mid-checklist and the sequence flashes and vanishes,
- * which reads worse than no sequence at all.
- */
-export const MIN_NARRATED_MS = 900;

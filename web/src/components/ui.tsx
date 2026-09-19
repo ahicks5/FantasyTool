@@ -15,7 +15,15 @@ import {
   verdictClass,
 } from "@/lib/format";
 import { describeError, isOnline } from "@/lib/errors";
-import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitPhase } from "@/lib/wait";
+import {
+  claimWait,
+  narratedFloorPassed,
+  OPENING_LINES,
+  OPENING_STEP_MS,
+  releaseWait,
+  subscribeWaits,
+  type WaitPhase,
+} from "@/lib/wait";
 import { IconCheck, IconChevron, IconClock, IconMark, IconMoon, IconSun, IconThumbDown, IconThumbUp } from "./icons";
 
 export function Card({
@@ -434,9 +442,10 @@ export function CountUp({
  * `ready` is the page's own "my data has landed". A warm API can answer while the
  * narrated checklist is still on its second line, and a sequence that appears and
  * vanishes inside 300ms reads as a glitch rather than as an opening — so once the
- * narration has started it gets its floor. A quiet skeleton owes nothing and this
- * returns `false` the instant the data is there, which is what keeps a cached tab
- * painting on the first frame.
+ * narration has started it gets its floor, long enough for every line to tick.
+ * A quiet skeleton owes nothing, and neither does a narrated opening that was
+ * painted complete under reduced motion, so this returns `false` the instant the
+ * data is there — which is what keeps a cached tab painting on the first frame.
  */
 export function useHeldWait(ready: boolean): boolean {
   // Read through the store rather than off the clock: the snapshot has to be the same
@@ -447,13 +456,6 @@ export function useHeldWait(ready: boolean): boolean {
   return !ready || !passed;
 }
 
-const OPENING = [
-  "Reading your league",
-  "Pulling this week's projections",
-  "Re-scoring to your settings",
-  "Writing the call sheet",
-];
-
 /**
  * The room coming on while the feed loads. These are the real phases the API
  * goes through; the ticks advance on a timer rather than on measured progress,
@@ -462,6 +464,10 @@ const OPENING = [
  * It only narrates once. The staged sequence is a good first impression and an
  * irritation the fourth time, so every later wait is a quiet skeleton — the
  * room is already on, it is just fetching.
+ *
+ * The lines and the tempo come from `lib/wait.ts` rather than living here: the floor
+ * that keeps the sequence on screen is computed from them, and when this file held
+ * its own copy the two drifted and a fast API cut the opening off at line two.
  */
 export function Opening() {
   // The phase is decided once, when this wait takes the screen, and released when it
@@ -473,17 +479,24 @@ export function Opening() {
   // a render React then throws away.
   const [phase, setPhase] = useState<WaitPhase | null>(null);
   const [step, setStep] = useState(0);
+  const [reduced, setReduced] = useState(false);
   useBeforePaint(() => {
-    setPhase(claimWait());
+    // Reduced motion is settled in the same beat as the claim because it decides both
+    // halves at once: the checklist is painted already ticked, and the claim is made
+    // without a floor, since the floor only exists to protect the ticking. Skipping the
+    // interval on its own — which is what this used to do — left that reader watching an
+    // untouched checklist for as long as the floor ran.
+    const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setReduced(reduce);
+    if (reduce) setStep(OPENING_LINES.length);
+    setPhase(claimWait(!reduce));
     return releaseWait;
   }, []);
   useEffect(() => {
-    if (phase !== "narrated") return;
-    const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
-    const id = setInterval(() => setStep((s) => Math.min(s + 1, OPENING.length)), 420);
+    if (phase !== "narrated" || reduced) return;
+    const id = setInterval(() => setStep((s) => Math.min(s + 1, OPENING_LINES.length)), OPENING_STEP_MS);
     return () => clearInterval(id);
-  }, [phase]);
+  }, [phase, reduced]);
 
   // Until the claim lands, show the quiet shape. It is the geometry of the page either
   // way, so resolving to the narrated version replaces text inside the same box.
@@ -494,7 +507,7 @@ export function Opening() {
       <WaitHero>
         <div className="display text-[30px] leading-[1.08] text-white">Opening the Penthouse</div>
         <ul className="mt-4 grid gap-2.5">
-          {OPENING.map((line, i) => {
+          {OPENING_LINES.map((line, i) => {
             const done = i < step;
             return (
               <li key={line} className={`flex items-center gap-2.5 text-[14px] ${done ? "text-white" : "text-white/40"}`}>
