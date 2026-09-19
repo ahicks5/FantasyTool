@@ -41,7 +41,11 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 - [~] Supabase magic-link auth — API verifies JWTs (tested); web /login built; needs a real project to verify
 - [x] Stripe Checkout (à la carte $3/$5 + Full Report $7) + webhook → entitlement (tested with a fake event; needs a real test-mode run)
 - [x] Free tier: 1 team; gate Trade Lab + extra teams
-- [~] Deploy web (Vercel) + API (Railway/Render) — Dockerfile + deploy/ configs written; not deployed (needs your accounts)
+- [x] Web is deployed: **https://fantasy-tool-alpha.vercel.app**, Vercel, root dir `web/`,
+      built from `claude/edge-fantasy-app-launch-alo0rr` (there is no `main`). See docs/DEPLOY.md.
+- [ ] **The live site runs on mock data.** `NEXT_PUBLIC_API_URL` is unset on the Vercel project,
+      so every league, player and number on it is fake. Deploy the API, set that variable, redeploy.
+- [~] API (Railway/Render) — Dockerfile + deploy/ configs written; nothing reachable is deployed yet
 
 ## Day 7 — Launch assets
 - [x] Landing page (web/ root, pricing pulled from /api/products)

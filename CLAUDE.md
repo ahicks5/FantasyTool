@@ -47,6 +47,14 @@ moves you make before kickoff. That difference is the whole brand.
 user-visible gain before launch. Env vars (`EDGE_DEV`, `EDGE_DB`, `X-Edge-User`) stay too. Anything
 a *user* reads says The Booth; browser storage keys are namespaced `booth.*`.
 
+## Deployed at
+**Web: https://fantasy-tool-alpha.vercel.app (Vercel) · API: Railway.**
+**There is no `main` branch** — production is `claude/edge-fantasy-app-launch-alo0rr`, and
+Vercel builds from it, so shipping the web app means `git push origin HEAD:claude/edge-fantasy-app-launch-alo0rr`.
+Vercel's Root Directory is `web/`. Full detail, env vars and rollback: **docs/DEPLOY.md** — read
+it before asking Andrew anything about hosting. `vercel login` needs a browser and cannot run in
+a sandbox; a CLI deploy needs `VERCEL_TOKEN` in the environment.
+
 ## Owner
 Andrew (self-taught Python/VBA/automation). Steers, doesn't type every line.
 Keep explanations short and plain. Visuals: light, high-contrast.
