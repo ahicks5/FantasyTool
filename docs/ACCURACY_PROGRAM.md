@@ -22,7 +22,7 @@ Those are different claims:
 | Claim | Measured by | Status |
 |---|---|---|
 | "A 4-point projection gap is right ~80% of the time" | `scripts/backtest.py` | **measured**, week 1 |
-| "Our Lock start/sit calls are right ~80% of the time" | nothing | **not measured** |
+| "Our Lock start/sit calls are right ~80% of the time" | `scripts/score_runs.py` | **built, no live week graded yet** |
 | "Our waiver adds beat the player you dropped" | nothing | not measured |
 | "Our trade verdicts were correct in hindsight" | nothing | not measured |
 
@@ -84,7 +84,7 @@ wrong is a product problem worth knowing about.
 Four pieces, roughly two days total.
 
 1. **`scripts/score_runs.py`** — the missing pairing. Reads `runs` for week N, fetches actuals for
-   week N, computes M1 and M2, writes `docs/accuracy_week{N}.json`. This is the whole programme;
+   week N, computes M1 and M2, writes `docs/frozen/score_runs_<season>_<week>.json`. This is the whole programme;
    everything else is presentation.
 2. **`/accuracy` page** — renders the JSON: hit rate by tag, the calibration curve, the running
    season total, and one honest miss. Linked from the landing page and every Monday post.

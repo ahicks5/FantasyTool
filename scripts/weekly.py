@@ -101,6 +101,16 @@ def cmd_grade(args) -> None:
 
     lineup = _run("scripts/backtest.py", str(week))
     moves = _run("scripts/backtest_moves.py", "--weeks", str(week), str(week))
+    # Grade the calls we actually made, not just the projections behind them. Two different
+    # claims (docs/ACCURACY_PROGRAM.md), so two different files: this one never lands in
+    # docs/BACKTEST.md, because a reader who finds them in one place will read them as one
+    # number. A week with no recorded runs writes "runs": 0 and is not an error -- which is
+    # what it will do until the job can reach the production store.
+    try:
+        _run("scripts/score_runs.py", str(week), "--season", str(season))
+    except SystemExit as e:  # a store we cannot reach must not lose the graded week
+        print(f"\nscore_runs did not complete ({e}) — docs/BACKTEST.md is still written, "
+              f"but docs/frozen/score_runs_{season}_{week}.json was not")
     with BACKTEST_DOC.open("a") as f:
         f.write(section(season, week, lineup, moves, date.today().isoformat()))
     print(f"\nappended week {week} to {BACKTEST_DOC}")
