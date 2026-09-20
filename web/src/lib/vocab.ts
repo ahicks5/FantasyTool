@@ -139,6 +139,29 @@ export type RoomKey = keyof typeof ROOMS;
 export const ROOM_ORDER = ["report"] as const satisfies readonly RoomKey[];
 
 /**
+ * The one line that interrupts you on the call sheet.
+ *
+ * Voice rules bend here and only here. The house style is clipped and unhurried because
+ * the staff are never rattled — but a starter who will not play is the one moment the
+ * room should sound rattled, and a line that stays cool while your flex is inactive is
+ * not poise, it is the app failing to tell you.
+ *
+ * `critical` states the consequence, not the diagnosis: "won't play" is what it costs
+ * you, where "Out" is a tag you then have to translate. `warning` says "in doubt" rather
+ * than naming a status, because the statuses differ by platform and the doubt does not.
+ *
+ * Counted rather than named. Two names fit, four do not, and a headline that truncates
+ * a player's name mid-word on the one week it fires is worse than a number you can act
+ * on — the names are one tap away on the depth chart, which is where the fix happens.
+ */
+export const ALARM = {
+  critical: (n: number) => `${n} starter${n === 1 ? "" : "s"} won\u2019t play`,
+  warning: (n: number) => `${n} starter${n === 1 ? "" : "s"} in doubt`,
+  /** Verb first, and it names the room rather than the tab, like every other way in. */
+  cta: "Fix the lineup",
+} as const;
+
+/**
  * What the hero says once every call on the sheet is ticked.
  *
  * The sheet's whole promise is that it ends. Before this the page just went grey and sat

@@ -4,16 +4,19 @@ import { useCallback, useMemo, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";
 import { CheckBack, Countdown, ErrorBox, Eyebrow, OnAirLive, Opening, Stamp, useHeldWait } from "@/components/ui";
+import { Alarm } from "@/components/Alarm";
+import type { Alarm as AlarmState } from "@/lib/gameday.ts";
 import { MatchupCell } from "@/components/MatchupCell";
 import { SheetGroup, SheetRoom } from "@/components/SheetGroup";
-import { getActions, sendFeedback } from "@/lib/api";
+import { getActions, getLineup, sendFeedback } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { calledKey, sheetStatus } from "@/lib/format";
 import { groupStatus, sheetRows } from "@/lib/sheet";
 import { deadlineNote, type DeadlineNote } from "@/lib/deadline.ts";
+import { alarm } from "@/lib/gameday.ts";
 import { loadCalled, saveCalled, type Connection } from "@/lib/storage";
 import { CLOSED, type GroupKey } from "@/lib/vocab";
-import type { Action, ActionFeed } from "@/lib/types";
+import type { Action, ActionFeed, Lineup } from "@/lib/types";
 
 function ago(ts: number): string {
   const m = Math.max(0, Math.round((Date.now() / 1000 - ts) / 60));
@@ -140,7 +143,7 @@ function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: num
  * different league) remounts this with its own ticks read once, in the initialiser —
  * rather than syncing local state to a prop inside an effect.
  */
-function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Connection; storageKey: string; animate: boolean }) {
+function CallSheet({ feed, c, storageKey, animate, warning }: { feed: ActionFeed; c: Connection; storageKey: string; animate: boolean; warning: AlarmState | null }) {
   const [called, setCalled] = useState<string[]>(() => loadCalled(storageKey));
 
   const toggle = useCallback(
@@ -165,6 +168,11 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
 
   return (
     <div>
+      {warning && (
+        <div className="mb-3.5">
+          <Alarm alarm={warning} animate={animate} />
+        </div>
+      )}
       {feed.matchup && (
         <div className="mb-3.5">
           <MatchupCell m={feed.matchup} animate={animate} />
@@ -242,15 +250,37 @@ function HomeBody({ c }: { c: Connection }) {
     () => getActions(c.platform, c.league_id, c.team_id),
   );
 
+  // The depth chart's own payload, fetched here only to answer "is anything broken".
+  //
+  // Deliberately a second request rather than a new field on the action feed: it is the
+  // same cache key the depth chart uses, so `useCached` de-duplicates and this warms that
+  // tab instead of costing it, and it needs no API deploy to ship.
+  //
+  // Its `error` is swallowed on purpose. The call sheet is the product and paints from
+  // its own feed; a lineup that fails to load must cost the reader a banner, never the
+  // page. The banner is additive -- nothing below it changes shape when it is absent.
+  const { data: lineup } = useCached<Lineup>(
+    `lineup:${c.platform}:${c.league_id}:${c.team_id}`,
+    () => getLineup(c.platform, c.league_id, c.team_id),
+  );
+
+  // One clock per mount, in an initialiser rather than the render body: `alarm` compares
+  // news timestamps against it, and a clock re-read every render makes the judgement drift
+  // under React — the same reason the depth chart reads it once. Declared here, above the
+  // early returns, because a hook after one runs in a different order on the render that
+  // takes the branch.
+  const [now] = useState(() => Date.now());
+
   // Held so a warm API cannot cut the opening off mid-sentence; zero cost once it has played.
   const waiting = useHeldWait(!!feed);
 
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (waiting || !feed) return <Opening />;
 
+  const warning = lineup ? alarm(lineup, now) : null;
   // Per league and per week, so a new week always starts with a clean sheet.
   const key = calledKey(c.league_id, feed.week);
-  return <CallSheet key={key} storageKey={key} feed={feed} c={c} animate={!instant} />;
+  return <CallSheet key={key} storageKey={key} feed={feed} c={c} animate={!instant} warning={warning} />;
 }
 
 export default function HomePage() {

@@ -86,6 +86,15 @@ export const IconFilm = (p: P) => (
 export const IconHeadset = (p: P) => (
   <Svg {...p}><path d="M4.5 14v-2a7.5 7.5 0 0 1 15 0v2" /><rect x="2.8" y="13.5" width="4" height="6" rx="1.8" /><rect x="17.2" y="13.5" width="4" height="6" rx="1.8" /><path d="M19.2 19.5v.6a2 2 0 0 1-2 2H13" /></Svg>
 );
+/** A bell, for the one banner that interrupts the call sheet. Never decoration. */
+export const IconAlarm = (p: P) => (
+  <Svg {...p}>
+    <path d="M6 16.5V11a6 6 0 0 1 12 0v5.5" />
+    <path d="M4.2 16.5h15.6" />
+    <path d="M10.2 19.4a2 2 0 0 0 3.6 0" />
+  </Svg>
+);
+
 export const IconClock = (p: P) => (
   <Svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5.2l3.2 2" /></Svg>
 );

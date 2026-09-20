@@ -188,6 +188,11 @@ const PAGES: PageCase[] = [
       // Every row is a door. The film's is the one with nothing to expand, so if rooms ever
       // stop linking out it is the row that proves it — there is no other way into it here.
       await expect(sheet.getByRole("link", { name: `Go to ${SECTIONS.report.title}` })).toBeVisible();
+      // The injury banner is the app's loudest surface and this fixture's starters are all
+      // clear, so it must not be here. Asserting the silence rather than the shout on
+      // purpose: the way an alert dies is by firing every week until nobody reads it, and
+      // that failure is invisible to a test that only ever checks it can appear.
+      await expect(sheet.getByRole("link", { name: /won\u2019t play|in doubt/ })).toHaveCount(0);
       // The cards are folded behind whichever rows do have calls. Group rows are the only
       // `<section>` with a disclosure — cards are `<article>` — so this cannot catch a
       // card's own Why? toggle by accident.
