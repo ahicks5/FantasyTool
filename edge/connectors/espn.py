@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 
-from edge.connectors.sleeper import apply_projections
+from edge.connectors.sleeper import apply_projections, season_byes, stamp_byes
 from edge.data import espn_api as api
 from edge.data import sleeper_api
 from edge.data.player_map import sleeper_id_for
@@ -178,6 +178,24 @@ def injury_status(raw_player: dict) -> str | None:
 
 
 def _player_from_entry(entry: dict) -> Player:
+    """One roster (or pool) row -> a Player.
+
+    **ESPN tells us the ruling and nothing around it.** The player object it sends on
+    mTeam+mRoster carries exactly `defaultPositionId`, `fullName`, `id`, `proTeamId`,
+    `stats` and `injuryStatus` -- those six and no others across all 196 rostered players
+    in `tests/fixtures/espn/corpus/521131/league.json.gz` and all 200 rows of its
+    `free_agents.json.gz`. `tests/fixtures/espn/league_2026.json` adds six more (active,
+    droppable, eligibleSlots, firstName, injured, lastName) and not one of them is news.
+    There is no body part, no news timestamp and no bye week anywhere in the payload, so
+    `injury_body_part`, `news_updated` and `bye_week` stay None here rather than being
+    invented: the UI draws nothing for a null, which is the honest answer.
+
+    They are not necessarily null by the time the league is built. ESPN players are priced
+    off the same Sleeper projections feed as everyone else, and `apply_projections` folds
+    that row's injury fields in (`connectors.sleeper.merge_feed_news`) exactly as it does
+    for a Sleeper league -- which is the whole point of mapping both platforms into the one
+    `Player`. Bye weeks arrive the same way, from `byes`.
+    """
     ppe = entry.get("playerPoolEntry") or {}
     raw = ppe.get("player") or {}
     pid = str(entry.get("playerId") or raw.get("id"))
@@ -276,6 +294,7 @@ def build_league(
     projections_raw: list[dict] | None = None,
     players: dict[str, dict] | None = None,
     free_agents_raw: list[dict] | None = None,
+    byes: dict[str, int] | None = None,
 ) -> League:
     """Map one ESPN league response (mTeam+mRoster+mSettings) to a League.
 
@@ -285,6 +304,8 @@ def build_league(
     what a waiver recommendation should be drawn from; without it we fall back to deriving
     the pool from unrostered projections, which can offer up a player our name matching
     failed to tie to a roster. `week` defaults to ESPN's current scoringPeriodId.
+    `byes` is {nfl_team: bye week} from `edge.data.schedule.bye_weeks`; ESPN's payload has
+    no bye week in it, so without it every Player keeps `bye_week = None`.
     """
     settings = raw.get("settings") or {}
     acq = settings.get("acquisitionSettings") or {}
@@ -371,6 +392,7 @@ def build_league(
                     fa.ext_ids.setdefault("sleeper", fa.id)
                     if fa.position == "DEF":
                         fa.name = _dst_name(fa.name, fa.nfl_team, espn_def_names)
+    stamp_byes(league, byes)
     return league
 
 
@@ -423,4 +445,4 @@ def load_league(league_id: str | int, season: int | None = None, week: int | Non
     except api.EspnError:
         fas = None  # fall back to the derived pool rather than showing no waiver advice at all
     return build_league(raw, week, projections_raw=to_raw(get_provider().weekly(season, week)),
-                        players=sleeper_api.players(), free_agents_raw=fas)
+                        players=sleeper_api.players(), free_agents_raw=fas, byes=season_byes(season))

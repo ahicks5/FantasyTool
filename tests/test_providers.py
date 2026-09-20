@@ -193,3 +193,37 @@ def test_fake_provider_drives_ros_values(sleeper_raw, league):
     ros = ros_values(league, FakeProvider(rows).season(2026), byes={})
     assert ros[starter] > 0
     assert all(v == 0.0 for pid, v in ros.items() if pid != starter)
+
+
+def test_availability_metadata_survives_the_provider_round_trip():
+    """The only road into a connector in production, and it used to drop two fields.
+
+    Every connector test feeds raw Sleeper JSON straight in, so a field lost here is lost
+    *only live* -- exactly where no test looks. ESPN leagues are priced off this same feed,
+    so dropping these two meant an ESPN roster showed a ruling with no body part and no
+    "just in" timestamp in production while passing every test offline.
+    """
+    row = {
+        "player_id": "4866",
+        "stats": {"rec": 5.0},
+        "team": "IND",
+        "player": {
+            "full_name": "Michael Pittman", "position": "WR", "team": "IND",
+            "injury_status": "Out", "injury_body_part": "Concussion",
+            "news_updated": 1789495259598,
+        },
+    }
+    p = providers.from_sleeper(row)
+    assert p.injury_body_part == "Concussion" and p.news_updated == 1789495259598
+
+    back = providers.to_raw([p])[0]["player"]
+    assert back["injury_body_part"] == "Concussion"
+    assert back["news_updated"] == 1789495259598
+    assert back["injury_status"] == "Out", "the ruling itself must not have moved"
+
+
+def test_a_row_with_no_availability_metadata_round_trips_as_nulls():
+    p = providers.from_sleeper({"player_id": "1", "stats": {}, "player": {"full_name": "A B"}})
+    assert p.injury_body_part is None and p.news_updated is None
+    back = providers.to_raw([p])[0]["player"]
+    assert back["injury_body_part"] is None and back["news_updated"] is None

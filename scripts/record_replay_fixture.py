@@ -17,7 +17,8 @@ from edge.evaluate import BACKTEST_LEAGUES
 
 # Everything the connector reads, nothing else — the raw dump carries 53 fields per player.
 KEEP = ("player_id", "full_name", "first_name", "last_name", "position", "fantasy_positions",
-        "team", "injury_status", "status", "age", "number", "years_exp", "search_rank")
+        "team", "injury_status", "injury_body_part", "news_updated", "status", "age", "number",
+        "years_exp", "search_rank")
 
 
 def trim_player(p: dict) -> dict:
@@ -28,7 +29,8 @@ def trim_projection(p: dict, scored: set[str]) -> dict:
     return {
         "player_id": p["player_id"],
         "player": {k: (p.get("player") or {}).get(k)
-                   for k in ("position", "first_name", "last_name", "injury_status")},
+                   for k in ("position", "first_name", "last_name", "injury_status",
+                             "injury_body_part", "news_updated")},
         "stats": {k: v for k, v in (p.get("stats") or {}).items() if k in scored},
     }
 

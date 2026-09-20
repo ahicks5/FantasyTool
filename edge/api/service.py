@@ -68,6 +68,12 @@ def load_sleeper(league_id: str, week: int | None = None) -> Bundle:
     league = sleeper.build_league(raw, api.users(league_id), rosters, players, week,
                                   projections_raw=to_raw(provider.weekly(season, week, positions)))
     byes = bye_weeks(load_schedule(season))
+    # Neither platform sends a bye week on a player, so it is stamped on from the schedule
+    # we already loaded. The ESPN path gets this inside `espn.load_league`; this one builds
+    # the league directly, so without the call here a Sleeper league -- every league in the
+    # test account -- reports no byes at all and the depth chart cannot flag a starter who
+    # is not playing. Costs nothing: `byes` is already in hand on the line above.
+    sleeper.stamp_byes(league, byes)
     ros = ros_values(league, provider.season(season, positions), byes)
     tx = _transactions_history(raw, week)
     try:

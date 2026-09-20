@@ -5,7 +5,7 @@ from typing import Callable
 
 from edge.data import sleeper_api as api
 from edge.data.providers import get_provider, to_raw
-from edge.data.schedule import FANTASY_LAST_WEEK
+from edge.data.schedule import FANTASY_LAST_WEEK, bye_weeks, load_schedule
 from edge.data.scoring import score
 from edge.models import BENCH_SLOTS, IDP_POSITIONS, League, Player, Team, startable_positions
 
@@ -88,6 +88,66 @@ def _as_int(value: object, low: int, high: int) -> int | None:
     return n if low <= n <= high else None
 
 
+def news_ms(value: object) -> int | None:
+    """A platform news timestamp as epoch MILLISECONDS, or None when it cannot be trusted.
+
+    **Sleeper sends milliseconds**, measured rather than assumed: every `news_updated` in
+    `tests/fixtures/sleeper/projections_2026_2.json` is 13 digits, and the 279 of them span
+    2026-09-07 to 2026-09-16 read as ms -- the nine days up to the day that fixture was
+    recorded (2026-09-16), for season 2026 week 2. Read as seconds the same numbers land in
+    the year 58,000, so there is nothing to weigh up. A ten-digit value from some other feed
+    would be seconds, so convert it rather than ship a timestamp in the wrong unit; anything
+    outside a plausible range is None, because "hurt 5 minutes ago" on a wrong number is
+    worse than no timestamp at all.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return None
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return None
+    if n <= 0:
+        return None
+    if n < 10 ** 11:          # ten digits or fewer: seconds since the epoch
+        n *= 1000
+    return n if 10 ** 12 <= n < 10 ** 13 else None   # roughly 2001-2286, else we misread it
+
+
+def merge_feed_news(pl: Player, raw: dict, *, prefer_feed: bool) -> None:
+    """Fold a projection row's embedded player object into a Player: status, body part, news.
+
+    Projections carry fresher injury info than the players dump, so for a rostered player
+    the feed wins; a free agent already carries whatever the platform's own pool said about
+    him, so the feed only fills what is missing. All three are display metadata -- none of
+    them reaches `lineup.py` or moves a single number (`injury_status` was already read
+    here and is left exactly as it was).
+    """
+    raw_player = raw.get("player") or {}
+    inj = raw_player.get("injury_status")
+    if inj and (prefer_feed or not pl.injury_status):
+        pl.injury_status = inj
+    part = raw_player.get("injury_body_part")
+    if part and (prefer_feed or not pl.injury_body_part):
+        pl.injury_body_part = part
+    news = news_ms(raw_player.get("news_updated"))
+    if news and (prefer_feed or not pl.news_updated):
+        pl.news_updated = news
+
+
+def stamp_byes(league: League, byes: dict[str, int] | None) -> None:
+    """Give every rostered player and free agent his bye week, when we were handed one.
+
+    A bye week is not a platform fact -- neither Sleeper's nor ESPN's player payload
+    carries one -- so it arrives from `edge.data.schedule.bye_weeks` as {team: week}. With
+    no `byes` nothing is touched and every `bye_week` stays None, which the UI draws as
+    nothing. 0 is never written: it would read as a real week.
+    """
+    if not byes:
+        return
+    for pl in [p for t in league.teams for p in t.players] + list(league.free_agents):
+        pl.bye_week = byes.get(pl.nfl_team or "") or None
+
+
 def _position(raw: dict, startable: set[str] | None) -> str:
     """The position this league would actually start him at.
 
@@ -114,6 +174,11 @@ def _player_from_raw(pid: str, players: dict[str, dict], startable: set[str] | N
         position=_position(raw, startable),
         nfl_team=raw.get("team"),
         injury_status=raw.get("injury_status"),
+        # The players dump carries these two as well; the projections feed overwrites them
+        # below when it has something fresher. scripts/record_replay_fixture.py's KEEP must
+        # list them or a recorded fixture can never exercise this branch.
+        injury_body_part=raw.get("injury_body_part"),
+        news_updated=news_ms(raw.get("news_updated")),
         fantasy_positions=list(raw.get("fantasy_positions") or []),
     )
 
@@ -125,7 +190,12 @@ def build_league(
     players: dict[str, dict],
     week: int,
     projections_raw: list[dict] | None = None,
+    byes: dict[str, int] | None = None,
 ) -> League:
+    """`byes` is {nfl_team: bye week} from `edge.data.schedule.bye_weeks`. Optional because
+    it is not a platform fact -- no Sleeper or ESPN payload carries a bye week -- and this
+    function stays pure; pass it and every Player gets `bye_week`, leave it out and they
+    keep None, which the UI draws as nothing."""
     settings = league_raw.get("settings", {})
     scoring = league_raw["scoring_settings"]
     user_by_id = {u["user_id"]: u for u in users_raw}
@@ -174,6 +244,7 @@ def build_league(
     )
     if projections_raw is not None:
         apply_projections(league, projections_raw, players)
+    stamp_byes(league, byes)
     return league
 
 
@@ -215,9 +286,7 @@ def apply_projections(
                 pl.proj_stats = raw["stats"]
                 pl.projected = score(raw["stats"], league.scoring)
                 # projections carry fresher injury info than the players dump
-                inj = (raw.get("player") or {}).get("injury_status")
-                if inj:
-                    pl.injury_status = inj
+                merge_feed_news(pl, raw, prefer_feed=True)
             else:
                 pl.projected = 0.0
     fas: list[Player] = []
@@ -231,6 +300,7 @@ def apply_projections(
             pl = _player_from_raw(pid, players, startable)
             pl.projected = pts
             pl.proj_stats = raw["stats"]
+            merge_feed_news(pl, raw, prefer_feed=True)
             fas.append(pl)
     else:
         for pl in free_agents:
@@ -248,9 +318,7 @@ def apply_projections(
                 continue
             pl.projected = pts
             pl.proj_stats = raw["stats"]
-            inj = (raw.get("player") or {}).get("injury_status")
-            if inj and not pl.injury_status:
-                pl.injury_status = inj
+            merge_feed_news(pl, raw, prefer_feed=False)
             fas.append(pl)
     fas.sort(key=lambda p: -(p.projected or 0))
     league.free_agents = fas
@@ -266,6 +334,19 @@ def projection_positions(roster_positions: list[str]) -> list[str]:
     return list(api.POSITIONS) + (list(api.IDP_POSITIONS) if startable & IDP_POSITIONS else [])
 
 
+def season_byes(season: int) -> dict[str, int] | None:
+    """{nfl_team: bye week} for this season, or None if the schedule is unreachable.
+
+    Shared by both connectors' live entry points. A bye week is a nice-to-have on a player
+    card, so a schedule we cannot load costs a row of small print -- it must never cost the
+    league itself, which is why this swallows rather than raises.
+    """
+    try:
+        return bye_weeks(load_schedule(season))
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def load_league(league_id: str, week: int | None = None) -> League:
     st = api.state()
     week = week or int(st["week"])
@@ -275,6 +356,7 @@ def load_league(league_id: str, week: int | None = None) -> League:
     return build_league(
         raw, api.users(league_id), api.rosters(league_id), api.players(), week,
         projections_raw=to_raw(get_provider().weekly(season, week, positions)),
+        byes=season_byes(season),
     )
 
 

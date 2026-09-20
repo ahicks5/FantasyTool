@@ -36,10 +36,20 @@ def team_logo_url(nfl_team: str | None) -> str | None:
 
 
 def player_dict(p: Player | None) -> dict | None:
+    """The one place a Player becomes JSON. Keys mirror `Player` in web/src/lib/types.ts.
+
+    The three availability fields ride along beside `injury_status`: what is wrong in the
+    platform's own words, when the platform last had news on him (epoch **milliseconds**,
+    normalised at the connector), and the week his NFL team is off. Every one of them is
+    optional and null when we do not know -- the UI draws nothing for a null, which is the
+    correct answer. `bye_week` is never 0, because 0 would read as a real week.
+    """
     if p is None:
         return None
     return {"id": p.id, "name": p.name, "position": p.position, "nfl_team": p.nfl_team,
-            "injury_status": p.injury_status, "projected": p.projected,
+            "injury_status": p.injury_status, "injury_body_part": p.injury_body_part,
+            "news_updated": p.news_updated, "bye_week": p.bye_week or None,
+            "projected": p.projected,
             "photo": photo_url(p), "team_logo": team_logo_url(p.nfl_team)}
 
 

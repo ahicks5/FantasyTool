@@ -72,6 +72,17 @@ class Player:
     position: str                # QB RB WR TE K DEF (or IDP)
     nfl_team: str | None = None
     injury_status: str | None = None   # Questionable, Doubtful, Out, IR, ...
+    # What is wrong, in the platform's own words ("Concussion", "Knee - ACL"). It rides
+    # beside `injury_status` and never replaces it: a body part is not a ruling, and only
+    # the status says whether he plays. Display metadata -- nothing ranks on it.
+    injury_body_part: str | None = None
+    # When the platform last had news on this player, epoch MILLISECONDS. A timestamp on
+    # the news, not on the injury, so it moves when a player is cleared as well as when he
+    # is ruled out. None when the platform did not say; never a guessed "now".
+    news_updated: int | None = None
+    # The week this player's NFL team is off. None means "we do not know" -- never 0, which
+    # would read as a real week. Not on any platform's player payload: it comes from the
+    # NFL schedule (`edge.data.schedule.bye_weeks`), handed to a connector as `byes`.
     bye_week: int | None = None
     projected: float | None = None     # this week's projection in league scoring
     proj_stats: dict[str, float] = field(default_factory=dict)

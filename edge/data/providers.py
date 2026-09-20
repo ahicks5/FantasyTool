@@ -54,6 +54,11 @@ class PlayerProjection:
     team: str | None = None                         # NFL team abbr
     opponent: str | None = None
     injury_status: str | None = None
+    # Availability metadata, carried but never priced. It rides here because this is the
+    # only road into a connector in production -- a field left off is not merely absent,
+    # it is absent *only live*, where the fixtures that would have caught it never run.
+    injury_body_part: str | None = None
+    news_updated: int | None = None                 # epoch MILLISECONDS of the last news
     source: str = "unknown"                         # provider name that produced this row
 
 
@@ -93,6 +98,8 @@ def from_sleeper(raw: dict, source: str = "sleeper") -> PlayerProjection:
         team=raw.get("team") or player.get("team"),
         opponent=raw.get("opponent"),
         injury_status=player.get("injury_status"),
+        injury_body_part=player.get("injury_body_part"),
+        news_updated=player.get("news_updated"),
         source=source,
     )
 
@@ -119,6 +126,8 @@ def to_raw(projections: Iterable[PlayerProjection | dict]) -> list[dict]:
                 "position": p.position,
                 "team": p.team,
                 "injury_status": p.injury_status,
+                "injury_body_part": p.injury_body_part,
+                "news_updated": p.news_updated,
             },
             "source": p.source,
         })

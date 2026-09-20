@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Lineup, LineupSlot } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
+import { GameDay } from "./GameDay";
 import { Scorecard } from "./Scorecard";
 import { IconArrowUp, IconCheck, IconChevron } from "./icons";
 import { ConfidenceStamp, Countdown, CountUp, Eyebrow, H2, InjuryTag, OnAirLive, Stamp } from "./ui";
@@ -208,10 +209,25 @@ export function LineupView({
     </>
   );
 
-  if (!toggle || !grades) return <div className="grid min-w-0 gap-6">{board}</div>;
+  /* The game-day read sits above everything, including the view toggle: "am I good for
+     Sunday, did anyone just get hurt" is the question the tab is opened with, and it is
+     true of the scorecard view as much as of the board. It is suppressed in the report's
+     compact embed on the same terms as the toggle — the film is a written summary and
+     has no business growing three collapsible controls inside it. */
+  const gameDayRows = !compact && <GameDay lineup={lineup} animate={animate} />;
+
+  if (!toggle || !grades) {
+    return (
+      <div className="grid min-w-0 gap-6">
+        {gameDayRows}
+        {board}
+      </div>
+    );
+  }
 
   return (
     <div className="grid min-w-0 gap-6">
+      {gameDayRows}
       {/* Same segmented control as the Trade Lab: one row, two truths about the same team. */}
       <div className="grid grid-cols-2 gap-1 rounded-2xl border border-line bg-soft p-1" role="tablist" aria-label="Depth chart view">
         {VIEWS.map((v) => (

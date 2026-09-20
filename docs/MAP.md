@@ -107,7 +107,7 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (38 modules, 7,646 lines)
+### `edge/` — the Python engine and API (38 modules, 7,786 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
@@ -115,18 +115,18 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/api/auth.py` | Who is calling? Supabase JWT (HS256) in production, X-Edge-User header in dev. Stdlib only. | api | 52 |
 | `edge/api/limits.py` | Per-IP rate limiting and request validation. Stdlib only. | limits | 176 |
 | `edge/api/payments.py` | Stripe Checkout + webhook. Prices are created inline from products.py, so there's nothing to set | api | 110 |
-| `edge/api/service.py` | Loads a league with everything the engine needs (ROS values, byes, bid history, tendencies), | service, api +3 | 112 |
+| `edge/api/service.py` | Loads a league with everything the engine needs (ROS values, byes, bid history, tendencies), | service, api +3 | 118 |
 | `edge/api/share.py` | Public share snapshots — the organic loop. | share, compliance | 69 |
 | `edge/api/store.py` | Tiny persistence: users' purchases and connected leagues. SQLite (stdlib) — zero cost, zero setup. | store_contract, api +3 | 198 |
 | `edge/api/store_pg.py` | The same store, on Postgres. Selected by DATABASE_URL; see store.open_store(). | store_contract | 192 |
 | `edge/business/economics.py` | Unit economics: what a sale is actually worth after everyone else takes their cut. | economics | 292 |
 | `edge/calibration.py` | How sure are we, really? Confidence from measured projection error, not from raw margin. | calibration | 222 |
 | `edge/cli.py` | Demo commands. Live network. Usage: | espn_connector, send | 214 |
-| `edge/connectors/espn.py` | ESPN (public league) -> normalized League. `build_league` is pure so tests run offline. | espn_connector, espn_corpus +3 | 426 |
-| `edge/connectors/sleeper.py` | Sleeper -> normalized League. Pure mapping functions take raw JSON so tests run offline. | deadlines, feed_performance +2 | 288 |
+| `edge/connectors/espn.py` | ESPN (public league) -> normalized League. `build_league` is pure so tests run offline. | espn_connector, espn_corpus +4 | 448 |
+| `edge/connectors/sleeper.py` | Sleeper -> normalized League. Pure mapping functions take raw JSON so tests run offline. | deadlines, feed_performance +3 | 370 |
 | `edge/data/espn_api.py` | Thin HTTP layer for ESPN fantasy football (v3 "lm-api-reads"). | espn_connector, espn_private | 160 |
 | `edge/data/player_map.py` | Match players from other platforms (ESPN, ...) to Sleeper player ids by name. | espn_connector, espn_live_fixture | 87 |
-| `edge/data/providers.py` | Projection providers — the engine's only door to projection data. | providers, compliance | 263 |
+| `edge/data/providers.py` | Projection providers — the engine's only door to projection data. | providers, compliance | 272 |
 | `edge/data/schedule.py` | NFL schedule / bye weeks from ESPN's free scoreboard endpoint. Cached per season. | actions, api +15 | 62 |
 | `edge/data/scoring.py` | Score a raw stat line against a league's scoring settings (Sleeper stat vocabulary). | scoring, evaluate_moves +1 | 16 |
 | `edge/data/sleeper_api.py` | Thin HTTP layer for Sleeper. Everything public, no auth. Cached players file on disk. | evaluate_moves, league_formats +2 | 106 |
@@ -136,8 +136,8 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/engine/copy.py` | Small helpers for prose the user actually reads. | copy | 37 |
 | `edge/engine/explain.py` | Trade explanation text. Template by default (free). Claude API when EDGE_USE_CLAUDE=1 and | trade | 76 |
 | `edge/engine/grades.py` | Letter grades for a roster, position by position — the draft-grade idea, kept live. | grades | 287 |
-| `edge/engine/lineup.py` | Lineup optimizer + start/sit calls with confidence and one-line reasons. | lineup, actions +7 | 339 |
-| `edge/engine/report.py` | Full Report: everything for one team this week, in one payload (+ simple HTML). | report, espn_live_fixture | 142 |
+| `edge/engine/lineup.py` | Lineup optimizer + start/sit calls with confidence and one-line reasons. | lineup, actions +9 | 339 |
+| `edge/engine/report.py` | Full Report: everything for one team this week, in one payload (+ simple HTML). | report, espn_live_fixture +1 | 152 |
 | `edge/engine/tendencies.py` | Manager tendency profiles from a league's transaction history (this season + last). | tendencies_products, api +2 | 141 |
 | `edge/engine/trade.py` | Trade Lab: verdict on a proposed trade + a counteroffer tuned to the other manager. | trade, espn_corpus +1 | 266 |
 | `edge/engine/trade_finder.py` | Trade Finder: who should you be talking to, and about what. | trade_finder, copy +3 | 340 |
@@ -147,7 +147,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/evaluate.py` | Did the advice work? Replays a finished week and scores Edge against the managers. | evaluate | 208 |
 | `edge/evaluate_moves.py` | Did the *waiver and trade* advice make anyone money? | evaluate_moves | 358 |
 | `edge/graphics.py` | Shareable trade-verdict card (1080x1080). HTML in, PNG out via headless Chromium (Playwright). | graphics, compliance +1 | 416 |
-| `edge/models.py` | Platform-agnostic models. Every connector (Sleeper, ESPN, ...) maps into these. | copy, espn_connector +11 | 176 |
+| `edge/models.py` | Platform-agnostic models. Every connector (Sleeper, ESPN, ...) maps into these. | copy, espn_connector +12 | 187 |
 | `edge/products.py` | Product catalog: free tier, à la carte passes, and The Penthouse bundle. Prices in cents. | tendencies_products, economics | 43 |
 
 ### `web/src/app/` — routes (18 files)
@@ -173,15 +173,16 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/trade/page.tsx` | GM's Office: the Trade Finder board, and the Trade Lab verdict on a trade you propose. | 511 |
 | `web/src/app/waivers/page.tsx` | Scouting: the waiver plan over the ranked free-agent board. | 80 |
 
-### `web/src/components/` — the view (20 files)
+### `web/src/components/` — the view (21 files)
 
 | File | What it is | Lines |
 |---|---|---|
 | `web/src/components/ActionCard.tsx` | One call on the call sheet: the move, the reason, the stamp, and the tick that crosses it off. | 225 |
 | `web/src/components/Avatar.tsx` | A player headshot. Initials are painted underneath rather than swapped in on error, so a | 66 |
 | `web/src/components/EspnAuthForm.tsx` | The two ESPN cookies a private league needs, asked for in the shape of a form rather than | 167 |
+| `web/src/components/GameDay.tsx` | The game-day answer, above the board: am I good for Sunday, did anything just happen, | 238 |
 | `web/src/components/LegalPage.tsx` | Shared chrome and typography for /terms and /privacy. Plain, readable, no app shell. | 66 |
-| `web/src/components/LineupView.tsx` | Two reads on the same team: this week's board, and how the roster grades out. | 248 |
+| `web/src/components/LineupView.tsx` | Two reads on the same team: this week's board, and how the roster grades out. | 264 |
 | `web/src/components/Locked.tsx` | Premium teaser, not a wall: says what we found, then offers the pass or the bundle. | 110 |
 | `web/src/components/MatchupCell.tsx` | The week's scoreboard, directly under the page title: you, them, and the door | 93 |
 | `web/src/components/Players.tsx` | Name over position/team, with a headshot. The name column always gets the slack. | 33 |
@@ -198,7 +199,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/icons.tsx` | Line icons at a common 24px grid. Emoji read as placeholder art in a paid product. | 111 |
 | `web/src/components/ui.tsx` | The kit: the shared devices every screen is built from — cards, stamps, meters, waits, the wordmark. | 919 |
 
-### `web/src/lib/` — client logic (19 files)
+### `web/src/lib/` — client logic (20 files)
 
 | File | What it is | Lines |
 |---|---|---|
@@ -208,6 +209,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/errors.ts` | Turning a failure into something worth reading. | 104 |
 | `web/src/lib/espnAuth.ts` | A private ESPN league needs two cookies from the user's own browser: `espn_s2` and `SWID`. | 92 |
 | `web/src/lib/format.ts` | Pure helpers (no React, no DOM) so they can be unit tested with node:test. | 250 |
+| `web/src/lib/gameday.ts` | Pure helpers (no React, no DOM, no clock read at load) so they can be unit tested | 495 |
 | `web/src/lib/leagueInput.ts` | One box for Sleeper, because asking someone to know whether they have a "username" or a | 100 |
 | `web/src/lib/legal.ts` | The handful of facts the Terms and Privacy pages cannot work out for themselves. | 51 |
 | `web/src/lib/matchup.ts` | The week's head-to-head, worked out slot by slot. | 131 |
