@@ -23,6 +23,7 @@ import type {
   TradeRequest,
   TradeResult,
   Waivers,
+  SeasonRecap,
   TeamGrades,
 } from "./types";
 import * as mocks from "./mocks";
@@ -228,6 +229,25 @@ export async function getRoster(platform: Platform, leagueId: string, teamId: st
  * is fetching that anyway. This is for the other eleven, where the compare view wants one
  * rival on demand and has no use for their start/sit advice.
  */
+/**
+ * The season behind you: played weeks, real scores, and what we said at the time.
+ *
+ * No mock branch. Every other fetcher can fake its payload because it is describing a
+ * roster that exists either way, but a recap is a claim about results that happened,
+ * and a demo build inventing a season it did not play is the one fabrication this app
+ * must never ship. The film renders its empty state instead, which is the truthful
+ * answer for a demo: no weeks on record.
+ */
+export async function getRecap(platform: Platform, leagueId: string, teamId: string): Promise<SeasonRecap> {
+  if (USE_MOCKS) {
+    const l = mocks.LEAGUE;
+    return { team: teamId, league: l.name, league_size: l.teams.length, weeks: [], record: null, points_rank: null };
+  }
+  return request<SeasonRecap>(
+    `/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/recap`,
+  );
+}
+
 export async function getTeamGrades(
   platform: Platform,
   leagueId: string,

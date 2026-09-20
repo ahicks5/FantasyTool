@@ -1,6 +1,7 @@
 /**
- * Two scorecards, lined up against each other. Pure helpers (no React, no DOM, no
- * clock) so they can be unit tested with node:test.
+ * Two scorecards, lined up against each other.
+ *
+ * Pure helpers (no React, no DOM, no clock) so they can be unit tested with node:test.
  *
  * This is a *presentation* of two `Grades` payloads the API already built. It never
  * computes a new score out of them, and three rules keep it that way:
@@ -26,9 +27,12 @@
 import type { Grades, PositionGrade } from "./types";
 
 /* ------------------------------------------------------------------- copy ---
-   TEMPORARY. Every user-facing string in the compare view lives here so it can be
-   lifted into `web/src/lib/vocab.ts` in one move — no word a user reads belongs in
-   a component. Delete this block when it lands there and re-point the imports.    */
+   Here rather than in `vocab.ts`, on the precedent `sheet.ts`, `format.ts` and
+   `deadline.ts` already set: vocab holds the names of rooms and the brand's lines,
+   and a string that only exists as the output of a formatter belongs with the
+   formatter. "You're 1st of 12 at RB. They're 10th." is a rendering of two ranks,
+   not a line anyone wrote. The block stays whole so the view's voice is still
+   readable in one place, and nothing user-facing sits inline in the component.   */
 export const COMPARE_COPY = {
   /** The block's eyebrow, above the two overall grades. */
   title: "Head to head",

@@ -8,12 +8,13 @@ import { ShareCard } from "@/components/ShareCard";
 import { Avatar } from "@/components/Avatar";
 import { PlayerLine } from "@/components/Players";
 import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, Stamp, StatusMeter, Why } from "@/components/ui";
-import { createShare, evaluateTrade, findTrades, getLeague, getRoster, PaywallError } from "@/lib/api";
+import { createShare, evaluateTrade, findTrades, getLeague, getRoster, getTeamGrades, PaywallError } from "@/lib/api";
 import { once } from "@/lib/cache";
 import { TradeFinderView, TradeFinderWait } from "@/components/TradeFinderView";
+import { Compare } from "@/components/Compare";
 import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
-import type { LeagueSummary, Player, TradeFinderResponse, TradeResult } from "@/lib/types";
+import type { Grades, LeagueSummary, Player, TeamGrades, TradeFinderResponse, TradeResult } from "@/lib/types";
 
 function sortRoster(players: Player[]): Player[] {
   return [...players].sort((a, b) => (b.ros ?? b.projected ?? 0) - (a.ros ?? a.projected ?? 0));
@@ -194,6 +195,34 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
     };
   }, [c.platform, c.league_id, theirId]);
 
+  // Two scorecards for the head-to-head, on the same `theirId` the picker already drives.
+  //
+  // Both sides go through `getTeamGrades` rather than lifting mine out of the depth
+  // chart's payload: one endpoint means both columns are computed the same way on the
+  // same bundle, and two roads to the same number is how a comparison ends up right on
+  // your side and quietly wrong on theirs.
+  //
+  // Failures are swallowed. This is a free read sitting above a paid product, and a
+  // scorecard that will not load must cost its own block, never the trade builder.
+  // Tagged with the team it describes rather than cleared on the way in. Clearing meant a
+  // `setCards(null)` in the effect body, which is a synchronous setState inside an effect
+  // -- a cascading render, and the lint rule that says so is right. Rendering only when the
+  // tag matches the current pick closes the same stale-card window without the extra pass.
+  const [cards, setCards] = useState<{ id: string; mine: Grades; theirs: TeamGrades } | null>(null);
+  useEffect(() => {
+    if (!theirId) return;
+    let alive = true;
+    Promise.all([
+      once(`grades:${c.platform}:${c.league_id}:${c.team_id}`, () => getTeamGrades(c.platform, c.league_id, c.team_id)),
+      once(`grades:${c.platform}:${c.league_id}:${theirId}`, () => getTeamGrades(c.platform, c.league_id, theirId)),
+    ])
+      .then(([m, t]) => alive && setCards({ id: theirId, mine: m.grades, theirs: t }))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [c.platform, c.league_id, c.team_id, theirId]);
+
   const others = useMemo(() => league?.teams.filter((t) => t.id !== c.team_id) ?? [], [league, c.team_id]);
   const theirTeam = others.find((t) => t.id === theirId);
   const givePlayers = give.map((id) => mine.find((p) => p.id === id)).filter((p): p is Player => !!p);
@@ -280,6 +309,12 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
           ))}
         </select>
       </section>
+
+      {/* Who they are, before what you might send them. Free on purpose: the rosters are
+          public inside the league and the letters are our arithmetic on them, while what
+          Trade Lab sells -- the verdict on an actual offer and a counter tuned to this
+          manager -- sits further down this same page. Nothing here names a target. */}
+      {cards?.id === theirId && <Compare mine={cards.mine} theirs={cards.theirs} className="mt-3.5" />}
 
       {/* One table rather than two cards. The two sides of a trade are one object, and
           splitting them into separate panels meant nothing on screen ever showed the
