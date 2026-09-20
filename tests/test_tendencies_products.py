@@ -44,3 +44,34 @@ def test_product_catalog_and_entitlements():
     assert [u["sku"] for u in ups] == ["trade_lab", "full_report"]
     a_la_carte = sum(p["price_cents"] for p in products.PRODUCTS if p["kind"] == "a_la_carte")
     assert products.BY_SKU["full_report"]["price_cents"] <= a_la_carte, "bundle should be the obvious deal vs buying both passes"
+
+
+def test_opening_the_free_trade_board_does_not_open_trade_lab():
+    """D3 made the Trade Finder's partner list free. The *product* is unchanged.
+
+    `edge/products.py` is the only source of truth for what is paid, and the free board is
+    a projection of a paid payload rather than a new entitlement — so the free tier still
+    grants exactly `my_team`, and Trade Lab still has to be bought.
+    """
+    from edge.engine import trade_finder
+
+    assert products.features_for([]) == {"my_team"}
+    assert not products.can([], "trade_lab")
+    assert not products.can(["waivers"], "trade_lab")
+    assert products.can(["trade_lab"], "trade_lab") and products.can(["full_report"], "trade_lab")
+    assert [u["sku"] for u in products.upsell([], "trade_lab")] == ["trade_lab", "full_report"]
+
+    paid = {"week": 2, "my_positions": {"surplus": {"RB": 40.0}, "need": {"TE": 12.0}},
+            "summary": "Team Nine is your best trade partner. They need RB.",
+            "partners": [{"team_id": "9", "team_name": "Team Nine", "owner_name": "phil",
+                          "complement": 1.84, "headline": "They need RB.",
+                          "positions": {"surplus": {"WR": 30.0}, "need": {"RB": 20.0}},
+                          "offers": [{"give_names": ["A Player"], "get_names": ["B Player"],
+                                      "fairness": 0.95, "my_gain_ros": 21.0}]}],
+            "blockers": [], "algo_version": trade_finder.ALGO_VERSION}
+    free = trade_finder.preview(paid)
+    assert free["partners"][0]["fit"] == trade_finder.BEST_FIT
+    assert "offers" not in free["partners"][0]
+    assert "A Player" not in json.dumps(free) and "B Player" not in json.dumps(free)
+    # The paid payload is untouched: preview reads, it does not strip in place.
+    assert paid["partners"][0]["offers"][0]["give_names"] == ["A Player"]

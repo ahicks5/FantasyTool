@@ -16,6 +16,12 @@ import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { Grades, LeagueSummary, Player, TeamGrades, TradeFinderResponse, TradeResult } from "@/lib/types";
 
+/* TEMPORARY: kept local so this stream does not touch `lib/vocab.ts`. The lead moves it. */
+const TRADE_COPY = {
+  /** Under the free board. Concrete about what the money buys, and it never names a player. */
+  lockTeaser: "We build the offer, grade the one you send back, and write the counter.",
+};
+
 function sortRoster(players: Player[]): Player[] {
   return [...players].sort((a, b) => (b.ros ?? b.projected ?? 0) - (a.ros ?? a.projected ?? 0));
 }
@@ -158,7 +164,10 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [paywall, setPaywall] = useState<PaywallError | null>(null);
-  const [found, setFound] = useState<TradeFinderResponse | null>(null);
+  // The API is the authority on entitlement, not the session: a caller without Trade Lab
+  // gets `{preview: true, ...}` from /trades/find — the same board with the offers taken
+  // out — rather than a 402. See `edge/engine/trade_finder.preview`.
+  const [found, setFound] = useState<(TradeFinderResponse & { preview?: boolean }) | null>(null);
   const [tab, setTab] = useState<"find" | "grade">(params.get("give") ? "grade" : "find");
 
   useEffect(() => {
@@ -251,41 +260,64 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   // Auto-run when arriving from an Action card with a prefilled offer.
   const prefilled = params.get("give") && params.get("get");
   const [autoRan, setAutoRan] = useState(false);
+  // Waits for the board before firing: on the free tier there is no grading to auto-run,
+  // and running it anyway traded a readable preview for a bare paywall.
   useEffect(() => {
-    if (!prefilled || autoRan || !mine.length || !theirs.length || !givePlayers.length || !getPlayers.length) return;
+    if (!prefilled || autoRan || !found || found.preview || !mine.length || !theirs.length || !givePlayers.length || !getPlayers.length) return;
     const id = window.setTimeout(() => {
       setAutoRan(true);
       void submit();
     }, 0);
     return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mine.length, theirs.length, autoRan]);
+  }, [mine.length, theirs.length, autoRan, found]);
 
-  if (paywall) return <Locked signedIn={signedIn} sku="trade_lab" what="Trade Lab" teaser={paywall.teaser} onUnlocked={refresh} />;
+  const preview = found?.preview === true;
+  // Only when there is no board to put it under. With one, the lock is a section of the
+  // page rather than a replacement for it.
+  if (paywall && !preview) return <Locked signedIn={signedIn} sku="trade_lab" what="Trade Lab" teaser={paywall.teaser} onUnlocked={refresh} />;
   if (error && !league) return <ErrorBox error={error} />;
   if (!league) return <SkeletonList rows={3} />;
 
+  // Free (D3): the finder's partner list, then the lock. There is no second tab to offer
+  // — "Grade an offer" is the thing being sold — so the tab bar goes with it.
+  const active = preview ? "find" : tab;
+
   return (
     <div className="grid gap-5">
-      <div className="grid grid-cols-2 gap-1 rounded-2xl border border-line bg-soft p-1" role="tablist" aria-label="Trade lab mode">
-        {(["find", "grade"] as const).map((t) => (
-          <button
-            key={t}
-            role="tab"
-            aria-selected={tab === t}
-            onClick={() => setTab(t)}
-            className={`min-h-0 rounded-xl py-2.5 text-[13px] font-bold transition-colors ${
-              tab === t ? "bg-paper text-ink shadow-[var(--shadow-card)]" : "text-muted"
-            }`}
-          >
-            {t === "find" ? "Find a trade" : "Grade an offer"}
-          </button>
-        ))}
-      </div>
+      {!preview && (
+        <div className="grid grid-cols-2 gap-1 rounded-2xl border border-line bg-soft p-1" role="tablist" aria-label="Trade lab mode">
+          {(["find", "grade"] as const).map((t) => (
+            <button
+              key={t}
+              role="tab"
+              aria-selected={tab === t}
+              onClick={() => setTab(t)}
+              className={`min-h-0 rounded-xl py-2.5 text-[13px] font-bold transition-colors ${
+                tab === t ? "bg-paper text-ink shadow-[var(--shadow-card)]" : "text-muted"
+              }`}
+            >
+              {t === "find" ? "Find a trade" : "Grade an offer"}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {tab === "find" && (found ? <TradeFinderView found={found} /> : <TradeFinderWait />)}
+      {active === "find" && (found ? <TradeFinderView found={found} preview={preview} /> : <TradeFinderWait />)}
 
-      {tab === "grade" && (
+      {/* Once, under the whole list. One lock per card would be eleven walls on a board
+          of three partners, and would read as a shakedown rather than an upsell. */}
+      {preview && (
+        <Locked
+          signedIn={signedIn}
+          sku="trade_lab"
+          what="Trade Lab"
+          teaser={paywall?.teaser ?? TRADE_COPY.lockTeaser}
+          onUnlocked={refresh}
+        />
+      )}
+
+      {active === "grade" && (
       <>
       <section className="card p-4">
         <label htmlFor="their-team" className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
@@ -529,16 +561,20 @@ function TradeBodyKeyed({ c, refresh, signedIn }: { c: Connection; refresh: () =
   return <TradeBody key={params.toString()} c={c} refresh={refresh} signedIn={signedIn} />;
 }
 
+/**
+ * No entitlement branch here any more.
+ *
+ * The room is open to everyone and the API decides what is in it: a caller with Trade Lab
+ * gets the offers, a caller without gets the same board in preview with the lock under it.
+ * `edge/products.py` is still the only thing that says which, and the 402 on `POST /trade`
+ * still holds the grade and the counter.
+ */
 export default function TradePage() {
   return (
     <AppShell section="trade" needsMe>
       {(s) => (
         <Suspense fallback={<SkeletonList rows={3} />}>
-          {s.has("trade_lab") ? (
-            <TradeBodyKeyed c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
-          ) : (
-            <Locked signedIn={s.signedIn} sku="trade_lab" what="Trade Lab" teaser="Propose any trade. We grade it, then draft a counter tuned to how that manager actually behaves." onUnlocked={s.refresh} />
-          )}
+          <TradeBodyKeyed c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
         </Suspense>
       )}
     </AppShell>

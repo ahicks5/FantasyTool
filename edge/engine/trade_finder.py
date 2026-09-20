@@ -39,6 +39,13 @@ MEANINGFUL_THEIR_GAIN = 2.0
 MIN_FAIRNESS = 0.75      # asset value balance below which the offer reads as an insult
 SIMPLICITY_BONUS = 1.5   # a 1-for-1 is far more likely to get accepted than a 2-for-1
 
+NO_DEAL = "No trade in this league helps both sides right now. Hold."
+# What a partner is called on the free board. A word, not the raw complement score: `fit 0.50`
+# is an engine internal that means nothing to a reader, and ranking is the only part of it a
+# user can act on.
+BEST_FIT = "Best fit"
+WORTH_A_CALL = "Worth a call"
+
 
 @dataclass
 class PositionProfile:
@@ -286,7 +293,7 @@ def find(league: League, my_team: Team, ros: dict[str, float],
     elif blockers:
         summary = blockers[0]["summary"]
     else:
-        summary = "No trade in this league helps both sides right now. Hold."
+        summary = NO_DEAL
     for p in partners:                      # the card already names the team; do not repeat it
         p.headline = p.headline.replace(f"{p.team.name} ", "They ")
     return {
@@ -338,3 +345,48 @@ def _blockers(league: League, my_team: Team, mine: PositionProfile, ros: dict[st
             })
     out.sort(key=lambda d: -d["my_gain_ros"])
     return out[:limit]
+
+
+def fit_tier(rank: int) -> str:
+    """The word a free user reads in place of the complement score."""
+    return BEST_FIT if rank == 0 else WORTH_A_CALL
+
+
+def preview(found: dict) -> dict:
+    """The free half of the board: who to call and why, with nothing you could act on.
+
+    Free is the *shape* of the room — what you can spare, where you are thin, and which
+    rosters are the mirror image of yours. Paid is the *move*: which players, what each
+    lineup gains, and whether the value balances. So this keeps each partner's name, its
+    rank as a word, and its has/needs, and drops every offer, every player name, every
+    rest-of-season figure and every fairness number.
+
+    Two things it drops that are easy to miss:
+
+    - `blockers`, which names the player you want and the manager holding him.
+    - the `summary`, when it came from a blocker rather than a partner, for the same reason.
+
+    Positions come out as ordered lists rather than `{"RB": 41.2}`: the magnitudes are
+    rest-of-season points and the UI only ever reads the keys.
+    """
+    def _positions(d: dict | None) -> dict:
+        d = d or {}
+        return {"surplus": list((d.get("surplus") or {})), "need": list((d.get("need") or {}))}
+
+    partners = [{
+        "team_id": p["team_id"],
+        "team_name": p["team_name"],
+        "owner_name": p.get("owner_name"),
+        "fit": fit_tier(i),
+        "headline": p.get("headline") or "",
+        "positions": _positions(p.get("positions")),
+    } for i, p in enumerate(found.get("partners") or [])]
+
+    return {
+        "preview": True,
+        "week": found.get("week"),
+        "my_positions": _positions(found.get("my_positions")),
+        "summary": (found.get("summary") or NO_DEAL) if partners else NO_DEAL,
+        "partners": partners,
+        "algo_version": found.get("algo_version") or ALGO_VERSION,
+    }

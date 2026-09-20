@@ -202,3 +202,103 @@ def test_an_offer_that_does_nothing_for_them_says_so_in_words(league, ros):
             for o in partner["offers"]:
                 if "both_sides_improve" in o["reason_codes"]:
                     assert "sweetener" not in o["why"]
+
+
+# ---- the free half of the board (D3) -------------------------------------------------
+#
+# `preview` is what an unpaid caller gets from /trades/find. Everything below is about the
+# one thing that must never slip: it may say who to call and what they are short at, and it
+# may not say a single name you could put on the table.
+
+def _every_player_name(league) -> set[str]:
+    return {p.name for t in league.teams for p in t.players}
+
+
+def _keys(node) -> set[str]:
+    """Every dict key anywhere in a payload. Checking keys beats grepping the JSON text:
+    'roster' contains 'ros' and a headline is allowed to say it."""
+    if isinstance(node, dict):
+        return set(node) | {k for v in node.values() for k in _keys(v)}
+    if isinstance(node, list):
+        return {k for v in node for k in _keys(v)}
+    return set()
+
+
+def test_preview_keeps_the_shape_of_the_room(league, ros, profiles):
+    found = trade_finder.find(league, league.teams[1], ros, profiles)
+    assert found["partners"], "fixture league should yield trade partners"
+    prev = trade_finder.preview(found)
+
+    assert prev["preview"] is True
+    assert set(prev) == {"preview", "week", "my_positions", "summary", "partners", "algo_version"}
+    assert prev["week"] == found["week"] and prev["algo_version"] == found["algo_version"]
+    assert prev["summary"] == found["summary"]
+    # Positions are the words, in the engine's own order, and nothing else.
+    assert prev["my_positions"]["surplus"] == list(found["my_positions"]["surplus"])
+    assert prev["my_positions"]["need"] == list(found["my_positions"]["need"])
+
+    assert len(prev["partners"]) == len(found["partners"])
+    for i, (p, src) in enumerate(zip(prev["partners"], found["partners"])):
+        assert set(p) == {"team_id", "team_name", "owner_name", "fit", "headline", "positions"}
+        assert p["team_id"] == src["team_id"] and p["team_name"] == src["team_name"]
+        assert p["headline"] == src["headline"]
+        assert p["positions"]["surplus"] == list(src["positions"]["surplus"])
+        assert p["fit"] == (trade_finder.BEST_FIT if i == 0 else trade_finder.WORTH_A_CALL)
+    json.dumps(prev)
+
+
+def test_preview_carries_no_offer_no_player_and_no_number(league, ros, profiles):
+    """The whole point of the free tier: the fit is visible, the move is not."""
+    names = _every_player_name(league)
+    banned = {"players", "give", "get", "give_names", "get_names", "give_players", "get_players",
+              "offers", "fairness", "score", "verdict", "complement", "blockers",
+              "my_gain_ros", "their_gain_ros", "target", "best_piece"}
+    for t in league.teams:
+        prev = trade_finder.preview(trade_finder.find(league, t, ros, profiles))
+        for k in _keys(prev):
+            assert k not in banned, f"{k!r} leaked into the free preview"
+        for n in names:
+            # Substring, not equality: a name inside a sentence is the leak that matters.
+            assert n not in json.dumps(prev), f"the free preview names {n}"
+        for p in prev["partners"]:
+            assert "offers" not in p and "complement" not in p
+            # The tier word, never the raw fit score.
+            assert p["fit"] in (trade_finder.BEST_FIT, trade_finder.WORTH_A_CALL)
+        # No rest-of-season magnitudes anywhere: positions are lists of position names.
+        for d in [prev["my_positions"]] + [p["positions"] for p in prev["partners"]]:
+            for side in ("surplus", "need"):
+                assert isinstance(d[side], list)
+                assert all(isinstance(x, str) for x in d[side])
+
+
+def test_preview_never_leaks_the_blocker_sentence(league, ros, profiles):
+    """With no partner, `find` puts the blocker's sentence — which names the player you
+    want and who holds him — in `summary`. The free board must not repeat it."""
+    me = league.teams[0]
+    inflated = dict(ros)
+    for t in league.teams:
+        if t.id == me.id:
+            continue
+        for p in t.players:
+            inflated[p.id] = inflated.get(p.id, 0.0) * 50 + 5000
+    found = trade_finder.find(league, me, inflated, profiles)
+    assert found["partners"] == [] and found["blockers"], "expected a blocked league"
+    assert found["blockers"][0]["target"] in found["summary"]
+
+    prev = trade_finder.preview(found)
+    assert prev["partners"] == []
+    assert prev["summary"] == trade_finder.NO_DEAL
+    blob = json.dumps(prev)
+    assert "blockers" not in blob
+    for n in _every_player_name(league):
+        assert n not in blob
+
+
+def test_preview_survives_an_empty_board():
+    """Week 1, a one-team league, a finder that found nothing: a shape, never a crash."""
+    prev = trade_finder.preview({"week": 1, "my_positions": {"surplus": {}, "need": {}},
+                                 "summary": "", "partners": [], "blockers": [],
+                                 "algo_version": trade_finder.ALGO_VERSION})
+    assert prev["partners"] == [] and prev["summary"] == trade_finder.NO_DEAL
+    assert prev["my_positions"] == {"surplus": [], "need": []}
+    assert trade_finder.preview({})["algo_version"] == trade_finder.ALGO_VERSION

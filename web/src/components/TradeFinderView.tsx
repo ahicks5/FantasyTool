@@ -15,13 +15,60 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { FinderOffer, Player, TradeFinderResponse, TradePartner } from "@/lib/types";
+import type { FinderOffer, Player } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { IconChevron, IconTrade } from "./icons";
 import { Eyebrow, Skeleton, Spinner, Why } from "./ui";
 
-function PosChips({ label, map, tone, max = 3 }: { label: string; map: Record<string, number>; tone: "start" | "sit"; max?: number }) {
-  const entries = Object.keys(map).slice(0, max);
+/* TEMPORARY: lives here so this stream does not touch `lib/vocab.ts`. The lead moves it. */
+const TRADE_COPY = {
+  eyebrow: "Trade lab",
+  previewEyebrow: "GM's Office",
+  lead: "Best fit first. Tap a team for its offers.",
+  previewLead: "Best fit first.",
+  /** The one line that ends every free partner card. Says where the move is, does not beg. */
+  previewOffers: "Offers are in Trade Lab.",
+  bestFit: "Best fit",
+  worthACall: "Worth a call",
+};
+
+/**
+ * What the board needs, whichever payload it was handed.
+ *
+ * Two shapes arrive here: the paid finder, and the free preview from `trade_finder.preview`
+ * — same partners, same has/needs, no offers and no numbers. Both are structurally this,
+ * so the board is one component rather than two that drift apart. `offers` absent *is* the
+ * free board; `preview` is passed explicitly rather than inferred from an empty list,
+ * because "we found nothing" and "you have not paid" are different sentences.
+ */
+export type BoardPositions = { surplus: Record<string, number> | string[]; need: Record<string, number> | string[] };
+
+export interface BoardPartner {
+  team_id: string;
+  team_name: string;
+  owner_name?: string | null;
+  headline: string;
+  positions: BoardPositions;
+  /** Preview only: the tier word. Paid falls back to rank, which is the same thing. */
+  fit?: string;
+  offers?: FinderOffer[];
+}
+
+export interface Board {
+  week: number;
+  my_positions: BoardPositions;
+  summary: string;
+  partners: BoardPartner[];
+}
+
+/** Positions arrive keyed by rest-of-season magnitude when paid and as a plain ordered list
+ *  when free. Only the order ever mattered. */
+function posList(v: Record<string, number> | string[] | undefined): string[] {
+  return Array.isArray(v) ? v : Object.keys(v ?? {});
+}
+
+function PosChips({ label, map, tone, max = 3 }: { label: string; map: Record<string, number> | string[]; tone: "start" | "sit"; max?: number }) {
+  const entries = posList(map).slice(0, max);
   if (!entries.length) return null;
   return (
     <span className="flex min-w-0 items-center gap-1.5">
@@ -134,14 +181,43 @@ function Offer({ o }: { o: FinderOffer }) {
 }
 
 /**
+ * The top of a partner card: the tier, the team, and the shape of their roster.
+ *
+ * All spans, because the paid card wraps it in a `<button>` and a `<div>` inside a button
+ * is invalid HTML that React will shout about in dev.
+ *
+ * The raw complement score used to sit at the end of this row as "fit 0.50". It is an
+ * engine internal on a 0–2ish scale with no units and no ceiling a reader could guess at,
+ * so two teams a whole tier apart looked like rounding. The tier word says the same thing
+ * and says it in English.
+ */
+function PartnerHead({ tier, p }: { tier: string; p: BoardPartner }) {
+  return (
+    <span className="block min-w-0">
+      <span className="flex items-center gap-2">
+        <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.12em] text-muted">{tier}</span>
+        <span aria-hidden className="h-px flex-1 bg-line" />
+      </span>
+      <span className="display mt-1 block truncate text-[20px] leading-tight">{p.team_name}</span>
+      <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <PosChips label="Has" map={p.positions.surplus} tone="start" max={2} />
+        <PosChips label="Needs" map={p.positions.need} tone="sit" max={2} />
+      </span>
+    </span>
+  );
+}
+
+/**
  * A partner, with their offers.
  *
  * Open or shut, and only the first one starts open. A board of four partners with every
  * offer expanded is a page you scroll rather than a page you read — the point of the
  * board is to see who is worth a call, then open the one you want.
  */
-function PartnerCard({ p, index, open, onToggle }: { p: TradePartner; index: number; open: boolean; onToggle: () => void }) {
-  const best = p.offers[0];
+function PartnerCard({ p, index, open, onToggle, preview = false }: { p: BoardPartner; index: number; open: boolean; onToggle: () => void; preview?: boolean }) {
+  const offers = p.offers ?? [];
+  const best = offers[0];
+  const tier = p.fit ?? (index === 0 ? TRADE_COPY.bestFit : TRADE_COPY.worthACall);
   return (
     <li id={`partner-${p.team_id}`} className={`card min-w-0 scroll-mt-20 overflow-hidden p-0 print print-${Math.min(index + 1, 5)}`}>
       <div className="flex min-w-0">
@@ -152,55 +228,60 @@ function PartnerCard({ p, index, open, onToggle }: { p: TradePartner; index: num
         </div>
 
         <div className="min-w-0 flex-1">
-          {/* The whole header is the toggle, so the tap target is the card, not a chevron. */}
-          <button
-            onClick={onToggle}
-            aria-expanded={open}
-            aria-controls={`offers-${p.team_id}`}
-            className="flex min-h-0 w-full items-start gap-3 p-4 text-left"
-          >
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-2">
-                <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.12em] text-muted">
-                  {index === 0 ? "Best fit" : "Worth a call"}
-                </span>
-                <span aria-hidden className="h-px flex-1 bg-line" />
-                <span className="tnum shrink-0 text-[11px] font-bold text-muted">fit {p.complement.toFixed(2)}</span>
-              </span>
-              <span className="display mt-1 block truncate text-[20px] leading-tight">{p.team_name}</span>
-              <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                <PosChips label="Has" map={p.positions.surplus} tone="start" max={2} />
-                <PosChips label="Needs" map={p.positions.need} tone="sit" max={2} />
-              </span>
-              {/* Shut, the card still says what is inside it. */}
-              {!open && best && (
-                <span className="mt-2 block truncate text-[12px] font-bold text-muted">
-                  {p.offers.length > 1 ? `${p.offers.length} offers · ` : ""}
-                  {best.give_names.join(" + ")} → {best.get_names.join(" + ")}
-                </span>
-              )}
-            </span>
-            <span
-              aria-hidden
-              className={`mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line-2 text-muted transition-transform ${open ? "rotate-90" : ""}`}
-            >
-              <IconChevron size={14} strokeWidth={2.6} />
-            </span>
-          </button>
-
-          {open && (
-            <div id={`offers-${p.team_id}`} className="border-t border-line">
-              {/* The hero already carries the best partner's headline — printing it again
-                  as the first thing inside the first card reads like a stutter. */}
-              {index > 0 && <p className="px-4 pt-3 text-[13px] leading-snug text-muted">{p.headline}</p>}
-              <ul className="divide-y divide-line">
-                {p.offers.map((o) => (
-                  <li key={o.give.join() + o.get.join()}>
-                    <Offer o={o} />
-                  </li>
-                ))}
-              </ul>
+          {/* Free, there is nothing to open: the card is the whole card. Rendering it as a
+              button that does nothing is the worst of both — it invites a tap and answers
+              with a shrug. The tier word, the shape of their roster, and one line saying
+              where the move lives. */}
+          {preview ? (
+            <div className="p-4">
+              <PartnerHead tier={tier} p={p} />
+              <p className="mt-2 text-[13px] leading-snug text-muted">{p.headline}</p>
+              <p className="mt-2.5 border-t border-line pt-2.5 text-[12px] font-bold text-muted">
+                {TRADE_COPY.previewOffers}
+              </p>
             </div>
+          ) : (
+            <>
+              {/* The whole header is the toggle, so the tap target is the card, not a chevron. */}
+              <button
+                onClick={onToggle}
+                aria-expanded={open}
+                aria-controls={`offers-${p.team_id}`}
+                className="flex min-h-0 w-full items-start gap-3 p-4 text-left"
+              >
+                <span className="min-w-0 flex-1">
+                  <PartnerHead tier={tier} p={p} />
+                  {/* Shut, the card still says what is inside it. */}
+                  {!open && best && (
+                    <span className="mt-2 block truncate text-[12px] font-bold text-muted">
+                      {offers.length > 1 ? `${offers.length} offers · ` : ""}
+                      {best.give_names.join(" + ")} → {best.get_names.join(" + ")}
+                    </span>
+                  )}
+                </span>
+                <span
+                  aria-hidden
+                  className={`mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line-2 text-muted transition-transform ${open ? "rotate-90" : ""}`}
+                >
+                  <IconChevron size={14} strokeWidth={2.6} />
+                </span>
+              </button>
+
+              {open && (
+                <div id={`offers-${p.team_id}`} className="border-t border-line">
+                  {/* The hero already carries the best partner's headline — printing it again
+                      as the first thing inside the first card reads like a stutter. */}
+                  {index > 0 && <p className="px-4 pt-3 text-[13px] leading-snug text-muted">{p.headline}</p>}
+                  <ul className="divide-y divide-line">
+                    {offers.map((o) => (
+                      <li key={o.give.join() + o.get.join()}>
+                        <Offer o={o} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -216,24 +297,31 @@ function PartnerCard({ p, index, open, onToggle }: { p: TradePartner; index: num
  * copy under this — but the line the eye lands on first is short enough to be read at a
  * glance, which is the entire job of a headline.
  */
-function headline(found: TradeFinderResponse): string {
+function headline(found: Board): string {
   const n = found.partners.length;
   if (!n) return "No deal on the board";
   return n === 1 ? "One call to make" : `${n} calls to make`;
 }
 
-export function TradeFinderView({ found }: { found: TradeFinderResponse }) {
+/**
+ * The board.
+ *
+ * `preview` is the free half (D3): the same partners, ranked the same way, with the offers
+ * taken out. It is a different *payload*, not a different screen — a free reader should see
+ * the room they are standing in, then the one thing they have to buy to act in it.
+ */
+export function TradeFinderView({ found, preview = false }: { found: Board; preview?: boolean }) {
   // The best fit opens; the rest are a list you choose from. Keyed by team id rather
   // than index so opening one cannot follow the wrong card if the board re-ranks.
   const [open, setOpen] = useState<string | null>(found.partners[0]?.team_id ?? null);
-  const spare = useMemo(() => Object.keys(found.my_positions.surplus).slice(0, 3), [found]);
-  const short = useMemo(() => Object.keys(found.my_positions.need).slice(0, 3), [found]);
+  const spare = useMemo(() => posList(found.my_positions.surplus).slice(0, 3), [found]);
+  const short = useMemo(() => posList(found.my_positions.need).slice(0, 3), [found]);
 
   return (
     <div className="grid min-w-0 gap-3.5">
       <section className="hero callsheet p-5">
         <div className="flex items-center gap-2">
-          <Eyebrow className="shrink-0">Trade lab</Eyebrow>
+          <Eyebrow className="shrink-0">{preview ? TRADE_COPY.previewEyebrow : TRADE_COPY.eyebrow}</Eyebrow>
           <span aria-hidden className="h-px flex-1 bg-white/10" />
           <span className="tnum shrink-0 text-[10px] font-black uppercase tracking-[0.12em] text-white/50">Week {found.week}</span>
         </div>
@@ -249,7 +337,7 @@ export function TradeFinderView({ found }: { found: TradeFinderResponse }) {
       </section>
 
       {found.partners.length > 0 && (
-        <p className="text-[13px] leading-relaxed text-muted">Best fit first. Tap a team for its offers.</p>
+        <p className="text-[13px] leading-relaxed text-muted">{preview ? TRADE_COPY.previewLead : TRADE_COPY.lead}</p>
       )}
 
       <ol className="grid gap-3.5">
@@ -258,6 +346,7 @@ export function TradeFinderView({ found }: { found: TradeFinderResponse }) {
             key={p.team_id}
             p={p}
             index={i}
+            preview={preview}
             open={open === p.team_id}
             onToggle={() => setOpen((cur) => (cur === p.team_id ? null : p.team_id))}
           />

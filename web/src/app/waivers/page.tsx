@@ -22,9 +22,11 @@ import { WaiversView } from "@/components/WaiversView";
 import { ErrorBox, H2, Opening, useHeldWait } from "@/components/ui";
 import { getWaiverPlan, getWaivers, PaywallError } from "@/lib/api";
 import { once, useCached } from "@/lib/cache";
+import { paywallTeaser } from "@/lib/teaser";
 import type { Connection } from "@/lib/storage";
 import type { WaiverPlanResponse, Waivers } from "@/lib/types";
 
+/** The fallback, for a 402 that arrived without one. Never the first choice: see below. */
 const TEASER =
   "We price every add against the player you would drop, tell you what to bid, and line up a fallback claim for when you lose the first one.";
 
@@ -40,7 +42,10 @@ function WaiverPlan({ c, refresh, signedIn }: { c: Connection; refresh: () => vo
     () => getWaiverPlan(c.platform, c.league_id, c.team_id),
   );
 
+  // Held back until the plan lands. The board is the same paid feature, so firing it for
+  // a locked reader buys a second 402 and nothing else.
   useEffect(() => {
+    if (!plan) return;
     let alive = true;
     once(`waivers:${c.platform}:${c.league_id}:${c.team_id}`, () => getWaivers(c.platform, c.league_id, c.team_id))
       .then((b) => alive && setBoard(b))
@@ -48,14 +53,14 @@ function WaiverPlan({ c, refresh, signedIn }: { c: Connection; refresh: () => vo
     return () => {
       alive = false;
     };
-  }, [c.platform, c.league_id, c.team_id]);
+  }, [c.platform, c.league_id, c.team_id, plan]);
 
   const waiting = useHeldWait(!!plan);
 
   // The API is the authority on entitlement, so a 402 here still locks the plan even
   // when the session thought otherwise. It replaces the plan, not the page.
   if (cause instanceof PaywallError)
-    return <Locked signedIn={signedIn} sku="waivers" what="Wire Pass" teaser={cause.teaser} onUnlocked={refresh} />;
+    return <Locked signedIn={signedIn} sku="waivers" what="Wire Pass" teaser={paywallTeaser(cause, TEASER)} onUnlocked={refresh} />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (waiting || !plan) return <Opening />;
 
@@ -87,11 +92,15 @@ export default function WaiversPage() {
       {(s) => (
         <div className="grid min-w-0 gap-7">
           <PlayerSearch c={s.connection!} />
-          {s.has("waivers") ? (
-            <WaiverPlan c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
-          ) : (
-            <Locked signedIn={s.signedIn} sku="waivers" what="Wire Pass" teaser={TEASER} onUnlocked={s.refresh} />
-          )}
+          {/* One branch, not two.
+              Asking the session whether this reader has Wire Pass and rendering the
+              constant when it says no looked like a saved request. What it actually did
+              was throw away the only sentence on this page that is about *this* roster:
+              the engine computes a concrete, name-free teaser for the 402 and the locked
+              reader — the only one it was ever written for — never saw it. So the read
+              always happens, and `WaiverPlan` renders the plan or the lock depending on
+              what the API answers. `edge/products.py` still decides which. */}
+          <WaiverPlan c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
         </div>
       )}
     </AppShell>
