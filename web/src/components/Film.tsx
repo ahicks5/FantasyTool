@@ -60,14 +60,18 @@ function SeasonPanel({ season }: { season: SeasonView }) {
         <span className="shrink-0 text-[11px] font-bold text-white/55">{COPY.weeksPlayed(season.played)}</span>
       </div>
 
-      <div className="mt-2 flex items-start gap-5">
-        <HeroStat label={COPY.recordLabel} value={recordLine ?? "—"} />
-        <HeroStat
-          label={COPY.rankLabel}
-          value={pointsRank === null ? "—" : ordinal(pointsRank)}
-          sub={pointsRank === null ? undefined : `of ${leagueSize}`}
-        />
-      </div>
+      {/* Preseason has no record and no rank, and two em dashes under two labels say less
+          than the weeks-played line above them already does. */}
+      {(recordLine !== null || pointsRank !== null) && (
+        <div className="mt-2 flex items-start gap-5">
+          <HeroStat label={COPY.recordLabel} value={recordLine ?? "—"} />
+          <HeroStat
+            label={COPY.rankLabel}
+            value={pointsRank === null ? "—" : ordinal(pointsRank)}
+            sub={pointsRank === null ? undefined : `of ${leagueSize}`}
+          />
+        </div>
+      )}
 
       {luck && (
         <>
