@@ -83,8 +83,10 @@ function SeasonPanel({ season }: { season: SeasonView }) {
               note={COPY.rankValue(pointsRank as number, leagueSize)}
             />
           </div>
-          <p className="mt-3 text-[15px] font-bold leading-snug text-white">{luck.line}</p>
-          <p className="mt-1 text-[12px] leading-snug text-white/60">{COPY.luckNote}</p>
+          {/* The luck sentence itself is NOT repeated here. /report now opens with the free
+              table, which reads the same RECAP_COPY.luck line above it, so a paid reader met
+              this sentence a screen ago. The bars and the note are what this panel adds. */}
+          <p className="mt-3 text-[12px] leading-snug text-white/60">{COPY.luckNote}</p>
         </>
       )}
     </section>

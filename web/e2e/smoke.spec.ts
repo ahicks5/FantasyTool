@@ -128,7 +128,11 @@ const PAGES: PageCase[] = [
       // By destination, not by label: the CTA's words live in vocab.ts and have already
       // changed once ("Connect your league" -> "Open the Penthouse · free"), which left
       // this assertion looking for a link that no longer existed.
-      await expect(page.locator('a[href="/connect"]').first()).toBeVisible();
+      // `.first()` was the header pill until it started pointing at /connect too, and that
+      // pill is deliberately hidden below 512px -- so the first match became an invisible
+      // one and this went red while the page was fine. Ask the real question instead: at
+      // this width, is there a way in that a thumb can actually reach?
+      await expect(page.locator('a[href="/connect"]:visible').first()).toBeVisible();
     },
   },
   {
@@ -189,7 +193,12 @@ const PAGES: PageCase[] = [
       }
       // Every row is a door. The film's is the one with nothing to expand, so if rooms ever
       // stop linking out it is the row that proves it — there is no other way into it here.
-      await expect(sheet.getByRole("link", { name: `Go to ${SECTIONS.report.title}` })).toBeVisible();
+      // Exact, because the standing line under the hero also links to the film and its
+      // spoken label ends with these same words. Two doors into one room is correct; a
+      // substring match that cannot tell them apart is not.
+      await expect(
+        sheet.getByRole("link", { name: `Go to ${SECTIONS.report.title}`, exact: true }),
+      ).toBeVisible();
       // The injury banner is the app's loudest surface and this fixture's starters are all
       // clear, so it must not be here. Asserting the silence rather than the shout on
       // purpose: the way an alert dies is by firing every week until nobody reads it, and
