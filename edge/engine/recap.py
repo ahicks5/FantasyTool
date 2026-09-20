@@ -193,7 +193,13 @@ def build(league: League, team_id: str, weeks: Iterable[PlayedWeek],
     reader who joined last Tuesday should see.
     """
     projected_by_week = projected_by_week or {}
-    played = sorted((w for w in weeks if w.played), key=lambda w: -w.week)
+    # Over, not merely started. `PlayedWeek.played` only asks whether anybody has scored,
+    # which goes true the moment the first Sunday touchdown lands -- so on a game day the
+    # week in progress arrived here fully formed and was written up as a finished result.
+    # A live 7-0 first quarter was published as a win. The league's own `week` is the one
+    # still being played, and every other room in the app is about it; the film is the room
+    # for the ones that are over, so it starts where they stop.
+    played = sorted((w for w in weeks if w.week < league.week and w.played), key=lambda w: -w.week)
     team = league.team(team_id)
     record = None
     if team and (team.wins or team.losses or team.ties):

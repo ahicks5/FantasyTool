@@ -315,7 +315,8 @@ def test_a_second_league_with_a_different_layout_works():
     assert pw.played and len(pw.totals) == 10
     league = build_league(lr, us, [{"roster_id": m["roster_id"], "owner_id": None,
                                     "players": m["players"], "starters": m["starters"], "settings": {}}
-                                   for m in matchups], players, week=1)
+                                   for m in matchups], players, week=2)
+    # Week 2 is the league's current week, so week 1 is over and the film may report it.
     out = recap.build(league, "1", [pw])
     assert out["league_size"] == 10 and len(out["weeks"]) == 1
     w = out["weeks"][0]
@@ -430,3 +431,28 @@ def test_the_payload_is_exactly_the_shape_the_web_declares(season):
     assert set(week["starters"][0]) == _interface("RecapStarter")
     assert set(week["starters"][0]["player"]) <= _interface("PlayerRef")
     assert set(week["bench"][0]) == _interface("BenchScore")
+
+
+def test_the_week_still_being_played_is_not_in_the_film(raw):
+    """A live week arrives looking finished, and was published as a result.
+
+    `PlayedWeek.played` only asks whether anybody has scored, which goes true with the
+    first Sunday touchdown. On a game day that made the week in progress a finished row:
+    the live API returned a 7.0-0.0 scoreline for an hour-old game as `"won": true`. The
+    film is the room for weeks that are over, and the league's own `week` is the one that
+    is not.
+    """
+    base = FIX / "sleeper" / "replay_week1"
+    lr, us = _load(base / "superflex/league.json"), _load(base / "superflex/users.json")
+    players = _load(base / "players_subset.json")
+    matchups = _load(base / "superflex/matchups_1.json")
+    pw = service._sleeper_played_week(lr, us, players, 1, matchups)
+    assert pw.played, "this fixture really is scored; the point is that scored is not over"
+
+    rosters = [{"roster_id": m["roster_id"], "owner_id": None, "players": m["players"],
+                "starters": m["starters"], "settings": {}} for m in matchups]
+    live = build_league(lr, us, rosters, players, week=1)
+    assert recap.build(live, "1", [pw])["weeks"] == [], "week 1 is still being played"
+
+    over = build_league(lr, us, rosters, players, week=2)
+    assert len(recap.build(over, "1", [pw])["weeks"]) == 1, "and it counts once it is done"
