@@ -224,6 +224,68 @@ export function sheetStatus(called: number, total: number): string {
   return `${called} of ${total} called`;
 }
 
+/* -------------------------------------------------- the owner's standing ---
+   "C · 8th of 12 · 0-2" — one line of season context under the call sheet's
+   hero, so "how am I doing" is answered on the screen people actually open
+   rather than only inside a tab nobody taps.
+
+   Two sources, because no single payload carries both halves: the letter and
+   the rank are the free scorecard (`/team/{id}/grades`), the record is the
+   league summary the app already reads when a league is connected. Either half
+   can be missing — a league whose connector could not read a record, a
+   scorecard that failed — and the line has to stay true rather than print a
+   placeholder, so the parts assemble here and a caller renders whatever came
+   back. Nothing is inferred: a record we do not have is a segment that is not
+   on the line, never "0-0".
+
+   No points, no projection, no claim about what the grade predicts. It is a
+   read, which is also why it never wears a stamp.                             */
+
+export interface StandingParts {
+  /** The roster's letter grade, as the grades endpoint states it. */
+  grade: string;
+  /** Where that roster ranks on strength, out of how many teams. */
+  rank: number;
+  leagueSize: number;
+  /** "0-2", or "1-1-1" in a league with ties. Null when nothing read it. */
+  record?: string | null;
+}
+
+/** "1st", "2nd", "3rd" — and 11th/12th/13th, which the last-digit rule gets wrong. */
+export function ordinal(n: number): string {
+  const rest = n % 100;
+  if (rest >= 11 && rest <= 13) return `${n}th`;
+  return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
+}
+
+/**
+ * The line as it is printed: "C · 8th by roster · 0-2".
+ *
+ * "by roster" is not decoration. The rank is a rest-of-season *strength* rank
+ * (engine/grades.py), and it prints beside a win-loss record, so without the
+ * word the line reads as league position — a claim we are not making, and one
+ * the fixtures actively contradict ("A · 1st by roster · 0-2"). Andrew chose
+ * the word over dropping the rank or waiting on a real standings rank.
+ */
+export function standingLine(s: StandingParts): string {
+  const parts = [s.grade, `${ordinal(s.rank)} by roster`];
+  if (s.record) parts.push(s.record);
+  return parts.join(" · ");
+}
+
+/**
+ * The same facts said out loud, for the label on the link.
+ *
+ * The printed line is three fragments separated by dots, which a screen reader
+ * runs together into "C 8th of 12 0-2" — three numbers and no nouns. It also
+ * cannot say *what* the rank is a rank of, and the one thing a rank beside a
+ * win-loss record will be read as is the standings. So the label names both.
+ */
+export function standingLabel(s: StandingParts): string {
+  const head = `Roster grade ${s.grade}, ranked ${ordinal(s.rank)} of ${s.leagueSize} on strength.`;
+  return s.record ? `${head} Record ${s.record}.` : head;
+}
+
 /**
  * "a" or "an" for a phrase. Spelling is not the rule — sound is — so the vowel-letter
  * shortcut gets "an unusual" and "a hour" wrong. The cases below are the ones English

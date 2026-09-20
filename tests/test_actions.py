@@ -1,5 +1,6 @@
 import copy
 import json
+import re
 from pathlib import Path
 import pytest
 
@@ -24,7 +25,7 @@ def test_free_user_sees_lineup_actions_and_locked_teasers(league):
     locked = [a for a in feed["actions"] if a["locked"]]
     assert locked and all(a["players"] == [] for a in locked), "teasers must not leak names"
     assert [a["priority"] for a in feed["actions"]] == list(range(1, len(feed["actions"]) + 1))
-    assert feed["summary"].startswith("Pending move")
+    assert re.fullmatch(r"\d+ moves? to make", feed["summary"]), feed["summary"]
     assert feed["algo_version"] == actions.ALGO_VERSION
     json.dumps(feed)
 
@@ -220,6 +221,32 @@ def test_a_quiet_week_gets_one_short_validating_line(league, monkeypatch):
     assert feed["summary"] == "All settled."
     # The constraint that broke the old copy: one short line, not two sentences.
     assert "." not in feed["summary"][:-1], f"two sentences again: {feed['summary']!r}"
+
+
+def test_the_headline_counts_the_moves_and_agrees_with_itself(league):
+    """The hero reads "{n} move{s} to make", and n is the sheet's own count of moves.
+
+    Two things can rot here independently. The number can drift from the list underneath it
+    -- the old copy counted `moves`, which excludes holds, and a reader who counts the cards
+    on screen has to get the same answer. And the plural can be hard-coded, which nobody
+    notices until the one week a team has exactly one call and the app says "1 moves".
+    `limit=1` is what forces that week to exist against a fixture that never produces it.
+    """
+    ros, byes = _ros(league)
+    seen_singular = seen_plural = False
+    for tm in league.teams:
+        for ents in ({"my_team"}, {"my_team", "waivers", "trade_lab"}):
+            for limit in (1, 5):
+                feed = actions.build(league, tm, ros, byes, entitlements=ents, limit=limit)
+                moves = [a for a in feed["actions"] if a["type"] != "hold"]
+                if not moves:
+                    assert feed["summary"] == "All settled."
+                    continue
+                word = "move" if len(moves) == 1 else "moves"
+                assert feed["summary"] == f"{len(moves)} {word} to make", feed["summary"]
+                seen_singular |= len(moves) == 1
+                seen_plural |= len(moves) > 1
+    assert seen_singular and seen_plural, "fixture exercised only one side of the plural"
 
 
 def test_the_hero_headline_fits_one_line_on_a_phone(league):

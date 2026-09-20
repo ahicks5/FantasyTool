@@ -165,6 +165,17 @@ const SEGMENTS: Record<Confidence, number> = { Lock: 3, Lean: 2, "Coin flip": 1 
  * The headline form of a confidence tag: the same three bars, stamped. Shown on
  * the card for a call you have to make. Dense lists keep `ConfidencePill`.
  */
+/* TEMPORARY: moves to lib/vocab.ts in Part 4, beside LineupView's LINEUP_COPY and
+   edge/engine/actions.py's HIT_LINE. The three must stay identical — the depth chart,
+   the call-sheet card and this tooltip are the same sentence on three surfaces.
+   A sentence, not a rendered percentage: the figure is a full-season measurement
+   (docs/CALIBRATION.md, 2025 weeks 1-17), never a property of last week. */
+const HIT_TITLE: Record<Confidence, string> = {
+  Lock: "Margins this size were right about 3 times in 4 across last season.",
+  Lean: "Margins this size were right about 3 times in 5 across last season.",
+  "Coin flip": "Margins this size were a coin flip across last season.",
+};
+
 export function ConfidenceStamp({ value, hit, slam = false }: { value: Confidence; hit?: number; slam?: boolean }) {
   const filled = SEGMENTS[value] ?? 1;
   return (
@@ -176,7 +187,7 @@ export function ConfidenceStamp({ value, hit, slam = false }: { value: Confidenc
       <span
         className="flex items-center gap-[2px]"
         aria-hidden
-        title={hit !== undefined ? `Margins this size were right about ${Math.round(hit * 100)}% of the time last week` : undefined}
+        title={hit !== undefined ? HIT_TITLE[value] : undefined}
       >
         {[0, 1, 2].map((i) => (
           <span key={i} className={`h-[10px] w-[3px] ${i < filled ? "bg-current" : "bg-current opacity-25"}`} />
@@ -192,7 +203,7 @@ export function ConfidencePill({ value, hit }: { value: Confidence; hit?: number
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full py-[3px] pl-2 pr-2.5 text-[11px] font-black uppercase tracking-wider ${confidenceClass(value)}`}
-      title={hit !== undefined ? `Margins this size were right about ${Math.round(hit * 100)}% of the time last week` : undefined}
+      title={hit !== undefined ? HIT_TITLE[value] : undefined}
     >
       <span className="flex items-center gap-[2px]" aria-hidden>
         {[0, 1, 2].map((i) => (

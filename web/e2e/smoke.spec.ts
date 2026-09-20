@@ -200,11 +200,17 @@ const PAGES: PageCase[] = [
       // card's own Why? toggle by accident.
       const toggles = sheet.locator("section button[aria-expanded]");
       expect(await toggles.count(), "no group on the sheet had anything to open").toBeGreaterThan(0);
-      await toggles.first().click();
+      // A bench with calls on it arrives open, so the cards are on screen before anything
+      // is clicked. That is the whole point of the change and the thing that must not
+      // silently regress back to a collapsed home screen.
+      await expect(toggles.first()).toHaveAttribute("aria-expanded", "true");
       // At least one action card, and cards are <article>, not skeletons.
       const cards = page.locator("main article");
       await expect(cards.first()).toBeVisible();
       expect(await cards.count()).toBeGreaterThan(0);
+      // The caret still works: it folds what it opened.
+      await toggles.first().click();
+      await expect(toggles.first()).toHaveAttribute("aria-expanded", "false");
     },
   },
   {

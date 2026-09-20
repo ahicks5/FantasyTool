@@ -11,10 +11,13 @@ import {
   formatCents,
   kickoffUrgency,
   nextKickoff,
+  ordinal,
   pct,
   reservedWidth,
   sheetStatus,
   signed,
+  standingLabel,
+  standingLine,
   URGENCY_LABEL,
   verdictClass,
   withArticle,
@@ -199,4 +202,43 @@ test("article picks by sound, not by spelling", () => {
   assert.equal(article(""), "a");
   assert.equal(article("   "), "a");
   assert.equal(withArticle("active dealer"), "an active dealer");
+});
+
+test("ordinals, including the teens the last-digit rule gets wrong", () => {
+  assert.equal(ordinal(1), "1st");
+  assert.equal(ordinal(2), "2nd");
+  assert.equal(ordinal(3), "3rd");
+  assert.equal(ordinal(4), "4th");
+  assert.equal(ordinal(8), "8th");
+  // The bug this exists to stop: 11/12/13 take "th", not "st"/"nd"/"rd".
+  assert.equal(ordinal(11), "11th");
+  assert.equal(ordinal(12), "12th");
+  assert.equal(ordinal(13), "13th");
+  // ...while 21/22/23 go back to the last-digit rule. A 32-team league is not
+  // fantasy football, but the helper should not be the thing that assumes it.
+  assert.equal(ordinal(21), "21st");
+  assert.equal(ordinal(22), "22nd");
+  assert.equal(ordinal(23), "23rd");
+});
+
+test("the standing line prints what we actually read, and nothing else", () => {
+  assert.equal(standingLine({ grade: "C", rank: 8, leagueSize: 12, record: "0-2" }), "C · 8th by roster · 0-2");
+  assert.equal(standingLine({ grade: "A-", rank: 1, leagueSize: 10, record: "2-0" }), "A- · 1st by roster · 2-0");
+  // A league whose connector gave us no record loses that segment. It must never
+  // become "0-0", which is a claim about a season rather than a gap in what we read.
+  assert.equal(standingLine({ grade: "B+", rank: 3, leagueSize: 12, record: null }), "B+ · 3rd by roster");
+  assert.equal(standingLine({ grade: "B+", rank: 3, leagueSize: 12 }), "B+ · 3rd by roster");
+  assert.equal(standingLine({ grade: "B+", rank: 3, leagueSize: 12, record: "" }), "B+ · 3rd by roster");
+  // Ties are the platform's string, not ours to reformat.
+  assert.equal(standingLine({ grade: "C", rank: 8, leagueSize: 12, record: "1-1-1" }), "C · 8th by roster · 1-1-1");
+});
+
+test("the standing line says out loud what the dots leave implicit", () => {
+  const said = standingLabel({ grade: "C", rank: 8, leagueSize: 12, record: "0-2" });
+  assert.match(said, /grade C/);
+  // The rank is a roster-strength rank, and beside a win-loss record it would
+  // otherwise be heard as a league position.
+  assert.match(said, /8th of 12 on strength/);
+  assert.match(said, /Record 0-2/);
+  assert.doesNotMatch(standingLabel({ grade: "C", rank: 8, leagueSize: 12, record: null }), /Record/);
 });

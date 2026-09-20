@@ -13,6 +13,21 @@ DEADLINE_BONUS = 3.0   # this week's lineup is decided at kickoff; waivers and t
 
 FEATURE_FOR = {"start": "my_team", "waiver": "waivers", "trade": "trade_lab", "hold": "my_team"}
 
+# The third line of a start/sit card's `why`: what a margin this size has historically been
+# worth. Measured over 2025 weeks 1-17 (docs/CALIBRATION.md). Same wording as LineupView's
+# LINEUP_COPY; both move to vocab.ts in Part 4.
+#
+# A sentence, not a rendered percentage. It used to print `HIT_RATE` inline and say "last
+# week", which was wrong twice over: the figure is a full-season measurement, not a weekly
+# one, and CLAUDE.md bars a public decision-accuracy claim until scripts/score_runs.py
+# exists. Prose that says what the number is a property of -- the margin, across a season --
+# survives the constant moving; "75% of the time last week" does not.
+HIT_LINE = {
+    lineup_mod.LOCK: "Margins this size were right about 3 times in 4 across last season.",
+    lineup_mod.LEAN: "Margins this size were right about 3 times in 5 across last season.",
+    lineup_mod.FLIP: "Margins this size were a coin flip across last season.",
+}
+
 
 def _gain_text(weekly: float, ros: float) -> str:
     """The number on the face of the card, which sits on the title line and cannot wrap.
@@ -63,7 +78,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
             "confidence": ch.confidence, "reason": ch.reason,
             "why": [f"{ch.in_.name} projects {effective(ch.in_):.1f}.",
                     (f"{ch.out.name} projects {effective(ch.out):.1f}" + (f" and is {ch.out.injury_status}." if ch.out.injury_status else ".")) if ch.out else "The slot is empty.",
-                    f"{ch.confidence}: margins this size were right {int(lineup_mod.HIT_RATE[ch.confidence] * 100)}% of the time last week."],
+                    f"{ch.confidence}: {HIT_LINE[ch.confidence]}"],
             "players": [report.player_dict(ch.in_), report.player_dict(ch.out)],
             "cta": {"label": "Depth chart", "href": "/team"},
             # Lineup fixes expire at kickoff, so they carry a deadline bonus on top of their size.
@@ -182,12 +197,17 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
         # we read the other rosters.
         summary = "All settled."
     else:
-        # Label-then-count, because it has to fit one line of a 30px display hero on a
-        # phone. "4 moves worth making" is twenty characters and the hero holds about
-        # eighteen, so it wrapped -- and the word it wrapped onto was "making", which
-        # carries nothing. The count is the only part that changes week to week, so it
-        # goes last where the eye lands, and the label in front of it stays put.
-        summary = f"Pending move{'s' if len(moves) != 1 else ''}: {len(moves)}"
+        # An instruction, not a status. "Pending moves: 4" is a queue depth -- it names a
+        # state the sheet is in and leaves the reader to work out that they are the one who
+        # has to act. "4 moves to make" is the same four calls with a verb on them, which
+        # is the house voice and the thing the landing page's worked example promises.
+        #
+        # Fifteen characters at the widest count this feed can carry (`limit` is 5), inside
+        # the ~eighteen a 30px display hero holds on a phone -- the budget that killed
+        # "4 moves worth making", and which `test_the_hero_headline_fits_one_line_on_a_phone`
+        # still pins. The count leads because it is the only part that changes week to week
+        # and a number is what the eye lands on first.
+        summary = f"{len(moves)} move{'s' if len(moves) != 1 else ''} to make"
     # How many rosters we actually read, rather than a hard-coded 11: this line is the
     # product's proof that a quiet week means we looked, so it has to be true in a
     # 10-team league and a 14-team one alike.

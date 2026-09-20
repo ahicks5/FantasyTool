@@ -230,13 +230,34 @@ export function SheetGroup({
   delay?: number;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
   const panelId = useId();
   const section = SECTIONS[group];
   const expandable = count > 0;
   // Every call on this bench is made. The row recedes to match the cards underneath it,
   // so scanning the sheet answers "what is left" without opening anything.
   const worked = total > 0 && done >= total;
+  /**
+   * A bench with calls on it opens with them on screen.
+   *
+   * Folded-by-default was the wrong default and the audit named it: the call sheet is the
+   * product, and it opened on three collapsed rows and a count. Not one player's name was
+   * on the home screen without a tap — the landing page's *mock* call sheet showed more
+   * than the app did. A bench with nothing to open still has nothing to open, so it stays
+   * the single row it always was: "Lineup's set" is the answer, and unfolding emptiness
+   * underneath it would be noise.
+   *
+   * A bench the reader has already worked through is the third case and it closes. Those
+   * cards are all crossed off; leaving them open costs a screen of scrolling to reach the
+   * bench that still needs something, which is the opposite of what this change is for.
+   * The row already says "· all called", so nothing is hidden — only folded.
+   *
+   * Read once, in the initialiser, so it is a starting position and not a rule: the moment
+   * the reader touches the caret the row is theirs, and ticking the last call on a bench
+   * does not then fold it shut underneath their hands. `done` and `total` arrive from the
+   * ticks the page read out of localStorage at mount, so "worked" is true on the first
+   * render for a sheet finished in an earlier visit — which is the case this is for.
+   */
+  const [open, setOpen] = useState(() => expandable && !worked);
 
   return (
     <>

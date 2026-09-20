@@ -8,6 +8,7 @@ import { Alarm } from "@/components/Alarm";
 import type { Alarm as AlarmState } from "@/lib/gameday.ts";
 import { MatchupCell } from "@/components/MatchupCell";
 import { SheetGroup, SheetRoom } from "@/components/SheetGroup";
+import { Standing } from "@/components/Standing";
 import { getActions, getLineup, sendFeedback } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { calledKey, sheetStatus } from "@/lib/format";
@@ -60,7 +61,7 @@ function rowNote(key: GroupKey, feed: ActionFeed): DeadlineNote | null {
  * scoreline below three folds of hero. It is its own cell above the sheet now
  * (`MatchupCell`), where it is the first thing under the title.
  */
-function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: number; total: number; animate: boolean }) {
+function Sheet({ feed, c, called, total, animate }: { feed: ActionFeed; c: Connection; called: number; total: number; animate: boolean }) {
   const delta = feed.projected_total - feed.current_total;
   const done = total > 0 && called >= total;
 
@@ -75,11 +76,12 @@ function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: num
         <Eyebrow>
           Week {feed.week} · {feed.team}
         </Eyebrow>
-        {/* The engine's summary counts what is *outstanding* ("Pending moves: 4"), so once
+        {/* The engine's summary counts what is *outstanding* ("4 moves to make"), so once
             every call is ticked it counts down to nothing and the hero is left asserting
-            a number that is no longer the point. The closed line is the answer to the
-            question the sheet was opened with, and it only exists client-side because
-            only the browser knows which calls this reader has ticked. */}
+            a number that is no longer the point — and an instruction nobody has left to
+            follow. The closed line is the answer to the question the sheet was opened
+            with, and it only exists client-side because only the browser knows which
+            calls this reader has ticked. */}
         <h1 className="display mt-2 text-[30px] leading-[1.08] text-white">{done ? CLOSED.head : feed.summary}</h1>
         {/* The total does not count up here. It sits inside a sentence, and a figure that
             eases from 0.0 to 121.4 re-wraps the whole paragraph while it climbs — the
@@ -105,6 +107,14 @@ function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: num
             <span className="tnum font-bold text-white">{feed.projected_total.toFixed(1)}</span>
           )}
         </p>
+
+        {/* Where the season stands, under where the week stands. The line above is this
+            kickoff; this one is the only thing on the call sheet that looks past it, and
+            it is the free reader's whole answer to "how am I doing" — the tab that
+            answers it properly is the one they have not paid for. Its own component
+            because it fetches its own two reads and must be allowed to fail on its own:
+            the hero is built from the feed and nothing in it may wait on a scorecard. */}
+        <Standing platform={c.platform} leagueId={c.league_id} teamId={c.team_id} />
 
         {total > 0 && (
           <div className="mt-5">
@@ -178,7 +188,7 @@ function CallSheet({ feed, c, storageKey, animate, warning }: { feed: ActionFeed
           <MatchupCell m={feed.matchup} animate={animate} />
         </div>
       )}
-      <Sheet feed={feed} called={calledCount} total={callable.length} animate={animate} />
+      <Sheet feed={feed} c={c} called={calledCount} total={callable.length} animate={animate} />
       {/* Three benches, in tab order, always all three — the empty one is the point.
           `min-w-0` on the items: a grid track defaults to `min-width: auto`, and a
           clamped card title is a `-webkit-box` whose min-content width is the whole

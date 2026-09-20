@@ -758,7 +758,7 @@ export function actionsFor(teamId: string, entitlements: Feature[]): ActionFeed 
       subtitle: `${ch.slot} · ${inP?.position ?? ""} ${inP?.nfl_team ?? ""}`,
       benefit: `+${ch.gain.toFixed(1)} projected points`, benefit_value: ch.gain,
       confidence: ch.confidence, reason: ch.reason,
-      why: [`${ch.in.name} projects ${inP?.projected.toFixed(1)}.`, `${ch.out?.name ?? "The slot"} projects ${outP?.projected.toFixed(1) ?? "0.0"}.`, `${ch.confidence}: margins this size were right about ${ch.confidence === "Lock" ? 80 : ch.confidence === "Lean" ? 62 : 51}% of the time last week.`],
+      why: [`${ch.in.name} projects ${inP?.projected.toFixed(1)}.`, `${ch.out?.name ?? "The slot"} projects ${outP?.projected.toFixed(1) ?? "0.0"}.`, `${ch.confidence}: ${ch.confidence === "Lock" ? "Margins this size were right about 3 times in 4 across last season." : ch.confidence === "Lean" ? "Margins this size were right about 3 times in 5 across last season." : "Margins this size were a coin flip across last season."}`],
       players: [inP ? withPhoto(inP) : null, outP ? withPhoto(outP) : null],
       cta: { label: "See lineup", href: "/team" },
     });
@@ -811,10 +811,12 @@ export function actionsFor(teamId: string, entitlements: Feature[]): ActionFeed 
   }
   actions.sort((a, b) => b.benefit_value - a.benefit_value);
   actions.forEach((a, i) => (a.priority = i + 1));
+  // Mirrors edge/engine/actions.py: holds are not moves, and the plural is not hard-coded.
+  const moves = actions.filter((a) => a.type !== "hold").length;
   return {
     week: WEEK, team: rosterFor(teamId).name, league: LEAGUE.name,
     projected_total: lineup.projected_total, current_total: lineup.current_total,
-    summary: `${actions.length} moves worth making`, all_clear: false, footer: "Everything else looks fine.",
+    summary: `${moves} move${moves === 1 ? "" : "s"} to make`, all_clear: false, footer: "Everything else looks fine.",
     matchup: { opponent: "Wait, another league?", opponent_id: "9", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
     actions, entitlements, synced_at: Date.now() / 1000 - 120,
   };
