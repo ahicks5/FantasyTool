@@ -19,7 +19,7 @@
  * scored. Stated flat, never as a scolding: the number is the point.
  */
 
-import type { BenchScore, RecapStarter, SeasonRecap, WeekRecap } from "./types";
+import type { BenchScore, RecapStarter, SeasonRecap, Standings, StandingsTeam, WeekRecap } from "./types";
 
 /* ---------------------------------------------------------------------------
    TEMPORARY COPY BLOCK — every word a user reads on the film.
@@ -369,4 +369,170 @@ export function seasonView(recap: SeasonRecap): SeasonView {
     chart: scoringChart(weeks),
     anyRecord: weeks.some((w) => w.hasRecord),
   };
+}
+
+/* ===========================================================================
+   THE TABLE — standings and the power ranking.
+
+   Free for every reader, so this half of the film page has to stand on its own:
+   it is the "how am I doing" screen, and for someone who has not paid it is the
+   whole of `/report`. Everything below is pure, like the rest of this module —
+   the component renders what `standingsView` hands it and works nothing out.
+=========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   TEMPORARY COPY BLOCK — every word a reader sees on the table.
+
+   Same deal as RECAP_COPY above: destined for `web/src/lib/vocab.ts`, gathered
+   in one object so the move is a cut and a re-import. The luck sentences are
+   NOT repeated here — the table reuses RECAP_COPY.luck, so the film and the
+   table cannot drift into two different words for the same fact.
+--------------------------------------------------------------------------- */
+
+export const STANDINGS_COPY = {
+  head: "The table",
+  /** Column labels. Short enough to survive 320px; spelled out in the row's second line. */
+  colRank: "#",
+  colTeam: "Team",
+  colRecord: "Rec",
+  colPoints: "PF",
+  /** The marker on the reader's own row. Says it in a word, so the rail is never the only cue. */
+  you: "You",
+  pointsAgainst: (v: string) => `PA ${v}`,
+  scoringRank: (rank: string) => `Scoring ${rank}`,
+  strengthRank: (rank: string) => `Roster ${rank}`,
+  /** The read when the season is too young to have a shape yet. */
+  earlyRead: (rank: string, size: number) => `Your roster rates ${rank} of ${size} from here.`,
+  /** The film teaser, built from this reader's own free row. Never a generic pitch. */
+  teaserRecord: (record: string, joiner: string, rank: string, size: number) =>
+    `You're ${record} ${joiner} ${rank} of ${size} in scoring.`,
+  teaserRoster: (rank: string, size: number) => `Your roster rates ${rank} of ${size} from here.`,
+  teaserTail: "The film shows which calls it came down to.",
+  teaserTailEarly: "The film grades every week against what we showed at the time.",
+  /** Joins the record to the scoring rank. "but" when the two disagree, "and" when they do not. */
+  joinerAgainst: "but",
+  joinerWith: "and",
+  /** What the two derived columns mean, said once under the table rather than in a header. */
+  legend: "Scoring is where the points sit. Roster is what the starting lineup is worth from here.",
+  /** A league that came back without a single team. Not expected; still rendered. */
+  empty: "No teams in this table yet.",
+} as const;
+
+/**
+ * How far the all-play record has to sit from the real one before the table says a word.
+ *
+ * One game in eight. Tighter than `LUCK_BAND`, and deliberately: that band reads a rank
+ * against a win rate, where one flipped result in a short season moves the number 0.2.
+ * All-play counts eleven games a week instead of one, so the same confidence costs far
+ * less of the season — and the gap it measures is the schedule directly, not a proxy.
+ */
+export const ALL_PLAY_BAND = 0.125;
+
+/** Share of games won, a tie counting half. Null when nothing has been played. */
+export function winShare(row: { wins: number; losses: number; ties: number }): number | null {
+  const games = row.wins + row.losses + row.ties;
+  return games <= 0 ? null : (row.wins + row.ties * 0.5) / games;
+}
+
+/**
+ * The reader's season in one word: is the record telling the truth about the scoring?
+ *
+ * Prefers the all-play gap, which is the real answer — every team against every other
+ * team, every week — and falls back to the rank-against-record read the film already
+ * uses when no week has been played yet. Null when there is nothing to say.
+ *
+ * `StandingsTeam.luck` is POSITIVE when the scoring is ahead of the record, which is the
+ * opposite sign to `LuckRead.gap`. That is the one trap in this module and it is why the
+ * comparison below reads the way it does.
+ */
+export function standingsRead(row: StandingsTeam | null, size: number): LuckRead | null {
+  if (!row) return null;
+  if (row.luck === null || row.all_play === null) {
+    return luckRead({ wins: row.wins, losses: row.losses, ties: row.ties }, row.points_rank, size);
+  }
+  const key: LuckKey = row.luck >= ALL_PLAY_BAND ? "unlucky" : row.luck <= -ALL_PLAY_BAND ? "fortunate" : "even";
+  return {
+    key,
+    winShare: winShare(row) ?? 0,
+    scoreShare: winShare(row.all_play) ?? 0,
+    gap: -row.luck,
+    line: RECAP_COPY.luck[key],
+  };
+}
+
+/**
+ * The paid half's teaser, built out of the free half's numbers.
+ *
+ * A paywall that says what we found beats one that describes a product, and everything
+ * here is already on screen above it — so it gives nothing away, and it is about this
+ * reader's own season rather than about the app. Null only when the table itself failed
+ * to load, and the component falls back to the product blurb for that.
+ */
+export function filmTeaser(row: StandingsTeam | null, size: number): string | null {
+  if (!row) return null;
+  const C = STANDINGS_COPY;
+  const record = recordLine(row);
+  if (record && row.points_rank !== null && winShare(row) !== null) {
+    const joiner = standingsRead(row, size)?.key === "unlucky" ? C.joinerAgainst : C.joinerWith;
+    return `${C.teaserRecord(record, joiner, ordinal(row.points_rank), size)} ${C.teaserTail}`;
+  }
+  return `${C.teaserRoster(ordinal(row.strength_rank), size)} ${C.teaserTailEarly}`;
+}
+
+/** One row of the table, every field already worded and formatted. */
+export interface StandingsRowView {
+  id: string;
+  name: string;
+  rank: number;
+  /** "3-0", or "3-0-1" when the league has ties. */
+  record: string;
+  pointsFor: string;
+  /** The second line, in order: points against, scoring rank, roster rank, streak. */
+  notes: string[];
+  isMe: boolean;
+}
+
+export interface StandingsView {
+  rows: StandingsRowView[];
+  size: number;
+  /** The reader's own row, or null when the connected team is not in this league's table. */
+  me: StandingsTeam | null;
+  /** The one-line read above the table. Null when the season cannot support one. */
+  read: LuckRead | null;
+  /** The real teaser for the locked film below the table. */
+  teaser: string | null;
+}
+
+/**
+ * The whole table, derived once.
+ *
+ * Rows are re-sorted by rank rather than trusted: the order is what a reader takes as the
+ * standing, and the API's order is not something this page should depend on. A tie keeps
+ * the better-named team first, which is the API's own tiebreak, so the two agree.
+ *
+ * The second line carries points against, both ranks and the streak. They are a line
+ * rather than four more columns because twelve rows of seven columns cannot be read at
+ * 320px without scrolling sideways, and a table you have to drag is not a table.
+ */
+export function standingsView(standings: Standings, teamId: string): StandingsView {
+  const teams = [...standings.teams].sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
+  const size = teams.length;
+  const C = STANDINGS_COPY;
+  const rows = teams.map((t) => ({
+    id: t.id,
+    name: t.name,
+    rank: t.rank,
+    record: recordLine(t) ?? "",
+    pointsFor: points(t.points_for),
+    notes: [
+      C.pointsAgainst(points(t.points_against)),
+      t.points_rank === null ? null : C.scoringRank(ordinal(t.points_rank)),
+      C.strengthRank(ordinal(t.strength_rank)),
+      t.streak,
+    ].filter((n): n is string => !!n),
+    isMe: t.id === teamId,
+  }));
+  const me = teams.find((t) => t.id === teamId) ?? null;
+  const read = standingsRead(me, size);
+  return { rows, size, me, read, teaser: filmTeaser(me, size) };
 }

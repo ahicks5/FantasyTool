@@ -58,3 +58,34 @@ def test_record_and_points(league):
     assert isinstance(t, Team)
     assert t.record.count("-") >= 1
     assert t.points_for > 0
+
+
+def test_the_standings_columns_sleeper_sends_are_mapped(league):
+    """Points against, the best-possible total and the streak label, off the same payload.
+
+    All three are built the way `fpts` is — a whole number plus a hundredths field — and
+    all three are what the standings table shows. Roster 1 in the recorded league is 2-0,
+    127.78 for, 101.40 against, 150.30 possible, on a 2W streak.
+    """
+    t = league.team("1")
+    assert t.points_for == 127.78
+    assert t.points_against == 101.40
+    assert t.max_points == 150.30
+    assert t.streak == "2W"
+    for other in league.teams:
+        assert other.points_against > 0 and other.max_points >= other.points_for
+        assert other.streak and other.streak[-1] in {"W", "L", "T"}
+
+
+def test_a_roster_sleeper_said_nothing_about_gets_nulls_not_zeros(sleeper_raw):
+    """A league before its first week has no `ppts` and no streak, and must not invent them.
+
+    `points_against` is allowed to be 0.0 — nobody has scored on you yet, which is true —
+    but "best possible: 0.0" and a blank streak are claims the platform never made.
+    """
+    from edge.connectors.sleeper import build_league
+    r = sleeper_raw
+    bare = [{"roster_id": 1, "owner_id": None, "players": [], "starters": [], "settings": {}}]
+    t = build_league(r["league"], r["users"], bare, r["players"], week=1).teams[0]
+    assert t.points_against == 0.0
+    assert t.max_points is None and t.streak is None

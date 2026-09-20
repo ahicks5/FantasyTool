@@ -730,3 +730,43 @@ export interface PlayerProfile {
   reads: ScoutRead[];
   algo_version: string;
 }
+
+/** Every team against every other team, every played week. */
+export interface AllPlay {
+  wins: number;
+  losses: number;
+  ties: number;
+}
+
+export interface StandingsTeam {
+  id: string;
+  name: string;
+  owner_name: string | null;
+  wins: number;
+  losses: number;
+  ties: number;
+  points_for: number;
+  points_against: number;
+  /** The platform's own best-possible season total. Null when it publishes none (ESPN). */
+  max_points: number | null;
+  /** The platform's own streak label, e.g. "2W". Null when it publishes none (ESPN). */
+  streak: string | null;
+  /** 1 = best. Record first, points for second. Tied teams share the better place. */
+  rank: number;
+  /** Where this team's season points sit, 1 = most. Null when nobody has scored yet. */
+  points_rank: number | null;
+  /** 1 = best roster from here, by rest-of-season starting value. May disagree with `rank`. */
+  strength_rank: number;
+  /** Null until a week has been played — weeks 1 and 2 are the normal case. */
+  all_play: AllPlay | null;
+  /**
+   * All-play win rate minus the real one. POSITIVE means scoring better than the record
+   * shows — the opposite sign to `LuckRead.gap` in lib/recap.ts. Null with no played weeks.
+   */
+  luck: number | null;
+}
+
+export interface Standings {
+  teams: StandingsTeam[];
+  algo_version: string;
+}

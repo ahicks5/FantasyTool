@@ -11,6 +11,7 @@ from edge.data import sleeper_api as api
 from edge.data.providers import get_provider, to_raw
 from edge.data.schedule import bye_weeks, load_schedule
 from edge.engine import recap as recap_mod
+from edge.engine import standings as standings_mod
 from edge.engine.tendencies import Profile, hoarded_positions, league_bid_stats, position_counts, profile_managers
 from edge.engine.values import ros_values
 from edge.evaluate import rosters_from_matchups
@@ -244,3 +245,17 @@ def played_weeks(platform: str, league_id: str, b: Bundle, auth=None) -> list[re
             _played[key] = pw
         out.append(pw)
     return out
+
+
+def standings(platform: str, league_id: str, b: Bundle, auth=None) -> dict:
+    """The whole league's table, from the bundle that is already in hand.
+
+    Nothing new is fetched for it: the rosters and rest-of-season values come off the
+    cached bundle, and the finished weeks are the same list the film reads — cached
+    forever per week, so the second room to ask for them pays nothing.
+
+    A season's history that fails upstream is an empty list, not an error: the table still
+    has every record, every points column and the power ranking, and only the all-play
+    columns go null. See `edge/engine/standings.py`.
+    """
+    return standings_mod.build(b.league, b.ros, played_weeks(platform, league_id, b, auth=auth))

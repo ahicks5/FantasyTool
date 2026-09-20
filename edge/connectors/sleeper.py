@@ -209,6 +209,10 @@ def build_league(
         meta = owner.get("metadata") or {}
         s = r.get("settings", {})
         pts = s.get("fpts", 0) + s.get("fpts_decimal", 0) / 100
+        # Sleeper splits every season total into a whole number and a hundredths field, so
+        # points against and the best-possible total are rebuilt the same way `fpts` is.
+        against = s.get("fpts_against", 0) + s.get("fpts_against_decimal", 0) / 100
+        ppts = s.get("ppts")
         team = Team(
             id=str(r["roster_id"]),
             name=meta.get("team_name") or owner.get("display_name") or f"Team {r['roster_id']}",
@@ -220,6 +224,11 @@ def build_league(
             losses=s.get("losses", 0),
             ties=s.get("ties", 0),
             points_for=round(pts, 2),
+            points_against=round(against, 2),
+            # None, not 0.0, when Sleeper did not send it: `ppts` is absent on a league
+            # that has not played, and "best possible: 0.0" is a claim we did not make.
+            max_points=round(ppts + s.get("ppts_decimal", 0) / 100, 2) if ppts is not None else None,
+            streak=(r.get("metadata") or {}).get("streak"),
             faab_remaining=(settings.get("waiver_budget", 0) - s.get("waiver_budget_used", 0))
             if settings.get("waiver_type") == 2 else None,
             waiver_position=s.get("waiver_position"),

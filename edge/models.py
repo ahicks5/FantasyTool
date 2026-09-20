@@ -117,6 +117,18 @@ class Team:
     losses: int = 0
     ties: int = 0
     points_for: float = 0.0
+    # Points this team has been scored ON, all season. 0.0 rather than None because every
+    # platform we read publishes it beside points_for, and a standings table with a blank
+    # column is worse than a zero in the one league that does not.
+    points_against: float = 0.0
+    # The platform's own best-possible total for the season -- what this roster would have
+    # scored with perfect lineups (Sleeper `ppts`). None means the platform never said, and
+    # is NOT zero: nothing here recomputes it, because a number we derived would disagree
+    # with the one the manager can read on the platform itself.
+    max_points: float | None = None
+    # The platform's own streak string, e.g. "2W", "1L". A label, never parsed into a number
+    # and never ranked on. None when the platform did not say.
+    streak: str | None = None
     faab_remaining: int | None = None
     waiver_position: int | None = None
 

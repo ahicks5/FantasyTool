@@ -337,6 +337,11 @@ def build_league(
             losses=int(rec.get("losses") or 0),
             ties=int(rec.get("ties") or 0),
             points_for=round(float(rec.get("pointsFor") or 0), 2),
+            points_against=round(float(rec.get("pointsAgainst") or 0), 2),
+            # ESPN publishes no best-possible total at all, and `max_points` stays None
+            # rather than becoming a number we worked out ourselves. `streak` is left None
+            # too: the payload carries `streakLength`/`streakType`, but the standings table
+            # takes the platform's own label and ESPN does not write one.
             faab_remaining=(budget - int(spent)) if use_faab else None,
             waiver_position=t.get("waiverRank"),
         ))

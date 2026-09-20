@@ -62,6 +62,22 @@ def test_teams_have_owners_rosters_and_starters(espn_league):
     assert lg.team("4").name == "Waiver Wire Wizards" and lg.team("4").owner_name == "pshah"
 
 
+def test_points_against_is_read_and_the_rest_is_left_alone(espn_league):
+    """ESPN publishes what was scored on you, and nothing else the standings table wants.
+
+    `record.overall.pointsAgainst` is real, so it is mapped. There is no best-possible
+    total anywhere in ESPN's payload and no streak *label* — only `streakLength` and
+    `streakType`, which is a number and a word, not the platform's own "2W". Both stay
+    None rather than becoming something we assembled: `docs/DATA.md`, every number has
+    one source.
+    """
+    for t in espn_league.teams:
+        assert t.points_against > 0, t.name
+        assert t.max_points is None and t.streak is None
+    one = espn_league.team("1")
+    assert (one.points_for, one.points_against) == (94.19, 114.13)
+
+
 def test_starters_follow_slot_order(espn_league):
     lg = espn_league
     for t in lg.teams:

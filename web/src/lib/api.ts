@@ -2,6 +2,7 @@
 // served from src/lib/mocks.ts; when set, it fetches `${NEXT_PUBLIC_API_URL}/api/...`.
 import type {
   ActionFeed,
+  Standings,
   ShareKind,
   ShareResponse,
   TradeFinderResponse,
@@ -332,4 +333,10 @@ export async function getPlayerProfile(platform: Platform, leagueId: string, pla
   return request<PlayerProfile>(
     `/league/${platform}/${encodeURIComponent(leagueId)}/player/${encodeURIComponent(playerId)}${q}`,
   );
+}
+
+/** The table: every team in the league. Free — no entitlement, so no PaywallError branch. */
+export async function getStandings(platform: Platform, leagueId: string): Promise<Standings> {
+  if (USE_MOCKS) return mocks.STANDINGS;
+  return request<Standings>(`/league/${platform}/${encodeURIComponent(leagueId)}/standings`);
 }

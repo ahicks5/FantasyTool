@@ -1,17 +1,23 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  ALL_PLAY_BAND,
   benchOrder,
+  filmTeaser,
   finalLine,
   luckRead,
   ordinal,
   points,
+  RECAP_COPY,
   recordLine,
   scoringChart,
   seasonView,
+  standingsRead,
+  standingsView,
   weekView,
+  winShare,
 } from "./recap.ts";
-import type { BenchScore, RecapStarter, SeasonRecap, WeekRecap } from "./types.ts";
+import type { BenchScore, RecapStarter, SeasonRecap, Standings, StandingsTeam, WeekRecap } from "./types.ts";
 
 function starter(slot: string, name: string, actual: number, projected: number | null): RecapStarter {
   return { slot, player: { id: name.toLowerCase(), name, position: slot }, projected, actual };
@@ -245,4 +251,123 @@ test("a flat season does not divide by zero", () => {
   const chart = scoringChart(seasonView(season({ weeks })).weeks);
   assert.ok(chart?.dots.every((d) => Number.isFinite(d.y)));
   assert.equal(chart?.average, 100);
+});
+
+/* ------------------------------------------------------------- the table --- */
+
+function row(over: Partial<StandingsTeam> = {}): StandingsTeam {
+  return {
+    id: "1",
+    name: "Andrew",
+    owner_name: "andrew",
+    wins: 0,
+    losses: 2,
+    ties: 0,
+    points_for: 219.64,
+    points_against: 248.1,
+    max_points: 260.4,
+    streak: "2L",
+    rank: 11,
+    points_rank: 8,
+    strength_rank: 6,
+    all_play: { wins: 12, losses: 10, ties: 0 },
+    luck: 0.545,
+    ...over,
+  };
+}
+
+function table(...teams: StandingsTeam[]): Standings {
+  return { teams, algo_version: "standings.v1" };
+}
+
+test("the table is sorted by rank, whatever order the API sent it in", () => {
+  const v = standingsView(
+    table(row({ id: "2", name: "Dana", rank: 3 }), row({ id: "1", rank: 1 }), row({ id: "3", name: "Sam", rank: 2 })),
+    "1",
+  );
+  assert.deepEqual(v.rows.map((r) => r.id), ["1", "3", "2"]);
+  assert.equal(v.size, 3);
+});
+
+test("the reader's own row is the only one marked", () => {
+  const v = standingsView(table(row({ id: "1", rank: 1 }), row({ id: "2", name: "Dana", rank: 2 })), "2");
+  assert.deepEqual(v.rows.map((r) => r.isMe), [false, true]);
+  assert.equal(v.me?.id, "2");
+});
+
+test("a reader whose team is not in this table gets no row, no read and no teaser", () => {
+  // Switching leagues with a stale cache. Every one of these is a branch the page renders.
+  const v = standingsView(table(row({ id: "1" })), "99");
+  assert.equal(v.me, null);
+  assert.equal(v.read, null);
+  assert.equal(v.teaser, null);
+  assert.equal(v.rows.length, 1);
+});
+
+test("a row states the record, the points and the second line in order", () => {
+  const [r] = standingsView(table(row()), "1").rows;
+  assert.equal(r.record, "0-2");
+  assert.equal(r.pointsFor, "219.6");
+  assert.deepEqual(r.notes, ["PA 248.1", "Scoring 8th", "Roster 6th", "2L"]);
+});
+
+test("a league with ties keeps them in the record", () => {
+  const [r] = standingsView(table(row({ wins: 1, losses: 1, ties: 1 })), "1").rows;
+  assert.equal(r.record, "1-1-1");
+});
+
+test("the second line drops what the platform did not send", () => {
+  // ESPN: no best-possible total and no streak label, and before week 1 no points rank.
+  const [r] = standingsView(table(row({ streak: null, max_points: null, points_rank: null })), "1").rows;
+  assert.deepEqual(r.notes, ["PA 248.1", "Roster 6th"]);
+});
+
+test("all-play ahead of the record reads as scoring better than the record shows", () => {
+  const read = standingsRead(row({ luck: 0.545 }), 12);
+  assert.equal(read?.key, "unlucky");
+  assert.equal(read?.line, RECAP_COPY.luck.unlucky);
+});
+
+test("all-play behind the record reads as winning more than the scoring says", () => {
+  assert.equal(standingsRead(row({ wins: 2, losses: 0, luck: -0.3 }), 12)?.key, "fortunate");
+});
+
+test("a gap inside the band is not called luck either way", () => {
+  assert.equal(standingsRead(row({ luck: 0.1 }), 12)?.key, "even");
+  assert.equal(standingsRead(row({ luck: -0.1 }), 12)?.key, "even");
+  // The band itself counts as a read, or a season sitting exactly on it says nothing.
+  assert.equal(standingsRead(row({ luck: ALL_PLAY_BAND }), 12)?.key, "unlucky");
+});
+
+test("with no week played the read falls back to the film's own rank-against-record one", () => {
+  const preseason = row({ wins: 0, losses: 0, ties: 0, all_play: null, luck: null, points_rank: 4 });
+  // Nothing has been played, so there is no record to read the scoring against, and the
+  // table says nothing rather than something confident about two games that do not exist.
+  assert.equal(standingsRead(preseason, 12), null);
+  const played = row({ wins: 1, losses: 3, ties: 0, all_play: null, luck: null, points_rank: 2 });
+  assert.equal(standingsRead(played, 12)?.key, "unlucky");
+});
+
+test("the film teaser is built from this reader's own row", () => {
+  assert.equal(
+    filmTeaser(row(), 12),
+    "You're 0-2 but 8th of 12 in scoring. The film shows which calls it came down to.",
+  );
+});
+
+test("the teaser joins the two facts with 'and' when they agree", () => {
+  const t = filmTeaser(row({ wins: 2, losses: 0, points_rank: 2, luck: -0.05 }), 12);
+  assert.equal(t, "You're 2-0 and 2nd of 12 in scoring. The film shows which calls it came down to.");
+});
+
+test("a season with nothing played still teases something real", () => {
+  const t = filmTeaser(row({ wins: 0, losses: 0, ties: 0, points_rank: null, all_play: null, luck: null }), 12);
+  assert.equal(t, "Your roster rates 6th of 12 from here. The film grades every week against what we showed at the time.");
+  assert.ok(!t?.includes("undefined") && !t?.includes("NaN"));
+});
+
+test("win share counts a tie as half and says nothing about a team that has not played", () => {
+  assert.equal(winShare({ wins: 0, losses: 0, ties: 0 }), null);
+  assert.equal(winShare({ wins: 1, losses: 1, ties: 0 }), 0.5);
+  assert.equal(winShare({ wins: 0, losses: 1, ties: 1 }), 0.25);
 });

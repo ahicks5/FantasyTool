@@ -4,6 +4,7 @@ import { withArticle } from "./format";
 import type {
   Action,
   ActionFeed,
+  Standings,
   TradeFinderResponse,
   WaiverPlanResponse,
   Confidence,
@@ -1079,3 +1080,49 @@ export function profileFor(playerId: string): PlayerProfile {
     algo_version: "profile.demo",
   };
 }
+
+// ---------- Standings ----------
+
+/**
+ * The table, derived from ROSTERS so the demo's standings, rosters and league summary are
+ * the same twelve teams rather than three sets of numbers that disagree.
+ *
+ * Week 2 with week 1 played, which is what the recorded fixture is: every row has an
+ * all-play record, so the luck read has something real to say in the demo.
+ */
+export const STANDINGS: Standings = (() => {
+  const parsed = ROSTERS.map((r) => {
+    const [wins, losses, ties] = r.record.split("-").map(Number);
+    return { r, wins, losses, ties: ties || 0 };
+  });
+  const byPoints = [...parsed].sort((a, b) => b.r.points_for - a.r.points_for);
+  const byRecord = [...parsed].sort(
+    (a, b) => b.wins - a.wins || b.r.points_for - a.r.points_for,
+  );
+  const size = parsed.length;
+  return {
+    teams: byRecord.map((t, i) => {
+      const pointsRank = byPoints.findIndex((p) => p.r.id === t.r.id) + 1;
+      const games = t.wins + t.losses + t.ties;
+      const actual = games ? (t.wins + t.ties * 0.5) / games : 0;
+      return {
+        id: t.r.id,
+        name: t.r.name,
+        owner_name: t.r.owner_name,
+        wins: t.wins,
+        losses: t.losses,
+        ties: t.ties,
+        points_for: t.r.points_for,
+        points_against: Math.round((t.r.points_for * 0.96 + 9) * 10) / 10,
+        max_points: Math.round(t.r.points_for * 1.17 * 10) / 10,
+        streak: t.wins > t.losses ? `${t.wins}W` : `${t.losses}L`,
+        rank: i + 1,
+        points_rank: pointsRank,
+        strength_rank: ((pointsRank + 2) % size) + 1,
+        all_play: { wins: (size - pointsRank) * games, losses: (pointsRank - 1) * games, ties: 0 },
+        luck: Math.round(((size - pointsRank) / (size - 1) - actual) * 1000) / 1000,
+      };
+    }),
+    algo_version: "standings.v1",
+  };
+})();
