@@ -10,6 +10,48 @@ def load(rel: str):
     return json.loads((FIX / rel).read_text())
 
 
+@pytest.fixture(autouse=True)
+def _no_cache_between_tests():
+    """Two modules hold a process-lifetime cache. Neither may outlive a test.
+
+    `nfl_stats` memoises parsed stat lines and `player_index` memoises the players dump,
+    both deliberately: a page view must not re-parse a season, and the search box must not
+    re-parse 14 MB on a keystroke. But a test that monkeypatches the HTTP layer underneath
+    either one never reaches the fetcher it just installed, so it silently asserts against
+    the *previous* test's data. That is a false pass, which is worse than a false failure,
+    so the caches are emptied around every test rather than in the few that remember to.
+    """
+    from edge.data import nfl_stats, player_index
+    _reset_rate_limits()
+    nfl_stats.clear()
+    player_index._cache = None
+    yield
+    nfl_stats.clear()
+    player_index._cache = None
+
+
+def _reset_rate_limits() -> None:
+    """Empty the API's sliding windows between tests.
+
+    Every test in the suite arrives from the same client IP in the same process, so the
+    per-IP windows accumulate across files and the cap is eventually reached by the suite
+    rather than by any one test. When that happened the symptom was not a clear 429: a
+    later, unrelated file started failing on a response body that was an error object, and
+    the file that pushed the count over the line was innocent. Which test hits which
+    endpoint is not something any other test should depend on, so the count is reset.
+    `tests/test_limits.py` builds its own middleware and is unaffected.
+    """
+    from edge.api import app as app_mod
+    from edge.api.limits import RateLimitMiddleware
+
+    stack = getattr(app_mod.app, "middleware_stack", None)
+    while stack is not None:
+        if isinstance(stack, RateLimitMiddleware):
+            stack.reset()
+            return
+        stack = getattr(stack, "app", None)
+
+
 @pytest.fixture(scope="session")
 def sleeper_raw():
     return {

@@ -628,3 +628,56 @@ All eight are now in, and the branches themselves can be deleted.
       should not come back without a deliberate decision to leave Penthouse.
 - [ ] The e2e Playwright smoke test and the Postgres half of the store contract suite have not
       been run here — they need a browser and a live Postgres. CI now runs both.
+
+## The scout report — search any NFL player, read his season (2026-09-20)
+
+Andrew: "the ability to search all players in the NFL, pull up a detailed profile of their…
+targets / points / routes all that stuff in really cool ways and get an in depth report on the
+person. That'd be in the scouting tab."
+
+- [x] **P-1** `edge/data/nfl_stats.py` — real per-week and per-season NFL stat lines from
+      Sleeper's `/stats` feed (targets, air yards, red-zone targets, carries, snaps, attempts).
+      Pre-scored keys (`pts_ppr`, `pos_rank_*`, `rank_*`, `fan_pts_allow*`) are stripped at the
+      source so nothing downstream can accidentally show a number scored in somebody else's
+      league. **`pts_allow_*` is deliberately NOT stripped** — it is a raw scoreboard fact and
+      the test league scores seven of those buckets by name, so a `pts_` prefix rule would have
+      zeroed every defence. `tests/test_nfl_stats.py`.
+- [x] **P-2** `edge/data/player_index.py` — the search index. The players dump is ~11k people
+      and 14 MB, so it is boiled down once a day into six fields each and searched in ~5ms.
+      Surname and first name share a match tier, or "chase" never reaches Ja'Marr Chase.
+      `tests/test_player_index.py`.
+- [x] **P-3** `edge/engine/profile.py` — splits, game log, and the plain-English reads (role,
+      volume, chances, shape, efficiency). Points always via the league's own scoring settings.
+      No forecasting and no self-grading, pinned by a forbidden-word sweep. `tests/test_profile.py`.
+- [x] **P-4** `edge/api/scout.py` + two free endpoints. `tests/test_scout_api.py` pins that the
+      profile is scored by *this* league and that making it free opened nothing that is paid.
+- [x] **P-5** Web: search box on `/waivers` above the paywall, profile at `/waivers/[player]`.
+
+### Decisions taken here
+- **The profile is free and the wire stays paid.** A profile is descriptive (what happened);
+  Wire Pass sells the ranked board, the bid and the drop, which are decisions. It is also the
+  front door — a locked Scouting tab now hands a visitor something real instead of a wall.
+  One line in `edge/api/app.py` reverses it.
+- **Last season is one request, this season is one per week.** Fetching last season week by week
+  would sharpen a traded player's target share and cost eighteen sequential requests on a cold
+  box. The limitation is stated in `split`'s docstring rather than corrected for.
+- **Rank is measured against players who took a snap** — 252 receivers last season, not the
+  1,365 with a row in the feed.
+
+### Found and fixed along the way (not scouting bugs)
+- [x] The whole test suite shared one rate-limit window: every test arrives from the same IP in
+      the same process, so the per-IP cap was reached by the *suite*. Adding a file of API tests
+      made four unrelated files fail on a 429 body. `tests/conftest.py` now resets the windows
+      between tests, and `RateLimitMiddleware.reset()` exists for it.
+- [x] `scripts/serve_fixtures.py` used the repo's real `.cache`, so a developer who had just run
+      the live CLI would be served live numbers by the fixture server and it would still look
+      like it was working. It gets a throwaway cache directory now.
+
+### Known limits, stated rather than hidden
+- [ ] **There is no route-participation data in any feed we have.** Andrew asked for routes;
+      snap share (`off_snp / tm_off_snp`) is the honest substitute and is what ships.
+      `test_snap_share_is_the_honest_substitute_for_routes_run` fails the day Sleeper adds one.
+- [ ] A player traded mid-season has his *last-season* shares measured against one team's
+      totals. This season's shares are exact, because they are weekly.
+- [ ] ESPN leagues reach the stat feed through `ext_ids["sleeper"]`; a player the name match
+      missed has no profile rather than a wrong one.

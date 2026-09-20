@@ -92,6 +92,82 @@ Ranked pickups with the bid and the drop. Wire name stays `waivers`.
   "reason":"Slots into your FLEX now and RB2 for the rest of the season. Bye-week cover for Gibbs (wk 8)."}]}
 ```
 
+### Player search (free)
+
+`GET /api/league/{platform}/{league_id}/players/search?q=chase&team_id=8` →
+```json
+[{"id":"6794","name":"Ja'Marr Chase","position":"WR","nfl_team":"CIN","years_exp":5,"rostered":true}]
+```
+
+Every player the platform carries, not just the ones on a roster. Two characters minimum —
+one letter matches thousands and the endpoint returns `[]` rather than a truncated guess.
+At most 12 hits, best first: exact name, then either name's opening, then anywhere, with
+Sleeper's own relevance rank breaking ties. A player without an NFL team (cut, retired)
+still matches but sorts below everyone with one.
+
+League-scoped although a player is not, for one field: `rostered` is a fact about *this*
+league, and a search that could not say whether a name is already taken would send the
+reader to a profile to find out.
+
+### Player profile (free)
+
+`GET /api/league/{platform}/{league_id}/player/{player_id}?team_id=8` →
+```json
+{"player":{"id":"6794","name":"Ja'Marr Chase","position":"WR","nfl_team":"CIN","years_exp":5,
+           "injury_status":null,"bye_week":10},
+ "owner":{"team_id":"3","team_name":"Brown Town","is_me":false},
+ "this_season":{"season":2026,"games":1,"points":18.4,"ppg":18.4,"snap_pct":0.91,
+                "targets":11,"target_share":0.31,"carries":null,"rush_share":null,
+                "rz_touches":2,"yards":104,"tds":1,"pos_rank":8,"pos_total":64,
+                "best":18.4,"worst":18.4,
+                "attempts":null,"rush_yards":null,"rec_yards":104},
+ "last_season":{"season":2025,"games":17,"points":312.6,"...":"same shape"},
+ "games":[{"week":1,"opponent":"CLE","played":true,"points":18.4,"snap_pct":0.91,
+           "targets":11,"carries":null,"rz_touches":2,"yards":104,"tds":1}],
+ "reads":[{"key":"role","head":"On the field","line":"91% of the snaps, up from 84%.","tone":"up"}],
+ "algo_version":"profile.v1"}
+```
+
+Three things callers must handle, none of them an error:
+
+- **`this_season` is null and `games` is empty** before anyone has played. In week 1 that is
+  every player in the league, and `last_season` is the whole report.
+- **A null stat is not a zero.** `targets` on a quarterback is `null` because the platform
+  does not record one, and rendering that as "0 targets" is a lie. Same for `snap_pct` when
+  the team's snap count is missing, and for `pos_rank` before anyone has scored.
+- **`reads` may be empty.** It is arithmetic on the two splits, and one game against no prior
+  season produces nothing worth saying.
+
+`years_exp` is **0 for a rookie** and **null when the platform did not say** (a team defence, or
+anyone off the usual depth charts). The two are not interchangeable.
+
+`attempts`, `rush_yards` and `rec_yards` are optional and feed `reads` only, so the page renders
+without them. They exist because `yards` is a combined total: divided by carries it is not yards
+per carry, it is yards per carry with the receiving yards folded in. The split lets a running
+back's efficiency be yards per carry and a quarterback's volume be attempts a game, which are the
+numbers those positions are actually judged by.
+
+`pos_rank` is measured against players who **took a snap**, not against every player with a row in
+the feed. Last season that is 252 receivers rather than 1,365, and the difference is the whole
+meaning of the number: "WR26 of 1,365" counts a thousand practice-squad players as the field he
+beat. The pool therefore grows through September as players debut, which is why `pos_total` is
+returned rather than implied.
+
+`points`, `ppg`, `best`, `worst` and `pos_rank` are scored through the **league's own scoring
+settings** from raw stat lines (`edge/data/scoring.py`). Sleeper's `pts_ppr` is stripped at the
+source and never reaches here — the same player is a different report in a six-point-passing
+league, and that is the point. Every other number is a raw count the platform published, so a
+row is checkable against any box score.
+
+**Free, on purpose, and it opens nothing.** What it returns is what already happened, which is
+descriptive; Wire Pass sells the ranked board, the bid and the drop, which are decisions.
+`test_the_paid_card_is_still_paid` and the 402 on `/waivers` pin the other half. Reverse it by
+adding an entitlement check in the endpoint — one line, and the only line.
+
+There is **no route-participation data** in any feed we have. Snap share (`off_snp / tm_off_snp`)
+is the closest honest measure of how much a player is on the field, and it is what `snap_pct` is.
+Nothing here approximates a route count.
+
 ## Trade Lab (feature: trade_lab)
 `POST /api/league/{platform}/{league_id}/trade`
 ```json

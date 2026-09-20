@@ -28,6 +28,10 @@ import type {
   TradeRequest,
   TradeResult,
   Verdict,
+  PlayerHit,
+  PlayerProfile,
+  ScoutGame,
+  ScoutSplit,
   Waivers,
 } from "./types";
 
@@ -921,5 +925,155 @@ export function sharedVerdictDemo(): SharedVerdict {
     week: WEEK,
     give_players: [toShared(giveP)],
     get_players: [toShared(getP)],
+  };
+}
+
+// --------------------------------------------------------------- the scout ---
+// The demo build has no NFL stat feed behind it, so a profile here is generated from the
+// player's mock projection: deterministic per player id, shaped like a real season, and
+// never presented as a real one. `npm run demo` is a showroom, not a data product.
+
+function seed(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function mockPlayers(): Player[] {
+  return ROSTERS.flatMap((r) => [...r.starters, ...r.bench]);
+}
+
+/**
+ * The wire's own players, who are free agents by definition.
+ *
+ * Without them the demo's search could only ever return somebody's starter, so the free-agent
+ * chip — the one result state worth searching *for* — was unreachable on the mock path and
+ * unreviewable in the packed demo. These are the same names the mock waiver board already
+ * shows, so the two surfaces agree about who is on the wire.
+ */
+function mockFreeAgents(): Player[] {
+  return WAIVERS.picks.map((p) => p.player);
+}
+
+/**
+ * The players the demo can find, and therefore the pages the static export must build.
+ *
+ * `npm run demo` has no API behind it, so `output: "export"` has to name every player page
+ * at build time. Naming all 172 mock roster players produced 968 files and 14 MB — past the
+ * 255-file ceiling of the artifact host the demo is published to, which is the only reason
+ * `demo:pack` exists. A demo nobody can publish cannot be shown.
+ *
+ * So the demo searches a curated pool instead: every position, a rostered star, a free agent
+ * off the wire, an injured player. **`generateStaticParams` in `waivers/[player]/page.tsx`
+ * reads this same list**, so the set that can be found and the set that was built cannot
+ * drift apart and no demo link can dead-end.
+ *
+ * None of this touches production. There, `generateStaticParams` returns `[]`, pages render
+ * on request, and the search box queries the real index of ~4,300 players.
+ */
+export const DEMO_POOL_SIZE = 24;
+
+export function demoPool(): Player[] {
+  const held = mockPlayers();
+  const wire = mockFreeAgents();
+  const byPos = (pos: string) => held.filter((p) => p.position === pos);
+  // Deterministic and spread across positions, so the demo never shows nine quarterbacks.
+  const picked: Player[] = [
+    ...wire,
+    ...byPos("QB").slice(0, 4),
+    ...byPos("RB").slice(0, 5),
+    ...byPos("WR").slice(0, 6),
+    ...byPos("TE").slice(0, 3),
+    ...held.filter((p) => p.injury_status).slice(0, 2),
+  ];
+  const seen = new Set<string>();
+  return picked.filter((p) => (seen.has(p.id) ? false : seen.add(p.id))).slice(0, DEMO_POOL_SIZE);
+}
+
+export function searchPlayers(q: string): PlayerHit[] {
+  const needle = q.trim().toLowerCase();
+  if (!needle) return [];
+  const held = new Set(mockPlayers().map((p) => p.id));
+  return demoPool()
+    .filter((p) => p.name.toLowerCase().includes(needle))
+    .slice(0, 12)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      position: p.position,
+      nfl_team: p.nfl_team ?? null,
+      years_exp: (seed(p.id) % 12) || null,
+      rostered: held.has(p.id),
+    }));
+}
+
+function mockSplit(p: Player, season: number, games: number): ScoutSplit {
+  const s = seed(p.id + season);
+  const ppg = Math.round((p.projected || 8) * (0.8 + ((s % 40) / 100)) * 10) / 10;
+  const catcher = p.position === "WR" || p.position === "TE" || p.position === "RB";
+  const runner = p.position === "RB" || p.position === "QB";
+  return {
+    season,
+    games,
+    points: Math.round(ppg * games * 10) / 10,
+    ppg,
+    snap_pct: Math.round((55 + (s % 40)) ) / 100,
+    targets: catcher ? (3 + (s % 7)) * games : null,
+    target_share: catcher ? Math.round((10 + (s % 18))) / 100 : null,
+    carries: runner ? (4 + (s % 12)) * games : null,
+    rush_share: runner ? Math.round((15 + (s % 40))) / 100 : null,
+    rz_touches: 1 + (s % 4) * games,
+    yards: (25 + (s % 60)) * games,
+    attempts: p.position === "QB" ? (24 + (s % 14)) * games : null,
+    rush_yards: runner ? (18 + (s % 40)) * games : null,
+    rec_yards: catcher ? (20 + (s % 45)) * games : null,
+    tds: Math.round(games * ((s % 9) / 10)),
+    pos_rank: 1 + (s % 36),
+    pos_total: 64,
+    best: Math.round(ppg * 1.9 * 10) / 10,
+    worst: Math.round(ppg * 0.3 * 10) / 10,
+  };
+}
+
+export function profileFor(playerId: string): PlayerProfile {
+  // Wider than `demoPool()` on purpose: a profile reached by a typed-in URL should still
+  // render if the id is a real mock player, even though search would not have offered him.
+  const pool = [...mockPlayers(), ...mockFreeAgents()];
+  const p = pool.find((x) => x.id === playerId) ?? pool[0];
+  const owner = ROSTERS.find((r) => [...r.starters, ...r.bench].some((x) => x.id === p.id));
+  const s = seed(p.id);
+  const now = mockSplit(p, 2026, 1);
+  const last = mockSplit(p, 2025, 16);
+  const games: ScoutGame[] = [
+    {
+      week: 1,
+      opponent: ["KC", "BUF", "SF", "DAL", "PHI"][s % 5],
+      played: true,
+      points: now.ppg ?? 0,
+      snap_pct: now.snap_pct,
+      targets: now.targets,
+      carries: now.carries,
+      rz_touches: now.rz_touches,
+      yards: now.yards,
+      tds: now.tds,
+    },
+  ];
+  return {
+    player: {
+      id: p.id,
+      name: p.name,
+      position: p.position,
+      nfl_team: p.nfl_team ?? null,
+      photo: p.photo ?? null,
+      years_exp: (s % 12) || null,
+      injury_status: p.injury_status ?? null,
+      bye_week: p.bye_week ?? null,
+    },
+    owner: owner ? { team_id: owner.id, team_name: owner.name, is_me: owner.id === MY_TEAM_ID } : null,
+    this_season: now,
+    last_season: last,
+    games,
+    reads: [],
+    algo_version: "profile.demo",
   };
 }

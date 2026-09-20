@@ -176,3 +176,31 @@ export const CLOSED = {
   /** Prefixes the computed time: "Check back Sunday, 11:55 AM". */
   back: "Check back",
 } as const;
+
+/**
+ * The scout report: searching every player in the league, and reading one.
+ *
+ * It lives in Scouting because that is the room where you look outward — the wire ranks
+ * the players worth adding, this answers "yes, but who *is* he". Room names and the words
+ * around the search box live here; the words that describe a *number* live with the
+ * formatter that produces it (`lib/profile.ts`), which is where every other
+ * formatter-owned string in the app already sits.
+ */
+export const SCOUT = {
+  /** The heading over the search box, on a tab whose own title is "Scouting". */
+  head: "Look anyone up",
+  placeholder: "Search any NFL player",
+  /** Shown under the box before a single key is pressed. */
+  hint: "Every player in the league, scored by your rules.",
+  empty: "Nobody by that name.",
+  /** The one honest caveat, shown on the profile: these are counts, not a forecast. */
+  footnote: "Every number here is what happened, scored by your league's settings.",
+  /** A player nobody in the league holds. The whole reason to be reading this page. */
+  free: "Free agent",
+  /**
+   * The back link out of a profile. It names the *search*, not the tab, because the tab's
+   * own title is already on screen — `AppShell` draws "Scouting" as the page heading, and
+   * a back link reading the same word directly under it looks like a mistake.
+   */
+  back: "All players",
+} as const;

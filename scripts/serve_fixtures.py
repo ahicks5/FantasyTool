@@ -19,6 +19,7 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -36,6 +37,7 @@ def load(rel: str):
 
 def install_fixture_sleeper() -> None:
     """Replace every network call in `edge.data.sleeper_api` with a recorded fixture."""
+    from edge.data import nfl_stats
     from edge.data import schedule as schedule_mod
     from edge.data import sleeper_api as api
 
@@ -60,12 +62,28 @@ def install_fixture_sleeper() -> None:
     api.projections = lambda season_, week, positions=None: weekly
     api.projections_season = lambda season_, positions=None: season
     api.trending_adds = lambda hours=48, limit=100: []
-    api.stats = lambda season_, week: []
+    # Recorded NFL stat lines, for the scouting tab's player profiles. Weeks we did not
+    # record come back empty, which `nfl_stats.game_log` already treats as a short season.
+    stats_weeks = {(2026, 1): load("sleeper/stats/stats_2026_1.json"),
+                   (2026, 2): load("sleeper/stats/stats_2026_2.json")}
+    stats_season = {2025: load("sleeper/stats/stats_2025_season.json")}
+    api.stats = lambda season_, week: stats_weeks.get((int(season_), int(week)), [])
+    nfl_stats._fetch_season = lambda season_: stats_season.get(int(season_), [])
     api.user = lambda username_or_id: {"user_id": "u1", "username": username_or_id}
     api.user_leagues = lambda user_id, season_: [
         {"league_id": LEAGUE_ID, "name": league_raw["name"], "status": league_raw.get("status", "in_season"),
          "total_rosters": league_raw.get("total_rosters", len(rosters_raw))}
     ]
+
+    # A cache directory of its own, thrown away with the process.
+    #
+    # `nfl_stats` is the first module to route a fixture-served call through
+    # `sleeper_api._cached`, which reads whatever is on disk before it calls the fetcher it
+    # was given. Pointed at the repo's real `.cache`, a developer who had just run the live
+    # CLI would be served that live season instead of the recorded one -- the fixture server
+    # would answer with real numbers and still look like it was working. Its whole promise
+    # is "identical numbers on every run", so it gets an empty directory nobody else writes.
+    api.CACHE_DIR = Path(tempfile.mkdtemp(prefix="edge-fixtures-"))
 
     # The bye-week table normally comes from ESPN's scoreboard; serve the recorded one.
     from edge.api import service as service_mod

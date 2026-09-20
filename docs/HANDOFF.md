@@ -18,11 +18,33 @@ dark by default — with every screen rebuilt around that, deployed and live.
 | Web | https://fantasy-tool-alpha.vercel.app (Vercel, Root Directory `web/`) |
 | API | https://edge-api-gi8d.onrender.com (Render) |
 | Production branch | `claude/edge-fantasy-app-launch-alo0rr` — **there is no `main`** |
-| Tests | 854 pytest (+44 skipped: 17 want a Postgres in `TEST_DATABASE_URL`), 85 node |
+| Tests | 1022 pytest (+44 skipped: 17 want a Postgres in `TEST_DATABASE_URL`), node + Playwright |
 
 Shipping the web app is a push to the production branch. Rolling back is the same push aimed
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
+
+## The scouting tab now has a player encyclopedia in it (2026-09-20)
+
+Search any player in the NFL from `/waivers`, open a profile at `/waivers/<player id>`: snaps,
+targets and target share, carries, red-zone work, a week-by-week game log, this season against
+last, and a handful of plain-English reads. **Scored by the reader's own league**, which is the
+whole difference between this and every free stats site. `TASKS.md` has the design decisions;
+`docs/API.md` has the contract.
+
+Three things about it that a future session will otherwise rediscover the hard way:
+
+- **The profile is free and the wire is still paid**, deliberately. The search box renders above
+  the paywall on `/waivers`, so a locked Scouting tab now hands a visitor something real.
+  `tests/test_scout_api.py::test_a_profile_is_free_and_does_not_open_the_wire` pins the other half.
+- **`pts_allow_*` is a raw stat, not a pre-scored one.** Everything else Sleeper pre-scores
+  (`pts_ppr`, `pos_rank_*`, `rank_*`) is stripped at the source, but the test league scores seven
+  `pts_allow_*` buckets by name — a `pts_` prefix rule would zero every defence in the app.
+- **There is no routes-run data in any feed we have.** Andrew asked for routes; snap share is the
+  honest substitute and is what shipped. A test fails the day Sleeper adds a route key.
+
+It is week 2 of 2026, so a player has **one** completed game. Every surface here was built for
+that case first: one game plus last season is the normal report until November, not an edge case.
 
 ## Two things are blocked on Andrew, not on code
 

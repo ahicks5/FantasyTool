@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from edge import products
-from edge.api import service, share as share_mod
+from edge.api import scout as scout_mod, service, share as share_mod
 from edge.api.auth import current_user, optional_user
 from edge.api.limits import RateLimitMiddleware, cors_origins, validate_id, validate_platform
 from edge.api.store import open_store
@@ -268,6 +268,45 @@ def team_grades(platform: str, league_id: str, team_id: str, auth=Depends(espn_a
     team = _team(b, team_id)
     return {"team": {"id": team.id, "name": team.name},
             "grades": grades.grade_team(b.league, team, b.ros).to_dict()}
+
+
+@app.get("/api/league/{platform}/{league_id}/players/search")
+def player_search(platform: str, league_id: str, q: str, team_id: str | None = None,
+                  auth=Depends(espn_auth)):
+    """Every player the platform carries, by name, for the scouting tab's search box.
+
+    Free, like the profile it leads to, and it opens nothing. See the profile below for why.
+    """
+    b = _bundle(platform, league_id, auth)
+    return scout_mod.search(b, q, team_id)
+
+
+@app.get("/api/league/{platform}/{league_id}/player/{player_id}")
+def player_profile(platform: str, league_id: str, player_id: str, team_id: str | None = None,
+                   auth=Depends(espn_auth)):
+    """One player's scouting report, scored by this league's settings.
+
+    **Free, on purpose, and it does not open the wire.** What it returns is what already
+    happened -- snaps, targets, carries, red-zone work, and the points those were worth
+    under *these* scoring settings. That is descriptive. Wire Pass sells the ranked board,
+    the bid and the drop, which are decisions, and `test_the_paid_card_is_still_paid` plus
+    the 402 on `/waivers` pin that half regardless of what happens here. It is also the
+    front door: CLAUDE.md's own framing is that competitors are encyclopedias you browse
+    and we are three moves you make, so the encyclopedia is what gets a stranger in the
+    building, not what we charge him for. Reverse it by adding an entitlement check here --
+    one line, and the only line.
+
+    `team_id` is optional and only decides whether `owner.is_me` is true; the report is the
+    same report without it.
+    """
+    validate_id(player_id, "player id")
+    b = _bundle(platform, league_id, auth)
+    got = scout_mod.build(b, player_id, team_id)
+    if got is None:
+        # No stat line in either season and nobody by that id in the player index. A real
+        # 404: the alternative is an empty report that reads like a player who did nothing.
+        raise HTTPException(404, "no player by that id")
+    return got
 
 
 def _teaser(b: service.Bundle, t, feature: str) -> str | None:

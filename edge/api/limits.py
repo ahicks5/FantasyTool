@@ -79,6 +79,11 @@ class SlidingWindow:
         self._sweep(now)
         return 0.0
 
+    def reset(self) -> None:
+        """Forget every recorded hit. For tests, which share one process and one client IP."""
+        self._hits.clear()
+        self._last_sweep = 0.0
+
     def _sweep(self, now: float) -> None:
         """Drop keys that have gone quiet, so an idle process does not grow forever."""
         if now - self._last_sweep < self.window:
@@ -118,6 +123,11 @@ class RateLimitMiddleware:
         self.overall = SlidingWindow(overall or _int_env("EDGE_RATE_ALL", 300), window)
         self.window = window
         self.enabled = os.environ.get("EDGE_RATE_LIMIT", "1") != "0"
+
+    def reset(self) -> None:
+        """Forget every recorded hit in both windows."""
+        self.costly.reset()
+        self.overall.reset()
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http" or not self.enabled:

@@ -2,6 +2,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
 import { SECTIONS } from "../src/lib/vocab";
 import { RECAP_COPY } from "../src/lib/recap";
+import { SCOUT } from "../src/lib/vocab";
 
 /**
  * Every page of the app at 375px, against the fixture API (`scripts/serve_fixtures.py`).
@@ -276,6 +277,54 @@ for (const p of PAGES) {
     expect(problems, `${p.path} logged browser errors`).toEqual([]);
   });
 }
+
+test("the scout: search a player, land on his profile", async ({ page }) => {
+  // The whole feature end to end through the real engine: the index finds him, the API
+  // scores his season by this league's settings, and the page renders it.
+  const { status } = await visit(page, "/waivers");
+  expect(status).toBe(200);
+
+  const box = page.getByPlaceholder(SCOUT.placeholder);
+  await expect(box).toBeVisible();
+  await box.fill("jeffer");
+
+  const hit = page.getByRole("link", { name: /Jefferson/i }).first();
+  await expect(hit).toBeVisible({ timeout: 10_000 });
+  await hit.click();
+
+  await page.waitForURL(/\/waivers\/\d+/);
+  await expect(page.getByRole("heading", { name: /Jefferson/i }).first()).toBeVisible();
+  // A number that can only have come from the engine scoring a real stat line.
+  await expect(page.getByText(SCOUT.footnote)).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+});
+
+test("the search box survives the Wire Pass paywall", async ({ page }) => {
+  // The growth decision, pinned in the browser: a visitor who has not bought Wire Pass
+  // still gets a working room. The API half is pinned by
+  // `tests/test_scout_api.py::test_a_profile_is_free_and_does_not_open_the_wire`; this is
+  // the half that a page refactor could quietly undo, by putting the lock back above the
+  // search instead of beside it.
+  //
+  // The fixture server grants every SKU, so the 402 is injected here rather than by
+  // booting a second server without them.
+  await page.route("**/waivers/plan*", (route) =>
+    route.fulfill({
+      status: 402,
+      contentType: "application/json",
+      body: JSON.stringify({ detail: { error: "requires a purchase", feature: "waivers", upsell: [] } }),
+    }),
+  );
+
+  const { status } = await visit(page, "/waivers");
+  expect(status).toBe(200);
+  // "Wire Pass", the product name on the lock card's eyebrow. Note the other page checks
+  // in this file look for "requires a purchase" — that is the API's 402 *message* and is
+  // never rendered, so those assertions cannot fail; this one keys off what a reader sees.
+  await expect(page.getByText("Wire Pass").first()).toBeVisible();
+  await expect(page.getByPlaceholder(SCOUT.placeholder)).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+});
 
 test("the API really is the fixture server, not mocks", async ({ page }) => {
   // If NEXT_PUBLIC_API_URL were unset the app would quietly serve src/lib/mocks.ts and the

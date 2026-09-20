@@ -25,6 +25,8 @@ import type {
   Waivers,
   SeasonRecap,
   TeamGrades,
+  PlayerHit,
+  PlayerProfile,
 } from "./types";
 import * as mocks from "./mocks";
 import { espnAuthHeaders } from "./espnAuth";
@@ -306,4 +308,28 @@ export async function evaluateTrade(platform: Platform, leagueId: string, req: T
 export async function getReport(platform: Platform, leagueId: string, teamId: string): Promise<Report> {
   if (USE_MOCKS) return mocks.reportFor(teamId);
   return request<Report>(`/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/report`);
+}
+
+/**
+ * Every player in the NFL, by name.
+ *
+ * League-scoped even though a player is not: `rostered` is a fact about *this* league,
+ * and a search that could not tell you a name is already taken would send you to a
+ * profile to find out.
+ */
+export async function searchPlayers(platform: Platform, leagueId: string, q: string, teamId?: string): Promise<PlayerHit[]> {
+  if (USE_MOCKS) return mocks.searchPlayers(q);
+  const params = new URLSearchParams({ q });
+  if (teamId) params.set("team_id", teamId);
+  return request<PlayerHit[]>(
+    `/league/${platform}/${encodeURIComponent(leagueId)}/players/search?${params.toString()}`,
+  );
+}
+
+export async function getPlayerProfile(platform: Platform, leagueId: string, playerId: string, teamId?: string): Promise<PlayerProfile> {
+  if (USE_MOCKS) return mocks.profileFor(playerId);
+  const q = teamId ? `?team_id=${encodeURIComponent(teamId)}` : "";
+  return request<PlayerProfile>(
+    `/league/${platform}/${encodeURIComponent(leagueId)}/player/${encodeURIComponent(playerId)}${q}`,
+  );
 }

@@ -581,3 +581,152 @@ export interface PaywallDetail {
   teaser?: string | null;
   upsell: Product[];
 }
+
+// ---------------------------------------------------------------------------
+// The scout report: one player, in depth
+// ---------------------------------------------------------------------------
+
+/**
+ * A player as a search result: enough to recognise him, nothing else.
+ *
+ * Deliberately thin. The search box queries every player in the league's platform dump
+ * (~11k rows, most of them practice-squad linemen nobody will ever type), so the payload
+ * is the four fields a human uses to tell two Josh Allens apart.
+ */
+export interface PlayerHit {
+  id: string;
+  name: string;
+  position: string;
+  nfl_team: string | null;
+  /**
+   * Seasons played before this one. **0 is a rookie; null is "the platform did not say"**
+   * — which it does not for a team defence or for anyone off the usual depth charts.
+   * The two are not the same and a rookie must not be rendered as unknown.
+   */
+  years_exp: number | null;
+  /** True when somebody in *this* league rosters him. Free agents are the interesting ones. */
+  rostered: boolean;
+}
+
+/**
+ * One game in a player's log, scored by the reader's own league.
+ *
+ * `points` is computed through `edge/data/scoring.py` from the raw stat line, never read
+ * off Sleeper's `pts_ppr` — the whole rule (CLAUDE.md: "Never assume PPR"). Every other
+ * number here is a raw count the platform published, so the row is checkable against any
+ * box score.
+ *
+ * Nulls are load-bearing: a stat the platform did not record for this position is null,
+ * not zero. A quarterback has no target count; that is not "0 targets".
+ */
+export interface ScoutGame {
+  week: number;
+  /** The team he faced, or null when the platform did not say. */
+  opponent: string | null;
+  /** False when he did not take a snap: a bye, an inactive, or an injury. */
+  played: boolean;
+  points: number;
+  /** His share of his own offence's snaps, 0–1. The closest thing to a route count that exists. */
+  snap_pct: number | null;
+  targets: number | null;
+  carries: number | null;
+  /** Carries inside the 20 plus targets inside the 20: the scoring chances he was given. */
+  rz_touches: number | null;
+  yards: number | null;
+  tds: number | null;
+}
+
+/**
+ * A whole season rolled up, scored by the reader's league.
+ *
+ * Shares (`target_share`, `rush_share`) are this player's count over his own team's count
+ * in the weeks he played, so a player who missed a month is not punished for the weeks he
+ * was not there.
+ */
+export interface ScoutSplit {
+  season: number;
+  /** Games he actually played, which is what every per-game number below divides by. */
+  games: number;
+  points: number;
+  ppg: number | null;
+  snap_pct: number | null;
+  targets: number | null;
+  target_share: number | null;
+  carries: number | null;
+  rush_share: number | null;
+  rz_touches: number | null;
+  /** Every yard he gained, however he gained it: passing plus rushing plus receiving. */
+  yards: number | null;
+  tds: number | null;
+  /**
+   * The three fields below exist so a read can say the stat a position is actually judged
+   * by. They are optional because the report renders without them — only `reads` consumes
+   * them, and an older API build simply produces slightly blunter prose.
+   *
+   * Without `attempts`, a quarterback's volume had to be stated as yards a game, when the
+   * number every manager actually quotes is attempts. Without the yards split, a running
+   * back's efficiency had to be yards per *touch*, because a single combined `yards` total
+   * cannot be divided by carries to get yards per carry — the receiving yards are in there
+   * too. Both of those were honest and both were the wrong number.
+   */
+  attempts?: number | null;
+  rush_yards?: number | null;
+  rec_yards?: number | null;
+  /** Where his points rank among everyone at his position, 1 = best. Null before anyone has played. */
+  pos_rank: number | null;
+  pos_total: number | null;
+  /** His best and worst week, so the average has a shape around it. */
+  best: number | null;
+  worst: number | null;
+}
+
+/**
+ * One plain-English observation, derived from counts and nothing else.
+ *
+ * Every read is arithmetic on the two splits above — snaps up, targets down, red-zone work
+ * appearing — and says what changed rather than what it means for next week. Nothing here
+ * is a projection, a rating or a claim about our own accuracy, which is the line
+ * `docs/ACCURACY_PROGRAM.md` draws and CLAUDE.md repeats.
+ */
+export interface ScoutRead {
+  /** Stable key for the icon and for tests: "role" | "volume" | "chances" | "shape" | "efficiency". */
+  key: string;
+  head: string;
+  line: string;
+  /** Which way it moved. "flat" is a real answer and the most common one. */
+  tone: "up" | "down" | "flat";
+}
+
+export interface ScoutPlayer {
+  id: string;
+  name: string;
+  position: string;
+  nfl_team: string | null;
+  photo?: string | null;
+  team_logo?: string | null;
+  /** Same rule as `PlayerHit.years_exp`: 0 is a rookie, null is "not provided". */
+  years_exp: number | null;
+  injury_status?: string | null;
+  injury_body_part?: string | null;
+  bye_week?: number | null;
+}
+
+/**
+ * The whole report for one player in one league.
+ *
+ * League-scoped on purpose, twice over: the points are scored by this league's settings,
+ * and `owner` says who holds him here. The same player is a different report in a
+ * six-point-passing-touchdown league, and pretending otherwise is the bug
+ * `docs/DATA.md` warns about.
+ */
+export interface PlayerProfile {
+  player: ScoutPlayer;
+  /** The team that rosters him in this league, or null when he is on the wire. */
+  owner: { team_id: string; team_name: string; is_me: boolean } | null;
+  this_season: ScoutSplit | null;
+  last_season: ScoutSplit | null;
+  /** This season's games, newest first. Empty in week 1 and that is a real answer. */
+  games: ScoutGame[];
+  reads: ScoutRead[];
+  algo_version: string;
+}

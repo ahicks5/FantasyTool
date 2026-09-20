@@ -1,8 +1,22 @@
 "use client";
-/** Scouting: the waiver plan over the ranked free-agent board. */
+/**
+ * Scouting: look anyone up, then the waiver plan over the ranked free-agent board.
+ *
+ * The search box is deliberately outside the lock and the wire plan is deliberately
+ * inside it. A profile says what already happened; the wire says what to do about it,
+ * and what to do is the product. So a visitor who has not bought Wire Pass still gets a
+ * working room — every player in the NFL, scored by his own league — while the board,
+ * the bids and the cuts stay behind `Locked`. Nothing on this page decides that:
+ * `edge/products.py` does, and the API still answers 402 for the plan itself.
+ *
+ * Which is why `WaiversBody` no longer returns `Locked` from the top. The lock is now a
+ * sibling of the search rather than a replacement for the whole tab, in both the
+ * entitlement branch and the paywall branch below.
+ */
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";
+import { PlayerSearch } from "@/components/PlayerSearch";
 import { WaiverPlanView } from "@/components/WaiverPlanView";
 import { WaiversView } from "@/components/WaiversView";
 import { ErrorBox, H2, Opening, useHeldWait } from "@/components/ui";
@@ -11,7 +25,11 @@ import { once, useCached } from "@/lib/cache";
 import type { Connection } from "@/lib/storage";
 import type { WaiverPlanResponse, Waivers } from "@/lib/types";
 
-function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => void; signedIn: boolean }) {
+const TEASER =
+  "We price every add against the player you would drop, tell you what to bid, and line up a fallback claim for when you lose the first one.";
+
+/** The paid half: the plan, and the board under it. Never the search. */
+function WaiverPlan({ c, refresh, signedIn }: { c: Connection; refresh: () => void; signedIn: boolean }) {
   const [board, setBoard] = useState<Waivers | null>(null);
   const [showBoard, setShowBoard] = useState(false);
 
@@ -34,6 +52,8 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
 
   const waiting = useHeldWait(!!plan);
 
+  // The API is the authority on entitlement, so a 402 here still locks the plan even
+  // when the session thought otherwise. It replaces the plan, not the page.
   if (cause instanceof PaywallError)
     return <Locked signedIn={signedIn} sku="waivers" what="Wire Pass" teaser={cause.teaser} onUnlocked={refresh} />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
@@ -64,17 +84,16 @@ function WaiversBody({ c, refresh, signedIn }: { c: Connection; refresh: () => v
 export default function WaiversPage() {
   return (
     <AppShell section="waivers" needsMe>
-      {(s) =>
-        s.has("waivers") ? (
-          <WaiversBody c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
-        ) : (
-          <Locked signedIn={s.signedIn} sku="waivers"
-            what="Wire Pass"
-            teaser="We price every add against the player you would drop, tell you what to bid, and line up a fallback claim for when you lose the first one."
-            onUnlocked={s.refresh}
-          />
-        )
-      }
+      {(s) => (
+        <div className="grid min-w-0 gap-7">
+          <PlayerSearch c={s.connection!} />
+          {s.has("waivers") ? (
+            <WaiverPlan c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />
+          ) : (
+            <Locked signedIn={s.signedIn} sku="waivers" what="Wire Pass" teaser={TEASER} onUnlocked={s.refresh} />
+          )}
+        </div>
+      )}
     </AppShell>
   );
 }
