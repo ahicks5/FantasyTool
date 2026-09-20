@@ -80,7 +80,8 @@ export function pct(p: number): string {
    November DST change and a hard-coded -0500/-0400 is wrong for half of it.
    `Intl` is stdlib, so this costs no bytes.                                     */
 
-const ZONE = "America/New_York";
+/** The league week is an Eastern-time week, whatever clock the reader is on. */
+export const ZONE = "America/New_York";
 const KICKOFF_HOUR = 13; // 1:00 PM ET, the main Sunday slate
 
 /**
@@ -107,7 +108,7 @@ function zoneOffsetMs(at: Date, zone: string = ZONE): number {
 }
 
 /** The wall-clock calendar date in `zone` at this instant, plus its weekday (0 = Sunday). */
-function zoneDate(at: Date, zone: string = ZONE): { y: number; m: number; d: number; weekday: number } {
+export function zoneDate(at: Date, zone: string = ZONE): { y: number; m: number; d: number; weekday: number } {
   const off = zoneOffsetMs(at, zone);
   const shifted = new Date(at.getTime() + off);
   return {
@@ -119,7 +120,7 @@ function zoneDate(at: Date, zone: string = ZONE): { y: number; m: number; d: num
 }
 
 /** The instant at which `y-m-d hour:00` reads on the clock in `zone`. */
-function instantForZoneWallTime(y: number, m: number, d: number, hour: number, zone: string = ZONE): number {
+export function instantForZoneWallTime(y: number, m: number, d: number, hour: number, zone: string = ZONE): number {
   const naive = Date.UTC(y, m - 1, d, hour, 0, 0);
   // One correction pass is enough: the guess is at most an hour off, and an hour
   // never spans two offset changes.
