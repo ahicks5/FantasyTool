@@ -220,3 +220,50 @@ test("the same instant always produces the same note", () => {
     assert.deepEqual(deadlineNote(group, d, 5, now), deadlineNote(group, d, 5, now));
   }
 });
+
+/* ------------------------------------------------------ daily waivers ---
+   The flagship test league runs on this, and reading its null day as "we were
+   not told" left the wire row with no clock at all.                         */
+
+test("a daily league clears every day, so the note says daily and not a weekday", () => {
+  const d = D({ waiver_day: null, waiver_hour: 12, waiver_daily: true });
+  const note = deadlineNote("waivers", d, 2, at("2026-09-16T08:00:00-04:00"));
+  assert.deepEqual(note, { text: "Runs daily 12:00", urgency: "soon" });
+  assert.ok(note!.text.length <= NOTE_CH, `"${note!.text}" must fit the row`);
+});
+
+test("a daily league's next run is today before the hour and tomorrow after it", () => {
+  const d = D({ waiver_hour: 12, waiver_daily: true });
+  // Wed 08:00 ET — noon has not come yet, so it is today.
+  assert.match(inET(nextWaiverRun(d, at("2026-09-16T08:00:00-04:00"))!), /Wed, 09\/16.*12:00/);
+  // Wed 13:00 ET — noon has gone, so it is tomorrow, not next Wednesday.
+  assert.match(inET(nextWaiverRun(d, at("2026-09-16T13:00:00-04:00"))!), /Thu, 09\/17.*12:00/);
+});
+
+test("a daily run rolls across the November DST change by wall clock, not by 24h", () => {
+  const d = D({ waiver_hour: 12, waiver_daily: true });
+  // Sat 31 Oct is EDT, Sun 1 Nov is EST; noon stays noon, and the gap is 25 hours.
+  const before = nextWaiverRun(d, at("2026-10-31T13:00:00-04:00"))!;
+  assert.match(inET(before), /Sun, 11\/01.*12:00/);
+  assert.equal(before - Date.parse("2026-10-31T12:00:00-04:00"), 25 * 3600_000);
+});
+
+test("an hour with no day is not daily unless the league said so", () => {
+  // Same shape the daily case has, minus the flag. `waiver_day: null` is also how a
+  // platform says nothing, and claiming "Runs daily" for that is the wrong-night failure.
+  const d = D({ waiver_day: null, waiver_hour: 12 });
+  assert.equal(deadlineNote("waivers", d, 2, at("2026-09-16T08:00:00-04:00")), null);
+  assert.equal(nextWaiverRun(d, at("2026-09-16T08:00:00-04:00")), null);
+});
+
+test("daily with no hour is a rhythm, not a deadline, so the row stays empty", () => {
+  const d = D({ waiver_daily: true });
+  assert.equal(deadlineNote("waivers", d, 2, at("2026-09-16T08:00:00-04:00")), null);
+});
+
+test("the daily flag never leaks into the other two benches", () => {
+  const d = D({ waiver_hour: 12, waiver_daily: true, trade_deadline_week: 11 });
+  const now = at("2026-09-16T12:00:00-04:00");
+  assert.deepEqual(deadlineNote("team", d, 2, now), deadlineNote("team", null, 2, now));
+  assert.equal(deadlineNote("trade", d, 2, now)!.text, "Deadline wk 11");
+});

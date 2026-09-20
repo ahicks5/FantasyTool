@@ -201,5 +201,15 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
         "summary": summary, "all_clear": n_real == 0 and not any(a["locked"] for a in actions),
         "footer": ("Everything else on your roster is fine. Go enjoy your Sunday." if moves else checked),
         "actions": actions,
+        # When each bench stops mattering, as this league itself defines it — never a
+        # convention we assumed, and never a platform's own numbering: the connectors have
+        # already converted into US/Eastern with 0 = Sunday. A null is the platform not
+        # telling us, and the UI draws no clock for it rather than a guessed one.
+        "deadlines": {
+            "waiver_day": league.waiver_day,
+            "waiver_hour": league.waiver_hour,
+            "waiver_daily": league.waiver_daily,
+            "trade_deadline_week": league.trade_deadline_week,
+        },
         "algo_version": ALGO_VERSION,
     }

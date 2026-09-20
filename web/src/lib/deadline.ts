@@ -86,13 +86,18 @@ export function nextWaiverRun(
   zone: string = ZONE,
 ): number | null {
   const day = validDay(d?.waiver_day);
-  if (day === null) return null;
+  const daily = d?.waiver_daily === true;
+  if (day === null && !daily) return null;
   const hour = validHour(d?.waiver_hour) ?? ASSUMED_WAIVER_HOUR;
 
   const { y, m, d: date, weekday } = zoneDate(now, zone);
-  const daysAhead = (day - weekday + 7) % 7;
+  // A daily league clears at that hour every day, so the next run is today if the hour
+  // has not passed and tomorrow if it has — which is what `daysAhead = 0` plus the
+  // already-passed rollover below computes, without a weekday to aim at.
+  const daysAhead = day === null ? 0 : (day - weekday + 7) % 7;
   let at = instantForZoneWallTime(y, m, date + daysAhead, hour, zone);
-  if (at <= now.getTime()) at = instantForZoneWallTime(y, m, date + daysAhead + 7, hour, zone);
+  const step = day === null ? 1 : 7;
+  if (at <= now.getTime()) at = instantForZoneWallTime(y, m, date + daysAhead + step, hour, zone);
   return at;
 }
 
@@ -122,12 +127,30 @@ function lineupNote(now: Date, zone: string): DeadlineNote {
   return { text, urgency };
 }
 
+/**
+ * A waiver night, or a daily league's next noon.
+ *
+ * The daily case is not a nicety: the flagship test league runs on it, and reading its
+ * null day as "we were not told" left the wire row with no clock at all. `waiver_daily`
+ * is a flag off the feed rather than a guess from `waiver_day === null`, because that
+ * same null is genuinely how a platform says nothing — and a row that claims claims run
+ * daily when we simply do not know is the wrong-night failure wearing a different hat.
+ *
+ * "Runs daily" with no hour is deliberately not a case: without an hour there is no
+ * deadline in it, only a rhythm, and the row is for deadlines.
+ */
 function waiverNote(d: Deadlines | null | undefined, now: Date, zone: string): DeadlineNote | null {
   const day = validDay(d?.waiver_day);
+  const hour = validHour(d?.waiver_hour);
+  if (d?.waiver_daily === true) {
+    if (hour === null) return null;
+    const at = nextWaiverRun(d, now, zone);
+    if (at === null) return null;
+    return { text: `Runs daily ${clockLabel(hour)}`, urgency: kickoffUrgency(at - now.getTime()) };
+  }
   if (day === null) return null;
   const at = nextWaiverRun(d, now, zone);
   if (at === null) return null;
-  const hour = validHour(d?.waiver_hour);
   const text = hour === null ? `Runs ${DAY_ABBR[day]}` : `Runs ${DAY_ABBR[day]} ${clockLabel(hour)}`;
   return { text, urgency: kickoffUrgency(at - now.getTime()) };
 }

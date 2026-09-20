@@ -459,6 +459,13 @@ export interface Deadlines {
   waiver_day: number | null;
   /** 0–23, US/Eastern, the hour claims process on that day. */
   waiver_hour: number | null;
+  /**
+   * True when claims clear every day at `waiver_hour`, which is Sleeper's daily-waiver
+   * mode and the setting the test league runs on. Such a league has no waiver *night*,
+   * so `waiver_day` is null for it — but null also means "the platform did not tell us",
+   * and the two must never be read as each other. Hence a flag, not an inference.
+   */
+  waiver_daily?: boolean;
   /** The last week trades may be made. Compared against `week`, never against a date. */
   trade_deadline_week: number | null;
 }

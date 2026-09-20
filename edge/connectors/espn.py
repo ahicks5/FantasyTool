@@ -25,6 +25,15 @@ log = logging.getLogger(__name__)
 # beats a subscriber finding out.
 UNMAPPED_WARN = 0.02
 
+# ESPN names the waiver day in English ("WEDNESDAY"), so there is nothing to decode and no
+# platform numbering to get wrong: acquisitionSettings.waiverProcessDays is a list of day
+# names. Our output is 0 = Sunday ... 6 = Saturday, the web contract's shape.
+ESPN_WAIVER_DAYS: dict[str, int] = {
+    "SUNDAY": 0, "MONDAY": 1, "TUESDAY": 2, "WEDNESDAY": 3,
+    "THURSDAY": 4, "FRIDAY": 5, "SATURDAY": 6,
+}
+
+
 # ESPN lineupSlotId -> our slot names (edge.models). Unknown ids (IDP, HC, P, ...) are skipped.
 LINEUP_SLOTS: dict[int, str] = {
     0: "QB", 2: "RB", 3: "WRRB_FLEX", 4: "WR", 5: "REC_FLEX", 6: "TE", 7: "SUPER_FLEX",
@@ -237,6 +246,30 @@ def _member_name(m: dict | None) -> str | None:
     return m.get("displayName") or f"{m.get('firstName', '')} {m.get('lastName', '')}".strip() or None
 
 
+def waiver_window(settings: dict) -> tuple[int | None, int | None]:
+    """(day, hour) claims process, in US/Eastern, 0 = Sunday ... 6 = Saturday.
+
+    The day is whatever `acquisitionSettings.waiverProcessDays` names, and nothing else:
+    a payload without it, or one naming more than one day (claims run on several days, so
+    there is no single night to count down to), gives None.
+
+    **The hour is deliberately None.** ESPN sends `waiverProcessHour` — 8 in
+    `tests/fixtures/espn/league_2026.json` — as a bare integer with no zone attached, and
+    nothing in the payload or in this repo says which zone that is. The one timestamp that
+    could have settled it, `status.waiverLastExecutionDate`, disagrees with the settings in
+    the only fixture that carries both (a Tuesday, against `waiverProcessDays:
+    ["WEDNESDAY"]`), so it is a placeholder rather than evidence. Sleeper's equivalent
+    field turned out to be US/Pacific, not Eastern (see `connectors/sleeper.waiver_window`),
+    so "ESPN is an Eastern company" is a guess, and a claim clock three hours wrong is
+    worse than no clock. What would fix this: one recorded ESPN league whose real waiver
+    transaction times can be lined up against its `waiverProcessHour`; then convert that hour
+    into Eastern here and pin it with that fixture.
+    """
+    days = [str(d).upper() for d in (settings.get("waiverProcessDays") or [])]
+    day = ESPN_WAIVER_DAYS.get(days[0]) if len(days) == 1 else None
+    return day, None
+
+
 def build_league(
     raw: dict,
     week: int | None = None,
@@ -255,6 +288,9 @@ def build_league(
     """
     settings = raw.get("settings") or {}
     acq = settings.get("acquisitionSettings") or {}
+    waiver_day, waiver_hour = waiver_window(acq)
+    # ESPN has no daily-waiver mode to read, so this is a fact about ESPN, not a default.
+    waiver_daily = False
     use_faab = bool(acq.get("isUsingAcquisitionBudget"))
     budget = int(acq.get("acquisitionBudget") or 0) if use_faab else None
     roster_positions = expand_roster_positions((settings.get("rosterSettings") or {}).get("lineupSlotCounts") or {})
@@ -295,7 +331,26 @@ def build_league(
         teams=teams,
         waiver_type="faab" if use_faab else "priority",
         faab_budget=budget,
-        trade_deadline_week=None,  # ESPN gives a deadline timestamp, not a week; resolve later
+        waiver_day=waiver_day,
+        waiver_hour=waiver_hour,
+        waiver_daily=waiver_daily,
+        # ESPN gives an epoch-millisecond timestamp (`tradeSettings.deadlineDate`, e.g.
+        # 1795044000000 = Wed 18 Nov 2026 19:20 ET in the fixture) and never a week, and
+        # there is nothing here to turn a date into a week with. `edge/data/schedule.py`
+        # holds only which teams play in each week, with no dates at all; the ESPN payload
+        # dates weeks nowhere either (`schedule` entries carry matchupPeriodId and points,
+        # `status` carries only round-number placeholders); and Sleeper's `season_start_date`
+        # is the current season's, on another platform, outside this pure function. Even
+        # with an anchor the answer would be off by a week as often as not: the fixture's
+        # deadline falls on the Wednesday AFTER week 11's games, so "week 11" and "week 12"
+        # are both defensible readings of the same instant, and the feed compares this
+        # against `week` to say "Last call wk N".
+        # To resolve it, what is missing is a week -> start/end date map for the season
+        # (`fetch_schedule` reads ESPN's scoreboard, which carries each game's date, and
+        # would only need to keep it) plus a decision on which side of a game week a
+        # deadline between two weeks belongs to. Until then a user with an ESPN league sees
+        # no trade clock, which is the honest answer.
+        trade_deadline_week=None,
     )
     if players is not None:
         missed = attach_sleeper_ids(league, players)

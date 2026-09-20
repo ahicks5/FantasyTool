@@ -135,6 +135,20 @@ class League:
     waiver_type: str = "faab"     # "faab" | "priority" | "none"
     faab_budget: int | None = None
     trade_deadline_week: int | None = None
+    # When this league's claims process, as the league itself sets it, in **US/Eastern**.
+    # `waiver_day` is 0 = Sunday ... 6 = Saturday (JS `getDay`, the shape the web contract
+    # wants) — NOT Python's `weekday()`, where Monday is 0, and not any platform's own
+    # numbering: each connector converts into this one. `waiver_hour` is 0-23.
+    # None means "the platform did not tell us" or "there is no single day" (daily waivers),
+    # and the UI shows no clock at all rather than one we guessed. Never fill these in with
+    # a convention; a claim deadline on the wrong night is worse than no deadline.
+    waiver_day: int | None = None
+    waiver_hour: int | None = None
+    # True when claims clear *every* day at `waiver_hour` rather than on one night, which
+    # is a different sentence on screen ("Runs daily 12:00", not "Runs Wed 12:00") and is
+    # stated rather than inferred from `waiver_day is None` -- that also means "the
+    # platform did not tell us", and the two must never be read as each other.
+    waiver_daily: bool = False
     free_agents: list[Player] = field(default_factory=list)
 
     def __post_init__(self) -> None:
