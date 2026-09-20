@@ -23,6 +23,7 @@ import type {
   TradeRequest,
   TradeResult,
   Waivers,
+  TeamGrades,
 } from "./types";
 import * as mocks from "./mocks";
 import { espnAuthHeaders } from "./espnAuth";
@@ -218,6 +219,28 @@ export async function getRoster(platform: Platform, leagueId: string, teamId: st
     return { team: { id: teamId, name: mocks.LEAGUE.teams.find((t) => t.id === teamId)?.name ?? teamId }, players, starters: [] };
   }
   return request<Roster>(`/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/roster`);
+}
+
+/**
+ * One team's scorecard, for any team in the league.
+ *
+ * The owner's own card already rides along inside `getLineup`, because the page drawing it
+ * is fetching that anyway. This is for the other eleven, where the compare view wants one
+ * rival on demand and has no use for their start/sit advice.
+ */
+export async function getTeamGrades(
+  platform: Platform,
+  leagueId: string,
+  teamId: string,
+): Promise<TeamGrades> {
+  if (USE_MOCKS) {
+    const g = mocks.lineupFor(teamId).grades;
+    if (!g) throw new Error(`no mock scorecard for team ${teamId}`);
+    return { team: { id: teamId, name: mocks.LEAGUE.teams.find((t) => t.id === teamId)?.name ?? teamId }, grades: g };
+  }
+  return request<TeamGrades>(
+    `/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/grades`,
+  );
 }
 
 export async function getLineup(platform: Platform, leagueId: string, teamId: string): Promise<Lineup> {

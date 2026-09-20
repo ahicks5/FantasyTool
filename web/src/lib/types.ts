@@ -83,6 +83,18 @@ export interface Player {
   nfl_team: string | null;
   injury_status: string | null;
   projected: number;
+  /**
+   * What is wrong, in the platform's words: "Concussion", "Hamstring". It rides beside
+   * `injury_status` and never replaces it — a body part is not a ruling, and only the
+   * status says whether he plays.
+   */
+  injury_body_part?: string | null;
+  /** When the platform last had news on this player, epoch **milliseconds**. This is the
+   *  whole answer to "did anyone just get hurt": it is a timestamp on the news, not on the
+   *  injury, so it moves when a player is cleared as well as when he is ruled out. */
+  news_updated?: number | null;
+  /** The week he is off. Null when the platform did not say — never 0, which is a week. */
+  bye_week?: number | null;
   opponent?: string;
   ros?: number;
   photo?: string | null;
@@ -162,6 +174,12 @@ export interface Grades {
   league_size: number;
   note: string;
   positions: PositionGrade[];
+}
+
+/** One team's scorecard on its own, from `/team/{id}/grades` — the compare view's unit. */
+export interface TeamGrades {
+  team: { id: string; name: string };
+  grades: Grades;
 }
 
 export interface Lineup {

@@ -248,6 +248,27 @@ def lineup(platform: str, league_id: str, team_id: str, email: str | None = Depe
     return out
 
 
+@app.get("/api/league/{platform}/{league_id}/team/{team_id}/grades")
+def team_grades(platform: str, league_id: str, team_id: str, auth=Depends(espn_auth)):
+    """One team's scorecard, for any team in the league, so a roster can be read against a rival.
+
+    The depth chart already ships the *owner's* scorecard inside `/lineup`, because the page
+    that draws it is fetching that anyway. This exists for the other eleven, where the page
+    wants one rival on demand and has no use for their start/sit advice.
+
+    **Free, on purpose, and it does not open Trade Lab.** What it returns is a letter and a
+    rank per position, computed by `engine/grades.py` from rosters every manager in the
+    league can already see on the platform itself. Trade Lab sells the verdict on an offer
+    and a counter tuned to the other manager's habits; "their running backs grade C+, ninth
+    of twelve" is neither, and `test_the_paid_card_is_still_paid` pins that half regardless.
+    Reverse it by adding an entitlement check here -- one line, and the only line.
+    """
+    b = _bundle(platform, league_id, auth)
+    team = _team(b, team_id)
+    return {"team": {"id": team.id, "name": team.name},
+            "grades": grades.grade_team(b.league, team, b.ros).to_dict()}
+
+
 def _teaser(b: service.Bundle, t, feature: str) -> str | None:
     """A concrete, name-free sentence for the paywall, computed from the real feed."""
     try:
