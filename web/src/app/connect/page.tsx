@@ -11,7 +11,7 @@ import { clearEspnAuth, useEspnAuth } from "@/lib/espnAuth";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck } from "@/components/icons";
 import { Button, Countdown, ErrorBox, Eyebrow, ThemeToggle, Wordmark } from "@/components/ui";
-import { LINES } from "@/lib/vocab";
+import { CONNECT, LINES } from "@/lib/vocab";
 
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
@@ -168,12 +168,20 @@ export default function ConnectPage() {
         <Eyebrow>
           Step <span className="tnum">1</span> of <span className="tnum">2</span> · Connect
         </Eyebrow>
-        <h1 className="display mt-2 text-[34px] leading-[1.04]">{LINES.threshold}</h1>
+        <h1 className="display mt-2 text-[34px] leading-[1.04]">{LINES.connect}</h1>
         {/* The on-ramp is only urgent if it says how long there is. Its own row, so a long
-            clock never crowds the wordmark on a small phone. */}
-        <div className="mt-3">
-          <Countdown />
-        </div>
+            clock never crowds the wordmark on a small phone.
+
+            It waits for a league. A clock counting down over an empty form is pressure to
+            do something the page has not asked for yet, and on the one screen where a
+            first-time visitor is deciding whether to hand us anything at all, that reads
+            as a sales timer. Once a league is loaded the deadline is theirs and it is the
+            reason to finish. */}
+        {league && (
+          <div className="mt-3">
+            <Countdown />
+          </div>
+        )}
       </div>
 
       {/* Two words, no sublabels. Whatever a platform needs is asked for after it is picked,
@@ -382,7 +390,7 @@ export default function ConnectPage() {
 
           <div className="sticky bottom-0 -mx-4 mt-5 border-t border-line bg-[color-mix(in_srgb,var(--color-plane)_92%,transparent)] px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-md">
             <Button variant="start" className="w-full" onClick={submit} busy={busy} disabled={!teamId}>
-              {busy ? "Wiring you in…" : teamId ? "Take me upstairs" : "Pick your team"}
+              {busy ? CONNECT.busy : teamId ? CONNECT.submit : CONNECT.pick}
             </Button>
           </div>
         </section>

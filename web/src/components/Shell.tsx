@@ -177,7 +177,7 @@ export function AppShell({
   needsMe?: boolean;
 }) {
   const session = useSession();
-  const { title, gate } = SECTIONS[section];
+  const { title, blurb, gate } = SECTIONS[section];
   // Someone returning from Stripe lands on one of these pages, so the wait for the
   // entitlement belongs here rather than in each one.
   const unlock = useUnlockOnReturn(session.refresh);
@@ -185,9 +185,22 @@ export function AppShell({
     <div className="flex min-h-screen flex-col">
       <TopBar session={session} />
       <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-32 pt-5">
-        <div className="mb-4 flex min-h-[34px] items-center justify-between gap-3">
-          <h1 className="truncate text-[26px]">{title}</h1>
-          {aside}
+        {/* The band is still one fixed height, and every tab pays the same one: the
+            blurb is never conditional, so adding it moves the page down once and never
+            again. 34px was the h1 alone; the line under it is 13px on `leading-snug`
+            (17px) over a 2px gap, so the band is 53px.
+
+            The blurb runs the full width *under* the title row rather than sharing the
+            row's left column, so an `aside` (the back chevron on a scout report) cannot
+            eat into it: at 320px the widest blurb wants about 200px and the column left
+            beside a chip is less than that. It truncates rather than wraps, because the
+            height of this band is the one thing on the page that must not move. */}
+        <div className="mb-4 min-h-[53px]">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="truncate text-[26px]">{title}</h1>
+            {aside}
+          </div>
+          <p className="mt-0.5 truncate text-[13px] leading-snug text-muted">{blurb}</p>
         </div>
         <UnlockingBanner state={unlock} />
         {needsMe && session.loading ? (

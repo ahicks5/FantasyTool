@@ -13,6 +13,12 @@
  *
  * - `label` is the tab, which has about nine characters before it wraps on a phone.
  * - `title` is the page's h1.
+ * - `blurb` is the one line under the h1 that says what the room is for. Nobody was
+ *   ever told what "Scouting" or "GM's Office" meant, and a coach word you have to
+ *   guess at is worse than a plain one: the blurb is the translation, printed on
+ *   every tab on every visit rather than once in an onboarding nobody reads. Verb
+ *   first, one line, and it has to hold on one line at 320px inside the title band's
+ *   fixed height — about 36 characters. It describes the room, never your team.
  * - `gate` is a noun phrase that has to read inside "…and {gate} shows up here",
  *   so it carries its own article. "depth chart shows up here" is what you get
  *   when the h1 is reused for prose, and it reads like a dropped word.
@@ -21,18 +27,59 @@ export interface Section {
   href: string;
   label: string;
   title: string;
+  blurb: string;
   gate: string;
 }
 
 export const SECTIONS = {
-  home: { href: "/home", label: "Call sheet", title: "Call sheet", gate: "your call sheet" },
-  team: { href: "/team", label: "Depth", title: "Depth chart", gate: "your depth chart" },
-  waivers: { href: "/waivers", label: "Scouting", title: "Scouting", gate: "the wire" },
-  trade: { href: "/trade", label: "GM's Office", title: "GM's Office", gate: "the trade board" },
-  report: { href: "/report", label: "Film", title: "The film", gate: "the film" },
+  home: {
+    href: "/home",
+    label: "Call sheet",
+    title: "Call sheet",
+    blurb: "This week\u2019s moves, ranked.",
+    gate: "your call sheet",
+  },
+  // The tab says "Lineup" and the page says "Depth chart". "Depth" on its own is the
+  // half of the phrase that carries none of the meaning — it reads as bench depth, which
+  // is a thing this tab also shows and is not what the tab is for. "Lineup" is six
+  // characters, inside the nine the bar allows, and it is the word people arrive with.
+  team: {
+    href: "/team",
+    label: "Lineup",
+    title: "Depth chart",
+    blurb: "Who starts, and why.",
+    gate: "your depth chart",
+  },
+  waivers: {
+    href: "/waivers",
+    label: "Scouting",
+    title: "Scouting",
+    blurb: "Who to pick up, and what to bid.",
+    gate: "the wire",
+  },
+  trade: {
+    href: "/trade",
+    label: "GM's Office",
+    title: "GM's Office",
+    blurb: "Who to call, and what to offer.",
+    gate: "the trade board",
+  },
+  report: {
+    href: "/report",
+    label: "Film",
+    title: "The film",
+    blurb: "How your season is going.",
+    gate: "the film",
+  },
   /** A room off the call sheet, not a tab of its own: it lives under `/home/` so the
    *  call sheet tab stays lit while you are reading the week's opponent. */
-  matchup: { href: "/home/matchup", label: "Matchup", title: "Matchup", gate: "this week's matchup" },
+  matchup: {
+    href: "/home/matchup",
+    label: "Matchup",
+    title: "Matchup",
+    blurb: "This week\u2019s opponent, slot by slot.",
+    gate: "this week\u2019s matchup",
+  },
 } as const satisfies Record<string, Section>;
 
 export type SectionKey = keyof typeof SECTIONS;
@@ -69,10 +116,19 @@ export const LINES = {
   /** The second beat, where the contrast is said out loud. */
   heroSub: "Everyone else hands you a database. We hand you a call sheet.",
 
-  /** Crossing the threshold: /login, /connect, the first email subject. */
+  /** Crossing the threshold: /login, and the first email subject. */
   threshold: "Welcome to the owner\u2019s box.",
   /** The same move where the line has to be shorter. */
   thresholdShort: "Take the top floor.",
+
+  /**
+   * The h1 on /connect. It is the one page in the app that is a task rather than a
+   * welcome: somebody who has already tapped "Open the Penthouse" knows where they
+   * are and needs to be told what to do next, and a second welcome in a row reads as
+   * a lobby with two receptionists. `threshold` still does the welcoming on /login,
+   * where there is nothing to do but arrive.
+   */
+  connect: "Connect your league.",
 
   /** The bundle, as a sentence — it sits above the price on the pricing card. */
   paywallBundle: "The rest of the building.",
@@ -203,4 +259,91 @@ export const SCOUT = {
    * a back link reading the same word directly under it looks like a mistake.
    */
   back: "All players",
+} as const;
+
+/**
+ * The words on /connect that are not the h1.
+ *
+ * The button changes with the state of the form, and its last state is the one that
+ * matters: "Take me upstairs" named the destination, which is a nice line and tells
+ * you nothing about what happens when you press it. The page's whole promise is the
+ * sheet on the other side of it, so the button says what it hands you. Verb first.
+ */
+export const CONNECT = {
+  /** Before a team is picked: the control is live, so it says what is missing. */
+  pick: "Pick your team",
+  /** Once a team is picked. */
+  submit: "Show my moves",
+  /** While the connection is being written. */
+  busy: "Wiring you in\u2026",
+} as const;
+
+/**
+ * The landing page, which is the only surface a cold visitor reads.
+ *
+ * Two rules hold every line here.
+ *
+ * **A feature card is a benefit with the room as its eyebrow.** The rooms are coach
+ * vocabulary and they are the right names inside the app, but "GM's Office" on a page
+ * read by somebody who has never seen the app is a door with no sign on it. The
+ * eyebrow keeps the room's name, the title says what you get, and by the time they are
+ * inside they have been taught the word.
+ *
+ * **No accuracy number appears here.** We advertised Lock at about 80%; it measures
+ * 75.1% over 2025 weeks 1-17, and `CLAUDE.md` forbids a public decision-accuracy claim
+ * until `scripts/score_runs.py` exists, which it does not. What is true and worth
+ * saying is the *practice*: every stamp is graded and the result is published. The
+ * measured per-margin figures belong on the depth chart, where they are a property of
+ * the margin in front of you rather than a billboard. See docs/CALIBRATION.md.
+ */
+export const LANDING = {
+  /**
+   * The four rooms, in the order a week actually goes: set the lineup, work the wire,
+   * make a call, then read how it went. `key` pairs each card with its icon and its
+   * tone in the page; the words stay here. The eyebrow is read off `SECTIONS` rather
+   * than typed again, so an advert for a room cannot survive that room being renamed.
+   */
+  features: [
+    {
+      key: "team",
+      room: SECTIONS.team.title,
+      title: "Start/sit, graded",
+      tag: "Free",
+      body: "Every starter checked against your bench, with a confidence stamp and one line of why.",
+    },
+    {
+      key: "waivers",
+      room: SECTIONS.waivers.title,
+      title: "Waivers, priced",
+      tag: "$3",
+      body: "Every free agent ranked by how much he actually moves your lineup. With a bid and the name to drop.",
+    },
+    {
+      key: "trade",
+      room: SECTIONS.trade.title,
+      title: "Trades, with a counter",
+      tag: "$5",
+      body: "A verdict on any trade, plus a counter tuned to how that manager has actually traded before.",
+    },
+    {
+      key: "report",
+      room: SECTIONS.report.title,
+      title: "Your standing",
+      tag: "Free",
+      body: "Record, points rank, and a letter grade for every position, against your league.",
+    },
+  ],
+
+  /**
+   * The worked example's headline. It is the product's own headline, word for word
+   * (`edge/engine/actions.py`), because an advert that says something the app does not
+   * say is an advert for a different app.
+   */
+  exampleHead: "3 moves to make",
+
+  /** What we promise about our own accuracy: the practice, never a number. */
+  score: {
+    head: "We keep score",
+    body: "Every stamp is graded against what actually happened, and we publish the result. We only move the thresholds when the data says to. When a call is too close to matter, we tell you to leave it alone.",
+  },
 } as const;

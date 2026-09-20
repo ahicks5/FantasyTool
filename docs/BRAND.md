@@ -96,7 +96,7 @@ reason to rename the sheet.
 | Room | Tab | What it is |
 |---|---|---|
 | Call sheet | `/home` | The three moves. The whole product. |
-| Depth chart | `/team` | Start/sit with a stamp and a one-line reason |
+| Depth chart | `/team` | Start/sit with a stamp and a one-line reason. The tab reads **Lineup**: "Depth" alone reads as bench depth. |
 | Scouting | `/waivers` | The wire: five pickups, ranked by fit, with a bid |
 | GM's Office | `/trade` | Trade Lab: verdict and counter |
 | The film | `/report` | The weekly report |

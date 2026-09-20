@@ -1,9 +1,9 @@
 /** The landing page: the pitch, one worked example and the pricing table. Indexable. */
 import Link from "next/link";
 import { Pricing } from "@/components/Pricing";
-import { IconChevron, IconHeadset, IconTeam, IconTrade, IconWire } from "@/components/icons";
+import { IconChevron, IconFilm, IconHeadset, IconTeam, IconTrade, IconWire } from "@/components/icons";
 import { Countdown, Eyebrow, LinkButton, OnAir, ThemeToggle, Wordmark } from "@/components/ui";
-import { LINES } from "@/lib/vocab";
+import { LANDING, LINES } from "@/lib/vocab";
 
 /** One example call. The headshots are real Sleeper CDN images. */
 const DEMO = [
@@ -39,32 +39,33 @@ const DEMO = [
   },
 ];
 
-const FEATURES = [
-  {
-    href: "/team",
-    title: "Depth chart",
-    tag: "Free",
-    Icon: IconTeam,
-    tone: "bg-start-soft text-start",
-    body: "Start/sit calls with a confidence stamp we backtest every week. Lock is right about 80% of the time.",
-  },
-  {
-    href: "/waivers",
-    title: "Scouting",
-    tag: "$3",
-    Icon: IconWire,
-    tone: "bg-lean-soft text-lean",
-    body: "Every free agent ranked by how much he actually moves your lineup. With a bid and the name to drop.",
-  },
-  {
-    href: "/trade",
-    title: "GM's Office",
-    tag: "$5",
-    Icon: IconTrade,
-    tone: "bg-soft text-ink",
-    body: "A verdict on any trade, plus a counter tuned to how that manager has actually traded before.",
-  },
-];
+/**
+ * The art for each feature card. The words live in `LANDING.features` (vocab.ts); this
+ * only pairs them with the icon and the swatch behind it, keyed the same way the tabs
+ * are. The tone is decoration and never the only thing carrying a meaning — the tag
+ * pill says Free or the price in words.
+ */
+type FeatureKey = (typeof LANDING.features)[number]["key"];
+
+const FEATURE_ART: Record<
+  FeatureKey,
+  { Icon: (p: { size?: number; strokeWidth?: number }) => React.ReactElement; tone: string }
+> = {
+  team: { Icon: IconTeam, tone: "bg-start-soft text-start" },
+  waivers: { Icon: IconWire, tone: "bg-lean-soft text-lean" },
+  trade: { Icon: IconTrade, tone: "bg-soft text-ink" },
+  report: { Icon: IconFilm, tone: "bg-soft text-ink-2" },
+};
+
+/**
+ * Every card, and the header pill, opens the connect page.
+ *
+ * They used to point at `/team`, `/waivers` and `/trade`, which is where the feature
+ * lives once you have a league — and a cold visitor has no league, so the whole
+ * landing page led into "The room's empty". One door, and it is the one that fills
+ * the room.
+ */
+const WAY_IN = "/connect";
 
 const STEPS = [
   { n: "1", title: "Hook up your league", body: "A Sleeper username or a league ID. No password, nothing to sign." },
@@ -130,7 +131,7 @@ export default function Landing() {
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
           <Link
-            href="/home"
+            href={WAY_IN}
             className="btn hidden min-h-11 items-center gap-1 whitespace-nowrap rounded-full border border-line-2 px-4 text-[13px] font-bold hover:bg-soft min-[512px]:inline-flex"
           >
             Open the Penthouse
@@ -179,9 +180,7 @@ export default function Landing() {
 
           <div className="px-5 pt-5">
             <div className="eyebrow">Week 2 · The Megalabowl</div>
-            <div className="display mt-1 text-[27px] leading-tight">
-              <span className="tnum">3</span> moves worth making
-            </div>
+            <div className="display tnum mt-1 text-[27px] leading-tight">{LANDING.exampleHead}</div>
           </div>
 
           <ul className="mt-5">
@@ -212,24 +211,32 @@ export default function Landing() {
       </section>
 
       <section className="mt-9 grid gap-3">
-        {FEATURES.map((f, i) => (
-          <Link key={f.href} href={f.href} className={`card block p-5 hover:bg-soft rise rise-${i + 1}`}>
-            <div className="flex items-start gap-3.5">
-              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${f.tone}`}>
-                <f.Icon size={21} strokeWidth={2} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="display text-[19px]">{f.title}</span>
-                  <span className="tnum shrink-0 rounded-full bg-soft px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-ink-2">
-                    {f.tag}
-                  </span>
+        {LANDING.features.map((f, i) => {
+          const art = FEATURE_ART[f.key];
+          return (
+            <Link key={f.key} href={WAY_IN} className={`card block p-5 hover:bg-soft rise rise-${i + 1}`}>
+              <div className="flex items-start gap-3.5">
+                <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${art.tone}`}>
+                  <art.Icon size={21} strokeWidth={2} />
+                </span>
+                {/* The room sits on the eyebrow row with the price, which leaves the
+                    benefit line the full column. "Trades, with a counter" is 22
+                    characters of 19px display type and shared that row with the pill
+                    in the old layout, where it truncated at 320px. */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="eyebrow truncate">{f.room}</span>
+                    <span className="tnum shrink-0 rounded-full bg-soft px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-ink-2">
+                      {f.tag}
+                    </span>
+                  </div>
+                  <div className="display mt-1 text-[19px] leading-tight">{f.title}</div>
+                  <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{f.body}</p>
                 </div>
-                <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{f.body}</p>
               </div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </section>
 
       <section className="mt-10">
@@ -248,23 +255,19 @@ export default function Landing() {
           ))}
         </ol>
 
-        {/* The differentiator: we publish our own hit rate. */}
+        {/* The differentiator: we grade our own calls in public.
+
+            This block used to lead with "80%" set at 40px. The measured Lock figure is
+            75.1% over 2025 weeks 1-17, its 95% interval never touches 80, and CLAUDE.md
+            forbids a public decision-accuracy claim until scripts/score_runs.py exists.
+            The number is gone rather than corrected: the practice is the differentiator,
+            and the per-margin figures live on the depth chart where they are honest. */}
         <div className="card mt-6 p-5">
           <div className="flex items-center gap-3">
             <IconHeadset size={22} strokeWidth={1.9} className="shrink-0 text-muted" />
-            <Eyebrow>We keep score</Eyebrow>
+            <Eyebrow>{LANDING.score.head}</Eyebrow>
           </div>
-          <div className="mt-3 flex items-baseline gap-3">
-            <span className="display tnum shrink-0 text-[40px] leading-none text-start">80%</span>
-            <div className="min-w-0">
-              <div className="text-[13px] font-bold">Lock calls, right</div>
-              <div className="mt-0.5 text-[12px] text-muted">backtested every week</div>
-            </div>
-          </div>
-          <p className="mt-3.5 text-[14px] leading-relaxed text-ink-2">
-            Every stamp is graded against what actually happened, and we publish the result. We only move the thresholds
-            when the data says to. When a call is too close to matter, we tell you to leave it alone.
-          </p>
+          <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{LANDING.score.body}</p>
         </div>
       </section>
 
