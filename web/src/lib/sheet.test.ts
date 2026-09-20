@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { groupActions, groupFor, groupForHref, groupStatus, type PlacedAction } from "./sheet.ts";
+import { groupActions, groupFor, groupForHref, groupStatus, sheetRows, type PlacedAction, type SheetRow } from "./sheet.ts";
 import type { Action, ActionType, Feature } from "./types.ts";
+import { GROUP_ORDER, ROOM_ORDER } from "./vocab.ts";
 
 const FEATURE: Record<ActionType, Feature> = {
   start: "my_team",
@@ -112,6 +113,47 @@ test("ranked alternatives quote the leader rather than a total", () => {
     { action: action("waiver", "/waivers", { benefit: "+2.0 wk", benefit_value: 2 }), n: 2 },
   ];
   assert.equal(groupStatus("waivers", items), "2 moves · +5.3 wk · +12 ROS");
+});
+
+const rowKeys = (rows: SheetRow[]) => rows.map((r) => `${r.kind}:${r.key}`);
+/** Explicit predicate rather than a bare `r.kind === "bench"`: narrowing a filter is a
+ *  TS 5.5 inference, and this file also has to survive `node --test` stripping types. */
+const benches = (rows: SheetRow[]) => rows.filter((r): r is Extract<SheetRow, { kind: "bench" }> => r.kind === "bench");
+
+test("an empty feed still shows every door in the building", () => {
+  // The rooms are the reason this exists: with no calls to make, the sheet is still a map
+  // of where you can go, so a quiet week must not shrink to three empty benches.
+  const rows = sheetRows([]);
+  assert.deepEqual(rowKeys(rows), ["bench:team", "bench:waivers", "bench:trade", "room:report"]);
+  assert.deepEqual(benches(rows).map((r) => r.items.length), [0, 0, 0]);
+});
+
+test("benches come first, in GROUP_ORDER, then the rooms in ROOM_ORDER", () => {
+  const feed = [
+    action("trade", "/trade", { id: "c" }),
+    action("start", "/team", { id: "a" }),
+    action("waiver", "/waivers", { id: "b" }),
+  ];
+  const rows = sheetRows(feed);
+  assert.deepEqual(rowKeys(rows), [...GROUP_ORDER.map((k) => `bench:${k}`), ...ROOM_ORDER.map((k) => `room:${k}`)]);
+  // The feed's own order does not reorder the benches, and the play numbers still come
+  // from the server's ranking across the whole sheet rather than from the bench.
+  const bs = benches(rows);
+  assert.deepEqual(bs.map((r) => ids(r.items)), [["a"], ["b"], ["c"]]);
+  assert.deepEqual(bs.map((r) => r.items.map((p) => p.n)), [[2], [3], [1]]);
+});
+
+test("a populated feed groups exactly as groupActions does", () => {
+  // `sheetRows` is a wrapper, not a second implementation: if these ever disagree, the
+  // sheet and anything still calling `groupActions` are filing the same call differently.
+  const feed = [action("start", "/team", { id: "a" }), action("hold", "/waivers", { id: "d" })];
+  assert.deepEqual(benches(sheetRows(feed)).map(({ key, items }) => ({ key, items })), groupActions(feed));
+});
+
+test("a room carries no calls to render", () => {
+  const room = sheetRows([]).find((r) => r.kind === "room");
+  // Not `items: []`. A room that looked like an empty bench would get a bench's stamp.
+  assert.ok(room && !("items" in room));
 });
 
 test("a locked teaser prints only the number the server sent", () => {

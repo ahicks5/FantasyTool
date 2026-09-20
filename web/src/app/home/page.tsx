@@ -5,13 +5,14 @@ import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";
 import { CheckBack, Countdown, ErrorBox, Eyebrow, OnAirLive, Opening, Stamp, useHeldWait } from "@/components/ui";
 import { MatchupCell } from "@/components/MatchupCell";
-import { SheetGroup } from "@/components/SheetGroup";
+import { SheetGroup, SheetRoom } from "@/components/SheetGroup";
 import { getActions, sendFeedback } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { calledKey, sheetStatus } from "@/lib/format";
-import { groupActions, groupStatus } from "@/lib/sheet";
+import { groupStatus, sheetRows } from "@/lib/sheet";
+import { deadlineNote, type DeadlineNote } from "@/lib/deadline.ts";
 import { loadCalled, saveCalled, type Connection } from "@/lib/storage";
-import { CLOSED } from "@/lib/vocab";
+import { CLOSED, type GroupKey } from "@/lib/vocab";
 import type { Action, ActionFeed } from "@/lib/types";
 
 function ago(ts: number): string {
@@ -21,6 +22,31 @@ function ago(ts: number): string {
 
 /** A hold is the staff telling you to stand pat — it is not a call you tick off. */
 const isCallable = (a: Action) => !a.locked && a.type !== "hold";
+
+/**
+ * The deadline a bench row carries, if any.
+ *
+ * The lineup row is the interesting case, and it gets its note only while kickoff is
+ * still `open` — more than a day out. Two reasons, and they point the same way.
+ *
+ * Inside a day `deadlineNote` renders the team's deadline as a live countdown, but this
+ * is computed once per render: nothing here ticks, so the row would sit on a frozen
+ * "Locks 04:11:32" that is wrong a second later. A stopped clock is worse than no clock.
+ *
+ * And it would be a second clock for a fact the screen already carries. `Countdown` is in
+ * the call-sheet band a few hundred pixels above, live, and inside two hours it takes the
+ * brand's red while the lamp quickens. So the row states the deadline while it is far
+ * enough away to be reference, and hands it to the band once it is tense — one clock per
+ * fact, and the loud one is the one that is actually running.
+ *
+ * Waivers and trade have no clock anywhere else, and neither counts in seconds: a waiver
+ * night and a deadline week do not go stale between renders.
+ */
+function rowNote(key: GroupKey, feed: ActionFeed): DeadlineNote | null {
+  const note = deadlineNote(key, feed.deadlines, feed.week);
+  if (key === "team" && note?.urgency !== "open") return null;
+  return note;
+}
 
 /**
  * The call sheet header. The one dark surface on the screen, printed with a
@@ -133,8 +159,9 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
   const callable = useMemo(() => feed.actions.filter(isCallable).map((a) => a.id), [feed]);
   const calledCount = useMemo(() => callable.filter((id) => called.includes(id)).length, [callable, called]);
   // Grouped by the tab that owns each call, but numbered by the server's ranking across
-  // the whole sheet — `lib/sheet.ts` carries both halves and the reason.
-  const groups = useMemo(() => groupActions(feed.actions), [feed]);
+  // the whole sheet — `lib/sheet.ts` carries both halves and the reason. Rooms you read
+  // ride along after the benches, so the front door shows the whole building.
+  const rows = useMemo(() => sheetRows(feed.actions), [feed]);
 
   return (
     <div>
@@ -149,21 +176,27 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
           clamped card title is a `-webkit-box` whose min-content width is the whole
           string, so without this one card stretches the sheet sideways. */}
       <ol className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3.5">
-        {groups.map((g, gi) => (
-          <li key={g.key} className="min-w-0">
+        {rows.map((row, gi) =>
+          row.kind === "room" ? (
+            <li key={row.key} className="min-w-0">
+              <SheetRoom room={row.key} animate={animate} delay={gi + 1} />
+            </li>
+          ) : (
+          <li key={row.key} className="min-w-0">
             <SheetGroup
-              group={g.key}
-              status={groupStatus(g.key, g.items)}
-              count={g.items.length}
+              group={row.key}
+              note={rowNote(row.key, feed)}
+              status={groupStatus(row.key, row.items)}
+              count={row.items.length}
               // Collapsed is the default, so a group that is fully worked through has to
               // say so on the row itself. Otherwise the greyed-out cards proving it are
               // behind a tap and the sheet looks the same at 0 of 3 as at 3 of 3.
-              done={g.items.filter(({ action }) => isCallable(action) && called.includes(action.id)).length}
-              total={g.items.filter(({ action }) => isCallable(action)).length}
+              done={row.items.filter(({ action }) => isCallable(action) && called.includes(action.id)).length}
+              total={row.items.filter(({ action }) => isCallable(action)).length}
               animate={animate}
               delay={gi + 1}
             >
-              {g.items.map(({ action: a, n }) => (
+              {row.items.map(({ action: a, n }) => (
                 <li key={a.id} className="min-w-0">
                   <ActionCard
                     a={a}
@@ -191,7 +224,8 @@ function CallSheet({ feed, c, storageKey, animate }: { feed: ActionFeed; c: Conn
               ))}
             </SheetGroup>
           </li>
-        ))}
+          ),
+        )}
       </ol>
       <p className={`mx-auto mt-7 max-w-[19rem] text-center text-[13px] leading-relaxed text-muted ${animate ? "rise rise-5" : ""}`}>
         {feed.footer}

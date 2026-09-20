@@ -173,16 +173,21 @@ const PAGES: PageCase[] = [
       // The hero names the week and team once the feed has loaded.
       await expect(page.getByText(`Week ${CONNECTION.week}`).first()).toBeVisible();
       await expect(page.getByText(CONNECTION.team_name).first()).toBeVisible();
-      // The sheet is three group rows now, one per tab that owns calls, and every one of
-      // them renders even when it holds nothing — that empty row is the whole feature.
+      // The sheet is a row per room now — the three benches that own calls, then the film,
+      // which owns none. Every one renders even when it holds nothing: that empty row is
+      // the whole feature, and the film's row is what makes the front page a map of the
+      // building rather than a list of this week's chores.
       // Assert the words rather than a role: a bench with no calls is deliberately a plain
       // row and not a control, and in this fixture the depth chart is exactly that, so
-      // looking for three buttons here fails on the case the grouping exists to show.
+      // looking for buttons here fails on the case the grouping exists to show.
       // Scoped to `main` because the tab bar says several of these words too.
       const sheet = page.locator("main");
-      for (const key of ["team", "waivers", "trade"] as const) {
+      for (const key of ["team", "waivers", "trade", "report"] as const) {
         await expect(sheet.getByText(SECTIONS[key].title, { exact: true }).first()).toBeVisible();
       }
+      // Every row is a door. The film's is the one with nothing to expand, so if rooms ever
+      // stop linking out it is the row that proves it — there is no other way into it here.
+      await expect(sheet.getByRole("link", { name: `Go to ${SECTIONS.report.title}` })).toBeVisible();
       // The cards are folded behind whichever rows do have calls. Group rows are the only
       // `<section>` with a disclosure — cards are `<article>` — so this cannot catch a
       // card's own Why? toggle by accident.

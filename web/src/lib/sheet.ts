@@ -1,7 +1,7 @@
 // Pure helpers (no React, no DOM) so they can be unit tested with node:test.
 import { signed } from "./format.ts";
 import type { Action, ActionType } from "./types";
-import { GROUP_ORDER, type GroupKey } from "./vocab.ts";
+import { GROUP_ORDER, ROOM_ORDER, type GroupKey, type RoomKey } from "./vocab.ts";
 
 /**
  * An action together with the place it held in the server's ranking of the whole sheet.
@@ -72,6 +72,40 @@ export function groupActions(actions: Action[]): ActionGroup[] {
     bucket.push({ action, n: i + 1 });
   });
   return GROUP_ORDER.map((key) => ({ key, items: buckets.get(key)! }));
+}
+
+/**
+ * A row on the sheet: a bench you work, or a room you read.
+ *
+ * The two are different in kind, not just in content, which is why this is a tagged union
+ * rather than a bench with its calls left empty. A bench carries a verdict — a status line,
+ * a stamp, a count, calls folded underneath — and all of that is a claim about *your team*.
+ * A room carries none of it: nothing on the feed measures the film, so a row for it that
+ * borrowed the bench's furniture would have to invent a verdict to fill it.
+ *
+ * `kind` is the discriminant so a renderer has to decide which it is holding before it can
+ * read `items`; a nullable `items` would let a room quietly render as an empty bench.
+ */
+export type SheetRow =
+  | { kind: "bench"; key: GroupKey; items: PlacedAction[] }
+  | { kind: "room"; key: RoomKey };
+
+/**
+ * Every row on the call sheet, in reading order: the three benches, then the rooms.
+ *
+ * Built on `groupActions` rather than beside it, so there is still exactly one place that
+ * decides which bench a call lands on. Benches come first and all three are always there —
+ * that is `groupActions`' whole point, and the rooms sit under the week's work because you
+ * work the sheet first and then go read about it.
+ *
+ * The rooms are constant. They are listed here anyway so the home screen renders one list
+ * of rows instead of a list plus a hand-written tail: the front door is the map of the
+ * building, and a room appended by the page is a room the next page forgets.
+ */
+export function sheetRows(actions: Action[]): SheetRow[] {
+  const benches: SheetRow[] = groupActions(actions).map(({ key, items }) => ({ kind: "bench", key, items }));
+  const rooms: SheetRow[] = ROOM_ORDER.map((key) => ({ kind: "room", key }));
+  return [...benches, ...rooms];
 }
 
 /** A hold is the staff telling you to stand pat. It is not a move, so it is not counted. */
