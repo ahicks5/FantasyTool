@@ -220,7 +220,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/site.ts` | Where this build thinks it lives. | 41 |
 | `web/src/lib/storage.ts` | What the browser remembers: the connected league, and the calls already ticked off. | 119 |
 | `web/src/lib/supabase.ts` | Supabase magic-link auth. Only active when both public env vars are set. | 43 |
-| `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 529 |
+| `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 583 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
 | `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 178 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 174 |

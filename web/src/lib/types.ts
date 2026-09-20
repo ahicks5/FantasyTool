@@ -194,6 +194,60 @@ export interface Lineup {
   grades?: Grades;
 }
 
+/**
+ * The film: what actually happened, which is the one thing no other tab can show.
+ *
+ * Every other room in the app is about the next kickoff. This is the only backward-looking
+ * surface, so it is the only one allowed to state results rather than projections.
+ */
+export interface RecapStarter {
+  slot: string;
+  player: PlayerRef | null;
+  /**
+   * What we had him at that week, or null. **Null is the normal case**: no projection for
+   * a past week is recoverable after the fact, so this is only ever read back from what we
+   * recorded at the time. A reader who joined in week 6 has nulls for weeks 1 to 5, and the
+   * page must say "no record" there rather than quietly drawing a shorter season.
+   */
+  projected: number | null;
+  /** What he actually scored, in this league's own scoring. */
+  actual: number;
+}
+
+export interface BenchScore {
+  player: PlayerRef;
+  points: number;
+}
+
+export interface WeekRecap {
+  week: number;
+  opponent: string | null;
+  my_points: number;
+  their_points: number | null;
+  /** Null when the week has no opponent on record (a bye in the league's schedule). */
+  won: boolean | null;
+  starters: RecapStarter[];
+  /** The most this roster could have scored that week. Null when the bench is unknown. */
+  best_possible: number | null;
+  /** Bench players who outscored a starter, worst miss first. Empty is the good week. */
+  bench: BenchScore[];
+}
+
+export interface SeasonRecap {
+  team: string;
+  league: string;
+  league_size: number;
+  /** Newest week first. Only weeks that have actually been played. */
+  weeks: WeekRecap[];
+  record: { wins: number; losses: number; ties: number } | null;
+  /**
+   * Where this team's total points rank in the league, 1 = most. Read against `record`:
+   * a good rank with a bad record is the honest word for unlucky, and it is the one thing
+   * a manager cannot see on the platform itself.
+   */
+  points_rank: number | null;
+}
+
 export interface Bid {
   amount: number | null;
   range: [number, number] | null;
