@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
 import { SECTIONS } from "../src/lib/vocab";
+import { RECAP_COPY } from "../src/lib/recap";
 
 /**
  * Every page of the app at 375px, against the fixture API (`scripts/serve_fixtures.py`).
@@ -243,10 +244,24 @@ const PAGES: PageCase[] = [
     path: "/report",
     name: "full report",
     check: async (page) => {
-      // The film is every section in one payload. Its waiver section is named from
-      // vocab, so take it from there rather than typing the word twice.
-      await expect(page.getByRole("heading", { name: "On the field" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: SECTIONS.waivers.title })).toBeVisible();
+      // The film looks backwards now, so it is no longer a restatement of the other
+      // tabs and the old section headings are gone with them.
+      //
+      // The fixture league's only recorded week is the 2026 week 2, which was recorded
+      // mid-week and scores 0.0 across all twelve rosters — so it is correctly not a
+      // played week and this asserts the **empty** film. That is the state a new signup
+      // sees in preseason, and it is worth pinning: a page whose whole subject is the
+      // past has to say so plainly rather than render a blank screen.
+      //
+      // The populated path is covered where the data actually exists: `tests/test_recap.py`
+      // and `src/lib/recap.test.ts` both run against a genuinely played 12-team season.
+      // Serving those weeks here instead was considered and rejected — they are a
+      // different season, so their player ids are absent from this league's player set
+      // and their ten starters do not fit its nine starting slots. A fixture that lies
+      // is worse than one that is thin.
+      await expect(page.getByText(RECAP_COPY.weeksHead, { exact: true }).first()).toBeVisible();
+      await expect(page.getByText(RECAP_COPY.nothingPlayedHead, { exact: true })).toBeVisible();
+      await expect(page.getByText(RECAP_COPY.nothingPlayed)).toBeVisible();
       await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
     },
   },

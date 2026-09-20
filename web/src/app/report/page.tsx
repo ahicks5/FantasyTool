@@ -1,104 +1,44 @@
 "use client";
-/** The film: the whole week in one payload, for The Penthouse bundle. */
-import Link from "next/link";
+/** The film: the season looked back on, week by week, against what we had at the time. */
 import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";
-import { LineupView } from "@/components/LineupView";
-import { WaiversView } from "@/components/WaiversView";
-import { WaiverPlanView } from "@/components/WaiverPlanView";
-import { TradeFinderView } from "@/components/TradeFinderView";
-import { ErrorBox, Eyebrow, H2, Opening, SplitMeter, useHeldWait, VerdictWord } from "@/components/ui";
-import { getReport } from "@/lib/api";
+import { Film } from "@/components/Film";
+import { ErrorBox, Opening, useHeldWait } from "@/components/ui";
+import { getRecap } from "@/lib/api";
 import { useCached } from "@/lib/cache";
-import { pct } from "@/lib/format";
+import { RECAP_COPY } from "@/lib/recap";
 import type { Connection } from "@/lib/storage";
-import type { Report } from "@/lib/types";
+import type { SeasonRecap } from "@/lib/types";
 
-function ReportBody({ c }: { c: Connection }) {
-  const { data, error, reload } = useCached<Report>(
-    `report:${c.platform}:${c.league_id}:${c.team_id}`,
-    () => getReport(c.platform, c.league_id, c.team_id),
+/**
+ * The film is the one tab that looks backwards.
+ *
+ * It used to re-render the lineup, the wire and the trade board in one column, which is
+ * the other four tabs read a second time. Nothing here is this week's advice: it is the
+ * weeks that have already happened, the calls we made, and what actually came in.
+ */
+function FilmBody({ c }: { c: Connection }) {
+  const { data, error, reload } = useCached<SeasonRecap>(
+    `recap:${c.platform}:${c.league_id}:${c.team_id}`,
+    () => getRecap(c.platform, c.league_id, c.team_id),
   );
   const waiting = useHeldWait(!!data);
 
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (waiting || !data) return <Opening />;
-
-  const m = data.matchup;
-  return (
-    <div className="grid gap-8">
-      {m && m.opponent && m.win_prob !== null && m.their_proj !== null && (
-        <section className="hero p-5">
-          <Eyebrow>Matchup outlook</Eyebrow>
-          <div className="mt-1 truncate text-[13px] font-bold text-white/85">vs {m.opponent}</div>
-          <div className="display tnum mt-1.5 text-[34px] leading-none text-white">
-            {m.my_proj.toFixed(1)}
-            <span className="mx-1.5 text-white/35">–</span>
-            <span className="text-white/55">{m.their_proj.toFixed(1)}</span>
-          </div>
-          <div className="mt-3.5">
-            <SplitMeter left={m.win_prob} right={1 - m.win_prob} leftLabel={`${pct(m.win_prob)} to win`} rightLabel={pct(1 - m.win_prob)} onHero />
-          </div>
-        </section>
-      )}
-
-      <section>
-        <H2>The board</H2>
-        <div className="mt-2">
-          <LineupView lineup={data.lineup} compact />
-        </div>
-      </section>
-
-      <section>
-        <H2>Scouting</H2>
-        <div className="mt-2">
-          {data.waiver_plan ? <WaiverPlanView plan={data.waiver_plan} compact /> : <WaiversView waivers={data.waivers} compact />}
-        </div>
-      </section>
-
-      {data.trade_finder && data.trade_finder.partners.length > 0 && (
-        <section>
-          <H2>Trades worth calling</H2>
-          <div className="mt-2">
-            <TradeFinderView found={data.trade_finder} />
-          </div>
-        </section>
-      )}
-
-      <section className={data.trade_finder?.partners.length ? "hidden" : ""}>
-        <H2>Trade targets</H2>
-        <ul className="mt-2 grid gap-2">
-          {data.trade_targets.length === 0 && <li className="text-sm text-muted">Nothing clean on the board this week.</li>}
-          {data.trade_targets.map((t, i) => (
-            <li key={i} className="card p-4">
-              <div className="flex items-center justify-between gap-2">
-                <Eyebrow className="truncate">{t.their_team_name}</Eyebrow>
-                <VerdictWord value={t.verdict} className="text-[17px]" />
-              </div>
-              <div className="mt-1.5 text-[14px] leading-relaxed">
-                <span className="font-black text-sit">Give</span> {t.give_names.join(" + ")}
-                <br />
-                <span className="font-black text-start">Get</span> {t.get_names.join(" + ")}
-              </div>
-              <p className="mt-1.5 text-[13px] leading-snug text-muted">{t.why}</p>
-              <Link
-                href={`/trade?their=${t.their_team_id}&give=${t.give.join(",")}&get=${t.get.join(",")}`}
-                className="mt-2.5 inline-block rounded-xl bg-soft px-3.5 py-2 text-[13px] font-bold"
-              >
-                Take it to the lab
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
-  );
+  return <Film recap={data} />;
 }
 
 export default function ReportPage() {
   return (
     <AppShell section="report" needsMe>
-      {(s) => (s.has("full_report") ? <ReportBody c={s.connection!} /> : <Locked signedIn={s.signedIn} sku="full_report" what="Full Report" onUnlocked={s.refresh} />)}
+      {(s) =>
+        s.has("full_report") ? (
+          <FilmBody c={s.connection!} />
+        ) : (
+          <Locked signedIn={s.signedIn} sku="full_report" what={RECAP_COPY.product} onUnlocked={s.refresh} />
+        )
+      }
     </AppShell>
   );
 }

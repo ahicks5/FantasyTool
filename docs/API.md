@@ -113,7 +113,55 @@ Ranked pickups with the bid and the drop. Wire name stays `waivers`.
 }
 ```
 
+## Head to head (free)
+
+One team's scorecard, for **any** team in the league, so a roster can be read against a
+rival in GM's Office. The connected team's own card already rides inside `/lineup`; this
+is for the other eleven, where the page wants one rival and no start/sit advice.
+
+Free deliberately. It returns a letter and a rank per position, computed from rosters
+every manager in the league can already see on the platform itself. Trade Lab sells the
+verdict on an actual offer and a counter tuned to that manager, which this is not —
+`test_a_rivals_letters_are_free_and_do_not_unlock_the_trade_lab` pins the boundary.
+
+`GET /api/league/{platform}/{league_id}/team/{team_id}/grades` →
+`{"team":{"id":"4","name":"Waddle My Balls"},"grades":{ ... same `Grades` shape `/lineup` returns ... }}`
+
 ## The film (feature: full_report)
 
 The weekly write-up that ships with The Penthouse bundle. Wire name stays `full_report`.
 `GET /api/league/{platform}/{league_id}/team/{team_id}/report` → `{"week":2,"lineup":{...},"waivers":{...},"trade_targets":[{"their_team_id":"4","give":[...],"get":[...],"verdict":"Fair","why":"..."}],"matchup":{"opponent":"...","my_proj":131.4,"their_proj":118.2,"win_prob":0.61},"html":"<...>"}`
+
+### Season recap
+
+The backward-looking half, and the only endpoint in the API that reports results rather
+than projections.
+
+`GET /api/league/{platform}/{league_id}/team/{team_id}/recap` →
+```json
+{"team":"I Feel Purdy","league":"...","league_size":12,
+ "weeks":[{"week":8,"opponent":"TrentDuckworth","my_points":93.78,"their_points":110.9,"won":false,
+           "starters":[{"slot":"QB","player":{"id":"11564","name":"Drake Maye","position":"QB"},"projected":null,"actual":32.28}],
+           "best_possible":116.38,
+           "bench":[{"player":{"id":"4098","name":"Kareem Hunt","position":"RB"},"points":17.2}]}],
+ "record":{"wins":3,"losses":11,"ties":0},"points_rank":8,"algo_version":"recap.v1"}
+```
+
+Things a caller has to handle, none of which are error states:
+
+- **`projected` is `null` for essentially every starter today.** No projection for a past
+  week is recoverable after the fact, so the only honest source is what we recorded at the
+  time — and nothing currently logs a lineup, so there is almost nothing to read back.
+  Build the "no record" state as the primary one.
+- **`starters` and `bench` are empty on ESPN, and `best_possible` is null.** ESPN gives the
+  scoreline for every past week in one call, but who was started and what each player scored
+  sits behind its `mBoxscore` view, one week at a time, which `edge/data/espn_api.py` does
+  not fetch. Real weeks, no line-by-line.
+- `weeks` is newest first and holds played weeks only. `won` is `my > theirs`, so a tie
+  reads `false`; `null` is reserved for a week with no opponent on record.
+- `bench` is worst miss first, and a bench player only counts against slots he was eligible
+  for — a kicker never "outscores" a receiver.
+- Sleeper costs one matchups call per week (there is no bulk endpoint), so a week-14 league
+  is 14 serial calls on a cold process. Finished weeks are cached for the life of the
+  process and cannot change, so steady state is roughly one call. A week that fails is
+  dropped and the rest are returned: a season is never an error page.

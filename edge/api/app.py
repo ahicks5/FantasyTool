@@ -17,6 +17,7 @@ from edge.connectors import sleeper
 from edge.engine import grades
 from edge.engine import lineup as lineup_mod
 from edge.engine import actions as actions_mod
+from edge.engine import recap as recap_mod
 from edge.engine import report, trade, trade_finder, waiver_plan, waivers
 from edge.engine.explain import explain
 
@@ -393,6 +394,44 @@ def full_report(platform: str, league_id: str, team_id: str, email: str | None =
     out["trade_finder"] = trade_finder.find(b.league, t, b.ros, b.profiles, limit_partners=2)
     store.log_run(email, platform, league_id, team_id, b.league.week, "report", "report.v2", {"team": t.name})
     return out
+
+
+def _recorded_projections(email: str | None, platform: str, league_id: str, team_id: str) -> dict:
+    """What we actually showed this team in past weeks, read back out of `runs`.
+
+    The only honest source for a past week's projection is the row we wrote at the time, so
+    this reads and never recomputes. It goes through `export_user`, which is part of the
+    store contract and therefore behaves the same on SQLite and Postgres, rather than a new
+    query against one of them. A signed-out reader has no rows and gets nothing, which is
+    correct — not an excuse to reconstruct one.
+    """
+    if not email:
+        return {}
+    try:
+        rows = store.export_user(email)["data"].get("runs") or []
+    except Exception:  # noqa: BLE001 — a film with no recorded projections still works
+        return {}
+    mine = [r for r in rows
+            if r.get("platform") == platform and str(r.get("league_id")) == str(league_id)
+            and str(r.get("team_id")) == str(team_id)]
+    return recap_mod.projections_from_runs(mine)
+
+
+@app.get("/api/league/{platform}/{league_id}/team/{team_id}/recap")
+def season_recap(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user),
+                 auth=Depends(espn_auth)):
+    """The film: the season that has already happened, week by week, newest first.
+
+    The one backward-looking room in the app, and the only one that states results. Every
+    number in it was scored by the league itself; the `projected` beside a starter is only
+    ever what we recorded that week, and is null wherever we recorded nothing. Part of the
+    Full Report, like the rest of the film.
+    """
+    _require(email, "full_report")
+    b = _bundle(platform, league_id, auth)
+    t = _team(b, team_id)
+    weeks = service.played_weeks(platform, league_id, b, auth=auth)
+    return recap_mod.build(b.league, t.id, weeks, _recorded_projections(email, platform, league_id, t.id))
 
 
 class ShareIn(BaseModel):
