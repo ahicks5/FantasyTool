@@ -441,6 +441,28 @@ export interface Action {
   cta: { label: string; href: string };
 }
 
+/**
+ * When each bench stops mattering, as the league itself defines it.
+ *
+ * Every field here is read off the league's own settings — Sleeper hands us
+ * `waiver_day_of_week`, `daily_waivers_hour` and `trade_deadline`; ESPN hands us a
+ * deadline timestamp — so a countdown built on this is the league's deadline and not a
+ * convention we assumed. Null means the platform did not tell us, and a row with a null
+ * deadline shows no clock rather than a guessed one.
+ *
+ * The lineup deadline is deliberately absent: it is Sunday's first kickoff on the
+ * reader's own clock, which the server does not have, and `nextKickoff()` already
+ * computes it in the browser.
+ */
+export interface Deadlines {
+  /** 0 = Sunday … 6 = Saturday, in US/Eastern — the day claims process. */
+  waiver_day: number | null;
+  /** 0–23, US/Eastern, the hour claims process on that day. */
+  waiver_hour: number | null;
+  /** The last week trades may be made. Compared against `week`, never against a date. */
+  trade_deadline_week: number | null;
+}
+
 export interface ActionFeed {
   week: number;
   team: string;
@@ -454,6 +476,8 @@ export interface ActionFeed {
   actions: Action[];
   entitlements: Feature[];
   synced_at: number;
+  /** Optional: an older API build does not send it, and the sheet must still render. */
+  deadlines?: Deadlines | null;
 }
 
 export interface FeedbackRequest {

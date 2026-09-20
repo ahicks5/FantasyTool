@@ -15,6 +15,7 @@ import {
   verdictClass,
 } from "@/lib/format";
 import { describeError, isOnline } from "@/lib/errors";
+import { CLOSED } from "@/lib/vocab";
 import {
   claimWait,
   narratedFloorPassed,
@@ -349,6 +350,44 @@ export function Countdown({ onHero = false, className = "" }: { onHero?: boolean
         {left === null ? "—" : countdown(left)}
       </span>
     </span>
+  );
+}
+
+/** An hour before the slate: late enough for the inactive reports, early enough to act. */
+const CHECK_BACK_LEAD_MS = 60 * 60 * 1000;
+
+/**
+ * When to look at this again, once every call on the sheet is ticked.
+ *
+ * The sheet's whole promise is that it ends, and before this the finished page just went
+ * grey and sat there — which reads as "nothing loaded" rather than "you are done". So the
+ * closed state hands back the one thing still worth knowing.
+ *
+ * Rendered in the **reader's own timezone**, not Eastern. `Countdown` beside it can quote
+ * a duration and stay true for everyone; a wall-clock time cannot, and "Sunday, 12:00 PM"
+ * shown to someone in Los Angeles is simply the wrong instruction. `Intl` with no locale
+ * argument takes the browser's zone, which is the one they will actually be reading.
+ *
+ * Same hydration shape as `Countdown`, for the same reason: the server has no clock of
+ * the reader's, so it paints nothing and the browser fills it in before the first paint.
+ * Resolving it in the state initialiser instead would make the hydration render disagree
+ * with the server's, and React answers a mismatch by keeping the DOM and discarding its
+ * own output — so the correct string would be computed and then thrown away.
+ */
+export function CheckBack({ className = "" }: { className?: string }) {
+  const [when, setWhen] = useState<string | null>(null);
+  useBeforePaint(() => {
+    const at = new Date(nextKickoff() - CHECK_BACK_LEAD_MS);
+    setWhen(
+      new Intl.DateTimeFormat(undefined, { weekday: "long", hour: "numeric", minute: "2-digit" }).format(at),
+    );
+  }, []);
+  // Nothing at all until it is known. A placeholder here would be a fake appointment.
+  if (when === null) return null;
+  return (
+    <p className={`text-[12px] font-semibold text-white/55 ${className}`}>
+      {CLOSED.back} {when}
+    </p>
   );
 }
 

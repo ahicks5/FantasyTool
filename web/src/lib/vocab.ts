@@ -116,3 +116,40 @@ export type GroupKey = keyof typeof GROUPS;
 
 /** Left to right on the sheet: lineup first, because it expires at kickoff. */
 export const GROUP_ORDER = ["team", "waivers", "trade"] as const satisfies readonly GroupKey[];
+
+/**
+ * Rooms you read rather than benches you work.
+ *
+ * The call sheet is the front door to the building, not just this week's chores: a row
+ * per destination means the whole app is visible from the home screen, and a room with
+ * nothing to decide still earns its row because the point is the map, not the workload.
+ *
+ * A room takes no stamp and no count. A stamp is a verdict on a bench — "nothing here
+ * worth calling" — and the film is never clear or busy, it is simply written. `line` is
+ * what the row says under its title, and it is a description of the room, never a claim
+ * about your team: nothing on the feed measures the film, so nothing here may imply it.
+ */
+export const ROOMS = {
+  report: { line: "The full week, written out" },
+} as const satisfies Partial<Record<TabKey, { line: string }>>;
+
+export type RoomKey = keyof typeof ROOMS;
+
+/** Under the benches: you work the sheet first, then go read about it. */
+export const ROOM_ORDER = ["report"] as const satisfies readonly RoomKey[];
+
+/**
+ * What the hero says once every call on the sheet is ticked.
+ *
+ * The sheet's whole promise is that it ends. Before this the page just went grey and sat
+ * there, which reads as "nothing loaded" rather than "you are done" — so the closed state
+ * says the work is finished and hands back the one thing still worth knowing: when to look
+ * again. `back` is completed by a time the browser computes, because the deadline is on
+ * the reader's clock and the server does not have it.
+ */
+export const CLOSED = {
+  /** Replaces `feed.summary` in the hero. Same length budget: 18 characters. */
+  head: "Sheet's clean.",
+  /** Prefixes the computed time: "Check back Sunday, 11:55 AM". */
+  back: "Check back",
+} as const;

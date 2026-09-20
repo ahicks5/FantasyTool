@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";
-import { Countdown, ErrorBox, Eyebrow, OnAirLive, Opening, Stamp, useHeldWait } from "@/components/ui";
+import { CheckBack, Countdown, ErrorBox, Eyebrow, OnAirLive, Opening, Stamp, useHeldWait } from "@/components/ui";
 import { MatchupCell } from "@/components/MatchupCell";
 import { SheetGroup } from "@/components/SheetGroup";
 import { getActions, sendFeedback } from "@/lib/api";
@@ -11,6 +11,7 @@ import { useCached } from "@/lib/cache";
 import { calledKey, sheetStatus } from "@/lib/format";
 import { groupActions, groupStatus } from "@/lib/sheet";
 import { loadCalled, saveCalled, type Connection } from "@/lib/storage";
+import { CLOSED } from "@/lib/vocab";
 import type { Action, ActionFeed } from "@/lib/types";
 
 function ago(ts: number): string {
@@ -45,7 +46,12 @@ function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: num
         <Eyebrow>
           Week {feed.week} · {feed.team}
         </Eyebrow>
-        <h1 className="display mt-2 text-[30px] leading-[1.08] text-white">{feed.summary}</h1>
+        {/* The engine's summary counts what is *outstanding* ("Pending moves: 4"), so once
+            every call is ticked it counts down to nothing and the hero is left asserting
+            a number that is no longer the point. The closed line is the answer to the
+            question the sheet was opened with, and it only exists client-side because
+            only the browser knows which calls this reader has ticked. */}
+        <h1 className="display mt-2 text-[30px] leading-[1.08] text-white">{done ? CLOSED.head : feed.summary}</h1>
         {/* The total does not count up here. It sits inside a sentence, and a figure that
             eases from 0.0 to 121.4 re-wraps the whole paragraph while it climbs — the
             reserved width stops the reflow but not the reading. The scoreboard number
@@ -93,6 +99,9 @@ function Sheet({ feed, called, total, animate }: { feed: ActionFeed; called: num
                 />
               ))}
             </div>
+            {/* A finished sheet used to end here, and a page that goes quiet reads as one
+                that failed to load. The appointment is the close. */}
+            {done && <CheckBack className="mt-2.5" />}
           </div>
         )}
       </div>
