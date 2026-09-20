@@ -151,3 +151,24 @@ def test_the_lineup_total_matches_an_independently_computed_optimum():
     leftovers = sorted([v for pos in ("RB", "WR", "TE") for v in by_pos[pos][2:]], reverse=True)
     expected = round(starters + sum(leftovers[:2]) + by_pos["DEF"][0] + by_pos["K"][0], 2)
     assert lineup_total(ps, TWO_QB_TWO_TE) == expected
+
+
+def test_hit_rates_are_the_measured_ones_not_the_advertised_ones():
+    """Lock shipped at 0.80 and was measured at 0.751 over 2025 weeks 1-17 (85,006 pairs,
+    docs/CALIBRATION.md, docs/calibration_2025.json). Its 95% interval is 74.6-75.6, so 0.80
+    is not a rounding argument -- it is a claim the data refuses. These numbers reach users
+    through report.lineup_dict, so this test is the guard on a public accuracy claim."""
+    from edge.engine.lineup import HIT_RATE
+
+    assert HIT_RATE == {LOCK: 0.75, LEAN: 0.62, FLIP: 0.52}
+    assert HIT_RATE[LOCK] < 0.80, "Lock has never measured 80% -- do not advertise it"
+    assert HIT_RATE[LOCK] > HIT_RATE[LEAN] > HIT_RATE[FLIP] > 0.5
+
+
+def test_a_coin_flip_is_priced_as_a_coin_flip():
+    """The Flip rate justifies `stabilize` holding the incumbent: under NOISE_MARGIN the
+    higher projection wins barely half the time, so the swap is not a move worth making."""
+    from edge.engine.lineup import HIT_RATE, NOISE_MARGIN
+
+    assert abs(HIT_RATE[FLIP] - 0.5) <= 0.05
+    assert confidence_for(NOISE_MARGIN - 0.01) == FLIP

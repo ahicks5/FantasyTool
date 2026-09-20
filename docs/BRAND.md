@@ -312,9 +312,11 @@ Stamping every row is confetti. On the dark hero a stamp is inked `text-white`.
 (`IconGreaseCheck` + `.grease`, a `pathLength="1"` dash), not printed. The sheet is
 laminated; the tick is yours.
 
-**Confidence language** — **shipping**, validated. Lock ≥ 4 pts (~80%), Lean 1.5–4
-(~62%), Coin flip < 1.5 (~51%). Below 1.5 the incumbent holds. Thresholds move only
-with data (`docs/BACKTEST.md`).
+**Confidence language** — **shipping**, validated. Lock ≥ 4 pts (75.1%), Lean 1.5–4
+(61.7%), Coin flip < 1.5 (52.5%). Below 1.5 the incumbent holds. Those are the measured
+rates over 2025 weeks 1–17 (`docs/CALIBRATION.md`), not the ~80% Lock was once
+advertised at — copy written from this file must never reinstate that number.
+Thresholds move only with data (`docs/BACKTEST.md`).
 
 ---
 

@@ -56,6 +56,8 @@ def player_dict(p: Player | None) -> dict | None:
 def lineup_dict(adv: LineupAdvice) -> dict:
     return {
         "week": adv.week, "projected_total": adv.projected_total, "current_total": adv.current_total,
+        # Shipped verbatim: the measured 2025 rates, not a rounded or re-scaled copy. If this
+        # ever stops being a straight pass-through, the sentence on the depth chart lies.
         "confidence_hit_rate": lineup_mod.HIT_RATE,
         "slots": [{"slot": c.slot, "player": player_dict(c.player), "confidence": c.confidence,
                    "reason": c.reason, "change": c.change, "margin": c.margin} for c in adv.slots],

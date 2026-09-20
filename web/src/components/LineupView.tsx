@@ -10,6 +10,24 @@ import { Scorecard } from "./Scorecard";
 import { IconArrowUp, IconCheck, IconChevron } from "./icons";
 import { ConfidenceStamp, Countdown, CountUp, Eyebrow, H2, InjuryTag, OnAirLive, Stamp } from "./ui";
 
+/**
+ * TEMPORARY: these strings belong in `lib/vocab.ts`; the lead moves them there.
+ *
+ * What a confidence tag is worth, in words. The figures are measured -- 2025 weeks 1-17,
+ * 85,006 within-position pairs (docs/CALIBRATION.md): Lock 75.1%, Lean 61.7%, Coin flip 52.5%.
+ * Two things this copy must never do again. It must not say "last week": a single week is
+ * twenty calls and noise, and the number never came from one. And it must not print a
+ * percentage: a percentage reads as a promise to the decimal, a fraction reads as the odds,
+ * and the odds are what we know.
+ */
+const LINEUP_COPY = {
+  hitRate: {
+    Lock: "Margins this size were right about 3 times in 4 across last season.",
+    Lean: "Margins this size were right about 3 times in 5 across last season.",
+    "Coin flip": "Margins this size were a coin flip across last season.",
+  } as Record<string, string>,
+};
+
 const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
 
 type View = "board" | "scorecard";
@@ -39,10 +57,11 @@ function Bars({ value }: { value: string }) {
  */
 function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
   const [open, setOpen] = useState(false);
-  const why = [
-    s.reason,
-    hit !== undefined ? `${s.confidence}: margins this size were right about ${Math.round(hit * 100)}% of the time last week.` : "",
-  ].filter(Boolean);
+  /* `hit` is a switch, not a number any more: the engine sends the measured rates (report.py's
+     `confidence_hit_rate`), and their absence -- an older payload -- means we say nothing about
+     accuracy at all. The wording itself is fixed per tag, so no rounding happens on screen. */
+  const hitLine = hit !== undefined ? LINEUP_COPY.hitRate[s.confidence] : undefined;
+  const why = [s.reason, hitLine ? `${s.confidence}: ${hitLine}` : ""].filter(Boolean);
 
   return (
     <li className={`min-w-0 ${s.change ? "bg-start-soft" : ""}`}>

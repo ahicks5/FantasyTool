@@ -26,6 +26,15 @@ week 1 was a small sample, and the tag survives.
 95% interval of 74.6–75.6 that never touches 80. You have to reach a margin of about 7 points
 before a call is right 80% of the time.
 
+**Shipped 2026-09-20 — the app now prints these numbers.** `lineup.HIT_RATE` carries the
+measured rates (Lock 0.75, Lean 0.62, Coin flip 0.52) in place of the advertised 0.80 / 0.62 /
+0.51, `report.lineup_dict` passes them through as `confidence_hit_rate`, and the depth chart
+states them as odds for the season — "Margins this size were right about 3 times in 4 across
+last season" — instead of a percentage attributed to last week, which was never where the
+number came from. The tags, the thresholds and `stabilize` are untouched, and
+`edge/calibration.py` is still not wired into `lineup.py`: that changes which calls get which
+tag and is Andrew's call, not this change's.
+
 **4. A margin means different things to different players.** Projection error grows with the
 projection: a player projected for 21 points misses by 8.0 on average, one projected for 2
 misses by 2.9. So the same 4-point gap wins 78.7% between two tight ends and 68.1% between

@@ -7,8 +7,15 @@ from functools import lru_cache
 from edge.models import FLEX_SLOTS, League, Player, Team, player_fits, slot_accepts
 
 LOCK, LEAN, FLIP = "Lock", "Lean", "Coin flip"
-# Measured on 2026 week 1 (docs/BACKTEST.md): how often the higher projection actually scored more.
-HIT_RATE = {LOCK: 0.80, LEAN: 0.62, FLIP: 0.51}
+# How often the higher projection actually scored more, MEASURED -- not advertised.
+# Source: 2025 weeks 1-17, 85,006 within-position startable pairs (scripts/calibrate.py,
+# raw numbers in docs/calibration_2025.json, written up in docs/CALIBRATION.md).
+# Lock 75.1% (95% CI 74.6-75.6), Lean 61.7%, Coin flip 52.5%. Lock was shipped at 0.80 and
+# its interval never touches it; you need a margin near 7 points before a call is right four
+# times in five. Rounded down to two places so nothing on screen over-promises.
+# These numbers are user-facing: edge/engine/report.py ships them as `confidence_hit_rate`
+# and LineupView.tsx turns them into a sentence. Move them only with a new calibrate run.
+HIT_RATE = {LOCK: 0.75, LEAN: 0.62, FLIP: 0.52}
 # Below this margin the higher projection won barely half the time, so calling it a "move" is
 # overclaiming. Same number that separates Coin flip from Lean.
 NOISE_MARGIN = 1.5

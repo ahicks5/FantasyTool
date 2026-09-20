@@ -35,3 +35,14 @@ def test_player_photos_come_from_free_cdns():
     espn = Player(id="4429795", name="y", position="WR", nfl_team="DET")
     espn.ext_ids["espn"] = "4429795"
     assert "espncdn" in player_dict(espn)["photo"]
+
+
+def test_lineup_dict_ships_the_measured_hit_rates_unchanged(league):
+    """`confidence_hit_rate` is what the depth chart turns into a sentence about accuracy, so
+    it must be the measured table verbatim -- no rounding up, no re-scaling on the way out."""
+    from edge.engine import lineup as lineup_mod
+
+    adv = lineup_mod.advise(league, league.teams[0])
+    rates = report.lineup_dict(adv)["confidence_hit_rate"]
+    assert rates == lineup_mod.HIT_RATE == {"Lock": 0.75, "Lean": 0.62, "Coin flip": 0.52}
+    assert max(rates.values()) < 0.80, "nothing shipped to a user may claim 80%"
