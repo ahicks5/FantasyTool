@@ -168,6 +168,32 @@ There is **no route-participation data** in any feed we have. Snap share (`off_s
 is the closest honest measure of how much a player is on the field, and it is what `snap_pct` is.
 Nothing here approximates a route count.
 
+## Trade Finder (free preview, full board: trade_lab)
+
+`GET /api/league/{platform}/{league_id}/team/{team_id}/trades/find`
+
+With `trade_lab` -> the full board:
+`{"week":2,"my_positions":{"surplus":{"RB":41.2},"need":{"TE":12.0}},"summary":"...",
+  "partners":[{"team_id":"9","team_name":"...","owner_name":"...","complement":1.84,
+               "headline":"...","positions":{...},"offers":[{...}]}],
+  "blockers":[...],"algo_version":"trade_finder.v1"}`
+
+Without it -> **200, not 402**, and the same board with the move taken out (D3):
+`{"preview":true,"week":2,"my_positions":{"surplus":["RB"],"need":["TE"]},"summary":"...",
+  "partners":[{"team_id":"9","team_name":"...","owner_name":"...","fit":"Best fit",
+               "headline":"...","positions":{"surplus":["WR"],"need":["RB"]}}],
+  "algo_version":"trade_finder.v1"}`
+
+Free is the shape of the room: what you can spare, where you are thin, which rosters are
+the mirror image of yours. Paid is the move. So the preview carries no offer, no player
+name, no rest-of-season figure, no fairness number and no `blockers` -- the blocker
+sentence names the player you want and who holds him, so the summary falls back to the
+neutral "Hold" line when there is no partner. Positions are ordered lists rather than
+magnitudes, because the magnitudes are ROS points. Built by
+`edge/engine/trade_finder.preview`; pinned by `tests/test_trade_finder.py` and
+`test_the_free_trade_board_is_a_preview_not_a_paywall`. `POST /trade` -- the grade and the
+counter -- is unchanged and still 402s.
+
 ## Trade Lab (feature: trade_lab)
 `POST /api/league/{platform}/{league_id}/trade`
 ```json
@@ -202,6 +228,46 @@ verdict on an actual offer and a counter tuned to that manager, which this is no
 
 `GET /api/league/{platform}/{league_id}/team/{team_id}/grades` →
 `{"team":{"id":"4","name":"Waddle My Balls"},"grades":{ ... same `Grades` shape `/lineup` returns ... }}`
+
+## The table (free)
+
+Standings and the power ranking: every team's record, points for and against, the
+platform's own best-possible total and streak, plus two numbers no platform publishes --
+an all-play record and a rest-of-season roster ranking.
+
+Free deliberately, and it is the top half of `/report`. Everything in it is either the
+platform's own published number or computed from rosters every manager in the league can
+already see. The week-by-week film below it stays behind `full_report`.
+
+`GET /api/league/{platform}/{league_id}/standings` ->
+
+```json
+{"teams":[{"id":"8","name":"Ja'Marrying Rich","owner_name":"andrew",
+           "wins":0,"losses":2,"ties":0,"points_for":219.64,"points_against":248.1,
+           "max_points":260.4,"streak":"2L","rank":11,"points_rank":8,"strength_rank":6,
+           "all_play":{"wins":12,"losses":10,"ties":0},"luck":0.545}],
+ "algo_version":"standings.v1"}
+```
+
+Things a caller has to handle, none of which are error states:
+
+- **`all_play` and `luck` are `null` until a week has been played**, which is the normal
+  case in weeks 1 and 2 and for every brand-new connection. Every other column is still
+  there. Build that state first.
+- **`max_points` and `streak` are `null` on ESPN.** ESPN publishes no best-possible total
+  at all, and no streak *label* -- only a length and a type, which is not the same thing.
+  `points_against` is real on both platforms.
+- **`points_rank` is `null` when nobody in the league has scored yet.**
+- `rank` is record first, points for second. All three ranks are competition ranks: tied
+  teams share the better place and the place after them is skipped.
+- **`luck` is the all-play win rate MINUS the real one**, so a *positive* number means the
+  team is scoring better than its record shows. That is the opposite sign to `LuckRead.gap`
+  in `web/src/lib/recap.ts`; `standingsRead` there is the one place that converts.
+- `strength_rank` is rest-of-season starting-lineup value (`engine/grades._lineup_value`),
+  1 = best roster from here. It is allowed to disagree with `rank`; that is the point.
+- Costs no extra network on a warm process: it reads the cached league bundle and the same
+  finished-week list the film uses, which is cached per week for the life of the process.
+  A season history that fails upstream nulls the all-play columns; it never errors.
 
 ## The film (feature: full_report)
 

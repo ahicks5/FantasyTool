@@ -164,7 +164,7 @@ def test_actions_feed_and_feedback(client, league):
 def test_waiver_plan_and_trade_finder_endpoints(client, league):
     tid = league.teams[1].id
     assert client.get(f"{LG}/team/{tid}/waivers/plan", headers=H).status_code == 402
-    assert client.get(f"{LG}/team/{tid}/trades/find", headers=H).status_code == 402
+    assert client.get(f"{LG}/team/{tid}/trades/find", headers=H).status_code == 200, "free gets the preview board (D3)"
     app_mod.store.grant("andrew@example.com", "full_report", 2026, source="test")
 
     plan = client.get(f"{LG}/team/{tid}/waivers/plan", headers=H)
@@ -191,9 +191,12 @@ def test_every_recommendation_is_logged_with_its_algorithm_version(client, leagu
     client.get(f"{LG}/team/{tid}/actions", headers=H)
     client.get(f"{LG}/team/{tid}/waivers/plan", headers=H)
     client.get(f"{LG}/team/{tid}/trades/find", headers=H)
+    # The depth chart records its calls too, or the accuracy programme only ever sees the
+    # readers who opened the call sheet (scripts/score_runs.py reads both kinds).
+    client.get(f"{LG}/team/{tid}/lineup", headers=H)
     runs = app_mod.store.runs()
     kinds = {r["kind"] for r in runs}
-    assert {"actions", "waiver_plan", "trade_finder"} <= kinds
+    assert {"actions", "waiver_plan", "trade_finder", "lineup"} <= kinds
     for r in runs:
         assert r["algo_version"] and r["algo_version"] != "?"
         assert r["week"] == 2 and r["team_id"] == tid
@@ -444,3 +447,56 @@ def test_an_old_database_gains_the_new_columns(tmp_path):
     store.grant("d@e.f", "waivers", 2026, ref="cs_new", payment_ref="pi_new")
     assert store.revoke("pi_new") == 1
     assert store.skus("d@e.f", 2026) == []
+
+
+def test_the_free_trade_board_is_a_preview_not_a_paywall(client, league):
+    """D3: a caller without Trade Lab gets the partner list, not a 402. It may say who to
+    call and what they are short at. It may not name a single player they could trade."""
+    tid = league.teams[1].id
+    free = client.get(f"{LG}/team/{tid}/trades/find", headers=H)
+    assert free.status_code == 200
+    f = free.json()
+    assert f["preview"] is True and f["partners"] and f["summary"]
+    blob = json.dumps(f)
+    for p in f["partners"]:
+        assert "offers" not in p and "complement" not in p
+        assert p["fit"] in ("Best fit", "Worth a call")
+    for n in {p.name for t in league.teams for p in t.players}:
+        assert n not in blob, f"the free board names {n}"
+    assert "fairness" not in blob and "give_names" not in blob
+
+    # Nothing else moved. The grade, the counter, the wire and the film are still bought.
+    assert client.post(f"{LG}/trade", headers=H, json={"my_team_id": tid,
+                                                       "their_team_id": league.teams[0].id,
+                                                       "give": [], "get": []}).status_code == 402
+    assert client.get(f"{LG}/team/{tid}/waivers/plan", headers=H).status_code == 402
+    assert client.get(f"{LG}/team/{tid}/report", headers=H).status_code == 402
+    assert client.get("/api/me", headers=H).json()["entitlements"] == ["my_team"]
+
+    app_mod.store.grant("andrew@example.com", "trade_lab", 2026, source="test")
+    paid = client.get(f"{LG}/team/{tid}/trades/find", headers=H).json()
+    assert "preview" not in paid
+    for p in paid["partners"]:
+        for o in p["offers"]:
+            assert o["give_names"] and o["get_names"] and o["fairness"]
+
+
+def test_the_table_is_free_and_the_film_under_it_is_not(client, league):
+    """D2: standings and the power ranking are free for everyone, with no entitlement check.
+
+    The two halves of /report are the whole point: a free reader gets the table and is sold
+    the film by what the table says about them. If this ever starts answering 402, the "how
+    am I doing" screen has gone behind the paywall and the growth loop with it.
+    """
+    r = client.get(f"{LG}/standings", headers=H)
+    assert r.status_code == 200
+    teams = r.json()["teams"]
+    assert len(teams) == len(league.teams)
+    assert {"rank", "points_rank", "strength_rank", "all_play", "luck"} <= set(teams[0])
+    assert [t["rank"] for t in teams] == sorted(t["rank"] for t in teams)
+
+    # The film underneath it is still bought, and so is everything else.
+    tid = league.teams[1].id
+    assert client.get(f"{LG}/team/{tid}/recap", headers=H).status_code == 402
+    assert client.get(f"{LG}/team/{tid}/report", headers=H).status_code == 402
+    assert client.get("/api/me", headers=H).json()["entitlements"] == ["my_team"]

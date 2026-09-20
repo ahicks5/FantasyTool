@@ -246,6 +246,12 @@ def lineup(platform: str, league_id: str, team_id: str, email: str | None = Depe
     # The scorecard rides along with the depth chart rather than getting its own endpoint:
     # the page that shows it already fetches this, and grading needs the same league bundle.
     out["grades"] = grades.grade_team(b.league, team, b.ros).to_dict()
+    # Record the call so it can be graded later. Only /actions logged before, so the accuracy
+    # programme could only ever see call-sheet readers; a user who lives on the depth chart
+    # contributed nothing to the measurement. Same data, same store, same export and delete
+    # paths as every other run -- `scripts/score_runs.py` already reads both kinds.
+    store.log_run(email, platform, league_id, team_id, b.league.week, "lineup",
+                  lineup_mod.ALGO_VERSION, out)
     return out
 
 
@@ -268,6 +274,30 @@ def team_grades(platform: str, league_id: str, team_id: str, auth=Depends(espn_a
     team = _team(b, team_id)
     return {"team": {"id": team.id, "name": team.name},
             "grades": grades.grade_team(b.league, team, b.ros).to_dict()}
+
+
+@app.get("/api/league/{platform}/{league_id}/standings")
+def league_standings(platform: str, league_id: str, email: str | None = Depends(optional_user),
+                     auth=Depends(espn_auth)):
+    """The table: every team's record, points, streak and roster strength. Free, for everyone.
+
+    The "how am I doing" screen, and the reason to open the app on a Tuesday. **No
+    entitlement check, on purpose.** Record, points for and points against are numbers every
+    manager in the league can already read on the platform itself; the two we add -- the
+    all-play record and the rest-of-season roster ranking -- are computed from rosters that
+    are equally public. The week-by-week film underneath it on `/report` is still
+    `full_report`, and `test_the_paid_card_is_still_paid` pins that half regardless.
+    Reverse this by adding one `_require(email, "full_report")` line here, and that is the
+    only line.
+
+    League-wide, so there is no team in it and `log_run` gets an empty `team_id`: these rows
+    must never be picked up by `_recorded_projections`, which filters runs by team.
+    """
+    b = _bundle(platform, league_id, auth)
+    out = service.standings(platform, league_id, b, auth=auth)
+    store.log_run(email, platform, league_id, "", b.league.week, "standings",
+                  out.get("algo_version", "?"), out)
+    return out
 
 
 @app.get("/api/league/{platform}/{league_id}/players/search")
@@ -394,9 +424,17 @@ def trade_finder_endpoint(platform: str, league_id: str, team_id: str, email: st
     """Who to talk to and about what, without the user proposing anything first."""
     b = _bundle(platform, league_id, auth)
     t = _team(b, team_id)
-    if not products.can(_skus(email), "trade_lab"):
-        _require(email, "trade_lab", teaser=_teaser(b, t, "trade_lab"))
     out = trade_finder.find(b.league, t, b.ros, b.profiles)
+    if not products.can(_skus(email), "trade_lab"):
+        # D3: the free half of GM's Office. 200, not 402 -- who to call and what they are
+        # short at, with every offer, player name, rest-of-season figure and fairness
+        # number stripped by `trade_finder.preview`. Trade Lab is unchanged: it still owns
+        # the offers, `POST /trade` still answers 402, and `edge/products.py` is still the
+        # only thing that says so.
+        free = {"preview": True, **trade_finder.preview(out)}
+        store.log_run(email, platform, league_id, team_id, b.league.week, "trade_finder_preview",
+                      free.get("algo_version", "?"), free)
+        return free
     store.log_run(email, platform, league_id, team_id, b.league.week, "trade_finder",
                   out.get("algo_version", "?"), out)
     return out

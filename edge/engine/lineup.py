@@ -19,6 +19,10 @@ HIT_RATE = {LOCK: 0.75, LEAN: 0.62, FLIP: 0.52}
 # Below this margin the higher projection won barely half the time, so calling it a "move" is
 # overclaiming. Same number that separates Coin flip from Lean.
 NOISE_MARGIN = 1.5
+# Every other engine module carries one, and `store.log_run` records it against each run so a
+# graded week (scripts/score_runs.py) knows which algorithm made the call. Bump it when the
+# advice changes, not when the wording does.
+ALGO_VERSION = "lineup.v1"
 ZERO_STATUSES = {"OUT", "IR", "PUP", "SUS", "NA", "DOUBTFUL"}
 
 
