@@ -272,3 +272,50 @@ Anything else found on the way is an implementation detail and gets decided in t
 that needs it, with the reason in the commit message. A new *product* question (something
 free becoming paid, a claim about accuracy, removing something a user sees today that this
 plan does not already remove) goes to Andrew before the work continues.
+
+---
+
+## 7. The prompt for the session that builds this
+
+Paste this into a fresh session. It assumes the session has its own working branch and
+that this file is on `claude/stoic-ramanujan-4ayz2p`.
+
+```
+Build the Debrief. Read CLAUDE.md, then docs/MAP.md, then docs/PLAN-DEBRIEF.md, in that
+order, before touching anything.
+
+The plan lives on branch claude/stoic-ramanujan-4ayz2p. Start by bringing it onto your
+working branch: git fetch origin claude/stoic-ramanujan-4ayz2p && git merge
+origin/claude/stoic-ramanujan-4ayz2p. Every decision D1-D7 in section 6 of the plan is
+made. Do not re-open them and do not ask me about them.
+
+Work the five steps in section 4 of the plan in order, DB-1 to DB-5, one commit per step,
+each green on its own. Nothing is done without a test: node tests for lib/, the e2e
+smoke test for the page, both listed in section 3. After each step, run the fast gates
+(uv run pytest -q; cd web && npm run lint && npm test && npm run build) and push to the
+working branch.
+
+Rules that bite here:
+- Every word a user reads goes in web/src/lib/vocab.ts. Never inline a name or a line.
+- The booth.* storage keys keep their names. The new key is booth.dismissed.<league>.<week>.
+- The Lock share button stays on the head coach's memo. Making that memo free never opens
+  Trade Lab; test_the_paid_card_is_still_paid and test_locked_teasers_never_name_a_player
+  must stay green.
+- No accuracy figure anywhere a user reads. vocab.test.ts sweeps for it.
+- The kickoff clock's red is allowed only on the dark plate. On a memo card, deadline
+  notes use the amber steps from lib/deadline.ts.
+- Check both themes at 320 and 390. Seed booth.connection before screenshotting, or you
+  photograph the connect gate (docs/HANDOFF.md).
+- Do not push to claude/edge-fantasy-app-launch-alo0rr. That is production. I say
+  "ship" first.
+
+Only stop to ask me if you find a product question the plan does not answer: something
+free becoming paid, a claim about accuracy, or removing something a user sees today that
+section 1 of the plan does not already remove. Implementation choices are yours; put the
+reason in the commit message.
+
+When DB-5 is done: run all five CI gates from CLAUDE.md, regenerate docs/MAP.md with
+scripts/gen_map.py, update TASKS.md and docs/HANDOFF.md, push, and give me: what shipped,
+screenshots of the Debrief in both themes, anything you left out and why, and nothing
+else.
+```
