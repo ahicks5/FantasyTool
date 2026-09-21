@@ -1259,8 +1259,8 @@ const MOCK_NEWS: NewsItem[] = [
     headline: "Saquon Barkley is Questionable (arm)",
     detail: "RB, in your lineup. Practice: limited.",
     at: Date.now() - 9 * 3_600_000, age_hours: 9.4,
-    player: { id: "4866", name: "Saquon Barkley", position: "RB", nfl_team: "PHI", starter: true },
-    about: { id: "4866", name: "Saquon Barkley", position: "RB", nfl_team: "PHI", status: "Questionable", body_part: "Arm", notes: null, practice: "Limited" },
+    player: { id: "4866", name: "Saquon Barkley", position: "RB", nfl_team: "PHI", starter: true, photo: "https://sleepercdn.com/content/nfl/players/thumb/4866.jpg", team_logo: "https://sleepercdn.com/images/team_logos/nfl/phi.png" },
+    about: { id: "4866", name: "Saquon Barkley", position: "RB", nfl_team: "PHI", status: "Questionable", body_part: "Arm", notes: null, practice: "Limited", photo: "https://sleepercdn.com/content/nfl/players/thumb/4866.jpg", team_logo: "https://sleepercdn.com/images/team_logos/nfl/phi.png" },
   },
   {
     id: "qb:6786:11566", kind: "qb", level: "warning",

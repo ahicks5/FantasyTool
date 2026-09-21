@@ -187,7 +187,7 @@ const PAGES: PageCase[] = [
       await expect(desk).toBeVisible();
       await expect(desk.getByText(CONNECTION.team_name).first()).toBeVisible();
       await expect(desk.getByText(`Week ${CONNECTION.week}`).first()).toBeVisible();
-      await expect(desk.locator(".binder")).toHaveCount(3);
+      await expect(desk.locator(".notebook")).toHaveCount(4);
     },
   },
   {
@@ -561,27 +561,33 @@ test("a link with ?player= opens straight onto his page", async ({ page }) => {
   await expect(page.getByRole("dialog")).toBeVisible();
 });
 
-test("the desk: news on top, the opponent beside it, three binders that open their tabs", async ({ page }) => {
+test("the desk: three stories on top, the call sheet, four notebooks that open their rooms", async ({ page }) => {
   await visit(page, "/home");
   const desk = page.getByRole("region", { name: DESK.aria });
   await expect(desk).toBeVisible();
-  // The news paper is first, and on the recorded week this roster has real news.
-  await expect(desk.getByRole("heading", { name: DESK.news.title })).toBeVisible();
+  // The news paper is first, cut to three stories; the recorded week has more than three.
   const news = desk.locator(".desk-news-row");
-  await expect(news.first()).toBeVisible();
+  await expect(news).toHaveCount(DESK.news.shown);
+  await desk.locator(".desk-more").click();
+  expect(await news.count()).toBeGreaterThan(DESK.news.shown);
+  // A story opens to the platform's own note.
+  const disclosure = news.first().locator("button[aria-expanded]");
+  await disclosure.click();
+  await expect(disclosure).toHaveAttribute("aria-expanded", "true");
   const paperTop = (await desk.locator(".desk-paper-news").boundingBox())!.y;
-  const bindersTop = (await desk.locator(".binder").first().boundingBox())!.y;
-  expect(paperTop, "news is above the binders").toBeLessThan(bindersTop);
-  // The opponent's paper leads to the scouting report.
+  const stackTop = (await desk.locator(".desk-stack").boundingBox())!.y;
+  expect(paperTop, "news is above the call sheet").toBeLessThan(stackTop);
+  // The stack opens the call sheet; the fourth notebook opens the scouting report.
+  await expect(desk.locator(`a[href="${SECTIONS.sheet.href}"]`)).toBeVisible();
   await expect(desk.locator(`a[href="${SECTIONS.matchup.href}"]`)).toBeVisible();
-  // Three binders, each a link into its tab; a lit one wears a badge with a number.
-  const binders = desk.locator(".binder");
-  await expect(binders).toHaveCount(3);
-  const lit = desk.locator(".binder-lit");
+  // Four notebooks, each a link; a lit one wears a badge with a number.
+  const notebooks = desk.locator(".notebook");
+  await expect(notebooks).toHaveCount(4);
+  const lit = desk.locator(".notebook-lit");
   await expect(lit.first()).toBeVisible();
-  await expect(lit.first().locator(".binder-badge")).toHaveText(/^\d+$/);
+  await expect(lit.first().locator(".desk-badge")).toHaveText(/^\d+$/);
   await assertNoHorizontalOverflow(page);
-  await binders.first().click();
+  await notebooks.first().click();
   await page.waitForURL(`**${SECTIONS.team.href}`);
   await expect(page.getByRole("heading", { level: 1, name: SECTIONS.team.title })).toBeVisible();
 });

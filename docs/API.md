@@ -109,9 +109,13 @@ and never a name.
       "headline": "Saquon Barkley is Questionable (arm)",
       "detail": "RB, in your lineup. Practice: limited.",
       "at": 1789940000000, "age_hours": 9.4,
-      "player": {"id": "4866", "name": "Saquon Barkley", "position": "RB", "nfl_team": "PHI", "starter": true},
+      "player": {"id": "4866", "name": "Saquon Barkley", "position": "RB", "nfl_team": "PHI", "starter": true,
+                 "photo": "https://sleepercdn.com/content/nfl/players/thumb/4866.jpg",
+                 "team_logo": "https://sleepercdn.com/images/team_logos/nfl/phi.png"},
       "about": {"id": "4866", "name": "Saquon Barkley", "position": "RB", "nfl_team": "PHI",
-                "status": "Questionable", "body_part": "Arm", "notes": null, "practice": "Limited"},
+                "status": "Questionable", "body_part": "Arm", "notes": null, "practice": "Limited",
+                "photo": "https://sleepercdn.com/content/nfl/players/thumb/4866.jpg",
+                "team_logo": "https://sleepercdn.com/images/team_logos/nfl/phi.png"},
       "also": [], "others": []
     }]
   },

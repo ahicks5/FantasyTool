@@ -32,6 +32,10 @@ the opening.
       free (6 tests), fixture `depth_charts.json` recorded from the live feed with its clock.
       Web: `components/Desk.tsx`, vocab `DESK`, browser test for the desk and the binder tap.
       The ranked sheet is untouched at `/home/sheet`. Decisions for Andrew in `docs/HANDOFF.md`.
+      Round two on his morning notes: three stories with faces and a "why it's yours" tag,
+      expandable; the call sheet as a stack of papers; four spiral notebooks "From the head
+      coach / head of scouting / GM" plus next up; league nameplate moved to the title band,
+      blurbs gone, letterhead is the mark + PH.
       Plus, on Andrew's note: the same news runs as a **ticker** along the bottom of every
       screen (`components/Ticker.tsx`, `lib/ticker.ts` tested, browser test), a door to the desk.
 - [ ] **VG-6** The wire paper: a free agent whose starter just went down, on the desk under

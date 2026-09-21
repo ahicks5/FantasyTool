@@ -322,25 +322,6 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 }
 .hero .eyebrow { color: rgb(247 246 243 / 0.55); }
 
-/* ----------------------------------------------------------------- ribbon ---
-   The league nameplate above the tab bar. A small plate that spans only the words
-   it holds: card surface, a hairline on three sides, open at the bottom where it
-   meets the bar, and the chrome rail along its top edge (`.rail`) so it reads as
-   metal screwed onto metal rather than as one more strip of UI.
-
-   Translucent with the same blur as the bar below it, so the page scrolls *under*
-   the plate instead of stopping dead at it.                                       */
-
-.ribbon {
-  border-radius: 11px 11px 0 0;
-  background: color-mix(in srgb, var(--color-paper) 86%, transparent);
-  border: 1px solid var(--color-line);
-  border-bottom: 0;
-  box-shadow: var(--bevel);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
 /* ------------------------------------------------------------ the call sheet ---
    The sheet is the hero with a printed grid laid over it: faint rules the eye
    reads as an etched surface, not as a table. Decorative, under the content, so
@@ -1214,7 +1195,7 @@ html.ride-boot::before {
 .desk-paper {
   display: block;
   position: relative;
-  padding: 14px 14px 14px;
+  padding: 11px 12px 10px;
   border-radius: 10px;
   color: var(--color-ink);
   background: var(--color-paper);
@@ -1227,98 +1208,61 @@ html.ride-boot::before {
   --color-line: #262a31;
   --color-soft: #1b1f26;
 }
-.desk-paper .eyebrow { color: var(--color-muted); }
-.desk-paper-news { padding-top: 16px; }
-.desk-paper-side { min-height: 118px; }
-.desk-paper-side:hover { background: #20232a; }
-/* Laid down by hand, not squared to the desk. Tiny, or the text reads as skewed. */
-.desk-tilt-l { transform: rotate(-1deg); }
-.desk-tilt-r { transform: rotate(1deg); }
+.desk-paper .eyebrow, .desk-stack .eyebrow { color: var(--color-muted); }
 .desk-letterhead {
   position: absolute;
   top: 8px;
-  right: 11px;
+  right: 10px;
   display: inline-flex;
   align-items: center;
   gap: 3px;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 7px;
-  letter-spacing: 0.14em;
+  font-size: 8px;
+  letter-spacing: 0.12em;
   color: #cdd2d9;
   opacity: 0.8;
 }
-.desk-news-row { padding: 10px 0; }
-.desk-news-row:first-child { padding-top: 8px; }
-.desk-news-row:last-child { padding-bottom: 2px; }
+.desk-news-row { padding: 7px 0; }
+.desk-news-row:first-child { padding-top: 5px; }
+.desk-news-row:last-child { padding-bottom: 3px; }
 .desk-level {
   flex-shrink: 0;
-  margin-top: 2px;
-  min-width: 52px;
-  padding: 3px 6px;
-  border-radius: 4px;
-  text-align: center;
-  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 8.5px;
   font-weight: 900;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-}
-
-/* A binder: a book on its back, spine to the left, the staff member's name on the cover,
-   what is inside, a count on the right and a badge on the corner when something is in it.
-   One per row: three across truncated every word at 375px. */
-.binder {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 64px;
-  padding: 10px 12px 10px 18px;
-  border-radius: 6px 10px 10px 6px;
-  color: #f4f3f0;
-  background: linear-gradient(160deg, #2a2e36 0%, #1c1f25 60%, #17191e 100%);
-  border: 1px solid rgb(255 255 255 / 0.1);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 6px 14px -6px rgb(0 0 0 / 0.8);
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
-}
-.binder:hover { transform: translateY(-2px); }
-.binder-spine {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 8px;
-  border-radius: 6px 0 0 6px;
-  background: var(--chrome-silver);
-  opacity: 0.55;
-}
-.binder-staff {
-  display: block;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #9aa1ac;
-}
-.binder-line {
-  display: block;
-  margin-top: 2px;
-  font-size: 16px;
-  line-height: 1.1;
-}
-.binder-count {
-  flex-shrink: 0;
-  max-width: 40%;
-  text-align: right;
-  font-size: 11px;
-  font-weight: 700;
   line-height: 1.2;
+}
+.desk-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 0;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+/* "From the head coach", under a title. */
+.desk-from {
+  display: block;
+  margin-top: 3px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: #8b929d;
 }
-.binder-badge {
+.desk-badge {
   position: absolute;
   top: -8px;
   right: -6px;
+  z-index: 2;
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
@@ -1332,19 +1276,81 @@ html.ride-boot::before {
   background: var(--color-signal);
   box-shadow: 0 0 0 2px #171412, 0 2px 6px rgb(0 0 0 / 0.6);
 }
-/* Something inside: the cover picks up the desk lamp and breathes. */
-.binder-lit {
+
+/* The call sheet: a stack of papers under a cover. Two sheets peek out below the cover,
+   each a little askew, which is what makes it a stack and not a card. */
+.desk-stack { position: relative; display: block; padding-bottom: 6px; }
+.desk-stack-sheet {
+  position: absolute;
+  inset: 0 0 0 0;
+  border-radius: 10px;
+  background: #15171b;
+  border: 1px solid rgb(255 255 255 / 0.06);
+}
+.desk-stack-sheet-1 { transform: translate(3px, 3px) rotate(0.6deg); }
+.desk-stack-sheet-2 { transform: translate(-3px, 6px) rotate(-0.8deg); background: #111316; }
+.desk-stack-cover {
+  position: relative;
+  display: block;
+  padding: 12px 14px 12px;
+  border-radius: 10px;
+  color: #f4f3f0;
+  background: linear-gradient(160deg, #2f343d 0%, #23272f 55%);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: var(--bevel), var(--shadow-card);
+  --color-ink: #f4f3f0;
+  --color-muted: rgb(247 246 243 / 0.55);
+}
+.desk-stack-cover .desk-from { color: rgb(247 246 243 / 0.5); }
+/* The badge sits on the top corner, so the letterhead moves to the bottom one. */
+.desk-stack-cover .desk-letterhead { top: auto; bottom: 12px; }
+
+/* A spiral notebook: a row of rings along the top edge, the title on the cover, who it is
+   from under it. It picks up the desk lamp and breathes when there is something inside. */
+.notebook {
+  position: relative;
+  display: block;
+  min-height: 84px;
+  padding: 18px 12px 11px 12px;
+  border-radius: 6px 6px 10px 10px;
+  color: #f4f3f0;
+  background: linear-gradient(170deg, #262a32 0%, #1b1e24 60%, #171a1f 100%);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 6px 14px -6px rgb(0 0 0 / 0.8);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  /* Dark whatever the theme: the cover is the metal, and the light theme's ink is black. */
+  --color-ink: #f4f3f0;
+}
+.notebook:hover { transform: translateY(-2px); }
+.notebook-rings {
+  position: absolute;
+  top: -5px;
+  left: 10px;
+  right: 10px;
+  height: 12px;
+  background: radial-gradient(circle at 50% 50%, #cdd2d9 0 2px, #6b727c 2.5px 3.5px, transparent 4px);
+  background-size: 14px 12px;
+  background-repeat: repeat-x;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.7));
+}
+.notebook-lock {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8b929d;
+}
+.notebook-lit {
   border-color: rgb(255 255 255 / 0.22);
   animation: binder-glow 2.6s ease-in-out infinite;
 }
-.binder-lit .binder-spine { opacity: 0.95; }
-.binder-lit .binder-count { color: #f4f3f0; }
-.binder-locked .binder-count { color: #8b929d; }
 @keyframes binder-glow {
   0%, 100% { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 6px 14px -6px rgb(0 0 0 / 0.8), 0 0 0 0 rgb(255 226 180 / 0); }
   50% { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 6px 14px -6px rgb(0 0 0 / 0.8), 0 0 18px 2px rgb(255 226 180 / 0.18); }
 }
-
 
 /* ----------------------------------------------------------------- ticker ---
    The bottom line: the desk's news running right to left over the tab bar. Dark in
@@ -1420,7 +1426,7 @@ button, a.btn, select, input { min-height: 44px; }
   /* The ride is never mounted under reduced motion (`Opening` checks first); if it
      ever is, nothing in it moves. */
   .ride, .ride * , .ride-doors::after { animation: none; transition: none; }
-  .binder-lit { animation: none; }
+  .notebook-lit { animation: none; }
   /* The strip holds still on the first, most serious, headline. */
   .ticker-track { animation: none; }
   .ticker-track[aria-hidden="true"] { display: none; }

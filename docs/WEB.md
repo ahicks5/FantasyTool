@@ -64,6 +64,17 @@ when it decides not to ride, and the cover fades on its own after three seconds 
 guess can never leave a blank screen. It repeats the day-stamp rule in plain JS; the test
 "the boot script agrees with rideDue" runs it in a sandbox to keep the two the same.
 
+**Round two of the desk (Andrew's notes, 2026-09-21 morning).** Less information, more
+doors: the news paper is cut to three stories with a face, a level chip and a few words
+for why it is on your desk (`DESK.news.tag`, e.g. "QB1 for your WR McLaurin"), each row
+opening to the platform's note and "more" for the rest; the call sheet is a stack of papers
+under a cover; the staff are four spiral notebooks in a 2x2 grid, each saying who it is
+from, with a badge when there is something inside. The letterhead is the mark and "PH". The
+league ribbon left the tab bar for the right of the title band (`Nameplate` in `Shell.tsx`)
+and the blurb under every h1 is gone, so the band is 40px on every tab. The notebooks and
+covers pin `--color-ink` themselves: they are dark in both themes and the light theme's ink
+is black, which is how the titles went dim on the first pass.
+
 **The doors open onto the desk, and the desk is the front page.** `/home` is the owner's
 desk (`components/Desk.tsx`, payload from `GET .../desk`): the news paper on top (what just
 happened in the NFL that touches this roster, from `edge/engine/newsdesk.py`), the next

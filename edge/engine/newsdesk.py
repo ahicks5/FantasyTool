@@ -15,6 +15,7 @@ is tested offline against a recorded feed.
 from __future__ import annotations
 
 from edge.data.depth_charts import SKILL, Slot
+from edge.engine.report import SLEEPER_CDN, photo_url, team_logo_url
 from edge.models import Team
 
 # How far back "just in" reaches. Andrew's brief: the last few hours or days.
@@ -60,9 +61,11 @@ def _what(s: Slot) -> str:
 
 
 def _about(s: Slot) -> dict:
+    # A Slot is keyed by Sleeper id, so its headshot is Sleeper's; a lineman has one too.
     return {"id": s.id, "name": s.name, "position": s.position, "nfl_team": s.team,
             "status": s.injury_status, "body_part": s.injury_body_part, "notes": s.injury_notes,
-            "practice": s.practice}
+            "practice": s.practice,
+            "photo": f"{SLEEPER_CDN}/content/nfl/players/thumb/{s.id}.jpg", "team_logo": team_logo_url(s.team)}
 
 
 def _item(kind: str, level: str, mine, starter: bool, about: Slot, headline: str, detail: str,
@@ -72,7 +75,8 @@ def _item(kind: str, level: str, mine, starter: bool, about: Slot, headline: str
         "headline": headline, "detail": detail,
         "at": about.news_updated, "age_hours": _hours_ago(about, now_ms),
         "player": {"id": mine.id, "name": mine.name, "position": mine.position,
-                   "nfl_team": mine.nfl_team, "starter": starter},
+                   "nfl_team": mine.nfl_team, "starter": starter,
+                   "photo": photo_url(mine), "team_logo": team_logo_url(mine.nfl_team)},
         "about": _about(about),
     }
 

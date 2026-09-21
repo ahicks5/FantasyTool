@@ -13,12 +13,8 @@
  *
  * - `label` is the tab, which has about nine characters before it wraps on a phone.
  * - `title` is the page's h1.
- * - `blurb` is the one line under the h1 that says what the room is for. Nobody was
- *   ever told what "Scouting" or "GM's Office" meant, and a coach word you have to
- *   guess at is worse than a plain one: the blurb is the translation, printed on
- *   every tab on every visit rather than once in an onboarding nobody reads. Verb
- *   first, one line, and it has to hold on one line at 320px inside the title band's
- *   fixed height — about 36 characters. It describes the room, never your team.
+ * - There is no blurb under the h1 any more (Andrew, 2026-09-21: "get rid of it"). The
+ *   right of the title band carries the league nameplate instead (`Shell.tsx`).
  * - `gate` is a noun phrase that has to read inside "…and {gate} shows up here",
  *   so it carries its own article. "depth chart shows up here" is what you get
  *   when the h1 is reused for prose, and it reads like a dropped word.
@@ -27,7 +23,6 @@ export interface Section {
   href: string;
   label: string;
   title: string;
-  blurb: string;
   gate: string;
 }
 
@@ -38,7 +33,6 @@ export const SECTIONS = {
     href: "/home",
     label: "Desk",
     title: "The desk",
-    blurb: "What landed, and who\u2019s next.",
     gate: "your desk",
   },
   /** The call sheet proper: every move, ranked and checkable. A room off the desk, under
@@ -47,7 +41,6 @@ export const SECTIONS = {
     href: "/home/sheet",
     label: "Call sheet",
     title: "Call sheet",
-    blurb: "This week\u2019s moves, ranked.",
     gate: "your call sheet",
   },
   // The tab says "Lineup" and the page says "Depth chart". "Depth" on its own is the
@@ -58,28 +51,24 @@ export const SECTIONS = {
     href: "/team",
     label: "Lineup",
     title: "Depth chart",
-    blurb: "Who starts, and why.",
     gate: "your depth chart",
   },
   waivers: {
     href: "/waivers",
     label: "Scouting",
     title: "Scouting",
-    blurb: "Who to pick up, and what to bid.",
     gate: "the wire",
   },
   trade: {
     href: "/trade",
     label: "GM's Office",
     title: "GM's Office",
-    blurb: "Who to call, and what to offer.",
     gate: "the trade board",
   },
   report: {
     href: "/report",
     label: "Film",
     title: "The film",
-    blurb: "How your season is going.",
     gate: "the film",
   },
   /** A room off the call sheet, not a tab of its own: it lives under `/home/` so the
@@ -88,7 +77,6 @@ export const SECTIONS = {
     href: "/home/matchup",
     label: "Matchup",
     title: "Matchup",
-    blurb: "This week\u2019s opponent, slot by slot.",
     gate: "this week\u2019s matchup",
   },
 } as const satisfies Record<string, Section>;
@@ -196,38 +184,58 @@ export const RIDE = {
 export const DESK = {
   aria: "The owner\u2019s desk",
   owner: "Owner",
+  /** The letterhead in the corner of every paper: the mark and two letters. */
+  letterhead: "PH",
   news: {
     eyebrow: "Just in",
-    title: "From the training room",
+    /** How many the paper shows before "more". Andrew: three stories. */
+    shown: 3,
     /** The window the desk reads back over. */
-    window: (hours: number) => `Last ${hours} hours`,
+    window: (hours: number) => `${hours}h`,
     quiet: "Quiet. Nothing on your roster moved.",
     /** How the platform's four levels read on the desk. */
     levels: { critical: "Check", warning: "Heads up", upside: "Opening", note: "Note" } as const,
-    also: (n: number) => `+${n} more of yours`,
-    more: (n: number) => `${n} more on the wire report`,
-    ago: (h: number) => (h < 1 ? "just now" : h < 24 ? `${Math.round(h)}h ago` : `${Math.round(h / 24)}d ago`),
+    more: (n: number) => `${n} more`,
+    less: "Fewer",
+    also: (n: number) => `+${n} of yours`,
+    ago: (h: number) => (h < 1 ? "now" : h < 24 ? `${Math.round(h)}h` : `${Math.round(h / 24)}d`),
+    /**
+     * Why this story is on your desk, in a few words beside the level: the player of
+     * yours it lands on and how. `pos` and `last` are his; `starter` is whether he is in
+     * your lineup this week.
+     */
+    tag: {
+      own: (pos: string, starter: boolean) => `Your ${pos} \u00b7 ${starter ? "starting" : "bench"}`,
+      qb: (pos: string, last: string) => `QB1 for your ${pos} ${last}`,
+      target: (pos: string, last: string) => `Ahead of your ${pos} ${last}`,
+      backfield: (pos: string, last: string) => `RB1 ahead of your ${last}`,
+      line: (pos: string, last: string) => `Blocks for your ${pos} ${last}`,
+    },
   },
-  opponent: {
-    eyebrow: "Next up",
-    none: "No game this week",
-    cta: "Scouting report",
-    /** Win chance, when the engine has one. */
-    odds: (pct: number) => `${pct}% to win`,
-  },
+  /** The stack of papers: the call sheet, week on the cover, moves on the badge. */
   sheet: {
-    eyebrow: "Call sheet",
-    cta: "Open the sheet",
+    title: "Call sheet",
+    week: (w: number) => `Week ${w}`,
+    from: "From the whole staff",
   },
-  binders: {
-    eyebrow: "The staff",
-    team: { staff: "Head coach", line: "Start / sit" },
-    waivers: { staff: "Head of scouting", line: "The wire" },
-    trade: { staff: "General manager", line: "Trade board" },
-    count: (n: number) => (n === 1 ? "1 worth a look" : `${n} worth a look`),
-    clear: "Nothing new",
+  /** The spiral notebooks. Each says what it is and who it is from. */
+  notebooks: {
+    team: { title: "Start / sit", from: "From the head coach" },
+    waivers: { title: "The wire", from: "From the head of scouting" },
+    trade: { title: "Trade board", from: "From the GM" },
+    matchup: { title: "Scouting report", from: "Next up" },
+    none: "No game this week",
     locked: "Locked",
   },
+} as const;
+
+export type BinderKey = "team" | "waivers" | "trade";
+
+/** The league nameplate on the right of the title band, on every tab. */
+export const NAMEPLATE = {
+  aria: (league: string, team: string, week: number) => `${league}, ${team}, week ${week}. Change league`,
+  connect: "Connect a league",
+  week: (w: number) => `Wk ${w}`,
 } as const;
 
 /** The ticker along the bottom of every screen: the desk's news, one line, running. */
@@ -238,8 +246,6 @@ export const TICKER = {
   quiet: "Quiet. Nothing on your roster moved.",
   loading: "Checking the wire\u2026",
 } as const;
-
-export type BinderKey = keyof typeof DESK.binders extends infer K ? Extract<K, "team" | "waivers" | "trade"> : never;
 
 export const GROUPS = {
   team: { clear: "Lineup's set", stamp: "All set" },

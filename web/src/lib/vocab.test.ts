@@ -4,6 +4,7 @@ import {
   CONFIDENCE_HIT_LINE,
   CONNECT,
   DESK,
+  NAMEPLATE,
   TICKER,
   EMAIL,
   GROUPS,
@@ -26,17 +27,17 @@ import {
 const SECTION_VALUES = Object.values(SECTIONS);
 /** Everything a user reads out of this module, flattened for the sweeps below. */
 const ALL_COPY: string[] = [
-  ...SECTION_VALUES.flatMap((s) => [s.label, s.title, s.blurb, s.gate]),
+  ...SECTION_VALUES.flatMap((s) => [s.label, s.title, s.gate]),
   ...Object.values(LINES),
   ...Object.values(RIDE),
   // The desk's words: the strings, plus every templated line rendered once.
-  DESK.aria, DESK.owner, DESK.news.eyebrow, DESK.news.title, DESK.news.quiet, DESK.news.window(72), DESK.news.also(2),
-  DESK.news.more(3), ...Object.values(DESK.news.levels), DESK.opponent.eyebrow, DESK.opponent.none, DESK.opponent.cta,
-  // `DESK.opponent.odds` is left out: a win chance is the engine's number for this week,
-  // not a claim about how often we are right, and the matchup page already prints it.
-  DESK.sheet.eyebrow, DESK.sheet.cta, DESK.binders.eyebrow, DESK.binders.count(1),
-  DESK.binders.count(3), DESK.binders.clear, DESK.binders.locked, ...Object.values(TICKER),
-  ...(["team", "waivers", "trade"] as const).flatMap((k) => [DESK.binders[k].staff, DESK.binders[k].line]),
+  DESK.aria, DESK.owner, DESK.letterhead, DESK.news.eyebrow, DESK.news.quiet, DESK.news.window(72), DESK.news.also(2),
+  DESK.news.more(3), DESK.news.less, ...Object.values(DESK.news.levels), DESK.news.tag.own("RB", true),
+  DESK.news.tag.own("RB", false), DESK.news.tag.qb("TE", "Loveland"), DESK.news.tag.target("WR", "TeSlaa"),
+  DESK.news.tag.backfield("RB", "Pacheco"), DESK.news.tag.line("RB", "Montgomery"),
+  DESK.sheet.title, DESK.sheet.week(2), DESK.sheet.from, DESK.notebooks.none, DESK.notebooks.locked,
+  ...(["team", "waivers", "trade", "matchup"] as const).flatMap((k) => [DESK.notebooks[k].title, DESK.notebooks[k].from]),
+  ...Object.values(TICKER), NAMEPLATE.connect, NAMEPLATE.week(2),
   ...Object.values(CONNECT),
   ...Object.values(GROUPS).flatMap((g) => [g.clear, g.stamp]),
   ...LANDING.features.flatMap((f) => [f.room, f.title, f.tag, f.body]),
@@ -54,26 +55,6 @@ const ALL_COPY: string[] = [
   ...Object.values(TRADE),
   ...Object.values(EMAIL),
 ];
-
-test("every section has a blurb that fits the title band on one line", () => {
-  for (const s of SECTION_VALUES) {
-    assert.ok(s.blurb.length > 0, `${s.title} has no blurb`);
-    // The band is a fixed height (Shell.tsx) and the blurb truncates rather than wraps,
-    // so a long line is silently cut off on a 320px phone instead of breaking the layout.
-    assert.ok(s.blurb.length <= 36, `${s.title} blurb is ${s.blurb.length} chars, too long for 320px`);
-    assert.ok(!s.blurb.includes("\n"), `${s.title} blurb is more than one line`);
-    assert.ok(s.blurb.endsWith("."), `${s.title} blurb is a sentence and takes a full stop`);
-  }
-});
-
-test("a blurb describes the room, never the reader's team", () => {
-  // "How your season is going" is the film describing itself. A blurb that said
-  // "You're 8th" would be a claim about the reader printed on every visit, including
-  // before a league is connected, where it is not even computable.
-  for (const s of SECTION_VALUES) {
-    assert.ok(!/\d/.test(s.blurb), `${s.title} blurb states a number: ${s.blurb}`);
-  }
-});
 
 test("the lineup tab says Lineup and the page still says Depth chart", () => {
   assert.equal(SECTIONS.team.label, "Lineup");
@@ -175,16 +156,17 @@ test("the desk is the front page and the call sheet is a room off it", () => {
   assert.ok(TAB_ORDER.includes("home") && !(TAB_ORDER as readonly string[]).includes("sheet"));
 });
 
-test("every binder has a member of staff and a tab to open", () => {
-  for (const k of ["team", "waivers", "trade"] as const) {
-    assert.ok(DESK.binders[k].staff.length > 0 && DESK.binders[k].line.length > 0);
-    assert.ok(k in SECTIONS, `binder ${k} opens no tab`);
+test("every notebook says who it is from and opens a section", () => {
+  for (const k of ["team", "waivers", "trade", "matchup"] as const) {
+    assert.ok(DESK.notebooks[k].title.length > 0 && DESK.notebooks[k].from.length > 0);
+    assert.ok(k in SECTIONS, `notebook ${k} opens no section`);
   }
+  for (const k of ["team", "waivers", "trade"] as const) assert.ok(DESK.notebooks[k].from.startsWith("From the"));
 });
 
 test("the desk's clock reads in hours, then days", () => {
-  assert.equal(DESK.news.ago(0.4), "just now");
-  assert.equal(DESK.news.ago(6.4), "6h ago");
-  assert.equal(DESK.news.ago(23.6), "24h ago");
-  assert.equal(DESK.news.ago(53), "2d ago");
+  assert.equal(DESK.news.ago(0.4), "now");
+  assert.equal(DESK.news.ago(6.4), "6h");
+  assert.equal(DESK.news.ago(23.6), "24h");
+  assert.equal(DESK.news.ago(53), "2d");
 });

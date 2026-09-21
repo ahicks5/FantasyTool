@@ -557,6 +557,8 @@ export interface NewsPlayerRef {
   position: string;
   nfl_team: string | null;
   starter: boolean;
+  photo?: string | null;
+  team_logo?: string | null;
 }
 
 /** The man the story is about, in the platform's words. */
@@ -569,6 +571,8 @@ export interface NewsAbout {
   body_part: string | null;
   notes: string | null;
   practice: string | null;
+  photo?: string | null;
+  team_logo?: string | null;
 }
 
 export interface NewsItem {

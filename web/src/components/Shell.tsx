@@ -1,5 +1,5 @@
 "use client";
-/** The room itself: top bar, league ribbon, tab bar, and the shell every page mounts. */
+/** The room itself: top bar, title band with the nameplate, ticker, tab bar, and the shell every page mounts. */
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
@@ -8,7 +8,7 @@ import { PlayerSheetProvider } from "./player/PlayerSheetProvider";
 import { Ticker } from "./Ticker";
 import { UnlockingBanner, useUnlockOnReturn } from "./Unlocking";
 import { LinkButton, OnAir, Opening, Spinner, ThemeToggle, Wordmark } from "./ui";
-import { SECTIONS, TAB_ORDER, type SectionKey, type TabKey } from "@/lib/vocab";
+import { NAMEPLATE, SECTIONS, TAB_ORDER, type SectionKey, type TabKey } from "@/lib/vocab";
 
 // Coach vocabulary, and every label still says what the screen is: scouting is the
 // free-agent pool, the GM's office is where deals get made, film is the weekly recap.
@@ -28,7 +28,7 @@ const TAB_ICONS: Record<TabKey, (p: { size?: number; strokeWidth?: number }) => 
  * The league and team used to live up here as a two-line block on the right, which
  * put the least urgent words on the screen at the top of every page and squeezed the
  * wordmark on a 320px phone. They are a nameplate, not navigation, so they moved to
- * the ribbon above the tab bar — see `LeagueRibbon`.
+ * the title band on the right — see `Nameplate`.
  */
 export function TopBar({ session }: { session: Session }) {
   const email = session.me?.email;
@@ -53,45 +53,33 @@ export function TopBar({ session }: { session: Session }) {
 }
 
 /**
- * The nameplate: which league and which team you are reading, on one line, riveted to
- * the top edge of the tab bar.
+ * The nameplate: which league and which team you are reading, on the right of the title
+ * band, on every tab. Small, right-aligned, two short lines: the team, then the league
+ * and the week. It used to be a ribbon riveted to the tab bar; Andrew moved it up here
+ * (2026-09-21) so the bottom of the screen is the ticker and the tabs and nothing else.
  *
- * It is a ribbon rather than a row: a small plate that only spans the words it holds,
- * with a chrome rail along its top edge, so it reads as something riveted to the metal
- * rather than as another bar of UI. Shipping it down here does two things the top bar
- * could not — it gets out of the way of the page title, and it sits beside the tabs,
- * which is the one place in the app that is about *where you are*.
- *
- * One line, always: both names truncate rather than wrap, because a nameplate that
- * grows to two lines moves the whole page under it.
+ * Both names truncate rather than wrap, so the band never changes height. It is also the
+ * door to `/connect`.
  */
-export function LeagueRibbon({ session }: { session: Session }) {
+export function Nameplate({ session }: { session: Session }) {
   const c = session.connection;
   return (
-    <div className="pointer-events-none flex justify-center px-4">
-      <Link
-        href="/connect"
-        className="ribbon rail pointer-events-auto flex min-h-0 min-w-0 max-w-full items-center gap-2 px-4 py-1.5 text-[11px] leading-none"
-        aria-label={c ? `${c.league_name}, ${c.team_name}, week ${c.week}. Change league` : "Connect a league"}
-      >
-        {c ? (
-          <>
-            {/* Each name gets its own ceiling in characters rather than a share of the
-                row. Left to flex-shrink, a long league name and a short team name both
-                truncated and the team came out as "H…", which says nothing; a ch cap
-                means the league gives up its tail first and the team is only ever cut
-                when it is genuinely long. Both fit a 320px plate together. */}
-            <span className="max-w-[15ch] truncate font-bold text-ink-2">{c.league_name}</span>
-            <span aria-hidden className="h-2.5 w-px shrink-0 bg-line-2" />
-            <span className="max-w-[11ch] truncate font-bold text-muted">{c.team_name}</span>
-            <span aria-hidden className="h-2.5 w-px shrink-0 bg-line-2" />
-            <span className="tnum shrink-0 font-black uppercase tracking-[0.1em] text-muted">Wk {c.week}</span>
-          </>
-        ) : (
-          <span className="truncate font-bold text-muted">Connect a league</span>
-        )}
-      </Link>
-    </div>
+    <Link
+      href="/connect"
+      className="nameplate min-w-0 max-w-[55%] shrink text-right leading-none"
+      aria-label={c ? NAMEPLATE.aria(c.league_name, c.team_name, c.week) : NAMEPLATE.connect}
+    >
+      {c ? (
+        <>
+          <span className="display block truncate text-[13px] text-ink">{c.team_name}</span>
+          <span className="mt-[3px] block truncate text-[10px] font-bold uppercase tracking-[0.08em] text-muted">
+            {c.league_name} <span aria-hidden>·</span> <span className="tnum">{NAMEPLATE.week(c.week)}</span>
+          </span>
+        </>
+      ) : (
+        <span className="block truncate text-[11px] font-bold text-muted">{NAMEPLATE.connect}</span>
+      )}
+    </Link>
   );
 }
 
@@ -109,17 +97,15 @@ function TabIcon({ Icon, active }: { Icon: (p: { size?: number; strokeWidth?: nu
 }
 
 /**
- * The tabs, with the league nameplate riveted to their top edge.
+ * The tabs, with the ticker riding on their top edge.
  *
- * Both live in one fixed block so the ribbon can never drift away from the bar it is
- * attached to, and so the whole assembly has a single height — which is what the page's
- * bottom padding is reserved against (`pb-40` on `main`: ribbon, ticker and bar at 320px).
+ * Both live in one fixed block so the whole assembly has a single height — which is what
+ * the page's bottom padding is reserved against (`pb-28` on `main`: ticker and bar).
  */
 export function TabBar({ session }: { session: Session }) {
   const path = usePathname();
   return (
     <div className="fixed inset-x-0 bottom-0 z-20">
-      <LeagueRibbon session={session} />
       {/* The bottom line: the desk's news running over the tabs, on every screen that
           has a team. Its height is part of what `main`'s bottom padding reserves. */}
       {session.connection && <Ticker c={session.connection} />}
@@ -177,12 +163,12 @@ export function AppShell({
 }: {
   section: SectionKey;
   children: (s: Session) => React.ReactNode;
-  /** Right-hand slot on the title row: a week chip, a back chevron. One line, no wrap. */
+  /** Right-hand slot on the title row, in place of the nameplate: a back chevron. One line, no wrap. */
   aside?: React.ReactNode;
   needsMe?: boolean;
 }) {
   const session = useSession();
-  const { title, blurb, gate } = SECTIONS[section];
+  const { title, gate } = SECTIONS[section];
   // Someone returning from Stripe lands on one of these pages, so the wait for the
   // entitlement belongs here rather than in each one.
   const unlock = useUnlockOnReturn(session.refresh);
@@ -192,23 +178,14 @@ export function AppShell({
     <PlayerSheetProvider>
     <div className="flex min-h-screen flex-col">
       <TopBar session={session} />
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-40 pt-5">
-        {/* The band is still one fixed height, and every tab pays the same one: the
-            blurb is never conditional, so adding it moves the page down once and never
-            again. 34px was the h1 alone; the line under it is 13px on `leading-snug`
-            (17px) over a 2px gap, so the band is 53px.
-
-            The blurb runs the full width *under* the title row rather than sharing the
-            row's left column, so an `aside` (the back chevron on a scout report) cannot
-            eat into it: at 320px the widest blurb wants about 200px and the column left
-            beside a chip is less than that. It truncates rather than wraps, because the
-            height of this band is the one thing on the page that must not move. */}
-        <div className="mb-4 min-h-[53px]">
-          <div className="flex items-center justify-between gap-3">
-            <h1 className="truncate text-[26px]">{title}</h1>
-            {aside}
-          </div>
-          <p className="mt-0.5 truncate text-[13px] leading-snug text-muted">{blurb}</p>
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">
+        {/* The band is one fixed height and every tab pays the same one, so moving between
+            tabs never shifts the page. The h1 on the left; on the right the page's own
+            `aside` when it has one (the back chevron on a scout report), otherwise the
+            league nameplate. */}
+        <div className="mb-4 flex min-h-[40px] items-center justify-between gap-3">
+          <h1 className="min-w-0 truncate text-[26px]">{title}</h1>
+          {aside ?? <Nameplate session={session} />}
         </div>
         <UnlockingBanner state={unlock} />
         {needsMe && session.loading ? (

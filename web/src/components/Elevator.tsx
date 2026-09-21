@@ -49,7 +49,7 @@ function Letterhead() {
   return (
     <div className="ride-letterhead">
       <IconMark size={8} className="ride-letterhead-mark" />
-      <span className="chrome-type">PENTHOUSE</span>
+      <span className="chrome-type">{DESK.letterhead}</span>
     </div>
   );
 }
@@ -163,7 +163,7 @@ export function ElevatorRide() {
                 </div>
                 <div className="ride-paper ride-paper-1">
                   <Letterhead />
-                  <div className="ride-paper-eyebrow">{DESK.opponent.eyebrow}</div>
+                  <div className="ride-paper-eyebrow">{DESK.notebooks.matchup.from}</div>
                   <div className="ride-paper-title display">{SECTIONS.matchup.title}</div>
                   <div className="ride-paper-rule" />
                   <div className="ride-paper-rule short" />
@@ -171,7 +171,7 @@ export function ElevatorRide() {
                 <div className="ride-paper ride-paper-hero ride-paper-2">
                   <Letterhead />
                   <div className="ride-paper-eyebrow">{c ? `Week ${c.week} · ${c.team_name}` : SECTIONS.home.label}</div>
-                  <div className="ride-paper-title display">{DESK.news.title}</div>
+                  <div className="ride-paper-title display">{DESK.news.eyebrow}</div>
                   <div className="ride-paper-rule" />
                   <div className="ride-paper-rule" />
                   <div className="ride-paper-rule short" />
