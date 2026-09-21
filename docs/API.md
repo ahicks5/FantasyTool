@@ -90,6 +90,54 @@ the same league bundle.
   position — not against the team's own starters. `next_man` is null when nobody is behind.
 - `starters` folds FLEX in, so a 2-RB + 2-FLEX league reports ~3 RB starters.
 
+## The owner's desk (free)
+
+`GET /api/league/{platform}/{league_id}/team/{team_id}/desk`
+
+The front page after the elevator. One payload: what just happened in the NFL that touches
+this roster, who is next, the call sheet's own summary, and one binder per staff member with
+how many items are inside it. Free for every reader; a paid binder still carries its count
+and never a name.
+
+```json
+{
+  "week": 2, "team": "Gaainzzz", "league": "The Megalabowl", "synced_at": 1758400000.0,
+  "news": {
+    "window_hours": 72, "count": 6,
+    "items": [{
+      "id": "own:4866:4866", "kind": "own", "level": "critical",
+      "headline": "Saquon Barkley is Questionable (arm)",
+      "detail": "RB, in your lineup. Practice: limited.",
+      "at": 1789940000000, "age_hours": 9.4,
+      "player": {"id": "4866", "name": "Saquon Barkley", "position": "RB", "nfl_team": "PHI", "starter": true},
+      "about": {"id": "4866", "name": "Saquon Barkley", "position": "RB", "nfl_team": "PHI",
+                "status": "Questionable", "body_part": "Arm", "notes": null, "practice": "Limited"},
+      "also": [], "others": []
+    }]
+  },
+  "matchup": {"opponent": "HusH", "opponent_id": "8", "my_proj": 118.2, "their_proj": 109.7, "win_prob": 0.61},
+  "sheet": {"summary": "3 moves to make", "moves": 3, "all_clear": false},
+  "binders": [
+    {"key": "team", "count": 2, "locked": false, "top_benefit": "+4.2 pts"},
+    {"key": "waivers", "count": 1, "locked": true, "top_benefit": "+7.8 pts"},
+    {"key": "trade", "count": 0, "locked": true, "top_benefit": null}
+  ],
+  "entitlements": ["my_team"]
+}
+```
+
+- `news.items` is at most eight, most serious first; `count` is how many there were.
+  `kind` is one of `own` (a player of yours carries a tag), `qb` (his QB1 is flagged),
+  `target` / `backfield` (a starter ahead of him is down, his role opens), `line` (his
+  offensive line lost a man; merged per offence, `others` are the rest). `level` is
+  `critical` (a starter of yours may not play), `warning`, `upside` or `note`. `also` lists
+  the other players of yours the same story touches. Every word is the platform's own
+  (`injury_status`, `injury_body_part`, `injury_notes`) or the depth chart as it lists it;
+  nothing is predicted and no number is invented. Only news dated inside the window counts.
+- `binders[].count` is the number of call-sheet actions of that binder's type, so the badge
+  and the tab it opens cannot disagree. `locked` follows `edge/products.py`.
+- `matchup` is the call sheet's own; `sheet.summary` is its headline.
+
 ## Scouting (feature: waivers)
 
 Ranked pickups with the bid and the drop. Wire name stays `waivers`.

@@ -85,6 +85,18 @@ def install_fixture_sleeper() -> None:
     # is "identical numbers on every run", so it gets an empty directory nobody else writes.
     api.CACHE_DIR = Path(tempfile.mkdtemp(prefix="edge-fixtures-"))
 
+    # The owner's desk reads the depth charts and the news off the full players dump, which
+    # the subset above does not carry, and grades "just in" against the clock. Serve the
+    # recorded dump and pin the clock to the moment it was recorded, so the desk shows the
+    # same news on every run.
+    from edge.api import desk as desk_mod
+    from edge.data import depth_charts
+    depth = load("sleeper/depth_charts.json")
+    charts = depth_charts.boil(depth["players"])
+    depth_charts.load = lambda: charts
+    desk_mod.depth_charts.load = lambda: charts
+    desk_mod.now_ms = lambda: depth["recorded_at"]
+
     # The bye-week table normally comes from ESPN's scoreboard; serve the recorded one.
     from edge.api import service as service_mod
     schedule_mod.load_schedule = lambda season_: weeks

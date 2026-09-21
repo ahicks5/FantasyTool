@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from edge import products
-from edge.api import directory as directory_mod, scout as scout_mod, service, share as share_mod
+from edge.api import desk, directory as directory_mod, scout as scout_mod, service, share as share_mod
 from edge.api.auth import current_user, optional_user
 from edge.api.limits import RateLimitMiddleware, cors_origins, validate_id, validate_platform
 from edge.api.store import open_store
@@ -458,6 +458,19 @@ def action_feed(platform: str, league_id: str, team_id: str, email: str | None =
     out["synced_at"] = b.loaded_at
     store.log_run(email, platform, league_id, team_id, b.league.week, "actions",
                   out.get("algo_version", "?"), out)
+    return out
+
+
+@app.get("/api/league/{platform}/{league_id}/team/{team_id}/desk")
+def owners_desk(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
+    """The front page: what just happened to this roster, who is next, and the binders. Free."""
+    b = _bundle(platform, league_id, auth)
+    t = _team(b, team_id)
+    ents = products.features_for(_skus(email))
+    feed = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats,
+                             trending=b.trending, profiles=b.profiles, matchups_raw=b.matchups)
+    out = desk.build(t, feed, ents)
+    out["synced_at"] = b.loaded_at
     return out
 
 
