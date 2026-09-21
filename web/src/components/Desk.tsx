@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar } from "./Avatar";
-import { IconChevron, IconMark } from "./icons";
+import { IconArrowUp, IconChevron, IconMark } from "./icons";
 import { PlayerName } from "./Players";
 import type { Connection } from "@/lib/storage";
 import { newsHeadline } from "@/lib/ticker.ts";
@@ -127,7 +127,7 @@ function NewsRow({ it, index }: { it: NewsItem; index: number }) {
         <span className="flex shrink-0 flex-col items-end gap-1">
           <Link href={planHref(it)} className="desk-plan-link" aria-label={DESK.news.planAria(a.name)}>
             <span>{DESK.news.plan}</span>
-            <IconChevron size={11} strokeWidth={2.8} />
+            <IconArrowUp size={11} strokeWidth={2.8} className="rotate-90" />
           </Link>
           <span className="tnum text-[10px] font-bold uppercase text-muted">{DESK.news.ago(it.age_hours)}</span>
         </span>

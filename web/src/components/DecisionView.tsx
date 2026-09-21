@@ -13,11 +13,12 @@
  * Every number is the engine's. Every word is `lib/vocab.ts`'s. This file lays it out.
  */
 
+import { useEffect } from "react";
 import type { DecisionFactor, Lineup, LineupCandidate, LineupRole, Player } from "@/lib/types";
 import { LINEUP, SECTIONS } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { PlayerName, PlayerTarget } from "./Players";
-import { useHandled } from "./LineupView";
+import { skipNextBoom, useHandled } from "./LineupView";
 import { IconCheck, IconChevron } from "./icons";
 import { Button, ConfidenceStamp, Eyebrow, H2, InjuryTag, LinkButton, Stamp } from "./ui";
 
@@ -97,6 +98,10 @@ function Versus({ c }: { c: LineupCandidate }) {
 export function DecisionView({ lineup, label }: { lineup: Lineup; label: string }) {
   const role: LineupRole | undefined = (lineup.roles ?? []).find((r) => r.label === label);
   const [handled, setHandled] = useHandled(lineup.week);
+  // Leaving this page for the lineup is not an arrival there: keep the stamp down.
+  useEffect(() => {
+    skipNextBoom();
+  }, []);
   const back = (
     <LinkButton href={SECTIONS.team.href} variant="secondary" size="sm" className="justify-self-start">
       <IconChevron size={12} strokeWidth={3} className="rotate-180" />

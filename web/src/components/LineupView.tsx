@@ -39,6 +39,15 @@ const INK: Record<string, string> = { Lock: "text-start", Lean: "text-lean", "Co
 
 /** Session-scoped: the stamp has landed this sitting (value: the week). */
 const BOOM_KEY = "booth.boom";
+/** Written by a role's page so the stamp stays down on the way back to the lineup. */
+const BOOM_SKIP = "skip";
+export function skipNextBoom() {
+  try {
+    window.sessionStorage.setItem(BOOM_KEY, BOOM_SKIP);
+  } catch {
+    /* nothing to remember with: it lands again */
+  }
+}
 
 /** The statuses that put a man on the reserve list rather than the bench. */
 const RESERVE = new Set(["IR", "PUP"]);
@@ -276,27 +285,25 @@ export function LineupView({
   const bench = lineup.bench.filter((b) => !RESERVE.has((b.player.injury_status ?? "").toUpperCase()));
   const reserve = lineup.bench.filter((b) => RESERVE.has((b.player.injury_status ?? "").toUpperCase()));
 
-  // The stamp lands once per sitting: a fresh arrival, never the report's compact embed,
-  // and not again this browser session once dismissed (the roster is one tap from every
-  // room, and a summary that re-lands on every tap stops being read).
+  // The stamp lands on every arrival at the tab -- a fresh open, a tap over from another
+  // room -- never in the report's compact embed, and not on the way back from a role's
+  // page, which leaves a marker so the summary does not re-land mid-decision. (It used to
+  // land once per browser session; a phone keeps that session for days, so it never came
+  // back, and a summary the owner never sees again is not a summary.)
   const [boom, setBoom] = useState(false);
   useBeforePaint(() => {
-    if (!animate || compact) return;
+    if (compact) return;
     try {
-      if (window.sessionStorage.getItem(BOOM_KEY) === String(lineup.week)) return;
+      if (window.sessionStorage.getItem(BOOM_KEY) === BOOM_SKIP) {
+        window.sessionStorage.removeItem(BOOM_KEY);
+        return;
+      }
     } catch {
       /* blocked storage: it lands every time */
     }
     setBoom(true);
-  }, [animate, compact, lineup.week]);
-  const dismiss = () => {
-    setBoom(false);
-    try {
-      window.sessionStorage.setItem(BOOM_KEY, String(lineup.week));
-    } catch {
-      /* nothing to remember with */
-    }
-  };
+  }, [compact, lineup.week]);
+  const dismiss = () => setBoom(false);
   const faces = [...required.map((c) => c.in), ...open.map((r) => r.pick)]
     .filter((p): p is Player => !!p && "projected" in p)
     .slice(0, 6);

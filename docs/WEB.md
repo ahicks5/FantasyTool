@@ -198,9 +198,10 @@ role's, not the slot call's, so a starter with nobody in the frame for his seat 
 Lock. IR and PUP men get their own "Injured reserve" list.
 
 The stamp that lands on a fresh open (`Boom`) is a dialog with a close button and stays
-until dismissed; it lands once per browser session (`booth.boom`, sessionStorage), never in
-the report's compact embed, and never when the lineup came from the session cache
-(`animate` false). Every word is in `LINEUP` in `lib/vocab.ts`; the probability beside a
+until dismissed; it lands on every arrival at the tab, never in the report's compact embed,
+and not on the way back from a role's page (`DecisionView` writes `booth.boom = skip` to
+sessionStorage and the lineup consumes it). It used to land once per browser session, and a
+phone keeps a session for days, so it never came back. Every word is in `LINEUP` in `lib/vocab.ts`; the probability beside a
 candidate is rendered from the engine's `p` beside a label, because the vocab sweep forbids
 a percentage in copy. The seven read keys in `LINEUP.factor` mirror `engine/decisions.KEYS`
 and `vocab.test.ts` pins the list. The engine's third confidence band is still the string

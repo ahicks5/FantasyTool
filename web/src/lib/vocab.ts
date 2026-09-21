@@ -222,8 +222,8 @@ export const DESK = {
     upside: "Upside",
     markUp: "\u2713",
     /** The arrow on the right of a story, above the clock: a plan has been thought out and
-     *  is waiting. Andrew: something succinct that says a recommendation is on offer. */
-    plan: "Plan ready",
+     *  is waiting. Andrew: "Plan B" and an arrow -- the fallback is drawn up, go see it. */
+    plan: "Plan B",
     planAria: (who: string) => `Action plan: ${who}`,
     more: (n: number) => `${n} more`,
     less: "Fewer",
