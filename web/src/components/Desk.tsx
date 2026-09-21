@@ -375,7 +375,7 @@ export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; anim
       <div className={`desk-office-head ${animate ? "rise rise-2" : ""}`} aria-hidden>
         <span>{DESK.notebooks.eyebrow}</span>
       </div>
-      <ul className="mt-2 grid grid-cols-2 gap-2.5" role="list" aria-label={DESK.notebooks.eyebrow}>
+      <ul className="mt-2 grid grid-cols-2 auto-rows-fr gap-2.5" role="list" aria-label={DESK.notebooks.eyebrow}>
         {staff.map(({ key, b }, i) => (
           <li key={key} className="min-w-0">
             <Notebook

@@ -1397,6 +1397,7 @@ html.ride-boot::before {
   margin-top: 3px;
   font-size: 9.5px;
   font-weight: 800;
+  font-style: italic;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #8b929d;
@@ -1556,7 +1557,9 @@ html.ride-boot::before {
 
 .notebook {
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   min-height: 84px;
   padding: 18px 12px 11px 12px;
   border-radius: 6px 6px 10px 10px;
@@ -1587,7 +1590,8 @@ html.ride-boot::before {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: auto;
+  padding-top: 8px;
   font-size: 11.5px;
   font-weight: 700;
   line-height: 1.2;
@@ -1928,6 +1932,25 @@ button, a.btn, select, input { min-height: 44px; }
 .roster-rank { font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-muted); text-align: right; }
 .roster-proj { font-size: 16px; line-height: 1; text-align: right; }
 .roster-total { background: var(--color-soft); }
+
+/* A required change: the out man's face under a red X, an arrow, the in man ringed green,
+   and what the swap is worth. Blatant on purpose: nobody should have to read it. */
+.swap { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.swap-man { display: grid; justify-items: center; gap: 5px; width: 84px; flex: none; text-align: center; }
+.swap-name { display: block; max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; font-weight: 800; line-height: 1.1; }
+.swap-out .swap-name { color: var(--color-sit); text-decoration: line-through; text-decoration-thickness: 2px; }
+.swap-in .swap-name { color: var(--color-start); }
+.swap-face { position: relative; display: inline-block; }
+/* The face fades, not the ring or the X over it. */
+.swap-out .swap-face > span:first-child > span > * { filter: grayscale(1) brightness(0.7); }
+.swap-x {
+  position: absolute; inset: -4px; display: grid; place-items: center;
+  color: var(--color-sit); filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+}
+.swap-arrow { flex: none; color: var(--color-start); }
+.swap-gain { margin-left: auto; flex: none; text-align: right; }
+.swap-gain-n { display: block; font-size: 28px; line-height: 1; color: var(--color-start); }
+.swap-gain-l { display: block; margin-top: 3px; font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted); }
 .roster-total .roster-role { color: var(--color-muted); }
 .roster-total .roster-proj { font-size: 18px; }
 .roster-mark { display: grid; flex: none; place-items: center; width: 40px; min-height: 0; }

@@ -141,8 +141,14 @@ function RosterRow({ label, p, confidence, role, changed }: { label: string; p: 
   );
 }
 
-/** A required change: the benched name drops, the starter rises, and the tag says why nobody has to think. */
-function Change({ c, animate, i }: { c: LineupChange; animate: boolean; i: number }) {
+/**
+ * A required change, blatant: the out man's face under a red X, a green arrow, the in man
+ * ringed green, and what the swap is worth. `faces` finds each man's photo on the roster,
+ * because the change itself carries only names.
+ */
+function Change({ c, faces, animate, i }: { c: LineupChange; faces: Map<string, Player>; animate: boolean; i: number }) {
+  const out = c.out ? faces.get(c.out.id) : undefined;
+  const inn = faces.get(c.in.id);
   return (
     <li className={`card border-sit/35 p-3.5 ${animate ? `print print-${Math.min(i + 1, 5)}` : ""}`}>
       <div className="flex items-center justify-between gap-2">
@@ -153,19 +159,31 @@ function Change({ c, animate, i }: { c: LineupChange; animate: boolean; i: numbe
           <ConfidenceStamp value={c.confidence} />
         )}
       </div>
-      <div className="mt-2 flex min-w-0 items-center gap-2.5">
-        <span className="min-w-0 flex-1">
-          <span className={`${animate ? "demote" : "opacity-55"} block truncate text-[13px] font-bold text-sit line-through decoration-2`}>
-            {c.out ? <PlayerName p={c.out} /> : LINEUP.change.empty}
+      <div className="swap mt-3">
+        <span className="swap-man swap-out" role="img" aria-label={LINEUP.change.outAria(c.out?.name ?? LINEUP.change.empty)}>
+          <span className="swap-face">
+            <Avatar name={c.out?.name ?? "?"} photo={out?.photo} teamLogo={out?.team_logo} size="lg" ring="sit" />
+            <span className="swap-x" aria-hidden>
+              <IconX size={56} strokeWidth={3.2} />
+            </span>
           </span>
-          <span className={`${animate ? "promote" : ""} mt-0.5 flex items-center gap-1 text-[15px] font-black text-start`}>
-            <IconArrowUp size={14} strokeWidth={3} />
-            <PlayerName p={c.in} className="truncate" />
-          </span>
+          <span className="swap-name">{c.out?.name ?? LINEUP.change.empty}</span>
         </span>
-        <span className="display tnum shrink-0 text-[21px] text-start">{signed(c.gain)}</span>
+        <span className="swap-arrow" aria-hidden>
+          <IconArrowUp size={26} strokeWidth={3} className="rotate-90" />
+        </span>
+        <span className={`swap-man swap-in ${animate ? "promote" : ""}`} role="img" aria-label={LINEUP.change.inAria(c.in.name)}>
+          <span className="swap-face">
+            <Avatar name={c.in.name} photo={inn?.photo} teamLogo={inn?.team_logo} size="lg" ring="start" />
+          </span>
+          <span className="swap-name">{c.in.name}</span>
+        </span>
+        <span className="swap-gain">
+          <span className="swap-gain-n display tnum">{signed(c.gain)}</span>
+          <span className="swap-gain-l">{LINEUP.change.saves}</span>
+        </span>
       </div>
-      <p className="mt-1.5 text-[12px] leading-snug text-ink-2">{c.reason}</p>
+      <p className="mt-3 text-[12px] leading-snug text-ink-2">{c.reason}</p>
     </li>
   );
 }
@@ -282,6 +300,10 @@ export function LineupView({
   // A bench man's arrow goes to the role he is in the frame for, when that role is open.
   const roleOf = new Map<string, LineupRole>();
   for (const r of roles) if (r.decision) for (const c of r.candidates) roleOf.set(c.player.id, r);
+  // Every man on the roster by id, for the faces a required change names.
+  const men = new Map<string, Player>();
+  for (const sl of lineup.slots) if (sl.player) men.set(sl.player.id, sl.player);
+  for (const b of lineup.bench) men.set(b.player.id, b.player);
   const bench = lineup.bench.filter((b) => !RESERVE.has((b.player.injury_status ?? "").toUpperCase()));
   const reserve = lineup.bench.filter((b) => RESERVE.has((b.player.injury_status ?? "").toUpperCase()));
 
@@ -293,6 +315,9 @@ export function LineupView({
   const [boom, setBoom] = useState(false);
   useBeforePaint(() => {
     if (compact) return;
+    // A shared link straight to a player opens his page over the lineup; the stamp would
+    // land on top of it, two dialogs deep. He came for the player: let him have it.
+    if (new URLSearchParams(window.location.search).has("player")) return;
     try {
       if (window.sessionStorage.getItem(BOOM_KEY) === BOOM_SKIP) {
         window.sessionStorage.removeItem(BOOM_KEY);
@@ -381,7 +406,7 @@ export function LineupView({
           ) : (
             <ul className="mt-2.5 grid gap-2.5">
               {required.map((c, i) => (
-                <Change key={`c${i}`} c={c} animate={animate} i={i} />
+                <Change key={`c${i}`} c={c} faces={men} animate={animate} i={i} />
               ))}
               {holes.map((h, i) => (
                 <Hole key={`h${i}`} h={h} animate={animate} i={required.length + i} />
@@ -420,7 +445,7 @@ export function LineupView({
           <H2>{LINEUP.section.required}</H2>
           <ul className="mt-2.5 grid gap-2.5">
             {lineup.changes.map((c, i) => (
-              <Change key={i} c={c} animate={animate} i={i} />
+              <Change key={i} c={c} faces={men} animate={animate} i={i} />
             ))}
           </ul>
         </section>

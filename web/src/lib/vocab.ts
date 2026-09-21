@@ -263,7 +263,7 @@ export const DESK = {
     eyebrow: "From the front office",
     team: { title: "Lineup", from: "From the head coach" },
     waivers: { title: "The wire", from: "From the head of scouting" },
-    trade: { title: "Trade board", from: "From the GM" },
+    trade: { title: "Trade board", from: "From the general manager" },
     report: { title: "The film", from: "Last week, graded" },
     locked: "Locked",
     /** What the pulse on a lit notebook means to a screen reader. */
@@ -354,7 +354,7 @@ export const PLAN = {
   },
   trade: {
     title: "Trade angle",
-    from: "From the GM",
+    from: "From the general manager",
     locked: (n: number) => (n === 1 ? "1 manager deep at the spot" : `${n} managers deep at the spot`),
     unlock: "Open the GM\u2019s Office",
     none: "Nobody in the league is deep at the spot.",
@@ -680,6 +680,11 @@ export const LINEUP = {
     forced: "Must fix",
     /** The projection has settled it. */
     settled: "Settled",
+    /** Over the gain on a required change: the swap is worth this many points. */
+    saves: "Swap saves",
+    /** The out man's face, read out. */
+    outAria: (name: string) => `${name} comes out`,
+    inAria: (name: string) => `${name} goes in`,
     /** A slot the roster cannot fill. */
     hole: "Nobody to start",
     wire: "Hit the wire",

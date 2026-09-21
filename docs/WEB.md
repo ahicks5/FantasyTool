@@ -73,7 +73,9 @@ guess can never leave a blank screen. It repeats the day-stamp rule in plain JS;
 doors: the news paper is cut to three stories with a face and a few words for why it is on
 your desk (`DESK.news.tag`, e.g. "QB1 for your WR McLaurin"), each row opening to the
 platform's note and "more" for the rest; the staff are four spiral notebooks in a 2x2 grid,
-each saying who it is from, with a badge when there is something inside. The letterhead is the mark and "PH". The
+each saying who it is from in italics ("From the general manager", never "GM"), with a badge
+when there is something inside; the grid's rows are `auto-rows-fr` and the cover is a flex
+column, so all four are the same size whatever wraps. The letterhead is the mark and "PH". The
 league ribbon left the tab bar for the right of the title band (`Nameplate` in `Shell.tsx`)
 and the blurb under every h1 is gone, so the band is 40px on every tab. The notebooks and
 covers pin `--color-ink` themselves: they are dark in both themes and the light theme's ink
@@ -172,7 +174,9 @@ bar can follow the switch.
 ## The lineup tab is two piles, and a role is a page
 
 `/team` (`LineupView.tsx`) answers one question and splits it: **required changes** (a forced
-fix, a swap the projection has settled, a slot nobody can fill) and **decisions** — starting
+fix, a swap the projection has settled, a slot nobody can fill; a swap is drawn as the out
+man's face under a red X, a green arrow, the in man ringed green, and "Swap saves +9.0", with
+the faces looked up on the roster because a change carries only names) and **decisions** — starting
 roles (`lineup.roles`: RB2, FLEX2) where the engine's pick is not a Lock over the closest man
 on the bench. The hero prints both counts as two chips on one row and they must never be
 folded into one number. There is no kickoff clock on this tab (a lineup has several
@@ -200,7 +204,8 @@ Lock. IR and PUP men get their own "Injured reserve" list.
 The stamp that lands on a fresh open (`Boom`) is a dialog with a close button and stays
 until dismissed; it lands on every arrival at the tab, never in the report's compact embed,
 and not on the way back from a role's page (`DecisionView` writes `booth.boom = skip` to
-sessionStorage and the lineup consumes it). It used to land once per browser session, and a
+sessionStorage and the lineup consumes it), nor when the page opened on a `?player=` link,
+where his page is already the dialog. It used to land once per browser session, and a
 phone keeps a session for days, so it never came back. Every word is in `LINEUP` in `lib/vocab.ts`; the probability beside a
 candidate is rendered from the engine's `p` beside a label, because the vocab sweep forbids
 a percentage in copy. The seven read keys in `LINEUP.factor` mirror `engine/decisions.KEYS`
