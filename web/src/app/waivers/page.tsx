@@ -1,12 +1,14 @@
 "use client";
 /**
- * Scouting: look anyone up, then the waiver plan over the ranked free-agent board.
+ * Scouting: browse every player in the league, then the waiver plan over the ranked
+ * free-agent board.
  *
- * The search box is deliberately outside the lock and the wire plan is deliberately
- * inside it. A profile says what already happened; the wire says what to do about it,
- * and what to do is the product. So a visitor who has not bought Wire Pass still gets a
- * working room — every player in the NFL, scored by his own league — while the board,
- * the bids and the cuts stay behind `Locked`. Nothing on this page decides that:
+ * The board is deliberately outside the lock and the wire plan is deliberately inside it.
+ * A projection is a player's own number and says what is; the wire says what to *do* about
+ * it — which of them fits this roster, what to bid, who to cut — and what to do is the
+ * product. So a visitor who has not bought Wire Pass still gets a working room: every
+ * player in the league, filtered, sorted and scored by his own settings, while the ranked
+ * plan, the bids and the cuts stay behind `Locked`. Nothing on this page decides that:
  * `edge/products.py` does, and the API still answers 402 for the plan itself.
  *
  * Which is why `WaiversBody` no longer returns `Locked` from the top. The lock is now a
@@ -16,7 +18,7 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { Locked } from "@/components/Locked";
-import { PlayerSearch } from "@/components/PlayerSearch";
+import { PlayerBoard } from "@/components/PlayerBoard";
 import { WaiverPlanView } from "@/components/WaiverPlanView";
 import { WaiversView } from "@/components/WaiversView";
 import { ErrorBox, H2, Opening, useHeldWait } from "@/components/ui";
@@ -30,7 +32,7 @@ import type { WaiverPlanResponse, Waivers } from "@/lib/types";
 const TEASER =
   "We price every add against the player you would drop, tell you what to bid, and line up a fallback claim for when you lose the first one.";
 
-/** The paid half: the plan, and the board under it. Never the search. */
+/** The paid half: the plan, and the ranked wire under it. Never the board above. */
 function WaiverPlan({ c, refresh, signedIn }: { c: Connection; refresh: () => void; signedIn: boolean }) {
   const [board, setBoard] = useState<Waivers | null>(null);
   const [showBoard, setShowBoard] = useState(false);
@@ -91,7 +93,7 @@ export default function WaiversPage() {
     <AppShell section="waivers" needsMe>
       {(s) => (
         <div className="grid min-w-0 gap-7">
-          <PlayerSearch c={s.connection!} />
+          <PlayerBoard c={s.connection!} />
           {/* One branch, not two.
               Asking the session whether this reader has Wire Pass and rendering the
               constant when it says no looked like a saved request. What it actually did

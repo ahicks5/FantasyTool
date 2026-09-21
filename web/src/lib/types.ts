@@ -650,6 +650,83 @@ export interface PaywallDetail {
  * (~11k rows, most of them practice-squad linemen nobody will ever type), so the payload
  * is the four fields a human uses to tell two Josh Allens apart.
  */
+/** How a board row may be ordered. Mirrors `SORTS` in `edge/api/directory.py`. */
+export type BoardSort = "projected" | "ros" | "trending" | "name" | "position";
+
+/** Who holds him, from this league's point of view. Mirrors `AVAILABILITY` there. */
+export type BoardAvailability = "all" | "free" | "rostered" | "mine";
+
+/**
+ * One row of the scouting board.
+ *
+ * **Every number is nullable, and null is not zero.** A zero projection is a real answer —
+ * a bye week, a deep bench — and a null means we never priced him at all, which is what a
+ * name search that reached past the league into the platform dump hands back. The board
+ * draws a dash for null and the real number for zero; merging them would state a fact
+ * about the player that we do not have.
+ */
+export interface BoardRow {
+  id: string;
+  name: string;
+  position: string;
+  /** Every slot he is eligible for, so a board filtered to RB still shows a dual-listed back. */
+  positions: string[];
+  nfl_team: string | null;
+  photo?: string | null;
+  team_logo?: string | null;
+  injury_status: string | null;
+  injury_body_part: string | null;
+  /** Never 0 — 0 would read as a real week. Null means we do not know. */
+  bye_week: number | null;
+  /** This week, in this league's scoring. */
+  projected: number | null;
+  /** Rest of the fantasy regular season, in this league's scoring. */
+  ros: number | null;
+  trending_adds: number;
+  /** Null means nobody in this league holds him. `is_me` needs a `team_id` on the request. */
+  rostered_by: { team_id: string; team_name: string; is_me: boolean } | null;
+}
+
+/**
+ * The filter controls this league can actually offer.
+ *
+ * Built server-side from the league's own rows, never hard-coded: a league with no kicker
+ * slot has no K chip, and an IDP league gets its own positions without anybody editing a
+ * list. Same rule as scoring — read the league, never assume it.
+ */
+export interface BoardFacets {
+  positions: string[];
+  nfl_teams: string[];
+  teams: { id: string; name: string }[];
+}
+
+export interface PlayerBoard {
+  week: number;
+  /** Every match, not the page — the difference is how the reader tells a narrow filter
+   *  from an empty league. */
+  total: number;
+  offset: number;
+  limit: number;
+  sort: BoardSort;
+  order: "desc" | "asc";
+  rows: BoardRow[];
+  facets: BoardFacets;
+  algo_version?: string;
+}
+
+/** What the board is being asked for. Everything optional; the server holds the defaults. */
+export interface BoardQuery {
+  q?: string;
+  pos?: string[];
+  nfl_team?: string[];
+  avail?: BoardAvailability;
+  owner?: string | null;
+  sort?: BoardSort;
+  order?: "desc" | "asc";
+  limit?: number;
+  offset?: number;
+}
+
 export interface PlayerHit {
   id: string;
   name: string;

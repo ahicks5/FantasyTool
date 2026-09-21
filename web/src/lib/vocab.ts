@@ -254,6 +254,15 @@ export const SCOUT = {
   /** A player nobody in the league holds. The whole reason to be reading this page. */
   free: "Free agent",
   /**
+   * The board came back empty.
+   *
+   * Deliberately not `empty`: that one answers a name somebody typed and the honest reply
+   * is that nobody is called that. This one answers a set of filters, where everybody
+   * exists and the cut is simply too narrow — so it points at the filters, which are the
+   * thing the reader can actually change.
+   */
+  noMatch: "Nobody fits those filters.",
+  /**
    * The back link out of a profile. It names the *search*, not the tab, because the tab's
    * own title is already on screen — `AppShell` draws "Scouting" as the page heading, and
    * a back link reading the same word directly under it looks like a mistake.

@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from edge import products
-from edge.api import scout as scout_mod, service, share as share_mod
+from edge.api import directory as directory_mod, scout as scout_mod, service, share as share_mod
 from edge.api.auth import current_user, optional_user
 from edge.api.limits import RateLimitMiddleware, cors_origins, validate_id, validate_platform
 from edge.api.store import open_store
@@ -331,6 +331,38 @@ def player_search(platform: str, league_id: str, q: str, team_id: str | None = N
     """
     b = _bundle(platform, league_id, auth)
     return scout_mod.search(b, q, team_id)
+
+
+@app.get("/api/league/{platform}/{league_id}/players")
+def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
+                     nfl_team: str = "", avail: str = "all", owner: str | None = None,
+                     sort: str = directory_mod.DEFAULT_SORT, order: str = "desc",
+                     limit: int = directory_mod.DEFAULT_LIMIT, offset: int = 0,
+                     team_id: str | None = None, auth=Depends(espn_auth)):
+    """The scouting board: every player in the league, filtered and sorted.
+
+    **Free, on the same line the search box and the profile are free on, and it opens
+    nothing.** What it hands back is each player's own numbers -- the projection the
+    connector scored against this league's settings, the rest-of-season value, the bye, the
+    add count. That is description. Wire Pass sells the decision: which of them fits *this*
+    roster, what to bid for him and who to cut to make room, and none of those three words
+    appears anywhere in this payload. The 402 on `/waivers` and `/waivers/plan` is
+    untouched, `edge/products.py` is still the only thing that decides, and
+    `tests/test_directory.py::test_the_board_does_not_open_the_wire` pins it.
+
+    Sorting is the reader's, not ours. He picks a column; we order by it. Nothing here
+    ranks a player as a fantasy asset -- that lives in `edge/engine/`, where CLAUDE.md
+    keeps it.
+
+    `team_id` is optional and only decides whether `rostered_by.is_me` is true, which is
+    also what `avail=mine` reads.
+    """
+    if owner:
+        validate_id(owner, "team id")
+    b = _bundle(platform, league_id, auth)
+    return directory_mod.query(b, q=q, pos=pos, nfl_team=nfl_team, avail=avail, owner=owner,
+                               sort=sort, order=order, limit=limit, offset=offset,
+                               team_id=team_id)
 
 
 @app.get("/api/league/{platform}/{league_id}/player/{player_id}")

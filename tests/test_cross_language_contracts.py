@@ -23,6 +23,17 @@ def _string_set(source: str, name: str) -> set[str]:
     return set(re.findall(r'"([^"]+)"', m.group(1)))
 
 
+def _string_array(source: str, name: str) -> list[str]:
+    """The members of `const NAME: readonly T[] = [...]` in a TypeScript file.
+
+    An array rather than a Set because order is part of what is pinned here: these lists
+    are the order a control offers its options in, and a Set would throw that away.
+    """
+    m = re.search(rf"{name}\s*:\s*readonly[^=]*=\s*\[(.*?)\]", source, re.S)
+    assert m, f"{name} is not a `readonly T[] = [...]` any more -- update this test with it"
+    return re.findall(r'"([^"]+)"', m.group(1))
+
+
 def test_the_web_zeroes_the_same_statuses_the_engine_does():
     """`gameday.ts` decides what is a hard out; `lineup.py` decides what scores zero.
 
@@ -61,3 +72,37 @@ def test_the_confidence_sentences_say_the_same_thing_in_both_languages():
             f"{tag}: python says {sentence!r}, vocab.ts says {ts[tag]!r}"
         )
         assert "%" not in sentence and "last week" not in sentence.lower()
+
+
+def test_the_board_offers_exactly_the_sorts_the_server_applies():
+    """`board.ts` draws the sort control; `directory.py` decides what a sort does.
+
+    A key in the control that the server does not know falls back to the server's default,
+    so the reader presses "Most added" and the board silently stays on projection -- a
+    sort that looks broken rather than one that errors. A key the server accepts and the
+    control never offers is simply unreachable. Change both or neither.
+    """
+    from edge.api.directory import SORTS
+
+    source = (WEB / "board.ts").read_text()
+    assert tuple(_string_array(source, "BOARD_SORTS")) == tuple(sorted(SORTS, key=SORTS.index)), (
+        "web/src/lib/board.ts BOARD_SORTS and edge/api/directory.py SORTS have drifted"
+    )
+    assert set(_string_array(source, "BOARD_SORTS")) == set(SORTS)
+
+
+def test_the_board_offers_exactly_the_availabilities_the_server_filters_on():
+    """The same contract for "who has him".
+
+    This one is the more damaging of the two to get wrong: an availability the server does
+    not recognise falls back to `all`, so a reader who asked for free agents would be shown
+    the whole league -- including players he cannot claim -- with the control still lit up
+    saying he had filtered them out.
+    """
+    from edge.api.directory import AVAILABILITY
+
+    source = (WEB / "board.ts").read_text()
+    assert tuple(_string_array(source, "BOARD_AVAILABILITY")) == tuple(AVAILABILITY), (
+        "web/src/lib/board.ts BOARD_AVAILABILITY and edge/api/directory.py AVAILABILITY "
+        "have drifted; change both or neither"
+    )

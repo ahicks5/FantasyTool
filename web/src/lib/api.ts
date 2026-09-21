@@ -29,6 +29,8 @@ import type {
   TeamGrades,
   PlayerHit,
   PlayerProfile,
+  PlayerBoard,
+  BoardQuery,
 } from "./types";
 import * as mocks from "./mocks";
 import { espnAuthHeaders } from "./espnAuth";
@@ -327,6 +329,37 @@ export async function searchPlayers(platform: Platform, leagueId: string, q: str
     `/league/${platform}/${encodeURIComponent(leagueId)}/players/search?${params.toString()}`,
   );
 }
+
+/**
+ * The scouting board: every player in the league, cut and ordered by the reader.
+ *
+ * Only the parameters that are actually set go on the wire, so the server's own defaults
+ * stay the single source of truth for what "no filter" means (docs/API.md). Array filters
+ * are comma-joined, which is the shape `edge/api/directory.py` parses.
+ */
+export async function getPlayerBoard(
+  platform: Platform,
+  leagueId: string,
+  query: BoardQuery = {},
+  teamId?: string,
+): Promise<PlayerBoard> {
+  if (USE_MOCKS) return mocks.playerBoard(query, teamId);
+  const p = new URLSearchParams();
+  if (query.q) p.set("q", query.q);
+  if (query.pos?.length) p.set("pos", query.pos.join(","));
+  if (query.nfl_team?.length) p.set("nfl_team", query.nfl_team.join(","));
+  if (query.avail && query.avail !== "all") p.set("avail", query.avail);
+  if (query.owner) p.set("owner", query.owner);
+  if (query.sort) p.set("sort", query.sort);
+  if (query.order) p.set("order", query.order);
+  if (query.limit != null) p.set("limit", String(query.limit));
+  if (query.offset) p.set("offset", String(query.offset));
+  if (teamId) p.set("team_id", teamId);
+  return request<PlayerBoard>(
+    `/league/${platform}/${encodeURIComponent(leagueId)}/players?${p.toString()}`,
+  );
+}
+
 
 export async function getPlayerProfile(platform: Platform, leagueId: string, playerId: string, teamId?: string): Promise<PlayerProfile> {
   if (USE_MOCKS) return mocks.profileFor(playerId);

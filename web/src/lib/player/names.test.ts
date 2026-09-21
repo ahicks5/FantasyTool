@@ -51,10 +51,15 @@ const ALLOWED: Record<string, string> = {
     "The starter rows only. `StarterLine` (lib/recap.ts) is a name, a slot and a score with " +
     "no player id on it, so there is no page to open. The bench rows beside them do go " +
     "through PlayerName. Carrying the id through the recap payload is the fix.",
-  "src/components/PlayerSearch.tsx":
-    "A search hit already opens his page, at /waivers/<id>. That route is the deep link " +
-    "(SPEC-PLAYER-PAGE.md, D-8) and the page the static demo exports, so the search is the " +
-    "one surface that should keep taking you to it rather than raising a sheet over it.",
+  "src/components/PlayerBoard.tsx":
+    "The scouting board, which replaced PlayerSearch. Every row *is* the door — the whole " +
+    "row is a button that raises his page — so the name inside it cannot also be one: a " +
+    "button cannot hold another button, the same blocker /trade has with its chips. It " +
+    "raises the sheet rather than taking you to /waivers/<id> because the wire list " +
+    "directly below it on the same screen raises one, and two gestures for the same tap on " +
+    "one page is worse than either, and because leaving the page would throw away the " +
+    "filters, the sort and every row paged in after the first fifty. /waivers/<id> is " +
+    "untouched and still the deep link (SPEC-PLAYER-PAGE.md, D-8).",
   "src/app/s/[id]/page.tsx": "The shared verdict page. Same `SharedPlayer` with no id, and it is read signed-out.",
   "src/app/connect/page.tsx": "League and team names on the way in, before there is a league to score anyone by.",
   "src/app/trade/page.tsx":
