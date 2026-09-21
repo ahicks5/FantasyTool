@@ -7,7 +7,7 @@ and a chat builds from it one `## PP-n` section at a time.
 **How to use this:** hand a chat this whole file, or one `## PP-n` section. Each section has
 Problem → Evidence (real file:line) → Build → Acceptance → Tests. Do not start a section without
 reading the files it names, and do not start any section before reading **§2, the decisions**,
-because several of them change what gets built.
+because they were answered by Andrew and are not up for re-litigation.
 
 ---
 
@@ -55,21 +55,26 @@ reader is being asked to make; the depth chart already makes that one), an X but
 share button (later — the growth loop wants one, but the Lock card is the proven one and
 this page is not a decision).
 
-## 2. Decisions needed from Andrew before the build
+## 2. Decisions taken (Andrew, 2026-09-21)
 
-Each of these is cheap to decide and expensive to guess. Defaults are what the chat builds
-if nobody says otherwise.
+Answered in session, so the chat builds these and does not re-ask. Anything not listed here
+is the chat's call, stated in its first message.
 
-| # | Decision | Default if unanswered |
+| # | Decision | Answer |
 |---|---|---|
-| **D-1** | **What is "chat"?** (a) A **live room per player** — every Penthouse user who opens this player, one thread, real time. (b) **Ask the staff** — a chat with the engine about *this* player, LLM-written over engine numbers, always answers. (a) is what the notes say, and it is empty on launch day: a room with nobody in it reads as a dead product. (b) is never empty and costs an API call per message. | Build the chat frame once; back it with **(a)** on Supabase Realtime, and seed every room with the Penthouse's own take as its first message so it is never blank. (b) becomes a "@staff" in the room later. |
-| **D-2** | **Does Vibes depend on the reader's league?** League-agnostic Vibes are generated once per player per week and cached for everyone (cheap, shareable). League-aware Vibes ("why you should have him *in your league*") cost a generation per league per player. | **League-agnostic**, generated once per (player, week). Anything league-specific stays on the Stats side, where the numbers already are. |
-| **D-3** | **Which section of Vibes is "our opinion"?** The notes say the platform should enforce its own view. The engine's honest opinion today is (i) the start/sit call in *your* league and (ii) our ROS value against the market once the composite exists. | Section titled from vocab ("The Penthouse says"), one stamp allowed on the Vibes side **only here** — the start/sit call — because it is a decision, and words for the rest. |
-| **D-4** | **Lifecycle badge names and ages.** Six phases in the notes: rookie-rising, rookie-with-questions, ascending, prime, fine wine, sunset. Prime is position-specific. | Names in `vocab.ts` as `LIFECYCLE`; default prime windows RB 22–27, WR/TE 23–30, QB 25–36. Tune with data later, not taste. |
-| **D-5** | **What number is "the Penthouse score"?** The notes want a stock-index style composite over Sleeper / ESPN / Yahoo / props. The honest version is a **projected stat line averaged across sources, then scored by the reader's league** — one number in points. A separate 0–100 index is a second scale that means "how good" and will fight the first. | Ship the composite as **points in the reader's scoring**, labelled "Penthouse", with sources counted ("3 sources"). No 0–100 index in v1. |
-| **D-6** | **Two accents for the two modes.** The brand is black and chrome and "the metal is the only decoration". Vibes and Stats need two distinguishable surfaces that both clear 4.5:1 in both themes. | Vibes = warm brass, Stats = cool chrome. Tokens in `globals.css`, named `--color-vibes` / `--color-stats`. Andrew signs off on screen, both themes. |
-| **D-7** | **Is chat free?** | Free but **signed in** (magic link exists). A display name is needed: use the reader's team name in the league they are connected to, not the email. |
-| **D-8** | **Does the page keep its URL?** A sheet on top of any page needs a way to be linked and to survive a refresh. | Yes: opening the sheet sets `?player=<id>` on the current URL; `/waivers/<id>` stays as the deep-link and the static demo's page. |
+| **D-1** | What is "chat"? | **A live room per player.** One real-time thread per player for every Penthouse user, on Supabase Realtime. Seeded with the Penthouse's own take so it is never empty. An "@staff" that answers in-thread is a later add, not v1. |
+| **D-2** | Does Vibes depend on the reader's league? | **No.** Generated once per (player, week), cached, served to everyone. League-specific facts stay on the Stats side. |
+| **D-3** | What is "our opinion", and may it carry a stamp? | **The start/sit call in the reader's league, with its stamp** — the one stamp allowed on Vibes, because it is a decision — plus a words-only take on the player under "The Penthouse says". |
+| **D-4** | Lifecycle badge names | Penthouse voice: **Rookie, rising · Rookie, unproven · Climbing · Prime · Fine wine · Last call.** Default prime windows RB 22–27, WR/TE 23–30, QB 25–36; tune with data, not taste. |
+| **D-5** | What is the Penthouse number? | **The composite projection, in the reader's league's points**, labelled with its source count. No 0–100 index. |
+| **D-6** | The two mode colours | **Brass for Vibes, chrome for Stats.** Tokens `--color-vibes` / `--color-stats` in both themes, 4.5:1 on their surfaces. Signed off on screen, both themes, before it ships. |
+| **D-7** | Who posts in chat, under what name? | **Anyone reads; posting needs a magic-link sign-in; the handle is the team name from the reader's connected league.** Email is never shown. |
+| **D-8** | Does the page keep a URL? | **Yes.** `?player=<id>` on the current page; `/waivers/<id>` stays as the deep link and the demo export's page. |
+| **D-9** | Build order after the frame | **PP-2 then PP-3** (header numbers, then Vibes), so the page reads well for a casual user first. Stats is the existing report until PP-4a. |
+| **D-10** | Data beyond the Sleeper feed | **nflverse play-by-play is green-lit** (PP-4b), after the licence and 2026-availability check. **Betting props are not** green-lit yet. ESPN's already-fetched projections were not ticked either, so the composite has no second source until Andrew names one — until then the header shows one projection, labelled with its source, and no "Penthouse" number (see PP-7). |
+| **D-11** | Position Battle | **Him vs his own teammates**: the depth chart on his NFL team at his position — who is taking the snaps, targets and carries from him, week by week. "Is he the guy?" Placeholder button in v1; the page is a later spec. |
+| **D-12** | A share button on the player page? | **Not in v1.** The Lock card stays the shareable asset. Revisit once Vibes copy is proven on screen. |
+| **D-13** | How much does Vibes say? | **Hook + three whys + take.** One display-type hook, three one-sentence reasons with an icon each, the short-game/long-game word, then "The Penthouse says". Fits one screen at 375px with the badge. |
 
 ## 3. What already exists (do not rebuild it)
 
@@ -288,9 +293,9 @@ is the reads, and they are full of digits.
    `edge/api/limits.py`) — or inline in the profile payload as `take` when cached and absent
    when not, so a cold cache does not slow the profile. Pick inline-when-cached plus a
    fire-and-forget generate; state the choice in `docs/API.md`.
-4. Web `VibesView`: hook as display type; three "why" lines with the read's icon; the horizon
-   section from PP-2; "The Penthouse says" with the take and, per D-3, the start/sit stamp when
-   the reader's league has one. Nothing else. A `take` that has not been generated yet shows
+4. Web `VibesView` (shape per D-13): hook as display type; three "why" lines with the read's
+   icon; the horizon section from PP-2; "The Penthouse says" with the take and, per D-3, the
+   start/sit stamp when the reader's league has one. Nothing else; it fits one screen at 375px. A `take` that has not been generated yet shows
    the template lines from vocab so the page is never blank.
 5. `vocab.ts`: `VIBES` heads and the fallback lines.
 
@@ -335,7 +340,7 @@ Two things are **not in any feed we have**, and `nfl_stats.py` says so in its do
 - **Field location** — where on the field a target went (left/middle/right × depth), which
   gap a run hit. That needs play-by-play. It is the whole "route tree on a field" graphic.
 
-Both exist, free and public, in **nflverse** (play-by-play with `pass_location`, `air_yards`,
+Both exist, free and public, in **nflverse** (green-lit, D-10) (play-by-play with `pass_location`, `air_yards`,
 `run_location`/`run_gap`, EPA and success per play; Next Gen Stats weekly receiving and
 rushing tables with separation, cushion, intended air yards, expected YAC; participation
 data from which routes run are derived). **Verify two things before building on it**: that
@@ -571,7 +576,10 @@ index that averages every source, betting props included.
    vendor is picked.
 4. Yahoo last: its projections are per-league behind OAuth; only if a Yahoo connector lands.
 5. Header shows "Penthouse 18.1" next to "This week 17.4 (Sleeper)" only once two or more
-   sources exist; with one source the slot is not drawn. Stats' projection panel lists each
+   sources exist; with one source the slot is not drawn. **As of D-10 only Sleeper is
+   green-lit**, so the composite has no second source: the header carries one labelled
+   projection and this section waits until Andrew names a second source (ESPN is free and
+   already fetched; props need a vendor and a terms check). Stats' projection panel lists each
    source's own number and the composite.
 
 **Acceptance.** With two fixture sources the composite of a player is the per-stat mean, scored by
@@ -584,7 +592,11 @@ The compliance test sees every source's attribution.
 ## PP-8 — Position Battle (placeholder only)
 
 A footer button that does nothing yet, rendered disabled with a vocab "soon" line, so the
-footer's three-up layout is real from PP-1. The page itself is a later spec.
+footer's three-up layout is real from PP-1. The page itself is a later spec. Its definition,
+per D-11: **him against his own teammates** — the depth chart on his NFL team at his position,
+who is taking the snaps, targets and carries from him, week by week. The data is already in
+the Sleeper actuals feed (every teammate's `off_snp`, `rec_tgt`, `rush_att` per week), so it
+is a `breakdown.py` function and a page, not a new source.
 
 ---
 
@@ -617,9 +629,8 @@ licensing gate in the middle; start the ESPN half early because it is free and a
 ```
 You are picking up PENTHOUSE, a paid fantasy football web app, to build the player page.
 Read CLAUDE.md first (short, non-negotiable), then docs/MAP.md, then docs/HANDOFF.md for
-the traps, then docs/SPEC-PLAYER-PAGE.md — the plan you are executing. Start with §2 of
-that spec: every decision there that Andrew has not answered, take the default and say so
-in your first message. Then build PP-1. One section per PR-sized commit; nothing is done
+the traps, then docs/SPEC-PLAYER-PAGE.md — the plan you are executing. §2 of that spec is
+thirteen decisions Andrew has already taken; build to them and do not re-ask. Then build PP-1. One section per PR-sized commit; nothing is done
 without a test or a browser check at 320 and 420px in both themes.
 
 Ground rules that matter most here:
