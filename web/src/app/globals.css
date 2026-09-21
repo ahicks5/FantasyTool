@@ -1694,6 +1694,15 @@ html.ride-boot::before {
 .ticker-dot { width: 6px; height: 6px; border-radius: 99px; flex-shrink: 0; }
 .ticker-quiet { animation: none; color: #8b929d; }
 .ticker-score { color: #c9ced6; }
+/* A segment heading on the strip, the way a network's runs: a plate that flashes, then
+   its items pass. Red for injuries, chrome for scores. */
+.ticker-head {
+  display: inline-flex; align-items: center; margin-right: 22px; padding: 2px 8px; border-radius: 3px;
+  font-size: 9px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase;
+  color: #fff; background: #3a4048; animation: ticker-flash 1.2s ease-in-out infinite;
+}
+.ticker-head-injuries { background: var(--color-sit); }
+@keyframes ticker-flash { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.45); } }
 .ticker-still .ticker-track { animation: none; }
 @keyframes ticker-run {
   from { transform: translateX(0); }
@@ -1716,6 +1725,7 @@ button, a.btn, select, input { min-height: 44px; }
   /* The strip holds still on the first, most serious, headline. */
   .ticker-track { animation: none; }
   .ticker-track[aria-hidden="true"] { display: none; }
+  .ticker-head { animation: none; }
   /* The card still changes state, it just arrives there already changed. */
   .card-open, .card-done { transition: none; }
   /* Deliberately still moving — see the note on .spinner. Slower, not stopped. */
@@ -1833,12 +1843,26 @@ button, a.btn, select, input { min-height: 44px; }
   box-shadow: 0 1px 0 rgb(0 0 0 / 0.25), inset 0 -2px 0 rgb(0 0 0 / 0.08);
   transform: rotate(-6deg);
 }
-.lineup-split { display: grid; gap: 4px; }
-.lineup-split-line { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; letter-spacing: -0.01em; }
+/* The split: two chips on one row, red and gold, never one number. */
+.lineup-split { display: flex; flex-wrap: wrap; gap: 6px; }
+.lineup-split-chip {
+  display: inline-flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: 6px;
+  padding: 5px 8px; border-radius: 999px; white-space: nowrap;
+  font-weight: 800; font-size: 11px; letter-spacing: -0.02em; color: #fff;
+  background: rgb(255 255 255 / 0.08); border: 1px solid rgb(255 255 255 / 0.12);
+}
+.lineup-split-required { border-color: color-mix(in srgb, var(--color-sit) 55%, transparent); }
+.lineup-split-decisions { border-color: color-mix(in srgb, var(--color-flip) 55%, transparent); }
 .lineup-split-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.coach-notes { white-space: nowrap; }
+.hero-jump {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 0; white-space: nowrap;
+  padding: 4px 8px; border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.16);
+  font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  color: rgb(247 246 243 / 0.7);
+}
 
-/* The stamp over the page: lands, holds, lifts. `boom-out` runs after the slam and the
-   component unmounts it at the end, so nothing is left blocking a tap. */
+/* The stamp over the page: lands and stays until dismissed. */
 .boom {
   position: fixed;
   inset: 0;
@@ -1847,61 +1871,64 @@ button, a.btn, select, input { min-height: 44px; }
   place-items: center;
   padding: 24px;
   background: rgb(0 0 0 / 0.42);
-  animation: boom-out 0.4s ease-in 1.9s both;
-  pointer-events: none;
 }
 .boom-card {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: 14px;
   width: min(100%, 340px);
-  padding: 22px 18px 18px;
+  padding: 26px 18px 18px;
   border-radius: 18px;
   background: var(--color-paper);
   color: var(--color-ink);
   box-shadow: var(--shadow-card), 0 30px 60px rgb(0 0 0 / 0.35);
   animation: boom-in 0.42s cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
+.boom-x {
+  position: absolute; top: 8px; right: 8px;
+  display: grid; place-items: center; width: 36px; height: 36px; min-height: 0;
+  border-radius: 50%; color: var(--color-muted); background: var(--color-soft);
+}
+.boom-close {
+  min-height: 0; padding: 9px 18px; border-radius: 999px;
+  font-size: 13px; font-weight: 800; color: var(--color-paper); background: var(--color-ink);
+}
 .boom-faces { display: flex; gap: 6px; }
 .boom-faces > * { margin-left: -6px; }
 .boom-faces > :first-child { margin-left: 0; }
 .boom-then { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); }
 @keyframes boom-in { from { opacity: 0; transform: scale(0.8) translateY(20px); } to { opacity: 1; transform: none; } }
-@keyframes boom-out { to { opacity: 0; visibility: hidden; } }
 @media (prefers-reduced-motion: reduce) {
-  .boom { display: none; }
+  .boom-card { animation: none; }
 }
 
-/* One close call. */
-.decision { padding: 14px 16px 12px; }
-.decision-vs {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-}
-.decision-man { display: grid; justify-items: center; gap: 6px; min-width: 0; text-align: center; }
-.decision-man-name { font-size: 13px; font-weight: 800; line-height: 1.15; max-width: 100%; }
-.decision-man-meta { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-muted); }
-.decision-sit .decision-man-name { color: var(--color-muted); }
-.decision-verb {
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  line-height: 1;
-}
-.decision-start .decision-verb { color: var(--color-start); }
-.decision-sit .decision-verb { color: var(--color-sit); }
-.decision-p {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  font-family: var(--font-display);
-  font-size: 22px;
-  line-height: 1;
-}
-.decision-p small { font-family: var(--font-body); font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); }
+/* A role that needs the owner, as one row: the role, the faces, the tag, the arrow. */
+.role-row { padding: 0; overflow: hidden; }
+.role-row-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; min-height: 0; }
+.role-label { flex: none; font-size: 20px; line-height: 1; min-width: 58px; }
+.role-faces { display: flex; align-items: center; }
+.role-faces > * + * { margin-left: -8px; }
+.role-pick { position: relative; z-index: 1; }
+.role-more { margin-left: 4px; font-size: 11px; font-weight: 800; color: var(--color-muted); }
+.role-meta { display: grid; justify-items: end; gap: 2px; margin-left: auto; text-align: right; }
+.role-tag { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.role-change { font-size: 9px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-start); white-space: nowrap; }
+
+/* The roster: one line per man, as tight as it goes. */
+.roster-row { display: flex; align-items: stretch; min-width: 0; }
+.roster-row-main { display: flex; flex: 1; min-width: 0; align-items: center; gap: 8px; padding: 6px 0 6px 12px; text-align: left; min-height: 0; }
+.roster-role { flex: none; width: 40px; font-size: 11px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-ink-2); }
+.roster-name { display: flex; flex: 1; min-width: 0; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; line-height: 1.1; }
+.roster-proj { flex: none; min-width: 38px; font-size: 16px; line-height: 1; text-align: right; }
+.roster-tag { flex: none; min-width: 34px; font-size: 9px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; text-align: right; }
+.roster-go { display: grid; flex: none; place-items: center; width: 34px; min-height: 0; color: var(--color-muted); }
+.roster-go-none { width: 22px; }
+
+/* One man in the frame on a role's page. */
+.frame-man { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+/* Reads on a pair, on a role's page. */
 .decision-game { font-size: 12px; font-weight: 700; color: var(--color-ink-2); }
 .factor { display: grid; grid-template-columns: 8px auto minmax(0, 1fr); align-items: start; gap: 8px; padding: 6px 0; font-size: 12px; line-height: 1.35; }
 .factor + .factor { border-top: 1px solid var(--color-line); }

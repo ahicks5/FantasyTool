@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getDesk } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import type { Connection } from "@/lib/storage";
-import { scoreLines, tickerDurationMs, tickerLines } from "@/lib/ticker.ts";
+import { tickerDurationMs, tickerEntries } from "@/lib/ticker.ts";
 import type { Desk, NewsLevel } from "@/lib/types";
 import { SECTIONS, TICKER } from "@/lib/vocab";
 
@@ -28,17 +28,11 @@ const DOT: Record<NewsLevel, string> = {
 
 export function Ticker({ c }: { c: Connection }) {
   const { data } = useCached<Desk>(`desk:${c.platform}:${c.league_id}:${c.team_id}`, () => getDesk(c.platform, c.league_id, c.team_id));
-  const items = data?.news.items ?? [];
-  const news = tickerLines(items);
-  // The scores run after the news, yours first (Andrew): the platform's points once a
-  // game is on, the engine's projections before kickoff.
-  const scores = scoreLines(data?.scoreboard);
-  const lines = [...news, ...scores];
+  // In segments, the way a network runs it: "Injuries" flashes and the news passes, then
+  // the week's games under "Live scores" or "Projected scores" (yours first, per Andrew).
+  const entries = tickerEntries(data?.news.items ?? [], data?.scoreboard);
+  const lines = entries.map((e) => e.line);
   const quiet = data !== null && lines.length === 0;
-  const track = [
-    ...news.map((line, i) => ({ line, level: items[i]?.level ?? "note", score: false })),
-    ...scores.map((line) => ({ line, level: "note" as NewsLevel, score: true })),
-  ];
   return (
     <Link
       href={SECTIONS.home.href}
@@ -59,12 +53,18 @@ export function Ticker({ c }: { c: Connection }) {
           // Two copies of the track make the loop seamless; the second is decoration.
           [0, 1].map((copy) => (
             <span key={copy} className="ticker-track" aria-hidden={copy === 1}>
-              {track.map(({ line, level, score }, i) => (
-                <span key={i} className={`ticker-item ${score ? "ticker-score tnum" : ""}`}>
-                  <span className={`ticker-dot ${DOT[level]}`} aria-hidden />
-                  {line}
-                </span>
-              ))}
+              {entries.map((e, i) =>
+                e.kind === "head" ? (
+                  <span key={i} className={`ticker-head ticker-head-${e.segment}`}>
+                    {e.line}
+                  </span>
+                ) : (
+                  <span key={i} className={`ticker-item ${e.score ? "ticker-score tnum" : ""}`}>
+                    <span className={`ticker-dot ${DOT[e.level]}`} aria-hidden />
+                    {e.line}
+                  </span>
+                ),
+              )}
             </span>
           ))
         )}

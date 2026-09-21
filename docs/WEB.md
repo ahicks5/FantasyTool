@@ -169,17 +169,47 @@ theme off it would mean most first-time visitors never see the brand. Light live
 `ThemeToggle` also rewrites `<meta name="theme-color">`. That is the only way a phone's status
 bar can follow the switch.
 
-## The lineup tab is two piles
+## The lineup tab is two piles, and a role is a page
 
 `/team` (`LineupView.tsx`) answers one question and splits it: **required changes** (a forced
-fix, a swap the projection has settled, a slot nobody can fill) and **decisions** (P(start
-outscores sit) under the Lock band, with the reads under each one). The hero prints both
-counts on their own lines and they must never be folded into one number. The stamp that lands
-on a fresh open (`Boom`) is CSS-timed and unmounts itself; it is skipped under reduced motion
-and whenever the lineup came from the session cache (`animate` false). Every word is in
-`LINEUP` in `lib/vocab.ts`; the probability on a decision card is rendered from the engine's
-`p` beside a label, because the vocab sweep forbids a percentage in copy. The seven read keys
-in `LINEUP.factor` mirror `engine/decisions.KEYS` and `vocab.test.ts` pins the list.
+fix, a swap the projection has settled, a slot nobody can fill) and **decisions** — starting
+roles (`lineup.roles`: RB2, FLEX2) where the engine's pick is not a Lock over the closest man
+on the bench. The hero prints both counts as two chips on one row and they must never be
+folded into one number. There is no kickoff clock on this tab (a lineup has several
+kickoffs); under the number is where the projection ranks in the league this week
+(`LINEUP.standing`), never a margin against the manager's own lineup, which a tipped coin
+flip can legitimately move down.
+
+A decision is one row here — the role in big letters, the pick ringed green, the other men
+in the frame, the tag, an arrow — and a page of its own at `/team/decide?role=RB2`
+(`DecisionView.tsx`, reading the same cached lineup): the head coach's call first, then every
+candidate with his number, his rank at his position in this league, who he plays, how likely
+the pick is to outscore him, and every read on the pair. "Handled" stores the role's label
+under `booth.handled` (per league, per week, `lib/storage.ts`) and it leaves the list until
+next week; a "N handled" line under the list puts them back. The roster below is one line per
+man (role, face, name, `pos_rank`, projection, Lock/Lean — never the third tag) with the
+same arrow on a man who is in the frame for an open role; IR and PUP men get their own
+"Injured reserve" list.
+
+The stamp that lands on a fresh open (`Boom`) is a dialog with a close button and stays
+until dismissed; it lands once per browser session (`booth.boom`, sessionStorage), never in
+the report's compact embed, and never when the lineup came from the session cache
+(`animate` false). Every word is in `LINEUP` in `lib/vocab.ts`; the probability beside a
+candidate is rendered from the engine's `p` beside a label, because the vocab sweep forbids
+a percentage in copy. The seven read keys in `LINEUP.factor` mirror `engine/decisions.KEYS`
+and `vocab.test.ts` pins the list. The engine's third confidence band is still the string
+`"Coin flip"` on the wire and in every graphic; on screen `CONFIDENCE_LABEL` renders it as
+**Owner's call** (`ConfidenceStamp`, `ConfidencePill`), because the word is the point: it is
+the owner's to make.
+
+## The ticker runs in segments
+
+`Ticker.tsx` draws `lib/ticker.tickerEntries`: a heading that flashes (`.ticker-head`, red
+for injuries, chrome for scores), then its items, the way a sports network runs a strip. The
+segments are Injuries (the desk's news) and this week's games — "Live scores" once any game
+has points, "Projected scores" before, in which case the items drop the "Proj" prefix the
+heading already says. An empty segment is not announced. Last week's fantasy results and NFL
+scores are wanted next and need a data feed the desk does not carry yet (`TASKS.md`, LT-10).
 
 ## The kickoff countdown
 

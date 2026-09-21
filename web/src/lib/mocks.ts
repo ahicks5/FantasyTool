@@ -18,8 +18,10 @@ import type {
   Grades,
   LeagueSummary,
   Lineup,
+  LineupCandidate,
   LineupChange,
   LineupDecision,
+  LineupRole,
   LineupSlot,
   Me,
   Player,
@@ -487,20 +489,92 @@ export function lineupFor(teamId: string): Lineup {
   }
   const required: LineupChange[] = [];
 
+  // Where each man ranks at his position across every roster in the league.
+  const everyone = ROSTERS.flatMap((x) => [...x.starters, ...x.bench]);
+  const rankOf = (p: Player) => {
+    const peers = everyone.filter((q) => q.position === p.position);
+    const eff = (q: Player) => (q.injury_status && ["Out", "IR", "PUP", "Doubtful"].includes(q.injury_status) ? 0 : q.projected);
+    return { rank: 1 + peers.filter((q) => eff(q) > eff(p)).length, of: peers.length };
+  };
+  const ranked = (p: Player): Player => ({ ...p, pos_rank: rankOf(p) });
+  slots = slots.map((s) => (s.player ? { ...s, player: ranked(s.player) } : s));
+
+  // Every role, named the way a manager names it, with the men who could take it. A
+  // bench man sits at ONE role: the seat he is closest to, as the engine does it.
+  const counts = new Map<string, number>();
+  for (const sl of STARTING_SLOTS) counts.set(sl, (counts.get(sl) ?? 0) + 1);
+  const labels = STARTING_SLOTS.map((sl, i) => {
+    if ((counts.get(sl) ?? 0) < 2) return sl;
+    const same = STARTING_SLOTS.map((x, j) => [x, j] as const).filter(([x]) => x === sl).map(([, j]) => j);
+    same.sort((a, b) => (slots[b].player?.projected ?? -1) - (slots[a].player?.projected ?? -1) || a - b);
+    return `${sl}${same.indexOf(i) + 1}`;
+  });
+  const pBeats = (a: number, b: number) => {
+    const sa = Math.max(1.5, 2.8 + 0.35 * a);
+    const sb = Math.max(1.5, 2.8 + 0.35 * b);
+    const z = (a - b) / Math.hypot(sa, sb);
+    return round1(1 / (1 + Math.exp(-1.7 * z)) * 1000) / 1000;
+  };
+  const tagFor = (p: number): Confidence => (p >= 0.75 ? "Lock" : p >= 0.6 ? "Lean" : "Coin flip");
+  const healthyBench = bench.filter((b) => !b.injury_status || b.injury_status === "Questionable");
+  const seatOf = new Map<string, number>();
+  for (const b of healthyBench) {
+    let best: [number, number] | null = null;
+    slots.forEach((s, i) => {
+      if (!s.player || !eligible(s.slot, b.position)) return;
+      const p = pBeats(s.player.projected, b.projected);
+      if (!best || p < best[0]) best = [p, i];
+    });
+    if (best) seatOf.set(b.id, best[1]);
+  }
+  const roles: LineupRole[] = slots.map((s, i) => {
+    const pick = s.player;
+    const candidates: LineupCandidate[] = healthyBench
+      .filter((b) => seatOf.get(b.id) === i && pick)
+      .map((b) => {
+        const p = pBeats(pick!.projected, b.projected);
+        const d = decisions.find((x) => (x.start.id === pick!.id && x.sit.id === b.id) || (x.sit.id === pick!.id && x.start.id === b.id));
+        return { player: ranked(b), p, confidence: tagFor(p), factors: d?.factors ?? [], tilt: d?.tilt ?? 0, opp: null };
+      })
+      .sort((a, b) => a.p - b.p);
+    const closest = candidates[0];
+    const tipped = decisions.find((x) => x.change && x.start.id === pick?.id);
+    const p = closest ? closest.p : 1;
+    return {
+      slot: s.slot,
+      label: labels[i],
+      pick,
+      was: tipped ? tipped.sit : pick,
+      candidates,
+      confidence: closest ? closest.confidence : "Lock",
+      p,
+      decision: !!closest && p < 0.75,
+      change: !!tipped,
+      tipped: !!tipped,
+      reason: tipped?.reason ?? (closest ? `${pick?.name} projects ${pick?.projected.toFixed(1)} to ${closest.player.name}’s ${closest.player.projected.toFixed(1)}.` : `${pick?.name} is the only man who can play ${labels[i]}.`),
+      game: tipped?.game ?? { state: "behind", margin: -9.4, live: false, line: "Projected 9.4 behind: chase the ceiling" },
+      opp: null,
+    };
+  });
+  const others = ROSTERS.filter((x) => x.id !== teamId).map((x) => x.starters.reduce((a, p) => a + p.projected, 0));
+  const standing = { rank: 1 + others.filter((x) => x > projected_total).length, of: ROSTERS.length };
+
   return {
     week: WEEK,
     projected_total,
     current_total,
+    standing,
+    roles,
     slots,
     bench: bench.map((p) => ({
-      player: p,
+      player: ranked(p),
       reason:
         p.injury_status === "Questionable"
           ? `Sit: ${p.projected.toFixed(1)} proj and listed ${p.injury_status}. Check Sunday status.`
           : `Sit: ${p.projected.toFixed(1)} proj, ${Math.max(0, lastFlex - p.projected).toFixed(1)} behind your last FLEX.`,
     })),
     changes,
-    summary: { required: required.length, decisions: decisions.length },
+    summary: { required: required.length, decisions: roles.filter((r) => r.decision).length },
     required,
     holes: [],
     decisions,

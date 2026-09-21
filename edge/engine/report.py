@@ -65,24 +65,48 @@ def _decision_dict(d) -> dict:
             "game": d.game, "factors": d.factors, "tilt": d.tilt}
 
 
+def _ranked(p: Player | None, ranks: dict[str, tuple[int, int]]) -> dict | None:
+    """`player_dict` plus where he ranks at his position in this league this week."""
+    d = player_dict(p)
+    if d is not None and p is not None and p.id in ranks:
+        rank, of = ranks[p.id]
+        d["pos_rank"] = {"rank": rank, "of": of}
+    return d
+
+
+def _role_dict(r, ranks: dict[str, tuple[int, int]]) -> dict:
+    return {"slot": r.slot, "label": r.label, "pick": _ranked(r.pick, ranks), "was": _ranked(r.was, ranks),
+            "confidence": r.confidence, "p": r.p, "decision": r.decision, "change": r.change,
+            "tipped": r.tipped, "reason": r.reason, "game": r.game, "opp": r.opp,
+            "candidates": [{"player": _ranked(c.player, ranks), "p": round(c.p, 3), "confidence": c.confidence,
+                            "factors": c.factors, "tilt": c.tilt, "opp": c.opp} for c in r.candidates]}
+
+
 def lineup_dict(adv: LineupAdvice) -> dict:
     """The lineup payload. Two piles on top of the board: `required` is what nobody has to
-    think about (a forced fix, or a swap the projection has settled at `LOCK_P`), `decisions`
-    is what someone does -- the close calls, each with the engine's call and the reads that
-    tip it. `holes` are slots the roster cannot fill. `changes` is every swap the lineup
-    makes, kept for the call sheet, the film and the grading."""
+    think about (a forced fix, or a swap the projection has settled at `LOCK_P`), and the
+    `roles` that are a `decision` are what someone does -- each starting role (RB2, FLEX)
+    with the engine's pick, every man who could take it instead, and the reads on each
+    pair. `summary.decisions` counts those roles. `decisions` keeps the pairwise close
+    calls for the film and the grading. `holes` are slots the roster cannot fill.
+    `changes` is every swap the lineup makes, kept for the call sheet, the film and the
+    grading. `standing` is where the projection ranks in the league this week."""
+    ranks = adv.pos_rank
     return {
         "week": adv.week, "projected_total": adv.projected_total, "current_total": adv.current_total,
-        "summary": {"required": len(adv.required) + len(adv.holes), "decisions": len(adv.decisions)},
+        "standing": {"rank": adv.standing[0], "of": adv.standing[1]},
+        "summary": {"required": len(adv.required) + len(adv.holes),
+                    "decisions": sum(1 for r in adv.roles if r.decision)},
         "required": [_swap_dict(ch) for ch in adv.required],
         "holes": [{"slot": h.slot, "player": player_dict(h.player), "reason": h.reason} for h in adv.holes],
+        "roles": [_role_dict(r, ranks) for r in adv.roles],
         "decisions": [_decision_dict(d) for d in adv.decisions],
         # Shipped verbatim: the measured 2025 rates, not a rounded or re-scaled copy. If this
         # ever stops being a straight pass-through, the sentence on the depth chart lies.
         "confidence_hit_rate": lineup_mod.HIT_RATE,
-        "slots": [{"slot": c.slot, "player": player_dict(c.player), "confidence": c.confidence,
+        "slots": [{"slot": c.slot, "player": _ranked(c.player, ranks), "confidence": c.confidence,
                    "reason": c.reason, "change": c.change, "margin": c.margin} for c in adv.slots],
-        "bench": [{"player": player_dict(p), "reason": r} for p, r in adv.bench],
+        "bench": [{"player": _ranked(p, ranks), "reason": r} for p, r in adv.bench],
         "changes": [_swap_dict(ch) for ch in adv.changes],
     }
 

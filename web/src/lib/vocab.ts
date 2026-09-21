@@ -19,6 +19,9 @@
  *   so it carries its own article. "depth chart shows up here" is what you get
  *   when the h1 is reused for prose, and it reads like a dropped word.
  */
+import type { Confidence } from "./types";
+import { ordinal } from "./format.ts";
+
 export interface Section {
   href: string;
   label: string;
@@ -392,6 +395,13 @@ export const TICKER = {
   aria: "News ticker. Open the desk",
   /** The plate on the left of the strip. */
   plate: "Just in",
+  /** The strip runs in segments the way a sports network's does: a heading flashes, then
+   *  its items pass. */
+  segment: {
+    injuries: "Injuries",
+    live: "Live scores",
+    proj: "Projected scores",
+  },
   quiet: "Quiet. Nothing on your roster moved.",
   loading: "Checking the wire\u2026",
   /** A game on the strip after the news: "Gaainzzz 131.0 – Eppsy13 118.3". */
@@ -610,35 +620,48 @@ export const LANDING = {
  * live here.
  */
 export const LINEUP = {
-  /** Top-left of the hero: the head coach's notes, the personality of the page. */
+  /** The hero's top line: the head coach's notes, the personality of the page. */
   coach: {
     from: "From the head coach",
     aria: "Your head coach has notes for you",
     notes: "Coach\u2019s notes",
+    /** The engine's pick for a role. Follow it blind, or open the role and decide. */
+    call: "Head coach\u2019s call",
   },
   projected: (week: number) => `Projected \u00b7 Week ${week}`,
-  vsCurrent: "vs current",
-  /** The split, stated plainly under the number. */
+  /** Under the number: where the projection ranks in the league this week. Not a margin
+   *  against your own lineup, which a tipped coin flip can legitimately move down. */
+  standing: (rank: number, of: number) => `Projects ${ordinal(rank)} of ${of} this week`,
+  /** The split, stated plainly under the number: two chips on one row. */
   required: (n: number) => `${n} required change${n === 1 ? "" : "s"}`,
   decisions: (n: number) => `${n} decision${n === 1 ? "" : "s"} to make`,
   /** Both piles empty: the coach has nothing for you. */
   clear: "Lineup\u2019s set",
-  /** The stamp that lands when the tab opens: the two numbers, then the faces. */
+  /** The stamp that lands when the tab opens. It stays until dismissed. */
   stamp: {
     fix: (n: number) => `Fix ${n}`,
     decide: (n: number) => `Decide ${n}`,
     clear: "All set",
     aria: "The head coach\u2019s summary",
     then: "Then have a look at",
+    close: "Got it",
+    closeAria: "Dismiss the head coach\u2019s summary",
   },
+  jump: "Roster",
   section: {
     required: "Required changes",
     decisions: "Decisions to make",
     field: "On the field",
     bench: "On the bench",
+    reserve: "Injured reserve",
   },
-  requiredQuiet: "Nothing has to change.",
-  decisionsQuiet: "Nothing close enough to think about.",
+  /** Nothing forced: a solid stamp, not an apology. */
+  requiredClear: "Handled",
+  requiredClearLine: "Nobody hurt, nobody on a bye, every slot filled.",
+  decisionsQuiet: "Every role is a Lock. Nothing to weigh.",
+  /** Roles marked handled this week, folded away under the list. */
+  handled: (n: number) => `${n} handled`,
+  showHandled: "Show",
   /** One required change. */
   change: {
     empty: "Empty slot",
@@ -650,24 +673,30 @@ export const LINEUP = {
     hole: "Nobody to start",
     wire: "Hit the wire",
   },
-  /** One close call. */
-  decision: {
-    start: "Start",
-    sit: "Sit",
-    /** The call keeps the lineup you set. */
-    keep: "As you set it",
-    /** The call changes it. */
+  /** One role that needs the owner. */
+  role: {
+    /** The row's question, and the page's heading. */
+    question: (label: string) => `Who\u2019s your ${label}?`,
+    aria: (label: string) => `Open the ${label} decision`,
+    /** The pick was on your bench. */
     change: "Change",
-    /** The reads, not the projection, made the call. */
+    keep: "As you set it",
     tipped: "The reads tip it",
-    /** Under the number: the calibrated probability behind the tag. The figure itself is
-     *  the engine's, rendered beside this, never written here. */
-    odds: "to outscore him",
-    reads: "What tips it",
+    considered: "Also in the frame",
+    /** The other men, in a list on the role's page. */
+    others: "The other options",
+    /** Beside a candidate's number: P(pick outscores him), rendered from the engine. */
+    odds: "the pick outscores him",
+    reads: "What separates them",
     none: "Nothing else separates them this week.",
     game: "Your game",
-    /** The tilt, read out: how many reads back the call, net. */
-    tilt: (n: number) => (n === 0 ? "Reads split" : n > 0 ? `${n} read${n === 1 ? "" : "s"} for` : `${-n} read${n === -1 ? "" : "s"} against`),
+    proj: "Proj",
+    /** Mark it handled: it leaves the list until next week. */
+    handle: "Handled",
+    handled: "Marked handled",
+    unhandle: "Put it back",
+    back: "Back to the lineup",
+    missing: "That role is not on this lineup.",
   },
   /** The seven reads, as labels. Keys mirror `engine/decisions.KEYS`. */
   factor: {
@@ -680,6 +709,17 @@ export const LINEUP = {
     role: "Role",
   } as const satisfies Record<string, string>,
 } as const;
+
+/**
+ * The tag a reader sees for each confidence band. The engine's value is the key and never
+ * changes ("Coin flip" is what the grading, the film and the share graphics carry); the
+ * word on screen is the owner's box's: a coin flip is a call only the owner can make.
+ */
+export const CONFIDENCE_LABEL: Record<Confidence, string> = {
+  Lock: "Lock",
+  Lean: "Lean",
+  "Coin flip": "Owner\u2019s call",
+};
 
 /**
  * What a confidence stamp is worth, in words. ONE definition for three surfaces.

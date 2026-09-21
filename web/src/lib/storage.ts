@@ -142,3 +142,42 @@ export function saveCalled(key: string, ids: string[]): void {
     /* private mode / blocked storage: the sheet just does not remember */
   }
 }
+
+/* ------------------------------------------------------------ handled roles ---
+   Which lineup roles you have marked handled this week. Scoped per league and per
+   week, so a new week asks the question again. Advice only: nothing is written back
+   to the platform, the role simply leaves the list until next week.                 */
+
+const HANDLED_KEY = "booth.handled";
+
+export function handledKey(platform: string, leagueId: string, teamId: string, week: number): string {
+  return `${platform}:${leagueId}:${teamId}:${week}`;
+}
+
+function readHandled(): Record<string, string[]> {
+  try {
+    const raw = window.localStorage.getItem(HANDLED_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, string[]>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function loadHandled(key: string): string[] {
+  const all = readHandled()[key];
+  return Array.isArray(all) ? all.filter((v): v is string => typeof v === "string") : [];
+}
+
+/** Keeps only this week's key, so the store never grows past one week per league. */
+export function saveHandled(key: string, labels: string[]): void {
+  try {
+    const all = readHandled();
+    const [platform, league, team] = key.split(":");
+    for (const k of Object.keys(all)) if (k.startsWith(`${platform}:${league}:${team}:`)) delete all[k];
+    all[key] = labels;
+    window.localStorage.setItem(HANDLED_KEY, JSON.stringify(all));
+  } catch {
+    /* blocked storage: the role simply shows again next visit */
+  }
+}

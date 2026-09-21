@@ -435,13 +435,164 @@ def settle(team: Team, slots: list[str], ctx: decisions_mod.Context | None = Non
 def _decision_reason(start: Player, sit: Player, p: float, tag: str, tipped: bool, tilt: int) -> str:
     a, b = effective(start), effective(sit)
     if tipped:
-        return (f"{start.name} projects {a:.1f} to {sit.name}\u2019s {b:.1f}, a coin flip. "
+        return (f"{start.name} projects {a:.1f} to {sit.name}\u2019s {b:.1f}, too close for the projection to call. "
                 f"The reads tip it his way, {tilt} to none." if tilt else "")
     if tag == LOCK:
         return f"{start.name} projects {a:.1f} to {sit.name}\u2019s {b:.1f}: {p:.0%} to outscore him."
     if tag == LEAN:
         return f"{start.name} projects {a:.1f} to {sit.name}\u2019s {b:.1f}: a lean, {p:.0%} to outscore him. The reads below say what else separates them."
-    return f"{start.name} projects {a:.1f} to {sit.name}\u2019s {b:.1f}: a coin flip at {p:.0%}. The projection does not decide this one; the reads below do."
+    return f"{start.name} projects {a:.1f} to {sit.name}\u2019s {b:.1f}: {p:.0%} to outscore him, too close for the projection to call. The owner decides this one; the reads say what should tip it."
+
+
+@dataclass
+class Candidate:
+    """A man who could take a role instead of the engine's pick: `p` is P(pick outscores
+    him), `confidence` the band that is, and `factors` the reads on the pair pointed at the
+    pick (`favors` "start" backs the pick, "sit" backs him)."""
+    player: Player
+    p: float
+    confidence: str
+    factors: list[dict] = field(default_factory=list)
+    tilt: int = 0
+    opp: str | None = None
+
+
+@dataclass
+class Role:
+    """One starting role, named the way a manager names it -- RB2, WR1, FLEX -- with the
+    engine's pick and every other man who could take it.
+
+    The page asks "who is the best man for this role?" rather than "A or B?", because a
+    role with a clear starter most weeks (Gibbs at RB1) is not the same question as the
+    second running back slot with three bench men within a few points of the incumbent.
+    `decision` is True when the pick is not a Lock over the closest candidate: the
+    projection alone has not settled the role and the reads should. `change` says the pick
+    was not in the lineup the manager set; `tipped` that the reads, not the projection,
+    seated him. `confidence` and `p` are the pick against the closest candidate (Lock and
+    1.0 when nobody could take the role)."""
+    slot: str
+    label: str
+    pick: Player | None
+    was: Player | None
+    candidates: list[Candidate]
+    confidence: str
+    p: float
+    decision: bool
+    change: bool
+    tipped: bool
+    reason: str
+    game: dict | None = None
+    opp: str | None = None
+
+
+def role_labels(slots: list[str], lineup: list[Player | None]) -> list[str]:
+    """RB1, RB2, WR1 ... : a slot that appears once keeps its name; one that appears more
+    than once is numbered by projection, so the higher-projected back is RB1 whatever
+    order the platform lists the slots in."""
+    counts: dict[str, int] = {}
+    for s in slots:
+        counts[s] = counts.get(s, 0) + 1
+    labels = list(slots)
+    for name, n in counts.items():
+        if n < 2:
+            continue
+        idx = [i for i, s in enumerate(slots) if s == name]
+        order = sorted(idx, key=lambda i: (-(effective(lineup[i]) if lineup[i] else -1.0), i))
+        for rank, i in enumerate(order, 1):
+            labels[i] = f"{name}{rank}"
+    return labels
+
+
+def roles(team: Team, slots: list[str], settled: Settled, ctx: decisions_mod.Context | None = None) -> list[Role]:
+    """Every starting role with its pick and the men who could take it instead.
+
+    A candidate is a healthy man the lineup does not start, listed at ONE role: the seat
+    he has the best chance of taking (the lowest P(pick beats him) among the roles he fits).
+    One Aaron Jones on the bench is one question -- "does he take the weaker flex?" -- not
+    four, however many running backs he could nominally replace; the seat he would actually
+    take is the one the projection has him closest to. A candidate the pick is a Lock over
+    is still listed, so the page shows who was considered, but a role is a decision only
+    when its closest candidate is not. The reads on each pair come from
+    `engine/decisions.read`, pointed at the pick.
+    """
+    lineup = settled.lineup
+    n = len(slots)
+    set_ = [team.player(pid) for pid in team.starters[:n]] + [None] * max(0, n - len(team.starters))
+    set_ids = {p.id for p in set_ if p}
+    starters = [p for p in lineup if p]
+    starter_ids = {p.id for p in starters}
+    bench = [p for p in team.players if p.id not in starter_ids and _healthy(p)]
+    labels = role_labels(slots, lineup)
+    tipped_by = {d.start.id: d for d in settled.decisions if d.change}
+
+    # Every (role, bench man) pair the man fits, then each man kept at his best seat.
+    pairs: dict[str, list[tuple[float, int]]] = {}
+    for i, (slot, pick) in enumerate(zip(slots, lineup)):
+        if pick is None or pick.unpriced or effective(pick) <= 0:
+            continue
+        for b in bench:
+            if player_fits(slot, b):
+                pairs.setdefault(b.id, []).append((calibration.p_beats(effective(pick), effective(b)), i))
+    seat_of = {bid: min(opts)[1] for bid, opts in pairs.items()}
+
+    out: list[Role] = []
+    for i, (slot, label, pick, was) in enumerate(zip(slots, labels, lineup, set_)):
+        if pick is None or effective(pick) <= 0:
+            # A hole, or a man who cannot score: `holes`/`required` already say so.
+            out.append(Role(slot, label, pick, was, [], FLIP, 0.0, False, False, False,
+                            f"Nobody healthy on the roster can take {label}.", None, None))
+            continue
+        others = [x for x in starters if x.id != pick.id]
+        cands: list[Candidate] = []
+        for b in bench:
+            if seat_of.get(b.id) != i:
+                continue
+            tag, p = _tag(effective(pick), effective(b))
+            reads = decisions_mod.read(ctx, pick, b, others)
+            cands.append(Candidate(b, p, tag, reads["factors"], reads["tilt"], decisions_mod.game_line(ctx, b)))
+        cands.sort(key=lambda c: c.p)
+        closest = cands[0] if cands else None
+        tipped = tipped_by.get(pick.id)
+        if closest is None:
+            tag, p, decision = LOCK, 1.0, False
+            reason = f"{pick.name} is the only man who can play {label}."
+        else:
+            tag, p = closest.confidence, closest.p
+            decision = p < calibration.LOCK_P
+            reason = _decision_reason(pick, closest.player, p, tag, tipped is not None, tipped.tilt if tipped else closest.tilt)
+        game = (tipped.game if tipped else None) or (decisions_mod.game_state(ctx) if ctx else None)
+        out.append(Role(slot, label, pick, was, cands, tag, round(p, 3), decision,
+                        pick.id not in set_ids, tipped is not None, reason, game,
+                        decisions_mod.game_line(ctx, pick)))
+    return out
+
+
+def standing(league: League, team: Team, projected: float) -> tuple[int, int]:
+    """Where this lineup's projection sits in the league this week: (rank, teams). Every
+    other team is priced as its manager has set it, because that is who you are up
+    against. Ties share the higher rank."""
+    others = [round(sum(effective(p) for pid in t.starters if (p := t.player(pid))), 2)
+              for t in league.teams if t.id != team.id]
+    return 1 + sum(1 for x in others if x > projected), len(league.teams)
+
+
+def position_ranks(league: League) -> dict[str, tuple[int, int]]:
+    """Every rostered player's rank at his position this week, league-wide: RB12 of 48.
+    By `effective`, so a man who will not play ranks at the bottom with the other zeros."""
+    by_pos: dict[str, list[Player]] = {}
+    seen: set[str] = set()
+    for t in league.teams:
+        for p in t.players:
+            if p.id in seen:
+                continue
+            seen.add(p.id)
+            by_pos.setdefault(p.position, []).append(p)
+    out: dict[str, tuple[int, int]] = {}
+    for pos, ps in by_pos.items():
+        vals = sorted((effective(p) for p in ps), reverse=True)
+        for p in ps:
+            out[p.id] = (1 + sum(1 for v in vals if v > effective(p)), len(ps))
+    return out
 
 
 def recommended_lineup(league: League, team: Team, ctx: decisions_mod.Context | None = None) -> list[Player | None]:
@@ -474,6 +625,9 @@ class LineupAdvice:
     required: list[Swap] = field(default_factory=list)
     decisions: list[Decision] = field(default_factory=list)
     holes: list[Hole] = field(default_factory=list)
+    roles: list[Role] = field(default_factory=list)
+    standing: tuple[int, int] = (1, 1)
+    pos_rank: dict[str, tuple[int, int]] = field(default_factory=dict)
 
 
 def _status_note(p: Player) -> str:
@@ -516,7 +670,7 @@ def advise(league: League, team: Team, ctx: decisions_mod.Context | None = None)
             # We are holding him over a higher-projected bench player. Say why, or the
             # recommendation looks like a mistake.
             reason = (f"Projects {effective(p):.1f}. {alt.name} projects {effective(alt):.1f}: "
-                      f"a coin flip, so hold.")
+                      f"too close for the projection to call, so hold.")
         elif alt:
             reason = f"Projects {effective(p):.1f}; best bench option {alt.name} at {effective(alt):.1f}."
         else:
@@ -544,4 +698,5 @@ def advise(league: League, team: Team, ctx: decisions_mod.Context | None = None)
 
     total = round(sum(effective(p) for p in best if p), 2)
     return LineupAdvice(league.week, total, current_total, calls, bench_notes,
-                        settled.changes, settled.required, settled.decisions, settled.holes)
+                        settled.changes, settled.required, settled.decisions, settled.holes,
+                        roles(team, slots, settled, ctx), standing(league, team, total), position_ranks(league))

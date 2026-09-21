@@ -1,6 +1,7 @@
 from edge import calibration
+from edge.engine import lineup
 from edge.engine.lineup import FLIP, LEAN, LOCK, advise, effective, lineup_total, optimize, settle
-from edge.models import Player
+from edge.models import League, Player, Team
 
 
 def P(i, pos, proj, team="X", inj=None):
@@ -250,3 +251,55 @@ def test_a_settled_lineup_is_never_worse_than_the_one_the_manager_set(league):
         for d in s.decisions:
             assert d.confidence in (LEAN, FLIP)
             assert d.start.id in {p.id for p in s.lineup if p} and d.sit.id not in {p.id for p in s.lineup if p}
+
+
+# ---------------------------------------------------------------- roles ----
+# The page asks "who is the best man for RB2?", not "A or B?". `lineup.roles` names every
+# starting role and lists the men who could take it, each bench man at one seat only.
+
+def _players(*rows):
+    return [Player(id=str(i), name=n, position=pos, nfl_team="X", projected=pr) for i, (n, pos, pr) in enumerate(rows, 1)]
+
+
+def test_roles_are_numbered_by_projection_and_single_slots_keep_their_name():
+    ps = _players(("A", "RB", 12.0), ("B", "RB", 18.0), ("Q", "QB", 20.0))
+    assert lineup.role_labels(["QB", "RB", "RB"], [ps[2], ps[0], ps[1]]) == ["QB", "RB2", "RB1"]
+    assert lineup.role_labels(["QB", "RB", "RB"], [ps[2], None, ps[1]]) == ["QB", "RB2", "RB1"]
+
+
+def test_a_bench_man_is_a_candidate_at_the_one_seat_he_is_closest_to():
+    """Aaron Jones could nominally replace four men; the question is whether he takes the
+    weakest seat he fits. The role that seat belongs to is the one decision."""
+    ps = _players(("Big", "RB", 20.0), ("Mid", "RB", 14.0), ("Weak", "WR", 9.0), ("Jones", "RB", 8.5), ("Wr2", "WR", 15.0))
+    team = Team("1", "T", None, None, ps, ["1", "2", "5", "3"])
+    slots = ["RB", "RB", "WR", "FLEX"]
+    settled = lineup.settle(team, slots)
+    rs = lineup.roles(team, slots, settled)
+    where = {c.player.name: r.label for r in rs for c in r.candidates}
+    assert where == {"Jones": "FLEX"}
+    flex = next(r for r in rs if r.label == "FLEX")
+    assert flex.pick.name == "Weak" and flex.decision and flex.confidence != "Lock" and not flex.change
+    big = next(r for r in rs if r.label == "RB1")
+    assert big.pick.name == "Big" and not big.decision and big.confidence == "Lock" and big.candidates == []
+
+
+def test_a_role_nobody_can_take_is_not_a_decision():
+    ps = _players(("Q", "QB", 20.0), ("A", "RB", 12.0))
+    team = Team("1", "T", None, None, ps, ["1", "2"])
+    rs = lineup.roles(team, ["QB", "RB"], lineup.settle(team, ["QB", "RB"]))
+    assert all(not r.decision and r.p == 1.0 for r in rs)
+
+
+def test_standing_and_position_ranks_are_league_wide():
+    a = _players(("Q", "QB", 20.0), ("A", "RB", 12.0))
+    b = [Player(id="9", name="Q2", position="QB", nfl_team="Y", projected=25.0),
+         Player(id="8", name="B", position="RB", nfl_team="Y", projected=6.0),
+         Player(id="7", name="Hurt", position="RB", nfl_team="Y", projected=30.0, injury_status="Out")]
+    league = League("L", "sleeper", "L", 2026, 2, ["QB", "RB", "BN"], {}, [
+        Team("1", "T1", None, None, a, ["1", "2"]), Team("2", "T2", None, None, b, ["9", "8"])])
+    assert lineup.standing(league, league.teams[0], 32.0) == (1, 2)      # 32 > 31
+    assert lineup.standing(league, league.teams[0], 31.0) == (1, 2)      # ties share the higher rank
+    assert lineup.standing(league, league.teams[0], 30.0) == (2, 2)
+    ranks = lineup.position_ranks(league)
+    assert ranks["2"] == (1, 3) and ranks["8"] == (2, 3)
+    assert ranks["7"] == (3, 3), "a man who will not play ranks with the zeros, whatever his projection"

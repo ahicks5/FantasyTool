@@ -64,10 +64,17 @@ Wire name stays `my_team`; the route stays `/lineup`.
 `GET /api/league/{platform}/{league_id}/team/{team_id}/lineup` →
 ```json
 {"week":2,"projected_total":131.4,"current_total":124.9,
+ "standing":{"rank":3,"of":12},
  "summary":{"required":1,"decisions":3},
  "required":[{"slot":"RB","out":{"id":"...","name":"Josh Jacobs","injury_status":"Out"},"in":{"id":"...","name":"Ray Davis"},
               "gain":5.0,"confidence":"Lock","p":null,"forced":true,"reason":"Josh Jacobs Out — do not start. Ray Davis projects 5.0."}],
  "holes":[{"slot":"K","player":null,"reason":"Nobody on the roster can fill K. Hit the wire."}],
+ "roles":[{"slot":"FLEX","label":"FLEX2","pick":{"id":"...","name":"Jaylen Warren","projected":11.8,"pos_rank":{"rank":25,"of":56}},
+           "was":{"id":"...","name":"Jaylen Warren"},"confidence":"Coin flip","p":0.51,"decision":true,"change":false,"tipped":false,
+           "reason":"Jaylen Warren projects 11.8 to Aaron Jones’s 11.6: 51% to outscore him, too close for the projection to call. ...",
+           "game":{"state":"ahead","margin":12.7,"live":false,"line":"Projected 12.7 ahead: protect the floor"},"opp":"@ NE",
+           "candidates":[{"player":{"id":"...","name":"Aaron Jones","projected":11.6,"pos_rank":{"rank":26,"of":56}},"p":0.51,"confidence":"Coin flip",
+                          "factors":[{"key":"opponent","favors":"sit","line":"..."}],"tilt":-1,"opp":"vs CHI"}]}],
  "decisions":[{"slot":"FLEX","start":{"id":"...","name":"Jaylen Warren","projected":11.8},"sit":{"id":"...","name":"Aaron Jones","projected":11.6},
                "p":0.51,"confidence":"Coin flip","change":false,"tipped":false,
                "reason":"Jaylen Warren projects 11.8 to Aaron Jones’s 11.6: a coin flip at 51%. The projection does not decide this one; the reads below do.",
@@ -88,8 +95,20 @@ Wire name stays `my_team`; the route stays `/lineup`.
 **The two piles.** `required` is what nobody has to think about: a forced fix (`forced`
 true — the slot was empty or the man in it will not play) or a swap the projection has
 settled (`Lock`). `holes` are slots the roster cannot fill; `summary.required` counts them
-too. `decisions` are the close calls: P(`start` outscores `sit`) is under the Lock band, so
-the projection alone does not pick. `start` is the engine's call, `change` says whether it
+too. `roles` is one entry per starting slot, named the way a manager names it (`label`:
+RB1, RB2, FLEX2 — numbered by projection when a slot repeats), with the engine's `pick`,
+the man the manager set there (`was`), and `candidates`: every healthy man the lineup does
+not start who fits the role, closest first. **A bench man is a candidate at one role only**,
+the seat he is closest to taking — one Aaron Jones is one question, not four. A role is a
+`decision` when the pick is not a Lock over the closest candidate; `summary.decisions`
+counts those. `p` and `confidence` on a role are the pick against the closest candidate;
+on a candidate, the pick against him, with `factors` the reads on that pair pointed at the
+pick and `opp` who he plays ("vs DAL", "@ DAL", "Bye"). `pos_rank` on a player is his rank
+at his position among every rostered player in the league this week (by `effective`, so a
+man who will not play ranks with the zeros). `standing` is where the projected total ranks
+among the league's lineups as their managers set them. The pairwise `decisions` are kept
+for the film and the grading: P(`start` outscores `sit`) is under the Lock band, so the
+projection alone does not pick. `start` is the engine's call, `change` says whether it
 differs from the lineup the manager set, `tipped` says the reads made the call rather than
 the projection, and `tilt` is the number of `factors` pointing at `start` net of those
 pointing at `sit`. `factors[].favors` is `"start"`, `"sit"` or null (context); `key` is one

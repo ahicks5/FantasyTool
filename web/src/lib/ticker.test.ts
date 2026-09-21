@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { GAP_CHARS, MIN_MS, PX_PER_CHAR, PX_PER_SECOND, newsHeadline, scoreLines, shortStatus, tickerDurationMs, tickerLine, tickerLines } from "./ticker.ts";
+import { GAP_CHARS, MIN_MS, PX_PER_CHAR, PX_PER_SECOND, newsHeadline, scoreLines, shortStatus, tickerDurationMs, tickerEntries, tickerLine, tickerLines } from "./ticker.ts";
 import type { NewsItem } from "./types";
 
 const who = { id: "1", name: "Terry McLaurin", position: "WR", nfl_team: "WAS", starter: true };
@@ -60,4 +60,18 @@ test("the scores run after the news: projections flagged before kickoff, the pla
   ];
   assert.deepEqual(scoreLines(games), ["Proj Gaainzzz 131.0 \u2013 Eppsy13 118.3", "HusH 71.2 \u2013 philking 0.0"]);
   assert.deepEqual(scoreLines(undefined), [], "an older API build sends no scoreboard");
+});
+
+test("the strip runs in segments: a heading, then its items, and an empty segment is not announced", () => {
+  const games = [{ matchup_id: 1, teams: [{ id: "1", name: "A", proj: 100.5, points: null }, { id: "2", name: "B", proj: 99.1, points: null }] }];
+  const entries = tickerEntries([base], games);
+  assert.deepEqual(entries.map((e) => e.kind), ["head", "item", "head", "item"]);
+  assert.equal(entries[0].line, "Injuries");
+  assert.equal(entries[2].line, "Projected scores");
+  // Under the "Projected scores" heading the lines do not repeat the word.
+  assert.equal(entries[3].line, "A 100.5 – B 99.1");
+  const live = tickerEntries([], [{ matchup_id: 1, teams: [{ id: "1", name: "A", proj: 100.5, points: 12.2 }, { id: "2", name: "B", proj: 99.1, points: 0 }] }]);
+  assert.equal(live[0].line, "Live scores");
+  assert.equal(live.length, 2);
+  assert.deepEqual(tickerEntries([], []), []);
 });

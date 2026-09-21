@@ -34,6 +34,24 @@ that actually tip them.
       this tab (`Scorecard.tsx` and `lib/gameday.ts` stay; the desk's Alarm still reads the latter).
 - [x] **LT-5** **Naming.** "Lineup" everywhere: the tab, the page title, the desk notebook, the
       call-sheet CTA. URL stays `/team`. "Depth chart" now means an NFL team's depth chart only.
+- [x] **LT-9** **Round two (Andrew's notes).** The stamp stays until dismissed (X and "Got
+      it"), once per browser session. No kickoff clock; the head coach's line is the hero's top
+      line with a "Roster" jump; the split is two chips on one row; under the number "Projects
+      3rd of 12 this week" (`lineup.standing`) replaces "vs current", which a tipped coin flip
+      could legitimately push negative. Required changes empty → a solid "Handled" stamp.
+      "Coin flip" reads **Owner's call** on screen (`CONFIDENCE_LABEL`; the engine string is
+      unchanged). Decisions are per starting role (`lineup.roles`: "Who's your RB2?"), one row
+      each with the pick ringed and the other men in the frame, opening `/team/decide?role=`
+      (`DecisionView`) with the head coach's call, every candidate's number, league position
+      rank, opponent and reads, and a "Handled" button (`booth.handled`, per week). A bench man
+      is a candidate at one role only, so a team has one to three decisions, not eight. Roster
+      rows are one line: role, face, name, `RB12`, number, Lock/Lean, arrow to an open role; IR
+      and PUP men in their own list. The ticker runs in segments (Injuries, Live/Projected
+      scores) with a flashing heading.
+- [ ] **LT-10** Ticker segments Andrew asked for that need data the desk does not carry: last
+      week's fantasy results (the film has the reader's own; the strip wants every game) and
+      NFL scores (ESPN's scoreboard has them live; `edge/data/schedule.py` caches a week, so
+      it wants its own short-lived fetch and a desk field).
 - [ ] **LT-6** Betting odds and player props as reads. Deliberately skipped this round.
 - [ ] **LT-7** Variance from last season's game log too (this season needs three games first, so
       the swing read is silent until week 4). Needs 17 cached week fetches for 2025.

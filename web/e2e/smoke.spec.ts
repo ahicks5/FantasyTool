@@ -96,6 +96,16 @@ async function assertNoHorizontalOverflow(page: Page): Promise<void> {
   ).toBeLessThanOrEqual(box.clientWidth + 1);
 }
 
+/** The head coach's stamp lands over /team on a fresh arrival and stays until dismissed. */
+async function dismissBoom(page: Page) {
+  // The stamp mounts in the same commit as the hero, so wait for the hero first: before
+  // the lineup has loaded there is nothing to dismiss yet, and it would land afterwards.
+  await expect(page.getByLabel(LINEUP.coach.aria)).toBeVisible();
+  const boom = page.getByRole("dialog", { name: LINEUP.stamp.aria });
+  if (await boom.count()) await boom.getByRole("button", { name: LINEUP.stamp.closeAria }).click();
+  await expect(boom).toHaveCount(0);
+}
+
 test.beforeEach(async ({ context, page }) => {
   await context.route("**/*", stubExternal);
   // Seed the stored league before any app script runs, so the pages skip the connect gate.
@@ -194,28 +204,48 @@ const PAGES: PageCase[] = [
     path: "/team",
     name: "lineup",
     check: async (page) => {
+      // The head coach's stamp lands first and stays until dismissed: the summary is seen.
+      const boom = page.getByRole("dialog", { name: LINEUP.stamp.aria });
+      await expect(boom).toBeVisible();
+      await expect(boom.getByText(/^(Fix \d+|Decide \d+|All set)/)).toBeVisible();
+      await boom.getByRole("button", { name: LINEUP.stamp.closeAria }).click();
+      await expect(boom).toHaveCount(0);
       await expect(page.getByText(/Projected/i).first()).toBeVisible();
       // The split, stated plainly and never blurred: a count of required changes and a
-      // count of decisions, as two separate lines under the number.
+      // count of decisions, two chips on one row under the number. No kickoff clock.
       await expect(page.getByText(/^\d+ required changes?$/).first()).toBeVisible();
       await expect(page.getByText(/^\d+ decisions? to make$/).first()).toBeVisible();
-      // The head coach's notes sit top-left of the hero.
+      await expect(page.getByText(/Projects \d+(st|nd|rd|th) of \d+ this week/)).toBeVisible();
+      // The head coach's notes are the hero's top line, and the roster is one jump away.
       await expect(page.getByLabel(LINEUP.coach.aria)).toBeVisible();
-      // The two piles, then the board. GoldenPP's week has close calls but nothing forced.
+      await expect(page.getByRole("link", { name: LINEUP.jump })).toBeVisible();
+      // Nothing forced this week: a solid stamp, not an apology.
+      await expect(page.getByText(LINEUP.requiredClear, { exact: true })).toBeVisible();
+      // The second pile is one row per role: the role in big letters, the faces, the arrow.
       await expect(page.getByRole("heading", { name: LINEUP.section.decisions })).toBeVisible();
-      const decisions = page.locator(".decision");
-      expect(await decisions.count()).toBeGreaterThanOrEqual(1);
-      // Every decision names its two men and carries at least one read with its label.
-      await expect(decisions.first().locator(".decision-start")).toBeVisible();
-      await expect(decisions.first().locator(".decision-sit")).toBeVisible();
-      await expect(decisions.first().locator(".factor").first()).toBeVisible();
+      const roles = page.locator(".role-row");
+      expect(await roles.count()).toBeGreaterThanOrEqual(1);
+      await expect(roles.first().locator(".role-pick")).toBeVisible();
+      await expect(page.getByText("Coin flip")).toHaveCount(0);
       // The old rows are gone: no game-day check, no scorecard toggle on this tab.
       await expect(page.getByText(/Game day check|Slot problems/)).toHaveCount(0);
       await expect(page.getByRole("tab", { name: /scorecard/i })).toHaveCount(0);
-      // A full lineup: one row per starting slot (9 in this league), each naming its slot.
-      const slots = page.locator("main li", { hasText: /^(QB|RB|WR|TE|FLEX|DEF|K)/ });
+      // A full lineup: one row per starting slot (9 in this league), each naming its role.
+      const slots = page.locator("main .roster-row", { hasText: /^(QB|RB|WR|TE|FLEX|DEF|K)/ });
       await expect(slots.first()).toBeVisible();
       expect(await slots.count()).toBeGreaterThanOrEqual(9);
+      // The arrow on a role opens its own page: the question, the coach's call, the others.
+      const label = (await roles.first().locator(".role-label").textContent()) ?? "";
+      await roles.first().getByRole("link").click();
+      await expect(page.getByRole("heading", { name: LINEUP.role.question(label) })).toBeVisible();
+      await expect(page.getByText(LINEUP.coach.call)).toBeVisible();
+      await expect(page.getByRole("heading", { name: LINEUP.role.others })).toBeVisible();
+      await expect(page.locator(".factor").first()).toBeVisible();
+      // Handled takes it off the list until next week.
+      await page.getByRole("button", { name: LINEUP.role.handle }).click();
+      await expect(page.getByText(LINEUP.role.handled)).toBeVisible();
+      await page.getByRole("link", { name: LINEUP.role.back }).click();
+      await expect(page.getByText(/^1 handled$/)).toBeVisible();
     },
   },
   {
@@ -466,6 +496,7 @@ test("tap a name, his page rises; swipe it down, it is gone", async ({ page }) =
   // densest wall of names in the app -- if the sheet works anywhere it works there.
   const { status } = await visit(page, "/team");
   expect(status).toBe(200);
+  await dismissBoom(page);
 
   // A real name, not a slot label or a team: two capitalised words on a button.
   const name = page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first();
@@ -503,6 +534,7 @@ test("a scrolled report does not throw the page away", async ({ page }) => {
   // The case the gesture rules exist for: reading the Stats side is a long series of
   // downward drags, and every one of them would otherwise close the sheet.
   await visit(page, "/team");
+  await dismissBoom(page);
   await page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first().click();
   const sheet = page.getByRole("dialog");
   await expect(sheet).toBeVisible();
@@ -524,6 +556,7 @@ test("a scrolled report does not throw the page away", async ({ page }) => {
 test("a link with ?player= opens straight onto his page", async ({ page }) => {
   // The deep link, and the back button that closes it. Both are the same state: the URL.
   await visit(page, "/team");
+  await dismissBoom(page);
   await page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
   const url = page.url();
@@ -606,14 +639,18 @@ test("a story's arrow opens its action plan: the call, the next man up, and the 
 
 test("the ticker runs the desk's news along the bottom of a tab that is not the desk", async ({ page }) => {
   await visit(page, SECTIONS.team.href);
+  await dismissBoom(page);
   const ticker = page.getByRole("link", { name: TICKER.aria });
   await expect(ticker).toBeVisible();
   // Real news from the recorded feed, not the quiet line and not the loading line.
   await expect(ticker.locator(".ticker-item").first()).toBeAttached();
   await expect(ticker.getByText(TICKER.quiet)).toHaveCount(0);
-  // The scores run after the news: every game this week, projections before kickoff.
+  // In segments, the way a network runs it: "Injuries" flashes, the news passes, then the
+  // week's games under "Projected scores" (the recorded week has not kicked off).
+  await expect(ticker.locator(".ticker-head").first()).toHaveText(TICKER.segment.injuries);
+  await expect(ticker.locator(".ticker-head").nth(1)).toHaveText(TICKER.segment.proj);
   await expect(ticker.locator(".ticker-score").first()).toBeAttached();
-  await expect(ticker.locator(".ticker-score").first()).toContainText(TICKER.proj);
+  await expect(ticker.locator(".ticker-score").first()).not.toContainText(TICKER.proj);
   // It sits over the tab bar, on screen, and it is a door to the desk.
   const box = (await ticker.boundingBox())!;
   expect(box.y + box.height).toBeLessThanOrEqual(812);

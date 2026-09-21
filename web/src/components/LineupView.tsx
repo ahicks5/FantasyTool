@@ -1,88 +1,124 @@
 "use client";
 /**
- * Lineup: is my starting lineup right for this week? Two piles, then the board.
+ * Lineup: is my starting lineup right for this week? Two piles, then the roster.
  *
- * The page answers one question by splitting the week's calls into things nobody should
- * spend a second on (a man who will not play, an empty slot, a swap the projection has
- * settled) and things that need a decision (two men close enough that the projection alone
- * does not pick, with the reads that should tip it). The two are never blurred: the hero
- * states both counts on their own lines, and each pile has its own section.
+ * The page splits the week into things nobody should spend a second on (a man who will not
+ * play, an empty slot, a swap the projection has settled) and roles that need the owner:
+ * a starting role (RB2, FLEX) where the engine's pick is not a Lock over the closest man
+ * on the bench. The two are never blurred: the hero states both counts side by side, and
+ * each pile has its own section.
  *
- * The head coach owns the tab. His notes sit top-left of the hero, and when the tab opens
- * fresh a stamp lands over the page with the two numbers and the faces involved, then
- * lifts so the eye travels up to the hero and down into the detail.
+ * A role that needs the owner is one tight row here -- the role in big letters, the pick
+ * ringed green, the other men in the frame beside him, an arrow -- and a whole page of
+ * its own at `/team/decide?role=RB2` (`DecisionView`), where every read on every man is
+ * laid out and the owner can mark it handled. The roster below is one line per man: role,
+ * face, name, his rank at his position in this league, his number, his tag. A row with a
+ * decision behind it carries the same arrow.
  *
- * Every number and every probability comes from the engine (`engine/lineup.settle`,
+ * The head coach owns the tab: his notes are the hero's top line, and when the tab opens
+ * fresh a stamp lands over the page with the two numbers and the faces involved. It stays
+ * until dismissed, so the summary is seen.
+ *
+ * Every number and every probability comes from the engine (`engine/lineup.roles`,
  * `engine/decisions.py`). Every word comes from `lib/vocab.ts`. This file draws.
  */
 
-import { useEffect, useState } from "react";
-import type { DecisionFactor, Lineup, LineupChange, LineupDecision, LineupHole, LineupSlot, Player } from "@/lib/types";
+import Link from "next/link";
+import { useEffect, useLayoutEffect, useState } from "react";
+import type { Lineup, LineupChange, LineupHole, LineupRole, Player } from "@/lib/types";
 import { signed } from "@/lib/format";
-import { LINEUP, SECTIONS } from "@/lib/vocab";
+import { handledKey, loadConnection, loadHandled, saveHandled } from "@/lib/storage";
+import { CONFIDENCE_LABEL, LINEUP, SECTIONS } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { PlayerName, PlayerTarget } from "./Players";
-import { IconArrowUp, IconCheck, IconChevron, IconNotes } from "./icons";
-import { ConfidenceStamp, Countdown, CountUp, Eyebrow, H2, InjuryTag, LinkButton, OnAirLive, Stamp } from "./ui";
+import { IconArrowUp, IconCheck, IconChevron, IconNotes, IconX } from "./icons";
+import { ConfidenceStamp, CountUp, Eyebrow, H2, InjuryTag, LinkButton, Stamp } from "./ui";
 
 const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
-
-/** Short enough to sit inline beside a name. "Coin flip" is two words and never fitted. */
-const SHORT: Record<string, string> = { Lock: "Lock", Lean: "Lean", "Coin flip": "Flip" };
 const INK: Record<string, string> = { Lock: "text-start", Lean: "text-lean", "Coin flip": "text-flip" };
 
-/** The three-bar meter at row scale. Always shipped with its word — never bars alone. */
-function Bars({ value }: { value: string }) {
-  const filled = value === "Lock" ? 3 : value === "Lean" ? 2 : 1;
+/** Session-scoped: the stamp has landed this sitting (value: the week). */
+const BOOM_KEY = "booth.boom";
+
+/** The statuses that put a man on the reserve list rather than the bench. */
+const RESERVE = new Set(["IR", "PUP"]);
+
+export function decideHref(label: string): string {
+  return `${SECTIONS.team.href}/decide?role=${encodeURIComponent(label)}`;
+}
+
+// Browser storage is read before the first paint on the client and never on the server,
+// so hydration sees the same empty set on both sides (the same shape `ui.tsx` uses).
+const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+/** Which roles this reader has marked handled this week. Shared with `DecisionView`. */
+export function useHandled(week: number): [Set<string>, (label: string, on: boolean) => void] {
+  const [key, setKey] = useState<string | null>(null);
+  const [handled, setHandled] = useState<Set<string>>(new Set());
+  useBeforePaint(() => {
+    const c = loadConnection();
+    if (!c) return;
+    const k = handledKey(c.platform, c.league_id, c.team_id, week);
+    setKey(k);
+    setHandled(new Set(loadHandled(k)));
+  }, [week]);
+  const set = (label: string, on: boolean) => {
+    const next = new Set(handled);
+    if (on) next.add(label);
+    else next.delete(label);
+    setHandled(next);
+    if (key) saveHandled(key, [...next]);
+  };
+  return [handled, set];
+}
+
+/** "RB12": where he ranks at his position in this league this week. Nothing without the rank. */
+function PosRank({ p }: { p: Player }) {
+  if (!p.pos_rank) return null;
   return (
-    <span className="flex items-center gap-[2px]" aria-hidden>
-      {[0, 1, 2].map((i) => (
-        <span key={i} className={`h-[8px] w-[2px] rounded-[1px] ${i < filled ? "bg-current" : "bg-current opacity-25"}`} />
-      ))}
+    <span className="tnum text-[10px] font-bold uppercase tracking-wide text-muted">
+      {p.position}
+      {p.pos_rank.rank}
     </span>
   );
 }
 
 /**
- * One line on the board: the slot, the man, the call, the number, and the reason for it.
- * The tap goes where a tap on a player should go: his page.
+ * One line of the roster: the role, the man, his rank, his number, his tag. A role with a
+ * decision behind it carries the arrow to it; a Lock carries nothing, there is nothing
+ * to open. The row itself opens the man's page.
  */
-function SlotRow({ s }: { s: LineupSlot }) {
-  const body = (
-    <>
-      <span className="slug w-[26px] shrink-0 text-[10px] uppercase tracking-[0.06em] text-muted">{s.slot}</span>
-      {s.player ? (
-        <Avatar name={s.player.name} photo={s.player.photo} teamLogo={s.player.team_logo} size="sm" ring={RING[s.confidence]} />
-      ) : (
-        <Avatar name="?" size="sm" />
-      )}
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-bold leading-tight">
-          {s.player?.name ?? LINEUP.change.empty}
-          <InjuryTag status={s.player?.injury_status ?? null} />
-        </span>
-        <span className={`mt-px flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide ${INK[s.confidence]}`}>
-          <Bars value={s.confidence} />
-          {SHORT[s.confidence] ?? s.confidence}
-          <span className="text-muted">
-            · {s.player?.position ?? "—"} {s.player?.nfl_team ?? ""}
-          </span>
-        </span>
-      </span>
-      <span className="display tnum shrink-0 text-[19px] leading-none">{(s.player?.projected ?? 0).toFixed(1)}</span>
-      {s.player && <IconChevron size={12} strokeWidth={2.6} className="shrink-0 text-muted" />}
-    </>
-  );
+function RosterRow({ label, p, confidence, role, changed }: { label: string; p: Player | null; confidence?: string; role?: LineupRole; changed?: boolean }) {
+  const open = role && role.decision;
+  const tag = confidence && confidence !== "Coin flip" ? confidence : null;
   return (
-    <li className={`min-w-0 ${s.change ? "bg-start-soft" : ""}`}>
-      {s.player ? (
-        <PlayerTarget p={s.player} className="flex w-full min-w-0 items-center gap-2.5 px-4 py-2 text-left" face={false}>
-          {body}
+    <li className={`roster-row ${changed ? "bg-start-soft" : ""}`}>
+      {p ? (
+        <PlayerTarget p={p} className="roster-row-main" face={false}>
+          <span className="roster-role">{label}</span>
+          <Avatar name={p.name} photo={p.photo} teamLogo={p.team_logo} size="xs" ring={confidence ? RING[confidence] : undefined} />
+          <span className="roster-name">
+            <span className="truncate">{p.name}</span>
+            <InjuryTag status={p.injury_status} />
+          </span>
+          <PosRank p={p} />
+          <span className="roster-proj display tnum">{p.projected.toFixed(1)}</span>
+          {tag && <span className={`roster-tag ${INK[tag]}`}>{CONFIDENCE_LABEL[tag as keyof typeof CONFIDENCE_LABEL] ?? tag}</span>}
         </PlayerTarget>
       ) : (
-        <span className="flex w-full min-w-0 items-center gap-2.5 px-4 py-2 text-left">{body}</span>
+        <span className="roster-row-main">
+          <span className="roster-role">{label}</span>
+          <Avatar name="?" size="xs" />
+          <span className="roster-name text-muted">{LINEUP.change.empty}</span>
+        </span>
       )}
-      {s.reason && <p className="line-clamp-2 px-4 pb-2 pl-[74px] text-[12px] leading-snug text-muted">{s.reason}</p>}
+      {open ? (
+        <Link href={decideHref(role.label)} aria-label={LINEUP.role.aria(role.label)} className="roster-go">
+          <IconChevron size={13} strokeWidth={2.8} />
+        </Link>
+      ) : (
+        <span className="roster-go roster-go-none" aria-hidden />
+      )}
     </li>
   );
 }
@@ -90,7 +126,7 @@ function SlotRow({ s }: { s: LineupSlot }) {
 /** A required change: the benched name drops, the starter rises, and the tag says why nobody has to think. */
 function Change({ c, animate, i }: { c: LineupChange; animate: boolean; i: number }) {
   return (
-    <li className={`card border-sit/35 p-4 ${animate ? `print print-${Math.min(i + 1, 5)}` : ""}`}>
+    <li className={`card border-sit/35 p-3.5 ${animate ? `print print-${Math.min(i + 1, 5)}` : ""}`}>
       <div className="flex items-center justify-between gap-2">
         <Eyebrow>{c.slot}</Eyebrow>
         {c.forced ? (
@@ -99,7 +135,7 @@ function Change({ c, animate, i }: { c: LineupChange; animate: boolean; i: numbe
           <ConfidenceStamp value={c.confidence} />
         )}
       </div>
-      <div className="mt-2.5 flex min-w-0 items-center gap-2.5">
+      <div className="mt-2 flex min-w-0 items-center gap-2.5">
         <span className="min-w-0 flex-1">
           <span className={`${animate ? "demote" : "opacity-55"} block truncate text-[13px] font-bold text-sit line-through decoration-2`}>
             {c.out ? <PlayerName p={c.out} /> : LINEUP.change.empty}
@@ -111,7 +147,7 @@ function Change({ c, animate, i }: { c: LineupChange; animate: boolean; i: numbe
         </span>
         <span className="display tnum shrink-0 text-[21px] text-start">{signed(c.gain)}</span>
       </div>
-      <p className="mt-2 text-[13px] leading-snug text-ink-2">{c.reason}</p>
+      <p className="mt-1.5 text-[12px] leading-snug text-ink-2">{c.reason}</p>
     </li>
   );
 }
@@ -119,102 +155,66 @@ function Change({ c, animate, i }: { c: LineupChange; animate: boolean; i: numbe
 /** A slot the roster cannot fill: not a swap, a trip to the wire. */
 function Hole({ h, animate, i }: { h: LineupHole; animate: boolean; i: number }) {
   return (
-    <li className={`card border-sit/35 p-4 ${animate ? `print print-${Math.min(i + 1, 5)}` : ""}`}>
+    <li className={`card border-sit/35 p-3.5 ${animate ? `print print-${Math.min(i + 1, 5)}` : ""}`}>
       <div className="flex items-center justify-between gap-2">
         <Eyebrow>{h.slot}</Eyebrow>
         <Stamp ink="text-sit" size="md">{LINEUP.change.hole}</Stamp>
       </div>
-      <div className="mt-2.5 text-[15px] font-black text-sit">{h.player ? <PlayerName p={h.player} /> : LINEUP.change.empty}</div>
-      <p className="mt-2 text-[13px] leading-snug text-ink-2">{h.reason}</p>
-      <LinkButton href={SECTIONS.waivers.href} variant="secondary" size="sm" className="mt-3">
+      <div className="mt-2 text-[15px] font-black text-sit">{h.player ? <PlayerName p={h.player} /> : LINEUP.change.empty}</div>
+      <p className="mt-1.5 text-[12px] leading-snug text-ink-2">{h.reason}</p>
+      <LinkButton href={SECTIONS.waivers.href} variant="secondary" size="sm" className="mt-2.5">
         {LINEUP.change.wire}
       </LinkButton>
     </li>
   );
 }
 
-function Man({ p, verb, side }: { p: Player; verb: string; side: "start" | "sit" }) {
+/**
+ * One role that needs the owner, as a teaser: the role in big letters, the pick ringed
+ * green, the other men in the frame, the tag, the arrow. Every word about *why* lives on
+ * the role's own page, so this row stays one line tall.
+ */
+function RoleRow({ r, animate, i }: { r: LineupRole; animate: boolean; i: number }) {
+  const others = r.candidates.slice(0, 3);
+  const more = r.candidates.length - others.length;
   return (
-    <div className={`decision-man decision-${side}`}>
-      <span className="decision-verb">{verb}</span>
-      <PlayerTarget p={p} face>
-        <Avatar name={p.name} photo={p.photo} teamLogo={p.team_logo} size="md" ring={side === "start" ? "start" : undefined} />
-      </PlayerTarget>
-      <span className="decision-man-name">
-        <PlayerName p={p} className="truncate" />
-        <InjuryTag status={p.injury_status} />
-      </span>
-      <span className="decision-man-meta tnum">
-        {p.position} {p.nfl_team ?? ""} · {p.projected.toFixed(1)}
-      </span>
-    </div>
-  );
-}
-
-function Factor({ f }: { f: DecisionFactor }) {
-  const side = f.favors === "start" ? "factor-start" : f.favors === "sit" ? "factor-sit" : "";
-  return (
-    <li className={`factor ${side}`}>
-      <span className="factor-dot" aria-hidden />
-      <span className="factor-key">{LINEUP.factor[f.key]}</span>
-      <span className="factor-line">{f.line}</span>
-    </li>
-  );
-}
-
-/** One close call: the two men, the engine's call, and the reads under it. */
-function Decision({ d, animate, i }: { d: LineupDecision; animate: boolean; i: number }) {
-  const status = d.change ? (d.tipped ? LINEUP.decision.tipped : LINEUP.decision.change) : LINEUP.decision.keep;
-  return (
-    <li className={`card decision ${d.change ? "border-start/35" : ""} ${animate ? `print print-${Math.min(i + 1, 5)}` : ""}`}>
-      <div className="flex items-center justify-between gap-2">
-        <Eyebrow>{d.slot}</Eyebrow>
-        <ConfidenceStamp value={d.confidence} />
-      </div>
-      <div className="decision-vs mt-3">
-        <Man p={d.start} verb={LINEUP.decision.start} side="start" />
-        <div className="decision-p tnum">
-          {Math.round(d.p * 100)}%
-          <small>{LINEUP.decision.odds}</small>
-        </div>
-        <Man p={d.sit} verb={LINEUP.decision.sit} side="sit" />
-      </div>
-      <p className="mt-3 text-[13px] leading-snug text-ink-2">{d.reason}</p>
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold uppercase tracking-wide">
-        <span className={d.change ? "text-start" : "text-muted"}>{status}</span>
-        <span className="text-muted">{LINEUP.decision.tilt(d.tilt)}</span>
-      </div>
-      <div className="mt-3 border-t border-line pt-2">
-        <Eyebrow>{LINEUP.decision.reads}</Eyebrow>
-        {d.game && <p className="decision-game mt-1">{d.game.line}</p>}
-        {d.factors.length > 0 ? (
-          <ul className="mt-1">
-            {d.factors.map((f, j) => (
-              <Factor key={j} f={f} />
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-1 text-[12px] text-muted">{LINEUP.decision.none}</p>
-        )}
-      </div>
+    <li className={`card role-row ${animate ? `print print-${Math.min(i + 1, 5)}` : ""}`}>
+      <Link href={decideHref(r.label)} aria-label={LINEUP.role.aria(r.label)} className="role-row-link">
+        <span className="role-label display">{r.label}</span>
+        <span className="role-faces">
+          {r.pick && (
+            <span className="role-pick">
+              <Avatar name={r.pick.name} photo={r.pick.photo} teamLogo={r.pick.team_logo} size="sm" ring="start" />
+            </span>
+          )}
+          {others.map((c) => (
+            <Avatar key={c.player.id} name={c.player.name} photo={c.player.photo} teamLogo={c.player.team_logo} size="sm" />
+          ))}
+          {more > 0 && <span className="role-more tnum">+{more}</span>}
+        </span>
+        <span className="role-meta">
+          <span className={`role-tag ${INK[r.confidence]}`}>{CONFIDENCE_LABEL[r.confidence]}</span>
+          {r.change && <span className="role-change">{r.tipped ? LINEUP.role.tipped : LINEUP.role.change}</span>}
+        </span>
+        <IconChevron size={14} strokeWidth={2.8} className="shrink-0 text-muted" />
+      </Link>
     </li>
   );
 }
 
 /**
- * The stamp that lands when the tab opens: the two numbers and the faces, then it lifts.
- * Tap to dismiss early; it goes on its own after the CSS has run. Never under reduced
- * motion, where the CSS hides it and the timer clears it straight away.
+ * The stamp that lands when the tab opens: the two numbers and the faces. It stays until
+ * dismissed, by the button or a tap on the shade, so the summary is seen. Never under
+ * reduced motion, where the CSS hides it.
  */
 function Boom({ required, decisions, faces, onDone }: { required: number; decisions: number; faces: Player[]; onDone: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onDone, 2400);
-    return () => clearTimeout(t);
-  }, [onDone]);
   const words = required + decisions === 0 ? [LINEUP.stamp.clear] : [required > 0 && LINEUP.stamp.fix(required), decisions > 0 && LINEUP.stamp.decide(decisions)].filter(Boolean);
   return (
-    <div className="boom" role="status" aria-label={LINEUP.stamp.aria} onClick={onDone} style={{ pointerEvents: "auto" }}>
-      <div className="boom-card">
+    <div className="boom" role="dialog" aria-label={LINEUP.stamp.aria} onClick={onDone}>
+      <div className="boom-card" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="boom-x" aria-label={LINEUP.stamp.closeAria} onClick={onDone}>
+          <IconX size={16} strokeWidth={2.4} />
+        </button>
         <span className="coach-notes text-muted">
           <span className="coach-notes-pad">
             <IconNotes size={18} strokeWidth={2.2} />
@@ -234,6 +234,9 @@ function Boom({ required, decisions, faces, onDone }: { required: number; decisi
             </span>
           </>
         )}
+        <button type="button" className="boom-close" onClick={onDone}>
+          {LINEUP.stamp.close}
+        </button>
       </div>
     </div>
   );
@@ -251,41 +254,71 @@ export function LineupView({
 }) {
   const required = lineup.required ?? [];
   const holes = lineup.holes ?? [];
-  const decisions = lineup.decisions ?? [];
+  const roles = lineup.roles ?? [];
+  const [handled, setHandled] = useHandled(lineup.week);
+  const open = roles.filter((r) => r.decision && !handled.has(r.label));
+  const done = roles.filter((r) => r.decision && handled.has(r.label));
   const nRequired = lineup.summary?.required ?? required.length + holes.length;
-  const nDecisions = lineup.summary?.decisions ?? decisions.length;
-  const delta = lineup.projected_total - lineup.current_total;
+  const nDecisions = open.length;
   const set = nRequired + nDecisions === 0;
+  // A bench man's arrow goes to the role he is in the frame for, when that role is open.
+  const roleOf = new Map<string, LineupRole>();
+  for (const r of roles) if (r.decision) for (const c of r.candidates) roleOf.set(c.player.id, r);
+  const bench = lineup.bench.filter((b) => !RESERVE.has((b.player.injury_status ?? "").toUpperCase()));
+  const reserve = lineup.bench.filter((b) => RESERVE.has((b.player.injury_status ?? "").toUpperCase()));
 
-  // The stamp plays once, on a fresh arrival, and never in the report's compact embed.
-  const [boom, setBoom] = useState(animate && !compact);
-  const faces = [...required.map((c) => c.in), ...decisions.map((d) => d.start)]
+  // The stamp lands once per sitting: a fresh arrival, never the report's compact embed,
+  // and not again this browser session once dismissed (the roster is one tap from every
+  // room, and a summary that re-lands on every tap stops being read).
+  const [boom, setBoom] = useState(false);
+  useBeforePaint(() => {
+    if (!animate || compact) return;
+    try {
+      if (window.sessionStorage.getItem(BOOM_KEY) === String(lineup.week)) return;
+    } catch {
+      /* blocked storage: it lands every time */
+    }
+    setBoom(true);
+  }, [animate, compact, lineup.week]);
+  const dismiss = () => {
+    setBoom(false);
+    try {
+      window.sessionStorage.setItem(BOOM_KEY, String(lineup.week));
+    } catch {
+      /* nothing to remember with */
+    }
+  };
+  const faces = [...required.map((c) => c.in), ...open.map((r) => r.pick)]
     .filter((p): p is Player => !!p && "projected" in p)
     .slice(0, 6);
 
   return (
-    <div className="grid min-w-0 gap-6">
-      {boom && <Boom required={nRequired} decisions={nDecisions} faces={faces} onDone={() => setBoom(false)} />}
+    <div className="grid min-w-0 gap-5">
+      {boom && <Boom required={nRequired} decisions={nDecisions} faces={faces} onDone={dismiss} />}
 
       <section className="hero callsheet">
-        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
-          <OnAirLive className="text-white/70" />
-          <Countdown onHero />
-        </div>
-        <div className="p-5">
-          {/* Top-left: the head coach's notes. The personality of the page, and who it is from. */}
+        {/* The top line is the head coach's: the personality of the page, and who it is from. */}
+        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2">
           <span className="coach-notes" aria-label={LINEUP.coach.aria} role="img">
             <span className="coach-notes-pad" aria-hidden>
-              <IconNotes size={18} strokeWidth={2.2} />
+              <IconNotes size={16} strokeWidth={2.2} />
             </span>
             {LINEUP.coach.from}
           </span>
-          <div className="mt-3 flex items-end justify-between gap-4">
+          {!compact && (
+            <a href="#roster" className="hero-jump">
+              {LINEUP.jump}
+              <IconChevron size={11} strokeWidth={3} className="rotate-90" />
+            </a>
+          )}
+        </div>
+        <div className="px-4 pb-4 pt-3">
+          <div className="flex items-end justify-between gap-4">
             <div className="min-w-0">
-              <Eyebrow>{LINEUP.projected(lineup.week)}</Eyebrow>
-              <CountUp value={lineup.projected_total} animate={animate} className="display mt-1 text-[42px] leading-none text-white" />
+              <Eyebrow className="whitespace-nowrap">{LINEUP.projected(lineup.week)}</Eyebrow>
+              <CountUp value={lineup.projected_total} animate={animate} className="display mt-0.5 text-[40px] leading-none text-white" />
             </div>
-            <div className="shrink-0 text-right">
+            <div className="shrink-0 pb-1 text-right">
               {set ? (
                 // Inked white: the hero is dark in both themes, where status green would vanish.
                 <Stamp ink="text-white" slam={animate}>
@@ -293,23 +326,18 @@ export function LineupView({
                   {LINEUP.clear}
                 </Stamp>
               ) : (
-                <>
-                  <div className={`tnum display text-[19px] ${delta >= 0 ? "text-start" : "text-flip"}`}>{signed(delta)}</div>
-                  <div className="text-[11px] text-white/55">
-                    {LINEUP.vsCurrent} <span className="tnum">{lineup.current_total.toFixed(1)}</span>
-                  </div>
-                </>
+                lineup.standing && <div className="max-w-[128px] text-[11px] font-bold leading-snug text-white/70">{LINEUP.standing(lineup.standing.rank, lineup.standing.of)}</div>
               )}
             </div>
           </div>
-          {/* The split, stated plainly. Two lines, two colours, two words: never one number. */}
+          {/* The split, stated plainly: two chips, two colours, two words, one row. */}
           {!set && (
-            <div className="lineup-split mt-4 text-white">
-              <span className="lineup-split-line">
+            <div className="lineup-split mt-3">
+              <span className="lineup-split-chip lineup-split-required">
                 <span className="lineup-split-dot bg-sit" aria-hidden />
                 {LINEUP.required(nRequired)}
               </span>
-              <span className="lineup-split-line">
+              <span className="lineup-split-chip lineup-split-decisions">
                 <span className="lineup-split-dot bg-flip" aria-hidden />
                 {LINEUP.decisions(nDecisions)}
               </span>
@@ -322,7 +350,13 @@ export function LineupView({
         <section className="min-w-0">
           <H2>{LINEUP.section.required}</H2>
           {nRequired === 0 ? (
-            <p className="mt-2 text-[13px] text-muted">{LINEUP.requiredQuiet}</p>
+            <div className="mt-2 flex items-center gap-3">
+              <Stamp ink="text-start" size="md" slam={animate}>
+                <IconCheck size={11} strokeWidth={3.4} />
+                {LINEUP.requiredClear}
+              </Stamp>
+              <span className="text-[12px] text-muted">{LINEUP.requiredClearLine}</span>
+            </div>
           ) : (
             <ul className="mt-2.5 grid gap-2.5">
               {required.map((c, i) => (
@@ -339,14 +373,23 @@ export function LineupView({
       {!compact && (
         <section className="min-w-0">
           <H2>{LINEUP.section.decisions}</H2>
-          {decisions.length === 0 ? (
+          {open.length === 0 ? (
             <p className="mt-2 text-[13px] text-muted">{LINEUP.decisionsQuiet}</p>
           ) : (
-            <ul className="mt-2.5 grid gap-2.5">
-              {decisions.map((d, i) => (
-                <Decision key={`${d.start.id}:${d.sit.id}`} d={d} animate={animate} i={i} />
+            <ul className="mt-2.5 grid gap-2">
+              {open.map((r, i) => (
+                <RoleRow key={r.label} r={r} animate={animate} i={i} />
               ))}
             </ul>
+          )}
+          {done.length > 0 && (
+            <p className="mt-2 flex items-center gap-2 text-[12px] text-muted">
+              <IconCheck size={11} strokeWidth={3} className="text-start" />
+              <span>{LINEUP.handled(done.length)}</span>
+              <button type="button" className="min-h-0 font-bold text-ink underline decoration-line-2 underline-offset-2" onClick={() => done.forEach((r) => setHandled(r.label, false))}>
+                {LINEUP.showHandled}
+              </button>
+            </p>
           )}
         </section>
       )}
@@ -362,11 +405,11 @@ export function LineupView({
         </section>
       )}
 
-      <section className="min-w-0">
+      <section className="min-w-0 scroll-mt-16" id="roster">
         <H2>{LINEUP.section.field}</H2>
-        <ul className="card mt-2.5 min-w-0 divide-y divide-line overflow-hidden p-0">
+        <ul className="card mt-2 min-w-0 divide-y divide-line overflow-hidden p-0">
           {lineup.slots.map((s, i) => (
-            <SlotRow key={i} s={s} />
+            <RosterRow key={i} label={roles[i]?.label ?? s.slot} p={s.player} confidence={s.confidence} role={roles[i]} changed={s.change} />
           ))}
         </ul>
       </section>
@@ -374,21 +417,20 @@ export function LineupView({
       {!compact && (
         <section className="min-w-0">
           <H2>{LINEUP.section.bench}</H2>
-          <ul className="card mt-2.5 min-w-0 divide-y divide-line overflow-hidden p-0">
-            {lineup.bench.map((b, i) => (
-              <li key={i} className="flex min-w-0 items-center gap-2.5 px-4 py-2" title={b.reason}>
-                <Avatar name={b.player.name} photo={b.player.photo} teamLogo={b.player.team_logo} size="sm" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] font-bold leading-tight">
-                    <PlayerName p={b.player} />
-                    <InjuryTag status={b.player.injury_status} />
-                  </span>
-                  <span className="mt-px block truncate text-[10px] font-semibold uppercase tracking-wide text-muted">
-                    {b.player.position} {b.player.nfl_team ?? ""}
-                  </span>
-                </span>
-                <span className="display tnum shrink-0 text-[17px] text-muted">{b.player.projected.toFixed(1)}</span>
-              </li>
+          <ul className="card mt-2 min-w-0 divide-y divide-line overflow-hidden p-0">
+            {bench.map((b, i) => (
+              <RosterRow key={i} label={b.player.position} p={b.player} role={roleOf.get(b.player.id)} />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {!compact && reserve.length > 0 && (
+        <section className="min-w-0">
+          <H2>{LINEUP.section.reserve}</H2>
+          <ul className="card mt-2 min-w-0 divide-y divide-line overflow-hidden p-0">
+            {reserve.map((b, i) => (
+              <RosterRow key={i} label={b.player.position} p={b.player} />
             ))}
           </ul>
         </section>

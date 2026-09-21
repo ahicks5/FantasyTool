@@ -557,7 +557,23 @@ def test_the_lineup_splits_required_changes_from_decisions_and_prices_every_swap
         body = client.get(f"{LG}/team/{t.id}/lineup").json()
         assert set(body["summary"]) == {"required", "decisions"}
         assert body["summary"]["required"] == len(body["required"]) + len(body["holes"])
-        assert body["summary"]["decisions"] == len(body["decisions"])
+        assert body["summary"]["decisions"] == sum(1 for r in body["roles"] if r["decision"])
+        assert 1 <= body["standing"]["rank"] <= body["standing"]["of"] == len(league.teams)
+        # One role per starting slot, named the way a manager names it, with its pick and
+        # the men who could take it instead. A bench man is a candidate at ONE role.
+        assert [r["slot"] for r in body["roles"]] == league.starting_slots
+        assert [r["label"] for r in body["roles"] if r["slot"] == "RB"] == ["RB1", "RB2"]
+        seen_cands: list[str] = []
+        for r in body["roles"]:
+            assert r["confidence"] in {"Lock", "Lean", "Coin flip"} and r["reason"]
+            if r["decision"]:
+                assert r["candidates"] and r["p"] < 0.75 and r["confidence"] != "Lock"
+            for c in r["candidates"]:
+                seen_cands.append(c["player"]["id"])
+                assert 0 <= c["p"] <= 1 and isinstance(c["factors"], list)
+            if r["pick"]:
+                assert r["pick"]["pos_rank"]["rank"] <= r["pick"]["pos_rank"]["of"]
+        assert len(seen_cands) == len(set(seen_cands))
         for ch in body["required"]:
             assert ch["forced"] or ch["confidence"] == "Lock"
             assert ch["in"] and ch["gain"] > 0

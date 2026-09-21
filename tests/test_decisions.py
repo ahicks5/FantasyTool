@@ -202,7 +202,7 @@ def test_two_reads_tip_a_coin_flip_and_one_does_not():
     assert [p.id for p in two.lineup] == ["2"]
     d = two.decisions[0]
     assert d.change and d.tipped and d.start.id == "2" and d.sit.id == "1" and d.tilt == 2
-    assert "coin flip" in d.reason and "reads tip it" in d.reason
+    assert "too close" in d.reason and "reads tip it" in d.reason
     assert two.changes[0].gain == -0.4, "the projected cost of taking the reads' side is stated, not hidden"
     assert two.required == []
 

@@ -26,7 +26,15 @@ Chromium requirement that keeps share-card unfurls from silently 503ing.
 
 ## The Lineup tab: two piles, and the reads that tip a close call (2026-09-21, late)
 
-Andrew's brief is in `TASKS.md` (LT-1 to LT-8). What shipped:
+Andrew's brief is in `TASKS.md` (LT-1 to LT-10). Round two (LT-9) reshaped the page around
+**roles**: `lineup.roles` names every starting slot the way a manager does (RB1, RB2, FLEX2),
+gives the engine's pick and the men who could take it (each bench man at ONE role, the seat
+he is closest to), and a role is a decision when the pick is not a Lock over the closest.
+One row per decision on `/team`, a page each at `/team/decide?role=`, "Handled" stored in
+`booth.handled`. The third confidence band reads **Owner's call** on screen via
+`CONFIDENCE_LABEL`; the wire string is still `"Coin flip"` and must stay (grading, film,
+graphics). Under the projection is the league standing (`lineup.standing`), not "vs
+current". The ticker runs in segments (`lib/ticker.tickerEntries`). What shipped first:
 
 - **`edge/calibration.py` is wired in** (`lineup.v2`). The tag is a probability band, the hold
   is `HOLD_P` = 0.60, `HIT_RATE` is the calibrated table. Under `LOCK_P` the projection has not

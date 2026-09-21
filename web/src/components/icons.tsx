@@ -128,3 +128,8 @@ export const IconNotes = (p: P) => (
     <path d="m20.2 12.3 1.5 1.5-6.2 6.2-2.3.8.8-2.3z" />
   </Svg>
 );
+export const IconX = (p: P) => (
+  <Svg {...p}>
+    <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
+  </Svg>
+);

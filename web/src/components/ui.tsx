@@ -15,7 +15,7 @@ import {
   verdictClass,
 } from "@/lib/format";
 import { describeError, isOnline } from "@/lib/errors";
-import { CLOSED, CONFIDENCE_HIT_LINE } from "@/lib/vocab";
+import { CLOSED, CONFIDENCE_HIT_LINE, CONFIDENCE_LABEL } from "@/lib/vocab";
 import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitPhase } from "@/lib/wait";
 import { dayStamp, liftRideBoot, rideDue, rideForced } from "@/lib/elevator";
 import { loadConnection, loadRideDay } from "@/lib/storage";
@@ -178,7 +178,7 @@ export function ConfidenceStamp({ value, hit, slam = false }: { value: Confidenc
           <span key={i} className={`h-[10px] w-[3px] ${i < filled ? "bg-current" : "bg-current opacity-25"}`} />
         ))}
       </span>
-      {value}
+      {CONFIDENCE_LABEL[value] ?? value}
     </Stamp>
   );
 }
@@ -195,7 +195,7 @@ export function ConfidencePill({ value, hit }: { value: Confidence; hit?: number
           <span key={i} className={`h-[9px] w-[3px] rounded-[1px] ${i < filled ? "bg-current" : "bg-current opacity-25"}`} />
         ))}
       </span>
-      {value}
+      {CONFIDENCE_LABEL[value] ?? value}
     </span>
   );
 }

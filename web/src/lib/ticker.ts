@@ -1,5 +1,5 @@
 /** The ticker: the desk's news as one line running along the bottom of every screen. Pure. */
-import type { NewsItem, ScoreboardGame } from "./types";
+import type { NewsItem, NewsLevel, ScoreboardGame } from "./types";
 import { TICKER } from "./vocab.ts";
 
 /* The news paper says it in full; the ticker says it in one breath. Same words, from the
@@ -77,6 +77,33 @@ export function scoreLines(games: ScoreboardGame[] | undefined): string[] {
       ? TICKER.score(a.name, a.points ?? 0, b.name, b.points ?? 0)
       : `${TICKER.proj} ${TICKER.score(a.name, a.proj, b.name, b.proj)}`;
     out.push(line);
+  }
+  return out;
+}
+
+/** One thing on the strip: a segment heading, or an item under it. */
+export type TickerEntry =
+  | { kind: "head"; segment: "injuries" | "live" | "proj"; line: string }
+  | { kind: "item"; line: string; level: NewsLevel; score: boolean };
+
+/**
+ * The strip in segments, the way a sports network runs it: a heading flashes, then its
+ * items pass. Injuries first (the news), then the week's games under "Live scores" once
+ * any game has points and "Projected scores" before. A segment with nothing in it is not
+ * announced.
+ */
+export function tickerEntries(items: NewsItem[], games: ScoreboardGame[] | undefined): TickerEntry[] {
+  const out: TickerEntry[] = [];
+  const news = tickerLines(items);
+  if (news.length) {
+    out.push({ kind: "head", segment: "injuries", line: TICKER.segment.injuries });
+    news.forEach((line, i) => out.push({ kind: "item", line, level: items[i]?.level ?? "note", score: false }));
+  }
+  const scores = scoreLines(games);
+  if (scores.length) {
+    const live = (games ?? []).some((g) => g.teams.some((t) => t.points !== null));
+    out.push({ kind: "head", segment: live ? "live" : "proj", line: live ? TICKER.segment.live : TICKER.segment.proj });
+    scores.forEach((line) => out.push({ kind: "item", line: live ? line : line.replace(`${TICKER.proj} `, ""), level: "note", score: true }));
   }
   return out;
 }

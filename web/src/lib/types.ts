@@ -107,6 +107,9 @@ export interface Player {
   ros?: number;
   photo?: string | null;
   team_logo?: string | null;
+  /** Where he ranks at his position among every rostered player in this league this week
+   *  (RB12 of 56). Optional: only the lineup payload carries it. */
+  pos_rank?: { rank: number; of: number } | null;
 }
 
 export interface Roster {
@@ -187,6 +190,41 @@ export interface LineupDecision {
   tilt: number;
 }
 
+/** A man who could take a role instead of the engine's pick. `p` is P(pick outscores him),
+ *  `factors` the reads on the pair pointed at the pick ("start" backs the pick, "sit" backs
+ *  him), `opp` who he plays ("vs DAL", "@ DAL", "Bye"; null without a schedule). */
+export interface LineupCandidate {
+  player: Player;
+  p: number;
+  confidence: Confidence;
+  factors: DecisionFactor[];
+  tilt: number;
+  opp: string | null;
+}
+
+/**
+ * One starting role, named the way a manager names it (RB2, WR1, FLEX): the engine's pick,
+ * the man you set there, and every man who could take it instead. `decision` is true when
+ * the pick is not a Lock over the closest candidate: the role needs the owner. `change`
+ * says the pick was not in the lineup you set; `tipped` that the reads, not the
+ * projection, seated him. `confidence` and `p` are the pick against the closest candidate.
+ */
+export interface LineupRole {
+  slot: string;
+  label: string;
+  pick: Player | null;
+  was: Player | null;
+  candidates: LineupCandidate[];
+  confidence: Confidence;
+  p: number;
+  decision: boolean;
+  change: boolean;
+  tipped: boolean;
+  reason: string;
+  game: DecisionGame | null;
+  opp: string | null;
+}
+
 /** A slot nobody on the roster can fill this week. The fix is the wire. */
 export interface LineupHole {
   slot: string;
@@ -251,8 +289,13 @@ export interface Lineup {
   /** Nothing to think about: a forced fix, or a swap the projection has settled (Lock). */
   required?: LineupChange[];
   holes?: LineupHole[];
-  /** The close calls, each with the engine's call and the reads that tip it. */
+  /** The close calls, pairwise, kept for the film and the grading. The page reads `roles`. */
   decisions?: LineupDecision[];
+  /** Every starting role with its pick and the men who could take it. The ones that are a
+   *  `decision` are the page's second pile. */
+  roles?: LineupRole[];
+  /** Where this lineup's projection ranks among the league's this week. */
+  standing?: { rank: number; of: number };
   slots: LineupSlot[];
   bench: BenchEntry[];
   /** Every swap the lineup makes from the one you set, required or decided. */

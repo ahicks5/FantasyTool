@@ -409,6 +409,20 @@ def _role(ctx: Context, p: Player) -> list[tuple[int, str]]:
 
 # --------------------------------------------------------------------------- the pair
 
+def game_line(ctx: Context | None, p: Player) -> str | None:
+    """Who a man plays this week, the way a ticker writes it: "vs DAL" at home, "@ DAL"
+    away, "Bye" on his bye. None when the schedule is not loaded."""
+    if ctx is None:
+        return None
+    team = p.nfl_team or ""
+    if team and ctx.byes.get(team) == ctx.week:
+        return "Bye"
+    g = ctx.games.get(team)
+    if not g:
+        return None
+    return f"{'vs' if g.get('home') else '@'} {g['opp']}"
+
+
 def read(ctx: Context | None, start: Player, sit: Player, starters: list[Player]) -> dict[str, Any]:
     """Every read on one pair, pointed at the man the engine is calling (`start`).
 
