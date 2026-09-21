@@ -1,5 +1,5 @@
 "use client";
-/** How last week's calls landed, in one line under the standing. Free for everyone. */
+/** How last week's calls landed, in one line on the film room's memo. Free for everyone. */
 import Link from "next/link";
 import { points } from "@/lib/recap";
 import { LAST_WEEK, SECTIONS } from "@/lib/vocab";
@@ -30,10 +30,13 @@ import { IconChevron } from "./icons";
  *
  * **No stamp, no colour carrying meaning.** A result is a fact rather than a call the
  * reader has to make (`Scorecard.tsx` has the rule), and a loss printed in status red turns
- * a scoreline into a telling-off (`FilmWeek.tsx` has that one). Chrome on the dark hero,
- * both themes, with the letter doing the work.
+ * a scoreline into a telling-off (`FilmWeek.tsx` has that one). Muted ink in both themes,
+ * with the letter doing the work.
+ *
+ * `tone` moved with the Debrief, same as the standing line's: this was white on the dark
+ * hero and is on the film room's memo now, which is paper.
  */
-export function LastWeek({ week }: { week?: LastWeekData | null }) {
+export function LastWeek({ week, tone = "hero" }: { week?: LastWeekData | null; tone?: "hero" | "card" }) {
   // `total` is never 0 from the engine — a week with nothing to grade comes back null —
   // but an older API build is allowed to be wrong about that rather than print "0 of 0".
   if (!week || week.total < 1) return null;
@@ -52,7 +55,9 @@ export function LastWeek({ week }: { week?: LastWeekData | null }) {
     <Link
       href={SECTIONS.report.href}
       aria-label={`${LAST_WEEK.lead} ${[spokenFinal, `${calls}.`].filter(Boolean).join(" ")} ${LAST_WEEK.go} ${SECTIONS.report.title}.`}
-      className="-mx-1.5 mt-1 inline-flex max-w-full items-start gap-1.5 rounded-lg px-1.5 py-0.5 text-white/55 transition-colors hover:bg-white/10 hover:text-white"
+      className={`-mx-1.5 mt-1 inline-flex max-w-full items-start gap-1.5 rounded-lg px-1.5 py-0.5 transition-colors ${
+        tone === "card" ? "text-ink-2 hover:bg-soft hover:text-ink" : "text-white/55 hover:bg-white/10 hover:text-white"
+      }`}
     >
       {/* It WRAPS, it does not truncate. At 320px the whole line is ~43 characters and
           truncating drops the tail -- which is the count, the only part that says whether

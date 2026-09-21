@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
-import { SECTIONS } from "../src/lib/vocab";
+import { DEPARTMENTS, DEPARTMENT_ORDER, SECTIONS } from "../src/lib/vocab";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { SCOUT } from "../src/lib/vocab";
 
@@ -174,52 +174,29 @@ const PAGES: PageCase[] = [
   },
   {
     path: "/home",
-    name: "action feed",
+    name: "the Debrief",
     check: async (page) => {
-      // The hero names the week and team once the feed has loaded.
-      await expect(page.getByText(`Week ${CONNECTION.week}`).first()).toBeVisible();
-      await expect(page.getByText(CONNECTION.team_name).first()).toBeVisible();
-      // The sheet is a row per room now — the three benches that own calls, then the film,
-      // which owns none. Every one renders even when it holds nothing: that empty row is
-      // the whole feature, and the film's row is what makes the front page a map of the
-      // building rather than a list of this week's chores.
-      // Assert the words rather than a role: a bench with no calls is deliberately a plain
-      // row and not a control, and in this fixture the depth chart is exactly that, so
-      // looking for buttons here fails on the case the grouping exists to show.
-      // Scoped to `main` because the tab bar says several of these words too.
-      const sheet = page.locator("main");
-      for (const key of ["team", "waivers", "trade", "report"] as const) {
-        await expect(sheet.getByText(SECTIONS[key].title, { exact: true }).first()).toBeVisible();
+      const debrief = page.locator("main");
+      // The engine's own headline, now a line rather than a hero (D3).
+      await expect(debrief.getByText(/\d+ moves? to make|All settled\./).first()).toBeVisible();
+      // Four memos, always all four, in tab order. The quiet one is the point: a
+      // department with nothing to report still prints, because a page that can only
+      // stay silent about a settled lineup cannot answer "is my lineup set?".
+      for (const key of DEPARTMENT_ORDER) {
+        await expect(debrief.getByText(DEPARTMENTS[key], { exact: true })).toBeVisible();
       }
-      // Every row is a door. The film's is the one with nothing to expand, so if rooms ever
-      // stop linking out it is the row that proves it — there is no other way into it here.
-      // Exact, because the standing line under the hero also links to the film and its
-      // spoken label ends with these same words. Two doors into one room is correct; a
-      // substring match that cannot tell them apart is not.
-      await expect(
-        sheet.getByRole("link", { name: `Go to ${SECTIONS.report.title}`, exact: true }),
-      ).toBeVisible();
-      // The injury banner is the app's loudest surface and this fixture's starters are all
-      // clear, so it must not be here. Asserting the silence rather than the shout on
-      // purpose: the way an alert dies is by firing every week until nobody reads it, and
-      // that failure is invisible to a test that only ever checks it can appear.
-      await expect(sheet.getByRole("link", { name: /won\u2019t play|in doubt/ })).toHaveCount(0);
-      // The cards are folded behind whichever rows do have calls. Group rows are the only
-      // `<section>` with a disclosure — cards are `<article>` — so this cannot catch a
-      // card's own Why? toggle by accident.
-      const toggles = sheet.locator("section button[aria-expanded]");
-      expect(await toggles.count(), "no group on the sheet had anything to open").toBeGreaterThan(0);
-      // A bench with calls on it arrives open, so the cards are on screen before anything
-      // is clicked. That is the whole point of the change and the thing that must not
-      // silently regress back to a collapsed home screen.
-      await expect(toggles.first()).toHaveAttribute("aria-expanded", "true");
-      // At least one action card, and cards are <article>, not skeletons.
-      const cards = page.locator("main article");
-      await expect(cards.first()).toBeVisible();
-      expect(await cards.count()).toBeGreaterThan(0);
-      // The caret still works: it folds what it opened.
-      await toggles.first().click();
-      await expect(toggles.first()).toHaveAttribute("aria-expanded", "false");
+      // Every memo is a door. The film room's is the one with no call on it, so if the
+      // quiet memos ever stop linking out it is the one that proves it.
+      await expect(debrief.getByRole("link", { name: SECTIONS.report.title, exact: true })).toBeVisible();
+      // The injury banner is the app's loudest surface and this fixture's starters are
+      // all clear, so it must not be here. Asserting the silence rather than the shout
+      // on purpose: the way an alert dies is by firing every week until nobody reads it,
+      // and that failure is invisible to a test that only checks it can appear.
+      await expect(debrief.getByRole("link", { name: /won\u2019t play|in doubt/ })).toHaveCount(0);
+      // A real name on the front page with nothing clicked. This is the finding the
+      // whole redesign came from and the thing that must not regress.
+      await expect(debrief.getByText(/[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/).first()).toBeVisible();
+      await expect(debrief.getByText(/requires a purchase/i)).toHaveCount(0);
     },
   },
   {
@@ -288,20 +265,138 @@ const PAGES: PageCase[] = [
   },
 ];
 
+/**
+ * A `start` call spliced into whatever the fixture league's engine really returned.
+ *
+ * The Megalabowl's week-2 lineup is genuinely settled — `lineup.advise` finds no swap
+ * worth calling — so its head coach's memo is correctly the clear one, and no fixture
+ * request will ever put a share button on this page. The growth loop is too important
+ * to go untested for that reason, so the feed is patched in the browser the same way
+ * the Wire Pass 402 is below: the engine still produces every other word on the page.
+ */
+/** Somebody who has bought nothing. `serve_fixtures.py` grants only the free tier here. */
+const FREE_USER = "free@example.com";
+
+const START_CALL = {
+  id: "start:test",
+  type: "start",
+  feature: "my_team",
+  locked: false,
+  priority: 1,
+  title: "Start Jaylen Warren over James Conner",
+  subtitle: "RB2 · RB PIT",
+  benefit: "+4.3 pts",
+  benefit_value: 4.3,
+  confidence: "Lock",
+  reason: "Conner is out. Warren has the backfield to himself against a soft front.",
+  why: ["Conner ruled out", "Warren saw 71% of the snaps last week"],
+  players: [
+    { id: "1", name: "Jaylen Warren", position: "RB", nfl_team: "PIT", injury_status: null, projected: 14.2 },
+    { id: "2", name: "James Conner", position: "RB", nfl_team: "ARI", injury_status: "Out", projected: 9.9 },
+  ],
+  cta: { label: "Depth chart", href: "/team" },
+};
+
+async function withStartCall(page: Page, user: string): Promise<void> {
+  // The identity goes on *this* handler rather than on a context-level one. A page route
+  // wins over a context route, and `route.fetch()` does not fall back through the
+  // handlers it outranked — so a context route adding `x-edge-user` never sees this
+  // request, and the feed comes back with everything unlocked. That is a silent failure:
+  // the page renders, the assertions about the free tier pass against a paid feed, and
+  // the test proves nothing.
+  await page.route("**/actions*", async (route) => {
+    const res = await route.fetch({ headers: { ...route.request().headers(), "x-edge-user": user } });
+    const feed = await res.json();
+    feed.actions = [START_CALL, ...(feed.actions ?? [])];
+    await route.fulfill({ response: res, json: feed });
+  });
+}
+
+test("the Lock share button rides on the head coach's memo, and opens nothing else", async ({ context, page }) => {
+  // The growth loop, and the half of it that is easy to break by accident. A start/sit
+  // call is shareable by someone who has never paid and never signed in; making that
+  // memo free must not open Trade Lab as a side effect. The API half is pinned by
+  // `tests/test_share.py::test_the_paid_card_is_still_paid` and
+  // `test_locked_teasers_never_name_a_player`; this is the half a page refactor could
+  // quietly undo, by moving the share button onto a card that only a payer sees.
+  await context.route("**/api/**", (route) => {
+    const headers = { ...route.request().headers(), "x-edge-user": FREE_USER };
+    route.continue({ headers });
+  });
+  await withStartCall(page, FREE_USER);
+  await page.goto("/home");
+
+  const coach = page.locator("main ol > li").filter({ hasText: DEPARTMENTS.team });
+  await expect(coach.getByRole("heading", { name: /Jaylen Warren/ })).toBeVisible();
+  await expect(coach.getByRole("button", { name: /share this call/i })).toBeVisible();
+
+  // ...and the GM's Office is still shut for this reader, with no player named in it.
+  const gm = page.locator("main ol > li").filter({ hasText: DEPARTMENTS.trade });
+  await expect(gm.getByRole("link", { name: /unlock/i })).toBeVisible();
+  await expect(gm.getByRole("button", { name: /share this call/i })).toHaveCount(0);
+  await assertNoHorizontalOverflow(page);
+});
+
 test("the Debrief shows a player without a click, for a reader who has bought nothing", async ({ context, page }) => {
   // The finding this whole plan started from: the home screen showed no player names at
   // all, every row folded, headline "Pending moves: 2". A free reader is the one who must
   // see them -- it is the only screen they get in full.
   await context.route("**/api/**", (route) => {
-    const headers = { ...route.request().headers(), "x-edge-user": "free@example.com" };
+    const headers = { ...route.request().headers(), "x-edge-user": FREE_USER };
     route.continue({ headers });
   });
+  await withStartCall(page, FREE_USER);
   await page.goto("/home");
   await expect(page.getByText(/\d+ moves? to make|All settled\./)).toBeVisible();
-  const cards = page.locator("main article");
-  await expect(cards.first()).toBeVisible();
-  // A real name, not a skeleton: at least two capitalised words inside a card.
-  await expect(cards.first().getByText(/[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/).first()).toBeVisible();
+  const memos = page.locator("main ol > li");
+  await expect(memos.first()).toBeVisible();
+  expect(await memos.count(), "one memo per department, always all four").toBe(DEPARTMENT_ORDER.length);
+  // A real name on the front page with nothing clicked.
+  await expect(memos.getByText(/[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/).first()).toBeVisible();
+  await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
+  await assertNoHorizontalOverflow(page);
+});
+
+test("a thumbs-down takes the item off the Debrief, and a reload keeps it off", async ({ page }) => {
+  // D5, end to end in the browser: the thumb is a real control now, so the page has to
+  // answer it. The item is hidden here and nowhere else -- the depth chart, the wire and
+  // the trade board stay complete, which `src/lib/sheet.test.ts` pins on the data side.
+  //
+  // Whichever memo the engine actually put a dismissable call on, rather than a named
+  // department: the fixture league's lineup is settled some weeks and busy others, and a
+  // test that picks the wrong one fails on the fixture rather than on the feature.
+  await page.goto("/home");
+  const memos = page.locator("main ol > li");
+  await expect(memos.first()).toBeVisible();
+  // Resolve to a fixed index first. Filtering by the thumbs-down is how the memo is
+  // *found*, but a Playwright locator re-runs its query on every use — and clicking that
+  // button swaps it for the reason chips, so the same locator would then match a
+  // different memo, or none.
+  const wrong = /this call was wrong/i;
+  const count = await memos.count();
+  let at = -1;
+  for (let i = 0; i < count; i += 1) {
+    if (await memos.nth(i).getByRole("button", { name: wrong }).count()) {
+      at = i;
+      break;
+    }
+  }
+  expect(at, "no memo carried a call that could be dismissed").toBeGreaterThanOrEqual(0);
+  const memo = memos.nth(at);
+  const before = (await memo.locator("h3").first().textContent())?.trim() ?? "";
+  expect(before.length, "the memo with the thumbs on it had no title").toBeGreaterThan(0);
+
+  await memo.getByRole("button", { name: wrong }).click();
+  // The reason chips, as on every other feedback control in the app.
+  await memo.getByRole("button", { name: "I disagree" }).click();
+
+  // Either the next-ranked call took its place, or the department has nothing left and
+  // says so. Both are the feature; what must not happen is the old title staying up.
+  await expect(memo.getByRole("heading", { name: before, exact: true })).toHaveCount(0);
+
+  await page.reload();
+  await expect(page.locator("main ol > li").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: before, exact: true })).toHaveCount(0);
   await assertNoHorizontalOverflow(page);
 });
 
@@ -369,9 +464,9 @@ test("the API really is the fixture server, not mocks", async ({ page }) => {
   const seen: string[] = [];
   page.on("request", (r) => r.url().includes("/api/") && seen.push(r.url()));
   await page.goto("/home");
-  // Attached, not visible: the call sheet folds its cards behind the group rows, and this
-  // test is about where the data came from rather than about what is on screen.
-  await expect(page.locator("main article").first()).toBeAttached();
+  // Attached, not visible: this test is about where the data came from rather than
+  // about what is on screen.
+  await expect(page.locator("main ol > li").first()).toBeAttached();
   expect(seen.some((u) => u.includes("/actions")), `no API calls seen: ${seen.join(", ")}`).toBe(true);
   expect(DEV_USER).toContain("@");
 });

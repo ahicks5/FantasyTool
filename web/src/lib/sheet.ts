@@ -1,7 +1,6 @@
 // Pure helpers (no React, no DOM) so they can be unit tested with node:test.
-import { signed } from "./format.ts";
 import type { Action, ActionType } from "./types";
-import { DEPARTMENT_ORDER, GROUP_ORDER, ROOM_ORDER, type DepartmentKey, type GroupKey, type RoomKey } from "./vocab.ts";
+import { DEPARTMENT_ORDER, GROUP_ORDER, type DepartmentKey, type GroupKey } from "./vocab.ts";
 
 /**
  * An action together with the place it held in the server's ranking of the whole sheet.
@@ -17,7 +16,7 @@ export interface PlacedAction {
   n: number;
 }
 
-/** One bench on the call sheet. Always present, even when it holds nothing. */
+/** One department's calls. Always present, even when it holds nothing. */
 export interface ActionGroup {
   key: GroupKey;
   items: PlacedAction[];
@@ -72,84 +71,6 @@ export function groupActions(actions: Action[]): ActionGroup[] {
     bucket.push({ action, n: i + 1 });
   });
   return GROUP_ORDER.map((key) => ({ key, items: buckets.get(key)! }));
-}
-
-/**
- * A row on the sheet: a bench you work, or a room you read.
- *
- * The two are different in kind, not just in content, which is why this is a tagged union
- * rather than a bench with its calls left empty. A bench carries a verdict — a status line,
- * a stamp, a count, calls folded underneath — and all of that is a claim about *your team*.
- * A room carries none of it: nothing on the feed measures the film, so a row for it that
- * borrowed the bench's furniture would have to invent a verdict to fill it.
- *
- * `kind` is the discriminant so a renderer has to decide which it is holding before it can
- * read `items`; a nullable `items` would let a room quietly render as an empty bench.
- */
-export type SheetRow =
-  | { kind: "bench"; key: GroupKey; items: PlacedAction[] }
-  | { kind: "room"; key: RoomKey };
-
-/**
- * Every row on the call sheet, in reading order: the three benches, then the rooms.
- *
- * Built on `groupActions` rather than beside it, so there is still exactly one place that
- * decides which bench a call lands on. Benches come first and all three are always there —
- * that is `groupActions`' whole point, and the rooms sit under the week's work because you
- * work the sheet first and then go read about it.
- *
- * The rooms are constant. They are listed here anyway so the home screen renders one list
- * of rows instead of a list plus a hand-written tail: the front door is the map of the
- * building, and a room appended by the page is a room the next page forgets.
- */
-export function sheetRows(actions: Action[]): SheetRow[] {
-  const benches: SheetRow[] = groupActions(actions).map(({ key, items }) => ({ kind: "bench", key, items }));
-  const rooms: SheetRow[] = ROOM_ORDER.map((key) => ({ kind: "room", key }));
-  return [...benches, ...rooms];
-}
-
-/** A hold is the staff telling you to stand pat. It is not a move, so it is not counted. */
-const isMove = (p: PlacedAction) => p.action.type !== "hold";
-
-/**
- * What a group row says when it has calls on it: how many, and what they are worth.
- *
- * `null` means the bench is clear and the row shows `GROUPS[key].clear` and its stamp
- * instead. A group holding nothing but a hold is clear — the hold is the reason, which
- * is why the row still opens.
- *
- * The wording lives here rather than in `vocab.ts` for the same reason `sheetStatus`
- * lives in `format.ts`: vocab holds the names of rooms and the brand's lines, and a
- * string that only exists as the output of a formatter belongs with the formatter.
- * "move" is what the engine already calls them in `feed.summary`.
- */
-export function groupStatus(key: GroupKey, items: PlacedAction[]): string | null {
-  const moves = items.filter(isMove);
-  if (!moves.length) return null;
-  const worth = worthText(key, moves);
-  const count = `${moves.length} move${moves.length === 1 ? "" : "s"}`;
-  return worth ? `${count} · ${worth}` : count;
-}
-
-/**
- * The figure on a group row, and it is never arithmetic we invented.
- *
- * Lineup fixes are independent slot swaps, so their gains genuinely add and the row can
- * quote the total. Waiver claims are ranked *alternatives* — `actions.py` labels the
- * second one "Fallback: add …" — so adding them up would promise points you cannot both
- * have. Those groups quote the leading call's own `benefit`, the string the server chose
- * to print on the card face.
- *
- * That also settles the paywall: a locked teaser's `benefit` is server-supplied, so
- * repeating it leaks nothing, while `benefit_value` is only ever summed for calls the
- * user has already paid to see.
- */
-function worthText(key: GroupKey, moves: PlacedAction[]): string {
-  if (key === "team") {
-    const total = moves.filter((p) => !p.action.locked).reduce((sum, p) => sum + p.action.benefit_value, 0);
-    return total > 0.05 ? `${signed(total)} pts` : "";
-  }
-  return moves[0]?.action.benefit ?? "";
 }
 
 /* ------------------------------------------------------------------ memos ---

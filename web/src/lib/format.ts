@@ -209,9 +209,10 @@ export function reservedWidth(value: number, digits = 1): number {
 }
 
 /* ------------------------------------------------------------- the sheet ---
-   A call sheet you can check off. Which calls are made is per league and per
-   week, so a new week always starts clean rather than inheriting last week's
-   ticks. The key is built here so the format is testable without a browser.   */
+   A Debrief you can work through: which calls you have made, and which items
+   you have waved off it. Both are per league and per week, so a new week always
+   starts clean rather than inheriting last week's. The keys are built here so
+   their format is testable without a browser.                                 */
 
 export function calledKey(leagueId: string, week: number): string {
   return `booth.called.${leagueId}.${week}`;
@@ -233,13 +234,6 @@ export function calledKey(leagueId: string, week: number): string {
  */
 export function dismissedKey(leagueId: string, week: number): string {
   return `booth.dismissed.${leagueId}.${week}`;
-}
-
-/** "2 of 3 called" / "Sheet's clean" — the line under the call-sheet heading. */
-export function sheetStatus(called: number, total: number): string {
-  if (total === 0) return "Nothing to call";
-  if (called >= total) return "Sheet's clean";
-  return `${called} of ${total} called`;
 }
 
 /* -------------------------------------------------- the owner's standing ---

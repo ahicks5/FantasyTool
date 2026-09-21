@@ -15,7 +15,6 @@ import {
   ordinal,
   pct,
   reservedWidth,
-  sheetStatus,
   signed,
   standingLabel,
   standingLine,
@@ -129,13 +128,6 @@ test("dismissed items are scoped the same way, and are their own list", () => {
   // Never the same key as the ticks: one says "I have made this call", the other says
   // "do not show me this again", and a thumb must not be able to corrupt a tick.
   assert.notEqual(dismissedKey("abc", 2), calledKey("abc", 2));
-});
-
-test("sheet status line", () => {
-  assert.equal(sheetStatus(0, 3), "0 of 3 called");
-  assert.equal(sheetStatus(2, 3), "2 of 3 called");
-  assert.equal(sheetStatus(3, 3), "Sheet's clean");
-  assert.equal(sheetStatus(0, 0), "Nothing to call");
 });
 
 test("the room tightens as kickoff approaches", () => {

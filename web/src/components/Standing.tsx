@@ -1,5 +1,5 @@
 "use client";
-/** Where you stand, in one line under the call sheet's hero: grade, rank, record. */
+/** Where you stand, in one line on the film room's memo: grade, rank, record. */
 import Link from "next/link";
 import { getLeague, getTeamGrades } from "@/lib/api";
 import { useCached } from "@/lib/cache";
@@ -32,8 +32,13 @@ const LINE_H = "min-h-[30px]";
  *
  * **No colour carrying meaning.** The grade tile on the depth chart tones its letter
  * green/amber/red and doubles every tone with a word (Loaded / Strong / Even / Soft /
- * Hole). There is no room for that word here, so the tone does not come with it: the line
- * is chrome on the dark hero in both themes, and the letter is the whole signal.
+ * Hole). There is no room for that word here, so the tone does not come with it: the
+ * line is muted ink in both themes, and the letter is the whole signal.
+ *
+ * `tone` is the one thing that moved with the Debrief. The line used to be white on the
+ * dark hero; it is on the film room's memo now, which is paper, and white-on-white is
+ * invisible. It is a prop rather than a rewrite because the hero tone is still the right
+ * one wherever this lands on a dark plate next.
  *
  * Two reads, both free, both already in the client, both on the cache keys the other
  * screens use — `grades:…` is the one `/trade` warms for the compare view, `league:…` the
@@ -48,10 +53,13 @@ export function Standing({
   platform,
   leagueId,
   teamId,
+  tone = "hero",
 }: {
   platform: Platform;
   leagueId: string;
   teamId: string;
+  /** `hero` is chrome on the dark plate; `card` is muted ink on paper. */
+  tone?: "hero" | "card";
 }) {
   const { data: card, error: cardError } = useCached<TeamGrades>(
     `grades:${platform}:${leagueId}:${teamId}`,
@@ -83,7 +91,9 @@ export function Standing({
     <Link
       href={SECTIONS.report.href}
       aria-label={`${standingLabel(parts)} ${STANDING.go} ${SECTIONS.report.title}.`}
-      className={`-mx-1.5 mt-2 inline-flex ${LINE_H} max-w-full items-center gap-1.5 rounded-lg px-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white`}
+      className={`-mx-1.5 mt-2 inline-flex ${LINE_H} max-w-full items-center gap-1.5 rounded-lg px-1.5 transition-colors ${
+        tone === "card" ? "text-muted hover:bg-soft hover:text-ink" : "text-white/70 hover:bg-white/10 hover:text-white"
+      }`}
     >
       <span className="tnum truncate text-[13px] font-bold leading-none">{standingLine(parts)}</span>
       <IconChevron size={13} strokeWidth={2.8} className="shrink-0" />

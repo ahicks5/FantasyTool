@@ -201,25 +201,34 @@ export type GroupKey = keyof typeof GROUPS;
 export const GROUP_ORDER = ["team", "waivers", "trade"] as const satisfies readonly GroupKey[];
 
 /**
- * Rooms you read rather than benches you work.
+ * What the staff call each kind of play, on the chip above a memo's item.
  *
- * The call sheet is the front door to the building, not just this week's chores: a row
- * per destination means the whole app is visible from the home screen, and a room with
- * nothing to decide still earns its row because the point is the map, not the workload.
+ * They were inline in `ActionCard` until the Debrief was built, which is exactly the
+ * drift the one-file rule exists to stop: "Claim" is a word a reader sees and the feed's
+ * own `type` ("waiver") is a data word, so the mapping between them is vocabulary.
+ * `edge/delivery/weekly_email.py::TYPE_LABEL` holds the same four for the email, which
+ * cannot import this file; if they ever disagree, the same call is named two things
+ * depending on whether you read it in the app or in your inbox.
+ */
+export const CALL_LABEL = {
+  start: "Start",
+  waiver: "Claim",
+  trade: "Trade",
+  hold: "Hold",
+} as const;
+
+/**
+ * Rooms you read rather than departments you work.
  *
- * A room takes no stamp and no count. A stamp is a verdict on a bench — "nothing here
- * worth calling" — and the film is never clear or busy, it is simply written. `line` is
- * what the row says under its title, and it is a description of the room, never a claim
- * about your team: nothing on the feed measures the film, so nothing here may imply it.
+ * A room takes no stamp and no count. A stamp is a verdict on a department — "nothing
+ * here worth calling" — and the film is never clear or busy, it is simply written.
+ * `line` is what the film room's memo says when no week has finished yet, and it is a
+ * description of the room, never a claim about your team: nothing on the feed measures
+ * the film, so nothing here may imply it.
  */
 export const ROOMS = {
   report: { line: "The full week, written out" },
 } as const satisfies Partial<Record<TabKey, { line: string }>>;
-
-export type RoomKey = keyof typeof ROOMS;
-
-/** Under the benches: you work the sheet first, then go read about it. */
-export const ROOM_ORDER = ["report"] as const satisfies readonly RoomKey[];
 
 /**
  * The one line that interrupts you on the call sheet.
@@ -242,22 +251,6 @@ export const ALARM = {
   warning: (n: number) => `${n} starter${n === 1 ? "" : "s"} in doubt`,
   /** Verb first, and it names the room rather than the tab, like every other way in. */
   cta: "Fix the lineup",
-} as const;
-
-/**
- * What the hero says once every call on the sheet is ticked.
- *
- * The sheet's whole promise is that it ends. Before this the page just went grey and sat
- * there, which reads as "nothing loaded" rather than "you are done" — so the closed state
- * says the work is finished and hands back the one thing still worth knowing: when to look
- * again. `back` is completed by a time the browser computes, because the deadline is on
- * the reader's clock and the server does not have it.
- */
-export const CLOSED = {
-  /** Replaces `feed.summary` in the hero. Same length budget: 18 characters. */
-  head: "Sheet's clean.",
-  /** Prefixes the computed time: "Check back Sunday, 11:55 AM". */
-  back: "Check back",
 } as const;
 
 /**
