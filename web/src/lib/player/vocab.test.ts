@@ -10,21 +10,22 @@ import { PLAYER } from "../vocab.ts";
  * Vibes side is the one surface where a digit is a bug.
  */
 
-/** Every string a reader can see out of the block, flattened. */
-const COPY: string[] = [
-  PLAYER.sheet,
-  PLAYER.modeGroup,
-  PLAYER.soon,
-  PLAYER.swipe,
-  PLAYER.close,
-  PLAYER.opening,
-  PLAYER.notFoundHead,
-  PLAYER.notFoundLine,
-  ...Object.values(PLAYER.modes).flatMap((m) => [m.label, m.said]),
-  ...Object.values(PLAYER.footer),
-  ...Object.values(PLAYER.vibes),
-  ...Object.values(PLAYER.stats),
-];
+/**
+ * Every string a reader can see out of the block, however deeply it is nested.
+ *
+ * Walked rather than listed. A hand-written list is a list someone forgets to add to, and
+ * the one line that never made it onto it is exactly the line that would carry the digit
+ * this file exists to catch. Functions are called with placeholder words, so a composed
+ * sentence is swept as well as a literal one.
+ */
+function strings(value: unknown, out: string[] = []): string[] {
+  if (typeof value === "string") out.push(value);
+  else if (typeof value === "function") out.push((value as (...a: string[]) => string)("Feature back", "Usage"));
+  else if (value && typeof value === "object") for (const v of Object.values(value)) strings(v, out);
+  return out;
+}
+
+const COPY: string[] = strings(PLAYER);
 
 test("not one word on the player page carries a digit", () => {
   // The Vibes side is words only, forever. The take is written against it in phase D, and
@@ -47,6 +48,15 @@ test("no line a user reads claims an accuracy figure", () => {
     assert.ok(!/\d\s*%/.test(line), `copy states a percentage: ${line}`);
     assert.ok(!/\b(accuracy|accurate|hit rate)\b/i.test(line), `copy claims accuracy: ${line}`);
   }
+});
+
+test("the walk actually reaches the nested words", () => {
+  // The sweep is only worth anything if it goes all the way down. These three live at
+  // three different depths, and the deepest is the one a hand-written list would miss.
+  assert.ok(COPY.includes(PLAYER.sheet), "a top-level string was missed");
+  assert.ok(COPY.includes(PLAYER.footer.chat), "a nested string was missed");
+  assert.ok(COPY.includes(PLAYER.vibes.snaps.every), "a twice-nested string was missed");
+  assert.ok(COPY.some((c) => c.includes("Feature back")), "a composed sentence was missed");
 });
 
 test("the three doors fit three-up on the narrowest phone", () => {

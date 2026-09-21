@@ -6,11 +6,10 @@ import type { Lineup, LineupSlot } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { GameDay } from "./GameDay";
-import { PlayerName } from "./Players";
+import { PlayerName, PlayerTarget } from "./Players";
 import { Scorecard } from "./Scorecard";
 import { IconArrowUp, IconCheck, IconChevron } from "./icons";
 import { ConfidenceStamp, Countdown, CountUp, Eyebrow, H2, InjuryTag, OnAirLive, Stamp } from "./ui";
-import { CONFIDENCE_HIT_LINE } from "@/lib/vocab";
 
 const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
 
@@ -35,25 +34,20 @@ function Bars({ value }: { value: string }) {
 }
 
 /**
- * One line on the board. It used to take two: the player on top, then the confidence tag and
- * a "Why?" link underneath, which made a nine-man lineup scroll like a document. Now the row
- * is a single line and tapping it opens the reasoning — tight to scan, evidence on demand.
+ * One line on the board: the slot, the man, the call, the number, and the reason for it.
+ *
+ * The reason used to be folded behind the row, which asked for a tap to read the one thing
+ * the row is actually asserting -- and then spent the tap, the only tap the row had, on
+ * text rather than on the player. Now the reason is simply there, on its own line,
+ * truncated so the row's height is fixed however long the engine's sentence runs, and the
+ * tap goes where a tap on a player should go: his page.
+ *
+ * The confidence hit line went with the disclosure. It is a sentence about the *tag*, not
+ * about this man, and it is already said on the stamp and on the call sheet.
  */
-function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
-  const [open, setOpen] = useState(false);
-  /* `hit` is a switch, not a number any more: the engine sends the measured rates (report.py's
-     `confidence_hit_rate`), and their absence -- an older payload -- means we say nothing about
-     accuracy at all. The wording itself is fixed per tag, so no rounding happens on screen. */
-  const hitLine = hit !== undefined ? CONFIDENCE_HIT_LINE[s.confidence] : undefined;
-  const why = [s.reason, hitLine ? `${s.confidence}: ${hitLine}` : ""].filter(Boolean);
-
-  return (
-    <li className={`min-w-0 ${s.change ? "bg-start-soft" : ""}`}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex w-full min-w-0 items-center gap-2.5 px-4 py-2 text-left"
-      >
+function SlotRow({ s }: { s: LineupSlot }) {
+  const body = (
+    <>
         <span className="slug w-[26px] shrink-0 text-[10px] uppercase tracking-[0.06em] text-muted">{s.slot}</span>
         {s.player ? (
           <Avatar name={s.player.name} photo={s.player.photo} teamLogo={s.player.team_logo} size="sm" ring={RING[s.confidence]} />
@@ -62,7 +56,7 @@ function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
         )}
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13px] font-bold leading-tight">
-            {s.player ? <PlayerName p={s.player} /> : "Empty"}
+            {s.player?.name ?? "Empty"}
             <InjuryTag status={s.player?.injury_status ?? null} />
           </span>
           <span className={`mt-px flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide ${INK[s.confidence]}`}>
@@ -73,15 +67,26 @@ function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
             </span>
           </span>
         </span>
-        <span className="display tnum shrink-0 text-[19px] leading-none">{(s.player?.projected ?? 0).toFixed(1)}</span>
-        <IconChevron size={12} strokeWidth={2.6} className={`shrink-0 text-muted transition-transform ${open ? "rotate-90" : ""}`} />
-      </button>
-      {open && why.length > 0 && (
-        <ul className="grid gap-1 px-4 pb-2.5 pl-[74px] text-[12px] leading-relaxed text-ink-2">
-          {why.map((l) => (
-            <li key={l}>{l}</li>
-          ))}
-        </ul>
+      <span className="display tnum shrink-0 text-[19px] leading-none">{(s.player?.projected ?? 0).toFixed(1)}</span>
+      {s.player && <IconChevron size={12} strokeWidth={2.6} className="shrink-0 text-muted" />}
+    </>
+  );
+  return (
+    <li className={`min-w-0 ${s.change ? "bg-start-soft" : ""}`}>
+      {s.player ? (
+        <PlayerTarget p={s.player} className="flex w-full min-w-0 items-center gap-2.5 px-4 py-2 text-left" face={false}>
+          {body}
+        </PlayerTarget>
+      ) : (
+        <span className="flex w-full min-w-0 items-center gap-2.5 px-4 py-2 text-left">{body}</span>
+      )}
+      {/* The call, stated rather than hidden.
+          Two lines, then it stops. One line cut most of these sentences off mid-clause
+          ("best bench option Tony Poll..."), which is hardly better than folding them away;
+          unbounded, a nine-man board scrolls like a document again, which is the thing this
+          row was made short to avoid. Two is where the engine's sentences actually land. */}
+      {s.reason && (
+        <p className="line-clamp-2 px-4 pb-2 pl-[74px] text-[12px] leading-snug text-muted">{s.reason}</p>
       )}
     </li>
   );
@@ -182,7 +187,7 @@ export function LineupView({
         <H2>On the field</H2>
         <ul className="card mt-2.5 min-w-0 divide-y divide-line overflow-hidden p-0">
           {lineup.slots.map((s, i) => (
-            <SlotRow key={i} s={s} hit={lineup.confidence_hit_rate?.[s.confidence]} />
+            <SlotRow key={i} s={s} />
           ))}
         </ul>
       </section>

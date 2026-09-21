@@ -471,12 +471,84 @@ export const PLAYER = {
   /** A player id that answers nothing. It will still answer nothing on a retry. */
   notFoundHead: "No page for him",
   notFoundLine: "Nobody by that id is in this league's player pool.",
-  /** The Vibes side, before the written take exists. */
+  /**
+   * The Vibes side: what he is, then which way he is going.
+   *
+   * Two tiers, because they answer different questions. The base moves over months and is
+   * what you own; the trend moves week to week and is what you act on. Every word here is
+   * a band in `lib/player/vibes.ts` -- the thresholds are there, the words are here.
+   *
+   * Nothing in this block may carry a digit. That is the Vibes rule and it is enforced
+   * twice: by `lib/player/vocab.test.ts` over these strings, and by `assertWordsOnly` over
+   * the sentence the headline composes out of them at runtime.
+   */
   vibes: {
-    /** Over the reads, which are the facts the take gets written from. */
-    head: "What the tape says",
-    /** No reads on record: week one, or a player who has not taken a snap. */
+    /** The two tier headings. */
+    baseHead: "What he is",
+    baseSub: "Slow to change. This is what you own.",
+    trendHead: "Which way he is going",
+    trendSub: "Week to week. This is what you act on.",
+    /** No counts on record at all: week one, or a man who has not taken a snap. */
     empty: "Nothing on him yet this season. Check the numbers next door.",
+    /** The base is there but nothing in it is worth a sentence. */
+    fallback: "Not enough on record to call him yet.",
+    /** What each row is measuring. Left column, both tiers. */
+    labels: {
+      snaps: "On the field",
+      work: "The ball",
+      standing: "At his position",
+      role: "His role",
+      usage: "Usage",
+      chances: "Red-zone work",
+      efficiency: "Every touch",
+      form: "Form",
+    },
+    /** Snap share, richest first. */
+    snaps: {
+      every: "Every down",
+      starter: "Starts",
+      rotation: "In the rotation",
+      sub: "Barely on",
+    },
+    /** His share of the position's work. Backs and receivers keep separate words. */
+    work: {
+      feature: "Feature back",
+      lead: "Leads the committee",
+      committee: "Split backfield",
+      backup: "Behind someone",
+      first: "First read",
+      inPlan: "In the plan",
+      complementary: "Complementary",
+      afterthought: "Rarely looked at",
+    },
+    /** Where he sits among the men who play his position. */
+    standing: {
+      elite: "Top of it",
+      starter: "Starter grade",
+      flex: "Flex grade",
+      bench: "Bench grade",
+    },
+    /** His last few weeks against his own season. Form, not talent. */
+    form: {
+      hot: "Hot",
+      warming: "Warming",
+      level: "Level",
+      cooling: "Cooling",
+      cold: "Cold",
+    },
+    /** A trend row's answer. */
+    dir: { up: "Up", down: "Down", level: "Level" },
+    /**
+     * The one line at the top, composed from the base and the loudest trend.
+     *
+     * Lower case on the trailing clause on purpose: the base word is a title
+     * ("Feature back") and the rest of the sentence runs on from it.
+     */
+    headline: {
+      still: (what: string) => `${what}, and steady with it.`,
+      rising: (what: string, moving: string) => `${what}, and ${moving.toLowerCase()} is climbing.`,
+      slipping: (what: string, moving: string) => `${what}, but ${moving.toLowerCase()} is slipping.`,
+    },
   },
   /** The Stats side. */
   stats: {

@@ -196,7 +196,7 @@ export function PlayerSheet({
         {/* `overscroll-contain` stops a flick at the end of the log from scrolling the page
             underneath, which on iOS also drags the sheet's own backdrop. */}
         <div ref={middle} className="min-h-0 overflow-y-auto overscroll-contain px-5 py-5">
-          <Middle mode={mode} view={view} notFound={notFound} error={error} reload={reload} onClose={onClose} />
+          <Middle mode={mode} profile={data} view={view} notFound={notFound} error={error} reload={reload} onClose={onClose} />
         </div>
         <Footer playerId={playerId} />
       </div>
@@ -229,8 +229,13 @@ function Header({
     <div className="mode-chrome border-b border-line">
       <button onClick={onClose} aria-label={PLAYER.close} className="flex min-h-0 w-full justify-center pb-1 pt-2.5">
         <span aria-hidden className="h-1.5 w-10 rounded-full bg-line-2" />
+        {/* The gesture is still the way out, and still said -- just not printed over the
+            man's name, where it was the third line of a header that only has room for two. */}
+        <span className="sr-only">{PLAYER.swipe}</span>
       </button>
-      <div className="flex items-start gap-3 px-4 pb-3">
+      {/* Centred against the avatar rather than top-aligned: with the swipe line gone the
+          text block is two lines against a 56px face, and top-aligning left it riding high. */}
+      <div className="flex items-center gap-3 px-4 pb-3">
         {/* `lg` and not `xl`: at 320px the toggle needs its width more than the head does. */}
         <Avatar name={head?.name ?? ""} photo={head?.photo ?? null} teamLogo={head?.teamLogo ?? null} size="lg" />
         <div className="min-w-0 flex-1">
@@ -243,7 +248,6 @@ function Header({
             <span>{positionLine(head)}</span>
             {head?.injuryStatus && <InjuryTag status={head.injuryStatus} />}
           </p>
-          <p className="mt-0.5 text-[10px] font-semibold text-muted">{PLAYER.swipe}</p>
         </div>
         <ModeToggle mode={mode} onMode={onMode} />
       </div>
@@ -296,6 +300,7 @@ function ModeToggle({ mode, onMode }: { mode: Mode; onMode: (m: Mode) => void })
  */
 function Middle({
   mode,
+  profile,
   view,
   notFound,
   error,
@@ -303,6 +308,9 @@ function Middle({
   onClose,
 }: {
   mode: Mode;
+  /** The payload, not the derived report: Vibes judges snap share and week-by-week form,
+   *  and `ProfileView` has already turned both of those into strings for the table. */
+  profile: PlayerProfile | null;
   view: ReturnType<typeof profileView> | null;
   notFound: boolean;
   error: string;
@@ -323,8 +331,8 @@ function Middle({
     );
   }
   if (error) return <ErrorBox message={error} onRetry={reload} />;
-  if (!view) return <Opening />;
-  return mode === "vibes" ? <VibesView reads={view.reads} /> : <Report view={view} />;
+  if (!view || !profile) return <Opening />;
+  return mode === "vibes" ? <VibesView profile={profile} /> : <Report view={view} />;
 }
 
 /* ------------------------------------------------------------------- footer --- */

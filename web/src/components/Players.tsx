@@ -3,6 +3,7 @@
 
 import type { Player } from "@/lib/types";
 import { Avatar } from "./Avatar";
+import { IconChevron } from "./icons";
 import type { PlayerSeed } from "./player/PlayerSheet";
 import { usePlayerSheet } from "./player/PlayerSheetProvider";
 import { InjuryTag } from "./ui";
@@ -44,7 +45,7 @@ export function PlayerName({
         e.preventDefault();
         open(p);
       }}
-      className={`min-h-0 -my-1 py-1 text-left ${className}`}
+      className={`player-link min-h-0 -my-1 py-1 text-left ${className}`}
     >
       {p.name}
     </button>
@@ -93,10 +94,14 @@ export function PlayerTarget({
   p,
   children,
   className = "",
+  face = true,
 }: {
   p: PlayerSeed;
   children: React.ReactNode;
   className?: string;
+  /** False where the target is a whole row rather than a headshot: a row carries its own
+   *  chevron and a chrome ring drawn around it would be a button inside a list. */
+  face?: boolean;
 }) {
   const { open } = usePlayerSheet();
   return (
@@ -108,9 +113,19 @@ export function PlayerTarget({
         e.preventDefault();
         open(p);
       }}
-      className={`min-h-0 ${className}`}
+      className={`relative min-h-0 ${face ? "player-face" : ""} ${className}`}
     >
       {children}
+      {/* Riveted to the corner of the face, so the headshot reads as a control rather than
+          as decoration. Small enough that it never covers the man's head. */}
+      {face && (
+        <span
+          aria-hidden
+          className="absolute -right-0.5 bottom-0 flex h-4 w-4 items-center justify-center rounded-full border border-line-2 bg-paper text-muted"
+        >
+          <IconChevron size={9} strokeWidth={3} />
+        </span>
+      )}
     </button>
   );
 }

@@ -601,6 +601,28 @@ button, a.btn, select, input { min-height: 44px; }
 .mode-chrome { background: var(--mode-surface); }
 .mode-ink { color: var(--mode-ink); }
 
+/* A name is a door, and it has to look like one.
+   A dotted rule under the name rather than a colour: every name in the app would otherwise
+   have to take the link blue, which on a roster of nine is a page of blue. Dotted is the
+   old "there is more behind this word" convention, it survives truncation, and it reads on
+   black and on paper without a second token. It firms up on hover and on focus. */
+.player-link {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-line-2);
+}
+.player-link:hover,
+.player-link:focus-visible { text-decoration-color: currentColor; }
+
+/* The call sheet's card names nobody -- its headline is a sentence the engine wrote -- so
+   the headshot is the only thing on it that is him, and it has to advertise itself. A
+   chrome rule around the face and a chevron riveted to its corner. */
+.player-face { border-radius: 9999px; box-shadow: 0 0 0 1.5px var(--color-line-2); }
+.player-face:hover,
+.player-face:focus-visible { box-shadow: 0 0 0 1.5px var(--color-ink-2); }
+
 /* The snap-back. The drag itself follows the finger and is input, not animation, so it is
    the release that is animated — and a transition, not a keyframe, so it starts from
    wherever the finger let go. While the finger is down there is no transition at all, or

@@ -386,7 +386,11 @@ test("tap a name, his page rises; swipe it down, it is gone", async ({ page }) =
   // A real name, not a slot label or a team: two capitalised words on a button.
   const name = page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first();
   await expect(name).toBeVisible();
-  const who = (await name.textContent())?.trim() ?? "";
+  // Its *accessible* name, not its text: on the depth chart the whole row is the target, so
+  // `textContent` is the slot, the tag and the projection as well as the man. `aria-label`
+  // is what a screen reader reads out, and it is his name alone.
+  const who = (await name.getAttribute("aria-label")) ?? (await name.textContent())?.trim() ?? "";
+  expect(who, "the tap target has no player name on it").toMatch(/^[A-Z][a-z]+ [A-Z]/);
   await name.click();
 
   const sheet = page.getByRole("dialog");
