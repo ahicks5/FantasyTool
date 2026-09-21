@@ -12,17 +12,76 @@
    the week and stale advice is worse than a spinner.
 --------------------------------------------------------------------------- */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const store = new Map<string, unknown>();
+/** A cached read, with the moment it landed. The stamp is what makes staleness askable. */
+interface Entry {
+  value: unknown;
+  at: number;
+}
+
+const store = new Map<string, Entry>();
 const inflight = new Map<string, Promise<unknown>>();
 
 export function cacheGet<T>(key: string): T | undefined {
-  return store.get(key) as T | undefined;
+  return store.get(key)?.value as T | undefined;
 }
 
-export function cacheSet<T>(key: string, value: T): void {
-  store.set(key, value);
+export function cacheSet<T>(key: string, value: T, at: number = Date.now()): void {
+  store.set(key, { value, at });
+}
+
+/** How long this key has been sitting in the cache, or null if it is not there. */
+export function cacheAge(key: string, now: number = Date.now()): number | null {
+  const hit = store.get(key);
+  return hit === undefined ? null : now - hit.at;
+}
+
+/**
+ * How old a read may get before coming back to the app is worth a refetch.
+ *
+ * Five minutes is chosen against the thing that actually goes stale: you leave for the
+ * Sleeper app, set a starter, and come back. That round trip is a minute or two, so the
+ * window has to be short enough to catch it — and long enough that flicking between the
+ * tab bar and another app does not refetch the league every time a thumb moves.
+ */
+export const REFRESH_MS = 5 * 60 * 1000;
+
+/**
+ * Refetch a key if what is cached has gone stale, and hand back the new value.
+ *
+ * Returns `null` when nothing was done: the key was never read, it is still fresh, or
+ * the refetch failed. That last one is deliberate and is the whole shape of this
+ * function — **the cached value is never cleared here**. The strip and the memos are
+ * already on screen with last-known-good data, and replacing a working page with a
+ * spinner (or worse, an error) because a background refresh missed is a regression
+ * the reader did not ask for. The old numbers stay up until new ones land.
+ *
+ * `now` is injectable so the staleness decision can be tested without a clock.
+ */
+export async function refreshIfStale<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  maxAgeMs: number = REFRESH_MS,
+  now: number = Date.now(),
+): Promise<T | null> {
+  const age = cacheAge(key, now);
+  if (age === null || age < maxAgeMs) return null;
+  // One refresh per key at a time: two tabs regaining focus together, or a focus event
+  // landing on top of the first read, must not become two requests.
+  const flight = inflight.get(key) as Promise<T> | undefined;
+  if (flight) return flight.catch(() => null);
+  const p = fetcher();
+  inflight.set(key, p);
+  try {
+    const v = await p;
+    cacheSet(key, v);
+    return v;
+  } catch {
+    return null;
+  } finally {
+    inflight.delete(key);
+  }
 }
 
 /** Drop everything, or everything under a prefix. Used when entitlements change. */
@@ -81,7 +140,11 @@ export interface Cached<T> {
  * `key` may be null while its inputs are still unknown (no league picked yet);
  * nothing is fetched until it is a string.
  */
-export function useCached<T>(key: string | null, fetcher: () => Promise<T>): Cached<T> {
+export function useCached<T>(
+  key: string | null,
+  fetcher: () => Promise<T>,
+  opts: { refreshMs?: number } = {},
+): Cached<T> {
   const initial = key ? cacheGet<T>(key) : undefined;
   const [data, setData] = useState<T | null>(initial ?? null);
   const [error, setError] = useState("");
@@ -108,7 +171,10 @@ export function useCached<T>(key: string | null, fetcher: () => Promise<T>): Cac
     }
     p.then(
       (v) => {
-        cacheSet(key, v);
+        // Only a real read re-stamps the entry. Re-caching a cache hit would reset its
+        // age on every mount, so a key that opts into the focus refresh below would be
+        // permanently one tab-switch old and never actually refetch.
+        if (hit === undefined) cacheSet(key, v);
         inflight.delete(key);
         if (alive) {
           setError("");
@@ -130,6 +196,43 @@ export function useCached<T>(key: string | null, fetcher: () => Promise<T>): Cac
     // `fetcher` is rebuilt every render by callers; the key is the real identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, nonce]);
+
+  // The fetcher is rebuilt every render by callers, so the refresh effect reads it
+  // through a ref rather than depending on it — otherwise every render would tear the
+  // listener down and put an identical one back. The ref is written in its own effect
+  // rather than in the render body: a ref is not a render value, and touching
+  // `.current` while rendering is what the react-hooks rule stops.
+  const latest = useRef(fetcher);
+  useEffect(() => {
+    latest.current = fetcher;
+  });
+  const { refreshMs } = opts;
+
+  /**
+   * Come back to the app and the numbers catch up.
+   *
+   * The cache is in memory for the session (docs/WEB.md), which is right for a tab
+   * switch and wrong for the case this exists for: you leave for the Sleeper app, swap
+   * a starter, and come back to a strip still drawing the lineup you left. So a key
+   * that opts in re-reads when the tab regains focus and what it holds is older than
+   * `refreshMs`. Nothing flashes — `refreshIfStale` leaves the old value in place
+   * until the new one lands, and a failed refresh leaves it there for good.
+   */
+  useEffect(() => {
+    if (!key || !refreshMs) return;
+    const check = () => {
+      if (document.visibilityState === "hidden") return;
+      void refreshIfStale<T>(key, () => latest.current(), refreshMs).then((v) => {
+        if (v !== null) setData(v);
+      });
+    };
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [key, refreshMs]);
 
   return {
     data,

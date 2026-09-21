@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   article,
   calledKey,
+  dismissedKey,
   confidenceClass,
   confidenceInk,
   countdown,
@@ -115,6 +116,19 @@ test("called calls are scoped to a league and a week", () => {
   assert.equal(calledKey("1403186749361901568", 2), "booth.called.1403186749361901568.2");
   assert.notEqual(calledKey("abc", 2), calledKey("abc", 3));
   assert.notEqual(calledKey("abc", 2), calledKey("xyz", 2));
+});
+
+test("dismissed items are scoped the same way, and are their own list", () => {
+  // The new key (D5). Same shape and the same scoping as the ticks, under the same
+  // `booth.` prefix — the one part of these keys that may never change, because
+  // renaming it signs every existing reader out of their league (docs/WEB.md).
+  assert.equal(dismissedKey("1403186749361901568", 2), "booth.dismissed.1403186749361901568.2");
+  assert.ok(dismissedKey("abc", 2).startsWith("booth."));
+  assert.notEqual(dismissedKey("abc", 2), dismissedKey("abc", 3), "a new week starts clean");
+  assert.notEqual(dismissedKey("abc", 2), dismissedKey("xyz", 2), "a thumb is per league");
+  // Never the same key as the ticks: one says "I have made this call", the other says
+  // "do not show me this again", and a thumb must not be able to corrupt a tick.
+  assert.notEqual(dismissedKey("abc", 2), calledKey("abc", 2));
 });
 
 test("sheet status line", () => {

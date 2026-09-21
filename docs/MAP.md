@@ -224,12 +224,12 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | File | What it is | Lines |
 |---|---|---|
 | `web/src/lib/api.ts` | API client for docs/API.md. With NEXT_PUBLIC_API_URL unset, every call is | 377 |
-| `web/src/lib/cache.ts` | A tiny in-memory cache for the session's fetched data. | 156 |
+| `web/src/lib/cache.ts` | A tiny in-memory cache for the session's fetched data. | 259 |
 | `web/src/lib/compare.ts` | Two scorecards, lined up against each other. | 226 |
 | `web/src/lib/deadline.ts` | Deadlines, as a bench of the call sheet says them out loud. | 181 |
 | `web/src/lib/errors.ts` | Turning a failure into something worth reading. | 104 |
 | `web/src/lib/espnAuth.ts` | A private ESPN league needs two cookies from the user's own browser: `espn_s2` and `SWID`. | 92 |
-| `web/src/lib/format.ts` | Pure helpers (no React, no DOM) so they can be unit tested with node:test. | 312 |
+| `web/src/lib/format.ts` | Pure helpers (no React, no DOM) so they can be unit tested with node:test. | 330 |
 | `web/src/lib/gameday.ts` | Pure helpers (no React, no DOM, no clock read at load) so they can be unit tested | 495 |
 | `web/src/lib/leagueInput.ts` | One box for Sleeper, because asking someone to know whether they have a "username" or a | 100 |
 | `web/src/lib/legal.ts` | The handful of facts the Terms and Privacy pages cannot work out for themselves. | 51 |
@@ -239,9 +239,9 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/recap.ts` | The film, worked out: a season of played weeks turned into the rows the page draws. | 538 |
 | `web/src/lib/search.ts` | The scout's search box, minus React. | 114 |
 | `web/src/lib/session.ts` | Who is signed in, which league they are looking at, and what they have paid for. | 82 |
-| `web/src/lib/sheet.ts` | Pure helpers (no React, no DOM) so they can be unit tested with node:test. | 153 |
+| `web/src/lib/sheet.ts` | Pure helpers (no React, no DOM) so they can be unit tested with node:test. | 230 |
 | `web/src/lib/site.ts` | Where this build thinks it lives. | 41 |
-| `web/src/lib/storage.ts` | What the browser remembers: the connected league, and the calls already ticked off. | 119 |
+| `web/src/lib/storage.ts` | What the browser remembers: the connected league, and the calls already ticked off. | 151 |
 | `web/src/lib/supabase.ts` | Supabase magic-link auth. Only active when both public env vars are set. | 43 |
 | `web/src/lib/teaser.ts` | Which sentence goes in a paywall. | 21 |
 | `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 829 |

@@ -100,7 +100,14 @@ export function useConnection(): Connection | null {
    last week's ticks. Advice only — nothing here is written back to Sleeper or
    ESPN, so this is a checklist, not a lineup submission.                       */
 
-export function loadCalled(key: string): string[] {
+/**
+ * A stored list of action ids, or an empty one.
+ *
+ * Anything that is not an array of strings reads as nothing remembered rather than as
+ * an error: the value came out of a browser we do not control, and a reader whose
+ * storage holds junk should get a working page, not a thrown render.
+ */
+function loadIds(key: string): string[] {
   try {
     const raw = window.localStorage.getItem(key);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
@@ -110,10 +117,35 @@ export function loadCalled(key: string): string[] {
   }
 }
 
-export function saveCalled(key: string, ids: string[]): void {
+function saveIds(key: string, ids: string[]): void {
   try {
     window.localStorage.setItem(key, JSON.stringify(ids));
   } catch {
-    /* private mode / blocked storage: the sheet just does not remember */
+    /* private mode / blocked storage: the page just does not remember */
   }
+}
+
+export function loadCalled(key: string): string[] {
+  return loadIds(key);
+}
+
+export function saveCalled(key: string, ids: string[]): void {
+  saveIds(key, ids);
+}
+
+/* ---------------------------------------------------------- the dismissed ---
+   Which items the reader has thumbed down off the Debrief this week, keyed by
+   `dismissedKey` and stored exactly as the ticks are. Two separate lists rather
+   than one list of {id, verdict}: they answer different questions ("I have made
+   this call" against "do not show me this again"), they expire on the same
+   schedule but for different reasons, and a single blob would make a thumb able
+   to corrupt a tick. Hiding is local and this-page-only (D5) — the feedback
+   itself goes to the API, where it is recorded whether or not this write lands. */
+
+export function loadDismissed(key: string): string[] {
+  return loadIds(key);
+}
+
+export function saveDismissed(key: string, ids: string[]): void {
+  saveIds(key, ids);
 }

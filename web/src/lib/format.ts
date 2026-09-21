@@ -217,6 +217,24 @@ export function calledKey(leagueId: string, week: number): string {
   return `booth.called.${leagueId}.${week}`;
 }
 
+/**
+ * Which items the reader has waved off the Debrief this week (D5).
+ *
+ * Same shape and the same scoping as `calledKey`, deliberately: per league and per
+ * week, so a new week starts with every department's memo back on the page and a
+ * thumb pressed in one league says nothing about another. It is a sibling of
+ * `booth.called.*` under the same `booth.` prefix, which is the one part of these
+ * keys that may never change — renaming it signs every existing reader out of their
+ * league, their theme and their ticked calls (docs/WEB.md).
+ *
+ * The scope is also the honesty of the feature: this hides an item on this page, on
+ * this device, for this week. It is not a note to the engine and it takes nothing off
+ * the depth chart, the wire or the trade board.
+ */
+export function dismissedKey(leagueId: string, week: number): string {
+  return `booth.dismissed.${leagueId}.${week}`;
+}
+
 /** "2 of 3 called" / "Sheet's clean" — the line under the call-sheet heading. */
 export function sheetStatus(called: number, total: number): string {
   if (total === 0) return "Nothing to call";

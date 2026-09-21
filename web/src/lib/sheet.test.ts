@@ -1,8 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { groupActions, groupFor, groupForHref, groupStatus, sheetRows, type PlacedAction, type SheetRow } from "./sheet.ts";
+import {
+  dismissable,
+  groupActions,
+  groupFor,
+  groupForHref,
+  groupStatus,
+  memos,
+  sheetRows,
+  type PlacedAction,
+  type SheetRow,
+} from "./sheet.ts";
 import type { Action, ActionType, Feature } from "./types.ts";
-import { GROUP_ORDER, ROOM_ORDER } from "./vocab.ts";
+import { DEPARTMENT_ORDER, GROUP_ORDER, ROOM_ORDER } from "./vocab.ts";
 
 const FEATURE: Record<ActionType, Feature> = {
   start: "my_team",
@@ -162,4 +172,111 @@ test("a locked teaser prints only the number the server sent", () => {
   // Nothing is derived from a withheld lineup gain either: the total skips locked calls.
   const lockedStart = { action: action("start", "/team", { locked: true, benefit_value: 9.9 }), n: 1 };
   assert.equal(groupStatus("team", [lockedStart]), "1 move");
+});
+
+/* ------------------------------------------------------------------ memos ---
+   The Debrief's unit. One per department, always all four, each holding the one
+   item that department most wants seen and a count of what is behind it.        */
+
+const memoKeys = (ms: ReturnType<typeof memos>) => ms.map((m) => m.key);
+const memoById = (ms: ReturnType<typeof memos>, key: string) => ms.find((m) => m.key === key)!;
+
+test("an empty feed still prints all four memos", () => {
+  // Same reason the empty bench was the point: a settled lineup contributes no action
+  // at all, so a page built from the feed alone could only fail to mention it. Four
+  // memos, four clear lines, four doors.
+  const ms = memos([]);
+  assert.deepEqual(memoKeys(ms), [...DEPARTMENT_ORDER]);
+  for (const m of ms) {
+    assert.equal(m.item, null);
+    assert.equal(m.more, 0);
+  }
+});
+
+test("each memo holds its department's top-ranked call, and counts the rest", () => {
+  // Feed order is the server's ranking across the whole sheet, so "top" means the one
+  // the engine ranked highest, never the first one filed here.
+  const feed = [
+    action("trade", "/trade", { id: "t1" }),
+    action("start", "/team", { id: "s1" }),
+    action("start", "/team", { id: "s2" }),
+    action("waiver", "/waivers", { id: "w1" }),
+    action("start", "/team", { id: "s3" }),
+  ];
+  const ms = memos(feed);
+  assert.equal(memoById(ms, "team").item?.action.id, "s1");
+  assert.equal(memoById(ms, "team").more, 2);
+  // The play number rides along, because it is the server's rank and not a position
+  // inside the memo — "02" on the head coach's memo is second on the whole sheet.
+  assert.equal(memoById(ms, "team").item?.n, 2);
+  assert.equal(memoById(ms, "waivers").item?.action.id, "w1");
+  assert.equal(memoById(ms, "waivers").more, 0);
+  assert.equal(memoById(ms, "trade").item?.action.id, "t1");
+});
+
+test("the film room never carries a call", () => {
+  // Nothing on the feed measures the film (D6): its memo is built from last week's
+  // result, so an action that somehow claimed it must not turn up here as one.
+  const ms = memos([action("start", "/report", { id: "odd" })]);
+  assert.equal(memoById(ms, "report").item, null);
+  assert.equal(memoById(ms, "report").more, 0);
+});
+
+test("a thumbs-down promotes the next call in that department", () => {
+  const feed = [
+    action("start", "/team", { id: "s1" }),
+    action("start", "/team", { id: "s2" }),
+    action("waiver", "/waivers", { id: "w1" }),
+  ];
+  const ms = memos(feed, ["s1"]);
+  assert.equal(memoById(ms, "team").item?.action.id, "s2");
+  assert.equal(memoById(ms, "team").more, 0, "the count is what the Debrief has left to show");
+  // And only that department: a thumb on the lineup says nothing about the wire.
+  assert.equal(memoById(ms, "waivers").item?.action.id, "w1");
+});
+
+test("dismissing the last call leaves a clear memo, not a missing one", () => {
+  const feed = [action("start", "/team", { id: "s1" }), action("start", "/team", { id: "s2" })];
+  const ms = memos(feed, ["s1", "s2"]);
+  assert.deepEqual(memoKeys(ms), [...DEPARTMENT_ORDER], "the memo stays on the page");
+  assert.equal(memoById(ms, "team").item, null, "so the card falls back to GROUPS.team.clear");
+  assert.equal(memoById(ms, "team").more, 0);
+});
+
+test("an id that is not on this week's feed hides nothing", () => {
+  // Storage is per league and per week, but a key can still outlive the feed it was
+  // written against. A stale id must simply never match.
+  const feed = [action("start", "/team", { id: "s1" })];
+  assert.equal(memoById(memos(feed, ["last-week:9"]), "team").item?.action.id, "s1");
+});
+
+test("a locked teaser cannot be thumbed off the page", () => {
+  // There is nothing there to be wrong about yet — the names are withheld until the
+  // pass is bought — so a dismissal would delete the upsell rather than answer it.
+  const locked = action("trade", "/trade", { id: "tl", locked: true });
+  assert.equal(dismissable(locked), false);
+  assert.equal(memoById(memos([locked], ["tl"]), "trade").item?.action.id, "tl");
+});
+
+test("a hold cannot be thumbed off either, and it is what scouting shows", () => {
+  // A hold is the staff saying stand pat. It is the reason the wire is quiet rather
+  // than a move, so it is neither tickable nor dismissable — hiding it would leave the
+  // memo asserting the same quiet with nothing behind it.
+  const hold = action("hold", "/waivers", { id: "waiver:hold", feature: "my_team" });
+  assert.equal(dismissable(hold), false);
+  const ms = memos([hold], ["waiver:hold"]);
+  assert.equal(memoById(ms, "waivers").item?.action.id, "waiver:hold");
+});
+
+test("memos file calls exactly as the benches do", () => {
+  // One place decides which department owns a call. If these ever disagree, the memo
+  // and the bench behind it are talking about two different tabs.
+  const feed = [
+    action("start", "/team", { id: "a" }),
+    action("hold", "/waivers", { id: "d" }),
+    action("trade", "/trade?their=4", { id: "c" }),
+  ];
+  for (const { key, items } of groupActions(feed)) {
+    assert.equal(memoById(memos(feed), key).item?.action.id, items[0]?.action.id);
+  }
 });
