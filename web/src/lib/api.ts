@@ -2,6 +2,7 @@
 // served from src/lib/mocks.ts; when set, it fetches `${NEXT_PUBLIC_API_URL}/api/...`.
 import type {
   ActionFeed,
+  EmailPref,
   Standings,
   ShareKind,
   ShareResponse,
@@ -339,4 +340,38 @@ export async function getPlayerProfile(platform: Platform, leagueId: string, pla
 export async function getStandings(platform: Platform, leagueId: string): Promise<Standings> {
   if (USE_MOCKS) return mocks.STANDINGS;
   return request<Standings>(`/league/${platform}/${encodeURIComponent(leagueId)}/standings`);
+}
+
+/**
+ * The weekly-email preference. Mock builds have no backend to ask, so the tick is kept
+ * in this browser; a real deployment keeps it on the account, because the send is a
+ * server job that has to know who asked.
+ */
+const EMAIL_OPT_IN_MOCK_KEY = "booth.email.optin";
+
+export async function getEmailOptIn(): Promise<boolean> {
+  if (USE_MOCKS) {
+    try {
+      return window.localStorage.getItem(EMAIL_OPT_IN_MOCK_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }
+  return (await request<EmailPref>("/me/email")).email_opt_in === true;
+}
+
+export async function setEmailOptIn(on: boolean): Promise<boolean> {
+  if (USE_MOCKS) {
+    try {
+      window.localStorage.setItem(EMAIL_OPT_IN_MOCK_KEY, on ? "1" : "0");
+    } catch {
+      /* a browser that refuses storage still gets the tick for this visit */
+    }
+    return on;
+  }
+  const out = await request<EmailPref>("/me/email", {
+    method: "PUT",
+    body: JSON.stringify({ email_opt_in: on }),
+  });
+  return out.email_opt_in === true;
 }

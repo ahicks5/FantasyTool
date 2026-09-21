@@ -46,6 +46,55 @@ Three things about it that a future session will otherwise rediscover the hard w
 It is week 2 of 2026, so a player has **one** completed game. Every surface here was built for
 that case first: one game plus last season is the normal report until November, not an edge case.
 
+## The owner's box shipped (2026-09-21)
+
+`docs/PLAN-OWNERS-BOX.md`, all eight workstreams, run as eight siloed agents with the
+lead applying every lead-only file. Deployed to production: Andrew answered D7 "ship".
+Full write-up in `TASKS.md` under "The owner's box".
+
+What a user sees that they did not before: player names on the call sheet without a tap;
+a blurb under every section title; **standings and a power ranking, free**; **half of GM's
+Office, free**; how last week's calls landed, free; and no accuracy claim anywhere that we
+have not measured.
+
+Decisions Andrew made, so they are not re-litigated: the landing drops the 80% number and
+the depth chart prints the measured figures (D1); standings free (D2); the trade preview
+free (D3); last week's calls free (D4); no email key, so the opt-in is built and the send
+is a dry run (D5); the standing line ships (D6); ship to production (D7). Plus, mid-flight:
+"by roster" on the standing line, the film's duplicate luck sentence dropped, the trade
+teaser title shortened, the last-week line wraps rather than truncates, and the published
+score file carries counts and never people.
+
+**Still owed to Andrew, and neither blocks anything shipped:** score a real week (the
+weekly job cannot reach the production store, and he chose not to put the DSN into CI), and
+decide which league a three-league manager's single weekly email covers.
+
+## Traps this session hit, in a session that had all eight streams green
+
+- **A stale `next start` makes all eleven e2e tests fail at once, and it looks exactly like
+  a code regression.** `next start` execs a `next-server` whose argv no longer carries the
+  port, so a cleanup that kills by port pattern misses it. Playwright's
+  `reuseExistingServer` then reuses that survivor, which serves an **old build whose chunk
+  hashes do not match the fresh HTML** — every `/_next/static/chunks/*` answers 500, nothing
+  hydrates, and every page renders empty. Neither `ss` nor `netstat` exists in this
+  container, so an empty port check means nothing; use `ps aux | grep next-server`. Kill
+  survivors *before* a run, never in an EXIT trap — a trap's `pkill` takes out your own
+  process group.
+- **A screenshot harness that does not seed `booth.connection` photographs the connect
+  gate.** Fifty-six shots came back showing "The room's empty" and reported zero overflow,
+  proving nothing about the free tier. `web/e2e/smoke.spec.ts` carries a comment about the
+  same omission once taking six of its eight tests dark. Seed it, and wait for the staged
+  "Opening the Penthouse" sequence to finish or you photograph the spinner.
+- **A user-facing claim that is *computed* survives a grep.** The 80% figure lived in three
+  more places than the two that were written down, because `actions.py` and `ui.tsx` both
+  built the sentence from `HIT_RATE` at runtime. Changing the constant silently rewrote them
+  into "right about 75% of the time last week". `CONFIDENCE_HIT_LINE` in `vocab.ts` is now
+  the one definition, `tests/test_cross_language_contracts.py` pins it against the engine's
+  `HIT_LINE`, and `vocab.test.ts` sweeps every string for a percentage.
+- **The fixture league cannot show the last-week line at all.** Its only recorded week never
+  played, so `last_week` is correctly null and no screenshot against `serve_fixtures.py`
+  will ever show that surface. The mock build carries the data; shoot that instead.
+
 ## Two things are blocked on Andrew, not on code
 
 1. **Open the paywall for testing.** Set `EDGE_DEMO_UNLOCK=1` in the Render service's

@@ -15,12 +15,7 @@ import { Compare } from "@/components/Compare";
 import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { Grades, LeagueSummary, Player, TeamGrades, TradeFinderResponse, TradeResult } from "@/lib/types";
-
-/* TEMPORARY: kept local so this stream does not touch `lib/vocab.ts`. The lead moves it. */
-const TRADE_COPY = {
-  /** Under the free board. Concrete about what the money buys, and it never names a player. */
-  lockTeaser: "We build the offer, grade the one you send back, and write the counter.",
-};
+import { TRADE } from "@/lib/vocab";
 
 function sortRoster(players: Player[]): Player[] {
   return [...players].sort((a, b) => (b.ros ?? b.projected ?? 0) - (a.ros ?? a.projected ?? 0));
@@ -312,7 +307,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
           signedIn={signedIn}
           sku="trade_lab"
           what="Trade Lab"
-          teaser={paywall?.teaser ?? TRADE_COPY.lockTeaser}
+          teaser={paywall?.teaser ?? TRADE.lockTeaser}
           onUnlocked={refresh}
         />
       )}

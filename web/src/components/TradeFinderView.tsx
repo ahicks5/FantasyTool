@@ -19,18 +19,7 @@ import type { FinderOffer, Player } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { IconChevron, IconTrade } from "./icons";
 import { Eyebrow, Skeleton, Spinner, Why } from "./ui";
-
-/* TEMPORARY: lives here so this stream does not touch `lib/vocab.ts`. The lead moves it. */
-const TRADE_COPY = {
-  eyebrow: "Trade lab",
-  previewEyebrow: "GM's Office",
-  lead: "Best fit first. Tap a team for its offers.",
-  previewLead: "Best fit first.",
-  /** The one line that ends every free partner card. Says where the move is, does not beg. */
-  previewOffers: "Offers are in Trade Lab.",
-  bestFit: "Best fit",
-  worthACall: "Worth a call",
-};
+import { TRADE } from "@/lib/vocab";
 
 /**
  * What the board needs, whichever payload it was handed.
@@ -217,7 +206,7 @@ function PartnerHead({ tier, p }: { tier: string; p: BoardPartner }) {
 function PartnerCard({ p, index, open, onToggle, preview = false }: { p: BoardPartner; index: number; open: boolean; onToggle: () => void; preview?: boolean }) {
   const offers = p.offers ?? [];
   const best = offers[0];
-  const tier = p.fit ?? (index === 0 ? TRADE_COPY.bestFit : TRADE_COPY.worthACall);
+  const tier = p.fit ?? (index === 0 ? TRADE.bestFit : TRADE.worthACall);
   return (
     <li id={`partner-${p.team_id}`} className={`card min-w-0 scroll-mt-20 overflow-hidden p-0 print print-${Math.min(index + 1, 5)}`}>
       <div className="flex min-w-0">
@@ -237,7 +226,7 @@ function PartnerCard({ p, index, open, onToggle, preview = false }: { p: BoardPa
               <PartnerHead tier={tier} p={p} />
               <p className="mt-2 text-[13px] leading-snug text-muted">{p.headline}</p>
               <p className="mt-2.5 border-t border-line pt-2.5 text-[12px] font-bold text-muted">
-                {TRADE_COPY.previewOffers}
+                {TRADE.previewOffers}
               </p>
             </div>
           ) : (
@@ -321,7 +310,7 @@ export function TradeFinderView({ found, preview = false }: { found: Board; prev
     <div className="grid min-w-0 gap-3.5">
       <section className="hero callsheet p-5">
         <div className="flex items-center gap-2">
-          <Eyebrow className="shrink-0">{preview ? TRADE_COPY.previewEyebrow : TRADE_COPY.eyebrow}</Eyebrow>
+          <Eyebrow className="shrink-0">{preview ? TRADE.previewEyebrow : TRADE.eyebrow}</Eyebrow>
           <span aria-hidden className="h-px flex-1 bg-white/10" />
           <span className="tnum shrink-0 text-[10px] font-black uppercase tracking-[0.12em] text-white/50">Week {found.week}</span>
         </div>
@@ -337,7 +326,7 @@ export function TradeFinderView({ found, preview = false }: { found: Board; prev
       </section>
 
       {found.partners.length > 0 && (
-        <p className="text-[13px] leading-relaxed text-muted">{preview ? TRADE_COPY.previewLead : TRADE_COPY.lead}</p>
+        <p className="text-[13px] leading-relaxed text-muted">{preview ? TRADE.previewLead : TRADE.lead}</p>
       )}
 
       <ol className="grid gap-3.5">

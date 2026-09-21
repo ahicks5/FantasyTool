@@ -117,7 +117,29 @@ def me(email: str | None = Depends(optional_user)):
     return {"email": email, "signed_in": bool(email), "skus": skus,
             "entitlements": sorted(products.features_for(skus)),
             "leagues_allowed": products.leagues_allowed(skus),
-            "leagues": store.leagues(email) if email else []}
+            "leagues": store.leagues(email) if email else [],
+            "email_opt_in": store.email_opt_in(email) if email else False}
+
+
+class EmailPrefIn(BaseModel):
+    email_opt_in: bool
+
+
+@app.get("/api/me/email")
+def get_email_pref(email: str = Depends(current_user)):
+    """Whether this account asked for Thursday's call sheet by email. Signed in only.
+
+    An account that has never chosen is off. There is no signed-out version of this:
+    a delivery preference with no address attached is not a preference.
+    """
+    return {"email": email, "email_opt_in": store.email_opt_in(email)}
+
+
+@app.put("/api/me/email")
+def set_email_pref(body: EmailPrefIn, email: str = Depends(current_user)):
+    """Tick or untick the weekly email. Idempotent; the reply is the state we now hold."""
+    store.set_email_opt_in(email, body.email_opt_in)
+    return {"email": email, "email_opt_in": store.email_opt_in(email)}
 
 
 @app.get("/api/me/data")
@@ -398,7 +420,8 @@ def action_feed(platform: str, league_id: str, team_id: str, email: str | None =
     t = _team(b, team_id)
     ents = products.features_for(_skus(email))
     out = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats,
-                            trending=b.trending, profiles=b.profiles, matchups_raw=b.matchups)
+                            trending=b.trending, profiles=b.profiles, matchups_raw=b.matchups,
+                            last_week=_last_week(email, platform, league_id, b, t, auth))
     out["entitlements"] = sorted(ents)
     out["synced_at"] = b.loaded_at
     store.log_run(email, platform, league_id, team_id, b.league.week, "actions",
@@ -473,25 +496,54 @@ def full_report(platform: str, league_id: str, team_id: str, email: str | None =
     return out
 
 
+def _recorded(email: str | None, platform: str, league_id: str, team_id: str) -> list[dict]:
+    """This team's `runs` rows — the only honest record of what we showed it, and when.
+
+    Goes through `export_user`, which is part of the store contract and therefore behaves
+    the same on SQLite and Postgres, rather than a new query against one of them. A
+    signed-out reader has no rows, which is correct and not an excuse to reconstruct any.
+    """
+    if not email:
+        return []
+    try:
+        rows = store.export_user(email)["data"].get("runs") or []
+    except Exception:  # noqa: BLE001 — a film with no recorded projections still works
+        return []
+    return [r for r in rows
+            if r.get("platform") == platform and str(r.get("league_id")) == str(league_id)
+            and str(r.get("team_id")) == str(team_id)]
+
+
 def _recorded_projections(email: str | None, platform: str, league_id: str, team_id: str) -> dict:
     """What we actually showed this team in past weeks, read back out of `runs`.
 
     The only honest source for a past week's projection is the row we wrote at the time, so
-    this reads and never recomputes. It goes through `export_user`, which is part of the
-    store contract and therefore behaves the same on SQLite and Postgres, rather than a new
-    query against one of them. A signed-out reader has no rows and gets nothing, which is
-    correct — not an excuse to reconstruct one.
+    this reads and never recomputes.
     """
-    if not email:
-        return {}
+    return recap_mod.projections_from_runs(_recorded(email, platform, league_id, team_id))
+
+
+def _last_week(email: str | None, platform: str, league_id: str, b, t, auth) -> dict | None:
+    """How last week's calls landed, for the call sheet's one free line (D4).
+
+    Both reads are already paid for elsewhere: the `runs` rows are the ones the film reads
+    back, and `service.played_weeks` caches a finished week forever — the film and the
+    standings share that cache. A reader with no recorded call returns before the platform
+    is touched at all, which is most readers.
+
+    Additive, always. The call sheet is the product and paints from its own feed; a season
+    history that fails upstream must cost the reader one line, never the page.
+    """
+    rows = _recorded(email, platform, league_id, t.id)
+    calls = recap_mod.calls_from_runs(rows) if rows else {}
+    if not calls:
+        return None
     try:
-        rows = store.export_user(email)["data"].get("runs") or []
-    except Exception:  # noqa: BLE001 — a film with no recorded projections still works
-        return {}
-    mine = [r for r in rows
-            if r.get("platform") == platform and str(r.get("league_id")) == str(league_id)
-            and str(r.get("team_id")) == str(team_id)]
-    return recap_mod.projections_from_runs(mine)
+        weeks = service.played_weeks(platform, league_id, b, auth=auth)
+    except Exception:  # noqa: BLE001
+        return None
+    return recap_mod.last_week(b.league, t.id, weeks,
+                               recap_mod.projections_from_runs(rows), calls)
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/recap")

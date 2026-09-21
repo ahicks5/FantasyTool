@@ -500,3 +500,50 @@ def test_the_table_is_free_and_the_film_under_it_is_not(client, league):
     assert client.get(f"{LG}/team/{tid}/recap", headers=H).status_code == 402
     assert client.get(f"{LG}/team/{tid}/report", headers=H).status_code == 402
     assert client.get("/api/me", headers=H).json()["entitlements"] == ["my_team"]
+
+
+# ---- the weekly email opt-in ----
+
+def test_the_email_preference_is_off_until_someone_asks(client):
+    r = client.get("/api/me/email", headers=H)
+    assert r.status_code == 200 and r.json()["email_opt_in"] is False
+    assert client.get("/api/me", headers=H).json()["email_opt_in"] is False
+
+
+def test_the_email_preference_round_trips(client):
+    assert client.put("/api/me/email", headers=H, json={"email_opt_in": True}).json()["email_opt_in"] is True
+    assert client.get("/api/me/email", headers=H).json()["email_opt_in"] is True
+    assert client.get("/api/me", headers=H).json()["email_opt_in"] is True
+    assert client.put("/api/me/email", headers=H, json={"email_opt_in": False}).json()["email_opt_in"] is False
+    assert client.get("/api/me/email", headers=H).json()["email_opt_in"] is False
+
+
+def test_the_email_preference_needs_an_account(client):
+    """There is no anonymous subscriber: an address is the whole point of the record."""
+    assert client.get("/api/me/email").status_code in (401, 403)
+    assert client.put("/api/me/email", json={"email_opt_in": True}).status_code in (401, 403)
+    assert client.get("/api/me").json()["email_opt_in"] is False, "signed out reads as off"
+
+
+def test_one_accounts_preference_is_not_anothers(client):
+    client.put("/api/me/email", headers=H, json={"email_opt_in": True})
+    other = {"X-Edge-User": "someone@else.com"}
+    assert client.get("/api/me/email", headers=other).json()["email_opt_in"] is False
+
+
+def test_the_feed_does_not_eat_its_own_last_week(client, league):
+    """The feed is written to `runs`, so `last_week` ends up inside a recorded payload.
+
+    Neither reader may pick it back up: `calls_from_runs` walks actions/changes, and the
+    projection harvest needs an id and a number. If either ever starts recursing, "2 of 3"
+    becomes nonsense and the bug is invisible from the outside.
+    """
+    tid = league.teams[1].id
+    for _ in range(3):
+        client.get(f"{LG}/team/{tid}/actions", headers=H)
+    feed = client.get(f"{LG}/team/{tid}/actions", headers=H).json()
+    lw = feed.get("last_week")
+    if lw is not None:
+        assert lw["total"] == len(lw["calls"])
+        assert lw["hits"] <= lw["total"]
+        assert "last_week" not in json.dumps(lw), "last_week nested inside itself"

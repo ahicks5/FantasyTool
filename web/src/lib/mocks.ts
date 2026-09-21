@@ -373,6 +373,7 @@ export const ME: Me = {
   entitlements: ["my_team"],
   leagues_allowed: 1,
   leagues: [{ platform: "sleeper", league_id: LEAGUE_ID, name: "The Megalabowl", team_id: MY_TEAM_ID }],
+  email_opt_in: false,
 };
 
 // ---------- Lineup ----------
@@ -804,7 +805,7 @@ export function actionsFor(teamId: string, entitlements: Feature[]): ActionFeed 
   } else {
     actions.push({
       id: "trade:locked", type: "trade", feature: "trade_lab", locked: true, priority: 0,
-      title: `A trade with ${t.their_team_name} improves both teams`, subtitle: `1-for-1 · you gain +${t.my_gain_ros.toFixed(0)} ROS lineup points`,
+      title: `A trade with ${t.their_team_name}`, subtitle: `1-for-1 · you gain +${t.my_gain_ros.toFixed(0)} ROS lineup points`,
       benefit: `+${t.my_gain_ros.toFixed(0)} ROS`, benefit_value: t.my_gain_ros, confidence: null,
       reason: "Unlock Trade Lab to see the offer and a counter tuned to them.", why: [], players: [],
       cta: { label: "Unlock Trade Lab", href: "/trade" },
@@ -820,6 +821,22 @@ export function actionsFor(teamId: string, entitlements: Feature[]): ActionFeed 
     summary: `${moves} move${moves === 1 ? "" : "s"} to make`, all_clear: false, footer: "Everything else looks fine.",
     matchup: { opponent: "Wait, another league?", opponent_id: "9", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
     actions, entitlements, synced_at: Date.now() / 1000 - 120,
+    // Free for every reader (D4). Two counts and a scoreline — never a rate, never a sum.
+    last_week: {
+      week: 1, result: "W" as const, score: 127.78, opp_score: 101.4,
+      calls: [
+        { start: { id: "6804", name: "Jordan Love", position: "QB" },
+          sit: { id: "4034", name: "Jared Goff", position: "QB" },
+          hit: true, margin: 5.42, projected: 2.1 },
+        { start: { id: "4866", name: "Saquon Barkley", position: "RB" },
+          sit: { id: "5892", name: "David Montgomery", position: "RB" },
+          hit: true, margin: 9.1, projected: 3.4 },
+        { start: { id: "6786", name: "CeeDee Lamb", position: "WR" },
+          sit: { id: "7525", name: "DeVonta Smith", position: "WR" },
+          hit: false, margin: -3.8, projected: 1.9 },
+      ],
+      hits: 2, total: 3,
+    },
   };
 }
 

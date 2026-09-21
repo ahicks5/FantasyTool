@@ -1,7 +1,7 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
 import { SECTIONS } from "../src/lib/vocab";
-import { RECAP_COPY } from "../src/lib/recap";
+import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { SCOUT } from "../src/lib/vocab";
 
 /**
@@ -279,9 +279,31 @@ const PAGES: PageCase[] = [
       await expect(page.getByText(RECAP_COPY.nothingPlayedHead, { exact: true })).toBeVisible();
       await expect(page.getByText(RECAP_COPY.nothingPlayed)).toBeVisible();
       await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
+      // The table is the free half and is the reason this page exists for someone who has
+      // bought nothing. It renders for THIS (paid) reader too, above the film.
+      await expect(page.getByText(STANDINGS_COPY.head, { exact: true })).toBeVisible();
+      const rows = page.locator("main li").filter({ hasText: /\d+-\d+/ });
+      expect(await rows.count(), "the table rendered no team rows").toBeGreaterThanOrEqual(12);
     },
   },
 ];
+
+test("the call sheet shows a player without a click, for a reader who has bought nothing", async ({ context, page }) => {
+  // The finding this whole plan started from: the home screen showed no player names at
+  // all, every row folded, headline "Pending moves: 2". A free reader is the one who must
+  // see them -- it is the only screen they get in full.
+  await context.route("**/api/**", (route) => {
+    const headers = { ...route.request().headers(), "x-edge-user": "free@example.com" };
+    route.continue({ headers });
+  });
+  await page.goto("/home");
+  await expect(page.getByText(/\d+ moves? to make|All settled\./)).toBeVisible();
+  const cards = page.locator("main article");
+  await expect(cards.first()).toBeVisible();
+  // A real name, not a skeleton: at least two capitalised words inside a card.
+  await expect(cards.first().getByText(/[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/).first()).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+});
 
 for (const p of PAGES) {
   test(`${p.path} (${p.name}) renders clean at 375px`, async ({ page }) => {

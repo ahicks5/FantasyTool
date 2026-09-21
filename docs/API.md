@@ -22,7 +22,17 @@ requires (Sleeper's docs ask for it on trending data). The UI must render it.
   {"sku":"full_report","name":"The Penthouse","price_cents":700,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","blurb":"The whole booth, every week, up to 5 leagues."}
 ]}
 ```
-`GET /api/me` → `{"email":"...","entitlements":["my_team","waivers"],"leagues_allowed":1,"leagues":[{"platform":"sleeper","league_id":"...","name":"...","team_id":"3"}]}`
+`GET /api/me` → `{"email":"...","entitlements":["my_team","waivers"],"leagues_allowed":1,"leagues":[{"platform":"sleeper","league_id":"...","name":"...","team_id":"3"}]}
+`GET /api/me` also carries `"email_opt_in":false`.
+
+`GET /api/me/email` → `{"email":"...","email_opt_in":false}`
+`PUT /api/me/email {"email_opt_in":true}` → `{"email":"...","email_opt_in":true}`
+
+Signed in only. Off is the answer for an account that never chose, so the absence of a record is
+never read as consent. The send list is built from this (`edge/delivery/send.recipients`) and also
+requires a connected league. Deleting an account removes the preference — see `docs/DATA_INVENTORY.md`.
+Nothing is sent yet: there is no `RESEND_API_KEY` and no verified sending domain, so the send is a
+dry run and the opt-in screen says so in as many words.
 
 `POST /api/checkout {"sku":"full_report"}` → `{"url":"https://checkout.stripe.com/..."}`
 `POST /api/stripe/webhook` (Stripe only)
@@ -30,8 +40,8 @@ requires (Sleeper's docs ask for it on trending data). The UI must render it.
 ## Data subject requests
 Signed in only — an account acting on its own data. See `docs/DATA_INVENTORY.md`.
 
-`GET /api/me/data` → `{"email":"...","data":{"purchases":[...],"leagues":[...],"runs":[...],"feedback":[...]}}`
-`DELETE /api/me?confirm=delete` → `{"ok":true,"deleted":{"purchases":1,"leagues":2,"runs":9,"feedback":0}}`
+`GET /api/me/data` → `{"email":"...","data":{"purchases":[...],"leagues":[...],"runs":[...],"feedback":[...],"email_prefs":[...]}}`
+`DELETE /api/me?confirm=delete` → `{"ok":true,"deleted":{"purchases":1,"leagues":2,"runs":9,"feedback":0,"email_prefs":1}}`
 
 Deletion revokes the season pass along with the data — that is the honest consequence and the
 `confirm` parameter exists so it cannot happen by accident. Public share links survive: they carry
@@ -228,6 +238,29 @@ verdict on an actual offer and a counter tuned to that manager, which this is no
 
 `GET /api/league/{platform}/{league_id}/team/{team_id}/grades` →
 `{"team":{"id":"4","name":"Waddle My Balls"},"grades":{ ... same `Grades` shape `/lineup` returns ... }}`
+
+## The call sheet's last-week line (free)
+
+`last_week` on the action feed (`GET /api/league/{platform}/{league_id}/team/{team_id}/actions`)
+is how the calls we made in the last finished week landed. **Free for every reader, paid or not.**
+
+```json
+{"week":1,"result":"W","score":127.78,"opp_score":101.4,
+ "calls":[{"start":{"id":"6804","name":"Jordan Love","position":"QB"},
+           "sit":{"id":"4034","name":"Jared Goff","position":"QB"},
+           "hit":true,"margin":5.42,"projected":2.1}],
+ "hits":2,"total":3,"algo_version":"recap.v1"}
+```
+
+`null` — and the line does not render — in week 1, for a reader with no recorded run, and for
+a platform that gives us a scoreline with nobody's points attached (ESPN). `result` and
+`opp_score` are null for a bye week. `margin` is actual points; `projected` is the margin we
+showed at the time, read back out of `runs` and null where we have no record.
+
+**There is no summed figure here and none may be derived.** "2 of 3 calls hit" is this
+reader's own week. A points-gained total, a points-left-on-the-bench total, or `hits / total`
+as a rate is a decision-accuracy claim about the product, which `CLAUDE.md` bars until
+`scripts/score_runs.py` has graded real weeks.
 
 ## The table (free)
 

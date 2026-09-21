@@ -34,6 +34,14 @@ export interface Me {
   entitlements: Feature[];
   leagues_allowed: number;
   leagues: MeLeague[];
+  /** Whether this account asked for the Thursday email. Absent on old payloads = off. */
+  email_opt_in?: boolean;
+}
+
+/** GET/PUT /api/me/email */
+export interface EmailPref {
+  email: string;
+  email_opt_in: boolean;
 }
 
 export interface CheckoutResponse {
@@ -231,6 +239,50 @@ export interface WeekRecap {
   best_possible: number | null;
   /** Bench players who outscored a starter, worst miss first. Empty is the good week. */
   bench: BenchScore[];
+}
+
+/**
+ * One start/sit call we made last week, and what happened to it.
+ *
+ * Stated flat, per call: this player outscored that one, by this margin. A tie is not a
+ * hit. `projected` is the margin **we showed at the time**, read back out of the run we
+ * recorded, and null wherever we have no record of one of the two — the same rule as
+ * `RecapStarter.projected`, and never re-derived from today's data.
+ *
+ * Nothing sums these. There is no "points gained" and no "points left on your bench":
+ * CLAUDE.md bars a public decision-accuracy claim until `scripts/score_runs.py` has graded
+ * real weeks, and `lib/recap.ts` already refuses to sum hits for the same reason.
+ */
+export interface LastWeekCall {
+  start: PlayerRef;
+  sit: PlayerRef;
+  hit: boolean;
+  /** What the starter outscored the benched player by. Negative is a miss. */
+  margin: number;
+  /** The margin we projected, or null when we recorded no number for one of them. */
+  projected: number | null;
+}
+
+/**
+ * How last week's calls landed: one line on the call sheet, the detail in the film.
+ *
+ * Free for everyone. Absent far more often than not — the feed sends null in week 1, for a
+ * reader with no recorded call, and for a platform that gives us a scoreline with nobody's
+ * points attached (ESPN) — and the line simply does not render.
+ *
+ * `hits` and `total` are integers on purpose: "2 of 3 calls hit" is this reader's own week
+ * and is allowed; `hits / total` is a rate, which is a claim about the product, and is not.
+ */
+export interface LastWeek {
+  week: number;
+  /** Null when there was no opponent that week; the line then drops its scoreline. */
+  result: "W" | "L" | "T" | null;
+  score: number;
+  opp_score: number | null;
+  calls: LastWeekCall[];
+  hits: number;
+  total: number;
+  algo_version?: string;
 }
 
 export interface SeasonRecap {
@@ -557,6 +609,11 @@ export interface ActionFeed {
   synced_at: number;
   /** Optional: an older API build does not send it, and the sheet must still render. */
   deadlines?: Deadlines | null;
+  /**
+   * How last week's calls landed, or null. Free for every reader, paid or not.
+   * Optional as well as nullable: an older API build does not send the key at all.
+   */
+  last_week?: LastWeek | null;
 }
 
 export interface FeedbackRequest {

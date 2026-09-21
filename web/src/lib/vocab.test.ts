@@ -1,6 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CONNECT, GROUPS, LANDING, LINES, SECTIONS, TAB_ORDER } from "./vocab.ts";
+import {
+  CONFIDENCE_HIT_LINE,
+  CONNECT,
+  EMAIL,
+  GROUPS,
+  LANDING,
+  LAST_WEEK,
+  LINES,
+  SECTIONS,
+  STANDING,
+  TAB_ORDER,
+  TRADE,
+} from "./vocab.ts";
 
 /**
  * The vocabulary is the one file that is allowed to say a section's name, so it is also
@@ -19,6 +31,16 @@ const ALL_COPY: string[] = [
   LANDING.exampleHead,
   LANDING.score.head,
   LANDING.score.body,
+  // Moved here in Part 4 from seven components. Sweeping them is the point of moving
+  // them: three of these sentences used to be three copies, and the copy that drifted
+  // was the one a grep could not find because it built its number at runtime.
+  ...Object.values(CONFIDENCE_HIT_LINE),
+  ...Object.values(STANDING),
+  LAST_WEEK.lead,
+  LAST_WEEK.go,
+  ...Object.values(LAST_WEEK.said),
+  ...Object.values(TRADE),
+  ...Object.values(EMAIL),
 ];
 
 test("every section has a blurb that fits the title band on one line", () => {
@@ -111,4 +133,25 @@ test("the tab order is a subset of the sections, with no repeats", () => {
   for (const key of TAB_ORDER) assert.ok(key in SECTIONS);
   const hrefs = SECTION_VALUES.map((s) => s.href);
   assert.equal(new Set(hrefs).size, hrefs.length);
+});
+
+test("the confidence sentences say what the margin did, never a rate", () => {
+  // These three are the reason the vocabulary has an accuracy rule at all. They are also
+  // the one definition three surfaces now share: the depth chart, the call-sheet card and
+  // the stamp's tooltip. If they ever disagree with edge/engine/actions.py's HIT_LINE, the
+  // same sentence says two different things depending on where you read it.
+  for (const tag of ["Lock", "Lean", "Coin flip"]) {
+    const line = CONFIDENCE_HIT_LINE[tag];
+    assert.ok(line, `no hit line for ${tag}`);
+    assert.ok(!/last week/i.test(line), `${tag} attributes a season figure to one week: ${line}`);
+    assert.ok(!/\d\s*%/.test(line), `${tag} prints a percentage: ${line}`);
+  }
+});
+
+test("the last-week line offers no way to state a rate", () => {
+  // "2 of 3 calls hit" is this reader's own week and is allowed. A percentage is a claim
+  // about the product, which CLAUDE.md bars until scripts/score_runs.py has graded weeks.
+  assert.equal(LAST_WEEK.calls(2, 3), "2 of 3 calls hit");
+  assert.equal(LAST_WEEK.calls(1, 1), "1 of 1 call hit");
+  assert.ok(!/%/.test(LAST_WEEK.calls(2, 3)));
 });

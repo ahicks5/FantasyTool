@@ -347,3 +347,82 @@ export const LANDING = {
     body: "Every stamp is graded against what actually happened, and we publish the result. We only move the thresholds when the data says to. When a call is too close to matter, we tell you to leave it alone.",
   },
 } as const;
+
+/**
+ * What a confidence stamp is worth, in words. ONE definition for three surfaces.
+ *
+ * The depth chart's "why" list, the call-sheet card's "why" list and the stamp's tooltip
+ * were three copies of the same three sentences. That is exactly how one of them ended up
+ * rendering "right about 75% of the time last week" the moment the measured rates landed:
+ * it built the number at runtime, so a grep for "80%" could never have found it.
+ *
+ * The engine holds the matching copy in `edge/engine/actions.py::HIT_LINE`, because that
+ * card's list is built server-side. The two must keep saying the same thing.
+ *
+ * No percentage, and never "last week": these are a full-season measurement
+ * (`docs/CALIBRATION.md`, 2025 weeks 1-17), not a property of any single week.
+ */
+export const CONFIDENCE_HIT_LINE: Record<string, string> = {
+  Lock: "Margins this size were right about 3 times in 4 across last season.",
+  Lean: "Margins this size were right about 3 times in 5 across last season.",
+  "Coin flip": "Margins this size were a coin flip across last season.",
+};
+
+/** The standing line under the call sheet's hero. Everything printed on it is data. */
+export const STANDING = {
+  /** Spoken only. The printed line is three fragments of data and no words at all. */
+  go: "Go to",
+} as const;
+
+/** "Last week: W 127.8-101.4 · 2 of 3 calls hit", under the standing line. */
+export const LAST_WEEK = {
+  lead: "Last week:",
+  /** Printed. One character, because the scoreline beside it says which way it went. */
+  mark: { W: "W", L: "L", T: "T" } as const,
+  /** Spoken. "W 127.8-101.4" is a scoreline to the eye and alphabet soup to a reader. */
+  said: { W: "won", L: "lost", T: "tied" } as const,
+  /**
+   * The only sentence this surface is allowed to say about how we did.
+   *
+   * Two counts, this reader's own week, stated flat. Not a rate: "we are right 67% of the
+   * time" is a claim about the product, and CLAUDE.md bars it until `scripts/score_runs.py`
+   * has graded real weeks. The engine hands over `hits` and `total` as integers precisely
+   * so that this is the only sentence available (`edge/engine/recap.py::last_week`).
+   */
+  calls: (hits: number, total: number) => `${hits} of ${total} call${total === 1 ? "" : "s"} hit`,
+  /** Spoken only. */
+  go: "Go to",
+} as const;
+
+/** The trade board, free and paid. */
+export const TRADE = {
+  eyebrow: "Trade lab",
+  previewEyebrow: "GM's Office",
+  lead: "Best fit first. Tap a team for its offers.",
+  previewLead: "Best fit first.",
+  /** The one line that ends every free partner card. Says where the move is, does not beg. */
+  previewOffers: "Offers are in Trade Lab.",
+  bestFit: "Best fit",
+  worthACall: "Worth a call",
+  /** Under the free board. Concrete about what the money buys, and it never names a player. */
+  lockTeaser: "We build the offer, grade the one you send back, and write the counter.",
+} as const;
+
+/** The weekly-email opt-in on /login. */
+export const EMAIL = {
+  eyebrow: "Thursday email",
+  label: "Send me the call sheet every Thursday",
+  note: "This week's moves, in your inbox before kickoff. Untick it any time.",
+  /*
+   * Andrew's call. There is no Resend key and no verified sending domain yet (D5), so the
+   * line above promises a Thursday email that cannot arrive. We still want the list, so the
+   * box stays and this says plainly where it stands. DELETE THIS LINE the day the first
+   * send goes out: a stale "not sending yet" is worse than no line at all.
+   */
+  pending: "Not sending yet. We'll email you when the first one goes out.",
+  saving: "Saving…",
+  savedOn: "Saved. You're on the list.",
+  savedOff: "Saved. You're off the list.",
+  failed: "That didn't save. Tick it again.",
+  unavailable: "Your settings aren't loading. Reload the page to try again.",
+} as const;

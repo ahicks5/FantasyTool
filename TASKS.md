@@ -2,6 +2,65 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## The owner's box (docs/PLAN-OWNERS-BOX.md, 2026-09-20)
+
+The engine had the insights; the app hid them. Eight workstreams, every decision asked of
+Andrew up front, every stream gated on its own tests plus screenshots at 320 and 390 in both
+themes. All eight are done and on production.
+
+- [x] **OB-A** The front door. Every section gained a one-line blurb under the h1 (band 34px ->
+      53px for all tabs equally, TASKS S-1 holds). Tab reads **Lineup**, title stays "Depth
+      chart". Landing cards are benefit-led, a fourth free card sells the standing, and **every
+      landing link into a gated tab now goes to `/connect`** — a cold visitor could previously
+      reach "The room's empty" from the advert. `web/src/lib/vocab.test.ts`, 14 tests.
+- [x] **OB-B** The call sheet shows the moves. A bench with calls arrives **open**, so player
+      names are on screen without a tap; one whose calls were all ticked still starts closed.
+      Headline is "3 moves to make", pinned to the landing's worked example by a test. Standing
+      line `C · 8th by roster · 0-2` under the hero — **"by roster" is load-bearing**: the rank
+      is roster strength and it prints beside a record, so without the word it reads as league
+      position (D6, and Andrew's call on the wording).
+- [x] **OB-C** Standings and the power ranking, **free** (D2). `/report` is two halves: the
+      table on top for everyone, the film underneath still paid, with a teaser built from the
+      reader's own row. All-play and luck are null until a week has played — week 2 is the
+      normal case, and the table still renders every other column. `tests/test_standings.py`,
+      20 tests.
+- [x] **OB-D** Half of GM's Office opened (D3). `/trades/find` answers **200 with a preview**
+      instead of 402: partner list, fit tier, has/needs. No offer, no player name, no ROS
+      figure, no fairness number, and `POST /trade` still 402s. Also fixed a real bug: the wire
+      page decided it was locked from session entitlements and rendered the generic constant
+      **without ever calling the API**, throwing away the engine's own teaser on the one screen
+      it was written for.
+- [x] **OB-E** Honest numbers (D1). `HIT_RATE` is the measured {Lock .75, Lean .62, Flip .52};
+      the landing drops the number entirely and the depth chart prints what the margin did.
+      **Three surfaces carried that claim and two built it at runtime**, so a grep for "80%"
+      found neither: `actions.py` and `ui.tsx`'s tooltip both started rendering "75% of the
+      time last week" the moment the constant changed.
+- [x] **OB-F** How last week's calls landed (D4), free: "Last week: W 127.8–101.4 · 2 of 3
+      calls hit", wrapping rather than truncating at 320px so the count is never the half that
+      gets cut. **No summed points figure anywhere** — per-call outcome only, because
+      `CLAUDE.md` bars the accuracy claim. Sleeper only: ESPN gives a scoreline with nobody's
+      points attached, so the line is correctly absent rather than invented.
+- [x] **OB-G** Weekly email opt-in (D5). Store, routes, send list and checkbox all built and
+      tested; **nothing sends** — there is no `RESEND_API_KEY` and no verified domain, and the
+      screen says so in as many words rather than promising a Thursday email that cannot
+      arrive. Unticking writes `opt_in=0` rather than deleting the row, and account deletion
+      removes it (pinned in `tests/test_compliance.py`).
+- [x] **OB-H** `scripts/score_runs.py` — the missing half of the accuracy programme, which
+      `CLAUDE.md` names as the gate on ever claiming decision accuracy. Grades recorded calls
+      against real points. **The published file is counts, never people** (Andrew's call): no
+      league id, team name or player name, since the weekly job commits it to the repo.
+- [ ] **OB-1** Score a real week. The script is fixture-proven but has never seen live data:
+      the weekly job has no `DATABASE_URL` and Andrew chose not to put the production DSN into
+      CI. Until that is resolved, `weekly.py grade` writes `"runs": 0` every week, honestly.
+- [ ] **OB-2** Decide the multi-league email. One tick promises one call sheet; a manager with
+      three leagues currently gets their first-connected one. Blocks the first real send, not
+      the commit.
+- [ ] **OB-3** ESPN has no last-week line and no `max_points`/`streak`. Needs an `mBoxscore`
+      fetch the ESPN HTTP layer does not expose.
+- [ ] **OB-4** `score_runs.calls_from_payload` and `recap.calls_from_runs` read the same two
+      payload shapes twice. They return different things on purpose, but the engine should own
+      one reader and the script should build on it.
+
 ## Onboarding a session (docs/MAP.md)
 - [x] **M-1** `docs/MAP.md`: the spine, a routing table from "I want to change X" to the files
       and the test that cover it, an index of which doc answers what, and a generated inventory

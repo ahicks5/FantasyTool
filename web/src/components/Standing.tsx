@@ -4,15 +4,9 @@ import Link from "next/link";
 import { getLeague, getTeamGrades } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { standingLabel, standingLine, type StandingParts } from "@/lib/format";
-import { SECTIONS } from "@/lib/vocab";
+import { SECTIONS, STANDING } from "@/lib/vocab";
 import type { LeagueSummary, Platform, TeamGrades } from "@/lib/types";
 import { IconChevron } from "./icons";
-
-/* TEMPORARY: user-facing strings live here until the lead moves them to lib/vocab.ts. */
-const STANDING_COPY = {
-  /** Spoken only. The printed line is three fragments of data and no words at all. */
-  go: "Go to",
-};
 
 /**
  * The height the line occupies, reserved while it is still being fetched.
@@ -88,7 +82,7 @@ export function Standing({
   return (
     <Link
       href={SECTIONS.report.href}
-      aria-label={`${standingLabel(parts)} ${STANDING_COPY.go} ${SECTIONS.report.title}.`}
+      aria-label={`${standingLabel(parts)} ${STANDING.go} ${SECTIONS.report.title}.`}
       className={`-mx-1.5 mt-2 inline-flex ${LINE_H} max-w-full items-center gap-1.5 rounded-lg px-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white`}
     >
       <span className="tnum truncate text-[13px] font-bold leading-none">{standingLine(parts)}</span>
