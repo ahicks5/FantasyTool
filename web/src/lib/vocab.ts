@@ -649,7 +649,10 @@ export const LINEUP = {
     close: "Got it",
     closeAria: "Dismiss the head coach\u2019s summary",
   },
-  jump: "Roster",
+  /** The hero's link down to the roster, which sits below both piles. */
+  jump: "Go to roster",
+  /** The last row of the starters table. */
+  total: "Total",
   section: {
     required: "Required changes",
     decisions: "Decisions to make",
@@ -699,9 +702,11 @@ export const LINEUP = {
     none: "Nothing else separates them this week.",
     game: "Your game",
     proj: "Proj",
-    /** Mark it handled: it leaves the list until next week. */
-    handle: "Handled",
-    handled: "Marked handled",
+    /** Mark it handled: it leaves the list until next week. The line under the button says so. */
+    handle: "Mark handled",
+    handleLine: (label: string) => `Takes ${label} off your decisions list until next week.`,
+    handled: "Handled",
+    handledLine: (label: string) => `${label} is off your decisions list until next week.`,
     unhandle: "Put it back",
     back: "Back to the lineup",
     missing: "That role is not on this lineup.",

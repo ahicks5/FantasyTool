@@ -1927,6 +1927,9 @@ button, a.btn, select, input { min-height: 44px; }
 .roster-name { display: flex; min-width: 0; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; line-height: 1.1; }
 .roster-rank { font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-muted); text-align: right; }
 .roster-proj { font-size: 16px; line-height: 1; text-align: right; }
+.roster-total { background: var(--color-soft); }
+.roster-total .roster-role { color: var(--color-muted); }
+.roster-total .roster-proj { font-size: 18px; }
 .roster-mark { display: grid; flex: none; place-items: center; width: 40px; min-height: 0; }
 .roster-flag { border-radius: 8px; }
 .roster-flag:hover { background: var(--color-soft); }
@@ -1936,12 +1939,13 @@ button, a.btn, select, input { min-height: 44px; }
 
 /* Reads on a pair, on a role's page. */
 .decision-game { font-size: 12px; font-weight: 700; color: var(--color-ink-2); }
-.factor { display: grid; grid-template-columns: 8px auto minmax(0, 1fr); align-items: start; gap: 8px; padding: 6px 0; font-size: 12px; line-height: 1.35; }
+.factor { display: grid; grid-template-columns: 8px 62px minmax(0, 1fr); align-items: start; gap: 8px; padding: 6px 0; font-size: 12px; line-height: 1.35; }
 .factor + .factor { border-top: 1px solid var(--color-line); }
 .factor-dot { width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; background: var(--color-line-2); }
 .factor-start .factor-dot { background: var(--color-start); }
 .factor-sit .factor-dot { background: var(--color-sit); }
-.factor-key { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); padding-top: 2px; white-space: nowrap; min-width: 44px; }
+.factor-key { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); padding-top: 2px; white-space: nowrap; }
 .factor-start .factor-key { color: var(--color-start); }
 .factor-sit .factor-key { color: var(--color-sit); }
-.factor-line { color: var(--color-ink-2); }
+.factor-line { color: var(--color-ink-2); display: grid; gap: 2px; }
+.factor-line span + span { padding-top: 2px; border-top: 1px dashed var(--color-line); }

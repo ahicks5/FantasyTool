@@ -317,7 +317,7 @@ export function LineupView({
           {!compact && (
             <a href="#roster" className="hero-jump">
               {LINEUP.jump}
-              <IconChevron size={11} strokeWidth={3} className="rotate-90" />
+              <IconArrowUp size={11} strokeWidth={3} className="rotate-180" />
             </a>
           )}
         </div>
@@ -427,6 +427,17 @@ export function LineupView({
             // Lock there even if a bench man who sits at another role projects near him.
             <RosterRow key={i} label={roles[i]?.label ?? s.slot} p={s.player} confidence={roles[i]?.confidence ?? s.confidence} role={roles[i]} changed={s.change} />
           ))}
+          {/* The same number as the hero, so the table adds up to what the page promised. */}
+          <li className="roster-row roster-total">
+            <span className="roster-row-main">
+              <span className="roster-role">{LINEUP.total}</span>
+              <span aria-hidden />
+              <span className="roster-name" />
+              <span className="roster-rank" />
+              <span className="roster-proj display tnum">{lineup.projected_total.toFixed(1)}</span>
+            </span>
+            <span className="roster-mark" aria-hidden />
+          </li>
         </ul>
       </section>
 

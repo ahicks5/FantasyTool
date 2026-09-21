@@ -184,10 +184,14 @@ A decision is one row here — the role in big letters, the pick ringed green, t
 in the frame, the tag, an arrow — and a page of its own at `/team/decide?role=RB2`
 (`DecisionView.tsx`, reading the same cached lineup): the head coach's call first, then every
 candidate with his number, his rank at his position in this league, who he plays, how likely
-the pick is to outscore him, and every read on the pair. "Handled" stores the role's label
-under `booth.handled` (per league, per week, `lib/storage.ts`) and it leaves the list until
-next week; a "N handled" line under the list puts them back. The roster below is one line per
-man on a fixed grid (role, face, name, `pos_rank`, projection) ending in one mark: a green
+the pick is to outscore him, and every read on the pair. The reads sit in the engine's key
+order on a fixed label column, and the engine's "A …; B …" line is split on the semicolon so
+each man reads on his own row. "Mark handled" (a line under the button says what it does)
+stores the role's label under `booth.handled` (per league, per week, `lib/storage.ts`) and
+it leaves the list until next week; a "N handled" line under the list puts them back. "Back
+to the lineup" is a button at both ends of the page. The roster below is one line per
+man on a fixed grid (role, face, name, `pos_rank`, projection) ending in one mark, and the
+starters close with a total row carrying the hero's number: a green
 lock on a settled role, a gold flag that opens an open one (on the pick and on every man in
 the frame for it), a red alert on a man who cannot play. The tag on a starter's row is the
 role's, not the slot call's, so a starter with nobody in the frame for his seat reads as a

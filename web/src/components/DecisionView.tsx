@@ -13,14 +13,17 @@
  * Every number is the engine's. Every word is `lib/vocab.ts`'s. This file lays it out.
  */
 
-import Link from "next/link";
 import type { DecisionFactor, Lineup, LineupCandidate, LineupRole, Player } from "@/lib/types";
 import { LINEUP, SECTIONS } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { PlayerName, PlayerTarget } from "./Players";
 import { useHandled } from "./LineupView";
 import { IconCheck, IconChevron } from "./icons";
-import { Button, ConfidenceStamp, Eyebrow, H2, InjuryTag, Stamp } from "./ui";
+import { Button, ConfidenceStamp, Eyebrow, H2, InjuryTag, LinkButton, Stamp } from "./ui";
+
+/** The reads in the engine's order (`decisions.KEYS`), so every card lists them the same way. */
+const FACTOR_ORDER = Object.keys(LINEUP.factor);
+const byOrder = (a: DecisionFactor, b: DecisionFactor) => FACTOR_ORDER.indexOf(a.key) - FACTOR_ORDER.indexOf(b.key);
 
 function Factor({ f }: { f: DecisionFactor }) {
   const side = f.favors === "start" ? "factor-start" : f.favors === "sit" ? "factor-sit" : "";
@@ -28,7 +31,12 @@ function Factor({ f }: { f: DecisionFactor }) {
     <li className={`factor ${side}`}>
       <span className="factor-dot" aria-hidden />
       <span className="factor-key">{LINEUP.factor[f.key]}</span>
-      <span className="factor-line">{f.line}</span>
+      {/* The engine writes one man per clause; each gets his own line so the two read side by side. */}
+      <span className="factor-line">
+        {f.line.split("; ").map((part, i) => (
+          <span key={i}>{part}</span>
+        ))}
+      </span>
     </li>
   );
 }
@@ -75,7 +83,7 @@ function Versus({ c }: { c: LineupCandidate }) {
       <Eyebrow className="mt-3">{LINEUP.role.reads}</Eyebrow>
       {c.factors.length > 0 ? (
         <ul className="mt-1">
-          {c.factors.map((f, j) => (
+          {[...c.factors].sort(byOrder).map((f, j) => (
             <Factor key={j} f={f} />
           ))}
         </ul>
@@ -90,10 +98,10 @@ export function DecisionView({ lineup, label }: { lineup: Lineup; label: string 
   const role: LineupRole | undefined = (lineup.roles ?? []).find((r) => r.label === label);
   const [handled, setHandled] = useHandled(lineup.week);
   const back = (
-    <Link href={SECTIONS.team.href} className="inline-flex items-center gap-1 text-[13px] font-bold text-ink-2">
+    <LinkButton href={SECTIONS.team.href} variant="secondary" size="sm" className="justify-self-start">
       <IconChevron size={12} strokeWidth={3} className="rotate-180" />
       {LINEUP.role.back}
-    </Link>
+    </LinkButton>
   );
   if (!role || !role.pick) {
     return (
@@ -135,24 +143,32 @@ export function DecisionView({ lineup, label }: { lineup: Lineup; label: string 
         </ul>
       </section>
 
-      <section className="flex flex-wrap items-center gap-3">
+      {/* What the button does is written under it: the word alone did not say. */}
+      <section className="card grid gap-2.5 p-3.5">
         {done ? (
           <>
-            <Stamp ink="text-start" size="md">
-              <IconCheck size={11} strokeWidth={3.4} />
-              {LINEUP.role.handled}
-            </Stamp>
-            <Button variant="ghost" size="sm" onClick={() => setHandled(role.label, false)}>
-              {LINEUP.role.unhandle}
-            </Button>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Stamp ink="text-start" size="md">
+                <IconCheck size={11} strokeWidth={3.4} />
+                {LINEUP.role.handled}
+              </Stamp>
+              <Button variant="ghost" size="sm" onClick={() => setHandled(role.label, false)}>
+                {LINEUP.role.unhandle}
+              </Button>
+            </div>
+            <p className="text-[12px] leading-snug text-muted">{LINEUP.role.handledLine(role.label)}</p>
           </>
         ) : (
-          <Button variant="start" onClick={() => setHandled(role.label, true)}>
-            <IconCheck size={14} strokeWidth={3} />
-            {LINEUP.role.handle}
-          </Button>
+          <>
+            <Button variant="start" onClick={() => setHandled(role.label, true)}>
+              <IconCheck size={14} strokeWidth={3} />
+              {LINEUP.role.handle}
+            </Button>
+            <p className="text-center text-[12px] leading-snug text-muted">{LINEUP.role.handleLine(role.label)}</p>
+          </>
         )}
       </section>
+      {back}
     </div>
   );
 }

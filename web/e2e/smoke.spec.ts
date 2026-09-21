@@ -238,6 +238,8 @@ const PAGES: PageCase[] = [
       const slots = page.locator("main .roster-row", { hasText: /^(QB|RB|WR|TE|FLEX|DEF|K)/ });
       await expect(slots.first()).toBeVisible();
       expect(await slots.count()).toBeGreaterThanOrEqual(9);
+      // The table adds up: a total row closes the starters.
+      await expect(page.locator("main .roster-total")).toContainText(LINEUP.total);
       // The arrow on a role opens its own page: the question, the coach's call, the others.
       const label = (await roles.first().locator(".role-label").textContent()) ?? "";
       await roles.first().getByRole("link").click();
@@ -247,8 +249,8 @@ const PAGES: PageCase[] = [
       await expect(page.locator(".factor").first()).toBeVisible();
       // Handled takes it off the list until next week.
       await page.getByRole("button", { name: LINEUP.role.handle }).click();
-      await expect(page.getByText(LINEUP.role.handled)).toBeVisible();
-      await page.getByRole("link", { name: LINEUP.role.back }).click();
+      await expect(page.getByText(LINEUP.role.handledLine(label))).toBeVisible();
+      await page.getByRole("link", { name: LINEUP.role.back }).first().click();
       await expect(page.getByText(/^1 handled$/)).toBeVisible();
     },
   },
