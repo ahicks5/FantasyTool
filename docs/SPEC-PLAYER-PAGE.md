@@ -617,6 +617,11 @@ is a `breakdown.py` function and a page, not a new source.
 
 ## 6. Order and size
 
+**The step-by-step build, cut small and tickable, is `docs/PLAYER-PAGE-STEPS.md`** — look and
+feel on mock data first (phases A–C), wiring after (D–E), chat, field and composite as their
+own PRs. That file also holds the isolation contract: which files this work may touch, so it
+never collides with other chats. Read it before starting a PP section.
+
 PP-1 → PP-2 → PP-3 are one shippable slice (the page exists, has a header worth reading, and
 Vibes is real). PP-4a is the second slice and the biggest piece of web work on the page; ship it
 family by family (usage, then efficiency, then boom/bust), each with its device. PP-4b waits on
@@ -629,8 +634,10 @@ licensing gate in the middle; start the ESPN half early because it is free and a
 ```
 You are picking up PENTHOUSE, a paid fantasy football web app, to build the player page.
 Read CLAUDE.md first (short, non-negotiable), then docs/MAP.md, then docs/HANDOFF.md for
-the traps, then docs/SPEC-PLAYER-PAGE.md — the plan you are executing. §2 of that spec is
-thirteen decisions Andrew has already taken; build to them and do not re-ask. Then build PP-1. One section per PR-sized commit; nothing is done
+the traps, then docs/SPEC-PLAYER-PAGE.md (what and why) and docs/PLAYER-PAGE-STEPS.md (the order,
+the isolation contract, and the checklist you tick as you go). §2 of that spec is
+thirteen decisions Andrew has already taken; build to them and do not re-ask. Then start at the first unticked step in PLAYER-PAGE-STEPS.md, tick it when it is on
+screen and tested, commit, and take the next one. One section per PR-sized commit; nothing is done
 without a test or a browser check at 320 and 420px in both themes.
 
 Ground rules that matter most here:

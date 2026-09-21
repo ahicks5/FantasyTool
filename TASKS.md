@@ -682,7 +682,7 @@ person. That'd be in the scouting tab."
 - [ ] ESPN leagues reach the stat feed through `ext_ids["sleeper"]`; a player the name match
       missed has no profile rather than a wrong one.
 
-## Player page (docs/SPEC-PLAYER-PAGE.md)
+## Player page (docs/SPEC-PLAYER-PAGE.md · steps and progress in docs/PLAYER-PAGE-STEPS.md)
 Spec written 2026-09-21 from Andrew and his cofounder's notes; **§2 of the spec records the
 thirteen decisions Andrew took the same day** (live room chat, league-agnostic Vibes, brass vs
 chrome, badge names, composite in league points, nflverse green-lit, props not, no share in v1).
