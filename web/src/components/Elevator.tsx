@@ -17,9 +17,12 @@ import {
   WALK_MS,
   type RideState,
 } from "@/lib/elevator";
+import { cacheGet } from "@/lib/cache";
 import { loadConnection, saveRideDay } from "@/lib/storage";
+import type { Desk } from "@/lib/types";
 import { DESK, RIDE, SECTIONS } from "@/lib/vocab";
 import { liftFloor } from "@/lib/wait";
+import { Avatar } from "./Avatar";
 import { IconMark } from "./icons";
 
 /* ---------------------------------------------------------------- the car ---
@@ -45,6 +48,18 @@ import { IconMark } from "./icons";
 /** The seam runs down the middle: half the mark on each door. */
 const MARK_SIZE = 72;
 
+/** The grey rules on a paper the desk has not filled yet. */
+function Rules({ n, short = true }: { n: number; short?: boolean }) {
+  return (
+    <>
+      {Array.from({ length: n }, (_, i) => (
+        <div key={i} className="ride-paper-rule" />
+      ))}
+      {short && <div className="ride-paper-rule short" />}
+    </>
+  );
+}
+
 /** A sheet of Penthouse letterhead: the wordmark small in the corner. */
 function Letterhead() {
   return (
@@ -62,6 +77,10 @@ export function ElevatorRide() {
   // Read once: the ride is a first impression of a team, and the connection does not
   // change while the doors are closing.
   const [c] = useState(loadConnection);
+  // The desk page is fetching underneath the ride, into the session cache under this key.
+  // Once it lands the papers on the desk show the real thing; until then, grey rules.
+  const deskKey = c ? `desk:${c.platform}:${c.league_id}:${c.team_id}` : null;
+  const [desk, setDesk] = useState<Desk | undefined>(() => (deskKey ? cacheGet<Desk>(deskKey) : undefined));
 
   useEffect(() => {
     // The boot cover has done its job: the car is on screen, in the same colour.
@@ -72,6 +91,10 @@ export function ElevatorRide() {
       if (startedAt.current === null) startedAt.current = now;
       const next = rideState(now - startedAt.current, skippedAt.current);
       setState((prev) => (prev.phase === next.phase && prev.floor === next.floor ? prev : next));
+      if (deskKey) {
+        const d = cacheGet<Desk>(deskKey);
+        if (d) setDesk((prev) => prev ?? d);
+      }
       if (next.phase === "done") {
         // The papers have faded. The page owes nothing more, whether the ride ran its
         // course (a no-op beside the floor's own timer) or the rider tapped through.
@@ -82,6 +105,7 @@ export function ElevatorRide() {
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the key is fixed for the ride
   }, []);
 
   if (s.phase === "done") return null;
@@ -107,6 +131,9 @@ export function ElevatorRide() {
     return "";
   };
   const team = c?.team_name ?? "PENTHOUSE";
+  const m = desk?.matchup;
+  const film = desk?.film;
+  const stories = desk?.news.items.slice(0, 2) ?? [];
 
   return (
     <div
@@ -173,27 +200,63 @@ export function ElevatorRide() {
                 <div className="ride-blotter">
                   <IconMark size={120} className="ride-blotter-mark" />
                 </div>
+                {/* The three papers carry what the desk page will show: this week's
+                    matchup, the top stories, last week's film. Real once the desk has
+                    loaded under the ride; grey rules until then. */}
                 <div className="ride-paper ride-paper-1">
                   <Letterhead />
                   <div className="ride-paper-eyebrow">{DESK.matchup.eyebrow}</div>
-                  <div className="ride-paper-title display">{SECTIONS.matchup.title}</div>
-                  <div className="ride-paper-rule" />
-                  <div className="ride-paper-rule short" />
+                  <div className="ride-paper-title display">{m?.opponent ? `${DESK.matchup.vs} ${m.opponent}` : SECTIONS.matchup.title}</div>
+                  {m && m.opponent && m.their_proj !== null ? (
+                    <>
+                      <div className="ride-paper-num display tnum">
+                        {m.my_proj.toFixed(1)}
+                        <small>{`${DESK.matchup.vs} ${m.their_proj.toFixed(1)}`}</small>
+                      </div>
+                      {m.win_prob !== null && (
+                        <div className="ride-paper-line tnum">
+                          <span>{DESK.matchup.odds(m.win_prob)}</span>
+                        </div>
+                      )}
+                    </>
+                  ) : desk ? (
+                    <div className="ride-paper-line">
+                      <span>{DESK.matchup.none}</span>
+                    </div>
+                  ) : (
+                    <Rules n={1} />
+                  )}
                 </div>
                 <div className="ride-paper ride-paper-hero ride-paper-2">
                   <Letterhead />
                   <div className="ride-paper-eyebrow">{c ? `Week ${c.week} · ${c.team_name}` : SECTIONS.home.label}</div>
                   <div className="ride-paper-title display">{DESK.news.eyebrow}</div>
-                  <div className="ride-paper-rule" />
-                  <div className="ride-paper-rule" />
-                  <div className="ride-paper-rule short" />
+                  {stories.length > 0 ? (
+                    stories.map((it) => (
+                      <div key={it.id} className="ride-paper-line">
+                        <Avatar name={it.about.name} photo={it.about.photo} teamLogo={it.about.team_logo} size="xs" className="ride-paper-face" />
+                        <span>{it.headline}</span>
+                      </div>
+                    ))
+                  ) : desk ? (
+                    <div className="ride-paper-line">
+                      <span>{DESK.news.quiet}</span>
+                    </div>
+                  ) : (
+                    <Rules n={2} />
+                  )}
                 </div>
                 <div className="ride-paper ride-paper-3">
                   <Letterhead />
                   <div className="ride-paper-eyebrow">{c?.league_name ?? DESK.notebooks.report.from}</div>
                   <div className="ride-paper-title display">{SECTIONS.report.title}</div>
-                  <div className="ride-paper-rule" />
-                  <div className="ride-paper-rule short" />
+                  {desk ? (
+                    <div className="ride-paper-line tnum">
+                      <span>{film ? DESK.notebooks.film(film.result, film.score, film.opp_score, film.hits, film.total) : DESK.notebooks.filmNone}</span>
+                    </div>
+                  ) : (
+                    <Rules n={1} />
+                  )}
                 </div>
                 <div className="ride-pen" />
                 <div className="ride-phone">

@@ -124,10 +124,12 @@ and never a name.
               "opponent_record": "1-1", "opponent_rank": 7, "teams": 12},
   "sheet": {"summary": "3 moves to make", "moves": 3, "all_clear": false},
   "binders": [
-    {"key": "team", "count": 2, "locked": false, "top_benefit": "+4.2 pts"},
-    {"key": "waivers", "count": 1, "locked": true, "top_benefit": "+7.8 pts"},
-    {"key": "trade", "count": 0, "locked": true, "top_benefit": null}
+    {"key": "team", "count": 2, "locked": false, "top_benefit": "+4.2 pts",
+     "top": {"title": "Start Jordan Love over Jared Goff", "player": {"id": "6804", "name": "Jordan Love", "position": "QB", "...": "..."}}},
+    {"key": "waivers", "count": 1, "locked": true, "top_benefit": "+7.8 pts", "top": null},
+    {"key": "trade", "count": 0, "locked": true, "top_benefit": null, "top": null}
   ],
+  "film": {"week": 1, "result": "W", "score": 127.78, "opp_score": 101.4, "hits": 2, "total": 3},
   "entitlements": ["my_team"]
 }
 ```
@@ -143,7 +145,13 @@ and never a name.
   (`injury_status`, `injury_body_part`, `injury_notes`) or the depth chart as it lists it;
   nothing is predicted and no number is invented. Only news dated inside the window counts.
 - `binders[].count` is the number of call-sheet actions of that binder's type, so the badge
-  and the tab it opens cannot disagree. `locked` follows `edge/products.py`.
+  and the tab it opens cannot disagree. `locked` follows `edge/products.py`. `top` is the
+  binder's first action as its cover line, its title and the first player on it (a
+  `Player`, with `photo`); null when the binder is empty **or locked**, because a locked
+  binder never names a player (`top_benefit` still carries the gain).
+- `film` is `last_week` (see the action feed) cut to one line: the result, the scoreline
+  and how many calls hit out of how many. Null in week 1 and for a reader with no recorded
+  call, which is most readers. Never a rate.
 - `standing` is the nameplate's three numbers: the record, the standings' own competition
   rank out of `teams`, and points a game: points for over *completed weeks*, never over the
   record (a league that also plays the median books two results a week). Null in week 1.

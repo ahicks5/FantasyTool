@@ -997,6 +997,25 @@ html.ride-boot::before {
 .ride-paper-title { font-size: 15px; line-height: 1.1; margin-top: 3px; white-space: nowrap; }
 .ride-paper-rule { height: 5px; border-radius: 3px; background: rgb(255 255 255 / 0.12); margin-top: 7px; }
 .ride-paper-rule.short { width: 60%; }
+/* What is actually on the papers once the desk has come in: a line of the real thing in
+   the paper's own ink, a small face beside a headline. The grey rules stand in until then. */
+.ride-paper-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: rgb(244 243 240 / 0.82);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ride-paper-line > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ride-paper-face { --color-soft: #2a2e36; --color-muted: #aab0b9; }
+.ride-paper-num { font-size: 18px; line-height: 1; margin-top: 6px; }
+.ride-paper-num small { font-size: 9px; font-weight: 700; color: var(--color-muted); margin-left: 4px; }
 .ride-paper-1 { left: 56px; top: 100px; transform: rotate(-7deg); }
 .ride-paper-2 { left: 85px; top: 196px; width: 230px; z-index: 2; }
 .ride-paper-3 { left: 178px; top: 350px; transform: rotate(5deg); }
@@ -1489,6 +1508,21 @@ html.ride-boot::before {
   background-repeat: space no-repeat;
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.7));
 }
+/* The line off the cover: a small face and the top item inside, in the notebook's own
+   ink. Truncated to one line; the room behind the cover has the rest. */
+.notebook-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #d6d9de;
+}
+.notebook-face { --color-soft: #2a2e36; --color-muted: #aab0b9; }
+/* Room for the lock label in the corner. */
+.notebook-locked .notebook-line { padding-right: 48px; }
 .notebook-lock {
   position: absolute;
   right: 10px;

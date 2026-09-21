@@ -7,7 +7,7 @@ import { IconChevron, IconMark } from "./icons";
 import { PlayerName } from "./Players";
 import type { Connection } from "@/lib/storage";
 import { newsHeadline } from "@/lib/ticker.ts";
-import type { Binder, Desk, DeskStanding, Matchup, NewsItem, NewsSeverity } from "@/lib/types";
+import type { Binder, Desk, DeskStanding, Film, Matchup, NewsItem, NewsSeverity, Player } from "@/lib/types";
 import { DESK, SECTIONS } from "@/lib/vocab";
 
 /* ---------------------------------------------------------------- the desk ---
@@ -261,6 +261,10 @@ function MatchupPaper({ m, week, standing, animate }: { m: Matchup | null | unde
  * and a count beats inside the cell, right-aligned: not a phone's red dot on a corner but
  * the staff saying we have to look at this. A locked notebook still shows its count,
  * name-free, the same rule the paid teasers follow.
+ *
+ * Under the title, one line off the cover: the top item inside with the face on it, the
+ * best move's gain when the binder is locked, or the film's scoreline. Filler is never a
+ * placeholder here: it is the engine's own top line (Andrew, 2026-09-21).
  */
 function Notebook({
   href,
@@ -268,6 +272,8 @@ function Notebook({
   from,
   count = 0,
   locked = false,
+  line,
+  face,
   animate,
   delay,
 }: {
@@ -276,12 +282,14 @@ function Notebook({
   from: string;
   count?: number;
   locked?: boolean;
+  line: string;
+  face?: Player | null;
   animate: boolean;
   delay: number;
 }) {
-  const label = [title, from, count > 0 ? DESK.notebooks.lit(count) : null, locked ? DESK.notebooks.locked : null].filter(Boolean).join(". ");
+  const label = [title, from, line, count > 0 ? DESK.notebooks.lit(count) : null, locked ? DESK.notebooks.locked : null].filter(Boolean).join(". ");
   return (
-    <Link href={href} className={`notebook ${count > 0 ? "notebook-lit" : ""} ${animate ? `rise rise-${delay}` : ""}`} aria-label={label}>
+    <Link href={href} className={`notebook ${count > 0 ? "notebook-lit" : ""} ${locked ? "notebook-locked" : ""} ${animate ? `rise rise-${delay}` : ""}`} aria-label={label}>
       <span className="notebook-rings" aria-hidden />
       <span className="flex items-start justify-between gap-2">
         <span className="display min-w-0 block truncate text-[16px] leading-tight text-ink">{title}</span>
@@ -292,9 +300,25 @@ function Notebook({
         )}
       </span>
       <span className="desk-from">{from}</span>
+      <span className="notebook-line" aria-hidden>
+        {face && <Avatar name={face.name} photo={face.photo} teamLogo={face.team_logo} size="xs" className="notebook-face" />}
+        <span className="min-w-0 truncate">{line}</span>
+      </span>
       {locked && <span className="notebook-lock">{DESK.notebooks.locked}</span>}
     </Link>
   );
+}
+
+/** The cover line of a staff notebook: the top item's title, or its gain when locked. */
+function coverLine(b: Binder | undefined): string {
+  if (!b || b.count === 0) return DESK.notebooks.quiet;
+  if (b.top?.title) return b.top.title;
+  return b.top_benefit ? DESK.notebooks.best(b.top_benefit) : DESK.notebooks.lit(b.count);
+}
+
+/** The film's cover line: last week's result and how the calls landed. */
+function filmLine(f: Film | null | undefined): string {
+  return f ? DESK.notebooks.film(f.result, f.score, f.opp_score, f.hits, f.total) : DESK.notebooks.filmNone;
 }
 
 export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; animate: boolean }) {
@@ -343,13 +367,22 @@ export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; anim
               from={DESK.notebooks[key].from}
               count={b?.count ?? 0}
               locked={b?.locked ?? false}
+              line={coverLine(b)}
+              face={b?.top?.player}
               animate={animate}
               delay={i + 2}
             />
           </li>
         ))}
         <li className="min-w-0">
-          <Notebook href={SECTIONS.report.href} title={DESK.notebooks.report.title} from={DESK.notebooks.report.from} animate={animate} delay={5} />
+          <Notebook
+            href={SECTIONS.report.href}
+            title={DESK.notebooks.report.title}
+            from={DESK.notebooks.report.from}
+            line={filmLine(desk.film)}
+            animate={animate}
+            delay={5}
+          />
         </li>
       </ul>
     </section>

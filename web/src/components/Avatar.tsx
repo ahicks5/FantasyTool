@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 
-const SIZES = { sm: "h-9 w-9 text-[11px]", md: "h-12 w-12 text-xs", lg: "h-[52px] w-[52px] text-sm", xl: "h-20 w-20 text-lg" };
+const SIZES = { xs: "h-5 w-5 text-[8px]", sm: "h-9 w-9 text-[11px]", md: "h-12 w-12 text-xs", lg: "h-[52px] w-[52px] text-sm", xl: "h-20 w-20 text-lg" };
 const RINGS = { start: "ring-start", sit: "ring-sit", flip: "ring-flip-fill", lean: "ring-lean" };
 
 function initials(name: string): string {
@@ -50,7 +50,7 @@ export function Avatar({
           />
         )}
       </span>
-      {teamLogo && !isLogo && !logoBroken && size !== "sm" && (
+      {teamLogo && !isLogo && !logoBroken && size !== "sm" && size !== "xs" && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={teamLogo}

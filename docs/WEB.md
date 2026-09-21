@@ -79,6 +79,17 @@ and the blurb under every h1 is gone, so the band is 40px on every tab. The note
 covers pin `--color-ink` themselves: they are dark in both themes and the light theme's ink
 is black, which is how the titles went dim on the first pass.
 
+**Round four (Andrew, 2026-09-21 evening): nothing on the desk is a placeholder.** Every
+notebook carries a cover line under "from" (`.notebook-line`): the top item inside with a
+20 px face (`Avatar size="xs"`; `binders[].top`, null when the binder is locked, so a locked
+one prints its gain via `DESK.notebooks.best`), `DESK.notebooks.quiet` when empty, and on
+the film the last-week line (`desk.film`, `DESK.notebooks.film`; `filmNone` before a graded
+week). The ride's papers (`Elevator.tsx`) read the desk payload from the session cache under
+the desk page's own key, polled in the frame loop, and show the matchup, the top two
+headlines with faces and the film line once it lands; the grey rules (`Rules`) stand in
+until then. The locked notebook's line leaves room for the lock label
+(`.notebook-locked .notebook-line`).
+
 **Round three (Andrew's notes, 2026-09-21 afternoon).** Every story carries the engine's
 `severity` (0-4, `SEVERITY` table in `edge/engine/newsdesk.py`; it is also the sort) as a
 four-pip meter with a word (`Severity` in `Desk.tsx`, `DESK.news.severity`), a "!" on the

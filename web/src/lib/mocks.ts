@@ -1296,7 +1296,9 @@ export function deskFor(teamId: string, entitlements: Feature[]): Desk {
   const has = new Set<Feature>(entitlements);
   const binder = (key: "team" | "waivers" | "trade", type: string, feature: Feature) => {
     const inside = feed.actions.filter((a) => a.type === type);
-    return { key, count: inside.length, locked: !has.has(feature), top_benefit: inside[0]?.benefit ?? null };
+    const first = inside[0];
+    const top = first && has.has(feature) ? { title: first.title, player: first.players.find((p) => p) ?? null } : null;
+    return { key, count: inside.length, locked: !has.has(feature), top_benefit: first?.benefit ?? null, top };
   };
   // Only the team the mocks dress in full gets the news; every other desk is quiet, which
   // is the normal case and must render just as well.
@@ -1308,6 +1310,9 @@ export function deskFor(teamId: string, entitlements: Feature[]): Desk {
     matchup: feed.matchup ? { ...feed.matchup, opponent_record: "1-1", opponent_rank: 7, teams: 12 } : null,
     sheet: { summary: feed.summary, moves: feed.actions.filter((a) => a.type !== "hold").length, all_clear: feed.all_clear },
     binders: [binder("team", "start", "my_team"), binder("waivers", "waiver", "waivers"), binder("trade", "trade", "trade_lab")],
+    film: feed.last_week
+      ? { week: feed.last_week.week, result: feed.last_week.result, score: feed.last_week.score, opp_score: feed.last_week.opp_score, hits: feed.last_week.hits, total: feed.last_week.total }
+      : null,
     entitlements, synced_at: feed.synced_at,
   };
 }

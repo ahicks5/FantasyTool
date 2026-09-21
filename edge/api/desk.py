@@ -2,10 +2,11 @@
 
 One payload for the first screen after the elevator: the news desk (`engine/newsdesk.py`)
 on top, this week's matchup with the opponent's record and place, the call sheet's own
-summary line, and one binder per staff member -- the head coach's depth chart, the scout's wire, the GM's trade
-board -- each carrying how many items are inside it worth pursuing. The counts are read off
-the call sheet the engine already built, so the binder and the tab it opens can never
-disagree. Free for every reader (`my_team`): a paid binder still shows its count, name-free,
+summary line, one binder per staff member -- the head coach's depth chart, the scout's wire,
+the GM's trade board -- each carrying how many items are inside it worth pursuing and, when it
+is bought, the top item's title and face as its cover line, and the film's one line on last
+week. The counts and the cover lines are read off the call sheet the engine already built, so
+the binder and the tab it opens can never disagree. Free for every reader (`my_team`): a paid binder still shows its count, name-free,
 the same rule the call sheet's teasers follow.
 """
 from __future__ import annotations
@@ -42,8 +43,30 @@ def binders(feed: dict, entitlements: set[str]) -> list[dict]:
             # The best thing in the binder, as the engine ranked it. Only its benefit,
             # which is what the call sheet already shows on a locked teaser.
             "top_benefit": inside[0].get("benefit") if inside else None,
+            # The same item as the cover line: its title and the face on it. Only when the
+            # binder is bought, because a locked binder never names a player.
+            "top": top(inside[0]) if inside and b["feature"] in entitlements else None,
         })
     return out
+
+
+def top(action: dict) -> dict:
+    """One call-sheet action as a notebook's cover line: what it says and whose face is on it."""
+    players = [p for p in action.get("players", []) if p]
+    return {"title": action.get("title"), "player": players[0] if players else None}
+
+
+# The film's cover line keeps the scoreline and the count; the per-call detail is the film's.
+FILM_KEYS = ("week", "result", "score", "opp_score", "hits", "total")
+
+
+def film(last_week: dict | None) -> dict | None:
+    """`engine/recap.last_week` cut to its one line: the result, the scoreline and how many
+    calls hit. Never a rate and never a sum, for the reason the recap gives. None whenever
+    the recap is None, which is every week 1 and every reader without a recorded call."""
+    if not last_week:
+        return None
+    return {k: last_week.get(k) for k in FILM_KEYS}
 
 
 def _rows(league, ros: dict[str, float]) -> list[dict]:
@@ -102,5 +125,6 @@ def build(team, feed: dict, entitlements: set[str], charts: dict | None = None,
         "matchup": matchup_card(feed.get("matchup"), rows),
         "sheet": {"summary": feed.get("summary"), "moves": len(moves), "all_clear": feed.get("all_clear", False)},
         "binders": binders(feed, entitlements),
+        "film": film(feed.get("last_week")),
         "entitlements": sorted(products.features_for([]) | set(entitlements)),
     }

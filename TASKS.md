@@ -53,6 +53,14 @@ the opening.
       and its row on the desk are deleted; the **matchup paper** takes its place (score, odds,
       their record and place via `desk.matchup_card`). The opponent notebook is the **film**.
       Notebook badge beats inside the cell, the edge takes the signal colour, rings are whole.
+- [x] **VG-9** **No placeholders on the desk (Andrew, 2026-09-21 evening).** Each notebook
+      carries a cover line: the top item inside with the player's face (`binders[].top`,
+      null when locked so no name leaks; a locked one prints the gain), "Nothing to do here"
+      when empty, and the film's last-week line (`film` on the desk payload, from
+      `recap.last_week`; "No week graded yet" before one). The ride's three papers show the
+      real desk once it has loaded under the ride (matchup, two headlines with faces, film),
+      grey rules until then. 2 desk tests, e2e on both. Real news-wire headlines are not in:
+      they would need an outside source (`providers.py` rule), parked until after launch.
 - [ ] **VG-6** The wire paper: a free agent whose starter just went down, on the desk under
       the scouting binder. `newsdesk` has the rule shape; it needs the pool, which the
       bundle already has.

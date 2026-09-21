@@ -98,3 +98,36 @@ def test_points_a_game_is_null_before_a_week_has_finished(league):
     lg = copy.deepcopy(league)
     lg.week = 1
     assert desk.standing(lg, lg.teams[0], {})["ppg"] is None
+
+
+def test_a_bought_binder_carries_its_top_item_as_a_cover_line_with_a_face(desk_client, league):
+    # The first roster whose lineup the engine would change; not every team has one.
+    for t in league.teams:
+        feed = desk_client.get(f"{LG}/team/{t.id}/actions", headers=H).json()
+        starts = [a for a in feed["actions"] if a["type"] == "start"]
+        if starts:
+            break
+    assert starts, "the recorded week has a start/sit call somewhere"
+    d = desk_client.get(f"{LG}/team/{t.id}/desk", headers=H).json()
+    by = {b["key"]: b for b in d["binders"]}
+    top = by["team"]["top"]
+    assert top["title"] == starts[0]["title"]
+    assert top["player"]["name"] == starts[0]["players"][0]["name"]
+    assert top["player"]["photo"], "the cover line has a face"
+    # Not bought: the count and the benefit stay, the cover line does not exist.
+    assert by["waivers"]["locked"] and by["waivers"]["top"] is None
+    assert by["trade"]["top"] is None
+
+
+def test_the_film_line_is_the_recaps_one_line_and_never_its_detail(league):
+    landed = {"week": 1, "result": "W", "score": 127.78, "opp_score": 101.4, "hits": 2, "total": 3,
+              "calls": [{"start": {"id": "1"}, "sit": {"id": "2"}, "hit": True, "margin": 5.0, "projected": None}],
+              "algo_version": "x"}
+    assert desk.film(landed) == {"week": 1, "result": "W", "score": 127.78, "opp_score": 101.4, "hits": 2, "total": 3}
+    assert desk.film(None) is None
+    fx = json.loads((FIX / "sleeper/depth_charts.json").read_text())
+    charts = boil(fx["players"])
+    d = desk.build(league.teams[0], {"actions": [], "last_week": landed}, {"my_team"}, charts=charts, clock_ms=fx["recorded_at"])
+    assert d["film"]["hits"] == 2 and "calls" not in d["film"]
+    quiet = desk.build(league.teams[0], {"actions": []}, {"my_team"}, charts=charts, clock_ms=fx["recorded_at"])
+    assert quiet["film"] is None

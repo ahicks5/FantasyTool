@@ -259,6 +259,17 @@ export const DESK = {
     locked: "Locked",
     /** What the pulse on a lit notebook means to a screen reader. */
     lit: (n: number) => `${n} to look at`,
+    /** The cover line on a locked notebook: the best move's gain, name withheld. */
+    best: (benefit: string) => `Best move ${benefit}`,
+    /** The cover line when the binder has nothing inside. */
+    quiet: "Nothing to do here",
+    /** The film's cover line: "W 128–101 · 2 of 3 calls hit". Never a rate. */
+    film: (result: string | null, score: number, opp: number | null, hits: number, total: number) => {
+      const line = result !== null && opp !== null ? `${result} ${score.toFixed(0)}–${opp.toFixed(0)} · ` : "";
+      return `${line}${hits} of ${total} call${total === 1 ? "" : "s"} hit`;
+    },
+    /** The film's cover line before a week has been graded. */
+    filmNone: "No week graded yet",
   },
 } as const;
 

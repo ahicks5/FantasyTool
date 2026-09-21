@@ -24,6 +24,29 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## Round five: nothing on the desk is a placeholder any more (2026-09-21, evening)
+
+Andrew: "some kind of updated info that's better than placeholder" on the desk's graphics.
+Two changes, both fed by data the app already had. **The notebooks carry a cover line**
+(`Notebook` in `Desk.tsx`, `.notebook-line`): the top item inside with the player's face
+(`binders[].top`, `desk.top()`: the first call-sheet action of that type, title and first
+player; null when locked, because a locked binder never names a player, so a locked one
+prints the gain, `DESK.notebooks.best`), "Nothing to do here" when empty, and the film's
+line, last week's result and scoreline and how many calls hit (`desk.film()`, `film` on the
+payload, cut from `recap.last_week`, so the desk route now passes `_last_week` into the
+feed; null in week 1 and for a reader without a recorded call, then "No week graded yet").
+**The ride's papers show the real desk** (`Elevator.tsx`): the ride reads the desk payload
+out of the session cache under the same key the desk page fetches into
+(`desk:{platform}:{league}:{team}`, polled in the frame loop, `cacheGet`), and once it has
+landed the matchup paper carries the opponent, both projections and the odds, the news
+paper the top two headlines with faces, the film paper its line. Until it lands the grey
+rules stay. The data is there long before the camera reaches the desk (the fetch is ~1 s,
+the papers are in view from ~9 s). The `Avatar` gained an `xs` size (20 px, no team badge)
+for both. Faces are Sleeper's CDN headshots, as everywhere else; players without one keep
+their initials. Real *headlines* in the news-wire sense are still not on the desk: the
+"headlines" are the platform's own injury designations, and pulling reporter copy would be
+a new outside source, a `providers.py` question for after launch.
+
 ## The desk, round four: severity, the plan, no call sheet (2026-09-21, afternoon)
 
 Andrew's notes on the desk and the ride, all in. **The ride** now starts in the lobby, races

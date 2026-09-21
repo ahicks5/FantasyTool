@@ -613,6 +613,25 @@ export interface Binder {
   count: number;
   locked: boolean;
   top_benefit: string | null;
+  /**
+   * The best item inside, as the notebook's cover line: what it says and whose face is on
+   * it. Null when the binder is empty or locked; a locked binder never names a player.
+   * Optional as well as nullable: an older API build does not send it.
+   */
+  top?: { title: string; player: Player | null } | null;
+}
+
+/**
+ * Last week, in one line: `engine/recap.last_week` cut to its scoreline and its count. Two
+ * integers, never a rate. Null in week 1 and for a reader with no recorded call.
+ */
+export interface Film {
+  week: number;
+  result: "W" | "L" | "T" | null;
+  score: number;
+  opp_score: number | null;
+  hits: number;
+  total: number;
 }
 
 /** Three numbers on the desk's nameplate. `ppg` is null before a game has been played. */
@@ -633,6 +652,8 @@ export interface Desk {
   matchup?: Matchup | null;
   sheet: { summary: string; moves: number; all_clear: boolean };
   binders: Binder[];
+  /** Optional as well as nullable: an older API build does not send it. */
+  film?: Film | null;
   entitlements: Feature[];
   synced_at: number;
 }

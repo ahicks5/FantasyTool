@@ -552,6 +552,11 @@ test("the desk: three stories on top, hardest first, the matchup, four notebooks
   const lit = desk.locator(".notebook-lit");
   await expect(lit.first()).toBeVisible();
   await expect(lit.first().locator(".notebook-badge")).toHaveText(/^\d+$/);
+  // Every cover carries a line off the top of what is inside; a lit, bought one has the face
+  // on it. The film's line is last week's, and the recorded league has no graded week.
+  for (let i = 0; i < 4; i++) await expect(notebooks.nth(i).locator(".notebook-line")).not.toBeEmpty();
+  await expect(lit.first().locator(".notebook-face")).toHaveCount(1);
+  await expect(desk.locator(`a.notebook[href="${SECTIONS.report.href}"] .notebook-line`)).toHaveText(DESK.notebooks.filmNone);
   // The rings are whole: none is cut off at the notebook's edge.
   await assertNoHorizontalOverflow(page);
   await notebooks.first().click();
@@ -601,6 +606,10 @@ test("the first open rides up to the call sheet, and the second does not", async
   const ride = page.getByRole("status", { name: RIDE.aria });
   await expect(ride).toBeVisible();
   await expect(ride.getByText(RIDE.goingUp)).toBeVisible();
+  // The papers on the desk fill with the real desk once it has loaded under the ride: the
+  // matchup's projected score, and a story with a face on it.
+  await expect(ride.locator(".ride-paper-1 .ride-paper-num")).toHaveCount(1, { timeout: 10_000 });
+  await expect(ride.locator(".ride-paper-2 .ride-paper-face")).not.toHaveCount(0);
   // It ends, and the desk is there when the doors open. The whole ride is under fifteen
   // seconds; the default timeout is inside that, so this one waits longer.
   await expect(ride).toHaveCount(0, { timeout: 25_000 });
