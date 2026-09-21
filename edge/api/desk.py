@@ -15,7 +15,7 @@ import time
 
 from edge import products
 from edge.data import depth_charts
-from edge.engine import newsdesk
+from edge.engine import newsdesk, report
 from edge.engine import standings as standings_mod
 
 # The three binders, in desk order, and which call-sheet action type and feature each holds.
@@ -69,6 +69,13 @@ def film(last_week: dict | None) -> dict | None:
     return {k: last_week.get(k) for k in FILM_KEYS}
 
 
+def scoreboard(league, team, matchups_raw: list[dict] | None) -> list[dict]:
+    """`report.scoreboard` with this reader's game first: the strip leads with your score."""
+    games = report.scoreboard(league, matchups_raw)
+    mine = [g for g in games if any(t["id"] == team.id for t in g["teams"])]
+    return mine + [g for g in games if g not in mine]
+
+
 def _rows(league, ros: dict[str, float]) -> list[dict]:
     """The standings table, with no played weeks so nothing is fetched -- the all-play
     columns go null and the rank column is unaffected."""
@@ -111,9 +118,11 @@ def standing(league, team, ros: dict[str, float], rows: list[dict] | None = None
 
 
 def build(team, feed: dict, entitlements: set[str], charts: dict | None = None,
-          clock_ms: int | None = None, league=None, ros: dict[str, float] | None = None) -> dict:
+          clock_ms: int | None = None, league=None, ros: dict[str, float] | None = None,
+          matchups_raw: list[dict] | None = None) -> dict:
     """`feed` is `engine/actions.build(...)` for this team; `charts` defaults to the live
-    boiled dump. `league` and `ros` are for the nameplate's standing; without them it is null."""
+    boiled dump. `league` and `ros` are for the nameplate's standing; without them it is null.
+    `matchups_raw` is the week's games, for the scoreboard the ticker runs after the news."""
     charts = depth_charts.load() if charts is None else charts
     news = newsdesk.build(team, charts, clock_ms if clock_ms is not None else now_ms())
     moves = [a for a in feed.get("actions", []) if a.get("type") != "hold"]
@@ -126,5 +135,7 @@ def build(team, feed: dict, entitlements: set[str], charts: dict | None = None,
         "sheet": {"summary": feed.get("summary"), "moves": len(moves), "all_clear": feed.get("all_clear", False)},
         "binders": binders(feed, entitlements),
         "film": film(feed.get("last_week")),
+        # Every game this week, yours first, for the ticker.
+        "scoreboard": scoreboard(league, team, matchups_raw) if league is not None else [],
         "entitlements": sorted(products.features_for([]) | set(entitlements)),
     }

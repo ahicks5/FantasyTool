@@ -130,6 +130,10 @@ and never a name.
     {"key": "trade", "count": 0, "locked": true, "top_benefit": null, "top": null}
   ],
   "film": {"week": 1, "result": "W", "score": 127.78, "opp_score": 101.4, "hits": 2, "total": 3},
+  "scoreboard": [
+    {"matchup_id": 2, "teams": [{"id": "1", "name": "Gaainzzz", "proj": 131.0, "points": null},
+                                {"id": "8", "name": "Eppsy13", "proj": 118.3, "points": null}]}
+  ],
   "entitlements": ["my_team"]
 }
 ```
@@ -140,7 +144,9 @@ and never a name.
   offensive line lost a man; merged per offence, `others` are the rest). `level` is
   `critical` (a starter of yours may not play), `warning`, `upside` or `note`; `severity`
   is how hard it lands, 4 (a starter of yours ruled out) down to 0 (a bench player's QB1 in
-  doubt), from the table in `engine/newsdesk.py`, and is the sort order. `also` lists
+  doubt), from the table in `engine/newsdesk.py`, and is the sort order. **Only your own
+  player lands at 3 or 4**; a teammate's story (his QB1, the man ahead of him, his line) is
+  at most 2, a watch (`SEVERITY_TEAMMATE_CAP`), because he still plays. `also` lists
   the other players of yours the same story touches. Every word is the platform's own
   (`injury_status`, `injury_body_part`, `injury_notes`) or the depth chart as it lists it;
   nothing is predicted and no number is invented. Only news dated inside the window counts.
@@ -152,6 +158,10 @@ and never a name.
 - `film` is `last_week` (see the action feed) cut to one line: the result, the scoreline
   and how many calls hit out of how many. Null in week 1 and for a reader with no recorded
   call, which is most readers. Never a rate.
+- `scoreboard` is every game in the league this week, yours first, for the ticker: each
+  team's projected total as the engine sets its lineup today (the same number as
+  `matchup.my_proj`) and the platform's own `points` once the game is on, null before
+  kickoff. A team on a bye is left out.
 - `standing` is the nameplate's three numbers: the record, the standings' own competition
   rank out of `teams`, and points a game: points for over *completed weeks*, never over the
   record (a league that also plays the median books two results a week). Null in week 1.

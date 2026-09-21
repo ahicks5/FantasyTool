@@ -99,6 +99,28 @@ def matchup(league: League, team: Team, matchups_raw: list[dict] | None) -> dict
             "my_proj": my_proj, "their_proj": their_proj, "win_prob": win_probability(my_proj, their_proj)}
 
 
+def scoreboard(league: League, matchups_raw: list[dict] | None) -> list[dict]:
+    """Every game in the league this week, for the ticker: both teams, each one's projected
+    total as the engine sets its lineup today, and the platform's own points once the games
+    are on (0.0 before kickoff, so `points` is null until a number exists). Same projection
+    as `matchup`, so the strip and the paper cannot disagree. Teams without an opponent
+    (a bye) are left out."""
+    if not matchups_raw:
+        return []
+    games: dict = {}
+    for m in matchups_raw:
+        t = league.team(str(m.get("roster_id")))
+        if t is None or m.get("matchup_id") is None:
+            continue
+        pts = m.get("points")
+        games.setdefault(m["matchup_id"], []).append({
+            "id": t.id, "name": t.name,
+            "proj": lineup_mod.lineup_total(t.players, league.starting_slots),
+            "points": float(pts) if pts else None,
+        })
+    return [{"matchup_id": k, "teams": v} for k, v in sorted(games.items(), key=lambda kv: kv[0]) if len(v) == 2]
+
+
 def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int],
           matchups_raw: list[dict] | None = None, bid_stats: dict | None = None,
           trending: dict[str, int] | None = None) -> dict:

@@ -61,6 +61,14 @@ the opening.
       real desk once it has loaded under the ride (matchup, two headlines with faces, film),
       grey rules until then. 2 desk tests, e2e on both. Real news-wire headlines are not in:
       they would need an outside source (`providers.py` rule), parked until after launch.
+- [x] **VG-10** **Round six (Andrew, 2026-09-21 night).** Ride runs on a capped frame clock
+      (`elevator.advance`, `MAX_FRAME_MS`) so a phone stall pauses it instead of skipping the
+      orbit. Severity: only your own player lands at 3-4, a teammate's story caps at 2
+      (`SEVERITY_TEAMMATE_CAP`). Openings are green: meter reads "Upside", the face wears a
+      check. Ticker runs every game's score after the news (`scoreboard` on the desk, yours
+      first; projections flagged "Proj" before kickoff, the platform's points after).
+      Matchup paper's credit on the top line; "From the front office" rule over the notebooks.
+      One loader on every page (`Loading.tsx`: the mark, a ring, working lines).
 - [ ] **VG-6** The wire paper: a free agent whose starter just went down, on the desk under
       the scouting binder. `newsdesk` has the rule shape; it needs the pool, which the
       bundle already has.

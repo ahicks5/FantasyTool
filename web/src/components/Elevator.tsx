@@ -2,6 +2,7 @@
 /** The ride up: the opening, played as an elevator to the office and a walk to the desk. Tap to skip. */
 import { useEffect, useRef, useState } from "react";
 import {
+  advance,
   BOARD_MS,
   CLOSE_MS,
   dayStamp,
@@ -72,7 +73,10 @@ function Letterhead() {
 
 export function ElevatorRide() {
   const [s, setState] = useState<RideState>(() => rideState(0));
-  const startedAt = useRef<number | null>(null);
+  // The ride's own clock: the sum of frame gaps, each capped (`advance`), so a stall on
+  // the phone pauses the ride where it is instead of jumping it to the landing.
+  const elapsed = useRef(0);
+  const lastFrame = useRef<number | null>(null);
   const skippedAt = useRef<number | null>(null);
   // Read once: the ride is a first impression of a team, and the connection does not
   // change while the doors are closing.
@@ -88,8 +92,9 @@ export function ElevatorRide() {
     saveRideDay(dayStamp(new Date()));
     let raf = 0;
     const frame = (now: number) => {
-      if (startedAt.current === null) startedAt.current = now;
-      const next = rideState(now - startedAt.current, skippedAt.current);
+      if (lastFrame.current !== null) elapsed.current = advance(elapsed.current, now - lastFrame.current);
+      lastFrame.current = now;
+      const next = rideState(elapsed.current, skippedAt.current);
       setState((prev) => (prev.phase === next.phase && prev.floor === next.floor ? prev : next));
       if (deskKey) {
         const d = cacheGet<Desk>(deskKey);
@@ -111,8 +116,8 @@ export function ElevatorRide() {
   if (s.phase === "done") return null;
 
   const skip = () => {
-    if (pastSkipping(s) || startedAt.current === null || skippedAt.current !== null) return;
-    skippedAt.current = performance.now() - startedAt.current;
+    if (pastSkipping(s) || lastFrame.current === null || skippedAt.current !== null) return;
+    skippedAt.current = elapsed.current;
   };
 
   const inCar = s.phase === "boarding" || s.phase === "press" || s.phase === "closing" || s.phase === "sealed" || s.phase === "rising";

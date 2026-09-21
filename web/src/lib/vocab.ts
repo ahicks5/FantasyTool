@@ -214,6 +214,10 @@ export const DESK = {
     severity: ["FYI", "Note", "Watch", "Serious", "Urgent"] as const,
     /** The mark on the face of a story that lands hard. */
     mark: "!",
+    /** A role opening for a player of yours: the meter goes green and says so, and the face
+     *  wears a check instead of the mark. Andrew: "some type of green 'yes'". */
+    upside: "Upside",
+    markUp: "\u2713",
     /** The arrow on the right of a story, above the clock: a plan has been thought out and
      *  is waiting. Andrew: something succinct that says a recommendation is on offer. */
     plan: "Plan ready",
@@ -252,6 +256,8 @@ export const DESK = {
   },
   /** The spiral notebooks. Each says what it is and who it is from. */
   notebooks: {
+    /** The thin header over the four: whose desk these came from. */
+    eyebrow: "From the front office",
     team: { title: "Start / sit", from: "From the head coach" },
     waivers: { title: "The wire", from: "From the head of scouting" },
     trade: { title: "Trade board", from: "From the GM" },
@@ -363,12 +369,35 @@ export const NAMEPLATE = {
 } as const;
 
 /** The ticker along the bottom of every screen: the desk's news, one line, running. */
+/* ------------------------------------------------------------- the loader ---
+   Any wait that is not the ride: the mark in the middle of the page, a ring turning
+   around it, and a line under it that changes while the staff work. The lines name
+   things the engine actually does (`docs/DATA.md`); none promises a number.           */
+export const LOADING = {
+  aria: "Loading",
+  lines: [
+    "Reading the depth charts",
+    "Checking the injury reports",
+    "Setting the lineup",
+    "Pricing the wire",
+    "Running trade simulations",
+    "Grading last week's calls",
+    "Scouting for insights",
+  ],
+  /** How long each line holds before the next. */
+  stepMs: 1400,
+} as const;
+
 export const TICKER = {
   aria: "News ticker. Open the desk",
   /** The plate on the left of the strip. */
   plate: "Just in",
   quiet: "Quiet. Nothing on your roster moved.",
   loading: "Checking the wire\u2026",
+  /** A game on the strip after the news: "Gaainzzz 131.0 – Eppsy13 118.3". */
+  score: (a: string, ap: number, b: string, bp: number) => `${a} ${ap.toFixed(1)} \u2013 ${b} ${bp.toFixed(1)}`,
+  /** Before kickoff the numbers are the engine's projections, and the strip says so. */
+  proj: "Proj",
 } as const;
 
 export const GROUPS = {

@@ -482,6 +482,55 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
    the setting is large sweeping movement, not a 16px ring.                     */
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* The wait on any page (`Loading.tsx`): the mark, a ring turning around it, a line. */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px 16px;
+  color: var(--color-ink);
+}
+.loading-compact { padding: 18px 12px; gap: 10px; }
+.loading-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 99px;
+  color: var(--color-ink);
+}
+.loading-compact .loading-ring { width: 48px; height: 48px; }
+.loading-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 99px;
+  border: 2px solid var(--color-line-2);
+}
+.loading-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 99px;
+  border: 2px solid transparent;
+  border-top-color: var(--color-ink);
+  animation: spin 1.1s cubic-bezier(0.4, 0.1, 0.3, 1) infinite;
+}
+.loading-line {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  text-align: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-ring::after { animation: none; border-color: var(--color-ink); border-top-color: var(--color-ink); }
+}
 .spinner {
   display: inline-block;
   border-radius: 99px;
@@ -1425,6 +1474,8 @@ html.ride-boot::before {
 .desk-sev-2 { color: var(--color-flip); }
 .desk-sev-3 { color: var(--color-flip); }
 .desk-sev-4 { color: var(--color-sit); }
+/* A role opening for a player of yours: green, and it says so. */
+.desk-sev-up, .desk-sev-hero.desk-sev-up { color: var(--color-start); }
 /* On the plan's dark header the empty pips need to read against the hero. */
 .desk-sev-hero .desk-sev-pips i { background: rgb(255 255 255 / 0.18); }
 .desk-sev-hero .desk-sev-pips i.on { background: currentColor; }
@@ -1452,6 +1503,7 @@ html.ride-boot::before {
   box-shadow: 0 0 0 2px var(--color-paper), 0 1px 3px rgb(0 0 0 / 0.5);
 }
 .desk-mark-4 { background: var(--color-sit); }
+.desk-mark-up { background: var(--color-start); font-size: 9px; }
 /* An urgent story has a red rule down its left edge as well. */
 .desk-news-row-4 { box-shadow: inset 3px 0 0 var(--color-sit); padding-left: 12px; margin-left: -12px; }
 
@@ -1481,6 +1533,27 @@ html.ride-boot::before {
 /* A spiral notebook: a row of rings along the top edge, the title on the cover, who it is
    from under it. When there is something inside the cover's edge takes the signal colour
    and the count beats inside the cell. */
+/* The thin rule over the four notebooks, the eyebrow set in it. */
+.desk-office-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8b929d;
+  white-space: nowrap;
+}
+.desk-office-head::before, .desk-office-head::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgb(255 255 255 / 0.12);
+}
+.desk-office-head::before { flex: 0 0 12px; }
+
 .notebook {
   position: relative;
   display: block;
@@ -1620,6 +1693,7 @@ html.ride-boot::before {
 .ticker-item { display: inline-flex; align-items: center; gap: 7px; padding-right: 34px; }
 .ticker-dot { width: 6px; height: 6px; border-radius: 99px; flex-shrink: 0; }
 .ticker-quiet { animation: none; color: #8b929d; }
+.ticker-score { color: #c9ced6; }
 .ticker-still .ticker-track { animation: none; }
 @keyframes ticker-run {
   from { transform: translateX(0); }

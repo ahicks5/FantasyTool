@@ -1,5 +1,6 @@
 /** The ticker: the desk's news as one line running along the bottom of every screen. Pure. */
-import type { NewsItem } from "./types";
+import type { NewsItem, ScoreboardGame } from "./types";
+import { TICKER } from "./vocab.ts";
 
 /* The news paper says it in full; the ticker says it in one breath. Same words, from the
    same payload, so the strip can never disagree with the desk. Pure so the copy rules and
@@ -56,6 +57,25 @@ export function tickerLines(items: NewsItem[]): string[] {
     const line = tickerLine(it);
     if (seen.has(line)) continue;
     seen.add(line);
+    out.push(line);
+  }
+  return out;
+}
+
+/**
+ * The scores after the news: one line per game, the desk's order (yours first). The
+ * platform's points once either side has any, the engine's projections before kickoff,
+ * flagged as such. Nothing here is computed: both numbers come off the payload.
+ */
+export function scoreLines(games: ScoreboardGame[] | undefined): string[] {
+  const out: string[] = [];
+  for (const g of games ?? []) {
+    if (g.teams.length !== 2) continue;
+    const [a, b] = g.teams;
+    const live = a.points !== null || b.points !== null;
+    const line = live
+      ? TICKER.score(a.name, a.points ?? 0, b.name, b.points ?? 0)
+      : `${TICKER.proj} ${TICKER.score(a.name, a.proj, b.name, b.proj)}`;
     out.push(line);
   }
   return out;

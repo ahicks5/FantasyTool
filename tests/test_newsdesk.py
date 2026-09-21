@@ -163,7 +163,16 @@ def test_a_questionable_lineman_is_not_news():
     assert newsdesk.build(t, charts(sewell), NOW)["items"] == []
 
 
-def test_order_is_critical_then_warning_then_upside_then_note_lineup_before_bench():
+def test_only_your_own_player_lands_above_a_watch():
+    """Andrew: a teammate's QB out is a watch on your desk, not a siren; only yours is dire."""
+    for (kind, starter, down), sev in newsdesk.SEVERITY.items():
+        if kind != "own":
+            assert sev <= newsdesk.SEVERITY_TEAMMATE_CAP, (kind, starter, down)
+    assert newsdesk.SEVERITY[("own", True, True)] == newsdesk.SEVERITY_TOP
+    assert newsdesk.SEVERITY[("qb", True, True)] == newsdesk.SEVERITY_TEAMMATE_CAP
+
+
+def test_order_is_by_how_hard_it_lands_then_critical_warning_upside_note_lineup_before_bench():
     t = team([me("gibbs", "Jahmyr Gibbs", "RB", "DET"), me("teslaa", "Isaac TeSlaa", "WR", "DET"),
               me("pacheco", "Isiah Pacheco", "RB", "DET")], ["gibbs", "teslaa"])
     out = newsdesk.build(t, charts(
@@ -173,8 +182,12 @@ def test_order_is_critical_then_warning_then_upside_then_note_lineup_before_benc
         slot("pacheco", "Isiah Pacheco", "RB", "DET", order=2, status="Questionable", ago_h=1),
         slot("gibbs", "Jahmyr Gibbs", "RB", "DET", order=1, status="Questionable", ago_h=1),
     ), NOW)
+    # Gibbs in doubt (yours, starting) lands at 3; Goff out is a watch (2), the most a
+    # teammate's story can land at; Pacheco in doubt on the bench, TeSlaa (already starting)
+    # seeing more of the ball and the lineman are lines to read past, level order among them.
     assert [(i["level"], i["kind"]) for i in out["items"]] == [
         ("critical", "own"), ("warning", "qb"), ("warning", "own"), ("upside", "target"), ("note", "line")]
+    assert [i["severity"] for i in out["items"]] == [3, 2, 1, 1, 1]
     assert out["items"][0]["player"]["name"] == "Jahmyr Gibbs"
     assert out["items"][2]["player"]["name"] == "Isiah Pacheco"
 

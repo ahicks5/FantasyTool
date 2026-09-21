@@ -131,3 +131,19 @@ def test_the_film_line_is_the_recaps_one_line_and_never_its_detail(league):
     assert d["film"]["hits"] == 2 and "calls" not in d["film"]
     quiet = desk.build(league.teams[0], {"actions": []}, {"my_team"}, charts=charts, clock_ms=fx["recorded_at"])
     assert quiet["film"] is None
+
+
+def test_the_scoreboard_is_every_game_this_week_with_yours_first(desk_client, league):
+    tid = league.teams[0].id
+    d = desk_client.get(f"{LG}/team/{tid}/desk").json()
+    games = d["scoreboard"]
+    assert len(games) == len(league.teams) // 2
+    assert any(t["id"] == tid for t in games[0]["teams"]), "your game leads"
+    for g in games:
+        assert len(g["teams"]) == 2
+        for t in g["teams"]:
+            assert t["name"] and t["proj"] > 0
+            assert t["points"] is None, "no game has kicked off in the recorded week"
+    # The paper and the strip agree on the projection.
+    me = next(t for t in games[0]["teams"] if t["id"] == tid)
+    assert me["proj"] == d["matchup"]["my_proj"]

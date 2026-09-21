@@ -64,29 +64,39 @@ export function planHref(it: NewsItem): string {
  * How hard a story lands: four pips, filled up to the engine's severity, and the word.
  * Colour never carries it alone. Exported for the plan page, which opens on the same meter.
  */
-export function Severity({ n, className = "" }: { n: NewsSeverity; className?: string }) {
+export function Severity({ n, up = false, className = "" }: { n: NewsSeverity; up?: boolean; className?: string }) {
+  // A role opening for a player of yours is good news: the meter goes green and says so.
+  const word = up ? DESK.news.upside : DESK.news.severity[n];
   return (
-    <span className={`desk-sev desk-sev-${n} ${className}`} role="img" aria-label={DESK.news.severity[n]}>
+    <span className={`desk-sev desk-sev-${n} ${up ? "desk-sev-up" : ""} ${className}`} role="img" aria-label={word}>
       <span className="desk-sev-pips" aria-hidden>
         {[1, 2, 3, 4].map((k) => (
           <i key={k} className={k <= n ? "on" : ""} />
         ))}
       </span>
-      <span className="desk-sev-word">{DESK.news.severity[n]}</span>
+      <span className="desk-sev-word">{word}</span>
     </span>
   );
 }
 
-/** The face on a story, and the mark on it when the story lands hard. */
+/** The face on a story: the mark on it when the story lands hard, a green check when it
+ *  is a role opening for a player of yours. */
 export function NewsFace({ it, size = "sm" }: { it: NewsItem; size?: "sm" | "md" }) {
   const a = it.about;
+  const up = it.level === "upside";
   return (
     <span className="relative shrink-0">
       <Avatar name={a.name} photo={a.photo} teamLogo={a.team_logo} size={size} />
-      {it.severity >= 3 && (
-        <span className={`desk-mark desk-mark-${it.severity}`} aria-hidden>
-          {DESK.news.mark}
+      {up ? (
+        <span className="desk-mark desk-mark-up" aria-hidden>
+          {DESK.news.markUp}
         </span>
+      ) : (
+        it.severity >= 3 && (
+          <span className={`desk-mark desk-mark-${it.severity}`} aria-hidden>
+            {DESK.news.mark}
+          </span>
+        )
       )}
     </span>
   );
@@ -109,7 +119,7 @@ function NewsRow({ it, index }: { it: NewsItem; index: number }) {
         <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
           <span className="display line-clamp-2 text-[13.5px] leading-tight text-ink">{newsHeadline(it)}</span>
           <span className="mt-1 flex min-w-0 items-center gap-1.5">
-            <Severity n={it.severity} />
+            <Severity n={it.severity} up={it.level === "upside"} />
             <span className="min-w-0 truncate text-[11px] font-bold text-ink-2">{tagFor(it)}</span>
           </span>
         </button>
@@ -218,8 +228,12 @@ function MatchupPaper({ m, week, standing, animate }: { m: Matchup | null | unde
       aria-label={`${DESK.matchup.eyebrow}, ${DESK.week(week)}: ${DESK.matchup.vs} ${m.opponent}${theirs ? `, ${theirs}` : ""}. ${DESK.matchup.you} ${m.my_proj.toFixed(1)}, ${DESK.matchup.them} ${m.their_proj.toFixed(1)}${odds ? `. ${odds}` : ""}. ${DESK.matchup.go}.`}
     >
       <Letterhead />
-      <span className="eyebrow">
-        {DESK.matchup.eyebrow} <span aria-hidden>·</span> {DESK.week(week)}
+      {/* Who, when, and whose read it is, on one line at the top (Andrew). */}
+      <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 pr-8">
+        <span className="eyebrow shrink-0">
+          {DESK.matchup.eyebrow} <span aria-hidden>·</span> {DESK.week(week)}
+        </span>
+        <span className="desk-from !mt-0 min-w-0 truncate">{DESK.matchup.from}</span>
       </span>
       <span className="mt-1.5 flex items-start gap-3">
         <span className="min-w-0 flex-1">
@@ -244,8 +258,7 @@ function MatchupPaper({ m, week, standing, animate }: { m: Matchup | null | unde
           <span className="tnum desk-odds-word">{odds}</span>
         </span>
       )}
-      <span className="mt-2 flex items-center justify-between gap-2">
-        <span className="desk-from !mt-0">{DESK.matchup.from}</span>
+      <span className="mt-2 flex items-center justify-end gap-2">
         <span className="desk-go">
           {DESK.matchup.go}
           <IconChevron size={11} strokeWidth={2.8} />
@@ -358,7 +371,11 @@ export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; anim
         <MatchupPaper m={desk.matchup} week={desk.week} standing={desk.standing} animate={animate} />
       </div>
 
-      <ul className="mt-3 grid grid-cols-2 gap-2.5" role="list">
+      {/* A thin rule with the eyebrow in it: whose work the four notebooks are. */}
+      <div className={`desk-office-head ${animate ? "rise rise-2" : ""}`} aria-hidden>
+        <span>{DESK.notebooks.eyebrow}</span>
+      </div>
+      <ul className="mt-2 grid grid-cols-2 gap-2.5" role="list" aria-label={DESK.notebooks.eyebrow}>
         {staff.map(({ key, b }, i) => (
           <li key={key} className="min-w-0">
             <Notebook

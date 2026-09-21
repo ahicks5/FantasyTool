@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getDesk } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import type { Connection } from "@/lib/storage";
-import { tickerDurationMs, tickerLines } from "@/lib/ticker.ts";
+import { scoreLines, tickerDurationMs, tickerLines } from "@/lib/ticker.ts";
 import type { Desk, NewsLevel } from "@/lib/types";
 import { SECTIONS, TICKER } from "@/lib/vocab";
 
@@ -29,9 +29,16 @@ const DOT: Record<NewsLevel, string> = {
 export function Ticker({ c }: { c: Connection }) {
   const { data } = useCached<Desk>(`desk:${c.platform}:${c.league_id}:${c.team_id}`, () => getDesk(c.platform, c.league_id, c.team_id));
   const items = data?.news.items ?? [];
-  const lines = tickerLines(items);
+  const news = tickerLines(items);
+  // The scores run after the news, yours first (Andrew): the platform's points once a
+  // game is on, the engine's projections before kickoff.
+  const scores = scoreLines(data?.scoreboard);
+  const lines = [...news, ...scores];
   const quiet = data !== null && lines.length === 0;
-  const track = lines.map((line, i) => ({ line, level: items[i]?.level ?? "note" }));
+  const track = [
+    ...news.map((line, i) => ({ line, level: items[i]?.level ?? "note", score: false })),
+    ...scores.map((line) => ({ line, level: "note" as NewsLevel, score: true })),
+  ];
   return (
     <Link
       href={SECTIONS.home.href}
@@ -52,8 +59,8 @@ export function Ticker({ c }: { c: Connection }) {
           // Two copies of the track make the loop seamless; the second is decoration.
           [0, 1].map((copy) => (
             <span key={copy} className="ticker-track" aria-hidden={copy === 1}>
-              {track.map(({ line, level }, i) => (
-                <span key={i} className="ticker-item">
+              {track.map(({ line, level, score }, i) => (
+                <span key={i} className={`ticker-item ${score ? "ticker-score tnum" : ""}`}>
                   <span className={`ticker-dot ${DOT[level]}`} aria-hidden />
                   {line}
                 </span>

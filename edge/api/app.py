@@ -470,7 +470,7 @@ def owners_desk(platform: str, league_id: str, team_id: str, email: str | None =
     feed = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats,
                              trending=b.trending, profiles=b.profiles, matchups_raw=b.matchups,
                              last_week=_last_week(email, platform, league_id, b, t, auth))
-    out = desk.build(t, feed, ents, league=b.league, ros=b.ros)
+    out = desk.build(t, feed, ents, league=b.league, ros=b.ros, matchups_raw=b.matchups)
     out["synced_at"] = b.loaded_at
     return out
 

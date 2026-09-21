@@ -24,6 +24,29 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## Round six: the scale, the scores, the loader (2026-09-21, night)
+
+Andrew's next notes. **The ride skipped once** halfway through the orbit, then played
+fine on a re-run: the clock was wall time read per animation frame, so a stall on the phone
+(hydration under the scene, a tab put away) jumped the ride from the orbit to the landing.
+The ride now runs on its own clock, the sum of frame gaps each capped at `MAX_FRAME_MS`
+(`elevator.advance`), so a stall pauses it instead. **Severity is re-scaled**: only a player
+of *yours* lands at 3 or 4; a teammate's story (his QB1 out, the man ahead of him, his line)
+is at most 2, a watch (`SEVERITY_TEAMMATE_CAP`), "if I don't have the QB and you're calling
+it out because I have his WR, that's nothing more than a watch". **Openings are green**: an
+`upside` story's meter is green and reads "Upside", and its face wears a green check instead
+of the mark (`Severity up`, `NewsFace`, `.desk-sev-up`, `.desk-mark-up`), on the desk and on
+the plan's header. **Scores run after the news on the ticker**: `scoreboard` on the desk
+payload (`report.scoreboard`, yours first via `desk.scoreboard`), every game this week with
+each side's projected total and the platform's points once a game is on; `ticker.scoreLines`
+prints "Proj A 131.0 – B 118.3" before kickoff and the points after. **The matchup paper's
+credit** ("From the scouting staff") moved to the top line beside "This week · Week 2", and a
+thin rule with **"From the front office"** in it sits over the four notebooks. **The loader on
+every page** is now `Loading.tsx`: the mark in a turning ring and a line that changes every
+1.4 s ("Reading the depth charts", "Running trade simulations", ...; `LOADING.lines`, all
+things the engine actually does). `SkeletonList` keeps its name and its callers and renders
+it; the desk's quiet wait does too, so the doors open onto the same loader.
+
 ## Round five: nothing on the desk is a placeholder any more (2026-09-21, evening)
 
 Andrew: "some kind of updated info that's better than placeholder" on the desk's graphics.

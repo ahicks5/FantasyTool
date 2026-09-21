@@ -1310,6 +1310,12 @@ export function deskFor(teamId: string, entitlements: Feature[]): Desk {
     matchup: feed.matchup ? { ...feed.matchup, opponent_record: "1-1", opponent_rank: 7, teams: 12 } : null,
     sheet: { summary: feed.summary, moves: feed.actions.filter((a) => a.type !== "hold").length, all_clear: feed.all_clear },
     binders: [binder("team", "start", "my_team"), binder("waivers", "waiver", "waivers"), binder("trade", "trade", "trade_lab")],
+    // Every game this week, yours first; the mocks know one opponent, the rest are the
+    // standings' names paired off with round projections.
+    scoreboard: feed.matchup
+      ? [{ matchup_id: 1, teams: [{ id: teamId, name: feed.team, proj: feed.matchup.my_proj, points: null }, { id: feed.matchup.opponent_id ?? "9", name: feed.matchup.opponent ?? "", proj: feed.matchup.their_proj ?? 0, points: null }] },
+         { matchup_id: 2, teams: [{ id: "4", name: "FxxxKroenke", proj: 121.4, points: null }, { id: "3", name: "HusH", proj: 109.7, points: null }] }]
+      : [],
     film: feed.last_week
       ? { week: feed.last_week.week, result: feed.last_week.result, score: feed.last_week.score, opp_score: feed.last_week.opp_score, hits: feed.last_week.hits, total: feed.last_week.total }
       : null,

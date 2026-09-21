@@ -33,17 +33,19 @@ FLAGGED = DOWN | QUESTION
 # up. The level says what sort of story it is; `severity` (below) says how hard it lands.
 LEVEL_RANK = {"critical": 0, "warning": 1, "upside": 2, "note": 3}
 
-# How hard a story lands, 4 (dire) down to 0 (for the record). Andrew's brief: his QB1 out
-# for the season is the top of the page with a mark on it; a bench player questionable, or a
-# backup's blocker scratched, is a line he can read past. The order on the desk is this
-# number first. Keyed by (kind, starter of yours, ruled out rather than in doubt).
+# How hard a story lands, 4 (dire) down to 0 (for the record). Andrew's brief: only a player
+# of *yours* lands at 3 or 4; a teammate's news, however big for that team, is at most a
+# watch (2) on your desk: "if I don't have the QB and you're calling it out because I have
+# his WR, that's nothing more than a watch". A bench player questionable, or a backup's
+# blocker scratched, is a line he can read past. The order on the desk is this number first.
+# Keyed by (kind, starter of yours, ruled out rather than in doubt).
 SEVERITY = {
     ("own", True, True): 4,        # your starter will not play
     ("own", True, False): 3,       # your starter is in doubt
     ("own", False, True): 2,       # a bench player of yours is out: a roster spot, not a lineup
     ("own", False, False): 1,
-    ("qb", True, True): 3,         # the man who feeds your starter is out
-    ("qb", True, False): 2,
+    ("qb", True, True): 2,         # the man who feeds your starter is out: he plays, expect less
+    ("qb", True, False): 1,
     ("qb", False, True): 1,
     ("qb", False, False): 0,
     ("target", False, True): 2,    # a bench player of yours is next in line: a start to weigh
@@ -53,6 +55,8 @@ SEVERITY = {
     ("line", True, True): 1,       # one blocker; a second one out lifts it to 2 below
 }
 SEVERITY_TOP = 4
+# The most a story that is not about your own player can land at.
+SEVERITY_TEAMMATE_CAP = 2
 # Every kind of story the desk produces; a plan is asked for by kind (`engine/plan.py`).
 KINDS = frozenset({"own", "qb", "target", "backfield", "line"})
 # The desk shows this many; `count` still says how many there were.

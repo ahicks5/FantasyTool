@@ -130,6 +130,21 @@ export function floorAt(t: number): number {
  * than the overlay vanishing mid-frame. A tap once the landing has begun changes
  * nothing.
  */
+/**
+ * The most the ride's clock may advance in one frame. The ride is driven by
+ * `requestAnimationFrame`, and a phone that stalls (the page hydrating under the scene, a
+ * tab put away and brought back) delivers the next frame seconds later; read off the wall
+ * clock the ride then jumped from the orbit straight to the landing, which Andrew saw as
+ * "it skipped about halfway through the rotation". So the clock is the sum of frame gaps,
+ * each capped here: a stall pauses the ride instead of skipping it.
+ */
+export const MAX_FRAME_MS = 100;
+
+/** The ride's clock after one frame: `dt` since the last one, stalls capped. */
+export function advance(elapsed: number, dt: number): number {
+  return elapsed + Math.min(Math.max(dt, 0), MAX_FRAME_MS);
+}
+
 export function rideState(elapsed: number, skippedAt: number | null = null): RideState {
   const t = skippedAt !== null && elapsed >= skippedAt && skippedAt < LAND_AT ? LAND_AT + (elapsed - skippedAt) : elapsed;
   const top = FLOORS.length - 1;

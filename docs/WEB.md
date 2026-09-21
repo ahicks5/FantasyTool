@@ -79,6 +79,15 @@ and the blurb under every h1 is gone, so the band is 40px on every tab. The note
 covers pin `--color-ink` themselves: they are dark in both themes and the light theme's ink
 is black, which is how the titles went dim on the first pass.
 
+**Round five (Andrew, 2026-09-21 night).** The ride's clock is its own (`elevator.advance`:
+frame gaps summed, each capped at `MAX_FRAME_MS`), never wall time, because a stalled frame
+on a phone used to jump the orbit to the landing. `Severity` takes `up` for an `upside`
+story (green, "Upside") and `NewsFace` puts a green check on it instead of the mark. The
+ticker appends `scoreLines(desk.scoreboard)` after the news (`.ticker-score`). The matchup
+paper's credit is on the eyebrow line; `.desk-office-head` is the rule over the notebooks.
+Every page's wait is `Loading.tsx` (`.loading`, `.loading-ring`, `.loading-line`, lines from
+`LOADING`): `SkeletonList` and the desk's `QuietWait` both render it, so there is one loader.
+
 **Round four (Andrew, 2026-09-21 evening): nothing on the desk is a placeholder.** Every
 notebook carries a cover line under "from" (`.notebook-line`): the top item inside with a
 20 px face (`Avatar size="xs"`; `binders[].top`, null when the binder is locked, so a locked

@@ -642,6 +642,13 @@ export interface DeskStanding {
   ppg: number | null;
 }
 
+/** One game this week, for the ticker: both teams, the engine's projected total for each,
+ *  and the platform's points once the game is on (null before kickoff). */
+export interface ScoreboardGame {
+  matchup_id: number | string;
+  teams: { id: string; name: string; proj: number; points: number | null }[];
+}
+
 export interface Desk {
   week: number;
   team: string;
@@ -654,6 +661,8 @@ export interface Desk {
   binders: Binder[];
   /** Optional as well as nullable: an older API build does not send it. */
   film?: Film | null;
+  /** Every game this week, yours first. Optional: an older API build does not send it. */
+  scoreboard?: ScoreboardGame[];
   entitlements: Feature[];
   synced_at: number;
 }

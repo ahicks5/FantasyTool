@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { GAP_CHARS, MIN_MS, PX_PER_CHAR, PX_PER_SECOND, newsHeadline, shortStatus, tickerDurationMs, tickerLine, tickerLines } from "./ticker.ts";
+import { GAP_CHARS, MIN_MS, PX_PER_CHAR, PX_PER_SECOND, newsHeadline, scoreLines, shortStatus, tickerDurationMs, tickerLine, tickerLines } from "./ticker.ts";
 import type { NewsItem } from "./types";
 
 const who = { id: "1", name: "Terry McLaurin", position: "WR", nfl_team: "WAS", starter: true };
@@ -50,4 +50,14 @@ test("the loop is paced to the text and never whips by", () => {
   const chars = long.reduce((n, l) => n + l.length + GAP_CHARS, 0);
   assert.equal(tickerDurationMs(long), Math.round(((chars * PX_PER_CHAR) / PX_PER_SECOND) * 1000));
   assert.ok(tickerDurationMs(long) > MIN_MS);
+});
+
+test("the scores run after the news: projections flagged before kickoff, the platform's points once a game is on", () => {
+  const games = [
+    { matchup_id: 2, teams: [{ id: "1", name: "Gaainzzz", proj: 131.04, points: null }, { id: "8", name: "Eppsy13", proj: 118.3, points: null }] },
+    { matchup_id: 1, teams: [{ id: "3", name: "HusH", proj: 100, points: 71.2 }, { id: "4", name: "philking", proj: 99, points: 0 }] },
+    { matchup_id: 3, teams: [{ id: "5", name: "Bye", proj: 90, points: null }] },
+  ];
+  assert.deepEqual(scoreLines(games), ["Proj Gaainzzz 131.0 \u2013 Eppsy13 118.3", "HusH 71.2 \u2013 philking 0.0"]);
+  assert.deepEqual(scoreLines(undefined), [], "an older API build sends no scoreboard");
 });

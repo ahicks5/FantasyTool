@@ -36,6 +36,8 @@ import {
   SLOW_MS,
   TOP_FLOOR,
   WALK_MS,
+  advance,
+  MAX_FRAME_MS,
 } from "./elevator.ts";
 
 /* ------------------------------------------------------------ the schedule --- */
@@ -203,4 +205,15 @@ test("the boot script never covers a page that could not lift it", () => {
   for (const p of RIDE_PATHS) assert.equal(boots({ path: p }), true, `${p} rides`);
   assert.equal(boots({ connection: false }), false, "no team, no ride");
   assert.equal(boots({ reduced: true }), false, "reduced motion never rides");
+});
+
+test("a stalled frame pauses the ride rather than skipping it", () => {
+  // Sixty smooth frames advance the clock by their own time.
+  let t = 0;
+  for (let i = 0; i < 60; i++) t = advance(t, 16.7);
+  assert.ok(Math.abs(t - 60 * 16.7) < 1e-6);
+  // A three-second stall (the page hydrating under the scene) is worth one long frame, not
+  // three seconds: the ride resumes where it was instead of landing early.
+  assert.equal(advance(1000, 3000), 1000 + MAX_FRAME_MS);
+  assert.equal(advance(1000, -5), 1000, "a clock that runs backwards is ignored");
 });

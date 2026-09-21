@@ -111,7 +111,7 @@ function PlanView({ plan }: { plan: Plan }) {
               {a.practice ? ` · ${PLAN.practice(a.practice)}` : ""}
             </div>
           </div>
-          <Severity n={plan.severity} className="desk-sev-hero shrink-0" />
+          <Severity n={plan.severity} up={plan.story?.level === "upside"} className="desk-sev-hero shrink-0" />
         </div>
         <div className="mt-4 border-t border-white/10 pt-4">
           <div className="display text-[22px] leading-none text-white">{call.head}</div>

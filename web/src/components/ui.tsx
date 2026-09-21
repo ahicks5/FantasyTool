@@ -20,6 +20,7 @@ import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitP
 import { dayStamp, liftRideBoot, rideDue, rideForced } from "@/lib/elevator";
 import { loadConnection, loadRideDay } from "@/lib/storage";
 import { ElevatorRide } from "./Elevator";
+import { Loading } from "./Loading";
 import { IconCheck, IconChevron, IconClock, IconMark, IconMoon, IconSun, IconThumbDown, IconThumbUp } from "./icons";
 
 export function Card({
@@ -542,59 +543,18 @@ export function Opening() {
   );
 }
 
-/**
- * The call sheet's hero, empty and waiting.
- *
- * Both loaders render through this, and its geometry is the real hero's: the same
- * ON AIR band at the same height with the same live clock in it, then the same `p-6`
- * body. The loaders used to be a different shape from the page — a `p-6` box with a
- * 26px line where the real thing has a band, a 30px headline and a pip row — so the
- * page reflowed twice on a cold start, once between the two loaders and once when
- * content landed. Sharing the frame means the only thing that ever changes inside it
- * is the text.
- */
-function WaitHero({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="hero callsheet sweep relative overflow-hidden">
-      {/* The ring, not the lamp: the room is not on air yet, and a wait that is not
-          visibly turning is indistinguishable from one that has stalled. Same row,
-          same height and the same live clock as the real band, so nothing moves when
-          the lamp replaces it. */}
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
-        <span className="flex items-center gap-2 text-white/70">
-          <Spinner size={15} label={null} />
-          <span className="text-[10px] font-black uppercase tracking-[0.18em]">Coming up</span>
-        </span>
-        <Countdown onHero />
-      </div>
-      <div className="p-6">{children}</div>
-    </div>
-  );
-}
 
 /**
  * Every wait after the first: the shape of the page, no narration. The ring is
  * the point — a skeleton on its own is ambiguous between "loading" and "broken",
  * and something that is turning is never mistaken for something that has stalled.
  */
+/** The desk's wait, ride or no ride: the same loader as every other page, held at about
+ *  the desk's height so the doors open onto a page in the same place. */
 function QuietWait() {
   return (
-    <div aria-busy="true" aria-label="Loading">
-      <WaitHero>
-        <Skeleton className="h-[14px] w-28 opacity-20" />
-        <Skeleton className="mt-2 h-[33px] w-56 opacity-25" />
-        <Skeleton className="mt-2.5 h-[17px] w-40 opacity-20" />
-        {/* The pip row, at its real height, so the swap to content does not nudge. */}
-        <div className="mt-5">
-          <Skeleton className="h-[26px] w-28 opacity-20" />
-          <div className="mt-2 flex gap-1.5">
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="h-1.5 flex-1 rounded-full bg-white/15" />
-            ))}
-          </div>
-        </div>
-      </WaitHero>
-      <SkeletonList rows={2} tall quiet />
+    <div aria-busy="true" aria-label="Loading" className="grid min-h-[60vh]">
+      <Loading />
     </div>
   );
 }
@@ -705,26 +665,17 @@ export function Skeleton({ className = "" }: { className?: string }) {
   return <div aria-hidden className={`skeleton ${className}`} />;
 }
 
-export function SkeletonList({ rows = 4, tall = false, quiet = false }: { rows?: number; tall?: boolean; quiet?: boolean }) {
+/**
+ * The wait on any page: the mark, the ring and the working lines (`Loading.tsx`). It
+ * used to be a list of grey cards; Andrew asked for one loader on every page that looks
+ * like the staff are working, so every caller of this gets it. `rows` sets how tall the
+ * space is held, so the page does not jump when content lands; `quiet` drops the
+ * padding for a wait inside a section.
+ */
+export function SkeletonList({ rows = 4, quiet = false }: { rows?: number; tall?: boolean; quiet?: boolean }) {
   return (
-    <div className="grid gap-3" aria-busy="true" aria-label="Loading">
-      {!quiet && (
-        <div className="flex items-center gap-2 text-muted">
-          <Spinner size={14} label={null} />
-          <span className="text-[10px] font-black uppercase tracking-[0.18em]">Loading</span>
-        </div>
-      )}
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="card flex items-center gap-3 p-4">
-          <Skeleton className="h-12 w-12 rounded-full" />
-          <div className="flex-1">
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="mt-2 h-3 w-1/3" />
-            {tall && <Skeleton className="mt-3 h-3 w-full" />}
-          </div>
-          <Skeleton className="h-7 w-12" />
-        </div>
-      ))}
+    <div className="grid" style={{ minHeight: quiet ? undefined : Math.min(rows, 6) * 72 }}>
+      <Loading compact={quiet} />
     </div>
   );
 }

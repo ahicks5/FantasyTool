@@ -545,6 +545,10 @@ test("the desk: three stories on top, hardest first, the matchup, four notebooks
   await expect(matchup).toBeVisible();
   await expect(matchup.getByText(/\d+-\d+ · \d+ of \d+/)).toHaveCount(2);
   await expect(matchup.getByText(/% to win/)).toBeVisible();
+  // The scouting credit is on the paper's top line, and the notebooks sit under a thin
+  // "front office" header.
+  await expect(matchup.getByText(DESK.matchup.from)).toBeVisible();
+  await expect(desk.locator(".desk-office-head")).toHaveText(DESK.notebooks.eyebrow);
   // Four notebooks, each a link; the fourth is the film; a lit one carries a count inside.
   const notebooks = desk.locator(".notebook");
   await expect(notebooks).toHaveCount(4);
@@ -590,6 +594,9 @@ test("the ticker runs the desk's news along the bottom of a tab that is not the 
   // Real news from the recorded feed, not the quiet line and not the loading line.
   await expect(ticker.locator(".ticker-item").first()).toBeAttached();
   await expect(ticker.getByText(TICKER.quiet)).toHaveCount(0);
+  // The scores run after the news: every game this week, projections before kickoff.
+  await expect(ticker.locator(".ticker-score").first()).toBeAttached();
+  await expect(ticker.locator(".ticker-score").first()).toContainText(TICKER.proj);
   // It sits over the tab bar, on screen, and it is a door to the desk.
   const box = (await ticker.boundingBox())!;
   expect(box.y + box.height).toBeLessThanOrEqual(812);

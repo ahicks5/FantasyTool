@@ -6,7 +6,7 @@ import pytest
 
 from edge.api import desk
 from edge.data.depth_charts import boil
-from edge.engine import plan
+from edge.engine import newsdesk, plan
 from edge.models import League, Player, Team
 from tests.test_api import client  # noqa: F401
 from tests.test_newsdesk import DET, NOW, charts, me, slot
@@ -70,7 +70,8 @@ def test_his_qb1_out_is_watch_with_the_backup_qb_named():
     t = Team(id="1", name="Mine", owner_id=None, owner_name=None, players=[arsb], starters=["arsb"])
     out = plan.build(league_of(t), t, "qb", "arsb", "goff",
                      charts(slot("goff", "Jared Goff", "QB", "DET", order=1, status="Out", ago_h=2)), NOW, {}, {}, ALL)
-    assert out["posture"] == "watch" and out["severity"] == 3
+    # A teammate's QB out is a watch (2) on your desk, never a siren: he still plays.
+    assert out["posture"] == "watch" and out["severity"] == newsdesk.SEVERITY_TEAMMATE_CAP
     assert [n["name"] for n in out["next_up"]] == ["Joshua Dobbs"]
     assert out["trade"] is None, "a QB you do not own is not a hole to trade for"
     assert out["wire"] is not None and out["wire"]["locked"] is False
