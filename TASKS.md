@@ -683,9 +683,10 @@ person. That'd be in the scouting tab."
       missed has no profile rather than a wrong one.
 
 ## Player page (docs/SPEC-PLAYER-PAGE.md)
-Spec written 2026-09-21 from Andrew and his cofounder's notes; **§2 of the spec lists eight
-decisions Andrew owes** (what "chat" is, whether Vibes is league-aware, the badge names, what the
-Penthouse number is, the two mode colours). Supersedes **S-5**.
+Spec written 2026-09-21 from Andrew and his cofounder's notes; **§2 of the spec records the
+thirteen decisions Andrew took the same day** (live room chat, league-agnostic Vibes, brass vs
+chrome, badge names, composite in league points, nflverse green-lit, props not, no share in v1).
+Supersedes **S-5**.
 - [ ] **PP-1** The frame: a bottom sheet any player name opens, swipe down to close, no X,
       frozen header and footer, Vibes/Stats toggle that flips colour *and* word, `?player=`
       in the URL. Stats = the existing scout report lifted out of `Profile.tsx`.
@@ -702,8 +703,10 @@ Penthouse number is, the two mode colours). Supersedes **S-5**.
       strip as inline SVG with node-tested builders.
 - [ ] **PP-4b** The field map, EPA, separation, routes run — from nflverse play-by-play behind
       `edge/data/pbp.py`. **Gated**: verify 2026 files and the licence first.
-- [ ] **PP-5** Chat per player. Own PR, after the first slice is live. Blocked on D-1.
+- [ ] **PP-5** Chat per player: a live room, signed-in to post, team name as handle. Own PR,
+      after the first slice is live.
 - [ ] **PP-6** GM's Office from the footer: `/trade?player=<id>` opens the right partner card.
 - [ ] **PP-7** The Penthouse Composite: `CompositeProvider` averaging raw stat lines across
       Sleeper, ESPN (already fetched), props (vendor + terms check), Yahoo last.
-- [ ] **PP-8** Position Battle: placeholder button only.
+- [ ] **PP-8** Position Battle: placeholder button only. Defined as him vs his own NFL
+      teammates at his position (snaps, targets, carries, week by week).
