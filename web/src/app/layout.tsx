@@ -21,14 +21,14 @@ const archivo = Archivo({
   weight: ["600", "700", "800", "900"],
 });
 
-// The name is one word. The descriptor "fantasy football call sheet" rides beside it
+// The name is one word. The descriptor "fantasy football debrief" rides beside it
 // wherever context is missing and never fuses into it: "Penthouse Fantasy" as a bare
 // string reads as something else entirely in search. See docs/BRAND.md section 2.
 // The separator is the middot the rest of the app uses, not an em dash.
 const TITLE = "Penthouse · own the week";
-const OG_TITLE = "Penthouse · fantasy football call sheet";
+const OG_TITLE = "Penthouse · fantasy football debrief";
 const DESCRIPTION =
-  "Take the top floor. Penthouse writes your fantasy football call sheet every week: three moves before kickoff, who starts, who to claim, what to offer.";
+  "Take the top floor. Penthouse writes your fantasy football debrief every week: three moves before kickoff, who starts, who to claim, what to offer.";
 const OG_DESCRIPTION = "Three moves before kickoff: who starts, who to claim, what to offer. Own the week.";
 
 export const metadata: Metadata = {

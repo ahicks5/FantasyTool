@@ -123,7 +123,7 @@ def main() -> None:
       box-shadow:0 0 22px 3px rgba(255,77,58,.55)"></span>
   </div>
   <div style="font-size:34px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#9a9892">{TAGLINE}</div>
-  <div style="font-size:26px;font-weight:600;letter-spacing:.06em;color:#6b7078">Fantasy football call sheet</div>
+  <div style="font-size:26px;font-weight:600;letter-spacing:.06em;color:#6b7078">Fantasy football debrief</div>
 </div>""")
         _shot(page, og, 1200, 630, APP / "opengraph-image.png")
 

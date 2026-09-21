@@ -149,10 +149,10 @@ def test_the_framing_copy_uses_house_vocabulary(league, ros_byes):
     feed = _feed(league, league.teams[1], {"my_team", "waivers", "trade_lab"}, ros_byes)
     built = em.build(feed, base_url="https://edge.example")
     visible = " ".join(em.visible_text(built["html"]).split())
-    for phrase in ("PENTHOUSE", "ON AIR", f"Call sheet · Week {feed['week']}", em.TAGLINE,
-                   "Open the call sheet"):
+    for phrase in ("PENTHOUSE", "ON AIR", f"Debrief · Week {feed['week']}", em.TAGLINE,
+                   "Open the debrief"):
         assert phrase in visible, f"missing {phrase!r}"
-    assert "PENTHOUSE — CALL SHEET" in built["text"] and em.TAGLINE in built["text"]
+    assert "PENTHOUSE — DEBRIEF" in built["text"] and em.TAGLINE in built["text"]
     # The mark is never a gradient here: background-clip:text is invisible in Outlook.
     assert "background-clip" not in built["html"], "the email wordmark must be flat colour"
     # A waiver claim is called a claim on the sheet, not by its data-model name.

@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   CONFIDENCE_HIT_LINE,
   CONNECT,
+  DEPARTMENTS,
+  DEPARTMENT_ORDER,
   EMAIL,
   GROUPS,
   LANDING,
@@ -27,6 +29,7 @@ const ALL_COPY: string[] = [
   ...Object.values(LINES),
   ...Object.values(CONNECT),
   ...Object.values(GROUPS).flatMap((g) => [g.clear, g.stamp]),
+  ...Object.values(DEPARTMENTS),
   ...LANDING.features.flatMap((f) => [f.room, f.title, f.tag, f.body]),
   LANDING.exampleHead,
   LANDING.score.head,
@@ -154,4 +157,52 @@ test("the last-week line offers no way to state a rate", () => {
   assert.equal(LAST_WEEK.calls(2, 3), "2 of 3 calls hit");
   assert.equal(LAST_WEEK.calls(1, 1), "1 of 1 call hit");
   assert.ok(!/%/.test(LAST_WEEK.calls(2, 3)));
+});
+
+/* ------------------------------------------------------------- the Debrief ---
+   The front page is the Debrief: one memo per department, each signed by whoever
+   is talking. These pin the rename and the eyebrows that replaced the hero.      */
+
+test("the front page is the Debrief, in the tab and on the page", () => {
+  // One name for one page (D1). The code identifiers do not move — `CallSheet` the
+  // component, `.callsheet` the CSS class, `sheet.ts`, and every `booth.*` storage key
+  // keep their names, because none of them is a word a user reads and renaming the keys
+  // signs every existing reader out of their league (docs/WEB.md).
+  assert.equal(SECTIONS.home.label, "Debrief");
+  assert.equal(SECTIONS.home.title, "Debrief");
+  assert.equal(SECTIONS.home.gate, "your debrief");
+  // The rename goes everywhere a user reads it, the landing's second beat included.
+  assert.match(LINES.heroSub, /debrief/);
+  assert.match(EMAIL.label, /debrief/);
+  for (const line of ALL_COPY) {
+    assert.ok(!/call sheet/i.test(line), `copy still says call sheet: ${line}`);
+  }
+});
+
+test("every department that reports to the Debrief has a memo eyebrow", () => {
+  // The Debrief prints all four, always, in tab order — an empty memo is the point,
+  // exactly as an empty bench was. `home` is the page they print on, not a department.
+  assert.deepEqual([...DEPARTMENT_ORDER], TAB_ORDER.filter((k) => k !== "home"));
+  for (const key of DEPARTMENT_ORDER) {
+    assert.ok(key in SECTIONS, `department "${key}" opens no section`);
+    assert.ok(DEPARTMENTS[key], `department "${key}" has no eyebrow`);
+  }
+  assert.equal(Object.keys(DEPARTMENTS).length, DEPARTMENT_ORDER.length);
+});
+
+test("an eyebrow is a person talking, and it fits the memo header", () => {
+  for (const key of DEPARTMENT_ORDER) {
+    const line = DEPARTMENTS[key];
+    // "From the …" is what makes it a memo rather than a section heading. A card titled
+    // "Depth chart" says a screen exists; "From the head coach" says somebody looked.
+    assert.match(line, /^From the /, `${key} eyebrow is not signed: ${line}`);
+    // It shares one line at 320px with the memo's status — a count, a deadline note or a
+    // stamp — which leaves about 26 characters before the eyebrow truncates.
+    assert.ok(line.length <= 26, `${key} eyebrow is ${line.length} chars, too long for 320px`);
+    // Same rules as every other line: no number, no claim, no verdict on the reader.
+    assert.ok(!/\d/.test(line), `${key} eyebrow states a number: ${line}`);
+  }
+  // Four different voices. Two departments signing the same name is a copy bug that
+  // reads as a rendering bug.
+  assert.equal(new Set(Object.values(DEPARTMENTS)).size, DEPARTMENT_ORDER.length);
 });

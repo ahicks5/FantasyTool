@@ -34,13 +34,13 @@ that sentence. If an asset could belong to a sportsbook or a DFS app, it is not 
 
 **Product name: Penthouse.** One word, everywhere a user reads it.
 
-**Descriptor: fantasy football call sheet.** It rides beside the name where context is
+**Descriptor: fantasy football debrief.** It rides beside the name where context is
 missing — title tags, app-store listing, social bios, the first email — and never
 becomes part of the name.
 
 ```
 <title>          Penthouse · own the week
-og:title         Penthouse · fantasy football call sheet
+og:title         Penthouse · fantasy football debrief
 social bio       Penthouse. Fantasy football, three moves before kickoff.
 handle           penthousefootball  (not penthousefantasy)
 ```
@@ -95,7 +95,7 @@ reason to rename the sheet.
 
 | Room | Tab | What it is |
 |---|---|---|
-| Call sheet | `/home` | The three moves. The whole product. |
+| Debrief | `/home` | One memo per department. The whole product. |
 | Depth chart | `/team` | Start/sit with a stamp and a one-line reason. The tab reads **Lineup**: "Depth" alone reads as bench depth. |
 | Scouting | `/waivers` | The wire: five pickups, ranked by fit, with a bid |
 | GM's Office | `/trade` | Trade Lab: verdict and counter |
@@ -114,7 +114,7 @@ the landing page sound like a lobby.
 |---|---|---|
 | `tagline` | **Own the week.** | Landing footer, share card, OG image, email. Locked. |
 | `hero` | Three moves before kickoff. | Landing h1 |
-| `heroSub` | Everyone else hands you a database. We hand you a call sheet. | Landing, second beat |
+| `heroSub` | Everyone else hands you a database. We hand you a debrief. | Landing, second beat |
 | `threshold` | Welcome to the owner's box. | `/login` eyebrow, `/connect` h1 |
 | `thresholdShort` | Take the top floor. | Meta description |
 | `paywallBundle` | The rest of the building. | The Penthouse card in `Pricing` |

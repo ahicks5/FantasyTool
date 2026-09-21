@@ -115,7 +115,7 @@ function MatchupBody({ c }: { c: Connection }) {
       <div className="card p-6 text-center">
         <Eyebrow>No matchup</Eyebrow>
         <p className="mx-auto mt-2 max-w-[18rem] text-[15px] leading-relaxed text-ink-2">
-          This league has no opponent on the board for week {feed.week}. The call sheet still stands.
+          This league has no opponent on the board for week {feed.week}. The debrief still stands.
         </p>
       </div>
     );

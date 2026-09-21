@@ -76,7 +76,7 @@ export const OPENING_LINES = [
   "Reading your league",
   "Pulling this week's projections",
   "Re-scoring to your settings",
-  "Writing the call sheet",
+  "Writing the debrief",
 ] as const;
 
 /** How long a line sits unticked before its check lands. */

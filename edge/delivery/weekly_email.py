@@ -1,4 +1,4 @@
-"""The weekly email: the call sheet, delivered before the user thinks to open the app.
+"""The weekly email: the Debrief, delivered before the user thinks to open the app.
 
 Email HTML is not web HTML. Gmail strips <style> blocks, Outlook ignores flexbox and most
 clients block nothing but render inconsistently, so everything here is tables and inline
@@ -37,8 +37,8 @@ METAL = "#dde1e6"
 TAGLINE = "Own the week."
 
 TYPE_COLOR = {"start": START, "waiver": LEAN, "trade": INK, "hold": MUTED}
-# What the call sheet calls each play. The raw feed type ("waiver") is a data word, not a
-# spoken one; the call sheet says "Claim".
+# What the Debrief calls each play. The raw feed type ("waiver") is a data word, not a
+# spoken one; the Debrief says "Claim".
 TYPE_LABEL = {"start": "Start", "waiver": "Claim", "trade": "Trade", "hold": "Hold"}
 CONFIDENCE_COLOR = {"Lock": START, "Lean": LEAN, "Coin flip": FLIP}
 MAX_ACTIONS = 4
@@ -107,7 +107,7 @@ def _stamp(label: str, color: str) -> str:
 
 
 def _action_row(a: dict, n: int, base_url: str) -> str:
-    """One call, numbered in the margin the way the web call sheet numbers it."""
+    """One call, numbered in the margin the way the web Debrief numbers it."""
     colour = TYPE_COLOR.get(a.get("type", ""), INK)
     label = TYPE_LABEL.get(a.get("type", ""), str(a.get("type") or "")).upper()
     # A hold already says "hold your budget" in the subtitle; repeating it underneath in green
@@ -169,7 +169,7 @@ def _action_row(a: dict, n: int, base_url: str) -> str:
                 {_esc(a.get('reason'))}</div>
               <a href="{_esc(href)}" style="display:inline-block;margin-top:12px;background:{INK};
                  color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:9px 14px;
-                 border-radius:8px;">{_esc(a.get('cta', {}).get('label') or 'Open the call sheet')}</a>
+                 border-radius:8px;">{_esc(a.get('cta', {}).get('label') or 'Open the debrief')}</a>
             </td>
           </tr>
         </table>
@@ -225,7 +225,7 @@ def render_html(feed: dict, base_url: str = "https://penthouse.example", unsubsc
         </table>
       </td></tr>
       <tr><td style="padding:22px 20px 8px 20px;">
-        {_eyebrow(f"Call sheet &middot; Week {_esc(feed.get('week'))} &middot; {_esc(feed.get('team'))}")}
+        {_eyebrow(f"Debrief &middot; Week {_esc(feed.get('week'))} &middot; {_esc(feed.get('team'))}")}
         <div style="font-size:26px;font-weight:800;color:{INK};line-height:1.2;margin-top:6px;">
           {_esc(feed.get('summary'))}</div>
         <div style="font-size:13px;color:{MUTED};margin-top:6px;">{sheet_line}.</div>
@@ -241,7 +241,7 @@ def render_html(feed: dict, base_url: str = "https://penthouse.example", unsubsc
         <div style="font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
              color:{MUTED};text-align:center;margin-top:14px;">{TAGLINE}</div>
         <div style="font-size:12px;color:{MUTED};text-align:center;margin-top:10px;">
-          <a href="{_esc(base_url)}/home" style="color:{MUTED};">Open the call sheet</a>
+          <a href="{_esc(base_url)}/home" style="color:{MUTED};">Open the debrief</a>
           {' &middot; ' + unsub if unsub else ''}
         </div>
       </td></tr>
@@ -257,7 +257,7 @@ def render_text(feed: dict, base_url: str = "https://penthouse.example") -> str:
     It carries the same margin numbers as the HTML, so a reply quoting "02" means the same
     call in either version.
     """
-    lines = ["PENTHOUSE — CALL SHEET",
+    lines = ["PENTHOUSE — DEBRIEF",
              f"Week {feed.get('week')} · {feed.get('team')}",
              feed.get("summary", ""), ""]
     m = feed.get("matchup") or {}

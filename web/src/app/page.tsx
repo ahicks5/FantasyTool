@@ -70,7 +70,7 @@ const WAY_IN = "/connect";
 const STEPS = [
   { n: "1", title: "Hook up your league", body: "A Sleeper username or a league ID. No password, nothing to sign." },
   { n: "2", title: "We re-score everything", body: "Every projection re-scored to your league's own settings. Never assumed PPR." },
-  { n: "3", title: "You get a call sheet", body: "Ranked moves for the week, each with one line of why. Tick them off as you make them." },
+  { n: "3", title: "You get a debrief", body: "Ranked moves for the week, each with one line of why. Tick them off as you make them." },
 ];
 
 function initials(name: string): string {
@@ -171,7 +171,7 @@ export default function Landing() {
       </section>
 
       {/* The one dark surface: the product itself, so the page shows before it tells. */}
-      <section className="mt-9 rise rise-2" aria-label="Example call sheet">
+      <section className="mt-9 rise rise-2" aria-label="Example debrief">
         <div className="hero callsheet">
           <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
             <OnAir className="text-white/70" />

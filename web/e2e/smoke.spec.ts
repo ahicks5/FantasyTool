@@ -288,7 +288,7 @@ const PAGES: PageCase[] = [
   },
 ];
 
-test("the call sheet shows a player without a click, for a reader who has bought nothing", async ({ context, page }) => {
+test("the Debrief shows a player without a click, for a reader who has bought nothing", async ({ context, page }) => {
   // The finding this whole plan started from: the home screen showed no player names at
   // all, every row folded, headline "Pending moves: 2". A free reader is the one who must
   // see them -- it is the only screen they get in full.

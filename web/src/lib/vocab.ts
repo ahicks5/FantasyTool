@@ -1,11 +1,9 @@
 /**
  * Every section name the app says out loud, in one place.
  *
- * Coach vocabulary, and it survives the rebrand on purpose: the penthouse is where the
- * sheet is *read*, not a reason to rename the sheet. The nav names a room (call sheet,
- * depth chart, scouting, the GM's Office, the film) while what you *buy* keeps its
- * product name (Wire Pass, Trade Lab, The Penthouse) — those live in `edge/products.py`,
- * not here.
+ * Coach vocabulary. The nav names a room (the debrief, the depth chart, scouting, the
+ * GM's Office, the film) while what you *buy* keeps its product name (Wire Pass, Trade
+ * Lab, The Penthouse) — those live in `edge/products.py`, not here.
  *
  * It is one module rather than strings scattered across five pages and a tab bar
  * because renaming a section otherwise means a sweep through the app and its tests,
@@ -34,10 +32,10 @@ export interface Section {
 export const SECTIONS = {
   home: {
     href: "/home",
-    label: "Call sheet",
-    title: "Call sheet",
-    blurb: "This week\u2019s moves, ranked.",
-    gate: "your call sheet",
+    label: "Debrief",
+    title: "Debrief",
+    blurb: "What your staff needs you to see.",
+    gate: "your debrief",
   },
   // The tab says "Lineup" and the page says "Depth chart". "Depth" on its own is the
   // half of the phrase that carries none of the meaning — it reads as bench depth, which
@@ -71,8 +69,8 @@ export const SECTIONS = {
     blurb: "How your season is going.",
     gate: "the film",
   },
-  /** A room off the call sheet, not a tab of its own: it lives under `/home/` so the
-   *  call sheet tab stays lit while you are reading the week's opponent. */
+  /** A room off the Debrief, not a tab of its own: it lives under `/home/` so the
+   *  Debrief tab stays lit while you are reading the week's opponent. */
   matchup: {
     href: "/home/matchup",
     label: "Matchup",
@@ -85,9 +83,9 @@ export const SECTIONS = {
 export type SectionKey = keyof typeof SECTIONS;
 
 /**
- * Tab order, left to right. The call sheet is first because it is the whole product.
+ * Tab order, left to right. The Debrief is first because it is the whole product.
  *
- * Not every section is a tab — `matchup` is a room off the call sheet — so `TabKey` is
+ * Not every section is a tab — `matchup` is a room off the Debrief — so `TabKey` is
  * narrower than `SectionKey`, and anything keyed by tab (the icon map) has to be
  * exhaustive over the tabs only. Typing it the other way round meant adding a
  * non-tab section demanded an icon for a tab that does not exist.
@@ -95,6 +93,35 @@ export type SectionKey = keyof typeof SECTIONS;
 export const TAB_ORDER = ["home", "team", "waivers", "trade", "report"] as const;
 
 export type TabKey = (typeof TAB_ORDER)[number];
+
+/**
+ * Who is talking, on each memo of the Debrief.
+ *
+ * The Debrief is the secretary's one-page summary of what every department needs the
+ * owner to see this week, so each card is signed by the department rather than titled
+ * with the tab it opens. "From the head coach" says a person looked at your lineup;
+ * "Depth chart" says a screen exists. The door underneath still names the room, so the
+ * eyebrow never has to carry the navigation as well.
+ *
+ * Keyed by `TabKey` for the same reason `GROUPS` is: the memo and the tab its door
+ * points at cannot drift apart. `home` is absent because the Debrief is the page these
+ * memos are printed on, not a department that reports to it.
+ *
+ * Length is load-bearing. The eyebrow shares one line at 320px with the memo's status
+ * (a count, a deadline note or a stamp), which leaves it about 26 characters before it
+ * truncates — "From the head of scouting" is 25 and is the longest the room allows.
+ */
+export const DEPARTMENTS = {
+  team: "From the head coach",
+  waivers: "From the head of scouting",
+  trade: "From the GM\u2019s Office",
+  report: "From the film room",
+} as const satisfies Partial<Record<TabKey, string>>;
+
+export type DepartmentKey = keyof typeof DEPARTMENTS;
+
+/** Tab order, minus the Debrief itself: the memos print in the order of the bar. */
+export const DEPARTMENT_ORDER = ["team", "waivers", "trade", "report"] as const satisfies readonly DepartmentKey[];
 
 /**
  * The lines the brand says out loud, in one place for the same reason the section
@@ -114,7 +141,7 @@ export const LINES = {
   /** The marketing h1. Its whole job is the contrast with an encyclopedia. */
   hero: "Three moves before kickoff.",
   /** The second beat, where the contrast is said out loud. */
-  heroSub: "Everyone else hands you a database. We hand you a call sheet.",
+  heroSub: "Everyone else hands you a database. We hand you a debrief.",
 
   /** Crossing the threshold: /login, and the first email subject. */
   threshold: "Welcome to the owner\u2019s box.",
@@ -140,7 +167,7 @@ export const LINES = {
 } as const;
 
 /**
- * The call sheet's three benches, and what each one says when it has nothing to call.
+ * The Debrief's three working departments, and what each says when it has nothing to call.
  *
  * The sheet used to be one flat ranked list of cards, which answers "what is the single
  * biggest move" and nothing else. Grouped under the tab that owns each call, it answers
@@ -411,7 +438,7 @@ export const TRADE = {
 /** The weekly-email opt-in on /login. */
 export const EMAIL = {
   eyebrow: "Thursday email",
-  label: "Send me the call sheet every Thursday",
+  label: "Send me the debrief every Thursday",
   note: "This week's moves, in your inbox before kickoff. Untick it any time.",
   /*
    * Andrew's call. There is no Resend key and no verified sending domain yet (D5), so the

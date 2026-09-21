@@ -90,12 +90,12 @@ Then only what you need:
 ## Brand, in one paragraph
 
 The product is the **owner's box**: the top floor, above the noise, where the staff still
-hands you a **call sheet** but you own the building. Competitors are encyclopedias you browse;
+hands you a **debrief** but you own the building. Competitors are encyclopedias you browse;
 we are three moves you make before kickoff. **Penthouse** is one word, everywhere a user reads
 it. Tagline: **"Own the week."** Voice: the staff in your ear — confident, clipped, verb
 first, plural. Never hedge on a call the engine is confident about; say plainly when it is a
 coin flip. Look: black and polished chrome, two type families, the metal is the only
-decoration. Sections are **call sheet** (home) · **depth chart** (team) · **scouting**
+decoration. Sections are **debrief** (home) · **depth chart** (team) · **scouting**
 (waivers) · **GM's Office** (trade) · **the film** (report) — but what you *buy* keeps its
 product name: Wire Pass, Trade Lab, The Penthouse. Full guide: **`docs/BRAND.md`**; how it is
 actually built: **`docs/WEB.md`**.
