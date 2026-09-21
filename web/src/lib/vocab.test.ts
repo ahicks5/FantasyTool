@@ -8,6 +8,7 @@ import {
   LANDING,
   LAST_WEEK,
   LINES,
+  RIDE,
   SECTIONS,
   STANDING,
   TAB_ORDER,
@@ -25,6 +26,7 @@ const SECTION_VALUES = Object.values(SECTIONS);
 const ALL_COPY: string[] = [
   ...SECTION_VALUES.flatMap((s) => [s.label, s.title, s.blurb, s.gate]),
   ...Object.values(LINES),
+  ...Object.values(RIDE),
   ...Object.values(CONNECT),
   ...Object.values(GROUPS).flatMap((g) => [g.clear, g.stamp]),
   ...LANDING.features.flatMap((f) => [f.room, f.title, f.tag, f.body]),

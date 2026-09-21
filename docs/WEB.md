@@ -31,6 +31,20 @@ instead. Once the narration starts it is owed `MIN_NARRATED_MS`, so a warm API c
 off mid-sentence. Both loaders render through the call sheet's own frame (`WaitHero`), so the
 swap to content changes the text and nothing else.
 
+**The opening is an elevator.** The first narrated wait of the day is the ride up
+(`components/Elevator.tsx`): a full-screen car over the quiet skeleton, the doors close,
+the floors go by while the API's real phases tick on the car's display, the car stops at
+PH, the lamp comes on, and the doors open onto the page that loaded underneath. Every
+duration lives in `lib/elevator.ts` and nowhere else: the component reads the clock
+through `rideState`, the CSS gets the door timings as custom properties, and
+`MIN_NARRATED_MS` in `lib/wait.ts` *is* `RIDE_TOTAL_MS`, so the page cannot swap to
+content while the doors are still moving. A tap skips to the doors opening, which lifts
+the floor early (`liftFloor`). It plays once a day per browser (`booth.ride`, a local day
+stamp), again after every `/connect` (`saveConnection` clears the stamp), never without a
+team, never under reduced motion, and `?ride=1` forces it for a demo. Every other cold
+load is a quiet skeleton with no floor at all. Screenshot it in both themes: the car's wall
+is the page colour, the doors are the hero's dark metal in both.
+
 **Nothing ever looks stalled.** Every wait shows a turning ring: `<Spinner>` on its own,
 `<Button busy>` for any async control, the shape of the page plus a ring for a page-level
 wait, and the tapped tab swapping its icon for one while a route arrives. That last one uses

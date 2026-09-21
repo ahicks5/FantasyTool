@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
-import { SECTIONS } from "../src/lib/vocab";
+import { RIDE, SECTIONS } from "../src/lib/vocab";
+import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { SCOUT } from "../src/lib/vocab";
 import { AVAILABILITY_LABELS, BOARD_LABELS, SORT_LABELS } from "../src/lib/board";
@@ -99,9 +100,13 @@ test.beforeEach(async ({ context, page }) => {
   await context.route("**/*", stubExternal);
   // Seed the stored league before any app script runs, so the pages skip the connect gate.
   await context.addInitScript(
-    ([key, value]) => {
+    ([key, value, rideKey, today]) => {
       try {
         window.localStorage.setItem(key, value);
+        // The elevator plays on the first open of the day. Stamp today so the pages
+        // below open straight onto their content; the one test that wants the ride
+        // asks for it with ?ride=1. Must match `RIDE_KEY` in web/src/lib/storage.ts.
+        window.localStorage.setItem(rideKey, today);
       } catch {
         /* blocked storage: the test will fail on content instead */
       }
@@ -109,7 +114,7 @@ test.beforeEach(async ({ context, page }) => {
     // Must match `KEY` in web/src/lib/storage.ts. It was `edge.connection` before the
     // rebrand and this seed was not carried over, so every page below rendered the connect
     // gate and the suite went dark on six of its eight tests without anyone being told.
-    ["booth.connection", JSON.stringify(CONNECTION)] as const,
+    ["booth.connection", JSON.stringify(CONNECTION), "booth.ride", dayStamp(new Date())] as const,
   );
   page.setDefaultTimeout(15_000);
 });
@@ -349,7 +354,10 @@ test("the board: filter to free-agent running backs, then re-sort them", async (
   const { status, problems } = await visit(page, "/waivers");
   expect(status).toBe(200);
 
-  const board = page.getByRole("list").first();
+  // The board's own list, by its id: the plan above it is also a list (the claim sits
+  // in an <ol>), so "the first list on the page" is the board only until the plan lands.
+  // With the opening no longer holding the page, it lands before this test reads its rows.
+  const board = page.locator("main ul[id$='-list']");
   await expect(board.getByRole("listitem").first()).toBeVisible({ timeout: 10_000 });
 
   const rows = board.getByRole("listitem");
@@ -409,7 +417,7 @@ test("the board is free, and clicking a row opens that player", async ({ page })
   await expect(page.getByText("Wire Pass").first()).toBeVisible();
 
   // A locked reader still gets a working board, and every row still opens a player.
-  const row = page.getByRole("list").first().getByRole("listitem").first();
+  const row = page.locator("main ul[id$='-list']").getByRole("listitem").first();
   await expect(row).toBeVisible({ timeout: 10_000 });
   await row.getByRole("button").first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -539,4 +547,36 @@ test("a link with ?player= opens straight onto his page", async ({ page }) => {
 
   await page.goto(url);
   await expect(page.getByRole("dialog")).toBeVisible();
+});
+
+test("the first open rides up to the call sheet, and the second does not", async ({ page }) => {
+  // The opening is an elevator (`components/Elevator.tsx`): it takes the screen, the
+  // floors go by, and the doors open onto the page that loaded underneath. Two things
+  // have to be true for it to be an opening and not a wall: it ends on its own, and
+  // it does not play again on the next open.
+  await visit(page, "/home?ride=1");
+  const ride = page.getByRole("status", { name: RIDE.aria });
+  await expect(ride).toBeVisible();
+  await expect(ride.getByText(RIDE.goingUp)).toBeVisible();
+  // It ends, and the call sheet is there when the doors open.
+  await expect(ride).toHaveCount(0);
+  await expect(page.getByText(/\d+ moves? to make|All settled\./)).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+  // Stamped, so a reload today is a quiet load.
+  expect(await page.evaluate(() => localStorage.getItem("booth.ride"))).toBe(dayStamp(new Date()));
+  await page.goto("/home", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText(/\d+ moves? to make|All settled\./)).toBeVisible();
+  await expect(page.getByRole("status", { name: RIDE.aria })).toHaveCount(0);
+});
+
+test("tapping the ride opens the doors early", async ({ page }) => {
+  await visit(page, "/home?ride=1");
+  const ride = page.getByRole("status", { name: RIDE.aria });
+  await expect(ride).toBeVisible();
+  const t0 = Date.now();
+  await ride.click();
+  await expect(ride).toHaveCount(0);
+  // The whole ride is over four seconds; a skip is the doors' opening time and no more.
+  expect(Date.now() - t0).toBeLessThan(2500);
+  await expect(page.getByText(/\d+ moves? to make|All settled\./)).toBeVisible();
 });

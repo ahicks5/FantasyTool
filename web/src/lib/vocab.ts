@@ -140,6 +140,25 @@ export const LINES = {
 } as const;
 
 /**
+ * The ride up. The opening is an elevator to the top floor (`components/Elevator.tsx`),
+ * and these are the few words on the car: the plate above the doors, the display on
+ * the wall, and the one control. The staff lines that tick on the way up live in
+ * `lib/elevator.ts`, because the ride's timing is derived from their count.
+ */
+export const RIDE = {
+  /** What a screen reader is told the overlay is. */
+  aria: "Riding up to the Penthouse",
+  /** Above the doors while the car climbs. */
+  goingUp: "Going up",
+  /** Above the doors once it has stopped. */
+  topFloor: "Top floor",
+  /** The eyebrow on the car's display: whose office this is. */
+  owner: "Owner",
+  /** The one control. A ride is a first impression, not a toll. */
+  skip: "Tap to skip",
+} as const;
+
+/**
  * The call sheet's three benches, and what each one says when it has nothing to call.
  *
  * The sheet used to be one flat ranked list of cards, which answers "what is the single

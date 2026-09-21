@@ -335,6 +335,7 @@ which slows rather than stops, because a frozen ring says "stalled".
 | `tick` | changed | a number |
 | `lamp` | pulses | ON AIR |
 | `sweep` | sheen crosses metal | a plan loading |
+| `ride` | the elevator: doors, floors, ding, doors | the first open of the day, once a team is known |
 
 The kit has no motion. It should list these — they are brand, and no competitor has a
 stamp that slams.
@@ -388,9 +389,13 @@ logo. Both shapes are built:
 - The in-app preview (`web/src/components/ShareCard.tsx`) mirrors this layout and holds
   a fourth copy of the mark. It moves with the Python card.
 
-**Loading screen.** The kit's is emblem + progress bar, which is what `WaitHero` already
-frames. Putting the mark in the `Opening` frame is still to do — the narrated checklist
-stays either way.
+**Loading screen.** The first open of the day is the ride up (`web/src/components/Elevator.tsx`):
+you step into the car, the doors close over the mark, the floors go by on the plate while
+the staff's checklist ticks on the wall display, the car stops at PH, the ON AIR lamp comes
+on, and the doors open onto the call sheet. The office is the app; nothing is revealed
+except the page. The lamp obeys its rule (it has the words beside it, and it comes on only
+when the car stops), the mark is engraved across the seam, and the doors are the hero's
+dark metal in both themes. Tap to skip. Every later wait is the quiet skeleton.
 
 **Email cannot be chrome.** Gmail strips `<style>`; Outlook renders no gradients, no
 `background-clip`, no SVG. The email is flat silver capitals (`METAL` in

@@ -2,6 +2,29 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## The video game (2026-09-21)
+
+Andrew wants Penthouse to play like MyGM: an owner, a staff, a building. The first piece is
+the opening.
+
+- [x] **VG-1** **The ride up.** The opening is an elevator: doors close over the mark, the
+      plate climbs L to PH while the API's real phases tick on the car's display, the car
+      stops, the ON AIR lamp comes on, the doors open onto the call sheet. Pure schedule in
+      `web/src/lib/elevator.ts` (10 tests), the floor in `lib/wait.ts` derived from it (the
+      old checklist-floor tests rewritten around the ride), the overlay in
+      `components/Elevator.tsx`, CSS only, no dependency. Once a day per browser, again
+      after every `/connect`, tap to skip, `?ride=1` to replay. Two browser tests.
+      Screenshotted frame by frame at 375px in both themes.
+- [ ] **VG-2** Sound. A chime at PH and a door roll would sell it, but a cold load has no
+      user gesture so autoplay is blocked; the `/connect` hand-off does have one. Decide
+      whether sound is worth an "audio on" switch in the top bar.
+- [ ] **VG-3** The call from the GM. The next beat: after the doors open, the phone on the
+      desk rings and the GM reads the sheet's top move. The line has to be the engine's
+      words, not the LLM's numbers.
+- [ ] **VG-4** The ride as the `/connect` hand-off proper: today `/connect` pushes to
+      `/home`, which rides because the stamp was cleared. Pushing straight into the ride
+      from the submit tap would let the doors close on the connect form itself.
+
 ## The owner's box (docs/PLAN-OWNERS-BOX.md, 2026-09-20)
 
 The engine had the insights; the app hid them. Eight workstreams, every decision asked of
@@ -164,6 +187,12 @@ themes. All eight are done and on production.
   `/api` itself, so that value 404s every call while the page still renders. Corrected.
 
 ## Decisions needed from Andrew
+
+- **The ride plays once a day.** Every reload used to replay the two-second checklist;
+  the elevator is over four seconds, so it plays on the first open of the day and after
+  connecting, and every other cold load is a quiet skeleton. If you want it every cold
+  load, it is one line in `Opening` (`components/ui.tsx`). If you want it rarer (once a
+  week), `rideDue` in `lib/elevator.ts` takes the stamp.
 
 - [ ] **Is the scouting board free?** It ships free (2026-09-21, see "The scouting board"). The
       case for: it is description, not decision — a projection is the player's own number,

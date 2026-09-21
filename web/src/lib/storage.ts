@@ -65,6 +65,8 @@ function notify() {
 export function saveConnection(c: Connection): void {
   try {
     window.localStorage.setItem(KEY, JSON.stringify(c));
+    // A new team is a new office: the next open rides up to it, whatever the day.
+    window.localStorage.removeItem(RIDE_KEY);
   } catch {
     /* private mode / blocked storage: ignore */
   }
@@ -92,6 +94,29 @@ function subscribe(cb: () => void): () => void {
 /** Client hook: null during SSR/hydration, then the persisted connection. */
 export function useConnection(): Connection | null {
   return useSyncExternalStore(subscribe, loadConnection, () => null);
+}
+
+/* ---------------------------------------------------------------- the ride ---
+   The last local day the elevator played (`lib/elevator.ts` decides what to do with
+   it). One stamp, so the ride is the first impression of the day and not of every
+   reload. Cleared by `saveConnection`.                                            */
+
+const RIDE_KEY = "booth.ride";
+
+export function loadRideDay(): string | null {
+  try {
+    return window.localStorage.getItem(RIDE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveRideDay(day: string): void {
+  try {
+    window.localStorage.setItem(RIDE_KEY, day);
+  } catch {
+    /* blocked storage: the ride simply plays again next time */
+  }
 }
 
 /* --------------------------------------------------------------- the sheet ---

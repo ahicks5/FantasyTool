@@ -19,6 +19,8 @@
    different trees, mounted by different components, and the question "is something
    already waiting" has one answer per session, not one per subtree.              */
 
+import { RIDE_TOTAL_MS } from "./elevator.ts";
+
 export type WaitPhase = "narrated" | "quiet";
 
 let opened = false;
@@ -30,8 +32,9 @@ let narratedAt = 0;
  * claims while another wait is already up gets a skeleton, whether or not the room
  * has opened. Pair every call with `releaseWait`.
  *
- * Pass `animated: false` when the checklist will be painted already complete — under
- * reduced motion — so the screen is not held for an animation that never runs.
+ * Pass `animated: false` when no ride will play — under reduced motion, or when the
+ * browser has already ridden up today — so the screen is not held for an animation
+ * that never runs.
  */
 export function claimWait(animated = true): WaitPhase {
   const alone = onScreen === 0;
@@ -48,52 +51,32 @@ export function claimFirstOpen(animated = true): boolean {
   if (opened) return false;
   opened = true;
   narratedAt = Date.now();
-  // The floor is there to protect an animation. Under reduced motion there is no
-  // animation to protect — every line is ticked on the first frame — and holding the
-  // screen anyway would leave that reader staring at a finished list for two seconds.
+  // The floor is there to protect an animation. When there is none to protect (reduced
+  // motion, or the ride already played today) holding the screen anyway would leave
+  // that reader staring at a skeleton for four seconds.
   if (animated) startFloor();
   return true;
 }
 
 /* ------------------------------------------------------------ the sequence ---
-   The lines, the tempo, and the floor they imply, in one place.
+   The opening is the ride up (`lib/elevator.ts`): the doors, the floors, and the
+   staff lines ticking on the way. The floor here is derived from that schedule.
 
-   They were in two: `Opening` in `components/ui.tsx` ticked four lines at 420ms
-   while `MIN_NARRATED_MS` here said 900, so a warm API released the screen around
-   line two and the opening was cut off mid-sentence — the animation and the floor
-   protecting it were two numbers in two files with nothing tying them together, and
-   a fifth line would have re-broken it in silence. The floor is now computed from
-   the same values the animation runs on, and the test "the floor outlasts the checklist
-   it is protecting" fails the moment it cannot cover them.
+   They were in two places once: `Opening` in `components/ui.tsx` ticked four lines
+   at 420ms while `MIN_NARRATED_MS` here said 900, so a warm API released the screen
+   around line two and the opening was cut off mid-sentence. The animation and the
+   floor protecting it were two numbers in two files with nothing tying them
+   together. Now the ride owns every number and this file reads them, and the test
+   "the floor outlasts the ride it is protecting" fails the moment it cannot.       */
 
-   The lines are words a user reads, which by the rule in CLAUDE.md puts them in
-   `lib/vocab.ts`. They are here because the floor has to be derived from their
-   count and `vocab.ts` has no business owning a timer; flagged for the lead rather
-   than settled here.                                                             */
-
-/** The phases the API really goes through, in the order the checklist ticks them. */
-export const OPENING_LINES = [
-  "Reading your league",
-  "Pulling this week's projections",
-  "Re-scoring to your settings",
-  "Writing the call sheet",
-] as const;
-
-/** How long a line sits unticked before its check lands. */
-export const OPENING_STEP_MS = 420;
+export { OPENING_LINES, OPENING_STEP_MS } from "./elevator.ts";
 
 /**
- * A beat after the last check, so the opening ends on a complete list instead of
- * swapping to content in the same frame the final tick arrives.
+ * The narrated opening plays for at least this long once it has started: the whole
+ * ride, doors closed to doors open. Derived, never typed by hand. A floor shorter
+ * than its own animation is the bug this constant used to be.
  */
-export const OPENING_TAIL_MS = 320;
-
-/**
- * The narrated opening plays for at least this long once it has started: long enough
- * for every line to tick, plus the tail beat. Derived, never typed by hand — a floor
- * shorter than its own animation is the bug this constant used to be.
- */
-export const MIN_NARRATED_MS = OPENING_LINES.length * OPENING_STEP_MS + OPENING_TAIL_MS;
+export const MIN_NARRATED_MS = RIDE_TOTAL_MS;
 
 /* ---------------------------------------------------------------- the floor ---
    A warm API can answer while the checklist is still on its second line, and a
@@ -131,6 +114,19 @@ export function subscribeWaits(cb: () => void): () => void {
  */
 export function narratedFloorPassed(): boolean {
   return floorPassed;
+}
+
+/**
+ * The ride is over, so nothing is owed. The elevator calls this when its doors have
+ * opened, which is either at `MIN_NARRATED_MS` (a no-op beside the timer) or earlier
+ * when the rider tapped to skip. A floor that has already lifted is left alone.
+ */
+export function liftFloor(): void {
+  if (floorPassed) return;
+  if (floorTimer) clearTimeout(floorTimer);
+  floorTimer = null;
+  floorPassed = true;
+  listeners.forEach((l) => l());
 }
 
 /** When the narration started, or 0. Exposed for tests and debugging. */

@@ -533,6 +533,175 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   animation: sweep 1.9s ease-in-out infinite;
 }
 
+/* --------------------------------------------------------------- the ride ---
+   The opening, as an elevator to the top floor (`components/Elevator.tsx`). The
+   durations are handed in as custom properties from `lib/elevator.ts`, so the doors
+   move on the same clock the phases are decided on. Every move in here is one of
+   the vocabulary above or a door on a track; nothing is decorative for its own sake.
+
+   The doors are dark in both themes, like the hero: they are the metal, and the
+   metal is the only decoration. The wall around them is the page.                 */
+
+.ride {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  background: var(--color-plane);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--ride-open, 700ms) ease-in;
+}
+/* The wall is solid from the first frame, so the page never shows through; it is the
+   car that comes on, plate and doors together. */
+@keyframes ride-lights { from { opacity: 0; } to { opacity: 1; } }
+.ride-plate, .ride-car { animation: ride-lights var(--ride-board, 350ms) ease-out both; }
+
+/* The plate above the doors: a small chrome-framed panel on the car wall. */
+.ride-plate {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: calc(28px + env(safe-area-inset-top));
+  min-width: 96px;
+  padding: 10px 18px 9px;
+  border-radius: 12px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-line-2);
+  box-shadow: var(--bevel), var(--shadow-card);
+  transition: opacity calc(var(--ride-open, 700ms) * 0.6) ease-in;
+}
+/* Once the doors are opening the plate fades on its own clock, not the lights'. */
+.ride[data-phase="opening"] .ride-plate, .ride[data-phase="opening"] .ride-car { animation: none; }
+.ride-arrow { color: var(--color-line-2); transition: color 0.2s ease; }
+.ride-arrow-lit { color: var(--color-ink); }
+.ride-floor {
+  font-size: 40px;
+  line-height: 1;
+  color: var(--color-ink);
+  min-width: 2ch;
+  text-align: center;
+  /* Quicker than the app's `tick`: mid-ascent a floor lasts about 100ms, and a
+     240ms fade never reached full white before the next one replaced it. */
+  animation-duration: 0.1s;
+}
+.ride-plate-label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* The car: the doors, and the display on the wall over them. */
+.ride-car {
+  position: absolute;
+  inset: calc(122px + env(safe-area-inset-top)) 0 0 0;
+}
+.ride-doors { position: absolute; inset: 0; overflow: hidden; }
+.ride-door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  overflow: hidden;
+  color: #cdd2d9;
+  background:
+    /* brushed: fine horizontal grain */
+    repeating-linear-gradient(180deg, rgb(255 255 255 / 0.022) 0 1px, transparent 1px 3px),
+    linear-gradient(100deg, var(--color-hero-2) 0%, var(--color-hero) 42%, color-mix(in srgb, var(--color-hero) 86%, white) 60%, var(--color-hero) 100%);
+  box-shadow: var(--bevel);
+  transition: transform var(--ride-close, 600ms) cubic-bezier(0.45, 0, 0.2, 1);
+  will-change: transform;
+}
+.ride-door-l { left: 0; border-right: 1px solid rgb(0 0 0 / 0.65); }
+.ride-door-r { right: 0; border-left: 1px solid rgb(255 255 255 / 0.07); }
+/* Half the mark on each door, engraved, meeting at the seam. */
+.ride-mark {
+  position: absolute;
+  top: 34%;
+  opacity: 0.5;
+}
+.ride-door-l .ride-mark { right: 0; transform: translateX(50%); }
+.ride-door-r .ride-mark { left: 0; transform: translateX(-50%); }
+
+/* Stepping in: the doors are ajar, the lobby dark behind them. */
+.ride[data-phase="boarding"] .ride-door-l { transform: translateX(-46%); transition: none; }
+.ride[data-phase="boarding"] .ride-door-r { transform: translateX(46%); transition: none; }
+
+/* Going up: the car lurches once, and the shaft's lights pass down the doors. */
+@keyframes ride-lurch {
+  0% { transform: translateY(0); }
+  30% { transform: translateY(5px); }
+  100% { transform: translateY(0); }
+}
+.ride[data-phase="rising"] .ride-car { animation: ride-lurch 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.ride-doors::after {
+  content: "";
+  position: absolute;
+  inset: -40% 0 auto 0;
+  height: 40%;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(180deg, transparent, rgb(255 255 255 / 0.05) 40%, rgb(255 255 255 / 0.11) 50%, rgb(255 255 255 / 0.05) 60%, transparent);
+}
+@keyframes ride-shaft { from { transform: translateY(0); } to { transform: translateY(350%); } }
+.ride[data-phase="rising"] .ride-doors::after { opacity: 1; animation: ride-shaft 0.62s linear infinite; }
+
+/* The stop: the car settles and the plate rings. */
+@keyframes ride-settle {
+  0% { transform: translateY(0); }
+  35% { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+.ride[data-phase="arrived"] .ride-car { animation: ride-settle 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+@keyframes ride-ding {
+  0% { text-shadow: 0 0 0 transparent; transform: scale(1); }
+  30% { text-shadow: 0 0 18px rgb(255 255 255 / 0.55); transform: scale(1.08); }
+  100% { text-shadow: 0 0 0 transparent; transform: scale(1); }
+}
+.ride[data-phase="arrived"] .ride-floor { animation: ride-ding 0.5s ease-out both; }
+
+/* The doors open onto the page that was there all along. */
+.ride[data-phase="opening"] { background: transparent; }
+.ride[data-phase="opening"] .ride-door { transition-duration: var(--ride-open, 700ms); transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+.ride[data-phase="opening"] .ride-door-l { transform: translateX(-102%); }
+.ride[data-phase="opening"] .ride-door-r { transform: translateX(102%); }
+.ride[data-phase="opening"] .ride-plate,
+.ride[data-phase="opening"] .ride-display,
+.ride[data-phase="opening"] .ride-skip { opacity: 0; }
+
+/* The display on the car wall: the hero surface, over the lower half of the doors. */
+.ride-display {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(320px, calc(100% - 48px));
+  transform: translateX(-50%);
+  padding: 18px 20px 16px;
+  transition: opacity calc(var(--ride-open, 700ms) * 0.5) ease-in;
+}
+
+.ride-skip {
+  position: absolute;
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  transition: opacity 0.3s ease;
+}
+
 button, a.btn, select, input { min-height: 44px; }
 
 /* Everything above degrades to a plain, instant layout. The lamp keeps its glow
@@ -542,6 +711,9 @@ button, a.btn, select, input { min-height: 44px; }
   .grease path {
     animation: none;
   }
+  /* The ride is never mounted under reduced motion (`Opening` checks first); if it
+     ever is, nothing in it moves. */
+  .ride, .ride * , .ride-doors::after { animation: none; transition: none; }
   /* The card still changes state, it just arrives there already changed. */
   .card-open, .card-done { transition: none; }
   /* Deliberately still moving — see the note on .spinner. Slower, not stopped. */

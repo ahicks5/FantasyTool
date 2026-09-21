@@ -24,6 +24,23 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## The opening is an elevator (2026-09-21)
+
+Andrew's direction: Penthouse should feel like MyGM, an owner with a staff and a building.
+The first piece shipped is the opening: the first open of the day rides up to the office.
+`web/src/lib/elevator.ts` owns every number (the doors, the floors, the staff lines, the
+skip); `components/Elevator.tsx` draws it; `lib/wait.ts` derives the narrated floor from
+the ride's total. Once a day per browser, again after `/connect`, tap to skip, `?ride=1` to
+replay. `docs/WEB.md` has the wiring, `TASKS.md` (VG-1 to VG-4) has what comes next: sound,
+the GM's phone call, and closing the doors on the connect form itself.
+
+**What it cost, so it is not paid twice.** The overlay used to fade in as a whole, so the
+page showed through it for its first third of a second; the wall is solid from frame one
+now and only the car fades in. The floor number reused the app's 240ms `tick`, and
+mid-ascent a floor lasts about 100ms, so the plate never reached full white; it has a 100ms
+tick of its own. And the door highlight was a fixed hex that striped in light mode; it is
+mixed from `--color-hero` now.
+
 ## Scouting is now a board, not just a search box (2026-09-21)
 
 `/waivers` opens on **every player in the league**, filtered and sorted by the reader:

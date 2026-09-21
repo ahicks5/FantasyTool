@@ -16,15 +16,10 @@ import {
 } from "@/lib/format";
 import { describeError, isOnline } from "@/lib/errors";
 import { CLOSED, CONFIDENCE_HIT_LINE } from "@/lib/vocab";
-import {
-  claimWait,
-  narratedFloorPassed,
-  OPENING_LINES,
-  OPENING_STEP_MS,
-  releaseWait,
-  subscribeWaits,
-  type WaitPhase,
-} from "@/lib/wait";
+import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitPhase } from "@/lib/wait";
+import { dayStamp, rideDue, rideForced } from "@/lib/elevator";
+import { loadConnection, loadRideDay } from "@/lib/storage";
+import { ElevatorRide } from "./Elevator";
 import { IconCheck, IconChevron, IconClock, IconMark, IconMoon, IconSun, IconThumbDown, IconThumbUp } from "./icons";
 
 export function Card({
@@ -496,17 +491,16 @@ export function useHeldWait(ready: boolean): boolean {
 }
 
 /**
- * The room coming on while the feed loads. These are the real phases the API
- * goes through; the ticks advance on a timer rather than on measured progress,
- * the way a loading sequence normally does.
+ * The room coming on while the feed loads.
  *
- * It only narrates once. The staged sequence is a good first impression and an
- * irritation the fourth time, so every later wait is a quiet skeleton — the
- * room is already on, it is just fetching.
+ * The first wait of the day is the ride up: the elevator (`Elevator.tsx`) plays over
+ * the quiet skeleton, and when its doors open the page is already there underneath.
+ * It only plays once a day and once per session, because the staged sequence is a
+ * good first impression and an irritation the fourth time; every later wait is the
+ * quiet skeleton on its own. The room is already on, it is just fetching.
  *
- * The lines and the tempo come from `lib/wait.ts` rather than living here: the floor
- * that keeps the sequence on screen is computed from them, and when this file held
- * its own copy the two drifted and a fast API cut the opening off at line two.
+ * The ride's lines and tempo come from `lib/elevator.ts`, and the floor that keeps
+ * the page from swapping to content mid-ride is derived there too (`lib/wait.ts`).
  */
 export function Opening() {
   // The phase is decided once, when this wait takes the screen, and released when it
@@ -517,54 +511,30 @@ export function Opening() {
   // double-invoked in Strict Mode and would burn the session's one narrated opening on
   // a render React then throws away.
   const [phase, setPhase] = useState<WaitPhase | null>(null);
-  const [step, setStep] = useState(0);
-  const [reduced, setReduced] = useState(false);
+  const [ride, setRide] = useState(false);
   useBeforePaint(() => {
-    // Reduced motion is settled in the same beat as the claim because it decides both
-    // halves at once: the checklist is painted already ticked, and the claim is made
-    // without a floor, since the floor only exists to protect the ticking. Skipping the
-    // interval on its own — which is what this used to do — left that reader watching an
-    // untouched checklist for as long as the floor ran.
+    // Whether the ride plays is settled in the same beat as the claim, because it
+    // decides both halves at once: the overlay, and the floor that exists only to
+    // protect it. No ride (reduced motion, already ridden today, no team yet) means
+    // no floor, so that reader is never held on a skeleton for an animation that is
+    // not running.
     const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setReduced(reduce);
-    if (reduce) setStep(OPENING_LINES.length);
-    setPhase(claimWait(!reduce));
+    const due =
+      !reduce && loadConnection() !== null && rideDue(loadRideDay(), dayStamp(new Date()), rideForced(window.location.search));
+    const p = claimWait(due);
+    setPhase(p);
+    setRide(p === "narrated" && due);
     return releaseWait;
   }, []);
-  useEffect(() => {
-    if (phase !== "narrated" || reduced) return;
-    const id = setInterval(() => setStep((s) => Math.min(s + 1, OPENING_LINES.length)), OPENING_STEP_MS);
-    return () => clearInterval(id);
-  }, [phase, reduced]);
 
-  // Until the claim lands, show the quiet shape. It is the geometry of the page either
-  // way, so resolving to the narrated version replaces text inside the same box.
-  if (phase !== "narrated") return <QuietWait />;
-
+  // The quiet shape is the geometry of the page either way. The ride, when it plays,
+  // is a scene over it, so the doors open onto content in the same place.
+  if (phase !== "narrated" || !ride) return <QuietWait />;
   return (
-    <div aria-busy="true" aria-label="Opening the Penthouse">
-      <WaitHero>
-        <div className="display text-[30px] leading-[1.08] text-white">Opening the Penthouse</div>
-        <ul className="mt-4 grid gap-2.5">
-          {OPENING_LINES.map((line, i) => {
-            const done = i < step;
-            return (
-              <li key={line} className={`flex items-center gap-2.5 text-[14px] ${done ? "text-white" : "text-white/40"}`}>
-                <span
-                  aria-hidden
-                  className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border ${
-                    done ? "border-start bg-start text-white" : "border-white/25"
-                  }`}
-                >
-                  {done && <IconCheck size={10} strokeWidth={3.5} />}
-                </span>
-                {line}
-              </li>
-            );
-          })}
-        </ul>
-      </WaitHero>
-    </div>
+    <>
+      <QuietWait />
+      <ElevatorRide />
+    </>
   );
 }
 

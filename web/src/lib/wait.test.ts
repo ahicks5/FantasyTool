@@ -6,14 +6,15 @@ import {
   MIN_NARRATED_MS,
   narratedAtMs,
   narratedFloorPassed,
+  liftFloor,
   OPENING_LINES,
   OPENING_STEP_MS,
-  OPENING_TAIL_MS,
   releaseWait,
   resetWaits,
   subscribeWaits,
   waitsOnScreen,
 } from "./wait.ts";
+import { OPEN_AT, OPEN_MS, RIDE_TOTAL_MS, RISE_AT } from "./elevator.ts";
 
 beforeEach(resetWaits);
 
@@ -124,30 +125,47 @@ test("resetting puts the session all the way back to cold", (t) => {
    The bug the owner reported: `MIN_NARRATED_MS` was a hand-typed 900 while `Opening`
    ticked four lines at 420ms in another file, so a warm API released the screen
    around line two and the graphic was cut off. These tests are derived from the same
-   constants the animation runs on, so a fifth line or a slower tempo cannot put the
-   floor back under the sequence without failing here.                              */
+   constants the animation runs on, so a fifth line, a slower tempo or a longer ride
+   cannot put the floor back under the sequence without failing here.              */
 
 const TICK_EVERY_LINE = OPENING_LINES.length * OPENING_STEP_MS;
+/** When the last staff line ticks, on the ride's clock. */
+const LAST_TICK_AT = RISE_AT + TICK_EVERY_LINE;
 
-test("the floor outlasts the checklist it is protecting", () => {
+test("the floor outlasts the ride it is protecting", () => {
   assert.ok(OPENING_LINES.length > 0 && OPENING_STEP_MS > 0, "there is a sequence to protect");
-  assert.ok(
-    MIN_NARRATED_MS > TICK_EVERY_LINE,
-    `the floor (${MIN_NARRATED_MS}ms) must outlast every tick (${TICK_EVERY_LINE}ms)`,
-  );
-  assert.ok(OPENING_TAIL_MS > 0, "the last check is owed a beat on screen before content lands");
-  assert.equal(MIN_NARRATED_MS, TICK_EVERY_LINE + OPENING_TAIL_MS, "and the floor is that, derived");
+  assert.ok(LAST_TICK_AT <= OPEN_AT, `the last line (${LAST_TICK_AT}ms) must tick before the doors open (${OPEN_AT}ms)`);
+  assert.ok(OPEN_MS > 0, "the doors are owed their time to open before content lands");
+  assert.equal(MIN_NARRATED_MS, RIDE_TOTAL_MS, "and the floor is the whole ride, derived");
 });
 
-test("a warm API cannot release the screen before the last line ticks", (t) => {
+test("a warm API cannot release the screen before the doors have opened", (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"] });
   assert.equal(claimWait(), "narrated");
-  t.mock.timers.tick(TICK_EVERY_LINE - OPENING_STEP_MS);
+  t.mock.timers.tick(LAST_TICK_AT - OPENING_STEP_MS);
   assert.equal(narratedFloorPassed(), false, "the last line has not ticked yet");
   t.mock.timers.tick(OPENING_STEP_MS);
   assert.equal(narratedFloorPassed(), false, "the final check has only just landed");
-  t.mock.timers.tick(OPENING_TAIL_MS);
-  assert.equal(narratedFloorPassed(), true, "and the beat after it is spent");
+  t.mock.timers.tick(OPEN_AT - LAST_TICK_AT);
+  assert.equal(narratedFloorPassed(), false, "the doors are still opening");
+  t.mock.timers.tick(OPEN_MS);
+  assert.equal(narratedFloorPassed(), true, "and then the room is yours");
+});
+
+test("skipping the ride lifts the floor early, once, and tells React", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let notified = 0;
+  const off = subscribeWaits(() => notified++);
+  assert.equal(claimWait(), "narrated");
+  t.mock.timers.tick(300);
+  liftFloor();
+  assert.equal(narratedFloorPassed(), true, "the rider tapped, the doors opened");
+  assert.equal(notified, 1, "React is told once");
+  t.mock.timers.tick(MIN_NARRATED_MS);
+  assert.equal(notified, 1, "and the timer it cancelled does not tell it again");
+  liftFloor();
+  assert.equal(notified, 1, "a second lift is a no-op");
+  off();
 });
 
 /* ----------------------------------------------------- reduced motion (S-3) --- */
