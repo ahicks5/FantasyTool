@@ -79,6 +79,7 @@ the value is visible and the names are not.
 | Does this make money? | `docs/UNIT_ECONOMICS.md` |
 | What is left to build? | `TASKS.md` |
 | What is the player page, and what is decided about it? | `docs/SPEC-PLAYER-PAGE.md` |
+| Which player-page step is next, and which files may it touch? | `docs/PLAYER-PAGE-STEPS.md` |
 | What are real leagues actually like? | `docs/LEAGUE_SURVEY.md` |
 
 ## Commands
