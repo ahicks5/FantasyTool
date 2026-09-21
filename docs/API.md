@@ -105,7 +105,7 @@ and never a name.
   "news": {
     "window_hours": 72, "count": 6,
     "items": [{
-      "id": "own:4866:4866", "kind": "own", "level": "critical",
+      "id": "own:4866:4866", "kind": "own", "level": "critical", "severity": 3,
       "headline": "Saquon Barkley is Questionable (arm)",
       "detail": "RB, in your lineup. Practice: limited.",
       "at": 1789940000000, "age_hours": 9.4,
@@ -120,7 +120,8 @@ and never a name.
     }]
   },
   "standing": {"record": "2-0", "rank": 3, "teams": 12, "ppg": 121.4},
-  "matchup": {"opponent": "HusH", "opponent_id": "8", "my_proj": 118.2, "their_proj": 109.7, "win_prob": 0.61},
+  "matchup": {"opponent": "HusH", "opponent_id": "8", "my_proj": 118.2, "their_proj": 109.7, "win_prob": 0.61,
+              "opponent_record": "1-1", "opponent_rank": 7, "teams": 12},
   "sheet": {"summary": "3 moves to make", "moves": 3, "all_clear": false},
   "binders": [
     {"key": "team", "count": 2, "locked": false, "top_benefit": "+4.2 pts"},
@@ -131,11 +132,13 @@ and never a name.
 }
 ```
 
-- `news.items` is at most eight, most serious first; `count` is how many there were.
+- `news.items` is at most eight, hardest-landing first; `count` is how many there were.
   `kind` is one of `own` (a player of yours carries a tag), `qb` (his QB1 is flagged),
   `target` / `backfield` (a starter ahead of him is down, his role opens), `line` (his
   offensive line lost a man; merged per offence, `others` are the rest). `level` is
-  `critical` (a starter of yours may not play), `warning`, `upside` or `note`. `also` lists
+  `critical` (a starter of yours may not play), `warning`, `upside` or `note`; `severity`
+  is how hard it lands, 4 (a starter of yours ruled out) down to 0 (a bench player's QB1 in
+  doubt), from the table in `engine/newsdesk.py`, and is the sort order. `also` lists
   the other players of yours the same story touches. Every word is the platform's own
   (`injury_status`, `injury_body_part`, `injury_notes`) or the depth chart as it lists it;
   nothing is predicted and no number is invented. Only news dated inside the window counts.
@@ -144,7 +147,45 @@ and never a name.
 - `standing` is the nameplate's three numbers: the record, the standings' own competition
   rank out of `teams`, and points a game: points for over *completed weeks*, never over the
   record (a league that also plays the median books two results a week). Null in week 1.
-- `matchup` is the call sheet's own; `sheet.summary` is its headline.
+- `matchup` is the call sheet's own plus the opponent's record and competition rank out of
+  `teams`, read from the same table as `standing`; `sheet.summary` is the call sheet's headline.
+
+### The action plan (free)
+
+`GET /api/league/{platform}/{league_id}/team/{team_id}/desk/plan/{kind}/{mine_id}/{about_id}`
+
+One story off the desk and every door out of it (`engine/plan.py`). `kind`, `mine_id`
+(`player.id`) and `about_id` (`about.id`) are the story's own. 404 when the players are not
+on this roster's desk.
+
+```json
+{
+  "kind": "own", "posture": "replace", "severity": 4, "week": 2, "synced_at": 1758400000.0,
+  "player": {"id": "4866", "name": "Saquon Barkley", "position": "RB", "projected": 17.2, "starter": true, ...},
+  "about": {"id": "4866", "name": "Saquon Barkley", "status": "Out", "body_part": "Arm", ...},
+  "story": {"id": "own:4866:4866", ...},
+  "next_up": [{"id": "9226", "name": "Will Shipley", "position": "RB", "nfl_team": "PHI", "depth_order": 2,
+               "status": null, "where": "wire", "owner": null, "photo": "...", "team_logo": "..."}],
+  "bench": [{"id": "...", "name": "Tank Bigsby", "position": "RB", "projected": 8.1, ...}],
+  "swap": null,
+  "wire": {"locked": true, "count": 2, "picks": []},
+  "trade": {"locked": true, "count": 3, "partners": []}
+}
+```
+
+- `posture` is a code the web puts words on: `monitor` (in doubt, not ruled out),
+  `replace` (a starter of yours will not play), `watch` (the man who feeds your starter is
+  out), `opening` (a role ahead of a player of yours came open).
+- `next_up` is his NFL team's depth chart behind him, in order, with `where` each man sits
+  in this league: `yours`, `wire`, `rostered` (with the `owner` team's name) or `unknown`.
+  Receivers are read per alignment. Public information: never locked.
+- `bench` is your own players at the spot who are not in your lineup, best projection first
+  (a hole only: `own`, `qb`, `line`). `swap`, for a role opening for a bench player of
+  yours, is the lowest-projected starter the engine sets at his position.
+- `wire` and `trade` are null unless the story is a hole and the man is ruled out. `wire` is
+  the wire's own ranking narrowed to the position (Wire Pass names them; without it `picks`
+  is empty and `count` stands). `trade` is the managers carrying a surplus at the position,
+  deepest first (Trade Lab names them). The counts are the same either side of the paywall.
 
 ## Scouting (feature: waivers)
 

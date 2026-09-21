@@ -122,9 +122,12 @@ def test_a_starting_receiver_down_is_upside_for_the_man_behind_him_and_not_for_t
     out = newsdesk.build(t, charts(arsb), NOW)
     [it] = out["items"]
     assert it["kind"] == "target" and it["level"] == "upside"
-    # Williams is in your lineup, so he leads the story; TeSlaa, on your bench, is also touched.
-    assert it["detail"] == "A starting DET receiver. Jameson Williams is next in line for those targets."
-    assert [a["name"] for a in it["also"]] == ["Isaac TeSlaa"]
+    # TeSlaa is on your bench, so the opening is a start to weigh (severity 2) and he leads
+    # the story; Williams, already in your lineup, simply sees more of the ball and is
+    # named as also touched.
+    assert it["severity"] == 2
+    assert it["detail"] == "A starting DET receiver. Isaac TeSlaa is next in line for those targets."
+    assert [a["name"] for a in it["also"]] == ["Jameson Williams"]
 
 
 def test_a_questionable_receiver_is_not_yet_anyones_upside():

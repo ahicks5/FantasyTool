@@ -30,8 +30,31 @@ FLAGGED = DOWN | QUESTION
 
 # Every kind the desk produces, and how it lands: `critical` is a starter of yours who may
 # not play; `warning` is a starter losing the man who feeds him; `upside` is a role opening
-# up. The order here is the order on the desk.
+# up. The level says what sort of story it is; `severity` (below) says how hard it lands.
 LEVEL_RANK = {"critical": 0, "warning": 1, "upside": 2, "note": 3}
+
+# How hard a story lands, 4 (dire) down to 0 (for the record). Andrew's brief: his QB1 out
+# for the season is the top of the page with a mark on it; a bench player questionable, or a
+# backup's blocker scratched, is a line he can read past. The order on the desk is this
+# number first. Keyed by (kind, starter of yours, ruled out rather than in doubt).
+SEVERITY = {
+    ("own", True, True): 4,        # your starter will not play
+    ("own", True, False): 3,       # your starter is in doubt
+    ("own", False, True): 2,       # a bench player of yours is out: a roster spot, not a lineup
+    ("own", False, False): 1,
+    ("qb", True, True): 3,         # the man who feeds your starter is out
+    ("qb", True, False): 2,
+    ("qb", False, True): 1,
+    ("qb", False, False): 0,
+    ("target", False, True): 2,    # a bench player of yours is next in line: a start to weigh
+    ("target", True, True): 1,     # your starter simply sees more of the ball
+    ("backfield", False, True): 2,
+    ("backfield", True, True): 1,
+    ("line", True, True): 1,       # one blocker; a second one out lifts it to 2 below
+}
+SEVERITY_TOP = 4
+# Every kind of story the desk produces; a plan is asked for by kind (`engine/plan.py`).
+KINDS = frozenset({"own", "qb", "target", "backfield", "line"})
 # The desk shows this many; `count` still says how many there were.
 SHOWN = 8
 # Sleeper's short codes stay upper-case; "Ir (ankle)" is not a word.
@@ -68,10 +91,16 @@ def _about(s: Slot) -> dict:
             "photo": f"{SLEEPER_CDN}/content/nfl/players/thumb/{s.id}.jpg", "team_logo": team_logo_url(s.team)}
 
 
+def severity(kind: str, starter: bool, about: Slot) -> int:
+    """How hard the story lands, from the table above. Unknown shapes are notes, never dire."""
+    return SEVERITY.get((kind, starter, status_of(about) in DOWN), 0)
+
+
 def _item(kind: str, level: str, mine, starter: bool, about: Slot, headline: str, detail: str,
           now_ms: int) -> dict:
     return {
         "id": f"{kind}:{mine.id}:{about.id}", "kind": kind, "level": level,
+        "severity": severity(kind, starter, about),
         "headline": headline, "detail": detail,
         "at": about.news_updated, "age_hours": _hours_ago(about, now_ms),
         "player": {"id": mine.id, "name": mine.name, "position": mine.position,
@@ -146,9 +175,10 @@ def build(team: Team, charts: dict[str, list[Slot]], now_ms: int, window_ms: int
                                    f"{s.name} is {_what(s)}",
                                    f"{s.team}’s RB1. {mine.name} is the next back on the depth chart.", now_ms))
 
-    # A starter of yours who may not play, first; then what feeds your starters; then the
-    # roles opening up. Inside a level your lineup before your bench, newest first.
-    items.sort(key=lambda i: (LEVEL_RANK[i["level"]], not i["player"]["starter"], -(i["at"] or 0)))
+    # What lands hardest first: a starter of yours who will not play, then one in doubt,
+    # then what feeds your starters, then the roles opening up. Inside a severity, the
+    # story's kind, your lineup before your bench, newest first.
+    items.sort(key=lambda i: (-i["severity"], LEVEL_RANK[i["level"]], not i["player"]["starter"], -(i["at"] or 0)))
     # One story per teammate: the same QB1 going down touches three of your players, and
     # the desk says it once, naming all three (`also`). The line merges per offence: two
     # Browns linemen out is one story about the Browns' line (`others`).
@@ -163,6 +193,8 @@ def build(team: Team, charts: dict[str, list[Slot]], now_ms: int, window_ms: int
             if it["kind"] == "line" and it["about"]["id"] not in {first["about"]["id"], *(o["id"] for o in first.get("others", []))}:
                 first.setdefault("others", []).append(it["about"])
                 first["headline"] = f"{it['about']['nfl_team']} offensive line: {1 + len(first['others'])} out"
+                # Two blockers down in front of your back is more than a note.
+                first["severity"] = max(first["severity"], 2)
             continue
         seen[key] = it
         merged.append(it)

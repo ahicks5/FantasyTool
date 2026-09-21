@@ -18,7 +18,7 @@ from edge.engine import grades
 from edge.engine import lineup as lineup_mod
 from edge.engine import actions as actions_mod
 from edge.engine import recap as recap_mod
-from edge.engine import report, trade, trade_finder, waiver_plan, waivers
+from edge.engine import plan, report, trade, trade_finder, waiver_plan, waivers
 from edge.engine.explain import explain
 
 app = FastAPI(title="Penthouse API", version="0.1")
@@ -470,6 +470,24 @@ def owners_desk(platform: str, league_id: str, team_id: str, email: str | None =
     feed = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats,
                              trending=b.trending, profiles=b.profiles, matchups_raw=b.matchups)
     out = desk.build(t, feed, ents, league=b.league, ros=b.ros)
+    out["synced_at"] = b.loaded_at
+    return out
+
+
+@app.get("/api/league/{platform}/{league_id}/team/{team_id}/desk/plan/{kind}/{mine_id}/{about_id}")
+def desk_plan(platform: str, league_id: str, team_id: str, kind: str, mine_id: str, about_id: str,
+              email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
+    """One story off the desk and every door out of it: the depth chart behind the man, your
+    bench at the spot, the wire and the trade angles. Free; the wire's names and the trade
+    partners' names need Wire Pass and Trade Lab (`engine/plan.py`)."""
+    b = _bundle(platform, league_id, auth)
+    t = _team(b, team_id)
+    ents = products.features_for(_skus(email))
+    out = plan.build(b.league, t, kind, mine_id, about_id, desk.depth_charts.load(), desk.now_ms(),
+                     b.ros, b.byes, ents, bid_stats=b.bid_stats, trending=b.trending)
+    if out is None:
+        raise HTTPException(404, "That story is not on this desk.")
+    out["week"] = b.league.week
     out["synced_at"] = b.loaded_at
     return out
 
