@@ -1,5 +1,5 @@
 "use client";
-/** The call sheet: this week's ranked moves, each one checkable. The app's home screen. */
+/** The call sheet: this week's ranked moves, each one checkable. A room off the desk. */
 import { useCallback, useMemo, useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { ActionCard } from "@/components/ActionCard";
@@ -302,9 +302,9 @@ function HomeBody({ c }: { c: Connection }) {
   return <CallSheet key={key} storageKey={key} feed={feed} c={c} animate={!instant} warning={warning} />;
 }
 
-export default function HomePage() {
+export default function SheetPage() {
   return (
-    <AppShell section="home">
+    <AppShell section="sheet">
       {(s) => <HomeBody c={s.connection!} />}
     </AppShell>
   );

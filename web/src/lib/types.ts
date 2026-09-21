@@ -544,6 +544,76 @@ export interface Report {
 
 export type ActionType = "start" | "waiver" | "trade" | "hold";
 
+/* ------------------------------------------------------------- the desk ---
+   The front page: `GET .../team/{id}/desk`. See docs/API.md, "The owner's desk". */
+
+export type NewsKind = "own" | "qb" | "target" | "backfield" | "line";
+export type NewsLevel = "critical" | "warning" | "upside" | "note";
+
+/** A player of yours a story touches. */
+export interface NewsPlayerRef {
+  id: string;
+  name: string;
+  position: string;
+  nfl_team: string | null;
+  starter: boolean;
+}
+
+/** The man the story is about, in the platform's words. */
+export interface NewsAbout {
+  id: string;
+  name: string;
+  position: string;
+  nfl_team: string | null;
+  status: string | null;
+  body_part: string | null;
+  notes: string | null;
+  practice: string | null;
+}
+
+export interface NewsItem {
+  id: string;
+  kind: NewsKind;
+  level: NewsLevel;
+  headline: string;
+  detail: string;
+  /** Epoch milliseconds, the platform's own date on the news. */
+  at: number | null;
+  age_hours: number;
+  player: NewsPlayerRef;
+  about: NewsAbout;
+  /** Other players of yours the same story touches. */
+  also?: NewsPlayerRef[];
+  /** For `line`: the other linemen out on the same offence. */
+  others?: NewsAbout[];
+}
+
+export interface DeskNews {
+  window_hours: number;
+  /** How many stories there were; `items` is capped. */
+  count: number;
+  items: NewsItem[];
+}
+
+export interface Binder {
+  key: "team" | "waivers" | "trade";
+  count: number;
+  locked: boolean;
+  top_benefit: string | null;
+}
+
+export interface Desk {
+  week: number;
+  team: string;
+  league: string;
+  news: DeskNews;
+  matchup?: Matchup | null;
+  sheet: { summary: string; moves: number; all_clear: boolean };
+  binders: Binder[];
+  entitlements: Feature[];
+  synced_at: number;
+}
+
 export interface ActionFeedExtras {
   algo_version?: string;
 }

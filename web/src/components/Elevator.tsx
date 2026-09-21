@@ -16,7 +16,7 @@ import {
   type RideState,
 } from "@/lib/elevator";
 import { loadConnection, saveRideDay } from "@/lib/storage";
-import { RIDE, SECTIONS } from "@/lib/vocab";
+import { DESK, RIDE, SECTIONS } from "@/lib/vocab";
 import { liftFloor } from "@/lib/wait";
 import { IconMark } from "./icons";
 
@@ -26,8 +26,8 @@ import { IconMark } from "./icons";
    built from a handful of planes in CSS 3D (the wall with its window and nameplate,
    the floor, the desk). The camera walks in, comes around the desk to the owner's
    chair, looks down at the papers on it, sits a moment, and the papers fade into the
-   call sheet. The office is the app itself: nothing is revealed except the page that
-   was loading underneath all along.
+   desk page (`Desk.tsx`), which is the same desk as a screen. The office is the app
+   itself: nothing is revealed except the page that was loading underneath all along.
 
    The whole ride is one clock read against `rideState` in `lib/elevator.ts`, which
    is where every duration lives. The CSS moves the doors and the camera on the same
@@ -163,23 +163,23 @@ export function ElevatorRide() {
                 </div>
                 <div className="ride-paper ride-paper-1">
                   <Letterhead />
-                  <div className="ride-paper-eyebrow">{SECTIONS.team.label}</div>
-                  <div className="ride-paper-title display">{SECTIONS.team.title}</div>
+                  <div className="ride-paper-eyebrow">{DESK.opponent.eyebrow}</div>
+                  <div className="ride-paper-title display">{SECTIONS.matchup.title}</div>
                   <div className="ride-paper-rule" />
                   <div className="ride-paper-rule short" />
                 </div>
                 <div className="ride-paper ride-paper-hero ride-paper-2">
                   <Letterhead />
                   <div className="ride-paper-eyebrow">{c ? `Week ${c.week} · ${c.team_name}` : SECTIONS.home.label}</div>
-                  <div className="ride-paper-title display">{SECTIONS.home.title}</div>
+                  <div className="ride-paper-title display">{DESK.news.title}</div>
                   <div className="ride-paper-rule" />
                   <div className="ride-paper-rule" />
                   <div className="ride-paper-rule short" />
                 </div>
                 <div className="ride-paper ride-paper-3">
                   <Letterhead />
-                  <div className="ride-paper-eyebrow">{c?.league_name ?? SECTIONS.waivers.label}</div>
-                  <div className="ride-paper-title display">{SECTIONS.waivers.title}</div>
+                  <div className="ride-paper-eyebrow">{c?.league_name ?? SECTIONS.sheet.label}</div>
+                  <div className="ride-paper-title display">{SECTIONS.sheet.title}</div>
                   <div className="ride-paper-rule" />
                   <div className="ride-paper-rule short" />
                 </div>

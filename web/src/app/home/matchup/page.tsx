@@ -231,7 +231,7 @@ function MatchupBody({ c }: { c: Connection }) {
           href="/home"
           className="btn inline-flex min-h-0 items-center justify-center gap-1 rounded-xl border border-line-2 bg-soft px-3.5 py-2.5 text-[13px] font-bold hover:bg-line"
         >
-          Back to the sheet
+          Back to the desk
           <IconChevron size={13} strokeWidth={2.8} />
         </Link>
       </div>

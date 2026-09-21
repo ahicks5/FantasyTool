@@ -1155,6 +1155,196 @@ html.ride-boot::before {
   transition: opacity 0.3s ease;
 }
 
+
+/* ------------------------------------------------------------------ the desk ---
+   The front page is the desk the elevator lands on: the top seen from the owner's chair,
+   the nameplate on the far edge, papers on the blotter, binders along the near edge. Dark
+   wood in both themes, like the hero and the doors: it is the room, and the metal and the
+   paper are the only decoration. The papers are the app's card surface, so the words on
+   them read exactly as they do on every other screen.                                   */
+
+.desk {
+  position: relative;
+  padding: 14px 12px 16px;
+  border-radius: var(--radius-card);
+  background:
+    radial-gradient(ellipse at 50% 30%, rgb(255 226 180 / 0.07), transparent 60%),
+    linear-gradient(170deg, #26221f 0%, #1c1917 45%, #171412 100%);
+  box-shadow: var(--bevel), var(--shadow-hero), inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  /* Dark whatever the theme, so the chrome on the letterhead is always the silver cut. */
+  --chrome: var(--chrome-silver);
+}
+/* The blotter under the papers. */
+.desk::before {
+  content: "";
+  position: absolute;
+  inset: 44px 6px 6px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, #17181c 0%, #121316 100%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.05), inset 0 1px 0 rgb(255 255 255 / 0.04), 0 2px 8px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+}
+.desk > * { position: relative; }
+
+.desk-nameplate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin: 0 auto 12px;
+  width: max-content;
+  max-width: 100%;
+  padding: 7px 18px 8px;
+  border-radius: 4px;
+  color: #f4f3f0;
+  background: linear-gradient(180deg, #2f343d 0%, #1b1e24 100%);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 3px 8px rgb(0 0 0 / 0.6);
+}
+.desk-nameplate-title {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8b929d;
+}
+
+/* A sheet of paper on the blotter: the card surface, a hairline, the letterhead in the
+   corner. The dark palette regardless of theme, because the desk is dark. */
+.desk-paper {
+  display: block;
+  position: relative;
+  padding: 14px 14px 14px;
+  border-radius: 10px;
+  color: var(--color-ink);
+  background: var(--color-paper);
+  border: 1px solid rgb(255 255 255 / 0.07);
+  box-shadow: var(--bevel), var(--shadow-card);
+  --color-paper: #1b1d21;
+  --color-ink: #f4f3f0;
+  --color-ink-2: #c9c7c1;
+  --color-muted: #9a9892;
+  --color-line: #262a31;
+  --color-soft: #1b1f26;
+}
+.desk-paper .eyebrow { color: var(--color-muted); }
+.desk-paper-news { padding-top: 16px; }
+.desk-paper-side { min-height: 118px; }
+.desk-paper-side:hover { background: #20232a; }
+/* Laid down by hand, not squared to the desk. Tiny, or the text reads as skewed. */
+.desk-tilt-l { transform: rotate(-1deg); }
+.desk-tilt-r { transform: rotate(1deg); }
+.desk-letterhead {
+  position: absolute;
+  top: 8px;
+  right: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 7px;
+  letter-spacing: 0.14em;
+  color: #cdd2d9;
+  opacity: 0.8;
+}
+.desk-news-row { padding: 10px 0; }
+.desk-news-row:first-child { padding-top: 8px; }
+.desk-news-row:last-child { padding-bottom: 2px; }
+.desk-level {
+  flex-shrink: 0;
+  margin-top: 2px;
+  min-width: 52px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* A binder: a book on its back, spine to the left, the staff member's name on the cover,
+   what is inside, a count on the right and a badge on the corner when something is in it.
+   One per row: three across truncated every word at 375px. */
+.binder {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 12px 10px 18px;
+  border-radius: 6px 10px 10px 6px;
+  color: #f4f3f0;
+  background: linear-gradient(160deg, #2a2e36 0%, #1c1f25 60%, #17191e 100%);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 6px 14px -6px rgb(0 0 0 / 0.8);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+.binder:hover { transform: translateY(-2px); }
+.binder-spine {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  border-radius: 6px 0 0 6px;
+  background: var(--chrome-silver);
+  opacity: 0.55;
+}
+.binder-staff {
+  display: block;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9aa1ac;
+}
+.binder-line {
+  display: block;
+  margin-top: 2px;
+  font-size: 16px;
+  line-height: 1.1;
+}
+.binder-count {
+  flex-shrink: 0;
+  max-width: 40%;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #8b929d;
+}
+.binder-badge {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #fff;
+  background: var(--color-signal);
+  box-shadow: 0 0 0 2px #171412, 0 2px 6px rgb(0 0 0 / 0.6);
+}
+/* Something inside: the cover picks up the desk lamp and breathes. */
+.binder-lit {
+  border-color: rgb(255 255 255 / 0.22);
+  animation: binder-glow 2.6s ease-in-out infinite;
+}
+.binder-lit .binder-spine { opacity: 0.95; }
+.binder-lit .binder-count { color: #f4f3f0; }
+.binder-locked .binder-count { color: #8b929d; }
+@keyframes binder-glow {
+  0%, 100% { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 6px 14px -6px rgb(0 0 0 / 0.8), 0 0 0 0 rgb(255 226 180 / 0); }
+  50% { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 6px 14px -6px rgb(0 0 0 / 0.8), 0 0 18px 2px rgb(255 226 180 / 0.18); }
+}
+
 button, a.btn, select, input { min-height: 44px; }
 
 /* Everything above degrades to a plain, instant layout. The lamp keeps its glow
@@ -1167,6 +1357,7 @@ button, a.btn, select, input { min-height: 44px; }
   /* The ride is never mounted under reduced motion (`Opening` checks first); if it
      ever is, nothing in it moves. */
   .ride, .ride * , .ride-doors::after { animation: none; transition: none; }
+  .binder-lit { animation: none; }
   /* The card still changes state, it just arrives there already changed. */
   .card-open, .card-done { transition: none; }
   /* Deliberately still moving — see the note on .spinner. Slower, not stopped. */

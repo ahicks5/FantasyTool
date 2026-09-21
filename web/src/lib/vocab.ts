@@ -32,8 +32,19 @@ export interface Section {
 }
 
 export const SECTIONS = {
+  // The front page is the owner's desk: what landed overnight, who is next, and the
+  // staff's binders. The ranked list it used to open on is a room off it now (`sheet`).
   home: {
     href: "/home",
+    label: "Desk",
+    title: "The desk",
+    blurb: "What landed, and who\u2019s next.",
+    gate: "your desk",
+  },
+  /** The call sheet proper: every move, ranked and checkable. A room off the desk, under
+   *  `/home/` so the desk tab stays lit while you work the list. */
+  sheet: {
+    href: "/home/sheet",
     label: "Call sheet",
     title: "Call sheet",
     blurb: "This week\u2019s moves, ranked.",
@@ -176,6 +187,51 @@ export const RIDE = {
  * Keyed by `TabKey` so the group and the tab its arrow points at can never drift apart;
  * `report` and `home` have no calls of their own, which is why this is a subset.
  */
+/**
+ * The owner's desk: the front page. A paper for what just happened, a paper for who is
+ * next, the call sheet's own line, and one binder per member of staff. The staff speak
+ * here: the head coach owns start/sit, the head of scouting owns the wire, the GM owns
+ * the trade board. Counts come from the engine; these are only the words around them.
+ */
+export const DESK = {
+  aria: "The owner\u2019s desk",
+  owner: "Owner",
+  news: {
+    eyebrow: "Just in",
+    title: "From the training room",
+    /** The window the desk reads back over. */
+    window: (hours: number) => `Last ${hours} hours`,
+    quiet: "Quiet. Nothing on your roster moved.",
+    /** How the platform's four levels read on the desk. */
+    levels: { critical: "Check", warning: "Heads up", upside: "Opening", note: "Note" } as const,
+    also: (n: number) => `+${n} more of yours`,
+    more: (n: number) => `${n} more on the wire report`,
+    ago: (h: number) => (h < 1 ? "just now" : h < 24 ? `${Math.round(h)}h ago` : `${Math.round(h / 24)}d ago`),
+  },
+  opponent: {
+    eyebrow: "Next up",
+    none: "No game this week",
+    cta: "Scouting report",
+    /** Win chance, when the engine has one. */
+    odds: (pct: number) => `${pct}% to win`,
+  },
+  sheet: {
+    eyebrow: "Call sheet",
+    cta: "Open the sheet",
+  },
+  binders: {
+    eyebrow: "The staff",
+    team: { staff: "Head coach", line: "Start / sit" },
+    waivers: { staff: "Head of scouting", line: "The wire" },
+    trade: { staff: "General manager", line: "Trade board" },
+    count: (n: number) => (n === 1 ? "1 worth a look" : `${n} worth a look`),
+    clear: "Nothing new",
+    locked: "Locked",
+  },
+} as const;
+
+export type BinderKey = keyof typeof DESK.binders extends infer K ? Extract<K, "team" | "waivers" | "trade"> : never;
+
 export const GROUPS = {
   team: { clear: "Lineup's set", stamp: "All set" },
   // "Standing pat" was the better phrase and did not survive the layout. The stamp sits

@@ -2,6 +2,7 @@
 // served from src/lib/mocks.ts; when set, it fetches `${NEXT_PUBLIC_API_URL}/api/...`.
 import type {
   ActionFeed,
+  Desk,
   EmailPref,
   Standings,
   ShareKind,
@@ -207,6 +208,15 @@ export async function getActions(platform: Platform, leagueId: string, teamId: s
     return mocks.actionsFor(teamId, me.entitlements);
   }
   return request<ActionFeed>(`/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/actions`);
+}
+
+/** The owner's desk: the front page. Free. */
+export async function getDesk(platform: Platform, leagueId: string, teamId: string): Promise<Desk> {
+  if (USE_MOCKS) {
+    const me = await getMe();
+    return mocks.deskFor(teamId, me.entitlements);
+  }
+  return request<Desk>(`/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/desk`);
 }
 
 export async function sendFeedback(req: FeedbackRequest): Promise<void> {

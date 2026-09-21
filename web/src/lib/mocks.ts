@@ -2,6 +2,8 @@
 // half-PPR projections come from tests/fixtures/sleeper/* ("The Megalabowl").
 import { withArticle } from "./format";
 import type {
+  Desk,
+  NewsItem,
   Action,
   ActionFeed,
   Standings,
@@ -1244,3 +1246,65 @@ export const STANDINGS: Standings = (() => {
     algo_version: "standings.v1",
   };
 })();
+
+
+/* ------------------------------------------------------------- the desk ---
+   Mirrors edge/api/desk.py: the binders count the call sheet's own actions, so the
+   badge and the tab it opens agree. The news is the shape the engine produces, in the
+   platform's words, for the one roster the mocks know best. */
+
+const MOCK_NEWS: NewsItem[] = [
+  {
+    id: "own:4866:4866", kind: "own", level: "critical",
+    headline: "Saquon Barkley is Questionable (arm)",
+    detail: "RB, in your lineup. Practice: limited.",
+    at: Date.now() - 9 * 3_600_000, age_hours: 9.4,
+    player: { id: "4866", name: "Saquon Barkley", position: "RB", nfl_team: "PHI", starter: true },
+    about: { id: "4866", name: "Saquon Barkley", position: "RB", nfl_team: "PHI", status: "Questionable", body_part: "Arm", notes: null, practice: "Limited" },
+  },
+  {
+    id: "qb:6786:11566", kind: "qb", level: "warning",
+    headline: "Jayden Daniels is Out (elbow)",
+    detail: "WAS\u2019s QB1. Terry McLaurin (WR) is in your lineup.",
+    at: Date.now() - 6 * 3_600_000, age_hours: 6.4,
+    player: { id: "6786", name: "Terry McLaurin", position: "WR", nfl_team: "WAS", starter: true },
+    about: { id: "11566", name: "Jayden Daniels", position: "QB", nfl_team: "WAS", status: "Out", body_part: "Elbow", notes: null, practice: null },
+  },
+  {
+    id: "target:9999:8112", kind: "target", level: "upside",
+    headline: "Alec Pierce is Out (heel)",
+    detail: "A starting IND receiver. Josh Downs is next in line for those targets.",
+    at: Date.now() - 3 * 3_600_000, age_hours: 3.5,
+    player: { id: "9999", name: "Josh Downs", position: "WR", nfl_team: "IND", starter: false },
+    about: { id: "8112", name: "Alec Pierce", position: "WR", nfl_team: "IND", status: "Out", body_part: "Heel", notes: null, practice: null },
+  },
+  {
+    id: "line:4866:1", kind: "line", level: "note",
+    headline: "PHI offensive line: 2 out",
+    detail: "Saquon Barkley (RB) is in your lineup.",
+    at: Date.now() - 30 * 3_600_000, age_hours: 30,
+    player: { id: "4866", name: "Saquon Barkley", position: "RB", nfl_team: "PHI", starter: true },
+    about: { id: "l1", name: "Cam Jurgens", position: "C", nfl_team: "PHI", status: "Out", body_part: "Back", notes: null, practice: null },
+    others: [{ id: "l2", name: "Tyler Steen", position: "G", nfl_team: "PHI", status: "IR", body_part: "Knee", notes: null, practice: null }],
+  },
+];
+
+export function deskFor(teamId: string, entitlements: Feature[]): Desk {
+  const feed = actionsFor(teamId, entitlements);
+  const has = new Set<Feature>(entitlements);
+  const binder = (key: "team" | "waivers" | "trade", type: string, feature: Feature) => {
+    const inside = feed.actions.filter((a) => a.type === type);
+    return { key, count: inside.length, locked: !has.has(feature), top_benefit: inside[0]?.benefit ?? null };
+  };
+  // Only the team the mocks dress in full gets the news; every other desk is quiet, which
+  // is the normal case and must render just as well.
+  const items = teamId === "1" ? MOCK_NEWS : [];
+  return {
+    week: feed.week, team: feed.team, league: feed.league,
+    news: { window_hours: 72, count: items.length, items },
+    matchup: feed.matchup,
+    sheet: { summary: feed.summary, moves: feed.actions.filter((a) => a.type !== "hold").length, all_clear: feed.all_clear },
+    binders: [binder("team", "start", "my_team"), binder("waivers", "waiver", "waivers"), binder("trade", "trade", "trade_lab")],
+    entitlements, synced_at: feed.synced_at,
+  };
+}

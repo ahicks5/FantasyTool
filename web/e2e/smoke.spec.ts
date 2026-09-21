@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
-import { RIDE, SECTIONS } from "../src/lib/vocab";
+import { DESK, RIDE, SECTIONS } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { SCOUT } from "../src/lib/vocab";
@@ -180,6 +180,18 @@ const PAGES: PageCase[] = [
   },
   {
     path: "/home",
+    name: "the desk",
+    check: async (page) => {
+      // The front page is the desk; its nameplate carries the team and the week.
+      const desk = page.getByRole("region", { name: DESK.aria });
+      await expect(desk).toBeVisible();
+      await expect(desk.getByText(CONNECTION.team_name).first()).toBeVisible();
+      await expect(desk.getByText(`Week ${CONNECTION.week}`).first()).toBeVisible();
+      await expect(desk.locator(".binder")).toHaveCount(3);
+    },
+  },
+  {
+    path: "/home/sheet",
     name: "action feed",
     check: async (page) => {
       // The hero names the week and team once the feed has loaded.
@@ -303,7 +315,7 @@ test("the call sheet shows a player without a click, for a reader who has bought
     const headers = { ...route.request().headers(), "x-edge-user": "free@example.com" };
     route.continue({ headers });
   });
-  await page.goto("/home");
+  await page.goto("/home/sheet");
   await expect(page.getByText(/\d+ moves? to make|All settled\./)).toBeVisible();
   const cards = page.locator("main article");
   await expect(cards.first()).toBeVisible();
@@ -467,10 +479,10 @@ test("the API really is the fixture server, not mocks", async ({ page }) => {
   const seen: string[] = [];
   page.on("request", (r) => r.url().includes("/api/") && seen.push(r.url()));
   await page.goto("/home");
-  // Attached, not visible: the call sheet folds its cards behind the group rows, and this
-  // test is about where the data came from rather than about what is on screen.
+  // Attached, not visible: this test is about where the data came from rather than about
+  // what is on screen. The desk is one call; it warms the call sheet with a second.
   await expect(page.locator("main article").first()).toBeAttached();
-  expect(seen.some((u) => u.includes("/actions")), `no API calls seen: ${seen.join(", ")}`).toBe(true);
+  expect(seen.some((u) => u.includes("/desk")), `no API calls seen: ${seen.join(", ")}`).toBe(true);
   expect(DEV_USER).toContain("@");
 });
 
@@ -547,6 +559,31 @@ test("a link with ?player= opens straight onto his page", async ({ page }) => {
 
   await page.goto(url);
   await expect(page.getByRole("dialog")).toBeVisible();
+});
+
+test("the desk: news on top, the opponent beside it, three binders that open their tabs", async ({ page }) => {
+  await visit(page, "/home");
+  const desk = page.getByRole("region", { name: DESK.aria });
+  await expect(desk).toBeVisible();
+  // The news paper is first, and on the recorded week this roster has real news.
+  await expect(desk.getByRole("heading", { name: DESK.news.title })).toBeVisible();
+  const news = desk.locator(".desk-news-row");
+  await expect(news.first()).toBeVisible();
+  const paperTop = (await desk.locator(".desk-paper-news").boundingBox())!.y;
+  const bindersTop = (await desk.locator(".binder").first().boundingBox())!.y;
+  expect(paperTop, "news is above the binders").toBeLessThan(bindersTop);
+  // The opponent's paper leads to the scouting report.
+  await expect(desk.locator(`a[href="${SECTIONS.matchup.href}"]`)).toBeVisible();
+  // Three binders, each a link into its tab; a lit one wears a badge with a number.
+  const binders = desk.locator(".binder");
+  await expect(binders).toHaveCount(3);
+  const lit = desk.locator(".binder-lit");
+  await expect(lit.first()).toBeVisible();
+  await expect(lit.first().locator(".binder-badge")).toHaveText(/^\d+$/);
+  await assertNoHorizontalOverflow(page);
+  await binders.first().click();
+  await page.waitForURL(`**${SECTIONS.team.href}`);
+  await expect(page.getByRole("heading", { level: 1, name: SECTIONS.team.title })).toBeVisible();
 });
 
 test("the first open rides up to the call sheet, and the second does not", async ({ page }) => {

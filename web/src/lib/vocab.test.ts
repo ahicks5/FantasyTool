@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   CONFIDENCE_HIT_LINE,
   CONNECT,
+  DESK,
   EMAIL,
   GROUPS,
   LANDING,
@@ -27,6 +28,14 @@ const ALL_COPY: string[] = [
   ...SECTION_VALUES.flatMap((s) => [s.label, s.title, s.blurb, s.gate]),
   ...Object.values(LINES),
   ...Object.values(RIDE),
+  // The desk's words: the strings, plus every templated line rendered once.
+  DESK.aria, DESK.owner, DESK.news.eyebrow, DESK.news.title, DESK.news.quiet, DESK.news.window(72), DESK.news.also(2),
+  DESK.news.more(3), ...Object.values(DESK.news.levels), DESK.opponent.eyebrow, DESK.opponent.none, DESK.opponent.cta,
+  // `DESK.opponent.odds` is left out: a win chance is the engine's number for this week,
+  // not a claim about how often we are right, and the matchup page already prints it.
+  DESK.sheet.eyebrow, DESK.sheet.cta, DESK.binders.eyebrow, DESK.binders.count(1),
+  DESK.binders.count(3), DESK.binders.clear, DESK.binders.locked,
+  ...(["team", "waivers", "trade"] as const).flatMap((k) => [DESK.binders[k].staff, DESK.binders[k].line]),
   ...Object.values(CONNECT),
   ...Object.values(GROUPS).flatMap((g) => [g.clear, g.stamp]),
   ...LANDING.features.flatMap((f) => [f.room, f.title, f.tag, f.body]),
@@ -156,4 +165,25 @@ test("the last-week line offers no way to state a rate", () => {
   assert.equal(LAST_WEEK.calls(2, 3), "2 of 3 calls hit");
   assert.equal(LAST_WEEK.calls(1, 1), "1 of 1 call hit");
   assert.ok(!/%/.test(LAST_WEEK.calls(2, 3)));
+});
+
+test("the desk is the front page and the call sheet is a room off it", () => {
+  assert.equal(SECTIONS.home.href, "/home");
+  assert.equal(SECTIONS.sheet.href, "/home/sheet");
+  assert.equal(SECTIONS.sheet.title, "Call sheet");
+  assert.ok(TAB_ORDER.includes("home") && !(TAB_ORDER as readonly string[]).includes("sheet"));
+});
+
+test("every binder has a member of staff and a tab to open", () => {
+  for (const k of ["team", "waivers", "trade"] as const) {
+    assert.ok(DESK.binders[k].staff.length > 0 && DESK.binders[k].line.length > 0);
+    assert.ok(k in SECTIONS, `binder ${k} opens no tab`);
+  }
+});
+
+test("the desk's clock reads in hours, then days", () => {
+  assert.equal(DESK.news.ago(0.4), "just now");
+  assert.equal(DESK.news.ago(6.4), "6h ago");
+  assert.equal(DESK.news.ago(23.6), "24h ago");
+  assert.equal(DESK.news.ago(53), "2d ago");
 });
