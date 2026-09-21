@@ -1,5 +1,6 @@
 "use client";
 /** One week of the film: the final, then every call and what happened, stated flat. */
+import { PlayerName } from "./Players";
 import { useState } from "react";
 import { IconChevron } from "./icons";
 import { Eyebrow } from "./ui";
@@ -163,7 +164,7 @@ function Bench({ week }: { week: WeekView }) {
           {week.bench.map((b, i) => (
             <li key={`${b.player.id}-${i}`} className="flex items-baseline justify-between gap-3 text-[13px]">
               <span className="min-w-0 truncate">
-                <span className="font-bold">{b.player.name}</span>
+                <span className="font-bold"><PlayerName p={b.player} /></span>
                 {b.player.position && (
                   <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">{b.player.position}</span>
                 )}

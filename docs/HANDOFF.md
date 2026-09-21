@@ -33,6 +33,9 @@ search box is still there and is now one filter among the others rather than a s
 beside them. `PlayerBoard.tsx` replaced `PlayerSearch.tsx`; `TASKS.md` has the decisions,
 `docs/API.md` has the contract.
 
+Rows raise the **player sheet** (the PP round's, which landed first), like every other
+name in the app — `/waivers/<id>` is untouched and still the deep link (D-8).
+
 Four things a future session will otherwise rediscover the hard way:
 
 - **The board is free and the wire is still paid** — the same line the profile already sat

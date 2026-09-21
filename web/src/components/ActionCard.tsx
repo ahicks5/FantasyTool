@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Action, LockCall, Player, SharedPlayer } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { IconCheck, IconChevron, IconGreaseCheck, IconLock } from "./icons";
+import { PlayerTarget } from "./Players";
 import { ShareLock } from "./ShareLock";
 import { ConfidenceStamp, Eyebrow, Feedback, Why } from "./ui";
 
@@ -125,14 +126,14 @@ export function ActionCard({
                 <IconCheck size={19} strokeWidth={2.6} />
               </span>
             ) : primary ? (
-              <span className="relative shrink-0 pr-2.5">
+              <PlayerTarget p={primary} className="relative shrink-0 pr-2.5">
                 <Avatar name={primary.name} photo={primary.photo} teamLogo={primary.team_logo} size="md" ring={a.type === "start" ? "start" : undefined} />
                 {secondary && (
                   <span className="absolute -bottom-1 right-0 rounded-full ring-2 ring-[var(--color-paper)]">
                     <Avatar name={secondary.name} photo={secondary.photo} size="sm" className="opacity-75 grayscale" />
                   </span>
                 )}
-              </span>
+              </PlayerTarget>
             ) : null}
 
             <div className="min-w-0 flex-1">

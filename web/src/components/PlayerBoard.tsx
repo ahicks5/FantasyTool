@@ -15,13 +15,16 @@
  * nothing here should start: `edge/products.py` is the only source of truth for that, and
  * the API answers 402 for the plan regardless of what this component does.
  *
- * Rows are real `<Link>`s, for the same reason the search box's were: they prefetch, they
- * open in a new tab, and a screen reader's own link handling works on them. Arrow keys
- * move DOM focus through them rather than painting a selection that only looks like focus.
+ * Every row opens the player sheet rather than navigating, because that is now the house
+ * rule everywhere a name appears (`components/Players.tsx`): the page rises over the room
+ * you are in and the tab you came from stays lit. The *whole row* is the door here, not
+ * just the name inside it — `PlayerName` is built for a name sitting inline in a sentence
+ * and deliberately refuses the house 44px target, which is right there and wrong on a
+ * browse board where tapping the row is the entire gesture. Arrow keys move DOM focus
+ * through the rows rather than painting a selection that only looks like focus.
  */
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import Link from "next/link";
 import { getPlayerBoard } from "@/lib/api";
 import {
   AVAILABILITY_LABELS,
@@ -48,6 +51,7 @@ import type { Connection } from "@/lib/storage";
 import type { BoardAvailability, BoardQuery, BoardRow, BoardSort, PlayerBoard as Board } from "@/lib/types";
 import { SCOUT } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
+import { usePlayerSheet } from "./player/PlayerSheetProvider";
 import { IconChevron } from "./icons";
 import { ErrorBox, H2, InjuryTag, SkeletonList, Spinner } from "./ui";
 
@@ -115,18 +119,22 @@ function Row({
   sort: string;
   avail: BoardAvailability;
   onKeyDown: (e: React.KeyboardEvent) => void;
-  bind: (el: HTMLAnchorElement | null) => void;
+  bind: (el: HTMLButtonElement | null) => void;
 }) {
   const adds = addsLabel(row);
   const held = row.rostered_by;
   const owner = showsOwner(avail);
+  const { open } = usePlayerSheet();
   return (
     <li>
-      <Link
+      <button
         ref={bind}
-        href={`/waivers/${encodeURIComponent(row.id)}`}
+        type="button"
+        // A `BoardRow` already is a `PlayerSeed`, so the sheet's header paints from the
+        // row the reader tapped rather than waiting on the fetch behind it.
+        onClick={() => open(row)}
         onKeyDown={onKeyDown}
-        className="flex min-h-14 w-full min-w-0 items-center gap-3 rounded-2xl border border-line px-3 py-2.5 transition-colors hover:bg-soft focus:border-ink focus:bg-soft focus:outline-none"
+        className="flex min-h-14 w-full min-w-0 items-center gap-3 rounded-2xl border border-line px-3 py-2.5 text-left transition-colors hover:bg-soft focus:border-ink focus:bg-soft focus:outline-none"
       >
         <Avatar name={row.name} photo={row.photo} teamLogo={row.team_logo} size="md" />
         <span className="min-w-0 flex-1">
@@ -161,7 +169,7 @@ function Row({
           </span>
         </span>
         <IconChevron size={16} className="shrink-0 text-muted" />
-      </Link>
+      </button>
     </li>
   );
 }
@@ -185,7 +193,7 @@ export function PlayerBoard({ c }: { c: Connection }) {
   const [retry, setRetry] = useState(0);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const links = useRef<(HTMLAnchorElement | null)[]>([]);
+  const links = useRef<(HTMLButtonElement | null)[]>([]);
   const id = useId();
   const listId = `${id}-list`;
 

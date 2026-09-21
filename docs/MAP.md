@@ -46,7 +46,6 @@ the value is visible and the names are not.
 
 | …this | Touch | And then |
 |---|---|---|
-| The scouting board — a filter, a sort, or what a row shows | `edge/api/directory.py`; the controls in `web/src/lib/board.ts`, the view in `web/src/components/PlayerBoard.tsx` | `tests/test_directory.py`, `web/src/lib/board.test.ts`; the two enums are pinned in `tests/test_cross_language_contracts.py` |
 | A start/sit call, or what "Lock" means | `edge/engine/lineup.py`; thresholds also `edge/calibration.py` | `tests/test_lineup.py`; read docs/CALIBRATION.md first — Lock is **not** calibrated |
 | The waiver plan, a bid, or the pool ranking | `edge/engine/waiver_plan.py`, `waivers.py`, `values.py` | `tests/test_waiver_plan.py`, `test_waivers_values.py` |
 | A trade verdict or counteroffer | `edge/engine/trade.py`, `tendencies.py`; wording in `explain.py` | `tests/test_trade.py` |
@@ -79,6 +78,8 @@ the value is visible and the names are not.
 | What can stop us launching? | `docs/RISK_REGISTER.md`, `docs/LEGAL_CHECKLIST.md` |
 | Does this make money? | `docs/UNIT_ECONOMICS.md` |
 | What is left to build? | `TASKS.md` |
+| What is the player page, and what is decided about it? | `docs/SPEC-PLAYER-PAGE.md` |
+| Which player-page step is next, and which files may it touch? | `docs/PLAYER-PAGE-STEPS.md` |
 | What are real leagues actually like? | `docs/LEAGUE_SURVEY.md` |
 
 ## Commands
@@ -165,7 +166,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/connect/page.tsx` | Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, two cookies. | 401 |
 | `web/src/app/error.tsx` | The boundary for anything a page throws while rendering. Without it Next shows its own | 35 |
 | `web/src/app/global-error.tsx` | Last resort: an error in the root layout itself, where the app's own chrome and | 45 |
-| `web/src/app/home/matchup/page.tsx` | The full read on this week's opponent: the scoreline, the win meter, and every | 247 |
+| `web/src/app/home/matchup/page.tsx` | The full read on this week's opponent: the scoreline, the win meter, and every | 248 |
 | `web/src/app/home/page.tsx` | The call sheet: this week's ranked moves, each one checkable. The app's home screen. | 311 |
 | `web/src/app/layout.tsx` | The root layout: the two type families, every metadata tag, and the theme boot script. | 90 |
 | `web/src/app/login/page.tsx` | Sign in with a magic link, or run as NEXT_PUBLIC_DEV_USER when Supabase is not configured. | 144 |
@@ -182,28 +183,28 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/waivers/[player]/page.tsx` | One player's scout report, inside Scouting. | 46 |
 | `web/src/app/waivers/page.tsx` | Scouting: browse every player in the league, then the waiver plan over the ranked | 110 |
 
-### `web/src/components/` — the view (34 files)
+### `web/src/components/` — the view (38 files)
 
 | File | What it is | Lines |
 |---|---|---|
-| `web/src/components/ActionCard.tsx` | One call on the call sheet: the move, the reason, the stamp, and the tick that crosses it off. | 225 |
+| `web/src/components/ActionCard.tsx` | One call on the call sheet: the move, the reason, the stamp, and the tick that crosses it off. | 226 |
 | `web/src/components/Alarm.tsx` | The one line that interrupts the call sheet: a starter who will not play. | 59 |
 | `web/src/components/Avatar.tsx` | A player headshot. Initials are painted underneath rather than swapped in on error, so a | 66 |
 | `web/src/components/Compare.tsx` | Two scorecards, side by side. Not a verdict, so it borrows the scorecard's | 220 |
 | `web/src/components/EmailOptIn.tsx` | The weekly-email opt-in: one checkbox, on /login, under the signed-in block. | 104 |
 | `web/src/components/EspnAuthForm.tsx` | The two ESPN cookies a private league needs, asked for in the shape of a form rather than | 167 |
 | `web/src/components/Film.tsx` | The film: the season looked back on, the record read against the scoring, week by week. | 130 |
-| `web/src/components/FilmWeek.tsx` | One week of the film: the final, then every call and what happened, stated flat. | 178 |
+| `web/src/components/FilmWeek.tsx` | One week of the film: the final, then every call and what happened, stated flat. | 179 |
 | `web/src/components/GameDay.tsx` | The game-day answer, above the board: am I good for Sunday, did anything just happen, | 238 |
 | `web/src/components/LastWeek.tsx` | How last week's calls landed, in one line under the standing. Free for everyone. | 71 |
 | `web/src/components/LegalPage.tsx` | Shared chrome and typography for /terms and /privacy. Plain, readable, no app shell. | 66 |
-| `web/src/components/LineupView.tsx` | Two reads on the same team: this week's board, and how the roster grades out. | 266 |
+| `web/src/components/LineupView.tsx` | Two reads on the same team: this week's board, and how the roster grades out. | 267 |
 | `web/src/components/Locked.tsx` | Premium teaser, not a wall: says what we found, then offers the pass or the bundle. | 110 |
 | `web/src/components/MatchupCell.tsx` | The week's scoreboard, directly under the page title: you, them, and the door | 93 |
-| `web/src/components/PlayerBoard.tsx` | The scouting board: every player in the league, cut and ordered by the reader. | 471 |
-| `web/src/components/Players.tsx` | Name over position/team, with a headshot. The name column always gets the slack. | 33 |
+| `web/src/components/PlayerBoard.tsx` | The scouting board: every player in the league, cut and ordered by the reader. | 479 |
+| `web/src/components/Players.tsx` | Name over position/team, with a headshot. The name column always gets the slack. | 116 |
 | `web/src/components/Pricing.tsx` | What each entitlement actually buys, in the user's words rather than the API's. | 106 |
-| `web/src/components/Profile.tsx` | The scout report on one player: who has him, what the counts say, and every week he has | 290 |
+| `web/src/components/Profile.tsx` | The scout report on one player: who has him, what the counts say, and every week he has | 83 |
 | `web/src/components/ProfileGames.tsx` | The game log: every week he has on record this season, and the same weeks as bars. | 176 |
 | `web/src/components/ProfileReads.tsx` | The read: what the counts say, in words, and the centrepiece of the scout report. | 102 |
 | `web/src/components/Scorecard.tsx` | A grade is a read on the roster, not a call the user has to make, so it never | 204 |
@@ -211,17 +212,21 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/ShareCard.tsx` | The marketing asset: a 1080x1080 card rendered at full size and scaled to fit. It is | 175 |
 | `web/src/components/ShareLock.tsx` | Turns a start/sit call into a public link — free, no account, no purchase. | 65 |
 | `web/src/components/SheetGroup.tsx` | One row of the call sheet: a bench you work, or a room you read, and the door into it. | 339 |
-| `web/src/components/Shell.tsx` | The room itself: top bar, league ribbon, tab bar, and the shell every page mounts. | 226 |
+| `web/src/components/Shell.tsx` | The room itself: top bar, league ribbon, tab bar, and the shell every page mounts. | 231 |
 | `web/src/components/Standing.tsx` | Where you stand, in one line under the call sheet's hero: grade, rank, record. | 92 |
 | `web/src/components/Standings.tsx` | The table: every team in the league, by record, and what the rosters are worth from here. | 90 |
 | `web/src/components/TradeFinderView.tsx` | The board. Who to call, what to offer, and what it is worth to each side. | 405 |
 | `web/src/components/Unlocking.tsx` | The gap between a cleared card and a written entitlement, made visible instead of confusing. | 131 |
-| `web/src/components/WaiverPlanView.tsx` | The waiver plan: the claim we are asking for, its bid, and the backup claims under it. | 190 |
-| `web/src/components/WaiversView.tsx` | The board: every free agent worth a claim, ranked. This is a long scannable | 92 |
+| `web/src/components/WaiverPlanView.tsx` | The waiver plan: the claim we are asking for, its bid, and the backup claims under it. | 191 |
+| `web/src/components/WaiversView.tsx` | The board: every free agent worth a claim, ranked. This is a long scannable | 93 |
 | `web/src/components/icons.tsx` | Line icons at a common 24px grid. Emoji read as placeholder art in a paid product. | 120 |
+| `web/src/components/player/PlayerSheet.tsx` | The player page: a full-height sheet that rises over whatever you were reading. | 373 |
+| `web/src/components/player/PlayerSheetProvider.tsx` | Who the player sheet is open on, and the URL that says so. | 132 |
+| `web/src/components/player/Report.tsx` | The scout report body: who he is, what the counts say, and every week he has on record. | 225 |
+| `web/src/components/player/VibesView.tsx` | Vibes: the player in words, and **not one digit**. | 60 |
 | `web/src/components/ui.tsx` | The kit: the shared devices every screen is built from — cards, stamps, meters, waits, the wordmark. | 919 |
 
-### `web/src/lib/` — client logic (26 files)
+### `web/src/lib/` — client logic (27 files)
 
 | File | What it is | Lines |
 |---|---|---|
@@ -238,6 +243,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/legal.ts` | The handful of facts the Terms and Privacy pages cannot work out for themselves. | 51 |
 | `web/src/lib/matchup.ts` | The week's head-to-head, worked out slot by slot. | 131 |
 | `web/src/lib/mocks.ts` | Mock data matching docs/API.md exactly. Player names, rosters and week-2 | 1246 |
+| `web/src/lib/player/sheet.ts` | The player sheet's gesture and mode rules. Pure (no React, no DOM), so the one part of | 86 |
 | `web/src/lib/profile.ts` | The scout report, worked out: one player's recorded season turned into the tiles, | 558 |
 | `web/src/lib/recap.ts` | The film, worked out: a season of played weeks turned into the rows the page draws. | 538 |
 | `web/src/lib/search.ts` | The scout's search box, minus React. | 114 |
@@ -249,7 +255,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/teaser.ts` | Which sentence goes in a paywall. | 21 |
 | `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 906 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 437 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 494 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 174 |
 
 <!-- END GENERATED -->

@@ -9,6 +9,7 @@
 import type { Waivers } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
+import { PlayerName } from "./Players";
 import { Eyebrow, InjuryTag, Why } from "./ui";
 
 export function WaiversView({ waivers, compact = false }: { waivers: Waivers; compact?: boolean }) {
@@ -27,7 +28,7 @@ export function WaiversView({ waivers, compact = false }: { waivers: Waivers; co
               <Avatar name={w.player.name} photo={w.player.photo} teamLogo={w.player.team_logo} size="lg" ring={i === 0 ? "lean" : undefined} />
               <div className="min-w-0 flex-1">
                 <div className="display truncate text-[17px] leading-tight">
-                  {w.player.name}
+                  <PlayerName p={w.player} />
                   <InjuryTag status={w.player.injury_status} />
                 </div>
                 <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
@@ -46,7 +47,7 @@ export function WaiversView({ waivers, compact = false }: { waivers: Waivers; co
                 <Eyebrow>Cut</Eyebrow>
                 {w.drop ? (
                   <>
-                    <div className="mt-0.5 truncate text-[14px] font-black text-sit">{w.drop.name}</div>
+                    <div className="mt-0.5 truncate text-[14px] font-black text-sit"><PlayerName p={w.drop} /></div>
                     <div className="text-[11px] text-muted">{w.drop.position}</div>
                   </>
                 ) : (

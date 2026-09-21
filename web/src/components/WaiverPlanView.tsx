@@ -3,6 +3,7 @@
 import type { WaiverClaim, WaiverPlanResponse } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
+import { PlayerName } from "./Players";
 import { IconArrowUp } from "./icons";
 import { Countdown, Eyebrow, H2, InjuryTag, OnAir, Stamp, Why } from "./ui";
 
@@ -39,7 +40,7 @@ function ClaimCard({ c, index }: { c: WaiverClaim; index: number }) {
         <Avatar name={c.add.name} photo={c.add.photo} teamLogo={c.add.team_logo} size="lg" ring={primary ? "lean" : undefined} />
         <div className="min-w-0 flex-1">
           <div className="display truncate text-[19px] leading-tight">
-            {c.add.name}
+            <PlayerName p={c.add} />
             <InjuryTag status={c.add.injury_status} />
           </div>
           <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -69,7 +70,7 @@ function ClaimCard({ c, index }: { c: WaiverClaim; index: number }) {
             /* No avatar here: the cut is the small half of the row and a face steals the
                width the name needs. */
             <div className="mt-0.5 min-w-0">
-              <span className="block text-[14px] font-black leading-tight text-sit">{c.drop.name}</span>
+              <span className="block text-[14px] font-black leading-tight text-sit"><PlayerName p={c.drop} /></span>
               <span className="mt-0.5 block text-[11px] leading-snug text-muted">
                 {c.drop.position}
                 {c.drop_cost > 0.05 ? ` · costs ${c.drop_cost.toFixed(2)}/wk` : " · free to lose"}
