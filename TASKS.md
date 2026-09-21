@@ -215,6 +215,15 @@ themes. All eight are done and on production.
   `/api` itself, so that value 404s every call while the page still renders. Corrected.
 
 ## Decisions needed from Andrew
+
+- [ ] **Is the scouting board free?** It ships free (2026-09-21, see "The scouting board"). The
+      case for: it is description, not decision — a projection is the player's own number,
+      while roster fit, the bid and the cut are the wire's and stay paid; every competitor
+      gives a browsable player list away; and CLAUDE.md's own framing is that the encyclopedia
+      is what gets a stranger in the building, not what we charge him for. The case against:
+      free agents sorted by projection descending is *adjacent* to "top pickups", which is the
+      Wire Pass pitch. If that is too close for comfort, gating it is one line in
+      `edge/api/app.py` — the same line named in the `player_profile` docstring.
 - [ ] Rollout + marketing plan: `launch/ROLLOUT_PLAN.md` (phases, materials, research, 7 decisions at the end).
       First action: email Sleeper about API licensing (their docs say commercial use needs a conversation).
 - [ ] **Launch with player photos on or off?** `EDGE_CARD_PHOTOS=0` is built and costs us nothing
@@ -791,3 +800,116 @@ person. That'd be in the scouting tab."
       totals. This season's shares are exact, because they are weekly.
 - [ ] ESPN leagues reach the stat feed through `ext_ids["sleeper"]`; a player the name match
       missed has no profile rather than a wrong one.
+
+## Player page (docs/SPEC-PLAYER-PAGE.md · steps and progress in docs/PLAYER-PAGE-STEPS.md)
+Spec written 2026-09-21 from Andrew and his cofounder's notes; **§2 of the spec records the
+thirteen decisions Andrew took the same day** (live room chat, league-agnostic Vibes, brass vs
+chrome, badge names, composite in league points, nflverse green-lit, props not, no share in v1).
+Supersedes **S-5**.
+- [ ] **PP-1** The frame: a bottom sheet any player name opens, swipe down to close, no X,
+      frozen header and footer, Vibes/Stats toggle that flips colour *and* word, `?player=`
+      in the URL. Stats = the existing scout report lifted out of `Profile.tsx`.
+- [ ] **PP-2** Header numbers: this week's projection and ROS on the profile payload, the
+      lifecycle badge (`edge/engine/lifecycle.py`) and short game / long game, in words.
+- [ ] **PP-3** Vibes: `edge/engine/takes.py` writes the read from a facts sheet of tiers and
+      tones — Claude when `EDGE_USE_CLAUDE=1`, template otherwise, cached per (player, week).
+      **No digit reaches the page**; a test rejects any that does.
+- [ ] **PP-4a** Stats, the nerd floor: `edge/engine/breakdown.py` — target share, air-yard
+      share, WOPR, aDOT, RACR, YAC, drop rate, broken tackles, stuff rate, red-zone shares,
+      points per target/touch/snap/reception, where the points come from, boom/bust against
+      this league's starter and replacement lines, floor/ceiling/stability, explosive share,
+      every rate against the position average; gauges, thermometers, depth strip, boom-bust
+      strip as inline SVG with node-tested builders.
+- [ ] **PP-4b** The field map, EPA, separation, routes run — from nflverse play-by-play behind
+      `edge/data/pbp.py`. **Gated**: verify 2026 files and the licence first.
+- [ ] **PP-5** Chat per player: a live room, signed-in to post, team name as handle. Own PR,
+      after the first slice is live.
+- [ ] **PP-6** GM's Office from the footer: `/trade?player=<id>` opens the right partner card.
+- [ ] **PP-7** The Penthouse Composite: `CompositeProvider` averaging raw stat lines across
+      Sleeper, ESPN (already fetched), props (vendor + terms check), Yahoo last.
+- [ ] **PP-8** Position Battle: placeholder button only. Defined as him vs his own NFL
+      teammates at his position (snaps, targets, carries, week by week).
+
+## Player page (docs/PLAYER-PAGE-STEPS.md)
+
+- [x] **Phase A — the frame.** Tap any name anywhere, his page rises over the tab you are on,
+      swipe it away. Stats is the existing scout report, lifted out of `Profile.tsx` so the
+      route and the sheet share one copy; Vibes is a words-only placeholder. Nothing in
+      `edge/` changed. Five gates green; 320/375/420 in both themes, both modes.
+- [ ] **Phase B/D — Vibes for real.** The first version worth showing anyone.
+- [ ] **Phase J — Handcuff (Andrew, 2026-09-21).** Blocked on two things, both in the steps
+      doc: **J0**, whether Handcuff and Position Battle are one page or two (they read the
+      same NFL depth chart from opposite ends), and **J1**, whether Sleeper's 2026
+      depth-chart fields are actually current.
+
+### Decisions needed from Andrew
+
+- **Which branch is the player page's home.** The isolation contract in the steps doc says
+  `claude/laughing-turing-0uco4m`; phase A shipped on `claude/gifted-franklin-iwoavf`, which
+  is where this session was told to develop. The doc commits were cherry-picked across, so
+  nothing is lost, but the two branches are not merged and the next player-page chat will
+  collide unless one of them is named.
+- **J0**, above. It changes how many pages phase J builds, not what it builds.
+- **Four surfaces still print a name that does not open his page** — `FilmWeek`'s starter
+  rows and `GameDay`'s detail rows have no player id in their payload, so carrying the id
+  through `lib/recap.ts` and `lib/gameday.ts` is an engine change and was left out of phase
+  A. The reasons are recorded in `web/src/lib/player/names.test.ts`, which fails if a fifth
+  appears.
+
+## The scouting board — browse every player (2026-09-21)
+
+Scouting could answer "where is Ja'Marr Chase" and nothing else. It can now answer "who are
+the best available running backs, and which of them is on a bye" — the question a manager
+actually opens a fantasy app to ask. One board, on `/waivers`, above the Wire Pass lock.
+
+- [x] **SB-1** `GET /api/league/{platform}/{league_id}/players` — the whole league's player
+      universe, filtered by name, position, NFL team, availability and owning team; sorted by
+      this week's projection, rest-of-season value, most added, name or position, either
+      direction; paged. `tests/test_directory.py`, 29 tests. Contract in `docs/API.md`.
+- [x] **SB-2** `edge/api/directory.py` builds every row from the **bundle that is already in
+      hand** — no new fetch, and the projection vendor stays behind `edge/data/providers.py`.
+      A board of four hundred rows costs what the old search box cost.
+- [x] **SB-3** `web/src/components/PlayerBoard.tsx` replaced `PlayerSearch.tsx`. Search is now
+      a filter like every other control rather than a second list beside them. Rules and words
+      in `web/src/lib/board.ts` (19 node tests), controls checked at 390px in both themes.
+- [x] **SB-4** Two browser tests: filter to free-agent RBs and re-sort them, and a locked
+      reader still gets a working board whose rows open a player.
+- [x] **SB-5** Merged with the player page (PP round, which landed first). **Every board row
+      raises the sheet** rather than navigating to `/waivers/<id>`: the wire list directly
+      below it on the same screen raises one, and leaving the page would throw away the
+      filters, the sort and every row paged in past the first fifty. The whole row is the
+      door, so the name inside it cannot also be one — the exemption and its reason are in
+      `web/src/lib/player/names.test.ts`, which replaced `PlayerSearch.tsx`'s entry.
+
+### Decisions taken here
+- **The board is free, on the same line the profile already was.** Every number on a row is
+  that player's own — his projection this week, his rest-of-season value, how many managers
+  are adding him. Wire Pass sells the *decision*: which of them fits **this** roster, what to
+  bid, who to cut. None of those three words appears in the payload, and
+  `test_the_board_never_prices_a_claim` fails the day one does. **This is the one call on this
+  round worth Andrew's eye** — see "Decisions needed from Andrew". Reversing it is one line in
+  `edge/api/app.py`, the same line the profile names.
+- **Null is not zero, all the way to the screen.** A zero projection is a real answer (bye
+  week, deep bench); a null means we never priced him, which is what a name search reaching
+  past the league into the platform dump returns. The board prints a dash for null, and null
+  sorts **last in both directions** — treating it as zero would rank a player we know nothing
+  about above every player projected to score.
+- **Facets are built from the league's own rows, never a constant.** A league with no kicker
+  slot gets no K chip. Same rule as scoring: read the league, never assume it.
+- **The free-agent pool is cut to startable positions; rosters are not.** The pool is derived
+  from whoever has a positive projection, so every kicker in the NFL sits in a no-K league's
+  pool. A *rostered* player at a dead position is really there and is still shown — hiding a
+  player who exists is worse than showing one who is useless.
+- **A name query still reaches the whole platform dump.** A player cut on Tuesday has no
+  projection and no pool row, and is exactly who somebody searches for on Tuesday. He comes
+  back numberless rather than zeroed.
+
+### Known limits, stated rather than hidden
+- [ ] **`/players/search` now has no caller in the app.** The board subsumed it. The endpoint
+      and `tests/test_scout_api.py` still pin it, and `searchPlayers` is still exported from
+      `web/src/lib/api.ts`; retiring it is a separate decision, not a side effect of this one.
+- [ ] `hitMeta` and `keepsResults` in `web/src/lib/search.ts` lost their last caller with
+      `PlayerSearch.tsx`. Both are still unit-tested. Left in place rather than deleted in the
+      same commit that moved the room.
+- [ ] The board pages at 50 rows behind a button. No virtualisation — a 12-team league's
+      universe is a few hundred rows, and a list that long is cheaper than the machinery.

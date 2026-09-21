@@ -295,6 +295,15 @@ export const SCOUT = {
   /** A player nobody in the league holds. The whole reason to be reading this page. */
   free: "Free agent",
   /**
+   * The board came back empty.
+   *
+   * Deliberately not `empty`: that one answers a name somebody typed and the honest reply
+   * is that nobody is called that. This one answers a set of filters, where everybody
+   * exists and the cut is simply too narrow — so it points at the filters, which are the
+   * thing the reader can actually change.
+   */
+  noMatch: "Nobody fits those filters.",
+  /**
    * The back link out of a profile. It names the *search*, not the tab, because the tab's
    * own title is already on screen — `AppShell` draws "Scouting" as the page heading, and
    * a back link reading the same word directly under it looks like a mistake.
@@ -466,4 +475,61 @@ export const EMAIL = {
   savedOff: "Saved. You're off the list.",
   failed: "That didn't save. Tick it again.",
   unavailable: "Your settings aren't loading. Reload the page to try again.",
+} as const;
+
+/**
+ * The player page: the sheet that rises when you tap any name.
+ *
+ * One block at the end of the file, appended rather than threaded through the sections
+ * above, because the page cuts across every room — it opens over the call sheet, the depth
+ * chart, the wire and the film alike, and belongs to none of them.
+ *
+ * **Nothing here carries a digit.** The Vibes side of the page is words only, and the words
+ * it is built from start here, so the rule is easiest to keep where the strings live
+ * (`src/lib/player/vocab.test.ts` is the guard).
+ */
+export const PLAYER = {
+  /** Spoken, for the dialog. The player's own name is read out in front of it. */
+  sheet: "player page",
+  /**
+   * The two sides, and the word each one puts on the header and the footer.
+   *
+   * The word is not decoration: the mode flips the colour of the whole frame, and colour
+   * never carries meaning on its own (`docs/BRAND.md`), so the word is the meaning and
+   * the brass and the chrome are the reinforcement.
+   */
+  modes: {
+    vibes: { label: "Vibes", said: "The read, in words" },
+    stats: { label: "Stats", said: "Every number he has" },
+  },
+  /** Spoken name of the toggle itself. */
+  modeGroup: "Which side of his page",
+  /** The three doors along the bottom. Mixed case: uppercase does not fit three-up at 320px. */
+  footer: {
+    battle: "Position Battle",
+    office: "GM's Office",
+    chat: "Chat",
+  },
+  /** On a door that is not built yet. States it, does not apologise for it. */
+  soon: "Soon",
+  /** Under the drag handle. The sheet has no close button, so it says how to leave. */
+  swipe: "Swipe down to leave",
+  /** Spoken, on the handle and the backdrop. Both close it. */
+  close: "Close his page",
+  /** The wait. */
+  opening: "Opening",
+  /** A player id that answers nothing. It will still answer nothing on a retry. */
+  notFoundHead: "No page for him",
+  notFoundLine: "Nobody by that id is in this league's player pool.",
+  /** The Vibes side, before the written take exists. */
+  vibes: {
+    /** Over the reads, which are the facts the take gets written from. */
+    head: "What the tape says",
+    /** No reads on record: week one, or a player who has not taken a snap. */
+    empty: "Nothing on him yet this season. Check the numbers next door.",
+  },
+  /** The Stats side. */
+  stats: {
+    empty: "No numbers on him yet this season.",
+  },
 } as const;

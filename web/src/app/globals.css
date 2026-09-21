@@ -570,6 +570,48 @@ button, a.btn, select, input { min-height: 44px; }
   word-break: break-word;
 }
 
+/* ---------------------------------------------------------------- player page ---
+   The sheet that rises when you tap any name, and the two sides it flips between.
+
+   Brass for Vibes, chrome for Stats (SPEC-PLAYER-PAGE.md, D-6). The mode flips the
+   colour of the header *and* the footer, so which side you are on is readable from the
+   frame rather than from a highlighted tab — and the word flips with it, because colour
+   never carries meaning on its own (docs/BRAND.md).
+
+   Both inks are set against the tinted surface they actually sit on, not against paper:
+   brass 6.5:1 dark / 5.5:1 light, chrome 8.8:1 dark / 6.6:1 light.
+
+   Chrome here is the flat metal ink, not `--chrome`, which is a gradient and cannot be a
+   text colour on a surface this small. */
+:root {
+  --color-vibes: #d6a94a;
+  --color-stats: #cdd2d9;
+}
+
+:root[data-theme="light"] {
+  --color-vibes: #7d5a11;
+  --color-stats: #4c545e;
+}
+
+/* Set once on the panel; the header and footer inside it only read these two. */
+[data-mode="vibes"] { --mode-ink: var(--color-vibes); }
+[data-mode="stats"] { --mode-ink: var(--color-stats); }
+[data-mode] { --mode-surface: color-mix(in srgb, var(--mode-ink) 10%, var(--color-paper)); }
+
+.mode-chrome { background: var(--mode-surface); }
+.mode-ink { color: var(--mode-ink); }
+
+/* The snap-back. The drag itself follows the finger and is input, not animation, so it is
+   the release that is animated — and a transition, not a keyframe, so it starts from
+   wherever the finger let go. While the finger is down there is no transition at all, or
+   every frame of the drag would lag behind it by the duration. */
+.sheet-panel { transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1); }
+.sheet-panel[data-dragging="true"] { transition: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-panel { transition: none; }
+}
+
 /* ------------------------------------------------------------- the strip ---
    The week's starters in a row on the plate. Nine 36px discs plus their gaps is
    about 380px, so below 400 the row scrolls sideways *inside its own box* rather

@@ -3,6 +3,7 @@ import { API_URL, DEV_USER } from "../playwright.config";
 import { DEPARTMENTS, DEPARTMENT_ORDER, SECTIONS, STARTERS } from "../src/lib/vocab";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { SCOUT } from "../src/lib/vocab";
+import { AVAILABILITY_LABELS, BOARD_LABELS, SORT_LABELS } from "../src/lib/board";
 
 /**
  * Every page of the app at 375px, against the fixture API (`scripts/serve_fixtures.py`).
@@ -478,9 +479,11 @@ for (const p of PAGES) {
   });
 }
 
-test("the scout: search a player, land on his profile", async ({ page }) => {
-  // The whole feature end to end through the real engine: the index finds him, the API
-  // scores his season by this league's settings, and the page renders it.
+test("the scout: search a player, his page rises", async ({ page }) => {
+  // The whole feature end to end through the real engine: the board finds him by name,
+  // the API scores his season by this league's settings, and his page renders it.
+  // Nothing navigates — since the player page became a sheet, a board row raises it over
+  // the room rather than leaving it.
   const { status } = await visit(page, "/waivers");
   expect(status).toBe(200);
 
@@ -488,14 +491,91 @@ test("the scout: search a player, land on his profile", async ({ page }) => {
   await expect(box).toBeVisible();
   await box.fill("jeffer");
 
-  const hit = page.getByRole("link", { name: /Jefferson/i }).first();
+  const hit = page.getByRole("button", { name: /Jefferson/i }).first();
   await expect(hit).toBeVisible({ timeout: 10_000 });
   await hit.click();
 
-  await page.waitForURL(/\/waivers\/\d+/);
-  await expect(page.getByRole("heading", { name: /Jefferson/i }).first()).toBeVisible();
-  // A number that can only have come from the engine scoring a real stat line.
-  await expect(page.getByText(SCOUT.footnote)).toBeVisible();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole("heading", { name: /Jefferson/i })).toBeVisible();
+  // The URL carries him, so the link is shareable and the back button closes him.
+  await expect(page).toHaveURL(/\?player=/);
+  await assertNoHorizontalOverflow(page);
+});
+
+test("the board: filter to free-agent running backs, then re-sort them", async ({ page }) => {
+  // The browse half of Scouting, end to end through the real engine: the API cuts the
+  // league's own universe down and orders it, and the page draws what came back. Nothing
+  // here pins a number -- the engine's output moves week to week -- only that the filters
+  // and the sort actually change the list.
+  const { status, problems } = await visit(page, "/waivers");
+  expect(status).toBe(200);
+
+  const board = page.getByRole("list").first();
+  await expect(board.getByRole("listitem").first()).toBeVisible({ timeout: 10_000 });
+
+  const rows = board.getByRole("listitem");
+  const countLine = page.getByText(/\d+ players?/).first();
+  /** The number the count line ends on: how many matched, not how many fitted on the page. */
+  const found = async () => Number(/(\d+) players?/.exec((await countLine.textContent()) ?? "")![1]);
+
+  // Running backs, still across the whole league.
+  await page.getByRole("button", { name: "RB", exact: true }).click();
+  await expect.poll(async () => rows.count(), { timeout: 10_000 }).toBeGreaterThan(0);
+  const everyRb = await found();
+
+  // Now only the ones nobody has.
+  await page.getByRole("button", { name: AVAILABILITY_LABELS.free, exact: true }).click();
+  await expect.poll(found, { timeout: 10_000 }).toBeLessThan(everyRb);
+  await expect.poll(async () => rows.count(), { timeout: 10_000 }).toBeGreaterThan(0);
+
+  for (const row of await rows.all()) {
+    // Every row is a running back. Matched against the meta line's own shape
+    // ("RB \u00b7 GB \u00b7 Bye 11") rather than a bare word: a row's text content runs the
+    // avatar initials and the name straight into it, so "Chris Brooks" at RB reads as
+    // "...BrooksRB \u00b7 GB" and there is no word boundary to anchor to.
+    await expect(row).toContainText(/RB \u00b7 /);
+    // And none of them repeats what the filter already said. `showsOwner` in lib/board.ts
+    // drops the badge here: "Free agent" on all of them is noise, and it wrapped under the
+    // meta line on some rows and not others, which left the list visibly ragged.
+    await expect(row).not.toContainText(SCOUT.free);
+  }
+
+  // Re-sorting is a different order, not a different list.
+  const first = await rows.first().textContent();
+  await page.getByLabel(BOARD_LABELS.sortBy).selectOption("name");
+  await expect.poll(async () => rows.first().textContent(), { timeout: 10_000 }).not.toBe(first);
+
+  // And the control says what it did.
+  await expect(page.getByLabel(BOARD_LABELS.sortBy)).toHaveValue("name");
+  expect(SORT_LABELS.name.label).toBe("Name");
+
+  await assertNoHorizontalOverflow(page);
+  expect(problems, "the board logged browser errors").toEqual([]);
+});
+
+test("the board is free, and clicking a row opens that player", async ({ page }) => {
+  // The other half of the growth decision, in the browser. The API half is pinned by
+  // `tests/test_directory.py::test_the_board_does_not_open_the_wire`; this is the half a
+  // page refactor could quietly undo, by moving the board inside the lock.
+  await page.route("**/waivers/plan*", (route) =>
+    route.fulfill({
+      status: 402,
+      contentType: "application/json",
+      body: JSON.stringify({ detail: { error: "requires a purchase", feature: "waivers", upsell: [] } }),
+    }),
+  );
+
+  const { status } = await visit(page, "/waivers");
+  expect(status).toBe(200);
+  await expect(page.getByText("Wire Pass").first()).toBeVisible();
+
+  // A locked reader still gets a working board, and every row still opens a player.
+  const row = page.getByRole("list").first().getByRole("listitem").first();
+  await expect(row).toBeVisible({ timeout: 10_000 });
+  await row.getByRole("button").first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page).toHaveURL(/\?player=/);
   await assertNoHorizontalOverflow(page);
 });
 
@@ -539,3 +619,73 @@ test("the API really is the fixture server, not mocks", async ({ page }) => {
   expect(DEV_USER).toContain("@");
 });
 
+
+test("tap a name, his page rises; swipe it down, it is gone", async ({ page }) => {
+  // The whole of phase A in one gesture. It runs on /team because the depth chart is the
+  // densest wall of names in the app -- if the sheet works anywhere it works there.
+  const { status } = await visit(page, "/team");
+  expect(status).toBe(200);
+
+  // A real name, not a slot label or a team: two capitalised words on a button.
+  const name = page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first();
+  await expect(name).toBeVisible();
+  const who = (await name.textContent())?.trim() ?? "";
+  await name.click();
+
+  const sheet = page.getByRole("dialog");
+  await expect(sheet).toBeVisible();
+  // It is his page, and the URL says so, so the link is shareable and the back button works.
+  await expect(sheet.getByRole("heading", { name: who })).toBeVisible();
+  await expect(page).toHaveURL(/\?player=/);
+  // Both sides are reachable and the word changes with the frame's colour.
+  await expect(sheet.getByRole("tab", { name: /Vibes/ })).toHaveAttribute("aria-selected", "true");
+  await sheet.getByRole("tab", { name: /Stats/ }).click();
+  await expect(sheet.getByRole("tab", { name: /Stats/ })).toHaveAttribute("aria-selected", "true");
+
+  // Swipe it away, from the header, which is the one grip that always belongs to the sheet.
+  const box = (await sheet.locator(".sheet-panel").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + 20);
+  await page.mouse.down();
+  for (const step of [40, 90, 150, 220]) await page.mouse.move(box.x + box.width / 2, box.y + 20 + step);
+  await page.mouse.up();
+
+  await expect(sheet).toHaveCount(0);
+  await expect(page).not.toHaveURL(/\?player=/);
+  await assertNoHorizontalOverflow(page);
+});
+
+test("a scrolled report does not throw the page away", async ({ page }) => {
+  // The case the gesture rules exist for: reading the Stats side is a long series of
+  // downward drags, and every one of them would otherwise close the sheet.
+  await visit(page, "/team");
+  await page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first().click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole("tab", { name: /Stats/ }).click();
+
+  const middle = sheet.locator(".sheet-panel > div").nth(1);
+  await middle.evaluate((el) => el.scrollBy(0, 200));
+  expect(await middle.evaluate((el) => el.scrollTop), "the report did not scroll").toBeGreaterThan(0);
+
+  const box = (await middle.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  for (const step of [60, 140, 240]) await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + step);
+  await page.mouse.up();
+
+  await expect(sheet).toBeVisible();
+});
+
+test("a link with ?player= opens straight onto his page", async ({ page }) => {
+  // The deep link, and the back button that closes it. Both are the same state: the URL.
+  await visit(page, "/team");
+  await page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  const url = page.url();
+
+  await page.goBack();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  await page.goto(url);
+  await expect(page.getByRole("dialog")).toBeVisible();
+});

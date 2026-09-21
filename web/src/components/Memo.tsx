@@ -7,6 +7,7 @@ import type { DeadlineNote } from "@/lib/deadline.ts";
 import { CALL_LABEL, DEPARTMENTS, GROUPS, SECTIONS, type DepartmentKey } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { IconArrowUp, IconCheck, IconClock, IconGreaseCheck, IconLock } from "./icons";
+import { PlayerTarget } from "./Players";
 import { ShareLock } from "./ShareLock";
 import { ConfidenceStamp, Feedback, Stamp } from "./ui";
 
@@ -239,7 +240,11 @@ function Item({
             <IconCheck size={19} strokeWidth={2.6} />
           </span>
         ) : primary ? (
-          <span className="relative shrink-0 pr-2.5">
+          // The headshot is the door to his page. A memo's headline is a sentence the
+          // engine composed ("Start Chase over Pittman"), so the only element on this
+          // card that is *him* is the face — without this the Debrief would be the one
+          // tab where a player cannot be opened. Ported from the card this memo replaced.
+          <PlayerTarget p={primary} className="relative shrink-0 pr-2.5">
             <Avatar
               name={primary.name}
               photo={primary.photo}
@@ -252,7 +257,7 @@ function Item({
                 <Avatar name={secondary.name} photo={secondary.photo} size="sm" className="opacity-75 grayscale" />
               </span>
             )}
-          </span>
+          </PlayerTarget>
         ) : null}
 
         <div className="min-w-0 flex-1">

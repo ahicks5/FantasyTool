@@ -100,6 +100,12 @@ function Slot({ slot, out, swapping }: { slot: LineupSlot; out: PlayerRef | null
  * with nothing to tick — and the honest reading of that badge is "this is not what you
  * have set", which is still true. The depth chart lists it either way.
  *
+ * **The discs are not player doors, and the plate is.** Every name in the app opens that
+ * player's page (`PlayerName`, `PlayerTarget`), and the strip prints no names at all — it
+ * is a picture of the lineup, not a roster. Making each face a button would also put nine
+ * of them inside this `<Link>`, which the browser flattens. So the whole plate is one
+ * target, it opens the depth chart, and every starter is a door on the other side of it.
+ *
  * **No generated art** (D4). A likeness of a named NFL player on a paid product is a
  * right-of-publicity question with no CDN to point at, it costs money per repaint on a
  * surface every free reader loads, and it cannot be deterministic — so it cannot be

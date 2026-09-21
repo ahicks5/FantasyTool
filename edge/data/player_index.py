@@ -30,6 +30,9 @@ from edge.data.player_map import normalize_name
 SEARCHABLE = ("QB", "RB", "WR", "TE", "K", "DEF")
 TTL = 24 * 3600
 LIMIT = 12
+# One letter matches thousands of people and tells nobody anything. `web/src/lib/search.ts`
+# holds the same number for the box, so the client never sends a query the server discards.
+SEARCH_MIN = 2
 # Sleeper leaves `search_rank` off the people it considers irrelevant. Sorting ascending
 # with a missing value would float them to the top, so absent means "last", not "first".
 NO_RANK = 9_999_999
@@ -57,6 +60,20 @@ class Hit:
     squash: str
 
 
+def norm_parts(name: str) -> tuple[str, str, str]:
+    """The three forms a name is matched in: normalised, surname, and spaces squashed out.
+
+    A function rather than three lines inside `build` because `api/directory.py` builds the
+    same forms for the league's own players. Two search surfaces that normalised names
+    differently would disagree about who "amonra" is, and a reader typing the same letters
+    into the box and into the board would have no way to tell which of them was lying.
+    """
+    norm = normalize_name(name)
+    if not norm:
+        return "", "", ""
+    return norm, norm.split()[-1], norm.replace(" ", "")
+
+
 def build(players: dict[str, dict]) -> list[Hit]:
     """Boil the dump down to the fields a search result needs. Sorted by relevance once."""
     out: list[Hit] = []
@@ -70,15 +87,15 @@ def build(players: dict[str, dict]) -> list[Hit]:
         # A team defence has no first or last name; Sleeper keys it by the abbreviation.
         if not name and pos == "DEF":
             name = f"{raw.get('team') or pid} Defense"
-        norm = normalize_name(name)
+        norm, last, squash = norm_parts(name)
         if not norm:
             continue
         years = raw.get("years_exp")
         out.append(Hit(
             id=str(pid), name=name, position=pos, team=raw.get("team"),
             years_exp=int(years) if isinstance(years, (int, float)) else None,
-            rank=int(raw.get("search_rank") or NO_RANK), norm=norm, last=norm.split()[-1],
-            squash=norm.replace(" ", ""),
+            rank=int(raw.get("search_rank") or NO_RANK), norm=norm, last=last,
+            squash=squash,
         ))
     out.sort(key=lambda h: h.rank)
     return out
@@ -98,7 +115,7 @@ def index(players_fn) -> list[Hit]:
     return built
 
 
-def _tier(h: Hit, q: str) -> int | None:
+def tier(norm: str, last: str, squash: str, q: str) -> int | None:
     """How well this row matches, lower is better. None means it does not match at all.
 
     Three tiers: the whole name, the start of either name, and anywhere at all.
@@ -111,18 +128,22 @@ def _tier(h: Hit, q: str) -> int | None:
     one tier, `search_rank` decides between them, and Sleeper's relevance order already
     knows which Allen is a Pro Bowl quarterback.
     """
-    if h.norm == q:
+    if norm == q:
         return 0
-    if h.norm.startswith(q) or h.last.startswith(q):
+    if norm.startswith(q) or last.startswith(q):
         return 1
-    if q in h.norm:
+    if q in norm:
         return 2
     # Hyphens and apostrophes optional, in either direction. Last resort, so "amonra" never
     # outranks a player whose printed name actually starts with what was typed.
     sq = q.replace(" ", "")
-    if sq and (h.squash.startswith(sq) or sq in h.squash):
+    if sq and (squash.startswith(sq) or sq in squash):
         return 3
     return None
+
+
+def _tier(h: Hit, q: str) -> int | None:
+    return tier(h.norm, h.last, h.squash, q)
 
 
 def search(rows: list[Hit], q: str, limit: int = LIMIT) -> list[Hit]:
@@ -134,7 +155,7 @@ def search(rows: list[Hit], q: str, limit: int = LIMIT) -> list[Hit]:
     manager searches for on Tuesday, and he is still the right answer, just not the first.
     """
     needle = normalize_name(q)
-    if len(needle) < 2:
+    if len(needle) < SEARCH_MIN:
         return []
     scored: list[tuple[int, int, int, Hit]] = []
     for h in rows:

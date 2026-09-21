@@ -6,6 +6,7 @@ import type { Lineup, LineupSlot } from "@/lib/types";
 import { confidenceRing, signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { GameDay } from "./GameDay";
+import { PlayerName } from "./Players";
 import { Scorecard } from "./Scorecard";
 import { IconArrowUp, IconCheck, IconChevron } from "./icons";
 import { ConfidenceStamp, Countdown, CountUp, Eyebrow, H2, InjuryTag, OnAirLive, Stamp } from "./ui";
@@ -60,7 +61,7 @@ function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
         )}
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13px] font-bold leading-tight">
-            {s.player?.name ?? "Empty"}
+            {s.player ? <PlayerName p={s.player} /> : "Empty"}
             <InjuryTag status={s.player?.injury_status ?? null} />
           </span>
           <span className={`mt-px flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide ${INK[s.confidence]}`}>
@@ -160,11 +161,11 @@ export function LineupView({
                 <div className="mt-2.5 flex min-w-0 items-center gap-2.5">
                   <span className="min-w-0 flex-1">
                     <span className={`${animate ? "demote" : "opacity-55"} block truncate text-[13px] font-bold text-sit line-through decoration-2`}>
-                      {c.out?.name ?? "Empty"}
+                      {c.out ? <PlayerName p={c.out} /> : "Empty"}
                     </span>
                     <span className={`${animate ? "promote" : ""} mt-0.5 flex items-center gap-1 text-[15px] font-black text-start`}>
                       <IconArrowUp size={14} strokeWidth={3} />
-                      <span className="truncate">{c.in.name}</span>
+                      <PlayerName p={c.in} className="truncate" />
                     </span>
                   </span>
                   <span className="display tnum shrink-0 text-[21px] text-start">{signed(c.gain)}</span>
@@ -194,7 +195,7 @@ export function LineupView({
                 <Avatar name={b.player.name} photo={b.player.photo} teamLogo={b.player.team_logo} size="sm" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px] font-bold leading-tight">
-                    {b.player.name}
+                    <PlayerName p={b.player} />
                     <InjuryTag status={b.player.injury_status} />
                   </span>
                   <span className="mt-px block truncate text-[10px] font-semibold uppercase tracking-wide text-muted">

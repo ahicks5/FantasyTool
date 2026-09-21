@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test src/**/*.test.ts",
+    "test": "node --test \"src/**/*.test.ts\"",
     "test:e2e": "playwright test",
     "demo": "EDGE_DEMO_EXPORT=1 NEXT_PUBLIC_EDGE_DEMO=1 next build",
     "demo:pack": "node scripts/pack-demo.mjs",

@@ -4,6 +4,7 @@ import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
 import { IconFilm, IconSheet, IconTeam, IconTrade, IconWire } from "./icons";
+import { PlayerSheetProvider } from "./player/PlayerSheetProvider";
 import { UnlockingBanner, useUnlockOnReturn } from "./Unlocking";
 import { LinkButton, OnAir, Opening, Spinner, ThemeToggle, Wordmark } from "./ui";
 import { SECTIONS, TAB_ORDER, type SectionKey, type TabKey } from "@/lib/vocab";
@@ -182,6 +183,9 @@ export function AppShell({
   // entitlement belongs here rather than in each one.
   const unlock = useUnlockOnReturn(session.refresh);
   return (
+    // One sheet for the whole app: tapping a name anywhere opens the same player page over
+    // the tab you are on, and the tab stays lit because nothing navigated.
+    <PlayerSheetProvider>
     <div className="flex min-h-screen flex-col">
       <TopBar session={session} />
       <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-32 pt-5">
@@ -222,5 +226,6 @@ export function AppShell({
       </main>
       <TabBar session={session} />
     </div>
+    </PlayerSheetProvider>
   );
 }

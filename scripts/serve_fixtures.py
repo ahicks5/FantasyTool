@@ -96,6 +96,20 @@ def build_app(user: str, skus: tuple[str, ...]):
     os.environ.setdefault("EDGE_SEASON", str(SEASON))
     os.environ.pop("EDGE_USE_CLAUDE", None)            # template explanations: offline + deterministic
     os.environ["EDGE_CACHE_DIR"] = str(ROOT / ".cache")
+    # The per-IP rate limiter is off here, and only here.
+    #
+    # It caps /api/league/ at 60 requests a minute per IP (EDGE_RATE_LEAGUE), which is a
+    # defence against strangers and exactly wrong for a browser suite: every test in
+    # web/e2e/smoke.spec.ts comes from 127.0.0.1, each page makes three or four league
+    # reads, and the whole run lands inside one 60-second window. Adding four tests for
+    # the Debrief pushed the suite past the cap, and the 61st read came back 429 -- which
+    # the app correctly renders as "Cannot reach Penthouse" on whichever page happened to
+    # be unlucky. It looked exactly like a broken page and it was a working limiter.
+    #
+    # Nothing is lost by turning it off: tests/test_limits.py drives the middleware
+    # directly, including the expensive-endpoint cap and the paths that are never
+    # throttled. Production reads the default and stays capped.
+    os.environ["EDGE_RATE_LIMIT"] = "0"
 
     install_fixture_sleeper()
 
