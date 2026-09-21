@@ -32,7 +32,7 @@ def store(request, tmp_path):
     s = PostgresStore(TEST_DSN)
     # Each test starts from nothing, so ordering assertions mean something.
     with s.db.cursor() as cur:
-        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback")
+        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback, email_prefs")
     yield s
     s.close()
 
@@ -104,6 +104,65 @@ def test_disconnecting_removes_only_that_league(store):
     store.connect_league("a@b.c", "espn", "L2", "2", "two")
     store.disconnect_league("a@b.c", "sleeper", "L1")
     assert [x["league_id"] for x in store.leagues("a@b.c")] == ["L2"]
+
+
+# ---- the weekly email opt-in -------------------------------------------------------
+# An email address is personal data and an unwanted email is a spam complaint against a
+# domain we need, so the only safe default is off, and the only safe record of "yes" is
+# one the user wrote themselves.
+
+def test_nobody_is_opted_in_until_they_ask(store):
+    assert store.email_opt_in("a@b.c") is False, "an address we have never heard of is not a subscriber"
+
+
+def test_the_opt_in_round_trips_and_can_be_taken_back(store):
+    store.set_email_opt_in("a@b.c", True)
+    assert store.email_opt_in("a@b.c") is True
+    store.set_email_opt_in("a@b.c", False)
+    assert store.email_opt_in("a@b.c") is False, "unticking the box has to stick"
+    store.set_email_opt_in("a@b.c", True)
+    assert store.email_opt_in("a@b.c") is True, "and they can change their mind back"
+
+
+def test_email_case_does_not_create_a_second_subscriber(store):
+    store.set_email_opt_in("Andrew@Example.com", True)
+    assert store.email_opt_in("andrew@example.com") is True
+    store.set_email_opt_in("ANDREW@EXAMPLE.COM", False)
+    assert store.email_opt_in("Andrew@Example.com") is False
+    assert store.opted_in_emails() == [], "one person, one row, whatever they typed"
+
+
+def test_one_persons_choice_is_not_anothers(store):
+    store.set_email_opt_in("yes@b.c", True)
+    store.set_email_opt_in("no@b.c", False)
+    assert store.opted_in_emails() == ["yes@b.c"]
+
+
+def test_the_send_list_is_only_the_people_who_asked(store):
+    for who in ("one@b.c", "two@b.c", "three@b.c"):
+        store.set_email_opt_in(who, True)
+        time.sleep(0.002)
+    store.set_email_opt_in("two@b.c", False)
+    assert store.opted_in_emails() == ["one@b.c", "three@b.c"]
+
+
+def test_the_opt_in_is_part_of_what_we_hold_on_someone(store):
+    """'What do you have on me?' has to answer with the preference too."""
+    store.set_email_opt_in("a@b.c", True)
+    rows = store.export_user("a@b.c")["data"]["email_prefs"]
+    assert len(rows) == 1
+    assert rows[0]["email"] == "a@b.c"
+    assert rows[0]["opt_in"] == 1, "both backends export the same shape, not 1 against true"
+
+
+def test_deleting_an_account_unsubscribes_it(store):
+    """A preference that survives a deletion request is how someone gets email after erasure."""
+    store.set_email_opt_in("a@b.c", True)
+    store.set_email_opt_in("other@b.c", True)
+    counts = store.delete_user("a@b.c")
+    assert counts["email_prefs"] == 1
+    assert store.email_opt_in("a@b.c") is False
+    assert store.opted_in_emails() == ["other@b.c"], "only theirs"
 
 
 # ---- shares -----------------------------------------------------------------------
@@ -181,3 +240,8 @@ def test_both_backends_expose_the_same_surface():
     public = lambda c: {n for n in dir(c) if not n.startswith("_") and callable(getattr(c, n))}
     sqlite_only = public(Store) - public(PostgresStore)
     assert not sqlite_only, f"PostgresStore is missing: {sorted(sqlite_only)}"
+    # The other direction matters just as much: a method only Postgres has is code the
+    # SQLite half silently cannot run. `close` is the one honest asymmetry — a sqlite3
+    # connection to :memory: has nothing to hand back to a pool.
+    postgres_only = public(PostgresStore) - public(Store) - {"close"}
+    assert not postgres_only, f"Store is missing: {sorted(postgres_only)}"

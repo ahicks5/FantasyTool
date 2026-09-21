@@ -42,6 +42,10 @@ export default function PrivacyPage() {
               number, which we could not store even if we wanted to.
             </>,
             <>
+              <strong>Whether you asked for the weekly email</strong>, if you tick that box when signed in. One row
+              saying yes or no, and nothing else. Untick it, or delete your account, and it is gone.
+            </>,
+            <>
               <strong>What we recommended</strong>, with the version of the engine that produced it, plus any
               Helpful/Wrong vote you leave. This is how we grade ourselves against what actually happened. It is the
               only reason the accuracy numbers on the site mean anything.

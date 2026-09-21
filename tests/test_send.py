@@ -6,11 +6,14 @@ to send rather than about sending.
 import pytest
 
 from edge.delivery import weekly_email
+from edge.api.store import Store
 from edge.delivery.send import (
     RESEND_ENDPOINT,
     DryRunSender,
+    Recipient,
     ResendSender,
     SendError,
+    recipients,
     sender_from_env,
 )
 
@@ -57,6 +60,89 @@ def test_a_configured_resend_is_returned():
 def test_an_unknown_provider_is_refused_rather_than_guessed():
     with pytest.raises(SendError, match="unknown"):
         sender_from_env({"EDGE_EMAIL_PROVIDER": "mailchimp"})
+
+
+# ---- who is on the list -------------------------------------------------------------
+# The list is the part of a send that cannot be checked afterwards: a stranger who gets
+# this has already got it. So it is two deliberate acts, never a default — they ticked
+# the box, and they have a league we can actually write about.
+
+def test_nobody_is_on_the_list_by_default():
+    store = Store(":memory:")
+    store.connect_league("quiet@b.c", "sleeper", "L1", "1", "The Megalabowl")
+    assert recipients(store) == [], "connecting a league is not asking for email"
+
+
+def test_opting_in_without_a_league_is_not_a_recipient():
+    """There is no call sheet to send them, and an empty email is worse than none."""
+    store = Store(":memory:")
+    store.set_email_opt_in("keen@b.c", True)
+    assert recipients(store) == []
+
+
+def test_the_list_is_the_people_who_asked_and_have_a_league():
+    store = Store(":memory:")
+    for who in ("one@b.c", "two@b.c", "three@b.c"):
+        store.set_email_opt_in(who, True)
+        store.connect_league(who, "sleeper", "L1", "1", "The Megalabowl")
+    store.set_email_opt_in("two@b.c", False)
+
+    got = recipients(store)
+    assert [r.email for r in got] == ["one@b.c", "three@b.c"]
+    assert all(isinstance(r, Recipient) for r in got)
+
+
+def test_unticking_the_box_takes_someone_off_the_list():
+    """The unsubscribe that matters is the one that works on the next send, not eventually."""
+    store = Store(":memory:")
+    store.set_email_opt_in("a@b.c", True)
+    store.connect_league("a@b.c", "sleeper", "L1", "1", "The Megalabowl")
+    assert [r.email for r in recipients(store)] == ["a@b.c"]
+    store.set_email_opt_in("a@b.c", False)
+    assert recipients(store) == []
+
+
+def test_deleting_an_account_takes_it_off_the_list():
+    """Erasure has to reach the send list, or someone gets email after asking us to forget them."""
+    store = Store(":memory:")
+    store.set_email_opt_in("a@b.c", True)
+    store.connect_league("a@b.c", "sleeper", "L1", "1", "The Megalabowl")
+    store.delete_user("a@b.c")
+    assert recipients(store) == []
+
+
+def test_a_manager_with_three_leagues_gets_one_email():
+    """One tick of the box promised one call sheet a week, not one per league."""
+    store = Store(":memory:")
+    store.set_email_opt_in("a@b.c", True)
+    for lid in ("L1", "L2", "L3"):
+        store.connect_league("a@b.c", "sleeper", lid, "1", lid)
+
+    got = recipients(store)
+    assert len(got) == 1
+    assert len(got[0].leagues) == 3, "the others are still visible to the caller"
+    assert got[0].league["league_id"] == "L1", "the one they connected first"
+
+
+def test_every_address_on_the_list_survives_the_send_checks():
+    """A list that feeds an address the sender would refuse is a run that dies mid-batch."""
+    store = Store(":memory:")
+    store.set_email_opt_in("Andrew@Example.com", True)
+    store.connect_league("Andrew@Example.com", "sleeper", "L1", "1", "The Megalabowl")
+
+    d = DryRunSender()
+    for r in recipients(store):
+        d.send(to=r.email, subject=GOOD["subject"], html=GOOD["html"], text=GOOD["text"])
+    assert [s.to for s in d.outbox] == ["andrew@example.com"]
+
+
+def test_the_list_alone_sends_nothing():
+    """Building the list is not sending it: that still needs a provider, a key and --send."""
+    store = Store(":memory:")
+    store.set_email_opt_in("a@b.c", True)
+    store.connect_league("a@b.c", "sleeper", "L1", "1", "The Megalabowl")
+    assert recipients(store), "there is someone to send to"
+    assert isinstance(sender_from_env({}), DryRunSender), "and nothing sends to them"
 
 
 # ---- the request we actually make --------------------------------------------------

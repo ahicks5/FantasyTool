@@ -8,6 +8,9 @@ complaint against a domain we need.
 
 So the default provider is a dry run. Sending for real takes both an explicit provider
 and a key, and the CLI takes `--send` on top of that. Nothing sends by accident.
+
+`recipients()` is the other half of that care: who is on the list, and why. There is no
+Resend key and no verified sending domain yet, so today every one of these is a dry run.
 """
 from __future__ import annotations
 
@@ -99,6 +102,46 @@ def _validate(to: str, subject: str, html: str, text: str) -> None:
         raise SendError("refusing to send with an empty subject")
     if not html.strip() or not text.strip():
         raise SendError("refusing to send without both an HTML body and a plain-text alternative")
+
+
+@dataclass
+class Recipient:
+    """One person the weekly email goes to, and the leagues we could write about."""
+
+    email: str
+    leagues: list[dict] = field(default_factory=list)
+
+    @property
+    def league(self) -> dict:
+        """The league this week's email is built from: the first one they connected.
+
+        One tick of the box promises one call sheet a week, so a manager with three
+        leagues gets one email, not three. Which of the three is a product question
+        nobody has answered yet; oldest-first is the stable, explainable default.
+        """
+        return self.leagues[0]
+
+
+def recipients(store) -> list[Recipient]:
+    """Who Thursday's send list is: accounts that asked for it and have a league to read.
+
+    Two filters, both of which have to hold. The opt-in is the consent — nobody is on
+    this list because a default put them there. The connected league is the content: an
+    email with no call sheet in it is worse than no email, and it spends a send on
+    someone who would rightly report it.
+
+    Note what this cannot see. A private ESPN league is read with cookies the user's own
+    browser holds and we deliberately never store (docs/DATA.md), so a scheduled job has
+    nothing to read it with. Such a row still appears here; the render is where it fails,
+    loudly, rather than here, silently.
+    """
+    out: list[Recipient] = []
+    for email in store.opted_in_emails():
+        leagues = store.leagues(email)
+        if not leagues:
+            continue
+        out.append(Recipient(email=email, leagues=leagues))
+    return out
 
 
 def sender_from_env(env: dict | None = None) -> DryRunSender | ResendSender:

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import EmailOptIn from "@/components/EmailOptIn";
 import { IconCheck } from "@/components/icons";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton, ThemeToggle, Wordmark } from "@/components/ui";
 import { getUserEmail, sendMagicLink, signOut, supabaseConfigured } from "@/lib/supabase";
@@ -56,23 +57,32 @@ function LoginInner() {
 
       <div className="mt-6 rise rise-1">
         {current ? (
-          <Card>
-            <Eyebrow>Signed in</Eyebrow>
-            <p className="mt-1.5 text-[17px] font-bold break-words">
-              {current}
-              {dev ? <span className="ml-1.5 text-[13px] font-bold text-muted">dev user</span> : null}
-            </p>
-            <div className="mt-5 grid gap-2.5">
-              <LinkButton href={next} className="w-full">
-                Back upstairs
-              </LinkButton>
-              {!dev && (
-                <Button variant="secondary" className="w-full" onClick={() => signOut().then(() => setCurrent(null))}>
-                  Sign out
-                </Button>
-              )}
-            </div>
-          </Card>
+          <>
+            <Card>
+              <Eyebrow>Signed in</Eyebrow>
+              <p className="mt-1.5 text-[17px] font-bold break-words">
+                {current}
+                {dev ? <span className="ml-1.5 text-[13px] font-bold text-muted">dev user</span> : null}
+              </p>
+              <div className="mt-5 grid gap-2.5">
+                <LinkButton href={next} className="w-full">
+                  Back upstairs
+                </LinkButton>
+                {!dev && (
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => signOut().then(() => setCurrent(null))}
+                  >
+                    Sign out
+                  </Button>
+                )}
+              </div>
+            </Card>
+            {/* Under the signed-in block on purpose: the preference hangs off an account,
+                so there is nothing to offer a visitor who has not signed in yet. */}
+            <EmailOptIn />
+          </>
         ) : !configured ? (
           <Card>
             <Eyebrow>Not configured</Eyebrow>

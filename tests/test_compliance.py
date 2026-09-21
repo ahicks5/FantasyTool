@@ -171,3 +171,15 @@ def test_deletion_does_not_break_public_share_links(client):
 
     client.delete("/api/me?confirm=delete", headers=H)
     assert client.get(f"/api/share/{sid}").status_code == 200
+
+
+def test_deletion_takes_the_account_off_the_weekly_email(client):
+    """A delivery preference that survives an erasure request is how someone keeps getting
+    email after asking to be forgotten. It is a row like any other, and it goes."""
+    app_mod.store.set_email_opt_in("andrew@example.com", True)
+    app_mod.store.set_email_opt_in("someone@else.com", True)
+
+    out = client.delete("/api/me?confirm=delete", headers=H).json()
+    assert out["deleted"]["email_prefs"] == 1
+    assert app_mod.store.email_opt_in("andrew@example.com") is False
+    assert app_mod.store.opted_in_emails() == ["someone@else.com"], "only theirs"

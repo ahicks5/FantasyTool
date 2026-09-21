@@ -40,6 +40,10 @@ CREATE INDEX IF NOT EXISTS runs_created ON runs (created DESC);
 CREATE TABLE IF NOT EXISTS feedback (
   email TEXT, platform TEXT, league_id TEXT, team_id TEXT, action_id TEXT,
   action_type TEXT, verdict TEXT, reason TEXT, week INTEGER, created DOUBLE PRECISION);
+
+CREATE TABLE IF NOT EXISTS email_prefs (
+  email TEXT PRIMARY KEY, opt_in INTEGER NOT NULL DEFAULT 0,
+  created DOUBLE PRECISION, updated DOUBLE PRECISION);
 """
 
 
@@ -111,6 +115,31 @@ class PostgresStore:
         self._exec("DELETE FROM leagues WHERE email=%s AND platform=%s AND league_id=%s",
                    (email.lower(), platform, league_id))
 
+    # ---- the weekly email ---------------------------------------------------------
+    # Mirrors Store.set_email_opt_in / email_opt_in / opted_in_emails. `opt_in` is an
+    # INTEGER here rather than a BOOLEAN on purpose: export_user hands the row straight
+    # to the caller as JSON, and 0/1 on one backend against true/false on the other is
+    # exactly the silent drift this file's twin suite exists to prevent.
+
+    def set_email_opt_in(self, email: str, on: bool) -> None:
+        """Record whether this account wants Thursday's call sheet by email."""
+        now = time.time()
+        self._exec(
+            "INSERT INTO email_prefs (email, opt_in, created, updated) VALUES (%s,%s,%s,%s) "
+            "ON CONFLICT (email) DO UPDATE SET opt_in=EXCLUDED.opt_in, updated=EXCLUDED.updated",
+            (email.lower(), 1 if on else 0, now, now))
+
+    def email_opt_in(self, email: str) -> bool:
+        """Has this account asked for the weekly email? Unknown means no."""
+        cur = self._exec("SELECT opt_in FROM email_prefs WHERE email=%s", (email.lower(),))
+        row = cur.fetchone()
+        return bool(row and row[0])
+
+    def opted_in_emails(self) -> list[str]:
+        """Every account that asked for it, oldest first. The send list starts here."""
+        cur = self._exec("SELECT email FROM email_prefs WHERE opt_in=1 ORDER BY created, email")
+        return [r[0] for r in cur.fetchall()]
+
     # ---- shares -------------------------------------------------------------------
 
     def put_share(self, share_id: str, payload: dict) -> None:
@@ -162,7 +191,7 @@ class PostgresStore:
     # and deletion, and the promise has to hold on the backend that actually holds a
     # paying customer's rows — which is this one.
 
-    USER_TABLES = ("purchases", "leagues", "runs", "feedback")
+    USER_TABLES = ("purchases", "leagues", "runs", "feedback", "email_prefs")
 
     def export_user(self, email: str) -> dict:
         """Everything we hold that is keyed to this email. The answer to 'what do you have?'."""

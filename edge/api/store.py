@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS runs (email TEXT, platform TEXT, league_id TEXT, team
   kind TEXT, algo_version TEXT, payload TEXT, created REAL);
 CREATE TABLE IF NOT EXISTS feedback (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, action_id TEXT,
   action_type TEXT, verdict TEXT, reason TEXT, week INTEGER, created REAL);
+CREATE TABLE IF NOT EXISTS email_prefs (email TEXT PRIMARY KEY, opt_in INTEGER NOT NULL DEFAULT 0,
+  created REAL, updated REAL);
 """
 
 
@@ -93,6 +95,31 @@ class Store:
                                (email.lower(),))
         return [{"platform": r[0], "league_id": r[1], "team_id": r[2], "name": r[3]} for r in rows]
 
+    # ---- the weekly email ----------------------------------------------------------
+    # One row per account, written only when someone ticks or unticks the box. An address
+    # we were never told about has no row, so absence reads as "off": nobody is ever sent
+    # email because a default said so. Stored as 0/1 rather than a boolean so the Postgres
+    # twin exports the same JSON this one does.
+
+    def set_email_opt_in(self, email: str, on: bool) -> None:
+        """Record whether this account wants Thursday's call sheet by email."""
+        now = time.time()
+        self.db.execute(
+            "INSERT INTO email_prefs (email, opt_in, created, updated) VALUES (?,?,?,?) "
+            "ON CONFLICT(email) DO UPDATE SET opt_in=excluded.opt_in, updated=excluded.updated",
+            (email.lower(), 1 if on else 0, now, now))
+        self.db.commit()
+
+    def email_opt_in(self, email: str) -> bool:
+        """Has this account asked for the weekly email? Unknown means no."""
+        row = self.db.execute("SELECT opt_in FROM email_prefs WHERE email=?", (email.lower(),)).fetchone()
+        return bool(row and row[0])
+
+    def opted_in_emails(self) -> list[str]:
+        """Every account that asked for it, oldest first. The send list starts here."""
+        rows = self.db.execute("SELECT email FROM email_prefs WHERE opt_in=1 ORDER BY created, email")
+        return [r[0] for r in rows]
+
     def put_share(self, share_id: str, payload: dict) -> None:
         """Store a public snapshot of a trade verdict. Display fields only — never an email,
         never anything identifying the league beyond the names already printed on the card."""
@@ -154,7 +181,7 @@ class Store:
     # promise is cheap to keep because we hold so little: an email, which leagues it picked,
     # what it bought, and what we recommended.
 
-    USER_TABLES = ("purchases", "leagues", "runs", "feedback")
+    USER_TABLES = ("purchases", "leagues", "runs", "feedback", "email_prefs")
 
     def export_user(self, email: str) -> dict:
         """Everything we hold that is keyed to this email. The answer to 'what do you have?'."""
