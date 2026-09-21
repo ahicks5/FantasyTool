@@ -769,3 +769,29 @@ Supersedes **S-5**.
       Sleeper, ESPN (already fetched), props (vendor + terms check), Yahoo last.
 - [ ] **PP-8** Position Battle: placeholder button only. Defined as him vs his own NFL
       teammates at his position (snaps, targets, carries, week by week).
+
+## Player page (docs/PLAYER-PAGE-STEPS.md)
+
+- [x] **Phase A — the frame.** Tap any name anywhere, his page rises over the tab you are on,
+      swipe it away. Stats is the existing scout report, lifted out of `Profile.tsx` so the
+      route and the sheet share one copy; Vibes is a words-only placeholder. Nothing in
+      `edge/` changed. Five gates green; 320/375/420 in both themes, both modes.
+- [ ] **Phase B/D — Vibes for real.** The first version worth showing anyone.
+- [ ] **Phase J — Handcuff (Andrew, 2026-09-21).** Blocked on two things, both in the steps
+      doc: **J0**, whether Handcuff and Position Battle are one page or two (they read the
+      same NFL depth chart from opposite ends), and **J1**, whether Sleeper's 2026
+      depth-chart fields are actually current.
+
+### Decisions needed from Andrew
+
+- **Which branch is the player page's home.** The isolation contract in the steps doc says
+  `claude/laughing-turing-0uco4m`; phase A shipped on `claude/gifted-franklin-iwoavf`, which
+  is where this session was told to develop. The doc commits were cherry-picked across, so
+  nothing is lost, but the two branches are not merged and the next player-page chat will
+  collide unless one of them is named.
+- **J0**, above. It changes how many pages phase J builds, not what it builds.
+- **Four surfaces still print a name that does not open his page** — `FilmWeek`'s starter
+  rows and `GameDay`'s detail rows have no player id in their payload, so carrying the id
+  through `lib/recap.ts` and `lib/gameday.ts` is an engine change and was left out of phase
+  A. The reasons are recorded in `web/src/lib/player/names.test.ts`, which fails if a fifth
+  appears.

@@ -3,6 +3,7 @@
 
 import type { Player } from "@/lib/types";
 import { Avatar } from "./Avatar";
+import type { PlayerSeed } from "./player/PlayerSheet";
 import { usePlayerSheet } from "./player/PlayerSheetProvider";
 import { InjuryTag } from "./ui";
 
@@ -29,7 +30,7 @@ export function PlayerName({
   className = "",
 }: {
   /** The whole player where the caller has one: the sheet's header paints from it. */
-  p: Player;
+  p: PlayerSeed;
   className?: string;
 }) {
   const { open } = usePlayerSheet();
@@ -75,5 +76,41 @@ export function PlayerLine({
         </span>
       </span>
     </span>
+  );
+}
+
+/**
+ * The same door, on something that is not a name.
+ *
+ * One card on the call sheet carries a player without ever printing his name on its own:
+ * the headline is a sentence the engine composed ("Start Chase over Pittman") and the only
+ * element that is *him* is the headshot. This makes that headshot the target, labelled
+ * with his name, so the call sheet is not the one tab where players cannot be opened.
+ *
+ * Children are whatever the caller was already drawing, so it changes nothing on screen.
+ */
+export function PlayerTarget({
+  p,
+  children,
+  className = "",
+}: {
+  p: PlayerSeed;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const { open } = usePlayerSheet();
+  return (
+    <button
+      type="button"
+      aria-label={p.name}
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        open(p);
+      }}
+      className={`min-h-0 ${className}`}
+    >
+      {children}
+    </button>
   );
 }

@@ -376,3 +376,73 @@ test("the API really is the fixture server, not mocks", async ({ page }) => {
   expect(DEV_USER).toContain("@");
 });
 
+
+test("tap a name, his page rises; swipe it down, it is gone", async ({ page }) => {
+  // The whole of phase A in one gesture. It runs on /team because the depth chart is the
+  // densest wall of names in the app -- if the sheet works anywhere it works there.
+  const { status } = await visit(page, "/team");
+  expect(status).toBe(200);
+
+  // A real name, not a slot label or a team: two capitalised words on a button.
+  const name = page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first();
+  await expect(name).toBeVisible();
+  const who = (await name.textContent())?.trim() ?? "";
+  await name.click();
+
+  const sheet = page.getByRole("dialog");
+  await expect(sheet).toBeVisible();
+  // It is his page, and the URL says so, so the link is shareable and the back button works.
+  await expect(sheet.getByRole("heading", { name: who })).toBeVisible();
+  await expect(page).toHaveURL(/\?player=/);
+  // Both sides are reachable and the word changes with the frame's colour.
+  await expect(sheet.getByRole("tab", { name: /Vibes/ })).toHaveAttribute("aria-selected", "true");
+  await sheet.getByRole("tab", { name: /Stats/ }).click();
+  await expect(sheet.getByRole("tab", { name: /Stats/ })).toHaveAttribute("aria-selected", "true");
+
+  // Swipe it away, from the header, which is the one grip that always belongs to the sheet.
+  const box = (await sheet.locator(".sheet-panel").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + 20);
+  await page.mouse.down();
+  for (const step of [40, 90, 150, 220]) await page.mouse.move(box.x + box.width / 2, box.y + 20 + step);
+  await page.mouse.up();
+
+  await expect(sheet).toHaveCount(0);
+  await expect(page).not.toHaveURL(/\?player=/);
+  await assertNoHorizontalOverflow(page);
+});
+
+test("a scrolled report does not throw the page away", async ({ page }) => {
+  // The case the gesture rules exist for: reading the Stats side is a long series of
+  // downward drags, and every one of them would otherwise close the sheet.
+  await visit(page, "/team");
+  await page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first().click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole("tab", { name: /Stats/ }).click();
+
+  const middle = sheet.locator(".sheet-panel > div").nth(1);
+  await middle.evaluate((el) => el.scrollBy(0, 200));
+  expect(await middle.evaluate((el) => el.scrollTop), "the report did not scroll").toBeGreaterThan(0);
+
+  const box = (await middle.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  for (const step of [60, 140, 240]) await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + step);
+  await page.mouse.up();
+
+  await expect(sheet).toBeVisible();
+});
+
+test("a link with ?player= opens straight onto his page", async ({ page }) => {
+  // The deep link, and the back button that closes it. Both are the same state: the URL.
+  await visit(page, "/team");
+  await page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  const url = page.url();
+
+  await page.goBack();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  await page.goto(url);
+  await expect(page.getByRole("dialog")).toBeVisible();
+});

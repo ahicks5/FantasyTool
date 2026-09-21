@@ -10,6 +10,7 @@
  */
 
 import Link from "next/link";
+import { PlayerName } from "@/components/Players";
 import { AppShell } from "@/components/Shell";
 import { Avatar } from "@/components/Avatar";
 import { Countdown, ErrorBox, Eyebrow, OnAirLive, SkeletonList, SplitMeter, Why } from "@/components/ui";
@@ -58,7 +59,7 @@ function Side({ p, mine = false, won }: { p: Player | null; mine?: boolean; won:
     <div className={`flex min-w-0 items-center gap-2.5 rounded-lg border-l-[3px] py-0.5 pl-2 ${won ? (mine ? "border-start bg-start-soft" : "border-sit bg-sit-soft") : "border-line-2"}`}>
       {p ? <Avatar name={p.name} photo={p.photo} teamLogo={p.team_logo} size="sm" /> : <span aria-hidden className="h-9 w-9 shrink-0" />}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] font-bold leading-tight">{p?.name ?? "Empty"}</div>
+        <div className="truncate text-[14px] font-bold leading-tight">{p ? <PlayerName p={p} /> : "Empty"}</div>
         <div className="truncate text-[11px] leading-tight text-muted">
           {mine ? "You" : "Them"}
           {p?.nfl_team ? ` · ${p.position} ${p.nfl_team}` : ""}
@@ -76,7 +77,7 @@ function Swing({ label, d, tone }: { label: string; d: SlotDuel | null; tone: "s
   return (
     <div className="min-w-0 rounded-2xl bg-soft p-3.5">
       <div className="text-[10px] font-black uppercase tracking-[0.1em] text-muted">{label}</div>
-      <div className="mt-1 truncate text-[14px] font-black leading-tight">{who?.name ?? "—"}</div>
+      <div className="mt-1 truncate text-[14px] font-black leading-tight">{who ? <PlayerName p={who} /> : "—"}</div>
       <div className={`tnum mt-0.5 text-[12px] font-bold ${tone === "start" ? "text-start" : "text-sit"}`}>
         {d.slot} {signed(d.margin)}
       </div>

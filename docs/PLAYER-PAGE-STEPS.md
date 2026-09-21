@@ -27,6 +27,12 @@ Phases A–C never touch `edge/`. Phase D is the first one that does.
 All player-page work lives on **`claude/laughing-turing-0uco4m`** (pull it before starting;
 every player-page chat uses it; other work uses other branches). Inside the tree:
 
+> **Phase A shipped on `claude/gifted-franklin-iwoavf` instead**, which is the branch that
+> session was told to develop on. The three doc commits were cherry-picked onto it first, so
+> the spec and the steps travel with the code. The two branches have not been merged. Anyone
+> picking phase B up needs to decide which one is the player page's home before starting, or
+> the next chat will collide with exactly what this table exists to prevent.
+
 | May create freely | Rule |
 |---|---|
 | `web/src/components/player/**` | every player-page component; nothing else imports from here except the three seams below |
@@ -54,60 +60,81 @@ more, stop and say so rather than widen.
 
 ## Phase A — The frame, on mock data. *"Tap any name, a page rises."*
 
-- [ ] **A1** `web/src/lib/player/sheet.ts` + test: `Mode = "vibes"|"stats"`, `DEFAULT_MODE`, and
+- [x] **A1** `web/src/lib/player/sheet.ts` + test: `Mode = "vibes"|"stats"`, `DEFAULT_MODE`, and
       `decide({dy, dt, atTop, startedInChrome})` → close / reset / ignore. Pure, no React.
       *Done when:* the decision table test passes (close on 120px, close on velocity, reset on a
       short drag, ignore when the middle is scrolled).
-- [ ] **A2** `vocab.ts`: append `PLAYER` — mode names, footer labels, "soon", the swipe hint, empty
+- [x] **A2** `vocab.ts`: append `PLAYER` — mode names, footer labels, "soon", the swipe hint, empty
       lines. *Done when:* `npm test` passes the no-digits vocab check.
-- [ ] **A3** `components/player/PlayerSheet.tsx`: the overlay. Full-height panel, rounded top,
+- [x] **A3** `components/player/PlayerSheet.tsx`: the overlay. Full-height panel, rounded top,
       drag handle, no X, `grid-rows-[auto_1fr_auto]`, middle scrolls, backdrop, Escape closes,
       `body` scroll locked while open. Header and footer are empty boxes for now.
       *You will see:* a sheet rise from the bottom with `.rise` and close on Escape.
-- [ ] **A4** Swipe to dismiss: pointer events drive `translateY`; release calls `decide`; snap-back
+- [x] **A4** Swipe to dismiss: pointer events drive `translateY`; release calls `decide`; snap-back
       is a transition, `none` under reduced motion. *You will see:* drag it down, it leaves; a
       short drag springs back; scrolling the middle never closes it.
-- [ ] **A5** `components/player/PlayerSheetProvider.tsx` + `usePlayerSheet()`: open state,
+- [x] **A5** `components/player/PlayerSheetProvider.tsx` + `usePlayerSheet()`: open state,
       `?player=<id>` via `history.pushState`, back button closes, mount reads the param. One line
       in `Shell.tsx`. *You will see:* `/home?player=<id>` opens the sheet; back closes it.
-- [ ] **A6** Header, frozen: `Avatar size="lg"` top-left, name, `POS · TEAM · vs OPP`, injury tag.
+- [x] **A6** Header, frozen: `Avatar size="lg"` top-left, name, `POS · TEAM · vs OPP`, injury tag.
       From the mock roster player for now. *You will see:* the head with the common stuff.
-- [ ] **A7** The mode toggle, top-right: `role="tablist"`, two tabs, the selected one carries the
+- [x] **A7** The mode toggle, top-right: `role="tablist"`, two tabs, the selected one carries the
       mode's word. *You will see:* it switches; nothing else changes yet.
-- [ ] **A8** `globals.css`: `--color-vibes` (brass) and `--color-stats` (chrome), dark and light;
+- [x] **A8** `globals.css`: `--color-vibes` (brass) and `--color-stats` (chrome), dark and light;
       header and footer surfaces read `data-mode`. *You will see:* the whole top and bottom flip
       brass ↔ chrome with the word. Check both themes; both must clear 4.5:1.
-- [ ] **A9** Lift `Report` (identity, reads, splits, game log, footnote) out of `Profile.tsx` into
+- [x] **A9** Lift `Report` (identity, reads, splits, game log, footnote) out of `Profile.tsx` into
       `components/player/Report.tsx`; `Profile.tsx` imports it back, unchanged on screen.
       *Done when:* `/waivers/<id>` renders exactly as before and `npm run demo` still builds.
-- [ ] **A10** Stats mode renders `Report` in the middle, fed by the existing
+- [x] **A10** Stats mode renders `Report` in the middle, fed by the existing
       `getPlayerProfile` mock. *You will see:* the scout report inside the sheet, scrolling under
       a frozen header. Check 320 and 420px.
-- [ ] **A11** Vibes mode renders `components/player/VibesView.tsx` with a placeholder: the reads'
+- [x] **A11** Vibes mode renders `components/player/VibesView.tsx` with a placeholder: the reads'
       **heads only** (their lines contain digits). *You will see:* a words-only page.
-- [ ] **A12** Footer, frozen: three buttons from `PLAYER.footer`. *Position Battle* disabled with
+- [x] **A12** Footer, frozen: three buttons from `PLAYER.footer`. *Position Battle* disabled with
       the "soon" line; *GM's Office* a `Link` to `/trade?player=<id>`; *Chat* disabled.
       Safe-area padding. *You will see:* the three-up bar that never moves.
-- [ ] **A13** Header and footer geometry at 320px: nothing wraps, nothing truncates the mode word,
+- [x] **A13** Header and footer geometry at 320px: nothing wraps, nothing truncates the mode word,
       the avatar and the toggle do not collide. *Done when:* screenshots at 320 and 420, both
       themes, both modes, are in the PR.
-- [ ] **A14** Loading and error inside the sheet: the `Opening` wait and `ErrorBox` from `ui.tsx`
+- [x] **A14** Loading and error inside the sheet: the `Opening` wait and `ErrorBox` from `ui.tsx`
       render in the middle; a 404 says the vocab line and offers close. *You will see:* the sheet
       never shows a blank middle.
-- [ ] **A15** `web/e2e/smoke.spec.ts`: tap a name on the call sheet → sheet visible → `page.mouse`
+- [x] **A15** `web/e2e/smoke.spec.ts`: tap a name on the call sheet → sheet visible → `page.mouse`
       swipe down → gone. *Done when:* `npm run test:e2e` passes.
-- [ ] **A16** `Players.tsx`: `PlayerLine` and a new `PlayerName` become the tap target
+- [x] **A16** `Players.tsx`: `PlayerLine` and a new `PlayerName` become the tap target
       (`<button>`, `min-h-11`, the name is the label, calls `usePlayerSheet().open(id)`).
-- [ ] **A17** The sweep, one commit, one line per file: every inline `{p.name}` in `ActionCard`,
+- [x] **A17** The sweep, one commit, one line per file: every inline `{p.name}` in `ActionCard`,
       `LineupView`, `WaiversView`, `WaiverPlanView`, `TradeFinderView`, `FilmWeek`, `GameDay`,
       `PlayerSearch`, `home/matchup`, `trade/page` goes through `PlayerName`. `ShareCard`,
       `Pricing`, `connect`, `s/[id]`, `Unlocking` are not player names and are left alone.
       *You will see:* every name in the app opens the page.
-- [ ] **A18** `web/src/lib/player/names.test.ts`: greps components and app for `.name}` outside
+- [x] **A18** `web/src/lib/player/names.test.ts`: greps components and app for `.name}` outside
       an allowlist, so a future surface cannot render a name that does not open the page.
 
 **Phase A is done when** a stranger can tap any name on any tab, read the scout report in a
 sheet, flip to a words-only Vibes, swipe it away, and nothing in `edge/` has changed.
+**Done, 2026-09-21**, on `claude/gifted-franklin-iwoavf` (see the note under the isolation
+contract). Five gates green; screenshots at 320/375/420 in both themes and both modes.
+
+Four surfaces print a name that still does not open the page, and each one is recorded with
+its reason in `web/src/lib/player/names.test.ts`, which fails if a fifth appears:
+
+| Surface | Why not, and the fix |
+|---|---|
+| `FilmWeek` starter rows, `GameDay` detail rows | `StarterLine` and `StarterQuestion` (`lib/recap.ts`, `lib/gameday.ts`) carry a name and a slot but **no player id**, so there is nothing to open. Carrying the id through those two payloads is the fix, and it is an engine change, so it was not done inside phase A. |
+| `PlayerSearch` hits | Already open his page, at `/waivers/<id>` — the deep link (D-8) and the page the static demo exports. Raising a sheet over the search instead would cost the demo its only real pages. |
+| `trade/page` selected chips | The chip is itself a button that removes the man from the offer, and a button cannot hold a button. The roster rows they are built from do open the page. |
+| `ShareCard`, `s/[id]` | `SharedPlayer` drops the id on purpose so a shared card cannot leak a roster. Out of scope by design. |
+
+Two things phase A needed that the contract did not list, both one line:
+
+- `web/package.json` — `npm test`'s glob was unquoted, so `src/**/*.test.ts` expanded in sh
+  as `src/*/*.test.ts` and never reached a subdirectory. **Every test under
+  `src/lib/player/` would have passed CI by not running.** Quoting it hands the glob to node.
+- `Players.tsx` gained a second export, `PlayerTarget`. The call-sheet card prints no name of
+  its own — its headline is a sentence the engine composed — so the headshot is the only
+  element that is *him*, and it became the target, labelled with his name.
 
 ## Phase B — Vibes looks real, still on mock data. *"A casual user gets excited."*
 
@@ -249,6 +276,52 @@ component that only draws. Mock breakdown rows come from a new `mocks.ts` block 
 - [ ] **H3** Header draws "Penthouse 18.1" only when two or more sources exist; Stats' projection
       panel lists each source and the composite.
 
+## Phase J — Handcuff. *"If he goes down, who gets the work?"* (D-14, spec PP-8.)
+
+Andrew's, 2026-09-21. A handcuff mark in the header opens a page of the men behind him on his
+own NFL depth chart. It is the one question on a player page with money attached: the backup
+to a workhorse is the best add on any wire, and he is only available the week *before* it
+matters.
+
+**J1 can stop this phase, and J0 is Andrew's, not a chat's.** Do not start J2 without both.
+
+- [ ] **J0** *Andrew decides:* Handcuff and **Position Battle** (D-11) read the same NFL depth
+      chart from opposite ends — "who is behind him?" against "is he the guy?". Two doors on
+      one dataset, one page with two halves, or Handcuff only. Spec PP-8 recommends the
+      middle one and says why. Nothing below changes except how many pages it lands on.
+- [ ] **J1** The data check, written up in `docs/DATA.md`: the Sleeper players dump we already
+      cache carries `depth_chart_position` and `depth_chart_order`. Are they **populated and
+      current for 2026**, for every team, past week 1? Sleeper's chart has gone stale in past
+      preseasons. *Stop here if the answer is no* — a handcuff page that is wrong is worse
+      than no handcuff page, and the alternative is a second source and a licence check.
+- [ ] **J2** `edge/data/depth.py` + `tests/test_depth.py`: `backups(player_id)` from the
+      cached dump, in depth order, below him. No chart on record returns null; it is never
+      inferred from a roster or a projection.
+- [ ] **J3** `edge/engine/handcuff.py` + `tests/test_handcuff.py`: each backup with what this
+      league knows — held by whom or free, his projection **in this league's scoring**, his
+      share of the position's work. It ranks nothing: the depth chart is the order.
+- [ ] **J4** `GET .../player/{id}/handcuff`, free, the same guard as the profile.
+      `docs/API.md`, `types.ts`, `mocks.ts`, `api.ts`. `tests/test_player_api.py` gains the
+      sibling of the test that pins the profile as free.
+- [ ] **J5** The mark: a handcuff in `icons.tsx` at the house line weight — two cuffs and the
+      chain, legible as a silhouette at 18px. It is the app's first icon that is an *object*
+      rather than a symbol, so it is the one most likely to read as clip art. Andrew signs it
+      off on screen before J6.
+- [ ] **J6** The button: header, right of the toggle, icon only, 44px, label from
+      `PLAYER.handcuff` in vocab. *Watch the geometry:* the header is full at 320px
+      (avatar 56, toggle 104, the name column taking the rest, already clamped to two lines).
+      This step is not done until 320 and 420 are checked in both themes, and if the name
+      will not take the hit, the button moves and the plan says where.
+- [ ] **J7** The page: `/handcuff/<id>`, a route, **not a second sheet** — a sheet over a
+      sheet has no way back on a phone, and this page is worth sending to a league-mate on
+      its own. A defence or a kicker has no handcuff and the button is absent, not empty. A
+      team with no chart says so in words.
+- [ ] **J8** `web/src/lib/player/handcuff.test.ts` for the view builder, and the e2e gains a
+      hop: open a player, press the handcuff, land on a named backup.
+
+**Phase J is done when** a reader can open any starter, ask who is behind him, and be told —
+in his own league's points, with the free ones marked.
+
 ## Phase I — The footer's other doors.
 
 - [ ] **I1** `/trade?player=<id>`: `lib/tradeFinder` helper (pure, tested) picks and orders offers
@@ -265,6 +338,9 @@ component that only draws. Mock breakdown rows come from a new `mocks.ts` block 
 - After **B + D**: Vibes is real. This is the first version worth showing people.
 - After **C + E**: Stats is the nerd floor.
 - **F**, **G**, **H** ship as their own PRs, in whatever order the decisions and the data allow.
+- **J** (Handcuff) is independent of all of them: it needs the header from **A** and nothing
+  else, so it can ship any time after J0 and J1 clear. It is the cheapest thing on this page
+  that a reader would tell someone else about.
 
 Shipping is `git push origin HEAD:claude/edge-fantasy-app-launch-alo0rr` after the five CI gates
 pass (`CLAUDE.md`), from this branch, once the other chats' branches have been merged in first.

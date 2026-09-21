@@ -75,6 +75,7 @@ is the chat's call, stated in its first message.
 | **D-11** | Position Battle | **Him vs his own teammates**: the depth chart on his NFL team at his position — who is taking the snaps, targets and carries from him, week by week. "Is he the guy?" Placeholder button in v1; the page is a later spec. |
 | **D-12** | A share button on the player page? | **Not in v1.** The Lock card stays the shareable asset. Revisit once Vibes copy is proven on screen. |
 | **D-13** | How much does Vibes say? | **Hook + three whys + take.** One display-type hook, three one-sentence reasons with an icon each, the short-game/long-game word, then "The Penthouse says". Fits one screen at 375px with the badge. |
+| **D-14** | Handcuff (Andrew, 2026-09-21) | **A button in the player page's header, a handcuff mark, opening a page of his backups.** Who inherits his touches if he goes down: the men behind him on his own NFL depth chart, whether or not anyone in the league holds them, with the ones on the wire marked. See **PP-8**. |
 
 ## 3. What already exists (do not rebuild it)
 
@@ -629,6 +630,93 @@ the nflverse check. PP-6 is small. PP-5 is the biggest and most infra-shaped pie
 give it its own PR and do it after the slice is on production. PP-7 is data work with a
 licensing gate in the middle; start the ESPN half early because it is free and already fetched.
 
+## PP-8 — Handcuff: who inherits his touches
+
+**Problem.** A manager reading a player page has one question the page cannot answer today:
+*if he goes down, who gets the work?* That question is worth money on a wire — the backup
+behind a workhorse back is the most valuable add in fantasy football and it is always
+available the week before it matters, never the week after. Today the only way to ask it is
+to leave the app.
+
+**Andrew's shape (D-14).** A button in the header carrying a handcuff mark, which opens his
+backups as a page of their own.
+
+**The overlap, which is a decision, not a detail.** D-11 already promises **Position Battle**:
+him against his own NFL teammates, week by week, snaps and targets and carries, answering "is
+he the guy?". Handcuff reads the same NFL depth chart from the other end — "who is behind
+him?". They are one dataset and two questions. Three ways to take it, and **this is Andrew's
+call before PP-8 is built**:
+
+1. **Two doors, one dataset** (what D-14 asks for as written). Handcuff in the header,
+   Position Battle in the footer. Clearest to a reader who wants one of them; two surfaces to
+   build and keep honest.
+2. **One page, two ends.** Position Battle becomes the whole depth chart at his position, him
+   highlighted in it: the men above him and the men below, one list. The handcuff button and
+   the footer's door open the same page, scrolled to different halves. Cheapest, and the
+   depth chart is a more honest object than two half-views of it.
+3. **Handcuff only, for now.** Drop Position Battle from v1. Handcuff is the question with
+   money attached; "is he the guy?" is mostly answered by the usage panel that phase C
+   already draws.
+
+**Recommendation: 2.** One engine module, one page, one test, and the reader gets both
+answers from either door. If Andrew wants the two framed separately it is two headings on
+one page, not two pages.
+
+**Evidence.**
+- `edge/data/providers.py` — the only module allowed to talk to a projection vendor. Whatever
+  supplies the depth chart is a data source and belongs beside it, not in the engine.
+- `api.sleeper.app/v1/players/nfl` (`docs/DATA.md`) is already cached on disk for 24h and
+  carries `depth_chart_position` and `depth_chart_order` per player. **That is the whole
+  feature's data, already fetched.** It has to be checked for 2026 freshness — Sleeper's
+  depth chart fields have been stale in past preseasons, and a handcuff page that is wrong is
+  worse than no handcuff page.
+- `edge/engine/profile.py` and `edge/api/scout.py` — the free profile, and the pattern this
+  follows: free, league-scored, no entitlement.
+- `web/src/components/player/PlayerSheet.tsx` — the header. **It is full at 320px.** Measured:
+  avatar 56px, the name column, the toggle 104px, with nothing spare. A fourth element in
+  that row costs the name column about 40px, and at 320 the name is already wrapping to two
+  lines. The footer cannot take it either: three doors at 99px each at 320, and a fourth puts
+  "Position Battle" at 73px, where it wraps.
+
+**Build.**
+1. `edge/data/depth.py`: read `depth_chart_position` and `depth_chart_order` out of the
+   already-cached players dump; `backups(player_id)` returns the men at his position on his
+   NFL team, in depth order, below him. Null when the dump has no chart for his team — a
+   missing chart is said, never guessed. `tests/test_depth.py` pins the null case and a
+   recorded team.
+2. `edge/engine/handcuff.py`: the backups, each with what this league already knows about him
+   — rostered by whom, or free; his projection in **this league's** scoring; his share of the
+   position's work to date (phase E's usage rows, reused). Ranks nothing: the depth chart is
+   the order, and the engine does not invent a second one.
+3. `GET .../player/{id}/handcuff` in `edge/api/player.py` (free, same guard as the profile).
+   `docs/API.md`, `types.ts`, `mocks.ts`.
+4. The mark: a handcuff in `web/src/components/icons.tsx`, drawn to the house line weight —
+   two cuffs and the chain, at 18px, legible as a silhouette. It is the first icon in the app
+   that is an *object* rather than a symbol, so it is the one most likely to read as clip art;
+   `docs/BRAND.md` §on the mark applies. Andrew signs it off on screen.
+5. The button: header, right of the toggle, **icon only**, 44px, `aria-label` from vocab. It
+   takes its width from the name column, so the name goes to `line-clamp-2` at 320 (it
+   already is) and the check at 320/420 in both themes is part of the step, not after it.
+6. The page: `/handcuff/<id>`, a route rather than a second sheet. A sheet over a sheet is a
+   stack with no way back on a phone, and this page is shareable in its own right — "here is
+   the man to go and get" is exactly the message someone sends a league-mate.
+
+**Acceptance.**
+- Open any player, press the handcuff, land on his backups in NFL depth order, each with his
+  status in **this** league and his points in **this** league's scoring.
+- A player whose team has no chart on record says so in words and offers nothing.
+- A defence or a kicker has no handcuff, and the button is absent rather than empty.
+- Free. Opening it opens nothing paid, and the test that pins the profile's freeness gains a
+  sibling.
+- Both themes, 320 and 420.
+
+**Tests.** `tests/test_depth.py` (the dump, the null case), `tests/test_handcuff.py` (league
+scoring, ownership, no invented ranking), `tests/test_player_api.py` (free, and opens nothing
+paid), `web/src/lib/player/handcuff.test.ts` (the view builder).
+
+**Blocked on Andrew:** the overlap above, and whether Sleeper's 2026 depth chart is fresh
+enough to ship on. Step PP-8.1 is that check and it can stop the section.
+
 ## 7. The prompt for the chat that builds it
 
 ```
@@ -636,7 +724,7 @@ You are picking up PENTHOUSE, a paid fantasy football web app, to build the play
 Read CLAUDE.md first (short, non-negotiable), then docs/MAP.md, then docs/HANDOFF.md for
 the traps, then docs/SPEC-PLAYER-PAGE.md (what and why) and docs/PLAYER-PAGE-STEPS.md (the order,
 the isolation contract, and the checklist you tick as you go). §2 of that spec is
-thirteen decisions Andrew has already taken; build to them and do not re-ask. Then start at the first unticked step in PLAYER-PAGE-STEPS.md, tick it when it is on
+fourteen decisions Andrew has already taken; build to them and do not re-ask. Then start at the first unticked step in PLAYER-PAGE-STEPS.md, tick it when it is on
 screen and tested, commit, and take the next one. One section per PR-sized commit; nothing is done
 without a test or a browser check at 320 and 420px in both themes.
 

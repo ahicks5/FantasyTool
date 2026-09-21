@@ -43,8 +43,10 @@ import { VibesView } from "./VibesView";
 export interface PlayerSeed {
   id: string;
   name: string;
-  position: string;
-  nfl_team: string | null;
+  /** Everything past the name is optional: a `PlayerRef` on a lineup change carries none of
+   *  it, and a hint that has to be complete is a hint half the callers cannot give. */
+  position?: string | null;
+  nfl_team?: string | null;
   /** Only the roster payloads carry this, which is why the header takes a seed at all. */
   opponent?: string | null;
   photo?: string | null;
@@ -55,7 +57,7 @@ export interface PlayerSeed {
 /** Who the header is drawing, from the seed or from the profile, whichever has landed. */
 interface Head {
   name: string;
-  position: string;
+  position: string | null;
   nflTeam: string | null;
   opponent: string | null;
   photo: string | null;
@@ -89,29 +91,23 @@ export function PlayerSheet({
   const view = useMemo(() => (data ? profileView(data, SCOUT.free) : null), [data]);
   const notFound = cause instanceof HttpError && cause.status === 404;
 
-  // The seed wins on the fields it has, because it is on screen a beat sooner and says the
-  // same thing; the profile fills the rest and is the only source once the sheet is opened
-  // from a link. `opponent` is only ever the seed's -- the profile payload has no fixture
-  // on it, and phase D is where the header gets one of its own.
-  const head: Head | null = seed
-    ? {
-        name: seed.name,
-        position: seed.position,
-        nflTeam: seed.nfl_team,
-        opponent: seed.opponent ?? null,
-        photo: seed.photo ?? null,
-        teamLogo: seed.team_logo ?? null,
-        injuryStatus: seed.injury_status ?? null,
-      }
-    : view
+  // Merged field by field rather than seed-or-profile, because a seed is a hint and some
+  // of them are very thin: a lineup change carries a `PlayerRef`, which is an id and a
+  // name and nothing else. The seed wins where it has an answer, since it is on screen a
+  // beat sooner and says the same thing; the profile fills the rest as it lands.
+  //
+  // `opponent` is only ever the seed's -- the profile payload carries no fixture, and
+  // phase D is where the header gets one of its own.
+  const head: Head | null =
+    seed || view
       ? {
-          name: view.name,
-          position: view.position,
-          nflTeam: view.nflTeam,
-          opponent: null,
-          photo: view.photo,
-          teamLogo: view.teamLogo,
-          injuryStatus: view.injuryStatus,
+          name: seed?.name ?? view?.name ?? "",
+          position: seed?.position ?? view?.position ?? null,
+          nflTeam: seed?.nfl_team ?? view?.nflTeam ?? null,
+          opponent: seed?.opponent ?? null,
+          photo: seed?.photo ?? view?.photo ?? null,
+          teamLogo: seed?.team_logo ?? view?.teamLogo ?? null,
+          injuryStatus: seed?.injury_status ?? view?.injuryStatus ?? null,
         }
       : null;
 
