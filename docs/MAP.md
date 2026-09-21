@@ -78,6 +78,7 @@ the value is visible and the names are not.
 | What can stop us launching? | `docs/RISK_REGISTER.md`, `docs/LEGAL_CHECKLIST.md` |
 | Does this make money? | `docs/UNIT_ECONOMICS.md` |
 | What is left to build? | `TASKS.md` |
+| What is the player page, and what is decided about it? | `docs/SPEC-PLAYER-PAGE.md` |
 | What are real leagues actually like? | `docs/LEAGUE_SURVEY.md` |
 
 ## Commands

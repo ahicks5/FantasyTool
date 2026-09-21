@@ -681,3 +681,29 @@ person. That'd be in the scouting tab."
       totals. This season's shares are exact, because they are weekly.
 - [ ] ESPN leagues reach the stat feed through `ext_ids["sleeper"]`; a player the name match
       missed has no profile rather than a wrong one.
+
+## Player page (docs/SPEC-PLAYER-PAGE.md)
+Spec written 2026-09-21 from Andrew and his cofounder's notes; **§2 of the spec lists eight
+decisions Andrew owes** (what "chat" is, whether Vibes is league-aware, the badge names, what the
+Penthouse number is, the two mode colours). Supersedes **S-5**.
+- [ ] **PP-1** The frame: a bottom sheet any player name opens, swipe down to close, no X,
+      frozen header and footer, Vibes/Stats toggle that flips colour *and* word, `?player=`
+      in the URL. Stats = the existing scout report lifted out of `Profile.tsx`.
+- [ ] **PP-2** Header numbers: this week's projection and ROS on the profile payload, the
+      lifecycle badge (`edge/engine/lifecycle.py`) and short game / long game, in words.
+- [ ] **PP-3** Vibes: `edge/engine/takes.py` writes the read from a facts sheet of tiers and
+      tones — Claude when `EDGE_USE_CLAUDE=1`, template otherwise, cached per (player, week).
+      **No digit reaches the page**; a test rejects any that does.
+- [ ] **PP-4a** Stats, the nerd floor: `edge/engine/breakdown.py` — target share, air-yard
+      share, WOPR, aDOT, RACR, YAC, drop rate, broken tackles, stuff rate, red-zone shares,
+      points per target/touch/snap/reception, where the points come from, boom/bust against
+      this league's starter and replacement lines, floor/ceiling/stability, explosive share,
+      every rate against the position average; gauges, thermometers, depth strip, boom-bust
+      strip as inline SVG with node-tested builders.
+- [ ] **PP-4b** The field map, EPA, separation, routes run — from nflverse play-by-play behind
+      `edge/data/pbp.py`. **Gated**: verify 2026 files and the licence first.
+- [ ] **PP-5** Chat per player. Own PR, after the first slice is live. Blocked on D-1.
+- [ ] **PP-6** GM's Office from the footer: `/trade?player=<id>` opens the right partner card.
+- [ ] **PP-7** The Penthouse Composite: `CompositeProvider` averaging raw stat lines across
+      Sleeper, ESPN (already fetched), props (vendor + terms check), Yahoo last.
+- [ ] **PP-8** Position Battle: placeholder button only.
