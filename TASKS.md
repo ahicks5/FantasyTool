@@ -7,8 +7,8 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 The front page becomes the Debrief: one memo per department ("From the head coach", "From
 the head of scouting", "From the GM's Office", "From the film room"), each with one item
 and a door, a headshot strip of the week's starters in place of the hero, and a thumbs-down
-that removes the item from the page. Planned, not started; seven decisions (D1-D7) at the
-end of the plan are waiting on Andrew.
+that removes the item from the page. Every decision (D1-D7) is made and recorded at the end
+of the plan; the build starts at DB-1.
 
 - [ ] **DB-1** Vocabulary: Call sheet -> Debrief, `DEPARTMENTS` eyebrows, the copy rows in the plan.
 - [ ] **DB-2** `lib/sheet.ts` `memos()`, the dismissed store, the cache stamp. Node-tested.

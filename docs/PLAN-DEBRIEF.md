@@ -130,7 +130,7 @@ department most wants you to do, and a door.
 - **The door**: one button, named for the room (`Depth chart`, `Waiver plan`, `Trade
   Lab`, `The film`), using the action's own `cta.href`, so a trade memo still deep-links
   into the Trade Lab with the offer pre-filled.
-- **The controls**: the tick (`Make the call`, compact; see D2), and the thumbs. Thumbs
+- **The controls**: the tick (`Make the call`, compact, D2), and the thumbs. Thumbs
   up says "Noted" as today. **Thumbs down opens the reason chips as today, posts the
   feedback, and then removes the item from the Debrief.** The next-ranked action for
   that department takes its place; when there is none, the memo shows the department's
@@ -159,8 +159,8 @@ department most wants you to do, and a door.
 ### 1.3 The one line the hero used to say
 
 `feed.summary` ("3 moves to make" / "All settled.") stays in the API: the weekly email
-prints it and `vocab.test.ts` pins the landing page's worked example to it. Whether the
-Debrief prints it is D3. If yes, it is one 13px line between the starters plate and the
+prints it and `vocab.test.ts` pins the landing page's worked example to it. The
+Debrief prints it (D3): one 13px line between the starters plate and the
 first memo, with `Synced 4 min ago` after it, and no panel around it.
 
 ---
@@ -176,12 +176,12 @@ sign people out if renamed (`docs/WEB.md`).
 |---|---|---|
 | `vocab.ts` `SECTIONS.home` | Call sheet / "This week's moves, ranked." / your call sheet | **Debrief** / "What your staff needs you to see." / your debrief |
 | `vocab.ts`, new `DEPARTMENTS` | — | the four eyebrows in the table at the top, keyed by `TabKey` |
-| `vocab.ts` `LINES.heroSub` | We hand you a call sheet. | We hand you a debrief. (D1) |
+| `vocab.ts` `LINES.heroSub` | We hand you a call sheet. | We hand you a debrief. |
 | `vocab.ts` `EMAIL.label` | Send me the call sheet every Thursday | Send me the debrief every Thursday |
 | `lib/wait.ts` | "Writing the call sheet" | "Writing the debrief" |
 | `app/home/matchup/page.tsx` | "The call sheet still stands." | "The debrief still stands." |
 | `app/page.tsx` | "You get a call sheet"; aria "Example call sheet" | "You get a debrief"; "Example debrief" |
-| `app/layout.tsx` OG title and description | fantasy football call sheet | fantasy football debrief (D1) |
+| `app/layout.tsx` OG title and description | fantasy football call sheet | fantasy football debrief |
 | `edge/delivery/weekly_email.py` | eyebrow, two links, plain-text header | Debrief (not sending yet, so cheap now and expensive later) |
 | `CLAUDE.md`, `docs/BRAND.md` §0 | Sections are call sheet (home) · … | debrief (home) · … |
 | Tab icon | `IconSheet` | keep, unless a memo/clipboard mark reads better at 21px |
@@ -253,33 +253,22 @@ Rough size: steps 1 and 2 are an hour each; 3 and 4 are the day; 5 and 6 the mor
 
 ---
 
-## 6. Decisions needed from Andrew
+## 6. Decisions, made
 
-Answer these once, up front. Each has a recommendation so a "fine" is a complete answer.
+Andrew asked for recommendations and took them (2026-09-21). These are settled; do not
+re-open them mid-build.
 
-- **D1 — How far does the rename go?** In-app only, or also the landing line ("We hand
-  you a call sheet."), the OG title and the email? *Recommend: everywhere a user reads.
-  Two names for the same page is the kind of thing that looks like a mistake on the day
-  someone screenshots it.*
-- **D2 — Keep the tick?** "Make the call" and its crossed-off state, on the memo item.
-  *Recommend: keep it, compact. It is what drops the swap badge on the starters plate,
-  and it is the only thing on the page that lets you say "done".* Dropping it also drops
-  the checklist habit the landing page sells ("Tick them off as you make them").
-- **D3 — Print "3 moves to make" as one plain line above the memos?** *Recommend: yes,
-  one 13px line, no panel. The landing page's worked example is pinned to that headline
-  by a test; if the app stops saying it, the landing has to change too.*
-- **D4 — The starters graphic is a headshot strip, not a generated image, with a
-  server-rendered share card as phase 2.** *Recommend: confirm.* If you want generated
-  art regardless, say so and it becomes its own plan with a cost line, because it is a
-  per-image spend on the free tier.
-- **D5 — A downvote hides the item on the Debrief for the rest of the week, on this
-  device, and nowhere else.** *Recommend: confirm.* The alternatives are "this visit
-  only" (it comes back on reload, which reads as the app ignoring you) or "everywhere"
-  (a thumb on the front page silently edits the depth chart, which is a lot for one tap).
-- **D6 — The film memo carries the last-week line and the standing line.** *Recommend:
-  confirm.* They are the two free surfaces you chose in the owner's box; the hero they
-  lived on is going, and the film room is the department that owns both facts.
-- **D7 — The four eyebrows.** *Recommend the set in the table at the top.* "From the head
-  coach's desk" was your phrasing and it is good; it is also 25 letterspaced capitals on a
-  card that has ~200px beside the status, so it is "From the head coach" on the card and
-  the desk stays in the voice.
+| | Decision |
+|---|---|
+| **D1** | The rename goes everywhere a user reads: the app, the landing line ("We hand you a debrief."), the OG title and description, the email. One name for one page. |
+| **D2** | The tick stays, compact, on the memo item. It is what drops the swap badge on the starters plate and the only "done" on the page. |
+| **D3** | "3 moves to make" prints as one plain 13px line above the memos, with "Synced 4 min ago" after it. No panel. The landing's worked example stays pinned to it. |
+| **D4** | The starters graphic is the headshot strip. A server-rendered "Starting lineup" share card is phase 2, after L1 (photos) is decided. No generated art. |
+| **D5** | A thumbs-down hides the item on the Debrief for the rest of the week, on this device, and nowhere else. Stored in `booth.dismissed.<league>.<week>`. |
+| **D6** | The film memo carries the last-week line and the standing line. |
+| **D7** | The eyebrows are "From the head coach", "From the head of scouting", "From the GM's Office", "From the film room". |
+
+Anything else found on the way is an implementation detail and gets decided in the commit
+that needs it, with the reason in the commit message. A new *product* question (something
+free becoming paid, a claim about accuracy, removing something a user sees today that this
+plan does not already remove) goes to Andrew before the work continues.
