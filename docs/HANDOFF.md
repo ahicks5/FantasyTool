@@ -24,6 +24,38 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## The Lineup tab: two piles, and the reads that tip a close call (2026-09-21, late)
+
+Andrew's brief is in `TASKS.md` (LT-1 to LT-8). What shipped:
+
+- **`edge/calibration.py` is wired in** (`lineup.v2`). The tag is a probability band, the hold
+  is `HOLD_P` = 0.60, `HIT_RATE` is the calibrated table. Under `LOCK_P` the projection has not
+  settled a pair and it becomes a *decision*; at or above it, a *required change*.
+- **`stabilize` is gone.** `lineup.settle(team, slots, ctx)` builds the recommendation by swaps
+  from the manager's own lineup: forced fills first, then swaps the projection settles, then
+  coin flips the reads tip (two net reads, `decisions.TILT_TO_MOVE`; a lean is never
+  overturned). Every `gain` is the lineup's real movement and they sum to the total delta. The
+  old per-slot hold reported phantom swaps ("+6.11 Lock" for moving a man who was already
+  starting) and that inflated the week-1 replay from an honest +0.70 to +2.02 a team; the
+  replay test now pins `> 0` and explains.
+- **`edge/engine/decisions.py`** gathers the reads: your game, swing, stack, matchup (points
+  actually allowed to the position, league scoring), health, rest, form, role. The API builds
+  the context on `/lineup` from the schedule (now with kickoffs: `schedule.load_games`), the
+  depth charts, the finished weeks' stat lines and your matchup; every source fails soft.
+- **The page** (`LineupView.tsx`): hero with the projection, the countdown, the coach's notepad
+  top-left and the split on two lines; a stamp over the page on a fresh open; "Required
+  changes"; "Decisions to make" with the two men, the probability, the call and the reads;
+  then the board and the bench. Game day / Just in / Slot problems and the Scorecard toggle
+  are gone from this tab (`GameDay.tsx` deleted; `Scorecard.tsx` kept for later).
+- **Naming.** "Lineup" everywhere a user reads it; URL stays `/team`.
+
+Traps from this round: the week-1 replay test was pinned to a number the bug had inflated,
+and three fixture guards (`test_recap`, `test_score_runs`, `test_actions`) counted calls the
+calibrated hold no longer makes -- read `tests/test_evaluate.py` before "fixing" a lower gain
+by loosening the hold. The vocab sweep forbids a percentage in any user-read string, so the
+probability on a decision card is rendered from the engine's `p` beside a label, never
+written into `vocab.ts`. The variance read is silent until a man has three games this season.
+
 ## Round six: the scale, the scores, the loader (2026-09-21, night)
 
 Andrew's next notes. **The ride skipped once** halfway through the orbit, then played

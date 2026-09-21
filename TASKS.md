@@ -2,6 +2,44 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## The Lineup tab (2026-09-21, late)
+
+Andrew's brief: the tab answers "is my starting lineup right for this week?" by splitting the
+calls into what has to change and what has to be decided, and the close calls get the reads
+that actually tip them.
+
+- [x] **LT-1** **Calibration plugged in.** `edge/calibration.py` is the confidence model
+      (`lineup.v2`): the tag is a probability band, the hold is `HOLD_P` (0.60), `HIT_RATE` is
+      the calibrated table. Under `LOCK_P` a pair is a decision, not a fix. `docs/CALIBRATION.md`.
+- [x] **LT-2** **The phantom-gain bug.** `settle` builds the lineup by swaps from the manager's
+      own, priced one at a time, so `sum(changes.gain) == projected_total - current_total` and
+      the recommendation is never worse than what he set (unless the reads tip a coin flip, and
+      then the negative gain is stated). The old per-slot hold reported "+6.11 Lock" for moving a
+      man who was already starting while the real change was a +1.46 coin flip; that inflated the
+      week-1 replay to +2.02 a team, now honestly +0.70 (`tests/test_evaluate.py`).
+- [x] **LT-3** **The decision-factor engine** (`edge/engine/decisions.py`, 17 tests): your own
+      game (ahead/behind/even, projected or on the board), swing (variance from his played games,
+      3+), stack (shares an offence with another starter of yours), matchup (points the defence
+      has actually allowed to the position, in the league's own scoring, ranked), health (status
+      and practice), rest (short week, bye), form (last game against this week's line), role (the
+      man ahead of him down, his QB1 down). Two net reads move a coin flip (`TILT_TO_MOVE`); a
+      lean is never overturned. Schedule now stores every game's kickoff
+      (`schedule.load_games`, `games_for`).
+- [x] **LT-4** **The page.** Hero keeps the projection and the countdown; under it the split on
+      two lines ("2 required changes" / "3 decisions to make"); the head coach's notepad top-left;
+      a stamp lands over the page on a fresh open with the two numbers and the faces, then lifts.
+      "Required changes" (forced fixes, Locks, holes with a wire link), "Decisions to make" (the
+      two men, the probability, the call, the reads with a dot and a word each), then the board
+      and the bench. Game day check / Just in / Slot problems and the Scorecard toggle are off
+      this tab (`Scorecard.tsx` and `lib/gameday.ts` stay; the desk's Alarm still reads the latter).
+- [x] **LT-5** **Naming.** "Lineup" everywhere: the tab, the page title, the desk notebook, the
+      call-sheet CTA. URL stays `/team`. "Depth chart" now means an NFL team's depth chart only.
+- [ ] **LT-6** Betting odds and player props as reads. Deliberately skipped this round.
+- [ ] **LT-7** Variance from last season's game log too (this season needs three games first, so
+      the swing read is silent until week 4). Needs 17 cached week fetches for 2025.
+- [ ] **LT-8** Re-run `scripts/survey_leagues.py` and `scripts/calibrate.py` against `lineup.v2`
+      so the corpus numbers and the calibration curve describe the algorithm that ships.
+
 ## The video game (2026-09-21)
 
 Andrew wants Penthouse to play like MyGM: an owner, a staff, a building. The first piece is
@@ -621,8 +659,10 @@ Build in this order; each is its own commit.
       one all-FLEX lineup, bench depth 4-13.
 
 ## Findings from the corpus — worth fixing before charging for Trade Lab
-- [ ] **`lineup.stabilize` is not transitive, and it can advise a lineup worse than the one the
-      manager already set.** Verified on 114052 "Raleigh Silly Nannies": his own lineup projects
+- [x] **`lineup.stabilize` is not transitive, and it can advise a lineup worse than the one the
+      manager already set.** FIXED 2026-09-21: `settle` replaces it (see "The Lineup tab" at the
+      top). Every gain shown is the gain delivered; `test_the_gain_advertised_is_the_gain_delivered`.
+      Original finding, kept for the record: Verified on 114052 "Raleigh Silly Nannies": his own lineup projects
       106.88, the optimum is 106.97, and we recommend **106.56**. The only change we show him is
       "Start Bucky Irving (12.4) over D'Andre Swift (10.6), +1.89" — but protecting Jaylen Warren
       at RB2 pushes Swift out of the lineup entirely and Blake Corum (10.2) into the FLEX, so the

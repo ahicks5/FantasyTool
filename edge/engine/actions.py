@@ -23,9 +23,9 @@ FEATURE_FOR = {"start": "my_team", "waiver": "waivers", "trade": "trade_lab", "h
 # exists. Prose that says what the number is a property of -- the margin, across a season --
 # survives the constant moving; "75% of the time last week" does not.
 HIT_LINE = {
-    lineup_mod.LOCK: "Margins this size were right about 3 times in 4 across last season.",
-    lineup_mod.LEAN: "Margins this size were right about 3 times in 5 across last season.",
-    lineup_mod.FLIP: "Margins this size were a coin flip across last season.",
+    lineup_mod.LOCK: "Calls this sure were right about 4 times in 5 across last season.",
+    lineup_mod.LEAN: "Calls this sure were right about 2 times in 3 across last season.",
+    lineup_mod.FLIP: "Calls this close were a coin flip across last season.",
 }
 
 
@@ -70,12 +70,10 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
     adv = lineup_mod.advise(league, team)
     actions: list[dict] = []
 
-    # 1. Lineup fixes (free). A swap inside the noise band is not a "move worth making" —
-    # our own backtest puts sub-1.5-point margins at a coin flip. It still shows on My Team.
+    # 1. Lineup fixes (free). `settle` already holds every swap the projection cannot
+    # settle (a coin flip, unless the week's reads tip it), so every change it hands over
+    # is a move worth making: a forced fix, a lock, a lean, or a coin flip the reads tipped.
     for ch in adv.changes:
-        forced = bool(ch.out and ch.out.is_out) or ch.out is None
-        if not forced and ch.gain < lineup_mod.NOISE_MARGIN:
-            continue
         out_name = ch.out.name if ch.out else "an empty slot"
         actions.append({
             "id": f"start:{ch.slot}:{ch.in_.id}",
@@ -88,7 +86,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                     (f"{ch.out.name} projects {effective(ch.out):.1f}" + (f" and is {ch.out.injury_status}." if ch.out.injury_status else ".")) if ch.out else "The slot is empty.",
                     f"{ch.confidence}: {HIT_LINE[ch.confidence]}"],
             "players": [report.player_dict(ch.in_), report.player_dict(ch.out)],
-            "cta": {"label": "Depth chart", "href": "/team"},
+            "cta": {"label": "Lineup", "href": "/team"},
             # Lineup fixes expire at kickoff, so they carry a deadline bonus on top of their size.
             # A big trade can still outrank a trivial swap.
             "score": ch.gain * 6 + DEADLINE_BONUS,

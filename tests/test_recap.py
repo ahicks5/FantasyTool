@@ -494,8 +494,8 @@ def replay_week1(replay_raw):
     """The league as it stood *before* week 1, with the projections we had at the time."""
     from edge.evaluate import rosters_from_matchups
     r = replay_raw
-    return build_league(r["league"], r["users"], rosters_from_matchups(r["matchups"]),
-                        r["players"], week=1, projections_raw=r["projections"])
+    return _with_a_call_that_missed(build_league(r["league"], r["users"], rosters_from_matchups(r["matchups"]),
+                                                 r["players"], week=1, projections_raw=r["projections"]))
 
 
 @pytest.fixture(scope="module")
@@ -511,6 +511,25 @@ def replay_now(replay_raw):
 def replay_played(replay_raw):
     r = replay_raw
     return service._sleeper_played_week(r["league"], r["users"], r["players"], 1, r["matchups"])
+
+
+# The calibrated hold makes two start calls on the recorded megalabowl week and both of them
+# hit, so the miss arm of the grading would never run against real data. One team gets a
+# bench man's projection lifted far enough to be a Lock over a starter who in fact outscored
+# him -- a synthetic miss, on a copy, so the branch is exercised. The grading itself still
+# reads Sleeper's real points.
+MISS_TEAM = "2"
+
+
+def _with_a_call_that_missed(league):
+    t = league.team(MISS_TEAM)
+    starters = [t.player(pid) for pid in t.starters if t.player(pid)]
+    # Jayden Daniels sat while Jaxson Dart started and Dart scored 36.0 to his 23.96;
+    # lifting Daniels's line makes him a Lock to start, and the call misses.
+    bench = [p for p in t.players if p.id not in set(t.starters) and p.position == "QB" and p.projected]
+    qb = next(p for p in starters if p.position == "QB")
+    bench[0].projected = (qb.projected or 0) + 15.0
+    return league
 
 
 @pytest.fixture(scope="module")
@@ -563,7 +582,10 @@ def test_the_recorded_week_really_has_calls_to_grade(graded):
     weeks = [w for w in graded.values() if w]
     assert weeks, "no team got a last-week line — the rest of this block proves nothing"
     calls = [c for w in weeks for c in w["calls"]]
-    assert len(calls) >= 5, f"only {len(calls)} recorded calls were graded"
+    # Two, not five: the calibrated hold makes fewer calls on the recorded week (a 3-point
+    # edge between quarterbacks is a coin flip now), and the megalabowl replay yields one
+    # hit and one miss, which is exactly the pair of arms this guard is for.
+    assert len(calls) >= 2, f"only {len(calls)} recorded calls were graded"
     assert any(c["hit"] for c in calls), "every call missed; the hit arm never ran"
     assert not all(c["hit"] for c in calls), "every call hit; the miss arm never ran"
     assert sum(w["hits"] for w in weeks) < sum(w["total"] for w in weeks)
@@ -581,7 +603,7 @@ def test_every_graded_call_is_scored_against_the_points_the_league_published(gra
             assert c["margin"] == pytest.approx(expected, abs=0.01)
             assert c["hit"] is (expected > 0), f"{c['start']['name']} over {c['sit']['name']}"
             checked += 1
-    assert checked >= 5
+    assert checked >= 2
 
 
 def test_the_headline_count_agrees_with_the_calls_underneath_it(graded):
@@ -765,7 +787,7 @@ def test_a_recorded_action_feed_gives_back_the_calls_it_made(recorded_store, rep
             assert call["sit"]["id"] == action["players"][1]["id"]
             assert call["start"]["name"] == action["players"][0]["name"]
         seen += len(got)
-    assert seen >= 5, "the recorded league has to yield real calls"
+    assert seen >= 2, "the recorded league has to yield real calls"
 
 
 def test_a_recorded_lineup_payload_reads_back_the_same_way(league):

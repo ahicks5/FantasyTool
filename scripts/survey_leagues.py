@@ -125,7 +125,7 @@ def mapping_health(league) -> dict:
 def survey_team(league, team, ros, byes) -> dict:
     """Everything the product would tell this one manager this week."""
     adv = lineup.advise(league, team)
-    changes = [c for c in adv.changes if c.gain >= lineup.NOISE_MARGIN or (c.out and c.out.is_out)]
+    changes = list(adv.changes)   # `settle` already holds every swap the projection cannot settle
     plan = waiver_plan.build(league, team, ros, byes)
     found = trade_finder.find(league, team, ros)
     offers = [o for pf in found.get("partners") or [] for o in pf.get("offers") or []]

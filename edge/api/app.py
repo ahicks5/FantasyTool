@@ -14,7 +14,8 @@ from edge.api.auth import current_user, optional_user
 from edge.api.limits import RateLimitMiddleware, cors_origins, validate_id, validate_platform
 from edge.api.store import open_store
 from edge.connectors import sleeper
-from edge.engine import grades
+from edge.data import nfl_stats, schedule
+from edge.engine import decisions, grades
 from edge.engine import lineup as lineup_mod
 from edge.engine import actions as actions_mod
 from edge.engine import recap as recap_mod
@@ -264,7 +265,7 @@ def roster(platform: str, league_id: str, team_id: str, auth=Depends(espn_auth))
 def lineup(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     b = _bundle(platform, league_id, auth)
     team = _team(b, team_id)
-    out = report.lineup_dict(lineup_mod.advise(b.league, team))
+    out = report.lineup_dict(lineup_mod.advise(b.league, team, _decision_context(b, team)))
     # The scorecard rides along with the depth chart rather than getting its own endpoint:
     # the page that shows it already fetches this, and grading needs the same league bundle.
     out["grades"] = grades.grade_team(b.league, team, b.ros).to_dict()
@@ -585,6 +586,31 @@ def _recorded_projections(email: str | None, platform: str, league_id: str, team
     this reads and never recomputes.
     """
     return recap_mod.projections_from_runs(_recorded(email, platform, league_id, team_id))
+
+
+def _decision_context(b, team):
+    """What the close calls read (`engine/decisions.py`): this week's and last week's
+    games, the depth charts, every finished week's stat lines and your own matchup.
+
+    Additive, always: the lineup is the free headline feature and paints from projections
+    alone; a schedule or stat feed that fails upstream costs the reader the reads under a
+    decision, never the page. Each source is already cached by its own module."""
+    try:
+        games = schedule.load_games(b.league.season)
+    except Exception:  # noqa: BLE001
+        games = {}
+    try:
+        charts = desk.depth_charts.load()
+    except Exception:  # noqa: BLE001
+        charts = {}
+    try:
+        log = nfl_stats.game_log(b.league.season, b.league.week - 1)
+    except Exception:  # noqa: BLE001
+        log = {}
+    try:
+        return decisions.build(b.league, team, b.matchups, games, charts, log, b.byes)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _last_week(email: str | None, platform: str, league_id: str, b, t, auth) -> dict | None:

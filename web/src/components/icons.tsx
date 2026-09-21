@@ -118,3 +118,13 @@ export const IconThumbUp = (p: P) => (
 export const IconThumbDown = (p: P) => (
   <Svg {...p}><path d="M7 4v10l4.5 6a2 2 0 0 0 3.3-2.1L13.5 15H19a2 2 0 0 0 2-2.3l-1-6A2 2 0 0 0 18 5H7Z" /><rect x="3" y="4" width="4" height="10" rx="1" /></Svg>
 );
+
+/** A notepad with a pen across it: the head coach's notes, top-left of the lineup. */
+export const IconNotes = (p: P) => (
+  <Svg {...p}>
+    <path d="M6 3.5h9.5a1.5 1.5 0 0 1 1.5 1.5v6" />
+    <path d="M6 3.5A1.5 1.5 0 0 0 4.5 5v14A1.5 1.5 0 0 0 6 20.5h6" />
+    <path d="M7.5 8h6M7.5 11.5h4.5M7.5 15h3" />
+    <path d="m20.2 12.3 1.5 1.5-6.2 6.2-2.3.8.8-2.3z" />
+  </Svg>
+);

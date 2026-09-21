@@ -138,8 +138,59 @@ export interface LineupChange {
   slot: string;
   out: PlayerRef | null;
   in: PlayerRef;
+  /** Projected points the whole lineup moves by. Every swap is priced against the lineup as
+   *  it stood when it was made, so the gains sum to `projected_total - current_total`. */
   gain: number;
   confidence: Confidence;
+  reason: string;
+  /** P(in outscores out), the calibrated probability the tag is a band of. Null for an
+   *  empty slot, where nobody was compared. */
+  p?: number | null;
+  /** A fix nobody has to think about: the slot was empty or the man in it will not play. */
+  forced?: boolean;
+}
+
+/** One read on a close call (`engine/decisions.py`): which way it points and the fact,
+ *  stated. `favors` is against the decision's `start` man: "start" backs him, "sit" backs
+ *  the other, null is context. `key` is one of the seven reads in `LINEUP.factor`. */
+export interface DecisionFactor {
+  key: "variance" | "stack" | "opponent" | "health" | "rest" | "form" | "role";
+  favors: "start" | "sit" | null;
+  line: string;
+}
+
+/** Your own matchup, as the close calls read it: chase the ceiling or protect the floor. */
+export interface DecisionGame {
+  state: "ahead" | "behind" | "even";
+  margin: number;
+  live: boolean;
+  line: string;
+}
+
+/**
+ * A start/sit the projection alone does not settle: P(start outscores sit) is under the
+ * Lock band. `start` is the engine's call, `change` says whether that differs from the
+ * lineup you set, `tipped` says the reads (not the projection) made the call, and `tilt`
+ * is the count of reads pointing at `start` net of those pointing at `sit`.
+ */
+export interface LineupDecision {
+  slot: string;
+  start: Player;
+  sit: Player;
+  p: number;
+  confidence: Confidence;
+  change: boolean;
+  tipped: boolean;
+  reason: string;
+  game: DecisionGame | null;
+  factors: DecisionFactor[];
+  tilt: number;
+}
+
+/** A slot nobody on the roster can fill this week. The fix is the wire. */
+export interface LineupHole {
+  slot: string;
+  player: Player | null;
   reason: string;
 }
 
@@ -194,8 +245,17 @@ export interface Lineup {
   week: number;
   projected_total: number;
   current_total: number;
+  /** The two piles, counted: what has to change, and what has to be decided. `required`
+   *  counts `holes` too, because a slot nobody can fill is still something to fix. */
+  summary?: { required: number; decisions: number };
+  /** Nothing to think about: a forced fix, or a swap the projection has settled (Lock). */
+  required?: LineupChange[];
+  holes?: LineupHole[];
+  /** The close calls, each with the engine's call and the reads that tip it. */
+  decisions?: LineupDecision[];
   slots: LineupSlot[];
   bench: BenchEntry[];
+  /** Every swap the lineup makes from the one you set, required or decided. */
   changes: LineupChange[];
   confidence_hit_rate?: Record<Confidence, number>;
   /** Optional: older API builds and compact embeds ship a lineup without it. */

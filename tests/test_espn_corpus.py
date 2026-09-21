@@ -42,7 +42,9 @@ from edge.connectors.espn import (ESPN_STAT_PER_N, ESPN_STAT_TO_SLEEPER, LINEUP_
                                   UNMAPPED_WARN, build_league, item_points)
 from edge.data.schedule import bye_weeks, load_schedule
 from edge.engine import actions as actions_mod
+from edge import calibration
 from edge.engine import lineup, trade, trade_finder, waiver_plan
+from edge.engine.lineup import effective
 from edge.engine.values import ros_values
 from edge.engine.waiver_plan import _drop_candidates
 from edge.models import BENCH_SLOTS, League, Player, Team, player_fits
@@ -573,7 +575,7 @@ def test_no_unforced_swap_is_recommended_inside_the_noise_margin(league_id, corp
         optimal_ids = {p.id for p in run.optimal if p}
         recommended_ids = {p.id for p in run.recommended if p}
         for ch in run.advice.changes:
-            if ch.gain >= lineup.NOISE_MARGIN:
+            if calibration.worth_swapping(effective(ch.in_), effective(ch.out)) if ch.out else True:
                 continue
             out = ch.out
             forced = out is None or out.is_out or not player_fits(ch.slot, out)

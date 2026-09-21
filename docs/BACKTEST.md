@@ -88,6 +88,15 @@ band, so Penthouse recommends the optimum only where the optimum is real. The ca
 The 4 that remain are slots where the incumbent was entangled elsewhere in the lineup;
 `stabilize` leaves those alone on purpose rather than cascading.
 
+**Superseded 2026-09-21 (`lineup.v2`).** Those entangled slots were the bug: `stabilize`
+reported a swap for a man who was already starting (a "+6.11 Lock") while the change it
+really made underneath was a sub-noise coin flip, and two of those coin flips landing +6.5 and
++32.9 is most of the +2.02 above. `lineup.settle` replaces it: swaps priced from the manager's
+own lineup, one at a time, with the hold on `calibration.HOLD_P` (0.60) instead of 1.5 points.
+On the same replay the honest number is **+0.70 a team** (raw optimum +1.82, on two lucky
+coin flips). `tests/test_evaluate.py` now asserts `> 0` and that every hold is a coin flip;
+`docs/CALIBRATION.md` has the model. Re-run this table against v2 (TASKS.md LT-8).
+
 `tests/test_evaluate.py` replays all six leagues offline from
 `tests/fixtures/sleeper/replay_week1/` and asserts these numbers, including that the hold
 still beats the raw optimum. Re-record with `scripts/record_replay_fixture.py <week>`.

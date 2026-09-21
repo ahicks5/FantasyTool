@@ -53,17 +53,37 @@ def player_dict(p: Player | None) -> dict | None:
             "photo": photo_url(p), "team_logo": team_logo_url(p.nfl_team)}
 
 
+def _swap_dict(ch) -> dict:
+    return {"slot": ch.slot, "out": player_dict(ch.out), "in": player_dict(ch.in_), "gain": ch.gain,
+            "confidence": ch.confidence, "reason": ch.reason,
+            "p": round(ch.p, 3) if ch.p is not None else None, "forced": ch.forced}
+
+
+def _decision_dict(d) -> dict:
+    return {"slot": d.slot, "start": player_dict(d.start), "sit": player_dict(d.sit), "p": round(d.p, 3),
+            "confidence": d.confidence, "change": d.change, "tipped": d.tipped, "reason": d.reason,
+            "game": d.game, "factors": d.factors, "tilt": d.tilt}
+
+
 def lineup_dict(adv: LineupAdvice) -> dict:
+    """The lineup payload. Two piles on top of the board: `required` is what nobody has to
+    think about (a forced fix, or a swap the projection has settled at `LOCK_P`), `decisions`
+    is what someone does -- the close calls, each with the engine's call and the reads that
+    tip it. `holes` are slots the roster cannot fill. `changes` is every swap the lineup
+    makes, kept for the call sheet, the film and the grading."""
     return {
         "week": adv.week, "projected_total": adv.projected_total, "current_total": adv.current_total,
+        "summary": {"required": len(adv.required) + len(adv.holes), "decisions": len(adv.decisions)},
+        "required": [_swap_dict(ch) for ch in adv.required],
+        "holes": [{"slot": h.slot, "player": player_dict(h.player), "reason": h.reason} for h in adv.holes],
+        "decisions": [_decision_dict(d) for d in adv.decisions],
         # Shipped verbatim: the measured 2025 rates, not a rounded or re-scaled copy. If this
         # ever stops being a straight pass-through, the sentence on the depth chart lies.
         "confidence_hit_rate": lineup_mod.HIT_RATE,
         "slots": [{"slot": c.slot, "player": player_dict(c.player), "confidence": c.confidence,
                    "reason": c.reason, "change": c.change, "margin": c.margin} for c in adv.slots],
         "bench": [{"player": player_dict(p), "reason": r} for p, r in adv.bench],
-        "changes": [{"slot": ch.slot, "out": player_dict(ch.out), "in": player_dict(ch.in_), "gain": ch.gain,
-                     "confidence": ch.confidence, "reason": ch.reason} for ch in adv.changes],
+        "changes": [_swap_dict(ch) for ch in adv.changes],
     }
 
 

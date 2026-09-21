@@ -169,6 +169,18 @@ theme off it would mean most first-time visitors never see the brand. Light live
 `ThemeToggle` also rewrites `<meta name="theme-color">`. That is the only way a phone's status
 bar can follow the switch.
 
+## The lineup tab is two piles
+
+`/team` (`LineupView.tsx`) answers one question and splits it: **required changes** (a forced
+fix, a swap the projection has settled, a slot nobody can fill) and **decisions** (P(start
+outscores sit) under the Lock band, with the reads under each one). The hero prints both
+counts on their own lines and they must never be folded into one number. The stamp that lands
+on a fresh open (`Boom`) is CSS-timed and unmounts itself; it is skipped under reduced motion
+and whenever the lineup came from the session cache (`animate` false). Every word is in
+`LINEUP` in `lib/vocab.ts`; the probability on a decision card is rendered from the engine's
+`p` beside a label, because the vocab sweep forbids a percentage in copy. The seven read keys
+in `LINEUP.factor` mirror `engine/decisions.KEYS` and `vocab.test.ts` pins the list.
+
 ## The kickoff countdown
 
 `nextKickoff` is the next Sunday 1:00 PM ET slate, computed via `Intl` against

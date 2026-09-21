@@ -18,7 +18,10 @@ def _ros(league):
 
 def test_free_user_sees_lineup_actions_and_locked_teasers(league):
     ros, byes = _ros(league)
-    t = league.team("2")  # has an empty RB slot + a QB swap in the fixture
+    # Team 12 is the one roster in the fixture with a swap the calibrated hold lets through
+    # (Brooks over White at 61%). Team 2's QB "swap" (Daniels 25.8 over Dart 22.6) is a 58%
+    # coin flip between two quarterbacks, held and shown as a decision instead.
+    t = league.team("12")
     feed = actions.build(league, t, ros, byes, entitlements={"my_team"})
     types = [a["type"] for a in feed["actions"]]
     assert "start" in types

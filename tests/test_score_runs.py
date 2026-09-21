@@ -97,9 +97,12 @@ def report(recorded, actuals):
 
 def test_the_fixture_is_not_empty(report):
     """The guard on every other test in this file: a vacuous pass is worse than a failure."""
-    assert report["runs"] >= 30, "no recorded runs were graded — the rest of this file proves nothing"
-    assert report["calls"] >= 30, f"only {report['calls']} start/sit calls graded"
-    assert report["confidence"][LOCK]["n"] >= 15, "not enough Lock calls to say anything"
+    # 66 teams on the recorded week; the calibrated hold makes a swap on 19 of them (25 calls,
+    # 15 of them Locks). The old per-slot hold reported more, partly as phantom swaps
+    # (tests/test_evaluate.py explains), so these floors are the honest fixture's with room.
+    assert report["runs"] >= 15, "no recorded runs were graded — the rest of this file proves nothing"
+    assert report["calls"] >= 20, f"only {report['calls']} start/sit calls graded"
+    assert report["confidence"][LOCK]["n"] >= 10, "not enough Lock calls to say anything"
     assert 0.0 < report["confidence"][LOCK]["hit_rate"] < 1.0
 
 
@@ -114,7 +117,7 @@ def test_every_graded_call_is_scored_against_the_points_that_were_really_scored(
             assert c["actual_gain"] == pytest.approx(expected, abs=0.01)
             assert c["hit"] == (expected > 0), f"{c['start']} over {c['sit']}"
             checked += 1
-    assert checked == report["calls"] >= 30
+    assert checked == report["calls"] >= 20
 
 
 def test_the_confidence_table_counts_what_the_teams_section_holds(report):
@@ -245,7 +248,7 @@ def test_a_league_we_cannot_get_actuals_for_is_skipped_not_fatal(recorded):
     out = score_runs.score_week(recorded, SEASON, WEEK, lambda platform, lid: None,
                                 kickoff=KICKOFF)
     assert out["runs"] == 0 and out["calls"] == 0
-    assert out["skipped"]["no_actuals"] >= 30
+    assert out["skipped"]["no_actuals"] >= 15
 
 
 def test_a_run_from_another_season_is_not_graded(recorded, actuals):
@@ -346,7 +349,7 @@ def test_the_headline_survives_dropping_the_detail(tmp_path, monkeypatch, report
     assert out["confidence"] == report["confidence"]
     assert (out["runs"], out["calls"], out["hits"]) == (
         report["runs"], report["calls"], report["hits"])
-    assert out["calls"] >= 30, "the published totals must still describe real calls"
+    assert out["calls"] >= 20, "the published totals must still describe real calls"
 
 
 def test_the_output_names_the_week_it_graded(report):

@@ -50,7 +50,8 @@ def install_fixture_sleeper() -> None:
     rosters_raw = load("sleeper/rosters.json")
     matchups = {2: load("sleeper/matchups_2.json")}
     transactions = {1: load("sleeper/transactions_1.json"), 2: load("sleeper/transactions_2.json")}
-    weeks = load("schedule_2026.json")["weeks"]
+    sched = load("schedule_2026.json")
+    weeks, games = sched["weeks"], sched.get("games", {})
 
     api.state = lambda: state
     api.league = lambda league_id: league_raw
@@ -101,6 +102,8 @@ def install_fixture_sleeper() -> None:
     from edge.api import service as service_mod
     schedule_mod.load_schedule = lambda season_: weeks
     service_mod.load_schedule = lambda season_: weeks
+    # The close calls on the lineup read who each team plays and when it kicks off.
+    schedule_mod.load_games = lambda season_: games
 
 
 def build_app(user: str, skus: tuple[str, ...]):

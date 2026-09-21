@@ -1,4 +1,5 @@
-from edge.engine.lineup import FLIP, LEAN, LOCK, advise, confidence_for, effective, lineup_total, optimize
+from edge import calibration
+from edge.engine.lineup import FLIP, LEAN, LOCK, advise, effective, lineup_total, optimize, settle
 from edge.models import Player
 
 
@@ -30,10 +31,12 @@ def test_out_players_are_zeroed_and_benched():
     assert [p.id for p in best] == ["2", "3", "5"]
 
 
-def test_confidence_thresholds():
-    assert confidence_for(4.0) == LOCK
-    assert confidence_for(2.0) == LEAN
-    assert confidence_for(1.0) == FLIP
+def test_confidence_is_the_calibrated_probability_not_a_points_margin():
+    """Four points between two tight ends is near-certain; four between two quarterbacks is
+    barely better than a guess (docs/CALIBRATION.md). The tag follows the probability."""
+    assert calibration.confidence(10.0, 4.0)[0] == LOCK      # +6 on small numbers
+    assert calibration.confidence(22.0, 18.0)[0] == LEAN     # +4 on big numbers is only a lean
+    assert calibration.confidence(12.0, 11.0)[0] == FLIP
 
 
 def test_advise_on_real_league_produces_calls_for_every_slot(league):
@@ -160,15 +163,90 @@ def test_hit_rates_are_the_measured_ones_not_the_advertised_ones():
     through report.lineup_dict, so this test is the guard on a public accuracy claim."""
     from edge.engine.lineup import HIT_RATE
 
-    assert HIT_RATE == {LOCK: 0.75, LEAN: 0.62, FLIP: 0.52}
-    assert HIT_RATE[LOCK] < 0.80, "Lock has never measured 80% -- do not advertise it"
+    assert HIT_RATE == {LOCK: 0.81, LEAN: 0.66, FLIP: 0.53}
     assert HIT_RATE[LOCK] > HIT_RATE[LEAN] > HIT_RATE[FLIP] > 0.5
 
 
 def test_a_coin_flip_is_priced_as_a_coin_flip():
-    """The Flip rate justifies `stabilize` holding the incumbent: under NOISE_MARGIN the
-    higher projection wins barely half the time, so the swap is not a move worth making."""
-    from edge.engine.lineup import HIT_RATE, NOISE_MARGIN
+    """The Flip rate justifies `settle` holding the incumbent: under `HOLD_P` the higher
+    projection wins barely half the time, so the swap is not a move worth making."""
+    from edge.engine.lineup import HIT_RATE
 
     assert abs(HIT_RATE[FLIP] - 0.5) <= 0.05
-    assert confidence_for(NOISE_MARGIN - 0.01) == FLIP
+    assert calibration.confidence(12.0, 11.5)[0] == FLIP
+    assert not calibration.worth_swapping(12.0, 11.5)
+
+
+# ---------------------------------------------------------------- settle: the bug and the split
+
+def T(players, starters):
+    from edge.models import Team
+    return Team(id="1", name="T", owner_id=None, owner_name=None, players=players, starters=starters)
+
+
+def test_the_gain_advertised_is_the_gain_delivered():
+    """The corpus finding (TASKS.md): the old per-slot hold protected Warren at RB2, which
+    pushed Swift out of FLEX and Corum in, and the page showed "+1.89" for a lineup that
+    projected LOWER than the one the manager set. Priced by swaps from his own lineup, the
+    total moves by exactly the sum of the gains shown, and never down."""
+    rb1, warren, swift, irving, corum = P(1, "RB", 18.0), P(2, "RB", 11.0), P(3, "RB", 10.6), P(4, "RB", 14.0), P(5, "RB", 10.2)
+    wr1, wr2, te, qb = P(6, "WR", 14.0), P(7, "WR", 12.0), P(8, "TE", 8.0), P(9, "QB", 20.0)
+    slots = ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX"]
+    team = T([qb, rb1, warren, swift, irving, corum, wr1, wr2, te], ["9", "1", "2", "6", "7", "8", "3"])
+    s = settle(team, slots)
+    current = sum(effective(team.player(i)) for i in team.starters)
+    total = sum(effective(p) for p in s.lineup if p)
+    assert total >= current
+    assert round(total - current, 2) == round(sum(c.gain for c in s.changes), 2)
+    # Irving over Swift is 14.0 v 10.6: a lean, so it is a decision the engine makes, not a
+    # required change; Warren (11.0) stays in, because one man can only replace one.
+    assert [c.in_.id for c in s.changes] == ["4"]
+    assert s.changes[0].out.id == "3" and s.changes[0].gain == 3.4
+    assert s.required == [] and s.decisions[0].change is True and s.decisions[0].confidence == LEAN
+    assert "2" in {p.id for p in s.lineup if p}
+
+
+def test_a_sub_noise_upgrade_holds_and_is_listed_as_a_decision():
+    allen, stafford = P(1, "QB", 21.5), P(2, "QB", 22.05)
+    s = settle(T([allen, stafford], ["1"]), ["QB"])
+    assert [p.id for p in s.lineup] == ["1"]
+    assert s.changes == []
+    assert len(s.decisions) == 1 and s.decisions[0].start.id == "1" and s.decisions[0].sit.id == "2"
+    assert s.decisions[0].confidence == FLIP and not s.decisions[0].change
+
+
+def test_a_lock_upgrade_is_a_required_change():
+    allen, jackson = P(1, "QB", 14.0), P(2, "QB", 24.0)
+    s = settle(T([allen, jackson], ["1"]), ["QB"])
+    assert [p.id for p in s.lineup] == ["2"]
+    assert len(s.required) == 1 and s.required[0].confidence == LOCK and s.required[0].gain == 10.0
+    assert s.decisions == []
+
+
+def test_an_out_starter_is_a_forced_fix_however_small_the_gain():
+    hurt, backup = P(1, "QB", 30, inj="Out"), P(2, "QB", 0.4)
+    s = settle(T([hurt, backup], ["1"]), ["QB"])
+    assert [p.id for p in s.lineup] == ["2"]
+    assert len(s.required) == 1 and s.required[0].forced and s.required[0].out.id == "1"
+    assert "Out" in s.required[0].reason
+
+
+def test_an_empty_slot_is_a_forced_fix_and_names_no_one():
+    s = settle(T([P(1, "QB", 20), P(2, "RB", 9)], ["1", "0"]), ["QB", "RB"])
+    assert [p.id for p in s.lineup] == ["1", "2"]
+    assert s.required[0].forced and s.required[0].out is None and s.required[0].gain == 9.0
+
+
+def test_a_settled_lineup_is_never_worse_than_the_one_the_manager_set(league):
+    for t in league.teams:
+        s = settle(t, league.starting_slots)
+        current = sum(effective(t.player(i)) for i in t.starters if t.player(i))
+        total = sum(effective(p) for p in s.lineup if p)
+        assert total >= current - 1e-9, t.name
+        assert round(total - current, 2) == round(sum(c.gain for c in s.changes), 2), t.name
+        for c in s.changes:
+            assert c.in_.id in {p.id for p in s.lineup if p}
+            assert c.out is None or c.out.id not in {p.id for p in s.lineup if p}
+        for d in s.decisions:
+            assert d.confidence in (LEAN, FLIP)
+            assert d.start.id in {p.id for p in s.lineup if p} and d.sit.id not in {p.id for p in s.lineup if p}

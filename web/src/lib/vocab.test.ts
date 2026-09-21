@@ -11,6 +11,7 @@ import {
   GROUPS,
   LANDING,
   LAST_WEEK,
+  LINEUP,
   LINES,
   RIDE,
   LOADING,
@@ -67,11 +68,32 @@ const ALL_COPY: string[] = [
   ...Object.values(LAST_WEEK.said),
   ...Object.values(TRADE),
   ...Object.values(EMAIL),
+  // The lineup tab: every string, and every templated line rendered once.
+  LINEUP.coach.from, LINEUP.coach.aria, LINEUP.coach.notes, LINEUP.projected(2), LINEUP.vsCurrent,
+  LINEUP.required(1), LINEUP.required(2), LINEUP.decisions(1), LINEUP.decisions(3), LINEUP.clear,
+  LINEUP.stamp.fix(2), LINEUP.stamp.decide(3), LINEUP.stamp.clear, LINEUP.stamp.aria, LINEUP.stamp.then,
+  ...Object.values(LINEUP.section), LINEUP.requiredQuiet, LINEUP.decisionsQuiet,
+  ...Object.values(LINEUP.change), LINEUP.decision.start, LINEUP.decision.sit, LINEUP.decision.keep,
+  LINEUP.decision.change, LINEUP.decision.tipped, LINEUP.decision.odds, LINEUP.decision.reads,
+  LINEUP.decision.none, LINEUP.decision.game, LINEUP.decision.tilt(0), LINEUP.decision.tilt(2), LINEUP.decision.tilt(-1),
+  ...Object.values(LINEUP.factor),
 ];
 
-test("the lineup tab says Lineup and the page still says Depth chart", () => {
+test("the lineup is called Lineup everywhere, and depth chart is left to the NFL", () => {
   assert.equal(SECTIONS.team.label, "Lineup");
-  assert.equal(SECTIONS.team.title, "Depth chart");
+  assert.equal(SECTIONS.team.title, "Lineup");
+  assert.equal(DESK.notebooks.team.title, "Lineup");
+  assert.equal(SECTIONS.team.href, "/team", "the URL stays put so links do not break");
+  for (const s of [...SECTION_VALUES.flatMap((x) => [x.label, x.title, x.gate]), ...Object.values(DESK.notebooks).map((n) => (typeof n === "object" ? n.title : ""))]) {
+    assert.doesNotMatch(s, /depth chart/i, `${s}: "depth chart" now means an NFL team's depth chart only`);
+  }
+});
+
+test("the two piles are never blurred into one word", () => {
+  assert.notEqual(LINEUP.required(2).split(" ").slice(1).join(" "), LINEUP.decisions(2).split(" ").slice(1).join(" "));
+  assert.match(LINEUP.required(1), /^1 required change$/);
+  assert.match(LINEUP.decisions(1), /^1 decision to make$/);
+  assert.equal(Object.keys(LINEUP.factor).join(","), "variance,stack,opponent,health,rest,form,role", "mirrors engine/decisions.KEYS");
 });
 
 test("every tab label fits the bar", () => {

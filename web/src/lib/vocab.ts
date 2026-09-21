@@ -45,15 +45,15 @@ export const SECTIONS = {
     title: "Action plan",
     gate: "the action plan",
   },
-  // The tab says "Lineup" and the page says "Depth chart". "Depth" on its own is the
-  // half of the phrase that carries none of the meaning — it reads as bench depth, which
-  // is a thing this tab also shows and is not what the tab is for. "Lineup" is six
-  // characters, inside the nine the bar allows, and it is the word people arrive with.
+  // "Lineup", everywhere: the tab, the page, the notebook on the desk. It used to be five
+  // different things ("Depth chart", "Start / sit", "/team"...), and Andrew picked the word
+  // people arrive with. "Depth chart" now means only an NFL team's depth chart, which is
+  // how the action plan already uses it. The URL stays `/team` so links do not break.
   team: {
     href: "/team",
     label: "Lineup",
-    title: "Depth chart",
-    gate: "your depth chart",
+    title: "Lineup",
+    gate: "your lineup",
   },
   waivers: {
     href: "/waivers",
@@ -258,7 +258,7 @@ export const DESK = {
   notebooks: {
     /** The thin header over the four: whose desk these came from. */
     eyebrow: "From the front office",
-    team: { title: "Start / sit", from: "From the head coach" },
+    team: { title: "Lineup", from: "From the head coach" },
     waivers: { title: "The wire", from: "From the head of scouting" },
     trade: { title: "Trade board", from: "From the GM" },
     report: { title: "The film", from: "Last week, graded" },
@@ -601,6 +601,87 @@ export const LANDING = {
 } as const;
 
 /**
+ * The lineup tab. One question -- is my starting lineup right for this week? -- answered
+ * as two piles that are never blurred: what has to change (a man who will not play, an
+ * empty slot, a swap the projection has settled) and what has to be decided (two men close
+ * enough that the projection alone does not pick). The head coach owns it, and his voice
+ * is here: the notes in the corner, the stamp that lands when the tab opens, the reads
+ * under each close call. Counts and probabilities come from the engine; only the words
+ * live here.
+ */
+export const LINEUP = {
+  /** Top-left of the hero: the head coach's notes, the personality of the page. */
+  coach: {
+    from: "From the head coach",
+    aria: "Your head coach has notes for you",
+    notes: "Coach\u2019s notes",
+  },
+  projected: (week: number) => `Projected \u00b7 Week ${week}`,
+  vsCurrent: "vs current",
+  /** The split, stated plainly under the number. */
+  required: (n: number) => `${n} required change${n === 1 ? "" : "s"}`,
+  decisions: (n: number) => `${n} decision${n === 1 ? "" : "s"} to make`,
+  /** Both piles empty: the coach has nothing for you. */
+  clear: "Lineup\u2019s set",
+  /** The stamp that lands when the tab opens: the two numbers, then the faces. */
+  stamp: {
+    fix: (n: number) => `Fix ${n}`,
+    decide: (n: number) => `Decide ${n}`,
+    clear: "All set",
+    aria: "The head coach\u2019s summary",
+    then: "Then have a look at",
+  },
+  section: {
+    required: "Required changes",
+    decisions: "Decisions to make",
+    field: "On the field",
+    bench: "On the bench",
+  },
+  requiredQuiet: "Nothing has to change.",
+  decisionsQuiet: "Nothing close enough to think about.",
+  /** One required change. */
+  change: {
+    empty: "Empty slot",
+    /** A man who will not play, or a slot with nobody in it: not a call, a fix. */
+    forced: "Must fix",
+    /** The projection has settled it. */
+    settled: "Settled",
+    /** A slot the roster cannot fill. */
+    hole: "Nobody to start",
+    wire: "Hit the wire",
+  },
+  /** One close call. */
+  decision: {
+    start: "Start",
+    sit: "Sit",
+    /** The call keeps the lineup you set. */
+    keep: "As you set it",
+    /** The call changes it. */
+    change: "Change",
+    /** The reads, not the projection, made the call. */
+    tipped: "The reads tip it",
+    /** Under the number: the calibrated probability behind the tag. The figure itself is
+     *  the engine's, rendered beside this, never written here. */
+    odds: "to outscore him",
+    reads: "What tips it",
+    none: "Nothing else separates them this week.",
+    game: "Your game",
+    /** The tilt, read out: how many reads back the call, net. */
+    tilt: (n: number) => (n === 0 ? "Reads split" : n > 0 ? `${n} read${n === 1 ? "" : "s"} for` : `${-n} read${n === -1 ? "" : "s"} against`),
+  },
+  /** The seven reads, as labels. Keys mirror `engine/decisions.KEYS`. */
+  factor: {
+    variance: "Swing",
+    stack: "Stack",
+    opponent: "Matchup",
+    health: "Health",
+    rest: "Rest",
+    form: "Form",
+    role: "Role",
+  } as const satisfies Record<string, string>,
+} as const;
+
+/**
  * What a confidence stamp is worth, in words. ONE definition for three surfaces.
  *
  * The depth chart's "why" list, the call-sheet card's "why" list and the stamp's tooltip
@@ -615,9 +696,9 @@ export const LANDING = {
  * (`docs/CALIBRATION.md`, 2025 weeks 1-17), not a property of any single week.
  */
 export const CONFIDENCE_HIT_LINE: Record<string, string> = {
-  Lock: "Margins this size were right about 3 times in 4 across last season.",
-  Lean: "Margins this size were right about 3 times in 5 across last season.",
-  "Coin flip": "Margins this size were a coin flip across last season.",
+  Lock: "Calls this sure were right about 4 times in 5 across last season.",
+  Lean: "Calls this sure were right about 2 times in 3 across last season.",
+  "Coin flip": "Calls this close were a coin flip across last season.",
 };
 
 /** The standing line under the call sheet's hero. Everything printed on it is data. */

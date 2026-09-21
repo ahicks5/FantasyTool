@@ -547,3 +547,26 @@ def test_the_feed_does_not_eat_its_own_last_week(client, league):
         assert lw["total"] == len(lw["calls"])
         assert lw["hits"] <= lw["total"]
         assert "last_week" not in json.dumps(lw), "last_week nested inside itself"
+
+
+def test_the_lineup_splits_required_changes_from_decisions_and_prices_every_swap(client, league):
+    """The lineup page's two piles (`docs/API.md`): `required` is a forced fix or a Lock,
+    `decisions` is the close calls with the engine's call and the reads that tip it, and
+    `summary` counts them. Every swap's gain is the projected total's real movement."""
+    for t in league.teams:
+        body = client.get(f"{LG}/team/{t.id}/lineup").json()
+        assert set(body["summary"]) == {"required", "decisions"}
+        assert body["summary"]["required"] == len(body["required"]) + len(body["holes"])
+        assert body["summary"]["decisions"] == len(body["decisions"])
+        for ch in body["required"]:
+            assert ch["forced"] or ch["confidence"] == "Lock"
+            assert ch["in"] and ch["gain"] > 0
+        for d in body["decisions"]:
+            assert d["confidence"] in {"Lean", "Coin flip"} and 0 < d["p"] < 0.75
+            assert d["start"]["id"] != d["sit"]["id"] and d["reason"]
+            assert isinstance(d["factors"], list) and isinstance(d["tilt"], int)
+            for f in d["factors"]:
+                assert f["favors"] in {"start", "sit", None} and f["line"]
+        gains = round(sum(ch["gain"] for ch in body["changes"]), 2)
+        assert round(body["projected_total"] - body["current_total"], 2) == gains, t.name
+    json.dumps(body)

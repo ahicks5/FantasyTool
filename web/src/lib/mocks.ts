@@ -19,6 +19,7 @@ import type {
   LeagueSummary,
   Lineup,
   LineupChange,
+  LineupDecision,
   LineupSlot,
   Me,
   Player,
@@ -398,6 +399,7 @@ export function lineupFor(teamId: string): Lineup {
   const starters = r.starters.filter((p) => p.id !== "0");
   const bench = [...r.bench];
   const changes: LineupChange[] = [];
+  const decisions: LineupDecision[] = [];
 
   let slots: LineupSlot[] = STARTING_SLOTS.map((slot, i) => {
     const player = starters[i] ?? starters[starters.length - 1];
@@ -424,8 +426,27 @@ export function lineupFor(teamId: string): Lineup {
         out: { id: diggs.id, name: diggs.name },
         in: { id: boosted.id, name: boosted.name },
         gain,
-        confidence: confidenceFor(gain),
+        confidence: "Coin flip",
+        p: 0.55,
+        forced: false,
         reason: "Lloyd draws the NYJ run defense with GB favored by 6; Diggs has been a decoy in WAS's first two games.",
+      });
+      // The same swap as the page's decision: a coin flip the reads tipped.
+      decisions.push({
+        slot: "FLEX",
+        start: boosted,
+        sit: diggs,
+        p: 0.55,
+        confidence: "Coin flip",
+        change: true,
+        tipped: true,
+        reason: `${boosted.name} projects ${boosted.projected.toFixed(1)} to ${diggs.name}’s ${diggs.projected.toFixed(1)}, a coin flip. The reads tip it his way, 2 to none.`,
+        game: { state: "behind", margin: -9.4, live: false, line: "Projected 9.4 behind: chase the ceiling" },
+        factors: [
+          { key: "opponent", favors: "start", line: `${boosted.name} faces NYJ, 27th of 32 against the RB; ${diggs.name} faces WAS, 6th of 32` },
+          { key: "form", favors: "start", line: `${diggs.name} scored 3.1 last week against a ${diggs.projected.toFixed(1)} line` },
+        ],
+        tilt: 2,
       });
       slots = slots.map((s, i) =>
         i === diggsIdx
@@ -440,6 +461,32 @@ export function lineupFor(teamId: string): Lineup {
   const current_total = round1(projected_total - changes.reduce((a, c) => a + c.gain, 0));
   const lastFlex = Math.min(...slots.filter((s) => s.slot === "FLEX").map((s) => s.player?.projected ?? 0));
 
+  // The close calls the lineup did not change: a starter and the bench man nearest him at
+  // his position, when they are inside about two points -- the mock's stand-in for the
+  // engine's calibrated coin-flip band.
+  for (const s of slots) {
+    if (!s.player || decisions.some((d) => d.start.id === s.player!.id)) continue;
+    const near = bench
+      .filter((b) => eligible(s.slot, b.position) && Math.abs(b.projected - s.player!.projected) < 2 && !b.injury_status)
+      .sort((a, b) => b.projected - a.projected)[0];
+    if (!near || decisions.some((d) => d.sit.id === near.id)) continue;
+    const p = round1(0.5 + (s.player.projected - near.projected) / 20);
+    decisions.push({
+      slot: s.slot,
+      start: s.player,
+      sit: near,
+      p,
+      confidence: "Coin flip",
+      change: false,
+      tipped: false,
+      reason: `${s.player.name} projects ${s.player.projected.toFixed(1)} to ${near.name}’s ${near.projected.toFixed(1)}: a coin flip at ${Math.round(p * 100)}%. The projection does not decide this one; the reads below do.`,
+      game: { state: "behind", margin: -9.4, live: false, line: "Projected 9.4 behind: chase the ceiling" },
+      factors: [{ key: "health", favors: null, line: `${s.player.name} is clear; ${near.name} is clear` }],
+      tilt: 0,
+    });
+  }
+  const required: LineupChange[] = [];
+
   return {
     week: WEEK,
     projected_total,
@@ -453,6 +500,10 @@ export function lineupFor(teamId: string): Lineup {
           : `Sit: ${p.projected.toFixed(1)} proj, ${Math.max(0, lastFlex - p.projected).toFixed(1)} behind your last FLEX.`,
     })),
     changes,
+    summary: { required: required.length, decisions: decisions.length },
+    required,
+    holes: [],
+    decisions,
     grades: gradesFor(r),
   };
 }

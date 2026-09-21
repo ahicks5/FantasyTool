@@ -49,7 +49,7 @@ LOCK_P = 0.75
 LEAN_P = 0.60
 
 # Below this the advice is worth less than the churn it causes, so the lineup holds the
-# incumbent instead of recommending the swap (see edge.engine.lineup.stabilize). It is the
+# incumbent instead of recommending the swap (see edge.engine.lineup.settle). It is the
 # Coin-flip boundary: at 0.60 a swap is right three times in five, which is the point where
 # acting beats sitting still.
 HOLD_P = LEAN_P

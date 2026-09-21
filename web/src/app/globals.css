@@ -1807,3 +1807,108 @@ button, a.btn, select, input { min-height: 44px; }
 @media (prefers-reduced-motion: reduce) {
   .sheet-panel { transition: none; }
 }
+
+/* ------------------------------------------------------------- the lineup ---
+   The head coach's tab. His notes sit top-left of the hero; the stamp lands over the
+   page when the tab opens; each close call is a card with the two men and the reads
+   under them. Colour never carries a read alone -- every dot has its word beside it. */
+.coach-notes {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgb(247 246 243 / 0.78);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.coach-notes-pad {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--color-hero);
+  background: linear-gradient(160deg, #fff8dc, #f2e6b8);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.25), inset 0 -2px 0 rgb(0 0 0 / 0.08);
+  transform: rotate(-6deg);
+}
+.lineup-split { display: grid; gap: 4px; }
+.lineup-split-line { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; letter-spacing: -0.01em; }
+.lineup-split-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+/* The stamp over the page: lands, holds, lifts. `boom-out` runs after the slam and the
+   component unmounts it at the end, so nothing is left blocking a tap. */
+.boom {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 0.42);
+  animation: boom-out 0.4s ease-in 1.9s both;
+  pointer-events: none;
+}
+.boom-card {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  width: min(100%, 340px);
+  padding: 22px 18px 18px;
+  border-radius: 18px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-card), 0 30px 60px rgb(0 0 0 / 0.35);
+  animation: boom-in 0.42s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.boom-faces { display: flex; gap: 6px; }
+.boom-faces > * { margin-left: -6px; }
+.boom-faces > :first-child { margin-left: 0; }
+.boom-then { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); }
+@keyframes boom-in { from { opacity: 0; transform: scale(0.8) translateY(20px); } to { opacity: 1; transform: none; } }
+@keyframes boom-out { to { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) {
+  .boom { display: none; }
+}
+
+/* One close call. */
+.decision { padding: 14px 16px 12px; }
+.decision-vs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+.decision-man { display: grid; justify-items: center; gap: 6px; min-width: 0; text-align: center; }
+.decision-man-name { font-size: 13px; font-weight: 800; line-height: 1.15; max-width: 100%; }
+.decision-man-meta { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-muted); }
+.decision-sit .decision-man-name { color: var(--color-muted); }
+.decision-verb {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.decision-start .decision-verb { color: var(--color-start); }
+.decision-sit .decision-verb { color: var(--color-sit); }
+.decision-p {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1;
+}
+.decision-p small { font-family: var(--font-body); font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); }
+.decision-game { font-size: 12px; font-weight: 700; color: var(--color-ink-2); }
+.factor { display: grid; grid-template-columns: 8px auto minmax(0, 1fr); align-items: start; gap: 8px; padding: 6px 0; font-size: 12px; line-height: 1.35; }
+.factor + .factor { border-top: 1px solid var(--color-line); }
+.factor-dot { width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; background: var(--color-line-2); }
+.factor-start .factor-dot { background: var(--color-start); }
+.factor-sit .factor-dot { background: var(--color-sit); }
+.factor-key { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); padding-top: 2px; white-space: nowrap; min-width: 44px; }
+.factor-start .factor-key { color: var(--color-start); }
+.factor-sit .factor-key { color: var(--color-sit); }
+.factor-line { color: var(--color-ink-2); }

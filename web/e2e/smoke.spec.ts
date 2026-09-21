@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
-import { DESK, PLAN, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
+import { DESK, LINEUP, PLAN, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { SCOUT } from "../src/lib/vocab";
@@ -195,6 +195,23 @@ const PAGES: PageCase[] = [
     name: "lineup",
     check: async (page) => {
       await expect(page.getByText(/Projected/i).first()).toBeVisible();
+      // The split, stated plainly and never blurred: a count of required changes and a
+      // count of decisions, as two separate lines under the number.
+      await expect(page.getByText(/^\d+ required changes?$/).first()).toBeVisible();
+      await expect(page.getByText(/^\d+ decisions? to make$/).first()).toBeVisible();
+      // The head coach's notes sit top-left of the hero.
+      await expect(page.getByLabel(LINEUP.coach.aria)).toBeVisible();
+      // The two piles, then the board. GoldenPP's week has close calls but nothing forced.
+      await expect(page.getByRole("heading", { name: LINEUP.section.decisions })).toBeVisible();
+      const decisions = page.locator(".decision");
+      expect(await decisions.count()).toBeGreaterThanOrEqual(1);
+      // Every decision names its two men and carries at least one read with its label.
+      await expect(decisions.first().locator(".decision-start")).toBeVisible();
+      await expect(decisions.first().locator(".decision-sit")).toBeVisible();
+      await expect(decisions.first().locator(".factor").first()).toBeVisible();
+      // The old rows are gone: no game-day check, no scorecard toggle on this tab.
+      await expect(page.getByText(/Game day check|Slot problems/)).toHaveCount(0);
+      await expect(page.getByRole("tab", { name: /scorecard/i })).toHaveCount(0);
       // A full lineup: one row per starting slot (9 in this league), each naming its slot.
       const slots = page.locator("main li", { hasText: /^(QB|RB|WR|TE|FLEX|DEF|K)/ });
       await expect(slots.first()).toBeVisible();

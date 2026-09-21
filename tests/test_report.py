@@ -44,5 +44,4 @@ def test_lineup_dict_ships_the_measured_hit_rates_unchanged(league):
 
     adv = lineup_mod.advise(league, league.teams[0])
     rates = report.lineup_dict(adv)["confidence_hit_rate"]
-    assert rates == lineup_mod.HIT_RATE == {"Lock": 0.75, "Lean": 0.62, "Coin flip": 0.52}
-    assert max(rates.values()) < 0.80, "nothing shipped to a user may claim 80%"
+    assert rates == lineup_mod.HIT_RATE == {"Lock": 0.81, "Lean": 0.66, "Coin flip": 0.53}

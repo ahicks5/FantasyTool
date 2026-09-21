@@ -21,33 +21,81 @@ def norm_team(abbr: str | None) -> str | None:
     return ALIASES.get(abbr, abbr)
 
 
+def _events(season: int, week: int) -> list[dict]:
+    r = requests.get(SCOREBOARD, params={"seasontype": 2, "week": week, "dates": season}, timeout=30)
+    r.raise_for_status()
+    return r.json()["events"]
+
+
+def _game(event: dict) -> dict:
+    """One game as the file stores it: both teams as ESPN spells them, and the kickoff as
+    ESPN's own ISO string (UTC). Normalised on the way out, never on the way in, so the
+    stored file reads exactly like the endpoint it came from."""
+    comps = event["competitions"][0]["competitors"]
+    home = next(c for c in comps if c.get("homeAway") == "home")
+    away = next(c for c in comps if c.get("homeAway") == "away")
+    return {"home": home["team"]["abbreviation"], "away": away["team"]["abbreviation"],
+            "kickoff": event["date"]}
+
+
+def fetch_all(season: int) -> dict:
+    """{"weeks": {week: [teams playing]}, "games": {week: [{home, away, kickoff}]}} for the
+    regular season, from one pass over the scoreboard."""
+    weeks: dict[str, list[str]] = {}
+    games: dict[str, list[dict]] = {}
+    for w in range(1, REGULAR_SEASON_WEEKS + 1):
+        events = _events(season, w)
+        weeks[str(w)] = sorted({norm_team(c["team"]["abbreviation"]) for e in events
+                                for c in e["competitions"][0]["competitors"]})
+        games[str(w)] = sorted((_game(e) for e in events), key=lambda g: (g["kickoff"], g["home"]))
+    return {"weeks": weeks, "games": games}
+
+
 def fetch_schedule(season: int) -> dict[str, list[str]]:
     """{week: [teams playing]} for the regular season."""
-    weeks: dict[str, list[str]] = {}
-    for w in range(1, REGULAR_SEASON_WEEKS + 1):
-        r = requests.get(SCOREBOARD, params={"seasontype": 2, "week": w, "dates": season}, timeout=30)
-        r.raise_for_status()
-        d = r.json()
-        weeks[str(w)] = sorted({norm_team(c["team"]["abbreviation"]) for e in d["events"]
-                                for c in e["competitions"][0]["competitors"]})
-    return weeks
+    return fetch_all(season)["weeks"]
 
 
-def load_schedule(season: int) -> dict[str, list[str]]:
-    """Cached 7 days. If ESPN is unreachable, fall back to the schedule bundled with the package."""
+def _load(season: int) -> dict:
+    """The season's file, cached 7 days. A cache written before games were stored is
+    refetched once; if ESPN is unreachable, the copy bundled with the package."""
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     f = CACHE_DIR / f"schedule_{season}.json"
     if f.exists() and time.time() - f.stat().st_mtime < 7 * 86400:
-        return json.loads(f.read_text())["weeks"]
+        d = json.loads(f.read_text())
+        if "games" in d:
+            return d
     try:
-        weeks = fetch_schedule(season)
-        f.write_text(json.dumps({"season": season, "weeks": weeks}))
-        return weeks
+        d = fetch_all(season)
+        f.write_text(json.dumps({"season": season, **d}))
+        return d
     except Exception:  # noqa: BLE001
         bundled = Path(__file__).with_name(f"schedule_{season}.json")
         if bundled.exists():
-            return json.loads(bundled.read_text())["weeks"]
+            return json.loads(bundled.read_text())
         raise
+
+
+def load_schedule(season: int) -> dict[str, list[str]]:
+    """{week: [teams playing]}. Cached 7 days; bundled copy if ESPN is unreachable."""
+    return _load(season)["weeks"]
+
+
+def load_games(season: int) -> dict[str, list[dict]]:
+    """{week: [{home, away, kickoff}]}, or {} for a season the file predates. Same cache
+    as `load_schedule`, so the two can never describe different seasons."""
+    return _load(season).get("games", {})
+
+
+def games_for(games: dict[str, list[dict]], week: int) -> dict[str, dict]:
+    """One week, indexed by team: {team: {"opp": ..., "kickoff": ISO string, "home": bool}}.
+    Team codes normalised (WSH -> WAS) to the ones the players carry."""
+    out: dict[str, dict] = {}
+    for g in games.get(str(week), []):
+        home, away = norm_team(g["home"]), norm_team(g["away"])
+        out[home] = {"opp": away, "kickoff": g["kickoff"], "home": True}
+        out[away] = {"opp": home, "kickoff": g["kickoff"], "home": False}
+    return out
 
 
 def bye_weeks(weeks: dict[str, list[str]]) -> dict[str, int]:

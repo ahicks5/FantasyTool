@@ -20,7 +20,7 @@ import pytest
 from edge.connectors.sleeper import build_league, projection_positions
 from edge.data.schedule import bye_weeks
 from edge.engine import actions, waivers
-from edge.engine.lineup import NOISE_MARGIN, advise, effective, lineup_total, optimize
+from edge.engine.lineup import advise, effective, lineup_total, optimize
 from edge.engine.values import ros_values
 from edge.models import BENCH_SLOTS, League, Team, player_fits, slot_accepts, startable_positions
 
@@ -195,9 +195,9 @@ def test_advise_returns_a_legal_call_for_every_starting_slot(fmt):
         for i in held:
             assert adv.slots[i].player.id in set(t.starters), \
                 f"{slug} team {t.id}: held {adv.slots[i].player.name}, who was not in the lineup"
-        # And each one costs less than the noise margin, by construction.
-        assert adv.projected_total >= optimum - NOISE_MARGIN * len(held) - 0.01, \
-            f"{slug} team {t.id}: holding cost more than the noise band allows"
+        # And the lineup we recommend is never worse than the one the manager set.
+        assert adv.projected_total >= adv.current_total - 0.01, \
+            f"{slug} team {t.id}: the settled lineup projects below the manager's own"
 
 
 def test_a_slot_is_only_left_empty_when_the_roster_truly_cannot_fill_it(fmt):

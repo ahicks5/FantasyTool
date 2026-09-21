@@ -312,11 +312,12 @@ Stamping every row is confetti. On the dark hero a stamp is inked `text-white`.
 (`IconGreaseCheck` + `.grease`, a `pathLength="1"` dash), not printed. The sheet is
 laminated; the tick is yours.
 
-**Confidence language** — **shipping**, validated. Lock ≥ 4 pts (75.1%), Lean 1.5–4
-(61.7%), Coin flip < 1.5 (52.5%). Below 1.5 the incumbent holds. Those are the measured
-rates over 2025 weeks 1–17 (`docs/CALIBRATION.md`), not the ~80% Lock was once
-advertised at — copy written from this file must never reinstate that number.
-Thresholds move only with data (`docs/BACKTEST.md`).
+**Confidence language** — **shipping**, calibrated. A stamp is a band of the measured
+probability that the higher-projected man outscores the lower (`edge/calibration.py`): Lock
+≥ 0.75 (delivered 81.0% over 2025), Lean ≥ 0.60 (66.9%), Coin flip below (53.9%). Below
+0.60 the incumbent holds unless the week's reads tip it. The measured rates live in
+`docs/CALIBRATION.md`; the copy says "about 4 times in 5", never a percentage, and never a
+figure attributed to a single week. Thresholds move only with data (`docs/BACKTEST.md`).
 
 ---
 

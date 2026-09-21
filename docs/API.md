@@ -57,12 +57,24 @@ no email (`edge/api/share.py`).
 ```
 `POST /api/connect {"platform":"sleeper","league_id":"...","team_id":"1"}` → saves to the user's leagues (counts against `leagues_allowed`).
 
-## Depth chart (feature: my_team)
+## Lineup (feature: my_team)
 
-The start/sit call sheet for one team. Wire name stays `my_team`.
+Is my starting lineup right for this week? One payload, two piles on top of the board.
+Wire name stays `my_team`; the route stays `/lineup`.
 `GET /api/league/{platform}/{league_id}/team/{team_id}/lineup` →
 ```json
 {"week":2,"projected_total":131.4,"current_total":124.9,
+ "summary":{"required":1,"decisions":3},
+ "required":[{"slot":"RB","out":{"id":"...","name":"Josh Jacobs","injury_status":"Out"},"in":{"id":"...","name":"Ray Davis"},
+              "gain":5.0,"confidence":"Lock","p":null,"forced":true,"reason":"Josh Jacobs Out — do not start. Ray Davis projects 5.0."}],
+ "holes":[{"slot":"K","player":null,"reason":"Nobody on the roster can fill K. Hit the wire."}],
+ "decisions":[{"slot":"FLEX","start":{"id":"...","name":"Jaylen Warren","projected":11.8},"sit":{"id":"...","name":"Aaron Jones","projected":11.6},
+               "p":0.51,"confidence":"Coin flip","change":false,"tipped":false,
+               "reason":"Jaylen Warren projects 11.8 to Aaron Jones’s 11.6: a coin flip at 51%. The projection does not decide this one; the reads below do.",
+               "game":{"state":"ahead","margin":12.7,"live":false,"line":"Projected 12.7 ahead: protect the floor"},
+               "factors":[{"key":"opponent","favors":"sit","line":"Jaylen Warren faces NE, 9th of 32 against the RB; Aaron Jones faces CHI, 25th of 32 (1 game in)"},
+                          {"key":"health","favors":"start","line":"Aaron Jones is Questionable (knee); Jaylen Warren is clear"}],
+               "tilt":0}],
  "slots":[{"slot":"RB","player":{"id":"4866","name":"Jahmyr Gibbs","position":"RB","nfl_team":"DET","injury_status":null,"projected":26.1,"opponent":"BUF"},
            "confidence":"Lock","reason":"Top RB projection this week (26.1). Nobody on your bench is close.","change":false}],
  "bench":[{"player":{...},"reason":"Sit: 11.2 proj, 4.1 behind your last FLEX."}],
@@ -73,7 +85,29 @@ The start/sit call sheet for one team. Wire name stays `my_team`.
                          "league_size":12,"depth":"thin","starter_names":["Saquon Barkley","David Montgomery"],
                          "next_man":"Aaron Jones","note":"8th of 12 at RB. Aaron Jones is the drop-off..."}]}}
 ```
-Confidence stamp: `Lock` (margin ≥ 4), `Lean` (≥ 1.5), `Coin flip` (< 1.5).
+**The two piles.** `required` is what nobody has to think about: a forced fix (`forced`
+true — the slot was empty or the man in it will not play) or a swap the projection has
+settled (`Lock`). `holes` are slots the roster cannot fill; `summary.required` counts them
+too. `decisions` are the close calls: P(`start` outscores `sit`) is under the Lock band, so
+the projection alone does not pick. `start` is the engine's call, `change` says whether it
+differs from the lineup the manager set, `tipped` says the reads made the call rather than
+the projection, and `tilt` is the number of `factors` pointing at `start` net of those
+pointing at `sit`. `factors[].favors` is `"start"`, `"sit"` or null (context); `key` is one
+of `variance stack opponent health rest form role` (`engine/decisions.KEYS`). `game` is your
+own matchup as the reads see it — ahead, behind or even, projected before kickoff and on the
+board after.
+
+**Every gain is delivered.** `changes` is every swap the lineup makes from the one you set
+(the required ones plus the decisions with `change` true), each priced against the lineup as
+it stood when it was made, so `sum(changes[].gain) == projected_total - current_total`. A
+change the reads tipped against the projection carries a negative `gain`, stated rather than
+hidden.
+
+Confidence stamp: a band of P(the higher-projected man outscores the lower), from
+`edge/calibration.py` — `Lock` ≥ 0.75, `Lean` ≥ 0.60, `Coin flip` below. `p` on each change
+and decision is that probability. A margin means different things to different players
+(four points is a Lock between tight ends and a Lean between quarterbacks), which is why the
+stamp is a probability and not a points gap.
 
 **The scorecard** (`grades`, free tier — `edge/engine/grades.py`) rides along here rather than
 getting its own endpoint, because the page that shows it already fetches this and grading needs

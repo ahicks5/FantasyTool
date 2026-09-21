@@ -27,13 +27,28 @@ week 1 was a small sample, and the tag survives.
 before a call is right 80% of the time.
 
 **Shipped 2026-09-20 — the app now prints these numbers.** `lineup.HIT_RATE` carries the
-measured rates (Lock 0.75, Lean 0.62, Coin flip 0.52) in place of the advertised 0.80 / 0.62 /
-0.51, `report.lineup_dict` passes them through as `confidence_hit_rate`, and the depth chart
-states them as odds for the season — "Margins this size were right about 3 times in 4 across
-last season" — instead of a percentage attributed to last week, which was never where the
-number came from. The tags, the thresholds and `stabilize` are untouched, and
-`edge/calibration.py` is still not wired into `lineup.py`: that changes which calls get which
-tag and is Andrew's call, not this change's.
+measured rates in place of the advertised 0.80 / 0.62 / 0.51, `report.lineup_dict` passes
+them through as `confidence_hit_rate`, and the lineup page states them as odds for the
+season instead of a percentage attributed to last week, which was never where the number
+came from.
+
+**Wired in 2026-09-21 (`lineup.v2`), on Andrew's call.** `edge/calibration.py` is now the
+confidence model in `edge/engine/lineup.py`: the tag is a band of `p_beats` (Lock ≥ 0.75,
+Lean ≥ 0.60), the hold is `HOLD_P` = 0.60 rather than a 1.5-point margin, and `HIT_RATE` is
+the calibrated table (Lock 0.81, Lean 0.66, Coin flip 0.53, rounded down from the 2025 grades
+above). The hold is stricter for big projections than the old margin was — three points
+between two quarterbacks is a coin flip now — and the week-1 replay's headline moved from
++2.02 to +0.70 a team; `tests/test_evaluate.py` explains why the old number is not the one to
+beat (two of its "Locks" were phantom swaps, see below). What defines "obvious" versus
+"needs thought" on the lineup page is exactly this band: under `LOCK_P` the projection has
+not settled it and the page shows the reads instead (`docs/API.md`, `engine/decisions.py`).
+
+**`stabilize` is gone; `settle` replaces it.** The corpus found the per-slot hold could
+recommend a lineup worse than the manager's own and advertise a gain it did not deliver
+(`TASKS.md`). `settle` builds the recommendation by swaps from the manager's lineup, one at
+a time, each priced against the lineup as it stands, so every gain shown is the gain the
+lineup moves by and the total never falls below what he set unless the reads tip a coin
+flip and say so.
 
 **4. A margin means different things to different players.** Projection error grows with the
 projection: a player projected for 21 points misses by 8.0 on average, one projected for 2
