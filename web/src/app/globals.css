@@ -682,8 +682,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 }
 .ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-door-l { transform: translateX(-102%); }
 .ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-door-r { transform: translateX(102%); }
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-plate,
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-display { opacity: 0; }
+.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-plate { opacity: 0; }
 .ride[data-phase="landing"] .ride-skip { opacity: 0; }
 
 /* The landing: the desk becomes the page. The whole scene fades and the call sheet,
@@ -1128,15 +1127,6 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 }
 
 /* The display on the car wall: the hero surface, over the lower half of the doors. */
-.ride-display {
-  position: absolute;
-  left: 24px;
-  top: 50%;
-  /* Beside the button panel, not under it. */
-  width: min(300px, calc(100% - 130px));
-  padding: 18px 20px 16px;
-  transition: opacity calc(var(--ride-open, 700ms) * 0.5) ease-in;
-}
 
 .ride-skip {
   position: absolute;

@@ -90,6 +90,8 @@ export function ElevatorRide() {
   const inCar = s.phase === "boarding" || s.phase === "press" || s.phase === "closing" || s.phase === "sealed" || s.phase === "rising";
   const arrived = !inCar;
   const rising = s.phase === "rising";
+  // Nothing sits in front of the doors but the doors: no card, no team, no words. The
+  // rider's name is on the desk upstairs, where it belongs.
   const pressed = s.phase !== "boarding";
   const team = c?.team_name ?? "PENTHOUSE";
 
@@ -217,20 +219,6 @@ export function ElevatorRide() {
           ))}
         </div>
 
-        {/* The car's display: whose office this is. The lamp comes on when the car
-            stops: the room is on air. The words are always beside it. */}
-        <div className="ride-display hero">
-          <div className="eyebrow">
-            {RIDE.owner}
-            {c ? ` · Week ${c.week}` : ""}
-          </div>
-          <div className="display mt-1 truncate text-[24px] leading-tight text-white">{team}</div>
-          {c && <div className="mt-0.5 truncate text-[13px] text-white/60">{c.league_name}</div>}
-          <div className={`mt-3.5 flex h-[14px] items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/70 ${arrived ? "rise" : "invisible"}`}>
-            <span className="lamp" aria-hidden />
-            On air
-          </div>
-        </div>
       </div>
 
       {/* The one control. Hidden once the landing has begun, when it can do nothing. */}

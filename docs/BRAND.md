@@ -390,8 +390,8 @@ logo. Both shapes are built:
   a fourth copy of the mark. It moves with the Python card.
 
 **Loading screen.** The first open of the day is the ride up (`web/src/components/Elevator.tsx`):
-you step into the car, the doors close over the mark, the floors go by on the plate while
-the staff's checklist ticks on the wall display, the car stops at PH, the ON AIR lamp comes
+you step into the car, press PH, the doors close over the mark, the floors go by on the plate,
+the car stops at PH, the ON AIR lamp comes
 on, and the doors open onto the office: the nameplate on the wall over the city at night,
 and the desk. The camera walks in, comes around to the owner's chair, and looks down at
 three papers with the team's name on them; the papers become the call sheet. The office
