@@ -606,11 +606,21 @@ export interface Binder {
   top_benefit: string | null;
 }
 
+/** Three numbers on the desk's nameplate. `ppg` is null before a game has been played. */
+export interface DeskStanding {
+  record: string;
+  rank: number;
+  teams: number;
+  ppg: number | null;
+}
+
 export interface Desk {
   week: number;
   team: string;
   league: string;
   news: DeskNews;
+  /** Optional as well as nullable: an older API build does not send it. */
+  standing?: DeskStanding | null;
   matchup?: Matchup | null;
   sheet: { summary: string; moves: number; all_clear: boolean };
   binders: Binder[];

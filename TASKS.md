@@ -36,6 +36,9 @@ the opening.
       expandable; the call sheet as a stack of papers; four spiral notebooks "From the head
       coach / head of scouting / GM" plus next up; league nameplate moved to the title band,
       blurbs gone, letterhead is the mark + PH.
+      Round three: three plates under the nameplate (record, place of N, points a game, the
+      standings' own numbers, `desk.standing`) and statuses print short (Q, D, Out, IR) on
+      the desk and the ticker (`shortStatus` / `newsHeadline` in `lib/ticker.ts`).
       Plus, on Andrew's note: the same news runs as a **ticker** along the bottom of every
       screen (`components/Ticker.tsx`, `lib/ticker.ts` tested, browser test), a door to the desk.
 - [ ] **VG-6** The wire paper: a free agent whose starter just went down, on the desk under

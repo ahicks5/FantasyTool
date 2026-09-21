@@ -1302,6 +1302,7 @@ export function deskFor(teamId: string, entitlements: Feature[]): Desk {
   return {
     week: feed.week, team: feed.team, league: feed.league,
     news: { window_hours: 72, count: items.length, items },
+    standing: { record: "2-0", rank: 1, teams: 12, ppg: 127.8 },
     matchup: feed.matchup,
     sheet: { summary: feed.summary, moves: feed.actions.filter((a) => a.type !== "hold").length, all_clear: feed.all_clear },
     binders: [binder("team", "start", "my_team"), binder("waivers", "waiver", "waivers"), binder("trade", "trade", "trade_lab")],

@@ -469,7 +469,7 @@ def owners_desk(platform: str, league_id: str, team_id: str, email: str | None =
     ents = products.features_for(_skus(email))
     feed = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats,
                              trending=b.trending, profiles=b.profiles, matchups_raw=b.matchups)
-    out = desk.build(t, feed, ents)
+    out = desk.build(t, feed, ents, league=b.league, ros=b.ros)
     out["synced_at"] = b.loaded_at
     return out
 

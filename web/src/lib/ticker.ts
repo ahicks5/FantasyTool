@@ -5,12 +5,47 @@ import type { NewsItem } from "./types";
    same payload, so the strip can never disagree with the desk. Pure so the copy rules and
    the tempo are tested with node:test. */
 
+/**
+ * The platform's status, short. Sleeper's own tags are words ("Questionable"); the desk
+ * and the ticker print the letter every fantasy app prints. Anything unknown is left as it
+ * came, never guessed at.
+ */
+export const SHORT_STATUS: Record<string, string> = {
+  questionable: "Q",
+  doubtful: "D",
+  out: "Out",
+  ir: "IR",
+  pup: "PUP",
+  sus: "SUS",
+  na: "NA",
+};
+
+export function shortStatus(status: string | null | undefined): string {
+  if (!status) return "";
+  return SHORT_STATUS[status.toLowerCase()] ?? status;
+}
+
+/**
+ * The headline as the desk prints it: the name, the short status, the body part. "is" is
+ * dropped, so "Saquon Barkley is Questionable (arm)" reads "Saquon Barkley Q (arm)". A
+ * merged line story ("CLE offensive line: 2 out") keeps the engine's headline; a single
+ * lineman gets the same short form under his offence's name.
+ */
+export function newsHeadline(it: NewsItem): string {
+  const a = it.about;
+  const part = a.body_part ? ` (${a.body_part.toLowerCase()})` : "";
+  const who = `${a.name} ${shortStatus(a.status)}${part}`;
+  if (it.kind === "line") return it.others?.length ? it.headline : `${a.nfl_team ?? ""} offensive line: ${who}`.trim();
+  return who;
+}
+
 /** One headline for the strip. A story about a teammate names the player of yours it lands
  *  on, so a reader on the trade tab knows why Jayden Daniels is on their screen. */
 export function tickerLine(it: NewsItem): string {
-  if (it.kind === "own" || it.kind === "line") return it.headline;
+  const head = newsHeadline(it);
+  if (it.kind === "own" || it.kind === "line") return head;
   const also = it.also?.length ? ` +${it.also.length}` : "";
-  return `${it.headline} → ${it.player.name}${also}`;
+  return `${head} → ${it.player.name}${also}`;
 }
 
 /** Every line once, in the desk's order. */

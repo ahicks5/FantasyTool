@@ -6,6 +6,7 @@ import { Avatar } from "./Avatar";
 import { IconChevron, IconMark } from "./icons";
 import { PlayerName } from "./Players";
 import type { Connection } from "@/lib/storage";
+import { newsHeadline } from "@/lib/ticker.ts";
 import type { Binder, Desk, NewsItem, NewsLevel } from "@/lib/types";
 import { DESK, SECTIONS } from "@/lib/vocab";
 
@@ -78,7 +79,7 @@ function NewsRow({ it, index }: { it: NewsItem; index: number }) {
         <Avatar name={a.name} photo={a.photo} teamLogo={a.team_logo} size="sm" />
         <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
           <span className="display line-clamp-2 text-[13.5px] leading-tight text-ink">
-            {it.kind === "line" ? it.headline : `${a.name} ${it.headline.slice(a.name.length).trim()}`}
+            {newsHeadline(it)}
           </span>
           <span className="mt-1 flex min-w-0 items-center gap-1.5">
             <span className={`desk-level ${LEVEL_TONE[it.level]}`}>{DESK.news.levels[it.level]}</span>
@@ -224,13 +225,31 @@ export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; anim
   const staff = (["team", "waivers", "trade"] as const).map((k) => ({ key: k, b: byKey[k] }));
   return (
     <section className="desk" aria-label={DESK.aria}>
-      {/* The nameplate on the far edge, read from the chair. */}
+      {/* The nameplate on the far edge, read from the chair, and under it the three
+          numbers an owner knows without looking: the record, the place, the points a
+          game. The standings' own numbers (`edge/api/desk.py`); nothing computed here. */}
       <div className={`desk-nameplate ${animate ? "rise" : ""}`}>
         <span className="display truncate text-[15px] leading-none">{c.team_name}</span>
         <span className="desk-nameplate-title">
           {DESK.owner} · {DESK.sheet.week(desk.week)}
         </span>
       </div>
+      {desk.standing && (
+        <dl className={`desk-stats ${animate ? "rise" : ""}`}>
+          <div>
+            <dt>{DESK.standing.record}</dt>
+            <dd className="tnum">{desk.standing.record}</dd>
+          </div>
+          <div>
+            <dt>{DESK.standing.rank}</dt>
+            <dd className="tnum">{DESK.standing.place(desk.standing.rank, desk.standing.teams)}</dd>
+          </div>
+          <div>
+            <dt>{DESK.standing.ppg}</dt>
+            <dd className="tnum">{desk.standing.ppg === null ? DESK.standing.none : desk.standing.ppg.toFixed(1)}</dd>
+          </div>
+        </dl>
+      )}
 
       <NewsPaper desk={desk} animate={animate} />
 

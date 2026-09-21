@@ -186,6 +186,15 @@ export const DESK = {
   owner: "Owner",
   /** The letterhead in the corner of every paper: the mark and two letters. */
   letterhead: "PH",
+  /** Three numbers on the nameplate. */
+  standing: {
+    record: "Record",
+    rank: "Place",
+    ppg: "Pts / game",
+    place: (rank: number, teams: number) => `${rank} of ${teams}`,
+    /** Before a game has been played there is no average, and a dash is not a zero. */
+    none: "\u2014",
+  },
   news: {
     eyebrow: "Just in",
     /** How many the paper shows before "more". Andrew: three stories. */

@@ -15,6 +15,7 @@ import time
 from edge import products
 from edge.data import depth_charts
 from edge.engine import newsdesk
+from edge.engine import standings as standings_mod
 
 # The three binders, in desk order, and which call-sheet action type and feature each holds.
 BINDERS = (
@@ -45,16 +46,33 @@ def binders(feed: dict, entitlements: set[str]) -> list[dict]:
     return out
 
 
+def standing(league, team, ros: dict[str, float]) -> dict:
+    """Three numbers on the nameplate: record, place, points a game.
+
+    The place is the standings' own competition rank (record, then points for), read off
+    `standings.build` with no played weeks so nothing is fetched -- the all-play columns
+    go null and the rank column is unaffected. Points a game is None until a game has
+    been played; a zero would read as a real average.
+    """
+    rows = standings_mod.build(league, ros, [])["teams"]
+    row = next(r for r in rows if r["id"] == team.id)
+    games = row["wins"] + row["losses"] + row["ties"]
+    record = f"{row['wins']}-{row['losses']}" + (f"-{row['ties']}" if row["ties"] else "")
+    return {"record": record, "rank": row["rank"], "teams": len(rows),
+            "ppg": round(row["points_for"] / games, 1) if games else None}
+
+
 def build(team, feed: dict, entitlements: set[str], charts: dict | None = None,
-          clock_ms: int | None = None) -> dict:
+          clock_ms: int | None = None, league=None, ros: dict[str, float] | None = None) -> dict:
     """`feed` is `engine/actions.build(...)` for this team; `charts` defaults to the live
-    boiled dump."""
+    boiled dump. `league` and `ros` are for the nameplate's standing; without them it is null."""
     charts = depth_charts.load() if charts is None else charts
     news = newsdesk.build(team, charts, clock_ms if clock_ms is not None else now_ms())
     moves = [a for a in feed.get("actions", []) if a.get("type") != "hold"]
     return {
         "week": feed.get("week"), "team": feed.get("team"), "league": feed.get("league"),
         "news": news,
+        "standing": standing(league, team, ros or {}) if league is not None else None,
         "matchup": feed.get("matchup"),
         "sheet": {"summary": feed.get("summary"), "moves": len(moves), "all_clear": feed.get("all_clear", False)},
         "binders": binders(feed, entitlements),

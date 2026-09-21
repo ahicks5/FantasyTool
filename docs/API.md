@@ -119,6 +119,7 @@ and never a name.
       "also": [], "others": []
     }]
   },
+  "standing": {"record": "2-0", "rank": 3, "teams": 12, "ppg": 121.4},
   "matchup": {"opponent": "HusH", "opponent_id": "8", "my_proj": 118.2, "their_proj": 109.7, "win_prob": 0.61},
   "sheet": {"summary": "3 moves to make", "moves": 3, "all_clear": false},
   "binders": [
@@ -140,6 +141,8 @@ and never a name.
   nothing is predicted and no number is invented. Only news dated inside the window counts.
 - `binders[].count` is the number of call-sheet actions of that binder's type, so the badge
   and the tab it opens cannot disagree. `locked` follows `edge/products.py`.
+- `standing` is the nameplate's three numbers: the record, the standings' own competition
+  rank out of `teams`, and points a game (null before a game has been played).
 - `matchup` is the call sheet's own; `sheet.summary` is its headline.
 
 ## Scouting (feature: waivers)

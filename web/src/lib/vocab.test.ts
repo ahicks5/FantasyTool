@@ -35,6 +35,7 @@ const ALL_COPY: string[] = [
   DESK.news.more(3), DESK.news.less, ...Object.values(DESK.news.levels), DESK.news.tag.own("RB", true),
   DESK.news.tag.own("RB", false), DESK.news.tag.qb("TE", "Loveland"), DESK.news.tag.target("WR", "TeSlaa"),
   DESK.news.tag.backfield("RB", "Pacheco"), DESK.news.tag.line("RB", "Montgomery"),
+  DESK.standing.record, DESK.standing.rank, DESK.standing.ppg, DESK.standing.place(3, 12),
   DESK.sheet.title, DESK.sheet.week(2), DESK.sheet.from, DESK.notebooks.none, DESK.notebooks.locked,
   ...(["team", "waivers", "trade", "matchup"] as const).flatMap((k) => [DESK.notebooks[k].title, DESK.notebooks[k].from]),
   ...Object.values(TICKER), NAMEPLATE.connect, NAMEPLATE.week(2),
