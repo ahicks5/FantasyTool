@@ -5,7 +5,7 @@ import type { NewsItem } from "./types";
 
 const who = { id: "1", name: "Terry McLaurin", position: "WR", nfl_team: "WAS", starter: true };
 const about = { id: "2", name: "Jayden Daniels", position: "QB", nfl_team: "WAS", status: "Out", body_part: "Elbow", notes: null, practice: null };
-const base: NewsItem = { id: "qb:1:2", kind: "qb", level: "warning", headline: "Jayden Daniels is Out (elbow)", detail: "", at: 0, age_hours: 6, player: who, about };
+const base: NewsItem = { id: "qb:1:2", kind: "qb", level: "warning", severity: 3, headline: "Jayden Daniels is Out (elbow)", detail: "", at: 0, age_hours: 6, player: who, about };
 
 test("the platform's status prints short, and an unknown one prints as it came", () => {
   assert.equal(shortStatus("Questionable"), "Q");

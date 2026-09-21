@@ -527,6 +527,11 @@ export interface Matchup {
   my_proj: number;
   their_proj: number | null;
   win_prob: number | null;
+  /** On the desk only: the opponent's record and competition rank out of `teams`, from the
+   *  same standings table as the nameplate. Null when the opponent is not in the table. */
+  opponent_record?: string | null;
+  opponent_rank?: number | null;
+  teams?: number;
 }
 
 export interface Report {
@@ -575,10 +580,14 @@ export interface NewsAbout {
   team_logo?: string | null;
 }
 
+/** How hard a story lands: 4 is a starter of yours ruled out, 0 is a line to read past. */
+export type NewsSeverity = 0 | 1 | 2 | 3 | 4;
+
 export interface NewsItem {
   id: string;
   kind: NewsKind;
   level: NewsLevel;
+  severity: NewsSeverity;
   headline: string;
   detail: string;
   /** Epoch milliseconds, the platform's own date on the news. */
@@ -625,6 +634,48 @@ export interface Desk {
   sheet: { summary: string; moves: number; all_clear: boolean };
   binders: Binder[];
   entitlements: Feature[];
+  synced_at: number;
+}
+
+/* ------------------------------------------------------------- the plan ---
+   One story off the desk: `GET .../team/{id}/desk/plan/{kind}/{mine}/{about}`. See
+   docs/API.md, "The action plan". */
+
+export type Posture = "monitor" | "replace" | "watch" | "opening";
+
+/** A man on the depth chart behind the one in the story, and where he sits in this league. */
+export interface NextUp extends NewsAbout {
+  depth_order: number | null;
+  where: "yours" | "wire" | "rostered" | "unknown";
+  owner: string | null;
+}
+
+export interface PlanWire {
+  locked: boolean;
+  count: number;
+  picks: { player: Player; bid: Bid; reason: string; weekly_gain: number }[];
+}
+
+export interface PlanTrade {
+  locked: boolean;
+  count: number;
+  partners: { team_id: string; team_name: string; owner_name: string | null; surplus: number }[];
+}
+
+export interface Plan {
+  kind: NewsKind;
+  posture: Posture;
+  severity: NewsSeverity;
+  week: number;
+  player: Player & { starter: boolean };
+  about: NewsAbout;
+  /** The story as the desk shows it now; null once it has aged off. */
+  story: NewsItem | null;
+  next_up: NextUp[];
+  bench: Player[];
+  swap: Player | null;
+  wire: PlanWire | null;
+  trade: PlanTrade | null;
   synced_at: number;
 }
 

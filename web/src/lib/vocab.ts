@@ -27,21 +27,23 @@ export interface Section {
 }
 
 export const SECTIONS = {
-  // The front page is the owner's desk: what landed overnight, who is next, and the
-  // staff's binders. The ranked list it used to open on is a room off it now (`sheet`).
+  // The front page is the owner's desk: what landed overnight, this week's matchup, and
+  // the staff's notebooks. The ranked call sheet it used to open on is gone (Andrew,
+  // 2026-09-21): the notebooks are the rooms, and the desk only says which to open.
   home: {
     href: "/home",
     label: "Desk",
     title: "The desk",
     gate: "your desk",
   },
-  /** The call sheet proper: every move, ranked and checkable. A room off the desk, under
-   *  `/home/` so the desk tab stays lit while you work the list. */
-  sheet: {
-    href: "/home/sheet",
-    label: "Call sheet",
-    title: "Call sheet",
-    gate: "your call sheet",
+  /** One story off the desk and what to do about it. A room off the desk, under `/home/`
+   *  so the desk tab stays lit; the story is named in the query string, never in the path,
+   *  because the static demo export cannot pre-render a path it has not seen. */
+  plan: {
+    href: "/home/plan",
+    label: "Plan",
+    title: "Action plan",
+    gate: "the action plan",
   },
   // The tab says "Lineup" and the page says "Depth chart". "Depth" on its own is the
   // half of the phrase that carries none of the meaning — it reads as bench depth, which
@@ -195,6 +197,8 @@ export const DESK = {
     /** Before a game has been played there is no average, and a dash is not a zero. */
     none: "\u2014",
   },
+  /** "Week 2", under the team name on the nameplate. */
+  week: (w: number) => `Week ${w}`,
   news: {
     eyebrow: "Just in",
     /** How many the paper shows before "more". Andrew: three stories. */
@@ -202,8 +206,17 @@ export const DESK = {
     /** The window the desk reads back over. */
     window: (hours: number) => `${hours}h`,
     quiet: "Quiet. Nothing on your roster moved.",
-    /** How the platform's four levels read on the desk. */
-    levels: { critical: "Check", warning: "Heads up", upside: "Opening", note: "Note" } as const,
+    /**
+     * How hard a story lands, the engine's `severity` 0..4 as a word (`engine/newsdesk.py`
+     * has the table). Four is a starter of yours ruled out and wears the mark; zero is a
+     * line to read past. Colour never carries it alone: the word is printed too.
+     */
+    severity: ["FYI", "Note", "Watch", "Serious", "Urgent"] as const,
+    /** The mark on the face of a story that lands hard. */
+    mark: "!",
+    /** The arrow on the right of a story: what to do about it. */
+    plan: "Plan",
+    planAria: (who: string) => `Action plan: ${who}`,
     more: (n: number) => `${n} more`,
     less: "Fewer",
     also: (n: number) => `+${n} of yours`,
@@ -221,20 +234,110 @@ export const DESK = {
       line: (pos: string, last: string) => `Blocks for your ${pos} ${last}`,
     },
   },
-  /** The stack of papers: the call sheet, week on the cover, moves on the badge. */
-  sheet: {
-    title: "Call sheet",
-    week: (w: number) => `Week ${w}`,
-    from: "From the whole staff",
+  /** The matchup card, where the call sheet's stack used to sit: who, the projected
+   *  score, the odds, their record, and the arrow into the full read. */
+  matchup: {
+    eyebrow: "This week",
+    from: "From the scouting staff",
+    you: "You",
+    them: "Them",
+    vs: "vs",
+    /** "61% to win", the engine's own probability. */
+    odds: (p: number) => `${Math.round(p * 100)}% to win`,
+    /** Their record and place, under their name. */
+    standing: (record: string, rank: number, teams: number) => `${record} \u00b7 ${rank} of ${teams}`,
+    go: "Full matchup",
+    none: "No game this week",
   },
   /** The spiral notebooks. Each says what it is and who it is from. */
   notebooks: {
     team: { title: "Start / sit", from: "From the head coach" },
     waivers: { title: "The wire", from: "From the head of scouting" },
     trade: { title: "Trade board", from: "From the GM" },
-    matchup: { title: "Scouting report", from: "Next up" },
-    none: "No game this week",
+    report: { title: "The film", from: "Last week, graded" },
     locked: "Locked",
+    /** What the pulse on a lit notebook means to a screen reader. */
+    lit: (n: number) => `${n} to look at`,
+  },
+} as const;
+
+/* -------------------------------------------------------------- the plan ---
+   One story off the desk and every door out of it (`/home/plan`, `engine/plan.py`). The
+   engine hands down a posture code and lists of facts; these are the words on them. The
+   voice is the staff in your ear: what to do, then why, and nothing hedged that the
+   platform has already ruled on.                                                        */
+
+export const PLAN = {
+  title: "Action plan",
+  aria: "Action plan",
+  back: "Back to the desk",
+  /** The story aged off the desk, or the link was wrong. */
+  gone: "That story has left the desk.",
+  /** The call, by the engine's posture code. Head first, then the reasoning. */
+  posture: {
+    monitor: {
+      head: "Monitor.",
+      body: "In doubt, not ruled out. Nothing to do before the next report. Check back before kickoff, and know who is behind him.",
+    },
+    replace: {
+      head: "Fill the slot.",
+      body: "He will not play. Your bench first, then the wire, then a deal if the hole outlasts the week.",
+    },
+    watch: {
+      head: "Expect less.",
+      body: "He still plays; the man who feeds him does not. Hold him unless your bench projects higher.",
+    },
+    opening: {
+      head: "Weigh the start.",
+      body: "The role ahead of him came open. Set him against your lowest starter at the spot; the depth chart stamps the call.",
+    },
+  },
+  status: (status: string | null, part: string | null) => `${status ?? "Cleared"}${part ? ` \u00b7 ${part}` : ""}`,
+  practice: (p: string) => `Practice: ${p.toLowerCase()}`,
+  /** The depth chart behind the man in the story. */
+  nextUp: {
+    title: "Next man up",
+    from: "His team\u2019s depth chart",
+    depth: (n: number) => `${n}${n === 2 ? "nd" : n === 3 ? "rd" : "th"} string`,
+    where: {
+      yours: "On your roster",
+      wire: "On the wire",
+      rostered: (owner: string) => `With ${owner}`,
+      unknown: "Not in this league",
+    },
+    none: "No depth chart listed behind him.",
+  },
+  /** Your own players at the spot who are not in your lineup. */
+  bench: {
+    title: "On your bench",
+    from: "Your roster, at the spot",
+    none: "Nobody on your bench plays the spot.",
+    projected: "proj",
+  },
+  /** For a role opening: him against your lowest starter at the position. */
+  swap: {
+    title: "Against your lowest starter",
+    from: "As the head coach sets it today",
+    him: "Him",
+    starter: "Your starter",
+  },
+  wire: {
+    title: "On the wire",
+    from: "From the head of scouting",
+    /** Without a Wire Pass: the count, and the door. */
+    locked: (n: number) => (n === 1 ? "1 pickup ranked at the spot" : `${n} pickups ranked at the spot`),
+    unlock: "Open the wire",
+    none: "Nothing at the spot worth a claim.",
+    bid: (amount: number) => `Bid $${amount}`,
+    priority: "Claim",
+  },
+  trade: {
+    title: "Trade angle",
+    from: "From the GM",
+    locked: (n: number) => (n === 1 ? "1 manager deep at the spot" : `${n} managers deep at the spot`),
+    unlock: "Open the GM\u2019s Office",
+    none: "Nobody in the league is deep at the spot.",
+    surplus: "Surplus at the spot",
   },
 } as const;
 

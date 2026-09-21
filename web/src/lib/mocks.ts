@@ -4,6 +4,8 @@ import { withArticle } from "./format";
 import type {
   Desk,
   NewsItem,
+  Plan,
+  Posture,
   Action,
   ActionFeed,
   Standings,
@@ -1255,7 +1257,7 @@ export const STANDINGS: Standings = (() => {
 
 const MOCK_NEWS: NewsItem[] = [
   {
-    id: "own:4866:4866", kind: "own", level: "critical",
+    id: "own:4866:4866", kind: "own", level: "critical", severity: 3,
     headline: "Saquon Barkley is Questionable (arm)",
     detail: "RB, in your lineup. Practice: limited.",
     at: Date.now() - 9 * 3_600_000, age_hours: 9.4,
@@ -1263,7 +1265,7 @@ const MOCK_NEWS: NewsItem[] = [
     about: { id: "4866", name: "Saquon Barkley", position: "RB", nfl_team: "PHI", status: "Questionable", body_part: "Arm", notes: null, practice: "Limited", photo: "https://sleepercdn.com/content/nfl/players/thumb/4866.jpg", team_logo: "https://sleepercdn.com/images/team_logos/nfl/phi.png" },
   },
   {
-    id: "qb:6786:11566", kind: "qb", level: "warning",
+    id: "qb:6786:11566", kind: "qb", level: "warning", severity: 3,
     headline: "Jayden Daniels is Out (elbow)",
     detail: "WAS\u2019s QB1. Terry McLaurin (WR) is in your lineup.",
     at: Date.now() - 6 * 3_600_000, age_hours: 6.4,
@@ -1271,7 +1273,7 @@ const MOCK_NEWS: NewsItem[] = [
     about: { id: "11566", name: "Jayden Daniels", position: "QB", nfl_team: "WAS", status: "Out", body_part: "Elbow", notes: null, practice: null },
   },
   {
-    id: "target:9999:8112", kind: "target", level: "upside",
+    id: "target:9999:8112", kind: "target", level: "upside", severity: 2,
     headline: "Alec Pierce is Out (heel)",
     detail: "A starting IND receiver. Josh Downs is next in line for those targets.",
     at: Date.now() - 3 * 3_600_000, age_hours: 3.5,
@@ -1279,7 +1281,7 @@ const MOCK_NEWS: NewsItem[] = [
     about: { id: "8112", name: "Alec Pierce", position: "WR", nfl_team: "IND", status: "Out", body_part: "Heel", notes: null, practice: null },
   },
   {
-    id: "line:4866:1", kind: "line", level: "note",
+    id: "line:4866:1", kind: "line", level: "note", severity: 2,
     headline: "PHI offensive line: 2 out",
     detail: "Saquon Barkley (RB) is in your lineup.",
     at: Date.now() - 30 * 3_600_000, age_hours: 30,
@@ -1303,9 +1305,50 @@ export function deskFor(teamId: string, entitlements: Feature[]): Desk {
     week: feed.week, team: feed.team, league: feed.league,
     news: { window_hours: 72, count: items.length, items },
     standing: { record: "2-0", rank: 1, teams: 12, ppg: 127.8 },
-    matchup: feed.matchup,
+    matchup: feed.matchup ? { ...feed.matchup, opponent_record: "1-1", opponent_rank: 7, teams: 12 } : null,
     sheet: { summary: feed.summary, moves: feed.actions.filter((a) => a.type !== "hold").length, all_clear: feed.all_clear },
     binders: [binder("team", "start", "my_team"), binder("waivers", "waiver", "waivers"), binder("trade", "trade", "trade_lab")],
     entitlements, synced_at: feed.synced_at,
+  };
+}
+
+/* ------------------------------------------------------------- the plan ---
+   Mirrors edge/engine/plan.py for the stories above: the posture from the status, the
+   depth chart behind the man, your bench at the spot, and the wire and the trade angles
+   locked to their counts unless the pass is held. */
+
+export function planFor(teamId: string, kind: string, mineId: string, aboutId: string, entitlements: Feature[]): Plan {
+  const story = MOCK_NEWS.find((it) => it.kind === kind && it.player.id === mineId && it.about.id === aboutId) ?? null;
+  if (!story) throw new Error("That story is not on this desk.");
+  const has = new Set<Feature>(entitlements);
+  const lineup = lineupFor(teamId);
+  const mine: Player = { ...(lineup.slots.find((sl) => sl.player?.id === mineId)?.player ?? lineup.bench.find((b) => b.player.id === mineId)?.player ?? {
+    id: story.player.id, name: story.player.name, position: story.player.position, nfl_team: story.player.nfl_team, injury_status: null, projected: 9.1,
+  }) };
+  const down = ["OUT", "IR", "PUP", "SUS", "NA", "DOUBTFUL"].includes((story.about.status ?? "").toUpperCase());
+  const posture: Posture = kind === "own" ? (down ? "replace" : "monitor") : kind === "qb" ? (down ? "watch" : "monitor") : kind === "line" ? "watch" : "opening";
+  const hole = kind === "own" || kind === "qb" || kind === "line";
+  const bench = hole ? lineup.bench.map((b) => b.player).filter((p) => p.id !== mineId && p.position === mine.position).slice(0, 4) : [];
+  const wirePicks = WAIVERS.picks.filter((p) => p.player.position === mine.position).slice(0, 3);
+  const next: Plan["next_up"] = kind === "own"
+    ? [{ id: "9226", name: "Will Shipley", position: "RB", nfl_team: "PHI", status: null, body_part: null, notes: null, practice: null, depth_order: 2, where: "wire", owner: null,
+         photo: "https://sleepercdn.com/content/nfl/players/thumb/9226.jpg", team_logo: "https://sleepercdn.com/images/team_logos/nfl/phi.png" }]
+    : kind === "qb"
+      ? [{ id: "4881", name: "Marcus Mariota", position: "QB", nfl_team: "WAS", status: null, body_part: null, notes: null, practice: null, depth_order: 2, where: "rostered", owner: "HusH" }]
+      : [{ ...story.player, status: null, body_part: null, notes: null, practice: null, depth_order: 2, where: "yours", owner: null }];
+  return {
+    kind: story.kind, posture, severity: story.severity, week: WEEK,
+    player: { ...mine, starter: story.player.starter },
+    about: story.about, story,
+    next_up: kind === "line" ? [] : next,
+    bench,
+    swap: posture === "opening"
+      ? lineup.slots.map((sl) => sl.player).filter((p): p is Player => !!p && p.position === mine.position).sort((a, b) => a.projected - b.projected)[0] ?? null
+      : null,
+    wire: hole && down ? { locked: !has.has("waivers"), count: wirePicks.length, picks: has.has("waivers") ? wirePicks.map((p) => ({ player: p.player, bid: p.bid, reason: p.reason, weekly_gain: p.weekly_gain })) : [] } : null,
+    trade: kind === "own" && down ? { locked: !has.has("trade_lab"), count: 2, partners: has.has("trade_lab") ? [
+      { team_id: "4", team_name: "HusH", owner_name: "Hugh", surplus: 41.2 }, { team_id: "7", team_name: "Wait, another league?", owner_name: null, surplus: 18.5 },
+    ] : [] } : null,
+    synced_at: Date.now() / 1000 - 120,
   };
 }

@@ -3,6 +3,7 @@
 import type {
   ActionFeed,
   Desk,
+  Plan,
   EmailPref,
   Standings,
   ShareKind,
@@ -217,6 +218,14 @@ export async function getDesk(platform: Platform, leagueId: string, teamId: stri
     return mocks.deskFor(teamId, me.entitlements);
   }
   return request<Desk>(`/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/desk`);
+}
+
+export async function getPlan(platform: Platform, leagueId: string, teamId: string, kind: string, mineId: string, aboutId: string): Promise<Plan> {
+  if (USE_MOCKS) {
+    const me = await getMe();
+    return mocks.planFor(teamId, kind, mineId, aboutId, me.entitlements);
+  }
+  return request<Plan>(`/league/${platform}/${leagueId}/team/${teamId}/desk/plan/${kind}/${encodeURIComponent(mineId)}/${encodeURIComponent(aboutId)}`);
 }
 
 export async function sendFeedback(req: FeedbackRequest): Promise<void> {

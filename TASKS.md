@@ -41,6 +41,18 @@ the opening.
       the desk and the ticker (`shortStatus` / `newsHeadline` in `lib/ticker.ts`).
       Plus, on Andrew's note: the same news runs as a **ticker** along the bottom of every
       screen (`components/Ticker.tsx`, `lib/ticker.ts` tested, browser test), a door to the desk.
+- [x] **VG-8** **Round four of the desk, and the ride (Andrew, 2026-09-21 afternoon).**
+      Ride: lobby, race to 23, slow through 23-28 with the panel lighting each floor passed,
+      PH lit at the stop, doors open on a dark room, a beat, the lights flick on, then the
+      walk (`lib/elevator.ts`: `FAST_MS`/`SLOW_MS`/`DARK_MS`/`LIGHTS_MS`, 33 tests). Desk:
+      stories ranked and marked by **severity** 0-4 (`newsdesk.SEVERITY`, pips + word, "!"
+      on the face, red rule at 4; level chips gone); an arrow on every row into the **action
+      plan** (`edge/engine/plan.py`, `GET .../desk/plan/{kind}/{mine}/{about}`, 10 tests;
+      `/home/plan`): the call, next man up with where he is in this league, your bench, the
+      wire and the trade angles (locked to counts without the pass). The call sheet page
+      and its row on the desk are deleted; the **matchup paper** takes its place (score, odds,
+      their record and place via `desk.matchup_card`). The opponent notebook is the **film**.
+      Notebook badge beats inside the cell, the edge takes the signal colour, rings are whole.
 - [ ] **VG-6** The wire paper: a free agent whose starter just went down, on the desk under
       the scouting binder. `newsdesk` has the rule shape; it needs the pool, which the
       bundle already has.
@@ -223,8 +235,13 @@ themes. All eight are done and on production.
   happened and never a point cost — keep it that way, or let the news paper quote the depth
   chart's margin? (b) line injuries are shown as a `note` for your starters only; if they
   still read as noise, drop rule 3 in `edge/engine/newsdesk.py`. (c) the window is 72 hours
-  (`WINDOW_HOURS`). Also: the home tab now says "Desk" and the ranked list is one tap away
-  at `/home/sheet` — say if you want the sheet back on the tab and the desk behind it.
+  (`WINDOW_HOURS`). Also: the home tab now says "Desk".
+- **The plan (2026-09-21, afternoon).** (a) The severity table is a guess at your priorities
+  (`edge/engine/newsdesk.py`, `SEVERITY`): QB out for your starter is 3, your own starter out
+  is 4, a bench player questionable is 1. Move numbers, not code. (b) The plan's wire and
+  trade lists are locked to counts without Wire Pass / Trade Lab; the depth chart and your
+  bench are free. Say if the free line should sit elsewhere. (c) The call sheet page is
+  deleted, not hidden; `engine/actions.py` still builds under the desk for the badge counts.
 
 - **The ride plays once a day.** Every reload used to replay the two-second checklist;
   the elevator is over four seconds, so it plays on the first open of the day and after

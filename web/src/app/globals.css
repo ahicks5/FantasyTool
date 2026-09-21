@@ -562,7 +562,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 /* Once the doors are opening the plate fades on its own clock, not the lights': an
    animation, even a finished one, overrides the transition to opacity 0. The rule has
    to hold for every phase after, or the fade-in restarts on the next phase change. */
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) :is(.ride-plate, .ride-car) { animation: none; }
+.ride:is([data-phase="opening"], [data-phase="dark"], [data-phase="lights"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) :is(.ride-plate, .ride-car) { animation: none; }
 .ride-arrow { color: var(--color-line-2); transition: color 0.2s ease; }
 .ride-arrow-lit { color: var(--color-ink); }
 .ride-floor {
@@ -571,9 +571,9 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   color: var(--color-ink);
   min-width: 2ch;
   text-align: center;
-  /* Quicker than the app's `tick`: mid-ascent a floor lasts about 100ms, and a
+  /* Quicker than the app's `tick`: in the race a floor lasts about 55ms, and a
      240ms fade never reached full white before the next one replaced it. */
-  animation-duration: 0.1s;
+  animation-duration: 0.05s;
 }
 .ride-plate-label {
   font-size: 10px;
@@ -657,13 +657,13 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 .ride[data-phase="arrived"] .ride-floor { animation: ride-ding 0.5s ease-out both; }
 
 /* The doors open onto the office, and the car's furniture goes with them. */
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-door {
+.ride:is([data-phase="opening"], [data-phase="dark"], [data-phase="lights"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-door {
   transition-duration: var(--ride-open, 600ms);
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-door-l { transform: translateX(-102%); }
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-door-r { transform: translateX(102%); }
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-plate { opacity: 0; }
+.ride:is([data-phase="opening"], [data-phase="dark"], [data-phase="lights"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-door-l { transform: translateX(-102%); }
+.ride:is([data-phase="opening"], [data-phase="dark"], [data-phase="lights"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-door-r { transform: translateX(102%); }
+.ride:is([data-phase="opening"], [data-phase="dark"], [data-phase="lights"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-plate { opacity: 0; }
 .ride[data-phase="landing"] .ride-skip { opacity: 0; }
 
 /* The landing: the desk becomes the page. The whole scene fades and the call sheet,
@@ -689,7 +689,8 @@ html.ride-boot::before {
 
 /* ------------------------------------------------------------- the panel ---
    The buttons on the car wall, riveted over the right door's edge. PH is pressed in
-   the second beat and stays lit for the ride; the floors below never light. */
+   the second beat and glows for the ride; the floors under it are the ones the car
+   slows through, and each lights as it is passed. */
 .ride-panel {
   position: absolute;
   right: 14px;
@@ -747,7 +748,25 @@ html.ride-boot::before {
   animation: ride-press 0.32s cubic-bezier(0.3, 1.4, 0.5, 1) both;
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 0 0 2px rgb(255 226 180 / 0.55), 0 0 16px 3px rgb(255 214 150 / 0.45);
 }
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-panel { opacity: 0; }
+/* The indicator: the floor the car is passing burns white, and the floors already passed
+   keep a dim afterglow, so the climb reads up the panel. At the stop PH takes the white. */
+.ride-button { transition: box-shadow 0.18s ease, color 0.18s ease; }
+.ride-button-passed {
+  color: #e6e9ee;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 0 0 1px rgb(255 226 180 / 0.3), 0 0 8px 1px rgb(255 214 150 / 0.22);
+}
+.ride-button-now {
+  color: #fff;
+  background: radial-gradient(circle at 35% 30%, #5a6070, #2a2e36 70%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 0 0 2px rgb(255 255 255 / 0.75), 0 0 18px 4px rgb(255 240 210 / 0.55);
+}
+@keyframes ride-ph-ding {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.ride[data-phase="arrived"] .ride-button-ph.ride-button-now { animation: ride-ph-ding 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+.ride:is([data-phase="opening"], [data-phase="dark"], [data-phase="lights"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-panel { opacity: 0; }
 
 /* ------------------------------------------------------------- the office ---
    A room made of planes: the back wall with its window and nameplate, the floor, and
@@ -770,7 +789,7 @@ html.ride-boot::before {
   perspective-origin: 50% 46%;
   opacity: 0;
 }
-.ride:is([data-phase="arrived"], [data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-office { opacity: 1; }
+.ride:is([data-phase="arrived"], [data-phase="opening"], [data-phase="dark"], [data-phase="lights"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-office { opacity: 1; }
 
 .ride-room {
   position: absolute;
@@ -783,11 +802,11 @@ html.ride-boot::before {
   transform: translate3d(0, 90px, -640px) rotateX(-8deg) rotateY(0deg);
   transition: transform var(--ride-walk, 1000ms) cubic-bezier(0.35, 0.05, 0.25, 1);
 }
-/* The walk in starts as the doors part and carries on without a seam: the target and
-   the duration are the same in both phases, so the one transition just continues. */
-.ride:is([data-phase="opening"], [data-phase="office"]) .ride-room {
+/* The camera holds in the doorway while the doors part, the room sits dark and the lights
+   come on; the walk in is the office phase alone. */
+.ride[data-phase="office"] .ride-room {
   transform: translate3d(0, 130px, -300px) rotateX(-16deg) rotateY(0deg);
-  transition-duration: calc(var(--ride-open, 800ms) + var(--ride-walk, 1000ms));
+  transition-duration: var(--ride-walk, 1000ms);
 }
 /* Around the desk and down onto it. rotateY turns the room so the camera is on the
    owner's side; rotateX(-90) then looks straight down, and because the papers are laid
@@ -798,6 +817,32 @@ html.ride-boot::before {
   transition-timing-function: cubic-bezier(0.5, 0.05, 0.2, 1);
 }
 .ride-room > * { position: absolute; transform-style: preserve-3d; backface-visibility: visible; }
+
+/* The lights are off when the doors open: near-black over the whole room, the window's
+   city the one thing that reads through. In the `lights` phase it flicks off in hard
+   steps, a tube catching, and stays off. A flat plane over the room rather than a filter
+   on it, because a filter flattens the 3D context the camera move depends on. */
+.ride-dark {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: #04050a;
+  opacity: 0.9;
+  pointer-events: none;
+}
+@keyframes ride-flick {
+  0% { opacity: 0.9; }
+  9% { opacity: 0.35; }
+  15% { opacity: 0.9; }
+  24% { opacity: 0.15; }
+  31% { opacity: 0.85; }
+  42% { opacity: 0.05; }
+  50% { opacity: 0.6; }
+  60% { opacity: 0; }
+  100% { opacity: 0; }
+}
+.ride[data-phase="lights"] .ride-dark { animation: ride-flick var(--ride-lights, 700ms) steps(1, end) both; }
+.ride:is([data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-dark { opacity: 0; }
 /* Looking down at the desk, the wall and floor are out of shot; fading them makes sure
    of it while the tilt carries them past the camera. */
 .ride-wall, .ride-ground { transition: opacity var(--ride-orbit, 1250ms) ease-in; }
@@ -1139,7 +1184,7 @@ html.ride-boot::before {
 
 /* ------------------------------------------------------------------ the desk ---
    The front page is the desk the elevator lands on: the top seen from the owner's chair,
-   the nameplate on the far edge, papers on the blotter, binders along the near edge. Dark
+   the nameplate on the far edge, papers on the blotter, notebooks along the near edge. Dark
    wood in both themes, like the hero and the doors: it is the room, and the metal and the
    paper are the only decoration. The papers are the app's card surface, so the words on
    them read exactly as they do on every other screen.                                   */
@@ -1241,7 +1286,7 @@ html.ride-boot::before {
   --color-line: #262a31;
   --color-soft: #1b1f26;
 }
-.desk-paper .eyebrow, .desk-stack .eyebrow { color: var(--color-muted); }
+.desk-paper .eyebrow { color: var(--color-muted); }
 .desk-letterhead {
   position: absolute;
   top: 8px;
@@ -1259,16 +1304,6 @@ html.ride-boot::before {
 .desk-news-row { padding: 7px 0; }
 .desk-news-row:first-child { padding-top: 5px; }
 .desk-news-row:last-child { padding-bottom: 3px; }
-.desk-level {
-  flex-shrink: 0;
-  padding: 2px 5px;
-  border-radius: 3px;
-  font-size: 8.5px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  line-height: 1.2;
-}
 .desk-more {
   display: inline-flex;
   align-items: center;
@@ -1291,55 +1326,138 @@ html.ride-boot::before {
   text-transform: uppercase;
   color: #8b929d;
 }
-.desk-badge {
+
+/* This week's game, where the call sheet's stack used to sit: the scoreline, the odds as
+   a bar, their record, and the arrow into the full read. */
+.desk-matchup { text-decoration: none; }
+.desk-matchup:hover { border-color: rgb(255 255 255 / 0.14); }
+.desk-odds {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.desk-odds-bar {
+  position: relative;
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.08);
+}
+.desk-odds-bar i {
   position: absolute;
-  top: -8px;
-  right: -6px;
+  inset: 0 auto 0 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #8b929d, #e6e9ee);
+}
+.desk-odds-word {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+}
+.desk-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+/* How hard a story lands: four pips, filled to the engine's severity, and the word. The
+   ink climbs from muted through amber to status red; the word is always printed too. */
+.desk-sev {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  color: var(--color-muted);
+}
+.desk-sev-pips { display: inline-flex; gap: 2px; }
+.desk-sev-pips i {
+  display: block;
+  width: 4px;
+  height: 9px;
+  border-radius: 1.5px;
+  background: rgb(255 255 255 / 0.12);
+}
+.desk-sev-pips i.on { background: currentColor; }
+.desk-sev-word {
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.desk-sev-2 { color: var(--color-flip); }
+.desk-sev-3 { color: var(--color-flip); }
+.desk-sev-4 { color: var(--color-sit); }
+/* On the plan's dark header the empty pips need to read against the hero. */
+.desk-sev-hero .desk-sev-pips i { background: rgb(255 255 255 / 0.18); }
+.desk-sev-hero .desk-sev-pips i.on { background: currentColor; }
+.desk-sev-hero.desk-sev-0, .desk-sev-hero.desk-sev-1 { color: rgb(255 255 255 / 0.7); }
+
+/* The mark on the face of a story that lands hard: a small disc on the top-left of the
+   avatar, amber for serious, red for urgent, the "!" Andrew asked for. */
+.desk-mark {
+  position: absolute;
+  top: -4px;
+  left: -4px;
   z-index: 2;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
+  width: 15px;
+  height: 15px;
   border-radius: 99px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-family: var(--font-display);
+  font-size: 10px;
   font-weight: 900;
+  line-height: 1;
   color: #fff;
-  background: var(--color-signal);
-  box-shadow: 0 0 0 2px #171412, 0 2px 6px rgb(0 0 0 / 0.6);
+  background: var(--color-flip);
+  box-shadow: 0 0 0 2px var(--color-paper), 0 1px 3px rgb(0 0 0 / 0.5);
 }
+.desk-mark-4 { background: var(--color-sit); }
+/* An urgent story has a red rule down its left edge as well. */
+.desk-news-row-4 { box-shadow: inset 3px 0 0 var(--color-sit); padding-left: 8px; margin-left: -12px; padding-right: 0; }
+.desk-news-row-4 > div { margin-left: 4px; }
 
-/* The call sheet: a stack of papers under a cover. Two sheets peek out below the cover,
-   each a little askew, which is what makes it a stack and not a card. */
-.desk-stack { position: relative; display: block; padding-bottom: 6px; }
-.desk-stack-sheet {
-  position: absolute;
-  inset: 0 0 0 0;
-  border-radius: 10px;
-  background: #15171b;
-  border: 1px solid rgb(255 255 255 / 0.06);
+/* The arrow into the action plan, on the right of every story. */
+.desk-plan-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  flex-shrink: 0;
+  min-width: 34px;
+  min-height: 40px;
+  padding: 0 4px;
+  border-radius: 8px;
+  border: 1px solid var(--color-line);
+  background: var(--color-soft);
+  color: var(--color-ink);
+  text-decoration: none;
 }
-.desk-stack-sheet-1 { transform: translate(3px, 3px) rotate(0.6deg); }
-.desk-stack-sheet-2 { transform: translate(-3px, 6px) rotate(-0.8deg); background: #111316; }
-.desk-stack-cover {
-  position: relative;
-  display: block;
-  padding: 12px 14px 12px;
-  border-radius: 10px;
-  color: #f4f3f0;
-  background: linear-gradient(160deg, #2f343d 0%, #23272f 55%);
-  border: 1px solid rgb(255 255 255 / 0.1);
-  box-shadow: var(--bevel), var(--shadow-card);
-  --color-ink: #f4f3f0;
-  --color-muted: rgb(247 246 243 / 0.55);
+.desk-plan-link span {
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
-.desk-stack-cover .desk-from { color: rgb(247 246 243 / 0.5); }
-/* The badge sits on the top corner, so the letterhead moves to the bottom one. */
-.desk-stack-cover .desk-letterhead { top: auto; bottom: 12px; }
+.desk-plan-link:hover { border-color: rgb(255 255 255 / 0.2); }
 
 /* A spiral notebook: a row of rings along the top edge, the title on the cover, who it is
-   from under it. It picks up the desk lamp and breathes when there is something inside. */
+   from under it. When there is something inside the cover's edge takes the signal colour
+   and the count beats inside the cell. */
 .notebook {
   position: relative;
   display: block;
@@ -1362,8 +1480,9 @@ html.ride-boot::before {
   right: 10px;
   height: 12px;
   background: radial-gradient(circle at 50% 50%, #cdd2d9 0 2px, #6b727c 2.5px 3.5px, transparent 4px);
-  background-size: 14px 12px;
-  background-repeat: repeat-x;
+  background-size: 12px 12px;
+  /* `space`: only whole rings, spread to the edges. `repeat-x` cut the last one in half. */
+  background-repeat: space no-repeat;
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.7));
 }
 .notebook-lock {
@@ -1377,12 +1496,34 @@ html.ride-boot::before {
   color: #8b929d;
 }
 .notebook-lit {
-  border-color: rgb(255 255 255 / 0.22);
-  animation: binder-glow 2.6s ease-in-out infinite;
+  border-color: color-mix(in srgb, var(--color-signal) 55%, rgb(255 255 255 / 0.1));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 6px 14px -6px rgb(0 0 0 / 0.8), inset 0 0 0 1px color-mix(in srgb, var(--color-signal) 25%, transparent);
 }
-@keyframes binder-glow {
-  0%, 100% { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 6px 14px -6px rgb(0 0 0 / 0.8), 0 0 0 0 rgb(255 226 180 / 0); }
-  50% { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 6px 14px -6px rgb(0 0 0 / 0.8), 0 0 18px 2px rgb(255 226 180 / 0.18); }
+/* The count inside the cover, right of the title: it beats like a pulse, twice then a
+   rest, the staff saying we have to look at this. Not a phone's dot on a corner. */
+.notebook-badge {
+  flex-shrink: 0;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  margin-top: -2px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #fff;
+  background: var(--color-signal);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-signal) 45%, transparent);
+  animation: notebook-beat 1.8s cubic-bezier(0.3, 0, 0.3, 1) infinite;
+}
+@keyframes notebook-beat {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-signal) 45%, transparent); }
+  12% { transform: scale(1.14); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-signal) 25%, transparent); }
+  24% { transform: scale(1); }
+  36% { transform: scale(1.1); box-shadow: 0 0 0 7px color-mix(in srgb, var(--color-signal) 0%, transparent); }
+  50% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-signal) 0%, transparent); }
 }
 
 /* ----------------------------------------------------------------- ticker ---
@@ -1459,7 +1600,7 @@ button, a.btn, select, input { min-height: 44px; }
   /* The ride is never mounted under reduced motion (`Opening` checks first); if it
      ever is, nothing in it moves. */
   .ride, .ride * , .ride-doors::after { animation: none; transition: none; }
-  .notebook-lit { animation: none; }
+  .notebook-badge { animation: none; }
   /* The strip holds still on the first, most serious, headline. */
   .ticker-track { animation: none; }
   .ticker-track[aria-hidden="true"] { display: none; }

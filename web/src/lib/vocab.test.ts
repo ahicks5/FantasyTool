@@ -5,6 +5,7 @@ import {
   CONNECT,
   DESK,
   NAMEPLATE,
+  PLAN,
   TICKER,
   EMAIL,
   GROUPS,
@@ -32,12 +33,20 @@ const ALL_COPY: string[] = [
   ...Object.values(RIDE),
   // The desk's words: the strings, plus every templated line rendered once.
   DESK.aria, DESK.owner, DESK.letterhead, DESK.news.eyebrow, DESK.news.quiet, DESK.news.window(72), DESK.news.also(2),
-  DESK.news.more(3), DESK.news.less, ...Object.values(DESK.news.levels), DESK.news.tag.own("RB", true),
+  DESK.news.more(3), DESK.news.less, ...DESK.news.severity, DESK.news.plan, DESK.news.planAria("Saquon Barkley"), DESK.news.tag.own("RB", true),
   DESK.news.tag.own("RB", false), DESK.news.tag.qb("TE", "Loveland"), DESK.news.tag.target("WR", "TeSlaa"),
   DESK.news.tag.backfield("RB", "Pacheco"), DESK.news.tag.line("RB", "Montgomery"),
   DESK.standing.record, DESK.standing.rank, DESK.standing.ppg, DESK.standing.place(3, 12),
-  DESK.sheet.title, DESK.sheet.week(2), DESK.sheet.from, DESK.notebooks.none, DESK.notebooks.locked,
-  ...(["team", "waivers", "trade", "matchup"] as const).flatMap((k) => [DESK.notebooks[k].title, DESK.notebooks[k].from]),
+  DESK.week(2), DESK.notebooks.locked, DESK.notebooks.lit(2),
+  DESK.matchup.eyebrow, DESK.matchup.from, DESK.matchup.you, DESK.matchup.them, DESK.matchup.go, DESK.matchup.none,
+  DESK.matchup.standing("1-1", 7, 12),
+  ...(["team", "waivers", "trade", "report"] as const).flatMap((k) => [DESK.notebooks[k].title, DESK.notebooks[k].from]),
+  PLAN.title, PLAN.back, PLAN.gone, ...Object.values(PLAN.posture).flatMap((p) => [p.head, p.body]),
+  PLAN.status("Out", "Knee"), PLAN.practice("Limited"), PLAN.nextUp.title, PLAN.nextUp.from, PLAN.nextUp.depth(2), PLAN.nextUp.depth(3),
+  ...Object.values(PLAN.nextUp.where).map((w) => (typeof w === "function" ? w("HusH") : w)), PLAN.nextUp.none,
+  PLAN.bench.title, PLAN.bench.from, PLAN.bench.none, PLAN.swap.title, PLAN.swap.from, PLAN.swap.him, PLAN.swap.starter,
+  PLAN.wire.title, PLAN.wire.from, PLAN.wire.locked(1), PLAN.wire.locked(2), PLAN.wire.unlock, PLAN.wire.none, PLAN.wire.bid(12), PLAN.wire.priority,
+  PLAN.trade.title, PLAN.trade.from, PLAN.trade.locked(1), PLAN.trade.locked(3), PLAN.trade.unlock, PLAN.trade.none, PLAN.trade.surplus,
   ...Object.values(TICKER), NAMEPLATE.connect, NAMEPLATE.week(2),
   ...Object.values(CONNECT),
   ...Object.values(GROUPS).flatMap((g) => [g.clear, g.stamp]),
@@ -150,19 +159,27 @@ test("the last-week line offers no way to state a rate", () => {
   assert.ok(!/%/.test(LAST_WEEK.calls(2, 3)));
 });
 
-test("the desk is the front page and the call sheet is a room off it", () => {
+test("the desk is the front page; the plan and the matchup are rooms off it, not tabs", () => {
   assert.equal(SECTIONS.home.href, "/home");
-  assert.equal(SECTIONS.sheet.href, "/home/sheet");
-  assert.equal(SECTIONS.sheet.title, "Call sheet");
-  assert.ok(TAB_ORDER.includes("home") && !(TAB_ORDER as readonly string[]).includes("sheet"));
+  assert.ok(SECTIONS.plan.href.startsWith("/home/") && SECTIONS.matchup.href.startsWith("/home/"));
+  assert.ok(!("sheet" in SECTIONS), "the call sheet is gone");
+  assert.ok(TAB_ORDER.includes("home") && !(TAB_ORDER as readonly string[]).includes("plan"));
 });
 
-test("every notebook says who it is from and opens a section", () => {
-  for (const k of ["team", "waivers", "trade", "matchup"] as const) {
+test("every notebook says who it is from and opens a tab", () => {
+  for (const k of ["team", "waivers", "trade", "report"] as const) {
     assert.ok(DESK.notebooks[k].title.length > 0 && DESK.notebooks[k].from.length > 0);
-    assert.ok(k in SECTIONS, `notebook ${k} opens no section`);
+    assert.ok((TAB_ORDER as readonly string[]).includes(k), `notebook ${k} opens no tab`);
   }
   for (const k of ["team", "waivers", "trade"] as const) assert.ok(DESK.notebooks[k].from.startsWith("From the"));
+});
+
+test("severity runs from a line to read past up to the mark, five words, and the odds are the engine's", () => {
+  assert.equal(DESK.news.severity.length, 5);
+  assert.equal(DESK.news.severity[4], "Urgent");
+  assert.equal(DESK.news.mark, "!");
+  assert.equal(DESK.matchup.odds(0.614), "61% to win");
+  for (const p of Object.values(PLAN.posture)) assert.ok(/\.$/.test(p.head) && /\.$/.test(p.body), "the call is a sentence");
 });
 
 test("the desk's clock reads in hours, then days", () => {

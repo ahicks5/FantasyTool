@@ -24,6 +24,27 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## The desk, round four: severity, the plan, no call sheet (2026-09-21, afternoon)
+
+Andrew's notes on the desk and the ride, all in. **The ride** now starts in the lobby, races
+to 23, slows through 23-28 with the panel lighting each floor as the car passes it, stops
+with PH lit, opens on a dark room, holds a beat, and the lights flick on before the walk;
+every number is still in `web/src/lib/elevator.ts`. **News is ranked by severity** (0-4,
+the `SEVERITY` table in `edge/engine/newsdesk.py`, also the sort order): pips and a word on
+every row, a "!" on the face from 3 up, a red rule at 4; the level chips are gone. **Every
+story has an action plan**: `edge/engine/plan.py` + `GET .../desk/plan/{kind}/{mine}/{about}`
+(free; the wire's names and the trade partners' names need the passes) → `/home/plan`. It
+says the call (monitor / fill the slot / expect less / weigh the start), who is behind him on
+the depth chart and whether that man is yours, on the wire or with which manager, your bench
+at the spot, the wire's picks and the managers deep at it. **The call sheet is deleted**
+(page, section, components, `lib/sheet.ts`); the matchup paper sits where its stack was, with
+the opponent's record and place from the standings table (`desk.matchup_card`). The fourth
+notebook is the film. Badges beat inside the notebook, the edge goes signal-red, rings are
+whole. Traps this round: `NEXT_PUBLIC_*` is baked at build time, so a `next start` after a
+plain `npm run build` serves mock data and eight browser tests go red for no code reason;
+`pkill -f`/`kill $(pgrep -f ...)` matches the calling shell (exit 144), use `fuser -k
+<port>/tcp`.
+
 ## The desk is the front page (2026-09-21, overnight)
 
 Andrew's second brief for the video game: the elevator's last frame *is* the app now.
@@ -62,7 +83,7 @@ to a `note`, shown for a starter of yours only, merged per offence. If they stil
 noise, delete rule 3 in `newsdesk.build`. (3) A free agent whose starter just went down (the
 handcuff on the wire) is the obvious next paper and belongs to the scouting binder. (4) The
 window is 72 hours; `WINDOW_HOURS` is the one number. (5) The ride's three papers are
-relabelled to match the desk (next up, just in, call sheet), nothing else about it moved.
+relabelled to match the desk (this week, just in, the film).
 
 ## The opening is an elevator, then the office (2026-09-21)
 

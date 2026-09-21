@@ -1,5 +1,5 @@
 "use client";
-/** The owner's desk: the front page. Three stories, the call sheet, and the staff's notebooks. */
+/** The owner's desk: the front page. Three stories, this week's matchup, and the staff's notebooks. */
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar } from "./Avatar";
@@ -7,7 +7,7 @@ import { IconChevron, IconMark } from "./icons";
 import { PlayerName } from "./Players";
 import type { Connection } from "@/lib/storage";
 import { newsHeadline } from "@/lib/ticker.ts";
-import type { Binder, Desk, NewsItem, NewsLevel } from "@/lib/types";
+import type { Binder, Desk, Matchup, NewsItem, NewsSeverity } from "@/lib/types";
 import { DESK, SECTIONS } from "@/lib/vocab";
 
 /* ---------------------------------------------------------------- the desk ---
@@ -16,21 +16,12 @@ import { DESK, SECTIONS } from "@/lib/vocab";
    information, more doors (Andrew, 2026-09-21): the desk shows *what there is to open*
    and a badge for how much is inside, and the rooms behind the doors do the reading.
 
-   Order is his brief: news first and cut to three stories, tight, with a face and a
-   team badge on each and a few words for why it is on your desk; then the call sheet
-   as a stack of papers under a cover; then four spiral notebooks, one per member of
-   staff and one for the next opponent, each saying who it is from. The numbers are the
-   engine's (`edge/api/desk.py`); every word around them is in `vocab.ts`.           */
-
-/** The four levels, each with its ink and a soft fill. Colour is never the only channel:
- *  the chip says the word too. `critical` is status red because it is a starter of yours
- *  who may not play, which is exactly the thing that colour means everywhere else. */
-const LEVEL_TONE: Record<NewsLevel, string> = {
-  critical: "text-sit bg-sit-soft",
-  warning: "text-flip bg-flip-soft",
-  upside: "text-start bg-start-soft",
-  note: "text-muted bg-soft",
-};
+   Order is his brief: the nameplate with the record, the place and the points a game;
+   news, cut to three stories and sorted by how hard each lands, with a face, a team badge,
+   a severity meter and an arrow into the action plan on every row; this week's matchup
+   where the call sheet's stack used to sit; then four spiral notebooks, one per member of
+   staff and one for the film, each saying who it is from. The numbers are the engine's
+   (`edge/api/desk.py`); every word around them is in `vocab.ts`.                       */
 
 /** The letterhead in the corner of every paper: the mark and two letters. */
 function Letterhead() {
@@ -62,11 +53,49 @@ function tagFor(it: NewsItem): string {
   return base + also;
 }
 
+/** The room off the desk for one story. The story is named in the query string, never the
+ *  path: the static demo export cannot pre-render a path it has not seen. */
+export function planHref(it: NewsItem): string {
+  const q = new URLSearchParams({ kind: it.kind, for: it.player.id, about: it.about.id });
+  return `${SECTIONS.plan.href}?${q}`;
+}
+
 /**
- * One story, one line and a half: the face, the headline, then the level and the tag.
- * Tap the row for the platform's own note and the other players of yours it touches.
- * The name opens his report, because the desk says what happened and the report says
- * how much it matters.
+ * How hard a story lands: four pips, filled up to the engine's severity, and the word.
+ * Colour never carries it alone. Exported for the plan page, which opens on the same meter.
+ */
+export function Severity({ n, className = "" }: { n: NewsSeverity; className?: string }) {
+  return (
+    <span className={`desk-sev desk-sev-${n} ${className}`} role="img" aria-label={DESK.news.severity[n]}>
+      <span className="desk-sev-pips" aria-hidden>
+        {[1, 2, 3, 4].map((k) => (
+          <i key={k} className={k <= n ? "on" : ""} />
+        ))}
+      </span>
+      <span className="desk-sev-word">{DESK.news.severity[n]}</span>
+    </span>
+  );
+}
+
+/** The face on a story, and the mark on it when the story lands hard. */
+export function NewsFace({ it, size = "sm" }: { it: NewsItem; size?: "sm" | "md" }) {
+  const a = it.about;
+  return (
+    <span className="relative shrink-0">
+      <Avatar name={a.name} photo={a.photo} teamLogo={a.team_logo} size={size} />
+      {it.severity >= 3 && (
+        <span className={`desk-mark desk-mark-${it.severity}`} aria-hidden>
+          {DESK.news.mark}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * One story, one line and a half: the face, the headline, then the meter and the tag, and
+ * the arrow on the right into the action plan. Tap the row itself for the platform's own
+ * note and the other players of yours it touches.
  */
 function NewsRow({ it, index }: { it: NewsItem; index: number }) {
   const [open, setOpen] = useState(false);
@@ -74,19 +103,21 @@ function NewsRow({ it, index }: { it: NewsItem; index: number }) {
   const others = it.others ?? [];
   const alsoNames = it.also ?? [];
   return (
-    <li className={`desk-news-row print print-${Math.min(index + 1, 5)}`}>
+    <li className={`desk-news-row desk-news-row-${it.severity} print print-${Math.min(index + 1, 5)}`}>
       <div className="flex items-center gap-2.5">
-        <Avatar name={a.name} photo={a.photo} teamLogo={a.team_logo} size="sm" />
+        <NewsFace it={it} />
         <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-          <span className="display line-clamp-2 text-[13.5px] leading-tight text-ink">
-            {newsHeadline(it)}
-          </span>
+          <span className="display line-clamp-2 text-[13.5px] leading-tight text-ink">{newsHeadline(it)}</span>
           <span className="mt-1 flex min-w-0 items-center gap-1.5">
-            <span className={`desk-level ${LEVEL_TONE[it.level]}`}>{DESK.news.levels[it.level]}</span>
+            <Severity n={it.severity} />
             <span className="min-w-0 truncate text-[11px] font-bold text-ink-2">{tagFor(it)}</span>
             <span className="tnum ml-auto shrink-0 text-[10px] font-bold uppercase text-muted">{DESK.news.ago(it.age_hours)}</span>
           </span>
         </button>
+        <Link href={planHref(it)} className="desk-plan-link" aria-label={DESK.news.planAria(a.name)}>
+          <span>{DESK.news.plan}</span>
+          <IconChevron size={12} strokeWidth={2.8} />
+        </Link>
       </div>
       {open && (
         <div className="mt-2 pl-[46px] text-[12px] leading-snug text-ink-2">
@@ -115,7 +146,7 @@ function NewsRow({ it, index }: { it: NewsItem; index: number }) {
 }
 
 /** The top paper: what just happened in the NFL that touches this roster. Three stories,
- *  the rest behind "more". */
+ *  hardest-landing first, the rest behind "more". */
 function NewsPaper({ desk, animate }: { desk: Desk; animate: boolean }) {
   const { news } = desk;
   const [all, setAll] = useState(false);
@@ -152,33 +183,66 @@ function NewsPaper({ desk, animate }: { desk: Desk; animate: boolean }) {
   );
 }
 
-/** A red count on a corner. */
-function Badge({ n }: { n: number }) {
-  return (
-    <span className="desk-badge tnum" aria-hidden>
-      {n}
-    </span>
-  );
-}
-
-/** The call sheet: a stack of papers under a cover, the week on it and the moves on the badge. */
-function SheetStack({ desk, animate }: { desk: Desk; animate: boolean }) {
-  const n = desk.sheet.moves;
+/**
+ * This week's game, as a paper on the desk: who, the projected score, the odds, their
+ * record and place, and the arrow into the full read. The numbers are the call sheet's
+ * own (`report.matchup`) and the standings table's; nothing is computed here.
+ */
+function MatchupPaper({ m, week, animate }: { m: Matchup | null | undefined; week: number; animate: boolean }) {
+  const cls = `desk-paper desk-matchup ${animate ? "rise rise-1" : ""}`;
+  if (!m || !m.opponent || m.their_proj === null) {
+    return (
+      <article className={cls}>
+        <Letterhead />
+        <span className="eyebrow">
+          {DESK.matchup.eyebrow} <span aria-hidden>·</span> {DESK.week(week)}
+        </span>
+        <p className="mt-2 text-[12.5px] leading-snug text-muted">{DESK.matchup.none}</p>
+      </article>
+    );
+  }
+  const ahead = m.my_proj >= m.their_proj;
+  const theirs =
+    m.opponent_record && m.opponent_rank && m.teams ? DESK.matchup.standing(m.opponent_record, m.opponent_rank, m.teams) : null;
+  const odds = m.win_prob !== null ? DESK.matchup.odds(m.win_prob) : null;
   return (
     <Link
-      href={SECTIONS.sheet.href}
-      className={`desk-stack ${animate ? "rise rise-1" : ""}`}
-      aria-label={`${DESK.sheet.title}, ${DESK.sheet.week(desk.week)}: ${desk.sheet.summary}`}
+      href={SECTIONS.matchup.href}
+      className={cls}
+      aria-label={`${DESK.matchup.eyebrow}, ${DESK.week(week)}: ${DESK.matchup.vs} ${m.opponent}${theirs ? `, ${theirs}` : ""}. ${DESK.matchup.you} ${m.my_proj.toFixed(1)}, ${DESK.matchup.them} ${m.their_proj.toFixed(1)}${odds ? `. ${odds}` : ""}. ${DESK.matchup.go}.`}
     >
-      <span className="desk-stack-sheet desk-stack-sheet-2" aria-hidden />
-      <span className="desk-stack-sheet desk-stack-sheet-1" aria-hidden />
-      <span className="desk-stack-cover">
-        <Letterhead />
-        {n > 0 && <Badge n={n} />}
-        <span className="eyebrow">{DESK.sheet.week(desk.week)}</span>
-        <span className="display mt-0.5 block text-[20px] leading-none text-ink">{DESK.sheet.title}</span>
-        <span className="mt-1.5 block text-[11px] font-bold text-muted">{desk.sheet.summary}</span>
-        <span className="desk-from">{DESK.sheet.from}</span>
+      <Letterhead />
+      <span className="eyebrow">
+        {DESK.matchup.eyebrow} <span aria-hidden>·</span> {DESK.week(week)}
+      </span>
+      <span className="mt-1.5 flex items-end gap-3">
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-muted">{DESK.matchup.you}</span>
+          <span className={`display tnum block text-[26px] leading-none ${ahead ? "text-ink" : "text-ink-2"}`}>{m.my_proj.toFixed(1)}</span>
+        </span>
+        <span className="display pb-1 text-[12px] text-muted" aria-hidden>
+          {DESK.matchup.vs}
+        </span>
+        <span className="min-w-0 flex-1 text-right">
+          <span className="block truncate text-[10px] font-black uppercase tracking-[0.12em] text-muted">{m.opponent}</span>
+          <span className={`display tnum block text-[26px] leading-none ${ahead ? "text-ink-2" : "text-ink"}`}>{m.their_proj.toFixed(1)}</span>
+        </span>
+      </span>
+      {theirs && <span className="tnum mt-1 block text-right text-[10.5px] font-bold text-muted">{theirs}</span>}
+      {m.win_prob !== null && (
+        <span className="desk-odds" aria-hidden>
+          <span className="desk-odds-bar">
+            <i style={{ width: `${Math.round(m.win_prob * 100)}%` }} />
+          </span>
+          <span className="tnum desk-odds-word">{odds}</span>
+        </span>
+      )}
+      <span className="mt-2 flex items-center justify-between gap-2">
+        <span className="desk-from !mt-0">{DESK.matchup.from}</span>
+        <span className="desk-go">
+          {DESK.matchup.go}
+          <IconChevron size={11} strokeWidth={2.8} />
+        </span>
       </span>
     </Link>
   );
@@ -186,8 +250,10 @@ function SheetStack({ desk, animate }: { desk: Desk; animate: boolean }) {
 
 /**
  * A spiral notebook: rings along the top, a title on the cover, who it is from
- * underneath, and a badge on the corner when there is something inside. A locked
- * notebook still shows its count, name-free, the same rule the call sheet's teasers follow.
+ * underneath. When there is something inside, the cover's edge takes the signal colour
+ * and a count beats inside the cell, right-aligned: not a phone's red dot on a corner but
+ * the staff saying we have to look at this. A locked notebook still shows its count,
+ * name-free, the same rule the paid teasers follow.
  */
 function Notebook({
   href,
@@ -195,7 +261,6 @@ function Notebook({
   from,
   count = 0,
   locked = false,
-  label,
   animate,
   delay,
 }: {
@@ -204,15 +269,21 @@ function Notebook({
   from: string;
   count?: number;
   locked?: boolean;
-  label: string;
   animate: boolean;
   delay: number;
 }) {
+  const label = [title, from, count > 0 ? DESK.notebooks.lit(count) : null, locked ? DESK.notebooks.locked : null].filter(Boolean).join(". ");
   return (
     <Link href={href} className={`notebook ${count > 0 ? "notebook-lit" : ""} ${animate ? `rise rise-${delay}` : ""}`} aria-label={label}>
       <span className="notebook-rings" aria-hidden />
-      {count > 0 && <Badge n={count} />}
-      <span className="display block truncate text-[16px] leading-tight text-ink">{title}</span>
+      <span className="flex items-start justify-between gap-2">
+        <span className="display min-w-0 block truncate text-[16px] leading-tight text-ink">{title}</span>
+        {count > 0 && (
+          <span className="notebook-badge tnum" aria-hidden>
+            {count}
+          </span>
+        )}
+      </span>
       <span className="desk-from">{from}</span>
       {locked && <span className="notebook-lock">{DESK.notebooks.locked}</span>}
     </Link>
@@ -220,7 +291,6 @@ function Notebook({
 }
 
 export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; animate: boolean }) {
-  const m = desk.matchup;
   const byKey = Object.fromEntries(desk.binders.map((b) => [b.key, b])) as Record<Binder["key"], Binder>;
   const staff = (["team", "waivers", "trade"] as const).map((k) => ({ key: k, b: byKey[k] }));
   return (
@@ -231,7 +301,7 @@ export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; anim
       <div className={`desk-nameplate ${animate ? "rise" : ""}`}>
         <span className="display truncate text-[15px] leading-none">{c.team_name}</span>
         <span className="desk-nameplate-title">
-          {DESK.owner} · {DESK.sheet.week(desk.week)}
+          {DESK.owner} · {DESK.week(desk.week)}
         </span>
       </div>
       {desk.standing && (
@@ -254,7 +324,7 @@ export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; anim
       <NewsPaper desk={desk} animate={animate} />
 
       <div className="mt-3">
-        <SheetStack desk={desk} animate={animate} />
+        <MatchupPaper m={desk.matchup} week={desk.week} animate={animate} />
       </div>
 
       <ul className="mt-3 grid grid-cols-2 gap-2.5" role="list">
@@ -266,21 +336,13 @@ export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; anim
               from={DESK.notebooks[key].from}
               count={b?.count ?? 0}
               locked={b?.locked ?? false}
-              label={`${DESK.notebooks[key].title}. ${DESK.notebooks[key].from}${b?.count ? `. ${b.count}` : ""}${b?.locked ? `. ${DESK.notebooks.locked}` : ""}`}
               animate={animate}
               delay={i + 2}
             />
           </li>
         ))}
         <li className="min-w-0">
-          <Notebook
-            href={SECTIONS.matchup.href}
-            title={m?.opponent ?? DESK.notebooks.none}
-            from={`${DESK.notebooks.matchup.from} · ${DESK.notebooks.matchup.title}`}
-            label={`${DESK.notebooks.matchup.title}. ${DESK.notebooks.matchup.from}: ${m?.opponent ?? DESK.notebooks.none}`}
-            animate={animate}
-            delay={5}
-          />
+          <Notebook href={SECTIONS.report.href} title={DESK.notebooks.report.title} from={DESK.notebooks.report.from} animate={animate} delay={5} />
         </li>
       </ul>
     </section>

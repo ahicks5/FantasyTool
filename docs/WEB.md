@@ -33,13 +33,18 @@ swap to content changes the text and nothing else.
 
 **The opening is an elevator, and then the office.** The first narrated wait of the day
 is the ride up (`components/Elevator.tsx`): a full-screen car over the quiet skeleton, PH
-is pressed on the panel, the doors close, the floors go by, the car stops at PH, the lamp
-comes on, and the doors open onto the office. The office is CSS
+is pressed on the panel, the doors close, the car races from the lobby to 23 (`FAST_MS`),
+slows through 23-28 with each floor lasting longer than the last (`SLOW_MS`, `easeOut`,
+`floorAt`) while the panel lights the floor being passed and keeps a dim afterglow on the
+ones below, stops at PH with the PH button burning white, and the doors open onto the office
+*dark* (`.ride-dark`, a near-black plane over the room so the window's city just shows: a
+filter would flatten the 3D context). A beat in the doorway (`DARK_MS`), then the lights
+flick on in hard steps (`LIGHTS_MS`, `ride-flick`, `steps(1, end)`). The office is CSS
 3D: a handful of planes (wall with window and nameplate, floor, the desk as a slab) placed
 around the desk top's centre, and the camera is the room's own transform. It walks in,
-turns around the desk to the owner's chair, tilts down onto three papers (the call sheet,
-the depth chart, the scouting report, on Penthouse letterhead with the team's name on
-them), sits a moment, and the papers fade into the call sheet that loaded underneath. The
+turns around the desk to the owner's chair, tilts down onto three papers (the matchup, just
+in, the film, on Penthouse letterhead with the team's name on them), sits a moment, and the
+papers fade into the desk that loaded underneath. The
 desk is dressed as an owner's: a nameplate with the team, read from the chair, a blotter with
 the mark embossed, a pen, a phone, a coffee and the mark as a trophy, all CSS shapes. Every
 camera move ends before its phase does (`WALK_MS` inside `OFFICE_MS`, `ORBIT_MS` inside
@@ -65,29 +70,46 @@ guess can never leave a blank screen. It repeats the day-stamp rule in plain JS;
 "the boot script agrees with rideDue" runs it in a sandbox to keep the two the same.
 
 **Round two of the desk (Andrew's notes, 2026-09-21 morning).** Less information, more
-doors: the news paper is cut to three stories with a face, a level chip and a few words
-for why it is on your desk (`DESK.news.tag`, e.g. "QB1 for your WR McLaurin"), each row
-opening to the platform's note and "more" for the rest; the call sheet is a stack of papers
-under a cover; the staff are four spiral notebooks in a 2x2 grid, each saying who it is
-from, with a badge when there is something inside. The letterhead is the mark and "PH". The
+doors: the news paper is cut to three stories with a face and a few words for why it is on
+your desk (`DESK.news.tag`, e.g. "QB1 for your WR McLaurin"), each row opening to the
+platform's note and "more" for the rest; the staff are four spiral notebooks in a 2x2 grid,
+each saying who it is from, with a badge when there is something inside. The letterhead is the mark and "PH". The
 league ribbon left the tab bar for the right of the title band (`Nameplate` in `Shell.tsx`)
 and the blurb under every h1 is gone, so the band is 40px on every tab. The notebooks and
 covers pin `--color-ink` themselves: they are dark in both themes and the light theme's ink
 is black, which is how the titles went dim on the first pass.
 
+**Round three (Andrew's notes, 2026-09-21 afternoon).** Every story carries the engine's
+`severity` (0-4, `SEVERITY` table in `edge/engine/newsdesk.py`; it is also the sort) as a
+four-pip meter with a word (`Severity` in `Desk.tsx`, `DESK.news.severity`), a "!" on the
+face at 3 and up (`NewsFace`, red at 4) and a red rule down the row at 4; the old level
+chips ("Heads up", "Opening") are gone. On the right of every row an arrow into the
+**action plan**, `/home/plan?kind=&for=&about=` (`app/home/plan/page.tsx`, payload from
+`GET .../desk/plan/{kind}/{mine}/{about}`, `edge/engine/plan.py`): the call as a posture
+code the vocab puts words on (`PLAN.posture`: monitor / fill the slot / expect less / weigh
+the start), the depth chart behind the man and where each one sits in this league, your
+bench at the spot, the wire's picks there and the managers deep at it, the last two locked
+to their counts without the pass. The query string, not a path segment, because the demo
+export cannot pre-render a path it has not seen; the outer grid is `grid-cols-1` because an
+`auto` track grows to the header's min-content and pushes the page off a phone. **The call
+sheet is gone**: `/home/sheet`, `SECTIONS.sheet`, `SheetGroup`, `ActionCard`, `MatchupCell`,
+`LastWeek` and `lib/sheet.ts` are deleted; where its stack sat is the matchup paper (you /
+them projected, the odds as a bar, their record and place from the same standings table as
+the nameplate via `desk.matchup_card`, an arrow into `/home/matchup`). The fourth notebook is
+the film. A lit notebook's edge takes the signal colour and its count beats inside the cell,
+right of the title (`notebook-badge`, `notebook-beat`; still under reduced motion) instead of
+a dot on the corner; the rings use `background-repeat: space` so only whole rings show.
+
 **The doors open onto the desk, and the desk is the front page.** `/home` is the owner's
 desk (`components/Desk.tsx`, payload from `GET .../desk`): the news paper on top (what just
-happened in the NFL that touches this roster, from `edge/engine/newsdesk.py`), the next
-opponent as a side paper into `/home/matchup`, the call sheet's own headline as the other
-side paper into `/home/sheet`, and three binders along the near edge, one per member of
-staff (head coach, head of scouting, GM), each a link into its tab wearing a badge with how
-many items are inside it. The counts are the call sheet's own action counts, so the badge
-and the tab can never disagree. A lit binder breathes (`binder-glow`; still under reduced
-motion). The desk is dark in both themes like the hero and the doors, and its papers carry
-the dark palette explicitly so the words read the same on either theme. The ranked list the
-app used to open on is untouched at `/home/sheet` (`SECTIONS.sheet`), so every deep link on
-a card still lands where it did. Names on the desk open the player sheet like everywhere
-else; the names test fails the moment one is printed flat.
+happened in the NFL that touches this roster, from `edge/engine/newsdesk.py`), the matchup
+paper, and four notebooks along the near edge, three for the staff (head coach, head of
+scouting, GM), each a link into its tab with how many items are inside it, and the film. The
+counts are the call sheet's own action counts (`engine/actions.py`, still built under the
+desk), so the badge and the tab can never disagree. The desk is dark in both themes like the
+hero and the doors, and its papers carry the dark palette explicitly so the words read the
+same on either theme. Names on the desk open the player sheet like everywhere else; the
+names test fails the moment one is printed flat.
 
 **The ticker runs along the bottom of every screen.** `components/Ticker.tsx` sits in the
 fixed block above the tab bar, under the ribbon, and reads the same cached `desk:` payload

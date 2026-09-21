@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
-import { DESK, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
+import { DESK, PLAN, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { SCOUT } from "../src/lib/vocab";
@@ -191,56 +191,6 @@ const PAGES: PageCase[] = [
     },
   },
   {
-    path: "/home/sheet",
-    name: "action feed",
-    check: async (page) => {
-      // The hero names the week and team once the feed has loaded.
-      await expect(page.getByText(`Week ${CONNECTION.week}`).first()).toBeVisible();
-      await expect(page.getByText(CONNECTION.team_name).first()).toBeVisible();
-      // The sheet is a row per room now — the three benches that own calls, then the film,
-      // which owns none. Every one renders even when it holds nothing: that empty row is
-      // the whole feature, and the film's row is what makes the front page a map of the
-      // building rather than a list of this week's chores.
-      // Assert the words rather than a role: a bench with no calls is deliberately a plain
-      // row and not a control, and in this fixture the depth chart is exactly that, so
-      // looking for buttons here fails on the case the grouping exists to show.
-      // Scoped to `main` because the tab bar says several of these words too.
-      const sheet = page.locator("main");
-      for (const key of ["team", "waivers", "trade", "report"] as const) {
-        await expect(sheet.getByText(SECTIONS[key].title, { exact: true }).first()).toBeVisible();
-      }
-      // Every row is a door. The film's is the one with nothing to expand, so if rooms ever
-      // stop linking out it is the row that proves it — there is no other way into it here.
-      // Exact, because the standing line under the hero also links to the film and its
-      // spoken label ends with these same words. Two doors into one room is correct; a
-      // substring match that cannot tell them apart is not.
-      await expect(
-        sheet.getByRole("link", { name: `Go to ${SECTIONS.report.title}`, exact: true }),
-      ).toBeVisible();
-      // The injury banner is the app's loudest surface and this fixture's starters are all
-      // clear, so it must not be here. Asserting the silence rather than the shout on
-      // purpose: the way an alert dies is by firing every week until nobody reads it, and
-      // that failure is invisible to a test that only ever checks it can appear.
-      await expect(sheet.getByRole("link", { name: /won\u2019t play|in doubt/ })).toHaveCount(0);
-      // The cards are folded behind whichever rows do have calls. Group rows are the only
-      // `<section>` with a disclosure — cards are `<article>` — so this cannot catch a
-      // card's own Why? toggle by accident.
-      const toggles = sheet.locator("section button[aria-expanded]");
-      expect(await toggles.count(), "no group on the sheet had anything to open").toBeGreaterThan(0);
-      // A bench with calls on it arrives open, so the cards are on screen before anything
-      // is clicked. That is the whole point of the change and the thing that must not
-      // silently regress back to a collapsed home screen.
-      await expect(toggles.first()).toHaveAttribute("aria-expanded", "true");
-      // At least one action card, and cards are <article>, not skeletons.
-      const cards = page.locator("main article");
-      await expect(cards.first()).toBeVisible();
-      expect(await cards.count()).toBeGreaterThan(0);
-      // The caret still works: it folds what it opened.
-      await toggles.first().click();
-      await expect(toggles.first()).toHaveAttribute("aria-expanded", "false");
-    },
-  },
-  {
     path: "/team",
     name: "lineup",
     check: async (page) => {
@@ -307,20 +257,27 @@ const PAGES: PageCase[] = [
   },
 ];
 
-test("the call sheet shows a player without a click, for a reader who has bought nothing", async ({ context, page }) => {
+test("the desk names a player without a click, and the plan opens, for a reader who has bought nothing", async ({ context, page }) => {
   // The finding this whole plan started from: the home screen showed no player names at
-  // all, every row folded, headline "Pending moves: 2". A free reader is the one who must
-  // see them -- it is the only screen they get in full.
+  // all, every row folded. A free reader is the one who must see them -- the desk is the
+  // only screen they get in full, and the plan behind a story is free too; only the wire's
+  // names and the trade partners' names wait behind a pass.
   await context.route("**/api/**", (route) => {
     const headers = { ...route.request().headers(), "x-edge-user": "free@example.com" };
     route.continue({ headers });
   });
-  await page.goto("/home/sheet");
-  await expect(page.getByText(/\d+ moves? to make|All settled\./)).toBeVisible();
-  const cards = page.locator("main article");
-  await expect(cards.first()).toBeVisible();
-  // A real name, not a skeleton: at least two capitalised words inside a card.
-  await expect(cards.first().getByText(/[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/).first()).toBeVisible();
+  await page.goto("/home");
+  const desk = page.getByRole("region", { name: DESK.aria });
+  await expect(desk).toBeVisible();
+  const first = desk.locator(".desk-news-row").first();
+  // A real name, not a skeleton: at least two capitalised words in the headline.
+  await expect(first.getByText(/[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/).first()).toBeVisible();
+  await first.locator(".desk-plan-link").click();
+  await page.waitForURL(`**${SECTIONS.plan.href}**`);
+  await expect(page.getByText(PLAN.nextUp.title, { exact: true })).toBeVisible();
+  // A locked list shows the count and the door, never a name.
+  const wire = page.getByText(/pickups? ranked at the spot/);
+  if (await wire.count()) await expect(page.getByRole("link", { name: new RegExp(PLAN.wire.unlock) })).toBeVisible();
   await assertNoHorizontalOverflow(page);
 });
 
@@ -561,13 +518,19 @@ test("a link with ?player= opens straight onto his page", async ({ page }) => {
   await expect(page.getByRole("dialog")).toBeVisible();
 });
 
-test("the desk: three stories on top, the call sheet, four notebooks that open their rooms", async ({ page }) => {
+test("the desk: three stories on top, hardest first, the matchup, four notebooks that open their rooms", async ({ page }) => {
   await visit(page, "/home");
   const desk = page.getByRole("region", { name: DESK.aria });
   await expect(desk).toBeVisible();
   // The news paper is first, cut to three stories; the recorded week has more than three.
   const news = desk.locator(".desk-news-row");
   await expect(news).toHaveCount(DESK.news.shown);
+  // Every story carries the meter and the arrow into its plan; the meter never climbs
+  // down the page, because the desk is sorted by how hard a story lands.
+  await expect(desk.locator(".desk-sev")).toHaveCount(DESK.news.shown);
+  await expect(desk.locator(".desk-plan-link")).toHaveCount(DESK.news.shown);
+  const sev = await desk.locator(".desk-sev").evaluateAll((els) => els.map((e) => Number(/desk-sev-(\d)/.exec(e.className)?.[1])));
+  for (let i = 1; i < sev.length; i++) expect(sev[i], `story ${i + 1} lands harder than the one above it`).toBeLessThanOrEqual(sev[i - 1]);
   await desk.locator(".desk-more").click();
   expect(await news.count()).toBeGreaterThan(DESK.news.shown);
   // A story opens to the platform's own note.
@@ -575,21 +538,44 @@ test("the desk: three stories on top, the call sheet, four notebooks that open t
   await disclosure.click();
   await expect(disclosure).toHaveAttribute("aria-expanded", "true");
   const paperTop = (await desk.locator(".desk-paper-news").boundingBox())!.y;
-  const stackTop = (await desk.locator(".desk-stack").boundingBox())!.y;
-  expect(paperTop, "news is above the call sheet").toBeLessThan(stackTop);
-  // The stack opens the call sheet; the fourth notebook opens the scouting report.
-  await expect(desk.locator(`a[href="${SECTIONS.sheet.href}"]`)).toBeVisible();
-  await expect(desk.locator(`a[href="${SECTIONS.matchup.href}"]`)).toBeVisible();
-  // Four notebooks, each a link; a lit one wears a badge with a number.
+  const matchupTop = (await desk.locator(".desk-matchup").boundingBox())!.y;
+  expect(paperTop, "news is above the matchup").toBeLessThan(matchupTop);
+  // The matchup paper names the opponent, their record, and opens the full read.
+  const matchup = desk.locator(`a[href="${SECTIONS.matchup.href}"]`);
+  await expect(matchup).toBeVisible();
+  await expect(matchup.getByText(/\d+-\d+ · \d+ of \d+/)).toBeVisible();
+  await expect(matchup.getByText(/% to win/)).toBeVisible();
+  // Four notebooks, each a link; the fourth is the film; a lit one carries a count inside.
   const notebooks = desk.locator(".notebook");
   await expect(notebooks).toHaveCount(4);
+  await expect(desk.locator(`a.notebook[href="${SECTIONS.report.href}"]`)).toBeVisible();
   const lit = desk.locator(".notebook-lit");
   await expect(lit.first()).toBeVisible();
-  await expect(lit.first().locator(".desk-badge")).toHaveText(/^\d+$/);
+  await expect(lit.first().locator(".notebook-badge")).toHaveText(/^\d+$/);
+  // The rings are whole: none is cut off at the notebook's edge.
   await assertNoHorizontalOverflow(page);
   await notebooks.first().click();
   await page.waitForURL(`**${SECTIONS.team.href}`);
   await expect(page.getByRole("heading", { level: 1, name: SECTIONS.team.title })).toBeVisible();
+});
+
+test("a story's arrow opens its action plan: the call, the next man up, and the way back", async ({ page }) => {
+  await visit(page, "/home");
+  const desk = page.getByRole("region", { name: DESK.aria });
+  const row = desk.locator(".desk-news-row").first();
+  const who = (await row.locator(".display").first().textContent())!.split(" ").slice(0, 2).join(" ");
+  await row.locator(".desk-plan-link").click();
+  await page.waitForURL(`**${SECTIONS.plan.href}**`);
+  await expect(page.getByRole("heading", { level: 1, name: SECTIONS.plan.title })).toBeVisible();
+  // The man the story is about, and one of the four calls.
+  await expect(page.locator("main").getByText(new RegExp(who.split(" ")[1])).first()).toBeVisible();
+  const heads = Object.values(PLAN.posture).map((p) => p.head);
+  await expect(page.locator("main").getByText(new RegExp(heads.map((h) => h.replace(".", "\\.")).join("|")))).toBeVisible();
+  await expect(page.getByText(PLAN.nextUp.title, { exact: true })).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+  await page.getByRole("link", { name: PLAN.back }).click();
+  await page.waitForURL(`**${SECTIONS.home.href}`);
+  await expect(desk).toBeVisible();
 });
 
 test("the ticker runs the desk's news along the bottom of a tab that is not the desk", async ({ page }) => {
@@ -615,14 +601,15 @@ test("the first open rides up to the call sheet, and the second does not", async
   const ride = page.getByRole("status", { name: RIDE.aria });
   await expect(ride).toBeVisible();
   await expect(ride.getByText(RIDE.goingUp)).toBeVisible();
-  // It ends, and the call sheet is there when the doors open.
-  await expect(ride).toHaveCount(0);
-  await expect(page.getByText(/\d+ moves? to make|All settled\./)).toBeVisible();
+  // It ends, and the desk is there when the doors open. The whole ride is under fifteen
+  // seconds; the default timeout is inside that, so this one waits longer.
+  await expect(ride).toHaveCount(0, { timeout: 25_000 });
+  await expect(page.getByRole("region", { name: DESK.aria })).toBeVisible();
   await assertNoHorizontalOverflow(page);
   // Stamped, so a reload today is a quiet load.
   expect(await page.evaluate(() => localStorage.getItem("booth.ride"))).toBe(dayStamp(new Date()));
   await page.goto("/home", { waitUntil: "domcontentloaded" });
-  await expect(page.getByText(/\d+ moves? to make|All settled\./)).toBeVisible();
+  await expect(page.getByRole("region", { name: DESK.aria })).toBeVisible();
   await expect(page.getByRole("status", { name: RIDE.aria })).toHaveCount(0);
 });
 
@@ -633,7 +620,7 @@ test("tapping the ride opens the doors early", async ({ page }) => {
   const t0 = Date.now();
   await ride.click();
   await expect(ride).toHaveCount(0);
-  // The whole ride is over four seconds; a skip is the doors' opening time and no more.
+  // The whole ride is over ten seconds; a skip is the landing's fade and no more.
   expect(Date.now() - t0).toBeLessThan(2500);
-  await expect(page.getByText(/\d+ moves? to make|All settled\./)).toBeVisible();
+  await expect(page.getByRole("region", { name: DESK.aria })).toBeVisible();
 });
