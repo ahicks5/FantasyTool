@@ -2,6 +2,28 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Weekly awards (docs/PLAN-AWARDS.md, 2026-09-21)
+
+Planned, not built. The slate the league argues about on a Tuesday: **GM of the Week · Coach of
+the Week · Left on the Table · Robbed · Backdoor**, free, on `/report` between the standings and
+the film. It is the first surface that is about the league rather than about your team, which is
+why it is worth building days out: every other screen is worth one reader, this one is worth
+eleven. `docs/PLAN-AWARDS.md` is the whole brief — the maths, the traps, the tests, and the six
+decisions already made.
+
+- [ ] **AW-1** `edge/engine/awards.py` — pure, offline, `awards.v1`. Five awards, hand-checked
+      against `tests/fixtures/sleeper/moves_2025/standard_ppr` (a real, fully played season).
+- [ ] **AW-2** `service.awards()` + `GET /api/league/{platform}/{league_id}/awards`, mirroring
+      `/standings`: free, league-wide, `log_run` with an **empty `team_id`**.
+- [ ] **AW-3** `/report` block, vocab, types and mocks; both themes at 320 and 390.
+- [ ] **AW-4** The entitlement pin — a free award slate must not open a paid room.
+
+Three things the plan exists to stop a session rediscovering: **no award may read a
+projection** (v1 grades what happened); **ESPN has no per-player points for a past week**, so
+three of the five are correctly absent there rather than zero-filled; and a week that has
+*started* is not a week that is *over* — a live 7–0 first quarter was once published as a win.
+
+
 ## The owner's box (docs/PLAN-OWNERS-BOX.md, 2026-09-20)
 
 The engine had the insights; the app hid them. Eight workstreams, every decision asked of
