@@ -4,17 +4,22 @@ import vm from "node:vm";
 import {
   ARRIVE_AT,
   CLOSE_AT,
+  DARK_AT,
   dayStamp,
   DESK_AT,
   DESK_MS,
-  easeInOut,
+  easeOut,
+  FAST_MS,
+  floorAt,
   FLOORS,
   LAND_AT,
   LAND_MS,
+  LIGHTS_AT,
   OFFICE_AT,
   OFFICE_MS,
   OPEN_AT,
   ORBIT_MS,
+  PANEL_FLOORS,
   pastSkipping,
   PRESS_AT,
   READ_AT,
@@ -27,14 +32,17 @@ import {
   RISE_AT,
   rideState,
   SEALED_AT,
+  SLOW_FROM,
+  SLOW_MS,
+  TOP_FLOOR,
   WALK_MS,
 } from "./elevator.ts";
 
 /* ------------------------------------------------------------ the schedule --- */
 
 test("the phases run in order and each one starts where the last ended", () => {
-  const at = [0, PRESS_AT, CLOSE_AT, SEALED_AT, RISE_AT, ARRIVE_AT, OPEN_AT, OFFICE_AT, DESK_AT, READ_AT, LAND_AT, RIDE_TOTAL_MS];
-  const phases = ["boarding", "press", "closing", "sealed", "rising", "arrived", "opening", "office", "desk", "reading", "landing", "done"];
+  const at = [0, PRESS_AT, CLOSE_AT, SEALED_AT, RISE_AT, ARRIVE_AT, OPEN_AT, DARK_AT, LIGHTS_AT, OFFICE_AT, DESK_AT, READ_AT, LAND_AT, RIDE_TOTAL_MS];
+  const phases = ["boarding", "press", "closing", "sealed", "rising", "arrived", "opening", "dark", "lights", "office", "desk", "reading", "landing", "done"];
   for (let i = 0; i < at.length; i++) {
     assert.equal(rideState(at[i]).phase, phases[i], `at ${at[i]}ms`);
     if (i > 0) assert.equal(rideState(at[i] - 1).phase, phases[i - 1], `just before ${at[i]}ms`);
@@ -52,7 +60,10 @@ test("the camera moves for part of a phase and rests for the remainder", () => {
 
 test("the floor plate climbs from the lobby to PH, never backwards, and lands on PH", () => {
   assert.equal(FLOORS[0], "L");
+  assert.equal(FLOORS[1], "1");
+  assert.equal(FLOORS[TOP_FLOOR], String(TOP_FLOOR));
   assert.equal(FLOORS[FLOORS.length - 1], "PH");
+  assert.equal(FLOORS.length, TOP_FLOOR + 2, "L, 1..28, PH");
   let last = -1;
   for (let t = 0; t <= RIDE_TOTAL_MS; t += 10) {
     const { floor } = rideState(t);
@@ -61,24 +72,56 @@ test("the floor plate climbs from the lobby to PH, never backwards, and lands on
     last = floor;
   }
   assert.equal(rideState(RISE_AT).floor, 0, "the ride starts in the lobby");
-  assert.equal(rideState(ARRIVE_AT - 1).floor, FLOORS.length - 1, "and reaches PH before the stop");
-  assert.equal(rideState(ARRIVE_AT).floor, FLOORS.length - 1);
+  assert.equal(rideState(ARRIVE_AT - 1).floor, TOP_FLOOR, "28 is on the plate as the car settles");
+  assert.equal(rideState(ARRIVE_AT).floor, FLOORS.length - 1, "and PH comes up with the stop");
 });
 
-test("every floor is shown: the ease never jumps two at once", () => {
+test("every floor is shown: neither leg jumps two at once", () => {
   const seen = new Set<number>();
   for (let t = RISE_AT; t <= ARRIVE_AT; t += 5) seen.add(rideState(t).floor);
   assert.equal(seen.size, FLOORS.length, "a floor was skipped");
 });
 
-test("the ease is slow at both ends and quick in the middle", () => {
-  assert.equal(easeInOut(0), 0);
-  assert.equal(easeInOut(1), 1);
-  assert.equal(easeInOut(0.5), 0.5);
-  assert.ok(easeInOut(0.1) < 0.1, "slow off the lobby");
-  assert.ok(easeInOut(0.9) > 0.9, "slow into PH");
-  assert.equal(easeInOut(-1), 0, "clamped below");
-  assert.equal(easeInOut(2), 1, "clamped above");
+test("the ascent races to 23 and slows from there: each floor after it lasts longer than the last", () => {
+  // The race: one speed, the lobby to just under 23, inside FAST_MS.
+  assert.equal(floorAt(0), 0);
+  assert.equal(floorAt(FAST_MS - 1), SLOW_FROM - 1);
+  const racePerFloor = FAST_MS / SLOW_FROM;
+  // The slow-down: 23 comes up soon after, then the dwell on each floor grows.
+  const arrivals: number[] = [];
+  let last = floorAt(FAST_MS);
+  for (let t = FAST_MS; t < FAST_MS + SLOW_MS; t += 1) {
+    const f = floorAt(t);
+    if (f !== last) {
+      arrivals.push(t);
+      last = f;
+    }
+  }
+  assert.equal(last, TOP_FLOOR, "PH is not reached until the stop");
+  assert.equal(arrivals.length, TOP_FLOOR - SLOW_FROM + 1, "23 through 28 each arrive once");
+  const dwells = arrivals.slice(1).map((t, i) => t - arrivals[i]);
+  for (let i = 1; i < dwells.length; i++) assert.ok(dwells[i] > dwells[i - 1], `floor ${SLOW_FROM + i} dwelt no longer than the one below`);
+  assert.ok(dwells[0] > racePerFloor, "and even the first slow floor outlasts a racing one");
+});
+
+test("the ease is quick at first and slow into PH", () => {
+  assert.equal(easeOut(0), 0);
+  assert.equal(easeOut(1), 1);
+  assert.ok(easeOut(0.5) > 0.5, "more than half way at half time");
+  assert.ok(easeOut(0.9) - easeOut(0.8) < easeOut(0.2) - easeOut(0.1), "slowing");
+  assert.equal(easeOut(-1), 0, "clamped below");
+  assert.equal(easeOut(2), 1, "clamped above");
+});
+
+test("the panel carries PH's neighbours, top down, and nothing the car races past", () => {
+  assert.deepEqual([...PANEL_FLOORS], ["28", "27", "26", "25", "24", "23"]);
+  assert.equal(PANEL_FLOORS[PANEL_FLOORS.length - 1], String(SLOW_FROM));
+});
+
+test("the doors open onto a dark room, and the lights come on before anyone walks in", () => {
+  assert.equal(rideState(DARK_AT).phase, "dark");
+  assert.equal(rideState(LIGHTS_AT).phase, "lights");
+  assert.ok(LIGHTS_AT < OFFICE_AT, "the lights are on before the walk");
 });
 
 /* ----------------------------------------------------------------- skipping --- */

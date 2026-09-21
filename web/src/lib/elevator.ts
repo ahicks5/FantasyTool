@@ -2,10 +2,11 @@
 
 /* ------------------------------------------------------------- the ride ---
    The app is the owner's office. The opening is the ride up to it: you step in, press
-   PH, the doors close, the floors go by, the car stops at PH, the lamp comes on, and
-   the doors open onto the office. The camera walks in toward the
-   desk, comes around it to the owner's chair, looks down at the papers, and the
-   papers become the call sheet.
+   PH, the doors close, the car races up from the lobby, slows through the last floors
+   with the panel lighting each one as it passes, stops at PH with the PH button lit,
+   and the doors open onto a dark office. A beat in the doorway, the lights flick on,
+   and the camera walks in toward the desk, comes around it to the owner's chair, looks
+   down at the papers, and the papers become the desk page.
 
    Everything here is a number or a pure function of one. The React component
    (`components/Elevator.tsx`) reads a clock and asks `rideState` what to draw; the CSS
@@ -15,9 +16,15 @@
 
                                                                                    */
 
-/** The floor plate reads these, lobby to top. The ride covers them with an ease, so
- *  the middle floors flash by and the first and last linger. */
-export const FLOORS = ["L", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "PH"] as const;
+/** The top numbered floor; PH is above it. */
+export const TOP_FLOOR = 28;
+/** The floor the car stops racing and starts to slow. From here up, the panel's buttons
+ *  light one at a time as the car passes them. */
+export const SLOW_FROM = 23;
+/** The floor plate reads these, lobby to top: L, 1..28, PH. `FLOORS[k]` is floor k. */
+export const FLOORS = ["L", ...Array.from({ length: TOP_FLOOR }, (_, i) => String(i + 1)), "PH"] as const;
+/** The buttons on the car's panel, top down: PH, then the floors the car slows through. */
+export const PANEL_FLOORS = FLOORS.slice(SLOW_FROM, -1).reverse();
 
 /* Every beat is given room to be read. The whole ride is skippable with a tap, and
    it plays once a day, so it is allowed to take its time: a scene that changes before
@@ -31,12 +38,21 @@ export const PRESS_MS = 550;
 export const CLOSE_MS = 650;
 /** A beat sealed before the car moves. */
 export const SEALED_MS = 250;
-/** The ascent: the floors tick by on the plate. */
-export const RISE_MS = 2200;
-/** The stop at PH: the ding, the lamp comes on, and a moment to take it in. */
-export const ARRIVE_MS = 800;
-/** The doors open onto the office, seen from the car. */
+/** The race: the lobby to `SLOW_FROM`, the plate flashing through the numbers. */
+export const FAST_MS = 1250;
+/** The slow-down: `SLOW_FROM` to PH, each floor lasting longer than the last, the panel's
+ *  buttons lighting one by one as the car passes them. */
+export const SLOW_MS = 2600;
+/** The ascent, both parts. */
+export const RISE_MS = FAST_MS + SLOW_MS;
+/** The stop at PH: the ding, the PH button comes on, and a moment to take it in. */
+export const ARRIVE_MS = 900;
+/** The doors open onto the office, dark. */
 export const OPEN_MS = 800;
+/** Standing in the doorway looking into the dark room: the window, the shapes of the desk. */
+export const DARK_MS = 700;
+/** The lights flick on. */
+export const LIGHTS_MS = 700;
 /** Into the office: the camera walks toward the desk, then rests on it. */
 export const OFFICE_MS = 1400;
 /** How much of that is the walk; the rest is the camera at rest. */
@@ -58,6 +74,8 @@ export type RidePhase =
   | "rising"
   | "arrived"
   | "opening"
+  | "dark"
+  | "lights"
   | "office"
   | "desk"
   | "reading"
@@ -71,7 +89,9 @@ export const SEALED_AT = CLOSE_AT + CLOSE_MS;
 export const RISE_AT = SEALED_AT + SEALED_MS;
 export const ARRIVE_AT = RISE_AT + RISE_MS;
 export const OPEN_AT = ARRIVE_AT + ARRIVE_MS;
-export const OFFICE_AT = OPEN_AT + OPEN_MS;
+export const DARK_AT = OPEN_AT + OPEN_MS;
+export const LIGHTS_AT = DARK_AT + DARK_MS;
+export const OFFICE_AT = LIGHTS_AT + LIGHTS_MS;
 export const DESK_AT = OFFICE_AT + OFFICE_MS;
 export const READ_AT = DESK_AT + DESK_MS;
 export const LAND_AT = READ_AT + READ_MS;
@@ -84,10 +104,22 @@ export interface RideState {
   floor: number;
 }
 
-/** Slow off the lobby, quick through the middle, slow into PH. */
-export function easeInOut(t: number): number {
+/** Quick at first and slower with every floor: the brakes coming on below PH. */
+export function easeOut(t: number): number {
   const x = Math.min(1, Math.max(0, t));
-  return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+  return 1 - (1 - x) * (1 - x);
+}
+
+/**
+ * Which floor the plate reads `t` ms into the ascent. Two legs: a race at one speed from
+ * the lobby to `SLOW_FROM`, then a slow-down through the last floors to PH, so 23 is on the
+ * plate for a beat, 24 for longer, and PH arrives like a car settling.
+ */
+export function floorAt(t: number): number {
+  const top = FLOORS.length - 1;
+  if (t < FAST_MS) return Math.min(SLOW_FROM - 1, Math.floor((t / FAST_MS) * SLOW_FROM));
+  const steps = top - SLOW_FROM + 1;
+  return Math.min(top, SLOW_FROM - 1 + Math.floor(easeOut((t - FAST_MS) / SLOW_MS) * steps));
 }
 
 /**
@@ -105,11 +137,11 @@ export function rideState(elapsed: number, skippedAt: number | null = null): Rid
   if (t < CLOSE_AT) return { phase: "press", floor: 0 };
   if (t < SEALED_AT) return { phase: "closing", floor: 0 };
   if (t < RISE_AT) return { phase: "sealed", floor: 0 };
-  if (t < ARRIVE_AT) {
-    return { phase: "rising", floor: Math.min(top, Math.floor(easeInOut((t - RISE_AT) / RISE_MS) * FLOORS.length)) };
-  }
+  if (t < ARRIVE_AT) return { phase: "rising", floor: floorAt(t - RISE_AT) };
   if (t < OPEN_AT) return { phase: "arrived", floor: top };
-  if (t < OFFICE_AT) return { phase: "opening", floor: top };
+  if (t < DARK_AT) return { phase: "opening", floor: top };
+  if (t < LIGHTS_AT) return { phase: "dark", floor: top };
+  if (t < OFFICE_AT) return { phase: "lights", floor: top };
   if (t < DESK_AT) return { phase: "office", floor: top };
   if (t < READ_AT) return { phase: "desk", floor: top };
   if (t < LAND_AT) return { phase: "reading", floor: top };

@@ -8,8 +8,10 @@ import {
   FLOORS,
   LAND_MS,
   liftRideBoot,
+  LIGHTS_MS,
   OPEN_MS,
   ORBIT_MS,
+  PANEL_FLOORS,
   pastSkipping,
   rideState,
   WALK_MS,
@@ -21,13 +23,15 @@ import { liftFloor } from "@/lib/wait";
 import { IconMark } from "./icons";
 
 /* ---------------------------------------------------------------- the car ---
-   The owner steps into the elevator, presses PH, the doors close, the floors go by,
-   the car stops at PH, the lamp comes on, and the doors open onto the office: a room
-   built from a handful of planes in CSS 3D (the wall with its window and nameplate,
-   the floor, the desk). The camera walks in, comes around the desk to the owner's
-   chair, looks down at the papers on it, sits a moment, and the papers fade into the
-   desk page (`Desk.tsx`), which is the same desk as a screen. The office is the app
-   itself: nothing is revealed except the page that was loading underneath all along.
+   The owner steps into the elevator, presses PH, the doors close, the car races up
+   from the lobby, slows through the last floors with the panel lighting each one as it
+   passes, stops at PH with the PH button lit, and the doors open onto the office, dark:
+   a room built from a handful of planes in CSS 3D (the wall with its window and
+   nameplate, the floor, the desk), seen for a beat by the city in the window. The lights
+   flick on. The camera walks in, comes around the desk to the owner's chair, looks down
+   at the papers on it, sits a moment, and the papers fade into the desk page
+   (`Desk.tsx`), which is the same desk as a screen. The office is the app itself:
+   nothing is revealed except the page that was loading underneath all along.
 
    The whole ride is one clock read against `rideState` in `lib/elevator.ts`, which
    is where every duration lives. The CSS moves the doors and the camera on the same
@@ -40,9 +44,6 @@ import { IconMark } from "./icons";
 
 /** The seam runs down the middle: half the mark on each door. */
 const MARK_SIZE = 72;
-
-/** The car's button panel: PH on top, then the floors below it, unlit. */
-const PANEL_FLOORS = ["12", "11", "10", "9", "8", "7"] as const;
 
 /** A sheet of Penthouse letterhead: the wordmark small in the corner. */
 function Letterhead() {
@@ -96,6 +97,15 @@ export function ElevatorRide() {
   // Nothing sits in front of the doors but the doors: no card, no team, no words. The
   // rider's name is on the desk upstairs, where it belongs.
   const pressed = s.phase !== "boarding";
+  // The panel: PH is pressed and glows for the ride. From 23 up, the floor the car is
+  // passing lights as the indicator and the ones below it keep a dim afterglow, so the
+  // climb reads up the panel as well as on the plate. At the stop PH comes on white.
+  const buttonClass = (f: string) => {
+    const k = FLOORS.indexOf(f as (typeof FLOORS)[number]);
+    if (arrived || s.floor > k) return "ride-button-passed";
+    if (rising && s.floor === k) return "ride-button-now";
+    return "";
+  };
   const team = c?.team_name ?? "PENTHOUSE";
 
   return (
@@ -113,6 +123,7 @@ export function ElevatorRide() {
           "--ride-walk": `${WALK_MS}ms`,
           "--ride-orbit": `${ORBIT_MS}ms`,
           "--ride-land": `${LAND_MS}ms`,
+          "--ride-lights": `${LIGHTS_MS}ms`,
         } as React.CSSProperties
       }
       onClick={skip}
@@ -131,9 +142,10 @@ export function ElevatorRide() {
       </div>
 
       <div className="ride-car">
-        {/* The office, behind the doors. Only lit once the car has arrived, so the
-            lobby is dark through the ajar doors at boarding. The room is placed around
-            the desk top's centre; the camera is the room's own transform. */}
+        {/* The office, behind the doors. In place once the car has arrived, so the lobby
+            is dark through the ajar doors at boarding; dark itself until the lights come
+            on (`.ride-dark`). The room is placed around the desk top's centre; the
+            camera is the room's own transform. */}
         <div className="ride-office" aria-hidden>
           <div className="ride-room">
             <div className="ride-wall">
@@ -163,7 +175,7 @@ export function ElevatorRide() {
                 </div>
                 <div className="ride-paper ride-paper-1">
                   <Letterhead />
-                  <div className="ride-paper-eyebrow">{DESK.notebooks.matchup.from}</div>
+                  <div className="ride-paper-eyebrow">{DESK.matchup.eyebrow}</div>
                   <div className="ride-paper-title display">{SECTIONS.matchup.title}</div>
                   <div className="ride-paper-rule" />
                   <div className="ride-paper-rule short" />
@@ -178,8 +190,8 @@ export function ElevatorRide() {
                 </div>
                 <div className="ride-paper ride-paper-3">
                   <Letterhead />
-                  <div className="ride-paper-eyebrow">{c?.league_name ?? SECTIONS.sheet.label}</div>
-                  <div className="ride-paper-title display">{SECTIONS.sheet.title}</div>
+                  <div className="ride-paper-eyebrow">{c?.league_name ?? DESK.notebooks.report.from}</div>
+                  <div className="ride-paper-title display">{SECTIONS.report.title}</div>
                   <div className="ride-paper-rule" />
                   <div className="ride-paper-rule short" />
                 </div>
@@ -197,6 +209,9 @@ export function ElevatorRide() {
               </div>
             </div>
           </div>
+          {/* The room with the lights off: near-black over everything, the window's city
+              just showing through. It flicks off in the `lights` phase. */}
+          <div className="ride-dark" />
         </div>
 
         {/* The doors. Brushed steel, the mark engraved across the seam, and while the
@@ -210,13 +225,14 @@ export function ElevatorRide() {
           </div>
         </div>
 
-        {/* The button panel on the car wall. PH is pressed, lights, and stays lit for
-            the ride; the floors under it never do. */}
+        {/* The button panel on the car wall: PH on top, then the floors the car slows
+            through. PH is pressed and glows for the ride; each floor lights as the car
+            passes it; PH comes on white at the stop. */}
         <div className="ride-panel" aria-hidden>
           <span className="ride-panel-brand chrome-type">PENTHOUSE</span>
-          <span className={`ride-button ride-button-ph display ${pressed ? "ride-button-lit" : ""}`}>PH</span>
+          <span className={`ride-button ride-button-ph display ${pressed ? "ride-button-lit" : ""} ${arrived ? "ride-button-now" : ""}`}>PH</span>
           {PANEL_FLOORS.map((f) => (
-            <span key={f} className="ride-button tnum">
+            <span key={f} className={`ride-button tnum ${buttonClass(f)}`}>
               {f}
             </span>
           ))}
