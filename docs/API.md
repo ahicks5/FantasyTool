@@ -142,7 +142,8 @@ and never a name.
 - `binders[].count` is the number of call-sheet actions of that binder's type, so the badge
   and the tab it opens cannot disagree. `locked` follows `edge/products.py`.
 - `standing` is the nameplate's three numbers: the record, the standings' own competition
-  rank out of `teams`, and points a game (null before a game has been played).
+  rank out of `teams`, and points a game: points for over *completed weeks*, never over the
+  record (a league that also plays the median books two results a week). Null in week 1.
 - `matchup` is the call sheet's own; `sheet.summary` is its headline.
 
 ## Scouting (feature: waivers)

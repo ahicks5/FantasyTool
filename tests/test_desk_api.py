@@ -77,3 +77,24 @@ def test_a_feed_we_cannot_reach_is_a_quiet_desk_not_a_broken_one(client, league,
 def test_the_desk_route_is_in_the_contract():
     doc = (Path(__file__).parent.parent / "docs" / "API.md").read_text()
     assert "/team/{team_id}/desk" in doc
+
+
+def test_the_nameplate_carries_record_place_and_points_a_game(desk_client, league):
+    tid = league.teams[0].id
+    d = desk_client.get(f"{LG}/team/{tid}/desk").json()
+    st = d["standing"]
+    t = league.teams[0]
+    assert st["record"] == f"{t.wins}-{t.losses}" and st["teams"] == 12 and 1 <= st["rank"] <= 12
+    # Week 2: one week is complete. Divided by completed weeks, not by the record -- this
+    # league plays the median too, so the record counts two results per week.
+    assert st["ppg"] == round(t.points_for / 1, 1)
+    table = desk_client.get(f"{LG}/standings").json()
+    mine = next(r for r in table["teams"] if r["id"] == tid)
+    assert st["rank"] == mine["rank"], "the desk's place is the table's place"
+
+
+def test_points_a_game_is_null_before_a_week_has_finished(league):
+    import copy
+    lg = copy.deepcopy(league)
+    lg.week = 1
+    assert desk.standing(lg, lg.teams[0], {})["ppg"] is None

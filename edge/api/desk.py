@@ -51,15 +51,19 @@ def standing(league, team, ros: dict[str, float]) -> dict:
 
     The place is the standings' own competition rank (record, then points for), read off
     `standings.build` with no played weeks so nothing is fetched -- the all-play columns
-    go null and the rank column is unaffected. Points a game is None until a game has
-    been played; a zero would read as a real average.
+    go null and the rank column is unaffected.
+
+    Points a game divides by **completed weeks**, never by the record. A Sleeper league that
+    also plays the league median books two results a week, so the test league reads 2-0
+    after one week of points, and dividing by wins+losses+ties printed half the true average.
+    None before a week has finished; a zero would read as a real average.
     """
     rows = standings_mod.build(league, ros, [])["teams"]
     row = next(r for r in rows if r["id"] == team.id)
-    games = row["wins"] + row["losses"] + row["ties"]
+    weeks = max(0, int(league.week) - 1)
     record = f"{row['wins']}-{row['losses']}" + (f"-{row['ties']}" if row["ties"] else "")
     return {"record": record, "rank": row["rank"], "teams": len(rows),
-            "ppg": round(row["points_for"] / games, 1) if games else None}
+            "ppg": round(row["points_for"] / weeks, 1) if weeks else None}
 
 
 def build(team, feed: dict, entitlements: set[str], charts: dict | None = None,
