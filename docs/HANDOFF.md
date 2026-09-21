@@ -24,6 +24,38 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## The desk is the front page (2026-09-21, overnight)
+
+Andrew's second brief for the video game: the elevator's last frame *is* the app now.
+`/home` is the owner's desk. First on it, when there is any, is the news: what happened in
+the NFL in the last 72 hours that touches this roster. Not every headline — the platform
+dates hundreds of players a day — but the ones that land here: a player of yours carrying
+a tag, his QB1 ruled out, the starter ahead of him going down (his role opens), his
+offensive line losing men. Then the next opponent as a side paper into the scouting report,
+the call sheet's headline as the other, and three binders along the near edge — head coach
+(start/sit), head of scouting (the wire), GM (trade board) — each with a badge counting what
+is inside and a glow when there is something. Tap a binder, land on its tab. The ranked call
+sheet moved to `/home/sheet`, unchanged.
+
+Where it lives: `edge/data/depth_charts.py` boils the Sleeper players dump into one row per
+NFL player with his depth-chart spot, injury tag, note and news date (memoised an hour, like
+`player_index`); `edge/engine/newsdesk.py` is the pure rules (20 tests, including a sweep of
+the recorded feed over every fixture team proving nothing is invented); `edge/api/desk.py`
+assembles the payload and `GET .../team/{id}/desk` serves it, free; `web/src/components/Desk.tsx`
+draws it. `tests/fixtures/sleeper/depth_charts.json` is the trimmed dump recorded
+2026-09-21 with its `recorded_at`, and `scripts/serve_fixtures.py` pins the desk's clock to
+it, so the browser suite sees the same news every run.
+
+**What is deliberately not there yet, for Andrew.** (1) The desk says what happened; it does
+not say how many points it costs — the depth chart and the wire do, and the rule that the
+desk never invents a number is tested. (2) Line injuries are the noisiest rule: Sleeper has
+no depth order for linemen, so a backup's scratch reads like a left tackle's. They are demoted
+to a `note`, shown for a starter of yours only, merged per offence. If they still read as
+noise, delete rule 3 in `newsdesk.build`. (3) A free agent whose starter just went down (the
+handcuff on the wire) is the obvious next paper and belongs to the scouting binder. (4) The
+window is 72 hours; `WINDOW_HOURS` is the one number. (5) The ride's three papers are
+relabelled to match the desk (next up, just in, call sheet), nothing else about it moved.
+
 ## The opening is an elevator, then the office (2026-09-21)
 
 Andrew's direction: Penthouse should feel like MyGM, an owner with a staff and a building.

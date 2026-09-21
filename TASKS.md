@@ -22,6 +22,21 @@ the opening.
       checklist is gone; a button panel in the car where PH is pressed and lights; and the
       desk dressed as an owner's (nameplate, blotter with the mark, letterhead on the papers,
       pen, phone, coffee, the mark as a trophy).
+- [x] **VG-5** **The desk is the front page.** `/home` is the owner's desk: the news paper
+      (what happened in the NFL in the last 72h that touches this roster — your own player's
+      tag, his QB1 out, the starter ahead of him down, his line losing men), the next opponent
+      as a side paper into the scouting report, the call sheet's headline into `/home/sheet`,
+      and three binders (head coach / head of scouting / GM) with badge counts read off the
+      call sheet's own actions, glowing when lit, each a door into its tab. Engine:
+      `edge/data/depth_charts.py` + `edge/engine/newsdesk.py` (20 tests), API `GET .../desk`
+      free (6 tests), fixture `depth_charts.json` recorded from the live feed with its clock.
+      Web: `components/Desk.tsx`, vocab `DESK`, browser test for the desk and the binder tap.
+      The ranked sheet is untouched at `/home/sheet`. Decisions for Andrew in `docs/HANDOFF.md`.
+- [ ] **VG-6** The wire paper: a free agent whose starter just went down, on the desk under
+      the scouting binder. `newsdesk` has the rule shape; it needs the pool, which the
+      bundle already has.
+- [ ] **VG-7** Trade angles from other voices (the statistics department, a rival GM).
+      Andrew's idea; the GM binder is the door, the engine's `trade_finder` is the source.
 - [ ] **VG-2** Sound. A chime at PH and a door roll would sell it, but a cold load has no
       user gesture so autoplay is blocked; the `/connect` hand-off does have one. Decide
       whether sound is worth an "audio on" switch in the top bar.
@@ -194,6 +209,13 @@ themes. All eight are done and on production.
   `/api` itself, so that value 404s every call while the page still renders. Corrected.
 
 ## Decisions needed from Andrew
+
+- **The desk (2026-09-21, overnight).** Three calls, none blocking: (a) the desk names what
+  happened and never a point cost — keep it that way, or let the news paper quote the depth
+  chart's margin? (b) line injuries are shown as a `note` for your starters only; if they
+  still read as noise, drop rule 3 in `edge/engine/newsdesk.py`. (c) the window is 72 hours
+  (`WINDOW_HOURS`). Also: the home tab now says "Desk" and the ranked list is one tap away
+  at `/home/sheet` — say if you want the sheet back on the tab and the desk behind it.
 
 - **The ride plays once a day.** Every reload used to replay the two-second checklist;
   the elevator is over four seconds, so it plays on the first open of the day and after

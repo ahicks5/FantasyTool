@@ -64,6 +64,20 @@ when it decides not to ride, and the cover fades on its own after three seconds 
 guess can never leave a blank screen. It repeats the day-stamp rule in plain JS; the test
 "the boot script agrees with rideDue" runs it in a sandbox to keep the two the same.
 
+**The doors open onto the desk, and the desk is the front page.** `/home` is the owner's
+desk (`components/Desk.tsx`, payload from `GET .../desk`): the news paper on top (what just
+happened in the NFL that touches this roster, from `edge/engine/newsdesk.py`), the next
+opponent as a side paper into `/home/matchup`, the call sheet's own headline as the other
+side paper into `/home/sheet`, and three binders along the near edge, one per member of
+staff (head coach, head of scouting, GM), each a link into its tab wearing a badge with how
+many items are inside it. The counts are the call sheet's own action counts, so the badge
+and the tab can never disagree. A lit binder breathes (`binder-glow`; still under reduced
+motion). The desk is dark in both themes like the hero and the doors, and its papers carry
+the dark palette explicitly so the words read the same on either theme. The ranked list the
+app used to open on is untouched at `/home/sheet` (`SECTIONS.sheet`), so every deep link on
+a card still lands where it did. Names on the desk open the player sheet like everywhere
+else; the names test fails the moment one is printed flat.
+
 Three things the office taught, so they are not paid for twice. **A plane that reaches
 behind the camera is painted over the whole scene**, so the wall and floor are sized to
 the room and no larger, and they fade out during the tilt as a second guard. **An
