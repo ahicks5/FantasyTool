@@ -32,14 +32,19 @@ off mid-sentence. Both loaders render through the call sheet's own frame (`WaitH
 swap to content changes the text and nothing else.
 
 **The opening is an elevator, and then the office.** The first narrated wait of the day
-is the ride up (`components/Elevator.tsx`): a full-screen car over the quiet skeleton, the
-doors close, the floors go by while the API's real phases tick on the car's display, the
-car stops at PH, the lamp comes on, and the doors open onto the office. The office is CSS
+is the ride up (`components/Elevator.tsx`): a full-screen car over the quiet skeleton, PH
+is pressed on the panel, the doors close, the floors go by, the car stops at PH, the lamp
+comes on, and the doors open onto the office. The office is CSS
 3D: a handful of planes (wall with window and nameplate, floor, the desk as a slab) placed
 around the desk top's centre, and the camera is the room's own transform. It walks in,
 turns around the desk to the owner's chair, tilts down onto three papers (the call sheet,
-the depth chart, the scouting report, with the team's name on them), and the papers fade
-into the call sheet that loaded underneath. Every duration lives in `lib/elevator.ts` and
+the depth chart, the scouting report, on Penthouse letterhead with the team's name on
+them), sits a moment, and the papers fade into the call sheet that loaded underneath. The
+desk is dressed as an owner's: a nameplate with the team facing the door, a blotter with
+the mark embossed, a pen, a phone, a coffee and the mark as a trophy, all CSS shapes. Every
+camera move ends before its phase does (`WALK_MS` inside `OFFICE_MS`, `ORBIT_MS` inside
+`DESK_MS`, then `READ_MS` with nothing moving), because a scene that changes right up to
+the cut reads as a glitch; Andrew's first note on the ride was that it went too fast. Every duration lives in `lib/elevator.ts` and
 nowhere else: the component reads the clock through `rideState`, the CSS gets the
 timings as custom properties, and `MIN_NARRATED_MS` in `lib/wait.ts` *is*
 `RIDE_TOTAL_MS`, so the page cannot swap to content while the camera is still moving. A

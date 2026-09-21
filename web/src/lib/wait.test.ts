@@ -7,14 +7,12 @@ import {
   narratedAtMs,
   narratedFloorPassed,
   liftFloor,
-  OPENING_LINES,
-  OPENING_STEP_MS,
   releaseWait,
   resetWaits,
   subscribeWaits,
   waitsOnScreen,
 } from "./wait.ts";
-import { LAND_AT, LAND_MS, OPEN_AT, RIDE_TOTAL_MS, RISE_AT } from "./elevator.ts";
+import { ARRIVE_AT, LAND_AT, LAND_MS, OPEN_AT, RIDE_TOTAL_MS } from "./elevator.ts";
 
 beforeEach(resetWaits);
 
@@ -128,13 +126,8 @@ test("resetting puts the session all the way back to cold", (t) => {
    constants the animation runs on, so a fifth line, a slower tempo or a longer ride
    cannot put the floor back under the sequence without failing here.              */
 
-const TICK_EVERY_LINE = OPENING_LINES.length * OPENING_STEP_MS;
-/** When the last staff line ticks, on the ride's clock. */
-const LAST_TICK_AT = RISE_AT + TICK_EVERY_LINE;
-
 test("the floor outlasts the ride it is protecting", () => {
-  assert.ok(OPENING_LINES.length > 0 && OPENING_STEP_MS > 0, "there is a sequence to protect");
-  assert.ok(LAST_TICK_AT <= OPEN_AT, `the last line (${LAST_TICK_AT}ms) must tick before the doors open (${OPEN_AT}ms)`);
+  assert.ok(ARRIVE_AT < OPEN_AT && OPEN_AT < LAND_AT, "there is a sequence to protect");
   assert.ok(LAND_MS > 0, "the desk is owed its fade onto the page before content lands");
   assert.equal(MIN_NARRATED_MS, RIDE_TOTAL_MS, "and the floor is the whole ride, derived");
 });
@@ -142,14 +135,12 @@ test("the floor outlasts the ride it is protecting", () => {
 test("a warm API cannot release the screen before the desk has become the page", (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"] });
   assert.equal(claimWait(), "narrated");
-  t.mock.timers.tick(LAST_TICK_AT - OPENING_STEP_MS);
-  assert.equal(narratedFloorPassed(), false, "the last line has not ticked yet");
-  t.mock.timers.tick(OPENING_STEP_MS);
-  assert.equal(narratedFloorPassed(), false, "the final check has only just landed");
-  t.mock.timers.tick(OPEN_AT - LAST_TICK_AT);
+  t.mock.timers.tick(ARRIVE_AT);
+  assert.equal(narratedFloorPassed(), false, "the car has only just stopped");
+  t.mock.timers.tick(OPEN_AT - ARRIVE_AT);
   assert.equal(narratedFloorPassed(), false, "the doors are still opening");
   t.mock.timers.tick(LAND_AT - OPEN_AT);
-  assert.equal(narratedFloorPassed(), false, "the camera is still on its way to the desk");
+  assert.equal(narratedFloorPassed(), false, "the camera is still at the desk");
   t.mock.timers.tick(LAND_MS);
   assert.equal(narratedFloorPassed(), true, "and then the room is yours");
 });

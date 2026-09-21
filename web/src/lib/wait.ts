@@ -59,8 +59,8 @@ export function claimFirstOpen(animated = true): boolean {
 }
 
 /* ------------------------------------------------------------ the sequence ---
-   The opening is the ride up (`lib/elevator.ts`): the doors, the floors, and the
-   staff lines ticking on the way. The floor here is derived from that schedule.
+   The opening is the ride up (`lib/elevator.ts`): the doors, the floors, the office
+   and the desk. The floor here is derived from that schedule.
 
    They were in two places once: `Opening` in `components/ui.tsx` ticked four lines
    at 420ms while `MIN_NARRATED_MS` here said 900, so a warm API released the screen
@@ -68,8 +68,6 @@ export function claimFirstOpen(animated = true): boolean {
    floor protecting it were two numbers in two files with nothing tying them
    together. Now the ride owns every number and this file reads them, and the test
    "the floor outlasts the ride it is protecting" fails the moment it cannot.       */
-
-export { OPENING_LINES, OPENING_STEP_MS } from "./elevator.ts";
 
 /**
  * The narrated opening plays for at least this long once it has started: the whole

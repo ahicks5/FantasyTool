@@ -17,7 +17,11 @@ the opening.
       from it, the overlay in `components/Elevator.tsx`, CSS only, no dependency. Once a day
       per browser, again after every `/connect`, `?ride=1` to replay. Two browser tests.
       Screenshotted frame by frame at 375px in both themes. Andrew's call (2026-09-21): the
-      desk is the last frame before the call sheet, not a new home screen.
+      desk is the last frame before the call sheet, not a new home screen. Round two, on his
+      notes: slower, every camera move rests before the cut, about ten seconds; the staff
+      checklist is gone; a button panel in the car where PH is pressed and lights; and the
+      desk dressed as an owner's (nameplate, blotter with the mark, letterhead on the papers,
+      pen, phone, coffee, the mark as a trophy).
 - [ ] **VG-2** Sound. A chime at PH and a door roll would sell it, but a cold load has no
       user gesture so autoplay is blocked; the `/connect` hand-off does have one. Decide
       whether sound is worth an "audio on" switch in the top bar.

@@ -35,7 +35,9 @@ owns every number (the doors, the floors, the staff lines, the walk, the skip);
 narrated floor from the ride's total. Once a day per browser, again after `/connect`, tap
 to skip, `?ride=1` to replay. `docs/WEB.md` has the wiring and the three 3D traps that cost
 time; `TASKS.md` (VG-1 to VG-4) has what comes next: sound, the GM's phone call, and
-closing the doors on the connect form itself.
+closing the doors on the connect form itself. Andrew's first notes (too fast, lose the
+checklist, press a button, make it an owner's desk) are all in; the ride is about ten
+seconds now, and every number is in `lib/elevator.ts` if he wants it shorter.
 
 **What it cost, so it is not paid twice.** The overlay used to fade in as a whole, so the
 page showed through it for its first third of a second; the wall is solid from frame one

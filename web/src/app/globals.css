@@ -581,7 +581,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 /* Once the doors are opening the plate fades on its own clock, not the lights': an
    animation, even a finished one, overrides the transition to opacity 0. The rule has
    to hold for every phase after, or the fade-in restarts on the next phase change. */
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="landing"]) :is(.ride-plate, .ride-car) { animation: none; }
+.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) :is(.ride-plate, .ride-car) { animation: none; }
 .ride-arrow { color: var(--color-line-2); transition: color 0.2s ease; }
 .ride-arrow-lit { color: var(--color-ink); }
 .ride-floor {
@@ -608,9 +608,9 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 .ride-car {
   position: absolute;
   inset: calc(122px + env(safe-area-inset-top)) 0 0 0;
-  transition: top var(--ride-office, 800ms) cubic-bezier(0.35, 0.05, 0.25, 1);
+  transition: top var(--ride-walk, 1000ms) cubic-bezier(0.35, 0.05, 0.25, 1);
 }
-.ride:is([data-phase="office"], [data-phase="desk"], [data-phase="landing"]) .ride-car { top: 0; }
+.ride:is([data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-car { top: 0; }
 .ride-doors { position: absolute; inset: 0; overflow: hidden; }
 .ride-door {
   position: absolute;
@@ -639,8 +639,8 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 .ride-door-r .ride-mark { left: 0; transform: translateX(-50%); }
 
 /* Stepping in: the doors are ajar, the lobby dark behind them. */
-.ride[data-phase="boarding"] .ride-door-l { transform: translateX(-46%); transition: none; }
-.ride[data-phase="boarding"] .ride-door-r { transform: translateX(46%); transition: none; }
+.ride:is([data-phase="boarding"], [data-phase="press"]) .ride-door-l { transform: translateX(-46%); transition: none; }
+.ride:is([data-phase="boarding"], [data-phase="press"]) .ride-door-r { transform: translateX(46%); transition: none; }
 
 /* Going up: the car lurches once, and the shaft's lights pass down the doors. */
 @keyframes ride-lurch {
@@ -676,20 +676,82 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 .ride[data-phase="arrived"] .ride-floor { animation: ride-ding 0.5s ease-out both; }
 
 /* The doors open onto the office, and the car's furniture goes with them. */
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="landing"]) .ride-door {
+.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-door {
   transition-duration: var(--ride-open, 600ms);
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="landing"]) .ride-door-l { transform: translateX(-102%); }
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="landing"]) .ride-door-r { transform: translateX(102%); }
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="landing"]) .ride-plate,
-.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="landing"]) .ride-display { opacity: 0; }
+.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-door-l { transform: translateX(-102%); }
+.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-door-r { transform: translateX(102%); }
+.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-plate,
+.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-display { opacity: 0; }
 .ride[data-phase="landing"] .ride-skip { opacity: 0; }
 
 /* The landing: the desk becomes the page. The whole scene fades and the call sheet,
    which loaded underneath, is what is left. */
 .ride { transition: opacity var(--ride-land, 450ms) ease-in; }
 .ride[data-phase="landing"] { opacity: 0; }
+
+/* ------------------------------------------------------------- the panel ---
+   The buttons on the car wall, riveted over the right door's edge. PH is pressed in
+   the second beat and stays lit for the ride; the floors below never light. */
+.ride-panel {
+  position: absolute;
+  right: 14px;
+  top: 18%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px 12px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #2a2e36 0%, #1a1d23 100%);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow: var(--bevel), var(--shadow-card);
+  transition: opacity calc(var(--ride-open, 800ms) * 0.5) ease-in;
+  /* The panel is dark in both themes, so its brand line is always the silver cut. */
+  --chrome: var(--chrome-silver);
+}
+.ride-panel-brand {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 6px;
+  letter-spacing: 0.16em;
+  margin-bottom: 2px;
+}
+.ride-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 99px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #8b929d;
+  background: radial-gradient(circle at 35% 30%, #3a3f48, #1c1f25 70%);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 1px 2px rgb(0 0 0 / 0.6);
+}
+.ride-button-ph {
+  width: 34px;
+  height: 34px;
+  font-size: 12px;
+  color: #cdd2d9;
+  transition: box-shadow 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+/* The press: the button goes in, and comes back lit. */
+@keyframes ride-press {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.86); }
+  100% { transform: scale(1); }
+}
+.ride-button-lit {
+  color: #fff;
+  animation: ride-press 0.32s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 0 0 2px rgb(255 226 180 / 0.55), 0 0 16px 3px rgb(255 214 150 / 0.45);
+}
+.ride:is([data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-panel { opacity: 0; }
 
 /* ------------------------------------------------------------- the office ---
    A room made of planes: the back wall with its window and nameplate, the floor, and
@@ -712,7 +774,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   perspective-origin: 50% 46%;
   opacity: 0;
 }
-.ride:is([data-phase="arrived"], [data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="landing"]) .ride-office { opacity: 1; }
+.ride:is([data-phase="arrived"], [data-phase="opening"], [data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-office { opacity: 1; }
 
 .ride-room {
   position: absolute;
@@ -723,27 +785,27 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   transform-style: preserve-3d;
   /* From the elevator, through the open doors. */
   transform: translate3d(0, 90px, -640px) rotateX(-8deg) rotateY(0deg);
-  transition: transform var(--ride-office, 800ms) cubic-bezier(0.35, 0.05, 0.25, 1);
+  transition: transform var(--ride-walk, 1000ms) cubic-bezier(0.35, 0.05, 0.25, 1);
 }
 /* The walk in starts as the doors part and carries on without a seam: the target and
    the duration are the same in both phases, so the one transition just continues. */
 .ride:is([data-phase="opening"], [data-phase="office"]) .ride-room {
   transform: translate3d(0, 130px, -300px) rotateX(-16deg) rotateY(0deg);
-  transition-duration: calc(var(--ride-open, 600ms) + var(--ride-office, 800ms));
+  transition-duration: calc(var(--ride-open, 800ms) + var(--ride-walk, 1000ms));
 }
 /* Around the desk and down onto it. rotateY turns the room so the camera is on the
    owner's side; rotateX(-90) then looks straight down, and because the papers are laid
    for the owner they come up the right way round. */
-.ride:is([data-phase="desk"], [data-phase="landing"]) .ride-room {
-  transform: translate3d(0, 0, 200px) rotateX(-90deg) rotateY(180deg);
-  transition-duration: var(--ride-desk, 950ms);
+.ride:is([data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-room {
+  transform: translate3d(0, 0, 120px) rotateX(-90deg) rotateY(180deg);
+  transition-duration: var(--ride-orbit, 1250ms);
   transition-timing-function: cubic-bezier(0.5, 0.05, 0.2, 1);
 }
 .ride-room > * { position: absolute; transform-style: preserve-3d; backface-visibility: visible; }
 /* Looking down at the desk, the wall and floor are out of shot; fading them makes sure
    of it while the tilt carries them past the camera. */
-.ride-wall, .ride-ground { transition: opacity var(--ride-desk, 950ms) ease-in; }
-.ride:is([data-phase="desk"], [data-phase="landing"]) :is(.ride-wall, .ride-ground) { opacity: 0; }
+.ride-wall, .ride-ground { transition: opacity var(--ride-orbit, 1250ms) ease-in; }
+.ride:is([data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) :is(.ride-wall, .ride-ground) { opacity: 0; }
 
 /* The back wall. Wide enough that its edges stay out of frame during the orbit, and
    no bigger: a plane that reaches behind the camera is painted over the whole scene. */
@@ -882,22 +944,196 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Room for the letterhead in the corner: a long league name ran under it. */
+  padding-right: 60px;
 }
 .ride-paper-hero .ride-paper-eyebrow { color: rgb(247 246 243 / 0.55); }
 .ride-paper-title { font-size: 15px; line-height: 1.1; margin-top: 3px; white-space: nowrap; }
 .ride-paper-rule { height: 5px; border-radius: 3px; background: rgb(255 255 255 / 0.12); margin-top: 7px; }
 .ride-paper-rule.short { width: 60%; }
-.ride-paper-1 { left: 22px; top: 70px; transform: rotate(-7deg); }
-.ride-paper-2 { left: 85px; top: 175px; width: 230px; z-index: 2; }
-.ride-paper-3 { left: 206px; top: 360px; transform: rotate(5deg); }
+.ride-paper-1 { left: 56px; top: 100px; transform: rotate(-7deg); }
+.ride-paper-2 { left: 85px; top: 196px; width: 230px; z-index: 2; }
+.ride-paper-3 { left: 178px; top: 350px; transform: rotate(5deg); }
+
+/* Letterhead: the wordmark, small, top right of every sheet. */
+.ride-letterhead {
+  position: absolute;
+  top: 7px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 6px;
+  letter-spacing: 0.14em;
+}
+.ride-letterhead-mark { color: #cdd2d9; opacity: 0.8; }
+
+/* The blotter under the papers, the mark embossed in its corner. */
+.ride-blotter {
+  position: absolute;
+  left: 42px;
+  top: 56px;
+  width: 316px;
+  height: 404px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #17181c 0%, #121316 100%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.05), inset 0 1px 0 rgb(255 255 255 / 0.04), 0 2px 8px rgb(0 0 0 / 0.5);
+}
+.ride-blotter-mark {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  color: #000;
+  opacity: 0.35;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.05));
+}
+
+/* The things an owner keeps on a desk. All flat shapes; nothing is an image. */
+.ride-pen {
+  position: absolute;
+  left: 322px;
+  top: 190px;
+  width: 7px;
+  height: 96px;
+  border-radius: 4px;
+  transform: rotate(14deg);
+  background: linear-gradient(90deg, #0b0c0e, #2a2d33 40%, #0f1114);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.6);
+}
+.ride-pen::before {
+  /* the clip */
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 10px;
+  width: 3px;
+  height: 26px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #e6e9ee, #8b929d);
+}
+.ride-pen::after {
+  /* the nib */
+  content: "";
+  position: absolute;
+  left: 1.5px;
+  bottom: -6px;
+  width: 4px;
+  height: 8px;
+  border-radius: 0 0 3px 3px;
+  background: #cdd2d9;
+}
+.ride-phone {
+  position: absolute;
+  left: 54px;
+  top: 404px;
+  width: 78px;
+  height: 52px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #1b1d21, #101215);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 3px 6px rgb(0 0 0 / 0.6);
+}
+.ride-phone-handset {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  width: 16px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #2b2f36, #1a1d22);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.6);
+}
+.ride-phone-keys {
+  position: absolute;
+  left: 30px;
+  top: 10px;
+  width: 40px;
+  height: 32px;
+  background:
+    radial-gradient(circle, #3a3f48 0 2px, transparent 2.6px) 0 0 / 13.3px 10.6px;
+}
+.ride-cup {
+  position: absolute;
+  left: 288px;
+  top: 412px;
+  width: 40px;
+  height: 40px;
+  border-radius: 99px;
+  background: radial-gradient(circle at 50% 50%, #2a1d14 0 11px, #e9e6df 12px 15px, #d7d3ca 16px);
+  box-shadow: 0 3px 6px rgb(0 0 0 / 0.6);
+}
+.ride-cup::after {
+  /* the handle */
+  content: "";
+  position: absolute;
+  right: -9px;
+  top: 12px;
+  width: 14px;
+  height: 16px;
+  border: 4px solid #d7d3ca;
+  border-left: 0;
+  border-radius: 0 9px 9px 0;
+}
+.ride-trophy {
+  position: absolute;
+  left: 298px;
+  top: 30px;
+  width: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ride-trophy-mark {
+  color: #e6e9ee;
+  filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.7));
+}
+.ride-trophy-base {
+  width: 34px;
+  height: 8px;
+  margin-top: -6px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #2b2f36, #14161a);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.6);
+}
+
+/* The owner's nameplate, on the door side of the desk, read on the way in. Laid in
+   the desk top's own plane (unrotated), so it faces the doorway and reads upside down
+   from the chair, the way a nameplate does. */
+.ride-desk-items { position: absolute; inset: 0; }
+.ride-desk-nameplate {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 150px;
+  padding: 6px 16px 7px;
+  border-radius: 4px;
+  color: #f4f3f0;
+  background: linear-gradient(180deg, #2f343d 0%, #1b1e24 100%);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 3px 8px rgb(0 0 0 / 0.6);
+}
+.ride-desk-nameplate-name { font-size: 14px; line-height: 1.1; white-space: nowrap; }
+.ride-desk-nameplate-title {
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8b929d;
+}
 
 /* The display on the car wall: the hero surface, over the lower half of the doors. */
 .ride-display {
   position: absolute;
-  left: 50%;
-  top: 46%;
-  width: min(320px, calc(100% - 48px));
-  transform: translateX(-50%);
+  left: 24px;
+  top: 50%;
+  /* Beside the button panel, not under it. */
+  width: min(300px, calc(100% - 130px));
   padding: 18px 20px 16px;
   transition: opacity calc(var(--ride-open, 700ms) * 0.5) ease-in;
 }

@@ -5,29 +5,32 @@ import {
   CLOSE_AT,
   dayStamp,
   DESK_AT,
+  DESK_MS,
   easeInOut,
   FLOORS,
   LAND_AT,
   LAND_MS,
   OFFICE_AT,
+  OFFICE_MS,
   OPEN_AT,
-  OPENING_LINES,
-  OPENING_STEP_MS,
+  ORBIT_MS,
   pastSkipping,
+  PRESS_AT,
+  READ_AT,
   RIDE_TOTAL_MS,
   rideDue,
   rideForced,
   RISE_AT,
-  RISE_MS,
   rideState,
   SEALED_AT,
+  WALK_MS,
 } from "./elevator.ts";
 
 /* ------------------------------------------------------------ the schedule --- */
 
 test("the phases run in order and each one starts where the last ended", () => {
-  const at = [0, CLOSE_AT, SEALED_AT, RISE_AT, ARRIVE_AT, OPEN_AT, OFFICE_AT, DESK_AT, LAND_AT, RIDE_TOTAL_MS];
-  const phases = ["boarding", "closing", "sealed", "rising", "arrived", "opening", "office", "desk", "landing", "done"];
+  const at = [0, PRESS_AT, CLOSE_AT, SEALED_AT, RISE_AT, ARRIVE_AT, OPEN_AT, OFFICE_AT, DESK_AT, READ_AT, LAND_AT, RIDE_TOTAL_MS];
+  const phases = ["boarding", "press", "closing", "sealed", "rising", "arrived", "opening", "office", "desk", "reading", "landing", "done"];
   for (let i = 0; i < at.length; i++) {
     assert.equal(rideState(at[i]).phase, phases[i], `at ${at[i]}ms`);
     if (i > 0) assert.equal(rideState(at[i] - 1).phase, phases[i - 1], `just before ${at[i]}ms`);
@@ -35,12 +38,12 @@ test("the phases run in order and each one starts where the last ended", () => {
   assert.equal(rideState(RIDE_TOTAL_MS + 60_000).phase, "done", "and it stays done");
 });
 
-test("the ascent is long enough for every staff line to tick before the doors open", () => {
-  const ticking = OPENING_LINES.length * OPENING_STEP_MS;
-  assert.ok(ticking <= RISE_MS, `the lines take ${ticking}ms and the rise is ${RISE_MS}ms`);
-  assert.equal(rideState(ARRIVE_AT).lines, OPENING_LINES.length, "every line is ticked on arrival");
-  assert.equal(rideState(RISE_AT).lines, 0, "and none is ticked before the car moves");
-  assert.equal(rideState(RISE_AT + OPENING_STEP_MS).lines, 1, "one line per step");
+test("the camera moves for part of a phase and rests for the remainder", () => {
+  // A scene that changes right up to the cut reads as a glitch; each move ends with
+  // the camera still, so the eye has somewhere to land.
+  assert.ok(WALK_MS < OFFICE_MS, "the walk in ends before the office phase does");
+  assert.ok(ORBIT_MS < DESK_MS, "the orbit ends before the desk phase does");
+  assert.ok(READ_AT < LAND_AT, "and the papers are held before they fade");
 });
 
 test("the floor plate climbs from the lobby to PH, never backwards, and lands on PH", () => {
@@ -81,7 +84,6 @@ test("a tap skips straight to the landing, with everything ticked", () => {
   const s = rideState(skipped, skipped);
   assert.equal(s.phase, "landing");
   assert.equal(s.floor, FLOORS.length - 1, "the plate reads PH");
-  assert.equal(s.lines, OPENING_LINES.length, "every line is ticked");
   assert.equal(rideState(skipped - 1, skipped).phase, "rising", "nothing changes before the tap");
   assert.notEqual(rideState(skipped + LAND_MS).phase, "done", "without a skip it is still riding");
   assert.equal(rideState(skipped + LAND_MS, skipped).phase, "done", "the landing takes its full time");
@@ -93,6 +95,7 @@ test("a tap once the landing has begun changes nothing", () => {
   assert.deepEqual(rideState(late + 10, late), rideState(late + 10));
   assert.ok(pastSkipping(rideState(late)));
   assert.ok(!pastSkipping(rideState(DESK_AT)), "the office is still skippable");
+  assert.ok(!pastSkipping(rideState(READ_AT)), "so is reading at the desk");
   assert.ok(!pastSkipping(rideState(RISE_AT)));
 });
 

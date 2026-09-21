@@ -191,7 +191,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Alarm.tsx` | The one line that interrupts the call sheet: a starter who will not play. | 59 |
 | `web/src/components/Avatar.tsx` | A player headshot. Initials are painted underneath rather than swapped in on error, so a | 66 |
 | `web/src/components/Compare.tsx` | Two scorecards, side by side. Not a verdict, so it borrows the scorecard's | 220 |
-| `web/src/components/Elevator.tsx` | The ride up: the opening, played as an elevator to the office and a walk to the desk. Tap to skip. | 211 |
+| `web/src/components/Elevator.tsx` | The ride up: the opening, played as an elevator to the office and a walk to the desk. Tap to skip. | 242 |
 | `web/src/components/EmailOptIn.tsx` | The weekly-email opt-in: one checkbox, on /login, under the signed-in block. | 104 |
 | `web/src/components/EspnAuthForm.tsx` | The two ESPN cookies a private league needs, asked for in the shape of a form rather than | 167 |
 | `web/src/components/Film.tsx` | The film: the season looked back on, the record read against the scoring, week by week. | 130 |
@@ -236,7 +236,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/cache.ts` | A tiny in-memory cache for the session's fetched data. | 156 |
 | `web/src/lib/compare.ts` | Two scorecards, lined up against each other. | 226 |
 | `web/src/lib/deadline.ts` | Deadlines, as a bench of the call sheet says them out loud. | 181 |
-| `web/src/lib/elevator.ts` | The ride up: the opening as an elevator to the top floor. Pure, so the schedule is tested. | 150 |
+| `web/src/lib/elevator.ts` | The ride up: the opening as an elevator to the top floor. Pure, so the schedule is tested. | 146 |
 | `web/src/lib/errors.ts` | Turning a failure into something worth reading. | 104 |
 | `web/src/lib/espnAuth.ts` | A private ESPN league needs two cookies from the user's own browser: `espn_s2` and `SWID`. | 92 |
 | `web/src/lib/format.ts` | Pure helpers (no React, no DOM) so they can be unit tested with node:test. | 312 |
@@ -259,6 +259,6 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 906 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
 | `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 585 |
-| `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 170 |
+| `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 168 |
 
 <!-- END GENERATED -->
