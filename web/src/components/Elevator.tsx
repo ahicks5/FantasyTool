@@ -209,10 +209,12 @@ export function ElevatorRide() {
               </div>
             </div>
           </div>
-          {/* The room with the lights off: near-black over everything, the window's city
-              just showing through. It flicks off in the `lights` phase. */}
-          <div className="ride-dark" />
         </div>
+        {/* The room with the lights off: near-black over the whole office, the window's city
+            just showing through. It flicks off in the `lights` phase. A sibling of the
+            office, not a child: WebKit paints a 3D context over a flat sibling inside it
+            whatever the z-index says, and the plane has to sit above the room. */}
+        <div className="ride-dark" aria-hidden />
 
         {/* The doors. Brushed steel, the mark engraved across the seam, and while the
             car climbs a light from the shaft passes down them. */}

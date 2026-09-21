@@ -543,7 +543,7 @@ test("the desk: three stories on top, hardest first, the matchup, four notebooks
   // The matchup paper names the opponent, their record, and opens the full read.
   const matchup = desk.locator(`a[href="${SECTIONS.matchup.href}"]`);
   await expect(matchup).toBeVisible();
-  await expect(matchup.getByText(/\d+-\d+ · \d+ of \d+/)).toBeVisible();
+  await expect(matchup.getByText(/\d+-\d+ · \d+ of \d+/)).toHaveCount(2);
   await expect(matchup.getByText(/% to win/)).toBeVisible();
   // Four notebooks, each a link; the fourth is the film; a lit one carries a count inside.
   const notebooks = desk.locator(".notebook");

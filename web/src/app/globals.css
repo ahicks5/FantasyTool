@@ -821,7 +821,10 @@ html.ride-boot::before {
 /* The lights are off when the doors open: near-black over the whole room, the window's
    city the one thing that reads through. In the `lights` phase it flicks off in hard
    steps, a tube catching, and stays off. A flat plane over the room rather than a filter
-   on it, because a filter flattens the 3D context the camera move depends on. */
+   on it, because a filter flattens the 3D context the camera move depends on; a sibling of
+   the office rather than a child of it, under the doors, because WebKit paints a 3D context
+   over a flat sibling inside it. The lit state is the plain rule, not the animation's end:
+   on a browser that drops the animation the room still comes on when the phase does. */
 .ride-dark {
   position: absolute;
   inset: 0;
@@ -829,7 +832,9 @@ html.ride-boot::before {
   background: #04050a;
   opacity: 0.9;
   pointer-events: none;
+  will-change: opacity;
 }
+.ride:is([data-phase="boarding"], [data-phase="press"], [data-phase="closing"], [data-phase="sealed"], [data-phase="rising"]) .ride-dark { opacity: 0; }
 @keyframes ride-flick {
   0% { opacity: 0.9; }
   9% { opacity: 0.35; }
@@ -841,8 +846,8 @@ html.ride-boot::before {
   60% { opacity: 0; }
   100% { opacity: 0; }
 }
-.ride[data-phase="lights"] .ride-dark { animation: ride-flick var(--ride-lights, 700ms) steps(1, end) both; }
-.ride:is([data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-dark { opacity: 0; }
+.ride[data-phase="lights"] .ride-dark { opacity: 0; animation: ride-flick var(--ride-lights, 700ms) steps(1, end) forwards; }
+.ride:is([data-phase="office"], [data-phase="desk"], [data-phase="reading"], [data-phase="landing"]) .ride-dark { opacity: 0; animation: none; }
 /* Looking down at the desk, the wall and floor are out of shot; fading them makes sure
    of it while the tilt carries them past the camera. */
 .ride-wall, .ride-ground { transition: opacity var(--ride-orbit, 1250ms) ease-in; }
@@ -1301,7 +1306,9 @@ html.ride-boot::before {
   color: #cdd2d9;
   opacity: 0.8;
 }
-.desk-news-row { padding: 7px 0; }
+/* The row prints in under a `clip-path` that ends at its own box (`printin`), so the box
+   is widened to the left to give the mark on the face somewhere to sit. */
+.desk-news-row { padding: 7px 0 7px 6px; margin-left: -6px; }
 .desk-news-row:first-child { padding-top: 5px; }
 .desk-news-row:last-child { padding-bottom: 3px; }
 .desk-more {
@@ -1427,21 +1434,18 @@ html.ride-boot::before {
 }
 .desk-mark-4 { background: var(--color-sit); }
 /* An urgent story has a red rule down its left edge as well. */
-.desk-news-row-4 { box-shadow: inset 3px 0 0 var(--color-sit); padding-left: 8px; margin-left: -12px; padding-right: 0; }
-.desk-news-row-4 > div { margin-left: 4px; }
+.desk-news-row-4 { box-shadow: inset 3px 0 0 var(--color-sit); padding-left: 12px; margin-left: -12px; }
 
-/* The arrow into the action plan, on the right of every story. */
+/* The door into the action plan, on the right of every story above the clock: a plan has
+   been thought out and is waiting. */
 .desk-plan-link {
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 1px;
+  gap: 2px;
   flex-shrink: 0;
-  min-width: 34px;
-  min-height: 40px;
-  padding: 0 4px;
-  border-radius: 8px;
+  min-height: 0;
+  padding: 4px 5px 4px 7px;
+  border-radius: 6px;
   border: 1px solid var(--color-line);
   background: var(--color-soft);
   color: var(--color-ink);

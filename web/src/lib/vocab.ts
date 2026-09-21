@@ -214,8 +214,9 @@ export const DESK = {
     severity: ["FYI", "Note", "Watch", "Serious", "Urgent"] as const,
     /** The mark on the face of a story that lands hard. */
     mark: "!",
-    /** The arrow on the right of a story: what to do about it. */
-    plan: "Plan",
+    /** The arrow on the right of a story, above the clock: a plan has been thought out and
+     *  is waiting. Andrew: something succinct that says a recommendation is on offer. */
+    plan: "Plan ready",
     planAria: (who: string) => `Action plan: ${who}`,
     more: (n: number) => `${n} more`,
     less: "Fewer",

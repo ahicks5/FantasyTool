@@ -7,7 +7,7 @@ import { IconChevron, IconMark } from "./icons";
 import { PlayerName } from "./Players";
 import type { Connection } from "@/lib/storage";
 import { newsHeadline } from "@/lib/ticker.ts";
-import type { Binder, Desk, Matchup, NewsItem, NewsSeverity } from "@/lib/types";
+import type { Binder, Desk, DeskStanding, Matchup, NewsItem, NewsSeverity } from "@/lib/types";
 import { DESK, SECTIONS } from "@/lib/vocab";
 
 /* ---------------------------------------------------------------- the desk ---
@@ -111,13 +111,16 @@ function NewsRow({ it, index }: { it: NewsItem; index: number }) {
           <span className="mt-1 flex min-w-0 items-center gap-1.5">
             <Severity n={it.severity} />
             <span className="min-w-0 truncate text-[11px] font-bold text-ink-2">{tagFor(it)}</span>
-            <span className="tnum ml-auto shrink-0 text-[10px] font-bold uppercase text-muted">{DESK.news.ago(it.age_hours)}</span>
           </span>
         </button>
-        <Link href={planHref(it)} className="desk-plan-link" aria-label={DESK.news.planAria(a.name)}>
-          <span>{DESK.news.plan}</span>
-          <IconChevron size={12} strokeWidth={2.8} />
-        </Link>
+        {/* The right column: the plan on top, the clock under it. */}
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          <Link href={planHref(it)} className="desk-plan-link" aria-label={DESK.news.planAria(a.name)}>
+            <span>{DESK.news.plan}</span>
+            <IconChevron size={11} strokeWidth={2.8} />
+          </Link>
+          <span className="tnum text-[10px] font-bold uppercase text-muted">{DESK.news.ago(it.age_hours)}</span>
+        </span>
       </div>
       {open && (
         <div className="mt-2 pl-[46px] text-[12px] leading-snug text-ink-2">
@@ -188,7 +191,7 @@ function NewsPaper({ desk, animate }: { desk: Desk; animate: boolean }) {
  * record and place, and the arrow into the full read. The numbers are the call sheet's
  * own (`report.matchup`) and the standings table's; nothing is computed here.
  */
-function MatchupPaper({ m, week, animate }: { m: Matchup | null | undefined; week: number; animate: boolean }) {
+function MatchupPaper({ m, week, standing, animate }: { m: Matchup | null | undefined; week: number; standing?: DeskStanding | null; animate: boolean }) {
   const cls = `desk-paper desk-matchup ${animate ? "rise rise-1" : ""}`;
   if (!m || !m.opponent || m.their_proj === null) {
     return (
@@ -204,6 +207,9 @@ function MatchupPaper({ m, week, animate }: { m: Matchup | null | undefined; wee
   const ahead = m.my_proj >= m.their_proj;
   const theirs =
     m.opponent_record && m.opponent_rank && m.teams ? DESK.matchup.standing(m.opponent_record, m.opponent_rank, m.teams) : null;
+  // Your own record and place again, under your score: the same two numbers the
+  // nameplate carries, so the two sides of the paper read alike.
+  const mine = standing ? DESK.matchup.standing(standing.record, standing.rank, standing.teams) : null;
   const odds = m.win_prob !== null ? DESK.matchup.odds(m.win_prob) : null;
   return (
     <Link
@@ -215,10 +221,11 @@ function MatchupPaper({ m, week, animate }: { m: Matchup | null | undefined; wee
       <span className="eyebrow">
         {DESK.matchup.eyebrow} <span aria-hidden>·</span> {DESK.week(week)}
       </span>
-      <span className="mt-1.5 flex items-end gap-3">
+      <span className="mt-1.5 flex items-start gap-3">
         <span className="min-w-0 flex-1">
           <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-muted">{DESK.matchup.you}</span>
           <span className={`display tnum block text-[26px] leading-none ${ahead ? "text-ink" : "text-ink-2"}`}>{m.my_proj.toFixed(1)}</span>
+          {mine && <span className="tnum mt-1 block text-[10.5px] font-bold text-muted">{mine}</span>}
         </span>
         <span className="display pb-1 text-[12px] text-muted" aria-hidden>
           {DESK.matchup.vs}
@@ -226,9 +233,9 @@ function MatchupPaper({ m, week, animate }: { m: Matchup | null | undefined; wee
         <span className="min-w-0 flex-1 text-right">
           <span className="block truncate text-[10px] font-black uppercase tracking-[0.12em] text-muted">{m.opponent}</span>
           <span className={`display tnum block text-[26px] leading-none ${ahead ? "text-ink-2" : "text-ink"}`}>{m.their_proj.toFixed(1)}</span>
+          {theirs && <span className="tnum mt-1 block text-[10.5px] font-bold text-muted">{theirs}</span>}
         </span>
       </span>
-      {theirs && <span className="tnum mt-1 block text-right text-[10.5px] font-bold text-muted">{theirs}</span>}
       {m.win_prob !== null && (
         <span className="desk-odds" aria-hidden>
           <span className="desk-odds-bar">
@@ -324,7 +331,7 @@ export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; anim
       <NewsPaper desk={desk} animate={animate} />
 
       <div className="mt-3">
-        <MatchupPaper m={desk.matchup} week={desk.week} animate={animate} />
+        <MatchupPaper m={desk.matchup} week={desk.week} standing={desk.standing} animate={animate} />
       </div>
 
       <ul className="mt-3 grid grid-cols-2 gap-2.5" role="list">
