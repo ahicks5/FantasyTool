@@ -265,3 +265,96 @@ def test_the_hero_headline_fits_one_line_on_a_phone(league):
     assert seen, "no summaries to check"
     for line in seen:
         assert len(line) <= 18, f"{line!r} is {len(line)} chars and will wrap the hero"
+
+
+# ---------------------------------------------------------------- the locked trade teaser
+
+def test_the_locked_trade_teaser_names_the_partner_and_stops(league):
+    """The title is "A trade with <team>" and nothing after it.
+
+    The clause that used to follow — "improves both teams" — ran the title past fifty
+    characters for a long team name, and the locked card spends about 52px of its title
+    column on the lock disc. At 320px that clipped the partner's name, which is the only
+    part of the title carrying information: "A trade with The Dart Knight…". The benefit
+    line and its "+18 ROS" already say the trade is worth making.
+
+    Asserted against the longest team name in the fixture rather than one sentence, because
+    the failure mode is a long name and a hard-coded string would not catch the clause
+    creeping back in some other wording.
+    """
+    ros, byes = _ros(league)
+    names = {t.name for t in league.teams}
+    longest = max(len(n) for n in names)
+    budget = len("A trade with ") + longest
+    seen = 0
+    for t in league.teams:
+        for a in actions.build(league, t, ros, byes, entitlements={"my_team"})["actions"]:
+            if not (a["locked"] and a["feature"] == "trade_lab"):
+                continue
+            seen += 1
+            assert a["title"].startswith("A trade with ")
+            # Exactly the partner's name after the preposition: any trailing clause,
+            # in any wording, fails here rather than only the one we removed.
+            assert a["title"][len("A trade with "):] in names, a["title"]
+            assert len(a["title"]) <= budget, f"{len(a['title'])} > {budget}: {a['title']}"
+    assert seen, "fixture should exercise the trade paywall"
+
+
+def test_the_waiver_teaser_title_is_unchanged(league):
+    """It measures 34 characters and did not clip; the trade fix must not touch it."""
+    ros, byes = _ros(league)
+    seen = 0
+    for t in league.teams:
+        for a in actions.build(league, t, ros, byes, entitlements={"my_team"})["actions"]:
+            if a["locked"] and a["feature"] == "waivers":
+                seen += 1
+                assert re.fullmatch(r"\d+ waiver moves? improves? your roster", a["title"]), a["title"]
+    assert seen, "fixture should exercise the waiver paywall"
+
+
+# ---------------------------------------------------------------- how last week landed
+
+def test_last_week_rides_along_on_the_feed_for_every_reader(league):
+    """Free for everyone (D4): the one line on the call sheet, whatever anyone has paid.
+
+    The engine does not compute it — it needs the `runs` table and this module is pure —
+    so the only thing pinned here is that the feed carries what it is handed, unchanged,
+    on the free tier and the paid one alike.
+    """
+    ros, byes = _ros(league)
+    t = league.teams[0]
+    landed = {"week": 1, "result": "W", "score": 118.0, "opp_score": 104.0,
+              "calls": [{"start": {"id": "1", "name": "A", "position": "WR"},
+                         "sit": {"id": "2", "name": "B", "position": "WR"},
+                         "hit": True, "margin": 4.2, "projected": 2.0}],
+              "hits": 1, "total": 1, "algo_version": "recap.v1"}
+    for ents in ({"my_team"}, {"my_team", "waivers", "trade_lab", "full_report"}):
+        feed = actions.build(league, t, ros, byes, entitlements=ents, last_week=landed)
+        assert feed["last_week"] == landed
+        json.dumps(feed)
+
+
+def test_a_reader_with_no_finished_week_gets_a_null_and_not_a_zero(league):
+    """Week 1 and every brand-new user. Null hides the line; "0 of 0 calls hit" would not."""
+    ros, byes = _ros(league)
+    feed = actions.build(league, league.teams[0], ros, byes, entitlements={"my_team"})
+    assert feed["last_week"] is None
+
+
+def test_the_feed_never_sums_last_weeks_calls(league):
+    """CLAUDE.md: no "points gained" figure anywhere. The feed passes two counts and stops."""
+    ros, byes = _ros(league)
+    landed = {"week": 1, "result": "L", "score": 91.9, "opp_score": 137.8,
+              "calls": [{"start": {"id": "1", "name": "A", "position": "WR"},
+                         "sit": {"id": "2", "name": "B", "position": "WR"},
+                         "hit": True, "margin": 8.24, "projected": None},
+                        {"start": {"id": "3", "name": "C", "position": "WR"},
+                         "sit": {"id": "4", "name": "D", "position": "WR"},
+                         "hit": False, "margin": -3.8, "projected": None}],
+              "hits": 1, "total": 2, "algo_version": "recap.v1"}
+    feed = actions.build(league, league.teams[0], ros, byes,
+                         entitlements={"my_team"}, last_week=landed)
+    out = feed["last_week"]
+    assert set(out) == set(landed), "the feed may not add a field to what it was handed"
+    assert (out["hits"], out["total"]) == (1, 2)
+    assert 4.44 not in out.values(), "the summed margin must not appear"

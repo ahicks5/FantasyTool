@@ -9,6 +9,7 @@ import type { Alarm as AlarmState } from "@/lib/gameday.ts";
 import { MatchupCell } from "@/components/MatchupCell";
 import { SheetGroup, SheetRoom } from "@/components/SheetGroup";
 import { Standing } from "@/components/Standing";
+import { LastWeek } from "@/components/LastWeek";
 import { getActions, getLineup, sendFeedback } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { calledKey, sheetStatus } from "@/lib/format";
@@ -115,6 +116,14 @@ function Sheet({ feed, c, called, total, animate }: { feed: ActionFeed; c: Conne
             because it fetches its own two reads and must be allowed to fail on its own:
             the hero is built from the feed and nothing in it may wait on a scorecard. */}
         <Standing platform={c.platform} leagueId={c.league_id} teamId={c.team_id} />
+
+        {/* And under where the season stands, whether we were right the last time we told
+            this reader something. Free for everyone (D4): one line here, the per-call
+            detail behind the film. It rides on the feed already in hand, so unlike the
+            standing line it needs no request and no reserved height — it is either there
+            on the first paint or not there at all, which is the normal case until a week
+            has finished with a recorded call in it. */}
+        <LastWeek week={feed.last_week} />
 
         {total > 0 && (
           <div className="mt-5">

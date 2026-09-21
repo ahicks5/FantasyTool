@@ -456,3 +456,371 @@ def test_the_week_still_being_played_is_not_in_the_film(raw):
 
     over = build_league(lr, us, rosters, players, week=2)
     assert len(recap.build(over, "1", [pw])["weeks"]) == 1, "and it counts once it is done"
+
+
+# ---------------------------------------------------------------- last week, graded
+
+# The trap this block exists to avoid is the one `docs/HANDOFF.md` names: a test that passes
+# because the data is absent. `last_week` returns None for a league with no recorded runs, so
+# a suite that only ever asserted `is None` would stay green forever while proving nothing
+# about the hit/miss arithmetic.
+#
+# The fixtures below therefore **record real runs first**. `recorded_store` runs the engine's
+# own `actions.build` over every team of the recorded 2026 week-1 Megalabowl and writes each
+# feed through `store.log_run`, exactly as `edge/api/app.py` writes it on every visit to the
+# call sheet; the calls are read back out of `store.export_user`, the way the API reads them.
+# The points they are graded against are Sleeper's own `players_points` from the same
+# recorded matchups. `test_the_recorded_week_really_has_calls_to_grade` fails loudly if that
+# ever stops producing both hits and misses.
+
+REPLAY = FIX / "sleeper" / "replay_week1"
+MEGA = REPLAY / "megalabowl"
+OWNER = "owner@example.com"
+
+
+@pytest.fixture(scope="module")
+def replay_raw():
+    return {
+        "league": _load(MEGA / "league.json"),
+        "users": _load(MEGA / "users.json"),
+        "players": _load(REPLAY / "players_subset.json"),
+        "matchups": _load(MEGA / "matchups_1.json"),
+        "projections": _load(MEGA / "projections_2026_1.json"),
+    }
+
+
+@pytest.fixture(scope="module")
+def replay_week1(replay_raw):
+    """The league as it stood *before* week 1, with the projections we had at the time."""
+    from edge.evaluate import rosters_from_matchups
+    r = replay_raw
+    return build_league(r["league"], r["users"], rosters_from_matchups(r["matchups"]),
+                        r["players"], week=1, projections_raw=r["projections"])
+
+
+@pytest.fixture(scope="module")
+def replay_now(replay_raw):
+    """The same league on the Tuesday after: week 1 is over, week 2 is the one being played."""
+    from edge.evaluate import rosters_from_matchups
+    r = replay_raw
+    return build_league(r["league"], r["users"], rosters_from_matchups(r["matchups"]),
+                        r["players"], week=2, projections_raw=r["projections"])
+
+
+@pytest.fixture(scope="module")
+def replay_played(replay_raw):
+    r = replay_raw
+    return service._sleeper_played_week(r["league"], r["users"], r["players"], 1, r["matchups"])
+
+
+@pytest.fixture(scope="module")
+def recorded_store(replay_week1):
+    """A store holding the call sheets we really served that week, logged the way the API logs.
+
+    `entitlements={"my_team"}` is the free tier, which is who this line is for. Start/sit is
+    free, so the calls are all there; the waiver and trade rows are name-free teasers and are
+    not calls at all.
+    """
+    from edge.data.schedule import bye_weeks
+    from edge.engine import actions as actions_mod
+    from edge.engine.values import ros_values
+
+    byes = bye_weeks(_load(FIX / "schedule_2026.json")["weeks"])
+    ros = ros_values(replay_week1, _load(FIX / "sleeper/projections_2026_season.json"), byes)
+    store = Store(":memory:")
+    for team in replay_week1.teams:
+        feed = actions_mod.build(replay_week1, team, ros, byes, entitlements={"my_team"})
+        store.log_run(OWNER, "sleeper", replay_week1.id, team.id, 1, "actions",
+                      feed["algo_version"], feed)
+    return store
+
+
+@pytest.fixture(scope="module")
+def recorded_calls(recorded_store, replay_week1):
+    """team_id -> what `calls_from_runs` reads back, through `export_user` like the API."""
+    rows = recorded_store.export_user(OWNER)["data"]["runs"]
+    out = {}
+    for team in replay_week1.teams:
+        mine = [r for r in rows if str(r["team_id"]) == team.id
+                and str(r["league_id"]) == replay_week1.id]
+        out[team.id] = recap.calls_from_runs(mine)
+    return out
+
+
+@pytest.fixture(scope="module")
+def graded(replay_now, replay_played, recorded_calls):
+    """team_id -> `last_week`, for every team we recorded a call for."""
+    return {tid: recap.last_week(replay_now, tid, [replay_played], {}, calls)
+            for tid, calls in recorded_calls.items()}
+
+
+def test_the_recorded_week_really_has_calls_to_grade(graded):
+    """The guard on every other test here: a vacuous pass is worse than a failure.
+
+    Both outcomes have to appear across the league, or the hit/miss branch is only half
+    executed and a bug in either arm would go unseen.
+    """
+    weeks = [w for w in graded.values() if w]
+    assert weeks, "no team got a last-week line — the rest of this block proves nothing"
+    calls = [c for w in weeks for c in w["calls"]]
+    assert len(calls) >= 5, f"only {len(calls)} recorded calls were graded"
+    assert any(c["hit"] for c in calls), "every call missed; the hit arm never ran"
+    assert not all(c["hit"] for c in calls), "every call hit; the miss arm never ran"
+    assert sum(w["hits"] for w in weeks) < sum(w["total"] for w in weeks)
+
+
+def test_every_graded_call_is_scored_against_the_points_the_league_published(graded, replay_played):
+    """Recompute each outcome straight from Sleeper's `players_points`, not from our code."""
+    checked = 0
+    for team_id, out in graded.items():
+        if not out:
+            continue
+        points = replay_played.player_points[team_id]
+        for c in out["calls"]:
+            expected = round(points.get(c["start"]["id"], 0.0) - points.get(c["sit"]["id"], 0.0), 2)
+            assert c["margin"] == pytest.approx(expected, abs=0.01)
+            assert c["hit"] is (expected > 0), f"{c['start']['name']} over {c['sit']['name']}"
+            checked += 1
+    assert checked >= 5
+
+
+def test_the_headline_count_agrees_with_the_calls_underneath_it(graded):
+    """"2 of 3 calls hit" is the only thing the free line prints; it cannot drift."""
+    for out in graded.values():
+        if not out:
+            continue
+        assert out["total"] == len(out["calls"]) >= 1
+        assert out["hits"] == sum(1 for c in out["calls"] if c["hit"])
+        assert 0 <= out["hits"] <= out["total"]
+
+
+def test_the_final_is_the_one_the_platform_published(graded, replay_played, replay_now):
+    """The scoreline on the line is the league's own, and the letter agrees with it."""
+    seen = 0
+    for team_id, out in graded.items():
+        if not out:
+            continue
+        opp_id = replay_played.opponents[team_id]
+        assert out["week"] == 1
+        assert out["score"] == replay_played.totals[team_id]
+        assert out["opp_score"] == replay_played.totals[opp_id]
+        assert out["result"] == ("W" if out["score"] > out["opp_score"]
+                                 else "L" if out["score"] < out["opp_score"] else "T")
+        # The film says the same thing about the same week, from the same numbers.
+        wk = recap.week_recap(replay_now, team_id, replay_played)
+        assert (wk["my_points"], wk["their_points"]) == (out["score"], out["opp_score"])
+        assert wk["won"] is (out["result"] == "W")
+        seen += 1
+    assert seen
+
+
+def test_the_line_carries_no_summed_points_figure(graded):
+    """CLAUDE.md, and the whole reason D4 is allowed to be free.
+
+    Per-call outcome, stated flat, is this reader's own week. A total — "you gained 14.2
+    points" or "you left 9 on the bench" — is a claim about how good the product is, and
+    that claim is not available until `scripts/score_runs.py` has graded real weeks. The
+    keys are pinned exactly so a helpful addition cannot slip one in.
+    """
+    for out in graded.values():
+        if not out:
+            continue
+        assert set(out) == {"week", "result", "score", "opp_score", "calls", "hits",
+                            "total", "algo_version"}
+        assert set(out["calls"][0]) == {"start", "sit", "hit", "margin", "projected"}
+        total_gain = round(sum(c["margin"] for c in out["calls"]), 2)
+        numbers = [v for v in out.values() if isinstance(v, (int, float))
+                   and not isinstance(v, bool)]
+        assert total_gain not in numbers or total_gain in (0, out["hits"], out["total"]), \
+            "something in the payload is the summed margin"
+        assert "rate" not in json.dumps(out)
+
+
+def test_one_week_of_calls_is_never_a_hit_rate(graded):
+    """A rate is a claim; a count of this reader's own three calls is not.
+
+    Nothing computes `hits / total` here, and nothing downstream may either — the engine
+    hands over two integers precisely so the only sentence available is "2 of 3".
+    """
+    for out in graded.values():
+        if not out:
+            continue
+        assert isinstance(out["hits"], int) and isinstance(out["total"], int)
+
+
+# ---------------------------------------------------------------- when there is no line
+
+def test_a_week_still_being_played_is_not_last_week(replay_week1, replay_played, recorded_calls):
+    """Week 1 and every brand-new user: the same live-week rule the film uses."""
+    for tid, calls in recorded_calls.items():
+        assert recap.last_week(replay_week1, tid, [replay_played], {}, calls) is None
+
+
+def test_no_recorded_calls_means_no_line(replay_now, replay_played, recorded_calls):
+    """A reader who connected on Wednesday has a finished week and nothing we said about it."""
+    assert any(recorded_calls.values()), "guard: the fixture must have calls to withhold"
+    for tid in recorded_calls:
+        assert recap.last_week(replay_now, tid, [replay_played], {}, {}) is None
+        assert recap.last_week(replay_now, tid, [replay_played], {}, {9: [{"start": {"id": "1"}, "sit": {"id": "2"}}]}) is None
+
+
+def test_no_over_week_at_all_means_no_line(replay_now, recorded_calls):
+    assert recap.last_week(replay_now, "1", [], {}, recorded_calls["1"]) is None
+
+
+def test_a_platform_that_cannot_say_who_scored_grades_nothing(replay_now, replay_played,
+                                                              recorded_calls):
+    """The ESPN case, and it must be a missing line rather than an invented miss.
+
+    `service._espn_played_weeks` recovers a scoreline and no per-player points at all, so
+    every call would grade as a 0.0 margin — a loss we made up. Silence is the honest answer.
+    """
+    scoreline_only = recap.PlayedWeek(week=replay_played.week, totals=replay_played.totals,
+                                      opponents=replay_played.opponents)
+    assert scoreline_only.played
+    for tid, calls in recorded_calls.items():
+        assert recap.last_week(replay_now, tid, [scoreline_only], {}, calls) is None
+
+
+def test_the_most_recent_finished_week_is_the_one_reported(replay_raw, replay_played,
+                                                           recorded_calls):
+    """Two weeks on the board, one line: last week, not the first one we have."""
+    from edge.evaluate import rosters_from_matchups
+    r = replay_raw
+    league = build_league(r["league"], r["users"], rosters_from_matchups(r["matchups"]),
+                          r["players"], week=4, projections_raw=r["projections"])
+    older = replay_played
+    newer = replace(replay_played, week=3)
+    tid = next(t for t, c in recorded_calls.items() if c)
+    calls = {1: recorded_calls[tid][1], 3: recorded_calls[tid][1]}
+    assert recap.last_week(league, tid, [older, newer], {}, calls)["week"] == 3
+    # The week we have calls for is not automatically the week we report.
+    assert recap.last_week(league, tid, [older, newer], {}, {1: recorded_calls[tid][1]}) is None
+
+
+# ---------------------------------------------------------------- grading rules
+
+def _week(points: dict[str, float]) -> recap.PlayedWeek:
+    return recap.PlayedWeek(week=1, totals={"1": 100.0, "2": 90.0},
+                            opponents={"1": "2", "2": "1"}, player_points={"1": points})
+
+
+def _calls(*pairs: tuple[str, str]) -> dict[int, list[dict]]:
+    return {1: [{"start": {"id": a, "name": a, "position": "WR"},
+                 "sit": {"id": b, "name": b, "position": "WR"}} for a, b in pairs]}
+
+
+def test_a_tie_is_not_a_hit(played_league):
+    """The generous convention is the dishonest one — docs/ACCURACY_PROGRAM.md, M1."""
+    league = replace(played_league, week=2, teams=played_league.teams)
+    out = recap.last_week(league, "1", [_week({"a": 12.0, "b": 12.0})], {}, _calls(("a", "b")))
+    assert out["calls"][0]["hit"] is False and out["calls"][0]["margin"] == 0.0
+    out = recap.last_week(league, "1", [_week({"a": 12.01, "b": 12.0})], {}, _calls(("a", "b")))
+    assert out["calls"][0]["hit"] is True
+
+
+def test_a_player_who_did_not_play_scored_zero_rather_than_vanishing(played_league):
+    """He was in the lineup and put up nothing. That is a real miss, not a missing number."""
+    league = replace(played_league, week=2, teams=played_league.teams)
+    out = recap.last_week(league, "1", [_week({"b": 8.0})], {}, _calls(("a", "b")))
+    assert out["calls"][0]["margin"] == -8.0 and out["calls"][0]["hit"] is False
+
+
+def test_a_call_about_two_players_the_week_never_heard_of_is_dropped(played_league):
+    """Not a miss: a pair with no entry either side is a week we cannot speak to."""
+    league = replace(played_league, week=2, teams=played_league.teams)
+    assert recap.last_week(league, "1", [_week({"c": 8.0})], {}, _calls(("a", "b"))) is None
+
+
+def test_the_projected_margin_is_only_ever_one_we_recorded(played_league):
+    """Same rule as `RecapStarter.projected`: read back, or null. Never re-derived."""
+    league = replace(played_league, week=2, teams=played_league.teams)
+    week, calls = [_week({"a": 12.0, "b": 4.0})], _calls(("a", "b"), ("a", "c"))
+    out = recap.last_week(league, "1", week, {1: {"a": 14.0, "b": 9.5}}, calls)
+    assert out["calls"][0]["projected"] == 4.5
+    assert out["calls"][1]["projected"] is None, "half a pair is no record of the call"
+    assert recap.last_week(league, "1", week, {}, calls)["calls"][0]["projected"] is None
+
+
+# ---------------------------------------------------------------- reading the runs back
+
+def test_a_recorded_action_feed_gives_back_the_calls_it_made(recorded_store, replay_week1,
+                                                             recorded_calls):
+    """The shape is pinned against what the call sheet really logs, not a hand-written dict."""
+    from edge.data.schedule import bye_weeks
+    from edge.engine import actions as actions_mod
+    from edge.engine.values import ros_values
+
+    byes = bye_weeks(_load(FIX / "schedule_2026.json")["weeks"])
+    ros = ros_values(replay_week1, _load(FIX / "sleeper/projections_2026_season.json"), byes)
+    seen = 0
+    for team in replay_week1.teams:
+        feed = actions_mod.build(replay_week1, team, ros, byes, entitlements={"my_team"})
+        starts = [a for a in feed["actions"]
+                  if a["type"] == "start" and not a["locked"] and all(a["players"])]
+        got = recorded_calls[team.id].get(1, [])
+        assert len(got) == len(starts)
+        for call, action in zip(got, starts):
+            assert call["start"]["id"] == action["players"][0]["id"]
+            assert call["sit"]["id"] == action["players"][1]["id"]
+            assert call["start"]["name"] == action["players"][0]["name"]
+        seen += len(got)
+    assert seen >= 5, "the recorded league has to yield real calls"
+
+
+def test_a_recorded_lineup_payload_reads_back_the_same_way(league):
+    """The depth chart logs `changes`, not `actions`; both are calls we made."""
+    from edge.engine import report as report_mod
+    from edge.engine.lineup import advise
+
+    seen = 0
+    for team in league.teams:
+        payload = report_mod.lineup_dict(advise(league, team))
+        got = recap.calls_from_runs([{"week": 2, "payload": json.dumps(payload)}]).get(2, [])
+        pairs = [(c["in"]["id"], c["out"]["id"]) for c in payload["changes"] if c["out"]]
+        assert [(c["start"]["id"], c["sit"]["id"]) for c in got] == pairs
+        seen += len(got)
+    assert seen, "the fixture league should produce at least one recorded change"
+
+
+def test_filling_an_empty_slot_is_not_a_call_we_can_be_wrong_about():
+    """There is no benched player to have been wrong about; `edge/evaluate.py` skips these too."""
+    payload = {"changes": [
+        {"slot": "FLEX", "out": None, "in": {"id": "1", "name": "A"}},
+        {"slot": "RB", "out": {"id": "2", "name": "B"}, "in": {"id": "3", "name": "C"}},
+    ]}
+    got = recap.calls_from_runs([{"week": 2, "payload": payload}])[2]
+    assert [c["start"]["id"] for c in got] == ["3"]
+
+
+def test_a_locked_teaser_is_never_read_back_as_a_call():
+    """A paywalled row carries no names by design; grading one would invent a call."""
+    payload = {"actions": [{"type": "start", "locked": True, "players": []},
+                           {"type": "waiver", "locked": False,
+                            "players": [{"id": "1"}, {"id": "2"}]}]}
+    assert recap.calls_from_runs([{"week": 2, "payload": payload}]) == {}
+
+
+def test_a_week_logged_a_dozen_times_is_still_three_calls():
+    """The call sheet logs a run on every visit. Counting the rows would inflate the line.
+
+    This is the difference between "2 of 3 calls hit" and "24 of 36", and it is the one
+    arithmetic error on this surface a reader would actually notice.
+    """
+    payload = {"actions": [
+        {"type": "start", "locked": False,
+         "players": [{"id": "1", "name": "A"}, {"id": "2", "name": "B"}]},
+        {"type": "start", "locked": False,
+         "players": [{"id": "3", "name": "C"}, {"id": "4", "name": "D"}]},
+    ]}
+    rows = [{"week": 2, "payload": json.dumps(payload)} for _ in range(12)]
+    got = recap.calls_from_runs(rows)[2]
+    assert [(c["start"]["id"], c["sit"]["id"]) for c in got] == [("1", "2"), ("3", "4")]
+
+
+def test_an_unparseable_or_weekless_run_row_is_skipped_not_guessed_at_for_calls():
+    assert recap.calls_from_runs([{"week": 3, "payload": "{not json"}]) == {}
+    assert recap.calls_from_runs([{"week": None, "payload": {"changes": [
+        {"in": {"id": "1"}, "out": {"id": "2"}}]}}]) == {}
+    # A waiver plan and a trade board hold neither shape, and must not be mined for one.
+    assert recap.calls_from_runs([{"week": 3, "payload": {"claims": [{"add": {"id": "1"}}]}}]) == {}

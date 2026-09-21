@@ -57,7 +57,15 @@ def _pos_rank_after_add(team: Team, fa, slots: list[str]) -> str | None:
 def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int],
           entitlements: set[str], bid_stats: dict | None = None, trending: dict[str, int] | None = None,
           profiles: dict[str, Profile] | None = None, matchups_raw: list[dict] | None = None,
-          limit: int = 5) -> dict:
+          last_week: dict | None = None, limit: int = 5) -> dict:
+    """The call sheet, as one payload.
+
+    `last_week` is `edge/engine/recap.last_week()` — the finished week and how the calls we
+    made in it landed — or None when there is no finished week, no recorded call, or no way
+    to grade one. It is passed in rather than computed here because it needs the `runs`
+    table and this module is pure; it rides along on the feed, unchanged, **free for every
+    reader**, paid or not. See that function for why it carries no summed figure.
+    """
     slots = league.starting_slots
     adv = lineup_mod.advise(league, team)
     actions: list[dict] = []
@@ -167,7 +175,12 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
         else:
             actions.append({
                 "id": "trade:locked", "type": "trade", "feature": "trade_lab", "locked": True,
-                "title": f"A trade with {partner['team_name']} improves both teams",
+                # Who it is with, and nothing else. The clause that used to follow ("improves
+                # both teams") pushed the title past 50 characters for a long team name, and
+                # the locked card gives ~52px of its title column to the lock disc -- so at
+                # 320px the name itself was what got clipped. The benefit line and its
+                # "+18 ROS" already say the trade is worth making.
+                "title": f"A trade with {partner['team_name']}",
                 "subtitle": partner["headline"],
                 "benefit": f"+{trade_finder._r0(o['my_gain_ros'])} ROS",
                 "benefit_value": o["my_gain_ros"],
@@ -221,6 +234,10 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
         "summary": summary, "all_clear": n_real == 0 and not any(a["locked"] for a in actions),
         "footer": ("Everything else on your roster is fine. Go enjoy your Sunday." if moves else checked),
         "actions": actions,
+        # How the calls we made last week landed, or null. Free for everyone (D4): the one
+        # line on the call sheet, the per-call detail in the paid film. Never a rate and
+        # never a sum -- edge/engine/recap.py::last_week has the rule and the reason.
+        "last_week": last_week,
         # When each bench stops mattering, as this league itself defines it — never a
         # convention we assumed, and never a platform's own numbering: the connectors have
         # already converted into US/Eastern with 0 = Sunday. A null is the platform not
