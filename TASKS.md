@@ -2,6 +2,41 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Player cards — shape, badges, tiers (specced 2026-09-21, see docs/PLAN-PLAYER-CARDS.md)
+
+Andrew's waiver-wire conversation, written down. Nothing built yet. Three layers on one object
+— **tier** (how good, league-relative), **badge** (what kind of season), **shape** (boom or
+steady) — and the same card works on the wire, the depth chart, the GM's Office and a share
+graphic. The rule the whole plan lives under: a card decorates a number, it never replaces
+one. A second session is already on the badges (PC-4).
+
+- [ ] **PC-1** `shape()` in a new `edge/engine/cards.py`: per-player sigma over his own weekly
+      points, as a residual against `calibration.sigma(p)`, shrunk by sample size so one game
+      claims nothing. `tests/test_cards.py`.
+- [ ] **PC-2** Shape on the wire card and the profile — "Floor 6 · Ceiling 22", never a ratio.
+- [ ] **PC-3** `suggest_bid` range widens with shape. The *amount* must not move.
+- [ ] **PC-4** Lifecycle badges: Fresh · Riser · Redshirt · Prime · Fine wine · Slipping ·
+      Washed. First match wins, one per player, none before the sample exists. **Not
+      "Sleeper"** — that is the connector's name.
+- [ ] **PC-5** Tiers (2K finishes) on top of `grades.py`, anchored to points above replacement
+      *in this league*, so superflex and TE-premium tier differently. Not a second ranker.
+- [ ] **PC-6** `tier`, `badges[]`, `shape` in the API contract and both web mirrors.
+- [ ] **PC-7** Pool browsing + badge/tier filters, **below** the top five, paid. The top five
+      never filter — that is the product, and the filter bar is the encyclopedia we are not.
+- [ ] **PC-8** The block: `trade_finder` constrained to one player, shopping or targeting.
+      Preview free, named package still Trade Lab.
+- [ ] **PC-9** Leverage ranking (ceiling when you are the underdog, floor when you are not)
+      measured in `evaluate_moves.py` over 2025 **before** it touches `waivers.rank`.
+
+### Decisions needed from Andrew
+- **D1** Does shape change the ranking, or only the words? (Rec: words + bid range now.)
+- **D2** Floor/ceiling numbers as well as the tag? (Rec: both, never the ratio.)
+- **D3** Does **"Washed"** ship? Right word, and the one badge that lands as an insult to a
+      real player on a card built to be screenshotted.
+- **D4** Seven tiers or the full ten gemstones? (Rec: seven.)
+- **D5** Filters on the wire, in Scouting, or both? (Rec: pool only, never the top five.)
+- **D6** Is the block free or paid? (Rec: same split as `/trades/find`.)
+
 ## The owner's box (docs/PLAN-OWNERS-BOX.md, 2026-09-20)
 
 The engine had the insights; the app hid them. Eight workstreams, every decision asked of

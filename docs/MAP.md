@@ -79,6 +79,7 @@ the value is visible and the names are not.
 | Does this make money? | `docs/UNIT_ECONOMICS.md` |
 | What is left to build? | `TASKS.md` |
 | What are real leagues actually like? | `docs/LEAGUE_SURVEY.md` |
+| What is planned for player cards (tiers, badges, variance)? | `docs/PLAN-PLAYER-CARDS.md` |
 
 ## Commands
 
