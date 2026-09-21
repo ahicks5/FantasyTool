@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import vm from "node:vm";
 import {
   ARRIVE_AT,
   CLOSE_AT,
@@ -17,6 +18,9 @@ import {
   pastSkipping,
   PRESS_AT,
   READ_AT,
+  RIDE_BOOT,
+  RIDE_BOOT_CLASS,
+  RIDE_PATHS,
   RIDE_TOTAL_MS,
   rideDue,
   rideForced,
@@ -119,4 +123,41 @@ test("?ride=1 forces the ride, nothing else does", () => {
   assert.equal(rideForced("?ride=0"), false);
   assert.equal(rideForced(""), false);
   assert.equal(rideForced("?unlock=1"), false);
+});
+
+/* ------------------------------------------------------------ before paint --- */
+
+/** Run the inline boot script against a pretend browser and say whether it covered. */
+function boots(opts: { path?: string; connection?: boolean; rideDay?: string | null; search?: string; reduced?: boolean }): boolean {
+  const store = new Map<string, string>();
+  if (opts.connection !== false) store.set("booth.connection", "{}");
+  if (opts.rideDay) store.set("booth.ride", opts.rideDay);
+  const classes = new Set<string>();
+  const sandbox = {
+    location: { pathname: opts.path ?? "/home", search: opts.search ?? "" },
+    localStorage: { getItem: (k: string) => store.get(k) ?? null },
+    matchMedia: () => ({ matches: !!opts.reduced }),
+    document: { documentElement: { classList: { add: (c: string) => classes.add(c) } } },
+    URLSearchParams,
+    String,
+    Date,
+  };
+  vm.runInNewContext(RIDE_BOOT, sandbox);
+  return classes.has(RIDE_BOOT_CLASS);
+}
+
+test("the boot script agrees with rideDue", () => {
+  const today = dayStamp(new Date());
+  assert.equal(boots({}), rideDue(null, today), "a fresh browser covers");
+  assert.equal(boots({ rideDay: today }), rideDue(today, today), "the second open of the day does not");
+  assert.equal(boots({ rideDay: "2000-01-01" }), rideDue("2000-01-01", today), "yesterday's ride does not count");
+  assert.equal(boots({ rideDay: today, search: "?ride=1" }), rideDue(today, today, true), "?ride=1 forces it");
+});
+
+test("the boot script never covers a page that could not lift it", () => {
+  assert.equal(boots({ path: "/" }), false, "the landing page mounts no opening");
+  assert.equal(boots({ path: "/connect" }), false);
+  for (const p of RIDE_PATHS) assert.equal(boots({ path: p }), true, `${p} rides`);
+  assert.equal(boots({ connection: false }), false, "no team, no ride");
+  assert.equal(boots({ reduced: true }), false, "reduced motion never rides");
 });

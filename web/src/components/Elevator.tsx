@@ -7,6 +7,7 @@ import {
   dayStamp,
   FLOORS,
   LAND_MS,
+  liftRideBoot,
   OPEN_MS,
   ORBIT_MS,
   pastSkipping,
@@ -62,6 +63,8 @@ export function ElevatorRide() {
   const [c] = useState(loadConnection);
 
   useEffect(() => {
+    // The boot cover has done its job: the car is on screen, in the same colour.
+    liftRideBoot();
     saveRideDay(dayStamp(new Date()));
     let raf = 0;
     const frame = (now: number) => {

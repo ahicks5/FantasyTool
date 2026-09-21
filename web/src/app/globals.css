@@ -690,6 +690,22 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
 .ride { transition: opacity var(--ride-land, 450ms) ease-in; }
 .ride[data-phase="landing"] { opacity: 0; }
 
+/* ---------------------------------------------------------- before paint ---
+   The boot script in the root layout puts this class on <html> when a ride is due,
+   before the first paint, so the page cannot flash under the doors. The ride lifts it
+   when it mounts. If nothing lifts it, it goes on its own after three seconds, so a
+   wrong guess costs a moment of blank page and never a stuck one. */
+html.ride-boot::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  background: var(--color-plane);
+  pointer-events: none;
+  animation: ride-boot-out 0.3s ease 3s forwards;
+}
+@keyframes ride-boot-out { to { opacity: 0; visibility: hidden; } }
+
 /* ------------------------------------------------------------- the panel ---
    The buttons on the car wall, riveted over the right door's edge. PH is pressed in
    the second beat and stays lit for the ride; the floors below never light. */

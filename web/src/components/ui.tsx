@@ -17,7 +17,7 @@ import {
 import { describeError, isOnline } from "@/lib/errors";
 import { CLOSED, CONFIDENCE_HIT_LINE } from "@/lib/vocab";
 import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitPhase } from "@/lib/wait";
-import { dayStamp, rideDue, rideForced } from "@/lib/elevator";
+import { dayStamp, liftRideBoot, rideDue, rideForced } from "@/lib/elevator";
 import { loadConnection, loadRideDay } from "@/lib/storage";
 import { ElevatorRide } from "./Elevator";
 import { IconCheck, IconChevron, IconClock, IconMark, IconMoon, IconSun, IconThumbDown, IconThumbUp } from "./icons";
@@ -523,7 +523,11 @@ export function Opening() {
       !reduce && loadConnection() !== null && rideDue(loadRideDay(), dayStamp(new Date()), rideForced(window.location.search));
     const p = claimWait(due);
     setPhase(p);
-    setRide(p === "narrated" && due);
+    const riding = p === "narrated" && due;
+    setRide(riding);
+    // The boot script may have covered the page expecting a ride; if there is none,
+    // uncover it now rather than waiting for the cover's own timeout.
+    if (!riding) liftRideBoot();
     return releaseWait;
   }, []);
 

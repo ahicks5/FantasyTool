@@ -144,3 +144,29 @@ export function rideDue(lastRide: string | null, today: string, force = false): 
 export function rideForced(search: string): boolean {
   return new URLSearchParams(search).get("ride") === "1";
 }
+
+/* ------------------------------------------------------------ before paint ---
+   The ride mounts from a layout effect, which is after the server's HTML has painted:
+   the top bar and the "connect a league" gate showed for a beat before the doors did.
+   This script runs inline in the root layout before the first paint (the same trick
+   as the theme boot) and, when a ride is due, puts a cover the colour of the page over
+   everything. `ElevatorRide` lifts it the moment it mounts; `Opening` lifts it when it
+   decides not to ride; and the CSS lets it go on its own after a few seconds in case
+   neither happens, so a wrong guess can never leave a blank screen.
+
+   It repeats `rideDue` and `dayStamp` in plain JS because nothing bundled exists yet
+   when it runs. The test "the boot script agrees with rideDue" holds them together. */
+
+/** The class the boot script puts on `<html>`, and `html.ride-boot::before` paints. */
+export const RIDE_BOOT_CLASS = "ride-boot";
+
+/** The paths that mount the opening. Elsewhere the cover would have nothing to lift it. */
+export const RIDE_PATHS = ["/home", "/team", "/waivers", "/trade", "/report"] as const;
+
+export const RIDE_BOOT = `(()=>{try{var p=location.pathname;if(${JSON.stringify(RIDE_PATHS)}.indexOf(p)<0)return;if(!localStorage.getItem("booth.connection"))return;if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;var d=new Date(),t=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");var f=new URLSearchParams(location.search).get("ride")==="1";if(f||localStorage.getItem("booth.ride")!==t)document.documentElement.classList.add(${JSON.stringify(RIDE_BOOT_CLASS)});}catch(e){}})()`;
+
+/** Take the boot cover down. Safe to call when it was never up. */
+export function liftRideBoot(): void {
+  if (typeof document === "undefined") return;
+  document.documentElement.classList.remove(RIDE_BOOT_CLASS);
+}

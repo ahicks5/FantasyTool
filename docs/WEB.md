@@ -55,6 +55,15 @@ and `?ride=1` forces it for a demo. Every other cold load is a quiet skeleton wi
 floor at all. Screenshot it in both themes: the car's wall is the page colour, the doors
 and the office are dark in both.
 
+**Nothing flashes before the doors.** The ride mounts from a layout effect, after the
+server's HTML has painted, so the top bar and the connect gate showed for a beat first.
+`RIDE_BOOT` in `lib/elevator.ts` is an inline script in the root layout (like the theme
+boot) that decides before the first paint whether a ride is due and covers the page in its
+own colour (`html.ride-boot::before`). `ElevatorRide` lifts it on mount, `Opening` lifts it
+when it decides not to ride, and the cover fades on its own after three seconds so a wrong
+guess can never leave a blank screen. It repeats the day-stamp rule in plain JS; the test
+"the boot script agrees with rideDue" runs it in a sandbox to keep the two the same.
+
 Three things the office taught, so they are not paid for twice. **A plane that reaches
 behind the camera is painted over the whole scene**, so the wall and floor are sized to
 the room and no larger, and they fade out during the tilt as a second guard. **An
