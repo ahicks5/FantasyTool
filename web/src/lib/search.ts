@@ -4,7 +4,7 @@
  * Everything here is a pure function so the parts that are easy to get wrong — when a
  * keystroke is worth a request, whether the list on screen still belongs to what is in
  * the box, how an arrow key moves — are testable without a DOM. The component
- * (`components/PlayerSearch.tsx`) owns the timers and the focus; this owns the rules.
+ * (`components/PlayerBoard.tsx`) owns the timers and the focus; this owns the rules.
  *
  * The words live here for the same reason every other formatter in `lib/` holds its own:
  * a label that describes a *field* belongs with the code that reads the field. The room's

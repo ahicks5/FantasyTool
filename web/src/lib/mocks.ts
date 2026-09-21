@@ -30,6 +30,10 @@ import type {
   TradeResult,
   Verdict,
   PlayerHit,
+  PlayerBoard,
+  BoardFacets,
+  BoardQuery,
+  BoardRow,
   PlayerProfile,
   ScoutGame,
   ScoutSplit,
@@ -1008,6 +1012,103 @@ export function demoPool(): Player[] {
   ];
   const seen = new Set<string>();
   return picked.filter((p) => (seen.has(p.id) ? false : seen.add(p.id))).slice(0, DEMO_POOL_SIZE);
+}
+
+/**
+ * The scouting board on the mock path: the demo pool, filtered and sorted here rather
+ * than by `edge/api/directory.py`.
+ *
+ * A deliberate second implementation, and a small one. The mock path exists so the app
+ * can be opened and reviewed with no API behind it — `npm run demo` packs a static export
+ * of exactly this — and a board that answered every filter with the same fifty rows would
+ * make the one screen this feature lives on unreviewable. The rules it copies are the two
+ * that are visible on screen: a null number sorts last in both directions, and the facets
+ * are built from the rows rather than from a constant.
+ */
+export function playerBoard(query: BoardQuery = {}, teamId?: string): PlayerBoard {
+  const held = new Map<string, MockRoster>();
+  for (const r of ROSTERS) for (const p of [...r.starters, ...r.bench]) held.set(p.id, r);
+
+  const seen = new Set<string>();
+  const pool = [...mockPlayers(), ...mockFreeAgents()].filter((p) =>
+    seen.has(p.id) ? false : seen.add(p.id),
+  );
+
+  const rows: BoardRow[] = pool.map((p) => {
+    const owner = held.get(p.id);
+    return {
+      id: p.id,
+      name: p.name,
+      position: p.position,
+      positions: [p.position],
+      nfl_team: p.nfl_team,
+      photo: p.photo ?? null,
+      team_logo: p.team_logo ?? null,
+      injury_status: p.injury_status,
+      injury_body_part: p.injury_body_part ?? null,
+      bye_week: p.bye_week ?? ((seed(p.id) % 8) + 5),
+      projected: p.projected,
+      ros: p.ros ?? Math.round(p.projected * (10 + (seed(p.id) % 6)) * 10) / 10,
+      trending_adds: seed(p.id) % 3 === 0 ? seed(p.id) % 40000 : 0,
+      rostered_by: owner
+        ? { team_id: owner.id, team_name: owner.name, is_me: owner.id === (teamId ?? MY_TEAM_ID) }
+        : null,
+    };
+  });
+
+  const facets: BoardFacets = {
+    positions: ["QB", "RB", "WR", "TE", "K", "DEF"].filter((pos) => rows.some((r) => r.position === pos)),
+    nfl_teams: [...new Set(rows.map((r) => r.nfl_team).filter((t): t is string => !!t))].sort(),
+    teams: ROSTERS.map((r) => ({ id: r.id, name: r.name })),
+  };
+
+  const pos = new Set((query.pos ?? []).map((x) => x.toUpperCase()));
+  const nflTeams = new Set((query.nfl_team ?? []).map((x) => x.toUpperCase()));
+  const needle = (query.q ?? "").trim().toLowerCase();
+  const avail = query.avail ?? "all";
+
+  let matched = rows.filter((r) => {
+    if (pos.size && !r.positions.some((x) => pos.has(x.toUpperCase()))) return false;
+    if (nflTeams.size && !nflTeams.has((r.nfl_team ?? "").toUpperCase())) return false;
+    if (avail === "free" && r.rostered_by) return false;
+    if (avail === "rostered" && !r.rostered_by) return false;
+    if (avail === "mine" && !r.rostered_by?.is_me) return false;
+    if (query.owner && r.rostered_by?.team_id !== query.owner) return false;
+    if (needle && !r.name.toLowerCase().includes(needle)) return false;
+    return true;
+  });
+
+  const sort = query.sort ?? "projected";
+  const desc = (query.order ?? "desc") !== "asc";
+  const numeric: Record<string, (r: BoardRow) => number | null> = {
+    projected: (r) => r.projected,
+    ros: (r) => r.ros,
+    trending: (r) => r.trending_adds,
+  };
+  matched = [...matched].sort((a, b) => {
+    if (sort === "name") return a.name.localeCompare(b.name) * (desc ? -1 : 1);
+    if (sort === "position") return a.position.localeCompare(b.position) * (desc ? -1 : 1) || a.name.localeCompare(b.name);
+    const get = numeric[sort] ?? numeric.projected;
+    const av = get(a);
+    const bv = get(b);
+    // Unknown last, whichever way the column is pointing — the server's rule.
+    if (av === null || bv === null) return av === bv ? a.name.localeCompare(b.name) : av === null ? 1 : -1;
+    return (desc ? bv - av : av - bv) || a.name.localeCompare(b.name);
+  });
+
+  const limit = Math.min(query.limit ?? 50, 200);
+  const offset = query.offset ?? 0;
+  return {
+    week: WEEK,
+    total: matched.length,
+    offset,
+    limit,
+    sort,
+    order: desc ? "desc" : "asc",
+    rows: matched.slice(offset, offset + limit),
+    facets,
+    algo_version: "directory.v1-mock",
+  };
 }
 
 export function searchPlayers(q: string): PlayerHit[] {

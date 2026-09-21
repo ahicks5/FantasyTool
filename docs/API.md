@@ -119,6 +119,52 @@ League-scoped although a player is not, for one field: `rostered` is a fact abou
 league, and a search that could not say whether a name is already taken would send the
 reader to a profile to find out.
 
+### Player board (free)
+
+`GET /api/league/{platform}/{league_id}/players?pos=RB,WR&avail=free&sort=ros&limit=50` →
+```json
+{"week":2,"total":214,"offset":0,"limit":50,"sort":"ros","order":"desc",
+ "rows":[{"id":"4866","name":"Saquon Barkley","position":"RB","positions":["RB"],
+          "nfl_team":"PHI","photo":"https://...","team_logo":"https://...",
+          "injury_status":null,"injury_body_part":null,"bye_week":9,
+          "projected":18.2,"ros":241.6,"trending_adds":1204,
+          "rostered_by":{"team_id":"3","team_name":"Brown Town","is_me":false}}],
+ "facets":{"positions":["QB","RB","WR","TE","DEF"],"nfl_teams":["ARI","ATL"],
+           "teams":[{"id":"1","name":"Raft Ryders"}]},
+ "algo_version":"directory.v1"}
+```
+
+The browse half of Scouting, next to the search box above. Every player in the league in
+one list, cut and ordered by the reader.
+
+| Param | Values | Default |
+|---|---|---|
+| `q` | name; two characters before it reaches past the league's own players | — |
+| `pos` | comma-separated, e.g. `RB,WR`. Matches **any** slot he is eligible for | all |
+| `nfl_team` | comma-separated abbreviations, e.g. `KC,SF` | all |
+| `avail` | `all` · `free` · `rostered` · `mine` (needs `team_id`) | `all` |
+| `owner` | one team id, for "show me his roster" | — |
+| `sort` | `projected` · `ros` · `trending` · `name` · `position` | `projected` |
+| `order` | `desc` · `asc` | `desc` |
+| `limit` / `offset` | page size (max 200) and where to start | 50 / 0 |
+
+`total` counts every match, not the page. `facets` is built from this league's own rows, so
+a league with no kicker slot never offers a K chip — do not hard-code the lists.
+
+`projected` is this week in **this league's scoring**; `ros` is the rest of the regular
+season. **Both are `null` when we never priced him, and null is not zero** — a zero is a
+real projection (bye week, deep bench), a null means we have no row for him at all, and the
+board prints a dash. Null sorts last in *both* directions.
+
+A name query reaches past the league into the full platform dump, so a player cut on
+Tuesday is still findable; those rows come back with every number null. The closest name
+match leads regardless of which column is sorted — somebody who typed a name is looking for
+that player.
+
+**Free, and it opens nothing.** These are each player's own numbers. Which of them fits
+*your* roster, what to bid and who to cut are the wire's, they stay behind Wire Pass, and
+no field on this payload carries a fit, a bid or a drop.
+
 ### Player profile (free)
 
 `GET /api/league/{platform}/{league_id}/player/{player_id}?team_id=8` →

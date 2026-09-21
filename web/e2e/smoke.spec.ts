@@ -3,6 +3,7 @@ import { DEV_USER } from "../playwright.config";
 import { SECTIONS } from "../src/lib/vocab";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { SCOUT } from "../src/lib/vocab";
+import { AVAILABILITY_LABELS, BOARD_LABELS, SORT_LABELS } from "../src/lib/board";
 
 /**
  * Every page of the app at 375px, against the fixture API (`scripts/serve_fixtures.py`).
@@ -332,6 +333,82 @@ test("the scout: search a player, land on his profile", async ({ page }) => {
   await page.waitForURL(/\/waivers\/\d+/);
   await expect(page.getByRole("heading", { name: /Jefferson/i }).first()).toBeVisible();
   // A number that can only have come from the engine scoring a real stat line.
+  await expect(page.getByText(SCOUT.footnote)).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+});
+
+test("the board: filter to free-agent running backs, then re-sort them", async ({ page }) => {
+  // The browse half of Scouting, end to end through the real engine: the API cuts the
+  // league's own universe down and orders it, and the page draws what came back. Nothing
+  // here pins a number -- the engine's output moves week to week -- only that the filters
+  // and the sort actually change the list.
+  const { status, problems } = await visit(page, "/waivers");
+  expect(status).toBe(200);
+
+  const board = page.getByRole("list").first();
+  await expect(board.getByRole("listitem").first()).toBeVisible({ timeout: 10_000 });
+
+  const rows = board.getByRole("listitem");
+  const countLine = page.getByText(/\d+ players?/).first();
+  /** The number the count line ends on: how many matched, not how many fitted on the page. */
+  const found = async () => Number(/(\d+) players?/.exec((await countLine.textContent()) ?? "")![1]);
+
+  // Running backs, still across the whole league.
+  await page.getByRole("button", { name: "RB", exact: true }).click();
+  await expect.poll(async () => rows.count(), { timeout: 10_000 }).toBeGreaterThan(0);
+  const everyRb = await found();
+
+  // Now only the ones nobody has.
+  await page.getByRole("button", { name: AVAILABILITY_LABELS.free, exact: true }).click();
+  await expect.poll(found, { timeout: 10_000 }).toBeLessThan(everyRb);
+  await expect.poll(async () => rows.count(), { timeout: 10_000 }).toBeGreaterThan(0);
+
+  for (const row of await rows.all()) {
+    // Every row is a running back. Matched against the meta line's own shape
+    // ("RB \u00b7 GB \u00b7 Bye 11") rather than a bare word: a row's text content runs the
+    // avatar initials and the name straight into it, so "Chris Brooks" at RB reads as
+    // "...BrooksRB \u00b7 GB" and there is no word boundary to anchor to.
+    await expect(row).toContainText(/RB \u00b7 /);
+    // And none of them repeats what the filter already said. `showsOwner` in lib/board.ts
+    // drops the badge here: "Free agent" on all of them is noise, and it wrapped under the
+    // meta line on some rows and not others, which left the list visibly ragged.
+    await expect(row).not.toContainText(SCOUT.free);
+  }
+
+  // Re-sorting is a different order, not a different list.
+  const first = await rows.first().textContent();
+  await page.getByLabel(BOARD_LABELS.sortBy).selectOption("name");
+  await expect.poll(async () => rows.first().textContent(), { timeout: 10_000 }).not.toBe(first);
+
+  // And the control says what it did.
+  await expect(page.getByLabel(BOARD_LABELS.sortBy)).toHaveValue("name");
+  expect(SORT_LABELS.name.label).toBe("Name");
+
+  await assertNoHorizontalOverflow(page);
+  expect(problems, "the board logged browser errors").toEqual([]);
+});
+
+test("the board is free, and clicking a row opens that player", async ({ page }) => {
+  // The other half of the growth decision, in the browser. The API half is pinned by
+  // `tests/test_directory.py::test_the_board_does_not_open_the_wire`; this is the half a
+  // page refactor could quietly undo, by moving the board inside the lock.
+  await page.route("**/waivers/plan*", (route) =>
+    route.fulfill({
+      status: 402,
+      contentType: "application/json",
+      body: JSON.stringify({ detail: { error: "requires a purchase", feature: "waivers", upsell: [] } }),
+    }),
+  );
+
+  const { status } = await visit(page, "/waivers");
+  expect(status).toBe(200);
+  await expect(page.getByText("Wire Pass").first()).toBeVisible();
+
+  // A locked reader still gets a working board, with real numbers on it.
+  const row = page.getByRole("list").first().getByRole("listitem").first();
+  await expect(row).toBeVisible({ timeout: 10_000 });
+  await row.getByRole("link").click();
+  await page.waitForURL(/\/waivers\/\w+/);
   await expect(page.getByText(SCOUT.footnote)).toBeVisible();
   await assertNoHorizontalOverflow(page);
 });

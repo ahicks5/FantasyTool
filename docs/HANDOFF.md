@@ -24,6 +24,35 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## Scouting is now a board, not just a search box (2026-09-21)
+
+`/waivers` opens on **every player in the league**, filtered and sorted by the reader:
+position chips, NFL team, who has him (All / Free / Rostered / Mine), and a sort over this
+week's projection, rest-of-season value, most added, name or position, either direction. The
+search box is still there and is now one filter among the others rather than a second list
+beside them. `PlayerBoard.tsx` replaced `PlayerSearch.tsx`; `TASKS.md` has the decisions,
+`docs/API.md` has the contract.
+
+Four things a future session will otherwise rediscover the hard way:
+
+- **The board is free and the wire is still paid** — the same line the profile already sat
+  on. Description is free; the decision (roster fit, the bid, the cut) is Wire Pass.
+  `tests/test_directory.py::test_the_board_never_prices_a_claim` greps the payload for the
+  wire's own words and `::test_the_board_does_not_open_the_wire` pins the 402s.
+  **This is the one call worth Andrew's eye this round** — it is in "Decisions needed from
+  Andrew" in `TASKS.md`, and reversing it is one line in `edge/api/app.py`.
+- **Nothing in `edge/api/directory.py` fetches.** Every number on a row was already in the
+  cached bundle. Add a vendor call there and you have both broken CLAUDE.md's providers rule
+  and turned a cheap board into a slow one.
+- **Null is not zero and must not become zero.** A null projection sorts last in *both*
+  directions and prints a dash. `boardNumber` in `web/src/lib/board.ts` is the only place
+  that decides, and it has a test named after the distinction.
+- **The two filter enums live in both languages.** `SORTS`/`AVAILABILITY` in
+  `directory.py` and `BOARD_SORTS`/`BOARD_AVAILABILITY` in `board.ts`, pinned by
+  `tests/test_cross_language_contracts.py`. Drift means a control that lies: an unknown
+  availability falls back to `all`, so the reader asks for free agents, sees the whole
+  league, and the control stays lit saying he filtered.
+
 ## The scouting tab now has a player encyclopedia in it (2026-09-20)
 
 Search any player in the NFL from `/waivers`, open a profile at `/waivers/<player id>`: snaps,
