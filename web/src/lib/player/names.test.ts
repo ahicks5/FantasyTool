@@ -36,6 +36,10 @@ const ALLOWED: Record<string, string> = {
   "src/components/Players.tsx": "PlayerName itself: this is the one place a name is printed.",
   "src/components/player/PlayerSheet.tsx": "The player page's own header. It is already his page.",
   "src/components/Locked.tsx": "A product's name on the paywall, not a player's.",
+  "src/components/LineupView.tsx":
+    "The board's slot rows only. The whole row is the target now (PlayerTarget), so the " +
+    "name inside it cannot also be a button -- a button cannot hold a button. The swap " +
+    "lines and the bench rows above and below it do go through PlayerName.",
   "src/components/player/Report.tsx": "The player page's own header. It is already his page.",
   "src/components/Pricing.tsx": "A product's name on the price list, not a player's.",
   "src/components/Unlocking.tsx": "A product's name, said back after a purchase, not a player's.",
