@@ -145,16 +145,16 @@ export function ElevatorRide() {
             <div className="ride-desk-side ride-desk-side-l" />
             <div className="ride-desk-side ride-desk-side-r" />
             <div className="ride-desk-top">
-              {/* What faces the door: the owner's nameplate, read on the way in. */}
-              <div className="ride-desk-items">
+              {/* Everything laid for the owner's chair, which is where the camera ends
+                  up: the nameplate, the blotter, the papers, and the things an owner
+                  keeps on a desk. The nameplate reads from the chair too: it is the
+                  last thing on screen before the call sheet, so it reads the same way
+                  the call sheet does. */}
+              <div className="ride-papers">
                 <div className="ride-desk-nameplate">
                   <span className="ride-desk-nameplate-name display">{team}</span>
                   <span className="ride-desk-nameplate-title">{RIDE.owner}</span>
                 </div>
-              </div>
-              {/* Everything laid for the owner's chair, which is where the camera ends
-                  up: the blotter, the papers, and the things an owner keeps on a desk. */}
-              <div className="ride-papers">
                 <div className="ride-blotter">
                   <IconMark size={120} className="ride-blotter-mark" />
                 </div>

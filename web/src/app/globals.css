@@ -1096,14 +1096,13 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   box-shadow: 0 2px 4px rgb(0 0 0 / 0.6);
 }
 
-/* The owner's nameplate, on the door side of the desk, read on the way in. Laid in
-   the desk top's own plane (unrotated), so it faces the doorway and reads upside down
-   from the chair, the way a nameplate does. */
-.ride-desk-items { position: absolute; inset: 0; }
+/* The owner's nameplate, on the far edge of the desk, laid to read from the chair like
+   everything else: it is the last thing on screen before the call sheet and reads the
+   same way up. (From the door it is upside down, which is not where anyone reads it.) */
 .ride-desk-nameplate {
   position: absolute;
   left: 50%;
-  bottom: 14px;
+  top: 14px;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;

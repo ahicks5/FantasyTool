@@ -40,7 +40,7 @@ around the desk top's centre, and the camera is the room's own transform. It wal
 turns around the desk to the owner's chair, tilts down onto three papers (the call sheet,
 the depth chart, the scouting report, on Penthouse letterhead with the team's name on
 them), sits a moment, and the papers fade into the call sheet that loaded underneath. The
-desk is dressed as an owner's: a nameplate with the team facing the door, a blotter with
+desk is dressed as an owner's: a nameplate with the team, read from the chair, a blotter with
 the mark embossed, a pen, a phone, a coffee and the mark as a trophy, all CSS shapes. Every
 camera move ends before its phase does (`WALK_MS` inside `OFFICE_MS`, `ORBIT_MS` inside
 `DESK_MS`, then `READ_MS` with nothing moving), because a scene that changes right up to
