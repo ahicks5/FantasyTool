@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
 import { IconFilm, IconSheet, IconTeam, IconTrade, IconWire } from "./icons";
 import { PlayerSheetProvider } from "./player/PlayerSheetProvider";
+import { Ticker } from "./Ticker";
 import { UnlockingBanner, useUnlockOnReturn } from "./Unlocking";
 import { LinkButton, OnAir, Opening, Spinner, ThemeToggle, Wordmark } from "./ui";
 import { SECTIONS, TAB_ORDER, type SectionKey, type TabKey } from "@/lib/vocab";
@@ -112,13 +113,16 @@ function TabIcon({ Icon, active }: { Icon: (p: { size?: number; strokeWidth?: nu
  *
  * Both live in one fixed block so the ribbon can never drift away from the bar it is
  * attached to, and so the whole assembly has a single height — which is what the page's
- * bottom padding is reserved against (`pb-32` on `main`, measured at 320px).
+ * bottom padding is reserved against (`pb-40` on `main`: ribbon, ticker and bar at 320px).
  */
 export function TabBar({ session }: { session: Session }) {
   const path = usePathname();
   return (
     <div className="fixed inset-x-0 bottom-0 z-20">
       <LeagueRibbon session={session} />
+      {/* The bottom line: the desk's news running over the tabs, on every screen that
+          has a team. Its height is part of what `main`'s bottom padding reserves. */}
+      {session.connection && <Ticker c={session.connection} />}
       <nav className="border-t border-line bg-[color-mix(in_srgb,var(--color-plane)_92%,transparent)] pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
       <ul className="mx-auto grid max-w-lg grid-cols-5">
         {TAB_ORDER.map((key) => {
@@ -188,7 +192,7 @@ export function AppShell({
     <PlayerSheetProvider>
     <div className="flex min-h-screen flex-col">
       <TopBar session={session} />
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-32 pt-5">
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-40 pt-5">
         {/* The band is still one fixed height, and every tab pays the same one: the
             blurb is never conditional, so adding it moves the page down once and never
             again. 34px was the h1 alone; the line under it is 13px on `leading-snug`

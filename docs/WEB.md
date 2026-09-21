@@ -78,6 +78,18 @@ app used to open on is untouched at `/home/sheet` (`SECTIONS.sheet`), so every d
 a card still lands where it did. Names on the desk open the player sheet like everywhere
 else; the names test fails the moment one is printed flat.
 
+**The ticker runs along the bottom of every screen.** `components/Ticker.tsx` sits in the
+fixed block above the tab bar, under the ribbon, and reads the same cached `desk:` payload
+the desk does, so once the desk has loaded it costs nothing and cannot disagree; on a tab
+opened cold it makes the one desk request itself. The track is rendered twice and slid by
+its own width for a seamless loop; the pace comes from the text's length (`lib/ticker.ts`,
+tested) so eight headlines do not run eight times faster than one. Hover pauses it; under
+reduced motion it holds still on the first, most serious, headline and hides the second
+copy. It is a link to the desk. Its height is part of what `main` reserves (`pb-40`). It
+cost the fixture server its rate cap: a fresh browser context per test now makes two
+league reads per page load, which crossed the 60-a-minute line mid-suite, so
+`serve_fixtures.py` runs with `EDGE_RATE_LIMIT=0`; production keeps the cap.
+
 Three things the office taught, so they are not paid for twice. **A plane that reaches
 behind the camera is painted over the whole scene**, so the wall and floor are sized to
 the room and no larger, and they fade out during the tilt as a second guard. **An

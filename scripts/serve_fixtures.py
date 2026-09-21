@@ -105,6 +105,11 @@ def install_fixture_sleeper() -> None:
 
 def build_app(user: str, skus: tuple[str, ...]):
     os.environ["EDGE_DEV"] = "1"                       # accept the X-Edge-User dev header
+    # No per-IP cap here. Every browser test is a fresh context with an empty cache, and
+    # the ticker on every tab means a page load is two league reads; twenty tests from one
+    # IP in a minute crossed the 60-read line and the suite failed on whichever test was
+    # unlucky enough to be running. Production keeps the cap; this server is test-only.
+    os.environ.setdefault("EDGE_RATE_LIMIT", "0")
     os.environ.setdefault("EDGE_SEASON", str(SEASON))
     os.environ.pop("EDGE_USE_CLAUDE", None)            # template explanations: offline + deterministic
     os.environ["EDGE_CACHE_DIR"] = str(ROOT / ".cache")

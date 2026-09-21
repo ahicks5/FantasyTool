@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
-import { DESK, RIDE, SECTIONS } from "../src/lib/vocab";
+import { DESK, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { SCOUT } from "../src/lib/vocab";
@@ -584,6 +584,20 @@ test("the desk: news on top, the opponent beside it, three binders that open the
   await binders.first().click();
   await page.waitForURL(`**${SECTIONS.team.href}`);
   await expect(page.getByRole("heading", { level: 1, name: SECTIONS.team.title })).toBeVisible();
+});
+
+test("the ticker runs the desk's news along the bottom of a tab that is not the desk", async ({ page }) => {
+  await visit(page, SECTIONS.team.href);
+  const ticker = page.getByRole("link", { name: TICKER.aria });
+  await expect(ticker).toBeVisible();
+  // Real news from the recorded feed, not the quiet line and not the loading line.
+  await expect(ticker.locator(".ticker-item").first()).toBeAttached();
+  await expect(ticker.getByText(TICKER.quiet)).toHaveCount(0);
+  // It sits over the tab bar, on screen, and it is a door to the desk.
+  const box = (await ticker.boundingBox())!;
+  expect(box.y + box.height).toBeLessThanOrEqual(812);
+  await ticker.click();
+  await page.waitForURL(`**${SECTIONS.home.href}`);
 });
 
 test("the first open rides up to the call sheet, and the second does not", async ({ page }) => {

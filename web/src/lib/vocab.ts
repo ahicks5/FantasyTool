@@ -230,6 +230,15 @@ export const DESK = {
   },
 } as const;
 
+/** The ticker along the bottom of every screen: the desk's news, one line, running. */
+export const TICKER = {
+  aria: "News ticker. Open the desk",
+  /** The plate on the left of the strip. */
+  plate: "Just in",
+  quiet: "Quiet. Nothing on your roster moved.",
+  loading: "Checking the wire\u2026",
+} as const;
+
 export type BinderKey = keyof typeof DESK.binders extends infer K ? Extract<K, "team" | "waivers" | "trade"> : never;
 
 export const GROUPS = {

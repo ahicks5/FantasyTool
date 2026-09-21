@@ -46,6 +46,14 @@ draws it. `tests/fixtures/sleeper/depth_charts.json` is the trimmed dump recorde
 2026-09-21 with its `recorded_at`, and `scripts/serve_fixtures.py` pins the desk's clock to
 it, so the browser suite sees the same news every run.
 
+Andrew's next note that night: run the news as a ticker along the bottom too. Done:
+`components/Ticker.tsx`, on every screen with a team, reading the desk's cache. One thing to
+know: the depth chart's own "Just in" row reads a *different* source (the lineup payload's
+`news_updated`, 48 hours, rostered players only), so against the fixtures it says "nothing
+new" while the desk and the ticker carry six stories. Live, both read the same feed; if the
+two windows should agree, `WINDOW_HOURS` in `newsdesk.py` and `NEWS_WINDOW_MS` in
+`lib/gameday.ts` are the two numbers.
+
 **What is deliberately not there yet, for Andrew.** (1) The desk says what happened; it does
 not say how many points it costs — the depth chart and the wire do, and the rule that the
 desk never invents a number is tested. (2) Line injuries are the noisiest rule: Sleeper has

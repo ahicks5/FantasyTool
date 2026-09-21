@@ -1345,6 +1345,69 @@ html.ride-boot::before {
   50% { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 6px 14px -6px rgb(0 0 0 / 0.8), 0 0 18px 2px rgb(255 226 180 / 0.18); }
 }
 
+
+/* ----------------------------------------------------------------- ticker ---
+   The bottom line: the desk's news running right to left over the tab bar. Dark in
+   both themes like the hero and the doors; it is the metal. The plate on the left is
+   fixed and the headlines pass behind it. */
+.ticker {
+  display: flex;
+  align-items: stretch;
+  height: 28px;
+  overflow: hidden;
+  color: #e6e9ee;
+  background: linear-gradient(180deg, #14171c 0%, #0c0e11 100%);
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  --chrome: var(--chrome-silver);
+}
+.ticker-plate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 0 10px 0 12px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #cdd2d9;
+  background: #1b1e24;
+  border-right: 1px solid rgb(255 255 255 / 0.1);
+  z-index: 1;
+}
+.ticker-plate .lamp { width: 6px; height: 6px; }
+.ticker-window {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  /* The headlines fade in at the plate and out at the edge. */
+  mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 16px), transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 16px), transparent 100%);
+}
+.ticker-track {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding-left: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  animation: ticker-run var(--ticker-ms, 20000ms) linear infinite;
+}
+.ticker:hover .ticker-track { animation-play-state: paused; }
+.ticker-item { display: inline-flex; align-items: center; gap: 7px; padding-right: 34px; }
+.ticker-dot { width: 6px; height: 6px; border-radius: 99px; flex-shrink: 0; }
+.ticker-quiet { animation: none; color: #8b929d; }
+.ticker-still .ticker-track { animation: none; }
+@keyframes ticker-run {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
 button, a.btn, select, input { min-height: 44px; }
 
 /* Everything above degrades to a plain, instant layout. The lamp keeps its glow
@@ -1358,6 +1421,9 @@ button, a.btn, select, input { min-height: 44px; }
      ever is, nothing in it moves. */
   .ride, .ride * , .ride-doors::after { animation: none; transition: none; }
   .binder-lit { animation: none; }
+  /* The strip holds still on the first, most serious, headline. */
+  .ticker-track { animation: none; }
+  .ticker-track[aria-hidden="true"] { display: none; }
   /* The card still changes state, it just arrives there already changed. */
   .card-open, .card-done { transition: none; }
   /* Deliberately still moving — see the note on .spinner. Slower, not stopped. */

@@ -4,6 +4,7 @@ import {
   CONFIDENCE_HIT_LINE,
   CONNECT,
   DESK,
+  TICKER,
   EMAIL,
   GROUPS,
   LANDING,
@@ -34,7 +35,7 @@ const ALL_COPY: string[] = [
   // `DESK.opponent.odds` is left out: a win chance is the engine's number for this week,
   // not a claim about how often we are right, and the matchup page already prints it.
   DESK.sheet.eyebrow, DESK.sheet.cta, DESK.binders.eyebrow, DESK.binders.count(1),
-  DESK.binders.count(3), DESK.binders.clear, DESK.binders.locked,
+  DESK.binders.count(3), DESK.binders.clear, DESK.binders.locked, ...Object.values(TICKER),
   ...(["team", "waivers", "trade"] as const).flatMap((k) => [DESK.binders[k].staff, DESK.binders[k].line]),
   ...Object.values(CONNECT),
   ...Object.values(GROUPS).flatMap((g) => [g.clear, g.stamp]),

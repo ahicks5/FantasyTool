@@ -32,6 +32,8 @@ the opening.
       free (6 tests), fixture `depth_charts.json` recorded from the live feed with its clock.
       Web: `components/Desk.tsx`, vocab `DESK`, browser test for the desk and the binder tap.
       The ranked sheet is untouched at `/home/sheet`. Decisions for Andrew in `docs/HANDOFF.md`.
+      Plus, on Andrew's note: the same news runs as a **ticker** along the bottom of every
+      screen (`components/Ticker.tsx`, `lib/ticker.ts` tested, browser test), a door to the desk.
 - [ ] **VG-6** The wire paper: a free agent whose starter just went down, on the desk under
       the scouting binder. `newsdesk` has the rule shape; it needs the pool, which the
       bundle already has.
