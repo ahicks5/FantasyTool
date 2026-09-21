@@ -22,6 +22,24 @@ export function confidenceInk(c: Confidence): string {
   return CONFIDENCE_INK[c] ?? CONFIDENCE_INK["Coin flip"];
 }
 
+/**
+ * The ring an `Avatar` wears for a confidence tag.
+ *
+ * Here rather than in the two components that draw it, for the reason the ink map is
+ * here: the depth chart's board and the Debrief's starters strip are the same claim
+ * about the same slot, and a Lock that is green in one and amber in the other is a bug
+ * nobody would think to look for.
+ */
+export const CONFIDENCE_RING: Record<Confidence, "start" | "lean" | "flip"> = {
+  Lock: "start",
+  Lean: "lean",
+  "Coin flip": "flip",
+};
+
+export function confidenceRing(c: Confidence): "start" | "lean" | "flip" {
+  return CONFIDENCE_RING[c] ?? CONFIDENCE_RING["Coin flip"];
+}
+
 export const VERDICT_TEXT_CLASSES: Record<Verdict, string> = {
   Accept: "text-start",
   Reject: "text-sit",

@@ -569,3 +569,30 @@ button, a.btn, select, input { min-height: 44px; }
   padding: 0.1em 0.35em;
   word-break: break-word;
 }
+
+/* ------------------------------------------------------------- the strip ---
+   The week's starters in a row on the plate. Nine 36px discs plus their gaps is
+   about 380px, so below 400 the row scrolls sideways *inside its own box* rather
+   than making the page do it: `body { overflow-x: hidden }` would swallow the
+   overflow without a scrollbar, and the reader would simply never see the last
+   two slots. `overscroll-behavior-x: contain` keeps a swipe that runs out of
+   strip from turning into a back-navigation gesture.
+
+   The scrollbar itself is hidden because it would land on the plate's bottom
+   edge, under the slot labels. The fade on the right edge is the channel that
+   replaces it — it is what says there is more row than you can see, and it is
+   painted in the plate's own colour so it reads as the strip running under the
+   card rather than as a gradient drawn on top of it.                          */
+
+.strip {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.strip::-webkit-scrollbar {
+  display: none;
+}
+.strip-fade {
+  background: linear-gradient(to right, transparent, var(--color-hero));
+}

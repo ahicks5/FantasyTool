@@ -164,7 +164,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/error.tsx` | The boundary for anything a page throws while rendering. Without it Next shows its own | 35 |
 | `web/src/app/global-error.tsx` | Last resort: an error in the root layout itself, where the app's own chrome and | 45 |
 | `web/src/app/home/matchup/page.tsx` | The full read on this week's opponent: the scoreline, the win meter, and every | 247 |
-| `web/src/app/home/page.tsx` | The Debrief: one memo per department, each with the one thing it needs you to see. | 257 |
+| `web/src/app/home/page.tsx` | The Debrief: one memo per department, each with the one thing it needs you to see. | 277 |
 | `web/src/app/layout.tsx` | The root layout: the two type families, every metadata tag, and the theme boot script. | 90 |
 | `web/src/app/login/page.tsx` | Sign in with a magic link, or run as NEXT_PUBLIC_DEV_USER when Supabase is not configured. | 144 |
 | `web/src/app/not-found.tsx` | The 404 page, deliberately not indexed. | 30 |
@@ -180,12 +180,12 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/waivers/[player]/page.tsx` | One player's scout report, inside Scouting. | 46 |
 | `web/src/app/waivers/page.tsx` | Scouting: look anyone up, then the waiver plan over the ranked free-agent board. | 108 |
 
-### `web/src/components/` — the view (33 files)
+### `web/src/components/` — the view (34 files)
 
 | File | What it is | Lines |
 |---|---|---|
 | `web/src/components/Alarm.tsx` | The one line that interrupts the call sheet: a starter who will not play. | 59 |
-| `web/src/components/Avatar.tsx` | A player headshot. Initials are painted underneath rather than swapped in on error, so a | 66 |
+| `web/src/components/Avatar.tsx` | A player headshot. Initials are painted underneath rather than swapped in on error, so a | 77 |
 | `web/src/components/Compare.tsx` | Two scorecards, side by side. Not a verdict, so it borrows the scorecard's | 220 |
 | `web/src/components/EmailOptIn.tsx` | The weekly-email opt-in: one checkbox, on /login, under the signed-in block. | 104 |
 | `web/src/components/EspnAuthForm.tsx` | The two ESPN cookies a private league needs, asked for in the shape of a form rather than | 167 |
@@ -194,7 +194,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/GameDay.tsx` | The game-day answer, above the board: am I good for Sunday, did anything just happen, | 238 |
 | `web/src/components/LastWeek.tsx` | How last week's calls landed, in one line on the film room's memo. Free for everyone. | 76 |
 | `web/src/components/LegalPage.tsx` | Shared chrome and typography for /terms and /privacy. Plain, readable, no app shell. | 66 |
-| `web/src/components/LineupView.tsx` | Two reads on the same team: this week's board, and how the roster grades out. | 266 |
+| `web/src/components/LineupView.tsx` | Two reads on the same team: this week's board, and how the roster grades out. | 265 |
 | `web/src/components/Locked.tsx` | Premium teaser, not a wall: says what we found, then offers the pass or the bundle. | 110 |
 | `web/src/components/MatchupCell.tsx` | The week's scoreboard, directly under the page title: you, them, and the door | 93 |
 | `web/src/components/Memo.tsx` | One department's memo on the Debrief: who is talking, the one thing they want, and the door. | 399 |
@@ -211,6 +211,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Shell.tsx` | The room itself: top bar, league ribbon, tab bar, and the shell every page mounts. | 226 |
 | `web/src/components/Standing.tsx` | Where you stand, in one line on the film room's memo: grade, rank, record. | 102 |
 | `web/src/components/Standings.tsx` | The table: every team in the league, by record, and what the rosters are worth from here. | 90 |
+| `web/src/components/Starters.tsx` | The week's starters in a row on the Debrief's one dark plate, and the clock over them. | 177 |
 | `web/src/components/TradeFinderView.tsx` | The board. Who to call, what to offer, and what it is worth to each side. | 405 |
 | `web/src/components/Unlocking.tsx` | The gap between a cleared card and a written entitlement, made visible instead of confusing. | 131 |
 | `web/src/components/WaiverPlanView.tsx` | The waiver plan: the claim we are asking for, its bid, and the backup claims under it. | 190 |
@@ -228,7 +229,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/deadline.ts` | Deadlines, as a bench of the call sheet says them out loud. | 181 |
 | `web/src/lib/errors.ts` | Turning a failure into something worth reading. | 104 |
 | `web/src/lib/espnAuth.ts` | A private ESPN league needs two cookies from the user's own browser: `espn_s2` and `SWID`. | 92 |
-| `web/src/lib/format.ts` | Pure helpers (no React, no DOM) so they can be unit tested with node:test. | 324 |
+| `web/src/lib/format.ts` | Pure helpers (no React, no DOM) so they can be unit tested with node:test. | 342 |
 | `web/src/lib/gameday.ts` | Pure helpers (no React, no DOM, no clock read at load) so they can be unit tested | 495 |
 | `web/src/lib/leagueInput.ts` | One box for Sleeper, because asking someone to know whether they have a "username" or a | 100 |
 | `web/src/lib/legal.ts` | The handful of facts the Terms and Privacy pages cannot work out for themselves. | 51 |
@@ -245,7 +246,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/teaser.ts` | Which sentence goes in a paywall. | 21 |
 | `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 829 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 448 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 469 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 174 |
 
 <!-- END GENERATED -->

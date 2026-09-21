@@ -201,6 +201,27 @@ export type GroupKey = keyof typeof GROUPS;
 export const GROUP_ORDER = ["team", "waivers", "trade"] as const satisfies readonly GroupKey[];
 
 /**
+ * The starters plate: the one dark surface on the Debrief.
+ *
+ * `head` names what the row of faces is, because nine discs with a slot under each is
+ * a lineup to anyone who already knows the app and an ornament to anyone who does not.
+ * `projected` labels the number beside it — the same word the depth chart uses for the
+ * same total, so the two rooms cannot be read as quoting different figures.
+ *
+ * `swap` completes "{name} for {out}" and is spoken only: on screen the badge is the
+ * outgoing player's initials struck through, which says it in the space a strip has.
+ * `set` is what the plate says out loud when the lineup we would play is the lineup
+ * that is set — no badge on any disc — and it is a statement about *this* strip, never
+ * a verdict on the team.
+ */
+export const STARTERS = {
+  head: "Your starters",
+  projected: "Projected",
+  swap: (name: string, out: string) => `${name} for ${out}`,
+  set: "as set",
+} as const;
+
+/**
  * What the staff call each kind of play, on the chip above a memo's item.
  *
  * They were inline in `ActionCard` until the Debrief was built, which is exactly the

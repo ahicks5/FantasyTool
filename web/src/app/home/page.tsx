@@ -6,11 +6,12 @@ import { ErrorBox, Opening, useHeldWait } from "@/components/ui";
 import { Alarm } from "@/components/Alarm";
 import type { Alarm as AlarmState } from "@/lib/gameday.ts";
 import { MatchupCell } from "@/components/MatchupCell";
+import { Starters } from "@/components/Starters";
 import { ActionMemo, FilmMemo } from "@/components/Memo";
 import { Standing } from "@/components/Standing";
 import { LastWeek } from "@/components/LastWeek";
 import { getActions, getLineup, sendFeedback } from "@/lib/api";
-import { useCached } from "@/lib/cache";
+import { REFRESH_MS, useCached } from "@/lib/cache";
 import { calledKey, dismissedKey } from "@/lib/format";
 import { dismissable, memos } from "@/lib/sheet";
 import { deadlineNote, type DeadlineNote } from "@/lib/deadline.ts";
@@ -125,6 +126,17 @@ function CallSheet({
         </div>
       )}
 
+      {/* The graphic that replaced the hero: the week's starters in a row, the projected
+          total, and the kickoff clock. It reads the depth chart's own payload, so it
+          costs no request — and when that payload has not landed yet the plate is simply
+          absent rather than a skeleton, because everything under it is built from the
+          action feed and must not wait on a second read. */}
+      {lineup && (
+        <div className="mb-3.5">
+          <Starters lineup={lineup} actions={feed.actions} called={called} animate={animate} />
+        </div>
+      )}
+
       {/* The one line the hero used to shout (D3). `feed.summary` is still the engine's
           own headline — the landing page's worked example is pinned to it and the weekly
           email prints it — but it is a sentence now rather than a panel, because the
@@ -212,10 +224,12 @@ function HomeBody({ c }: { c: Connection }) {
   const { data: feed, error, instant, reload } = useCached<ActionFeed>(
     `actions:${c.platform}:${c.league_id}:${c.team_id}`,
     () => getActions(c.platform, c.league_id, c.team_id),
+    { refreshMs: REFRESH_MS },
   );
 
-  // The depth chart's own payload. It answers "is anything broken" for the alarm banner
-  // and "how many swaps are there really" for the head coach's memo.
+  // The depth chart's own payload. It draws the starters plate, answers "is anything
+  // broken" for the alarm banner, and says how many swaps there really are for the head
+  // coach's memo.
   //
   // Deliberately a second request rather than a new field on the action feed: it is the
   // same cache key the depth chart uses, so `useCached` de-duplicates and this warms that
@@ -227,6 +241,12 @@ function HomeBody({ c }: { c: Connection }) {
   const { data: lineup } = useCached<Lineup>(
     `lineup:${c.platform}:${c.league_id}:${c.team_id}`,
     () => getLineup(c.platform, c.league_id, c.team_id),
+    // Both reads come back when the tab regains focus and what is cached is over five
+    // minutes old. The cache is in memory for the session, which is right for a tab
+    // switch and wrong for the case the strip exists for: you leave for the Sleeper app,
+    // swap a starter, and come back. Nothing flashes — the old numbers stay on screen
+    // until the new ones land, and a failed refresh leaves them there.
+    { refreshMs: REFRESH_MS },
   );
 
   // One clock per mount, in an initialiser rather than the render body: `alarm` compares

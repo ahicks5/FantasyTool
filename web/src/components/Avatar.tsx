@@ -4,12 +4,13 @@
  * slow or missing image never leaves an empty circle.
  */
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 
 const SIZES = { sm: "h-9 w-9 text-[11px]", md: "h-12 w-12 text-xs", lg: "h-[52px] w-[52px] text-sm", xl: "h-20 w-20 text-lg" };
 const RINGS = { start: "ring-start", sit: "ring-sit", flip: "ring-flip-fill", lean: "ring-lean" };
 
-function initials(name: string): string {
+/** "Jaylen Warren" -> "JW". Exported: the starters strip prints the same two letters. */
+export function initials(name: string): string {
   const parts = name.replace(/[^A-Za-z' .-]/g, "").split(/\s+/).filter(Boolean);
   return ((parts[0]?.[0] ?? "") + (parts[parts.length - 1]?.[0] ?? "")).toUpperCase();
 }
@@ -21,6 +22,7 @@ export function Avatar({
   size = "md",
   className = "",
   ring,
+  ringOffset = "var(--color-paper)",
 }: {
   name: string;
   photo?: string | null;
@@ -28,15 +30,24 @@ export function Avatar({
   size?: keyof typeof SIZES;
   className?: string;
   ring?: keyof typeof RINGS;
+  /**
+   * What the ring's gap is painted in. Defaults to the card surface, which is what
+   * every caller sat on until the starters strip put these discs on the dark plate —
+   * where `--color-paper` is white in the light theme and the gap reads as a halo.
+   */
+  ringOffset?: string;
 }) {
   const [broken, setBroken] = useState(false);
   const [logoBroken, setLogoBroken] = useState(false);
   // A team logo is a centred mark, not a face: crop it and you lose the badge.
   const isLogo = !!photo && photo === teamLogo;
-  const ringCls = ring ? `${RINGS[ring]} ring-2 ring-offset-2 ring-offset-[var(--color-paper)]` : "";
+  const ringCls = ring ? `${RINGS[ring]} ring-2 ring-offset-2` : "";
   return (
     <span className={`relative inline-block shrink-0 ${className}`}>
-      <span className={`relative flex items-center justify-center overflow-hidden rounded-full bg-soft font-black text-muted ${SIZES[size]} ${ringCls}`}>
+      <span
+        className={`relative flex items-center justify-center overflow-hidden rounded-full bg-soft font-black text-muted ${SIZES[size]} ${ringCls}`}
+        style={ring ? { "--tw-ring-offset-color": ringOffset } as CSSProperties : undefined}
+      >
         <span aria-hidden>{initials(name)}</span>
         {photo && !broken && (
           // eslint-disable-next-line @next/next/no-img-element

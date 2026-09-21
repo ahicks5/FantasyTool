@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import type { Lineup, LineupSlot } from "@/lib/types";
-import { signed } from "@/lib/format";
+import { confidenceRing, signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { GameDay } from "./GameDay";
 import { Scorecard } from "./Scorecard";
@@ -11,7 +11,6 @@ import { IconArrowUp, IconCheck, IconChevron } from "./icons";
 import { ConfidenceStamp, Countdown, CountUp, Eyebrow, H2, InjuryTag, OnAirLive, Stamp } from "./ui";
 import { CONFIDENCE_HIT_LINE } from "@/lib/vocab";
 
-const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
 
 type View = "board" | "scorecard";
 const VIEWS: View[] = ["board", "scorecard"];
@@ -55,7 +54,7 @@ function SlotRow({ s, hit }: { s: LineupSlot; hit?: number }) {
       >
         <span className="slug w-[26px] shrink-0 text-[10px] uppercase tracking-[0.06em] text-muted">{s.slot}</span>
         {s.player ? (
-          <Avatar name={s.player.name} photo={s.player.photo} teamLogo={s.player.team_logo} size="sm" ring={RING[s.confidence]} />
+          <Avatar name={s.player.name} photo={s.player.photo} teamLogo={s.player.team_logo} size="sm" ring={confidenceRing(s.confidence)} />
         ) : (
           <Avatar name="?" size="sm" />
         )}

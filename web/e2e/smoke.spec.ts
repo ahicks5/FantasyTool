@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { DEV_USER } from "../playwright.config";
-import { DEPARTMENTS, DEPARTMENT_ORDER, SECTIONS } from "../src/lib/vocab";
+import { API_URL, DEV_USER } from "../playwright.config";
+import { DEPARTMENTS, DEPARTMENT_ORDER, SECTIONS, STARTERS } from "../src/lib/vocab";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { SCOUT } from "../src/lib/vocab";
 
@@ -188,6 +188,21 @@ const PAGES: PageCase[] = [
       // Every memo is a door. The film room's is the one with no call on it, so if the
       // quiet memos ever stop linking out it is the one that proves it.
       await expect(debrief.getByRole("link", { name: SECTIONS.report.title, exact: true })).toBeVisible();
+      // The starters plate: one disc per starting slot, in slot order. Counted against
+      // the engine's own lineup rather than against a hard-coded nine, because the
+      // number of starting slots is a property of the league.
+      const plate = debrief.getByRole("link", { name: new RegExp(STARTERS.head, "i") });
+      await expect(plate).toBeVisible();
+      const slots = plate.locator("li");
+      const lineup = await page.request
+        .get(`${API_URL}/api/league/${CONNECTION.platform}/${CONNECTION.league_id}/team/${CONNECTION.team_id}/lineup`, {
+          headers: { "x-edge-user": DEV_USER },
+        })
+        .then((r) => r.json());
+      expect(await slots.count(), "a disc per starting slot").toBe(lineup.slots.length);
+      // The clock lives here and nowhere else on this page: it is the one dark surface,
+      // which is the only place the brand lets its red run.
+      await expect(plate.getByText(/kickoff|locks in/i)).toBeVisible();
       // The injury banner is the app's loudest surface and this fixture's starters are
       // all clear, so it must not be here. Asserting the silence rather than the shout
       // on purpose: the way an alert dies is by firing every week until nobody reads it,
