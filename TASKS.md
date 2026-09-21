@@ -830,6 +830,23 @@ actually opens a fantasy app to ask. One board, on `/waivers`, above the Wire Pa
       door, so the name inside it cannot also be one — the exemption and its reason are in
       `web/src/lib/player/names.test.ts`, which replaced `PlayerSearch.tsx`'s entry.
 
+### Tightened after Andrew saw it live (2026-09-21)
+- [x] **SB-6** **The plan leads, the board follows.** With the board on top the page was
+      5,420px and the claims began at 4,900 — the recommendations were, in practice,
+      unreachable. Order was the whole fix; the board loses nothing by being second.
+- [x] **SB-7** **The lock does not lead.** When the API answers 402 there is no plan to put
+      first, so the offer renders *under* the board rather than over it. A visitor who has
+      not bought Wire Pass still opens Scouting onto something real. Pinned in the browser
+      by a bounding-box check in `the search box survives the Wire Pass paywall`.
+- [x] **SB-8** **The plan itself is tighter.** The budget was a 42px hero with a bar of its
+      own — ~160px to say "$100" — and is now one strip beside the countdown. The claim
+      card lost the green "In" chip (the band above already says it is the claim) and its
+      three-line stat block is one line. `value_cap`/`market` moved into "How is this
+      priced?", which is the question they answer.
+- [x] **SB-9** **Backups are rows, not cards.** They are reference, not calls: printed as
+      full cards they were four fifths of the plan's height. A two-backup plan went from
+      ~1,400px to ~620px, so the whole call now fits above the fold at 390px.
+
 ### Decisions taken here
 - **The board is free, on the same line the profile already was.** Every number on a row is
   that player's own — his projection this week, his rest-of-season value, how many managers

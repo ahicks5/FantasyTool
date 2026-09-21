@@ -33,6 +33,13 @@ search box is still there and is now one filter among the others rather than a s
 beside them. `PlayerBoard.tsx` replaced `PlayerSearch.tsx`; `TASKS.md` has the decisions,
 `docs/API.md` has the contract.
 
+**The plan is first on the page and the board second** — the board is four thousand pixels
+of rows, so anything under it is unreachable. The one exception is a locked reader: the
+`Locked` card renders *below* the board, so a visitor who has not bought Wire Pass opens
+Scouting onto every player in the league rather than onto a price. A bounding-box check in
+the browser suite pins that, because it is exactly the kind of thing a later layout tidy-up
+reverses without noticing.
+
 Rows raise the **player sheet** (the PP round's, which landed first), like every other
 name in the app — `/waivers/<id>` is untouched and still the deep link (D-8).
 

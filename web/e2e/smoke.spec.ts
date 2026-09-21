@@ -238,10 +238,11 @@ const PAGES: PageCase[] = [
     path: "/waivers",
     name: "waiver plan",
     check: async (page) => {
-      // Paid page, unlocked for this user: the budget hero, then either claims or an
+      // Paid page, unlocked for this user: the budget strip, then either claims or an
       // explained hold. A paywall or an error box here means the smoke test failed.
-      // Both words, because the hero reads one or the other off `plan.waiver_type`.
-      await expect(page.getByText(/Budget left|Waiver order/i).first()).toBeVisible();
+      // Both words, because the strip reads one or the other off `plan.waiver_type`.
+      // Anchored: the hero collapsed to one line and the label is now its own node.
+      await expect(page.getByText(/^(left|waiver order)$/i).first()).toBeVisible();
       // Either the first claim's CTA, or the Hold stamp a quiet week gets instead.
       // Anchored, so the word "hold" inside a sentence of prose does not satisfy it.
       await expect(page.getByText(/^(Claim him|Hold)$/).first()).toBeVisible();
@@ -439,7 +440,16 @@ test("the search box survives the Wire Pass paywall", async ({ page }) => {
   // in this file look for "requires a purchase" — that is the API's 402 *message* and is
   // never rendered, so those assertions cannot fail; this one keys off what a reader sees.
   await expect(page.getByText("Wire Pass").first()).toBeVisible();
-  await expect(page.getByPlaceholder(SCOUT.placeholder)).toBeVisible();
+  const box = page.getByPlaceholder(SCOUT.placeholder);
+  await expect(box).toBeVisible();
+
+  // And the offer is *under* the board, not over it. A paid reader opens this tab onto
+  // his claims; a reader who has not bought opens it onto every player in the league,
+  // and meets the price after the room has shown him something real. That order is the
+  // growth loop, and it is the half a layout change could quietly reverse.
+  const search = (await box.boundingBox())!;
+  const lock = (await page.getByText("Wire Pass").first().boundingBox())!;
+  expect(lock.y, "the lock should sit below the board, not above it").toBeGreaterThan(search.y);
   await assertNoHorizontalOverflow(page);
 });
 
