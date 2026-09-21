@@ -133,3 +133,15 @@ export const IconX = (p: P) => (
     <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
   </Svg>
 );
+export const IconFlag = (p: P) => (
+  <Svg {...p}>
+    <path d="M5.5 21V4.5" />
+    <path d="M5.5 5h11.2l-1.6 3.4 1.6 3.4H5.5z" fill="currentColor" stroke="none" />
+  </Svg>
+);
+export const IconAlert = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 3.5 21 19.5H3z" />
+    <path d="M12 9.5v4.5M12 16.8v.2" strokeWidth={2.6} />
+  </Svg>
+);

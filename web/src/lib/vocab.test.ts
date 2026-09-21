@@ -70,10 +70,10 @@ const ALL_COPY: string[] = [
   ...Object.values(TRADE),
   ...Object.values(EMAIL),
   // The lineup tab: every string, and every templated line rendered once.
-  ...Object.values(LINEUP.coach), LINEUP.projected(2), LINEUP.standing(1, 12), LINEUP.standing(2, 12), LINEUP.standing(3, 12), LINEUP.standing(11, 12),
+  ...Object.values(LINEUP.coach), LINEUP.projected(2), LINEUP.standingLabel, LINEUP.standing(1, 12), LINEUP.standing(2, 12), LINEUP.standing(3, 12), LINEUP.standing(11, 12),
   LINEUP.required(1), LINEUP.required(2), LINEUP.decisions(1), LINEUP.decisions(3), LINEUP.clear,
   LINEUP.stamp.fix(2), LINEUP.stamp.decide(3), LINEUP.stamp.clear, LINEUP.stamp.aria, LINEUP.stamp.then, LINEUP.stamp.close, LINEUP.stamp.closeAria,
-  LINEUP.jump, ...Object.values(LINEUP.section), LINEUP.requiredClear, LINEUP.requiredClearLine, LINEUP.decisionsQuiet,
+  LINEUP.jump, ...Object.values(LINEUP.section), LINEUP.mark.lock, LINEUP.mark.flag("RB2"), LINEUP.mark.out, LINEUP.requiredClear, LINEUP.requiredClearLine, LINEUP.decisionsQuiet,
   LINEUP.handled(2), LINEUP.showHandled, ...Object.values(LINEUP.change),
   LINEUP.role.question("RB2"), LINEUP.role.aria("RB2"), LINEUP.role.change, LINEUP.role.keep, LINEUP.role.tipped, LINEUP.role.considered,
   LINEUP.role.others, LINEUP.role.odds, LINEUP.role.reads, LINEUP.role.none, LINEUP.role.game, LINEUP.role.proj, LINEUP.role.handle,
@@ -97,8 +97,8 @@ test("the two piles are never blurred into one word", () => {
   assert.match(LINEUP.decisions(1), /^1 decision to make$/);
   assert.equal(Object.keys(LINEUP.factor).join(","), "variance,stack,opponent,health,rest,form,role", "mirrors engine/decisions.KEYS");
   // The standing is a rank, never a margin against your own lineup, and never a percentage.
-  assert.equal(LINEUP.standing(3, 12), "Projects 3rd of 12 this week");
-  assert.equal(LINEUP.standing(11, 12), "Projects 11th of 12 this week");
+  assert.equal(LINEUP.standing(3, 12), "3rd of 12");
+  assert.equal(LINEUP.standing(11, 12), "11th of 12");
   // A coin flip is the owner's to make, and the word on screen says so; the engine's key
   // is untouched, because the grading, the film and the share graphics carry it.
   assert.equal(CONFIDENCE_LABEL["Coin flip"], "Owner\u2019s call");

@@ -31,7 +31,7 @@ import { handledKey, loadConnection, loadHandled, saveHandled } from "@/lib/stor
 import { CONFIDENCE_LABEL, LINEUP, SECTIONS } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { PlayerName, PlayerTarget } from "./Players";
-import { IconArrowUp, IconCheck, IconChevron, IconNotes, IconX } from "./icons";
+import { IconAlert, IconArrowUp, IconCheck, IconChevron, IconFlag, IconLock, IconNotes, IconX } from "./icons";
 import { ConfidenceStamp, CountUp, Eyebrow, H2, InjuryTag, LinkButton, Stamp } from "./ui";
 
 const RING: Record<string, "start" | "lean" | "flip"> = { Lock: "start", Lean: "lean", "Coin flip": "flip" };
@@ -72,25 +72,39 @@ export function useHandled(week: number): [Set<string>, (label: string, on: bool
   return [handled, set];
 }
 
-/** "RB12": where he ranks at his position in this league this week. Nothing without the rank. */
+/** "RB12": where he ranks at his position in this league this week. A dash without one. */
 function PosRank({ p }: { p: Player }) {
-  if (!p.pos_rank) return null;
-  return (
-    <span className="tnum text-[10px] font-bold uppercase tracking-wide text-muted">
-      {p.position}
-      {p.pos_rank.rank}
-    </span>
-  );
+  return <span className="roster-rank tnum">{p.pos_rank ? `${p.position}${p.pos_rank.rank}` : "\u2014"}</span>;
 }
 
+/** A man who cannot be started this week: out, on reserve, suspended, doubtful. */
+const DOWN = new Set(["OUT", "IR", "PUP", "SUS", "NA", "DOUBTFUL"]);
+
 /**
- * One line of the roster: the role, the man, his rank, his number, his tag. A role with a
- * decision behind it carries the arrow to it; a Lock carries nothing, there is nothing
- * to open. The row itself opens the man's page.
+ * One line of the roster, on a fixed grid so every column stands in a line: the role, the
+ * face, the name, his rank at his position, his number, and one mark. The mark is a green
+ * lock when the projection has settled his role, a gold flag when the role is the owner's
+ * to decide (it opens that decision), and a red alert when he cannot play and has to leave
+ * the lineup. The row itself opens the man's page.
  */
 function RosterRow({ label, p, confidence, role, changed }: { label: string; p: Player | null; confidence?: string; role?: LineupRole; changed?: boolean }) {
-  const open = role && role.decision;
-  const tag = confidence && confidence !== "Coin flip" ? confidence : null;
+  const down = !p || DOWN.has((p.injury_status ?? "").toUpperCase());
+  const inFrame = !!role?.decision && !!p && (p.id === role.pick?.id || role.candidates.some((c) => c.player.id === p.id));
+  const mark = down ? (
+    <span className="roster-mark text-sit" role="img" aria-label={LINEUP.mark.out}>
+      <IconAlert size={15} strokeWidth={2.2} />
+    </span>
+  ) : inFrame && role ? (
+    <Link href={decideHref(role.label)} aria-label={LINEUP.mark.flag(role.label)} className="roster-mark roster-flag text-flip">
+      <IconFlag size={15} strokeWidth={2} />
+    </Link>
+  ) : confidence === "Lock" ? (
+    <span className="roster-mark text-start" role="img" aria-label={LINEUP.mark.lock}>
+      <IconLock size={14} strokeWidth={2.3} />
+    </span>
+  ) : (
+    <span className="roster-mark" aria-hidden />
+  );
   return (
     <li className={`roster-row ${changed ? "bg-start-soft" : ""}`}>
       {p ? (
@@ -103,22 +117,17 @@ function RosterRow({ label, p, confidence, role, changed }: { label: string; p: 
           </span>
           <PosRank p={p} />
           <span className="roster-proj display tnum">{p.projected.toFixed(1)}</span>
-          {tag && <span className={`roster-tag ${INK[tag]}`}>{CONFIDENCE_LABEL[tag as keyof typeof CONFIDENCE_LABEL] ?? tag}</span>}
         </PlayerTarget>
       ) : (
         <span className="roster-row-main">
           <span className="roster-role">{label}</span>
           <Avatar name="?" size="xs" />
           <span className="roster-name text-muted">{LINEUP.change.empty}</span>
+          <span className="roster-rank" />
+          <span className="roster-proj" />
         </span>
       )}
-      {open ? (
-        <Link href={decideHref(role.label)} aria-label={LINEUP.role.aria(role.label)} className="roster-go">
-          <IconChevron size={13} strokeWidth={2.8} />
-        </Link>
-      ) : (
-        <span className="roster-go roster-go-none" aria-hidden />
-      )}
+      {mark}
     </li>
   );
 }
@@ -326,7 +335,12 @@ export function LineupView({
                   {LINEUP.clear}
                 </Stamp>
               ) : (
-                lineup.standing && <div className="max-w-[128px] text-[11px] font-bold leading-snug text-white/70">{LINEUP.standing(lineup.standing.rank, lineup.standing.of)}</div>
+                lineup.standing && (
+                  <>
+                    <Eyebrow className="whitespace-nowrap">{LINEUP.standingLabel}</Eyebrow>
+                    <div className="display tnum mt-0.5 whitespace-nowrap text-[22px] leading-none text-white/85">{LINEUP.standing(lineup.standing.rank, lineup.standing.of)}</div>
+                  </>
+                )
               )}
             </div>
           </div>
@@ -409,7 +423,9 @@ export function LineupView({
         <H2>{LINEUP.section.field}</H2>
         <ul className="card mt-2 min-w-0 divide-y divide-line overflow-hidden p-0">
           {lineup.slots.map((s, i) => (
-            <RosterRow key={i} label={roles[i]?.label ?? s.slot} p={s.player} confidence={s.confidence} role={roles[i]} changed={s.change} />
+            // The tag is the role's: a starter with no man in the frame for his seat is a
+            // Lock there even if a bench man who sits at another role projects near him.
+            <RosterRow key={i} label={roles[i]?.label ?? s.slot} p={s.player} confidence={roles[i]?.confidence ?? s.confidence} role={roles[i]} changed={s.change} />
           ))}
         </ul>
       </section>

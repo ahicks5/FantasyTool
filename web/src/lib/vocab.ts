@@ -629,9 +629,11 @@ export const LINEUP = {
     call: "Head coach\u2019s call",
   },
   projected: (week: number) => `Projected \u00b7 Week ${week}`,
-  /** Under the number: where the projection ranks in the league this week. Not a margin
-   *  against your own lineup, which a tipped coin flip can legitimately move down. */
-  standing: (rank: number, of: number) => `Projects ${ordinal(rank)} of ${of} this week`,
+  /** Beside the number: where the projection ranks in the league this week, as an eyebrow
+   *  and a figure. Not a margin against your own lineup, which a tipped coin flip can
+   *  legitimately move down. */
+  standingLabel: "League rank",
+  standing: (rank: number, of: number) => `${ordinal(rank)} of ${of}`,
   /** The split, stated plainly under the number: two chips on one row. */
   required: (n: number) => `${n} required change${n === 1 ? "" : "s"}`,
   decisions: (n: number) => `${n} decision${n === 1 ? "" : "s"} to make`,
@@ -654,6 +656,12 @@ export const LINEUP = {
     field: "On the field",
     bench: "On the bench",
     reserve: "Injured reserve",
+  },
+  /** The icons on a roster row, read out. */
+  mark: {
+    lock: "Lock",
+    flag: (label: string) => `Decision at ${label}`,
+    out: "Must leave the lineup",
   },
   /** Nothing forced: a solid stamp, not an apology. */
   requiredClear: "Handled",

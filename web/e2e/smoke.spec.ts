@@ -215,7 +215,11 @@ const PAGES: PageCase[] = [
       // count of decisions, two chips on one row under the number. No kickoff clock.
       await expect(page.getByText(/^\d+ required changes?$/).first()).toBeVisible();
       await expect(page.getByText(/^\d+ decisions? to make$/).first()).toBeVisible();
-      await expect(page.getByText(/Projects \d+(st|nd|rd|th) of \d+ this week/)).toBeVisible();
+      await expect(page.getByText(LINEUP.standingLabel, { exact: true })).toBeVisible();
+      await expect(page.getByText(/^\d+(st|nd|rd|th) of \d+$/)).toBeVisible();
+      // The roster marks: a lock on a settled role, a flag that opens an open one.
+      await expect(page.getByRole("img", { name: LINEUP.mark.lock }).first()).toBeAttached();
+      await expect(page.getByRole("link", { name: /^Decision at / }).first()).toBeAttached();
       // The head coach's notes are the hero's top line, and the roster is one jump away.
       await expect(page.getByLabel(LINEUP.coach.aria)).toBeVisible();
       await expect(page.getByRole("link", { name: LINEUP.jump })).toBeVisible();

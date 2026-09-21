@@ -177,7 +177,7 @@ roles (`lineup.roles`: RB2, FLEX2) where the engine's pick is not a Lock over th
 on the bench. The hero prints both counts as two chips on one row and they must never be
 folded into one number. There is no kickoff clock on this tab (a lineup has several
 kickoffs); under the number is where the projection ranks in the league this week
-(`LINEUP.standing`), never a margin against the manager's own lineup, which a tipped coin
+(`LINEUP.standing`, "2nd of 12" under a "League rank" eyebrow), never a margin against the manager's own lineup, which a tipped coin
 flip can legitimately move down.
 
 A decision is one row here — the role in big letters, the pick ringed green, the other men
@@ -187,9 +187,11 @@ candidate with his number, his rank at his position in this league, who he plays
 the pick is to outscore him, and every read on the pair. "Handled" stores the role's label
 under `booth.handled` (per league, per week, `lib/storage.ts`) and it leaves the list until
 next week; a "N handled" line under the list puts them back. The roster below is one line per
-man (role, face, name, `pos_rank`, projection, Lock/Lean — never the third tag) with the
-same arrow on a man who is in the frame for an open role; IR and PUP men get their own
-"Injured reserve" list.
+man on a fixed grid (role, face, name, `pos_rank`, projection) ending in one mark: a green
+lock on a settled role, a gold flag that opens an open one (on the pick and on every man in
+the frame for it), a red alert on a man who cannot play. The tag on a starter's row is the
+role's, not the slot call's, so a starter with nobody in the frame for his seat reads as a
+Lock. IR and PUP men get their own "Injured reserve" list.
 
 The stamp that lands on a fresh open (`Boom`) is a dialog with a close button and stays
 until dismissed; it lands once per browser session (`booth.boom`, sessionStorage), never in

@@ -1915,15 +1915,21 @@ button, a.btn, select, input { min-height: 44px; }
 .role-tag { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
 .role-change { font-size: 9px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-start); white-space: nowrap; }
 
-/* The roster: one line per man, as tight as it goes. */
+/* The roster: one line per man on a fixed grid, so the roles, the faces, the names, the
+   ranks, the numbers and the marks each stand in their own column. */
 .roster-row { display: flex; align-items: stretch; min-width: 0; }
-.roster-row-main { display: flex; flex: 1; min-width: 0; align-items: center; gap: 8px; padding: 6px 0 6px 12px; text-align: left; min-height: 0; }
-.roster-role { flex: none; width: 40px; font-size: 11px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-ink-2); }
-.roster-name { display: flex; flex: 1; min-width: 0; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; line-height: 1.1; }
-.roster-proj { flex: none; min-width: 38px; font-size: 16px; line-height: 1; text-align: right; }
-.roster-tag { flex: none; min-width: 34px; font-size: 9px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; text-align: right; }
-.roster-go { display: grid; flex: none; place-items: center; width: 34px; min-height: 0; color: var(--color-muted); }
-.roster-go-none { width: 22px; }
+.roster-row-main {
+  display: grid; flex: 1; min-width: 0; align-items: center; column-gap: 8px;
+  grid-template-columns: 40px 24px minmax(0, 1fr) 42px 42px;
+  padding: 8px 0 8px 12px; text-align: left; min-height: 0;
+}
+.roster-role { font-size: 11px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-ink-2); }
+.roster-name { display: flex; min-width: 0; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; line-height: 1.1; }
+.roster-rank { font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-muted); text-align: right; }
+.roster-proj { font-size: 16px; line-height: 1; text-align: right; }
+.roster-mark { display: grid; flex: none; place-items: center; width: 40px; min-height: 0; }
+.roster-flag { border-radius: 8px; }
+.roster-flag:hover { background: var(--color-soft); }
 
 /* One man in the frame on a role's page. */
 .frame-man { display: flex; align-items: center; gap: 10px; min-width: 0; }
