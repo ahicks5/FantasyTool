@@ -127,12 +127,24 @@ export function Starters({
       aria-label={`${STARTERS.head}, ${SECTIONS.team.title}`}
       className={`hero callsheet block ${animate ? "rise" : ""}`}
     >
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
+      {/* Wraps rather than truncates, like a memo's header. The clock reserves its widest
+          string so it never resizes as it ticks (`COUNTDOWN_CH`), and that reservation is
+          166px in the display face — with the label beside it the band wants 284 of the
+          246 a 320px screen leaves it. Squeezing either one is the wrong trade: a clipped
+          clock reads "6d 14:" and a squeezed label reads "YOUR S…". So at 320 the clock
+          drops to its own line, right-aligned, and at 390 the two share one. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/10 px-5 py-3">
         {/* The ON AIR lamp does not come with the clock. It was the hero saying the room
             was live; the plate is saying what your lineup is, and a pulsing light beside
-            nine faces reads as an alert about one of them. */}
-        <span className="eyebrow min-w-0 truncate">{STARTERS.head}</span>
-        <Countdown onHero />
+            nine faces reads as an alert about one of them.
+
+            A step smaller and less tracked than `.eyebrow`, for the same reason the memo
+            headers are: the clock reserves its widest string so it never resizes as it
+            ticks, and at 11px/0.14em the label beside it read "YOUR S…" at 320px. */}
+        <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.08em] text-white/55">
+          {STARTERS.head}
+        </span>
+        <Countdown onHero className="ml-auto" />
       </div>
 
       <div className="px-5 pt-4">

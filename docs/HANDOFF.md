@@ -9,8 +9,8 @@ this file stays short.
 
 ## Where things stand
 
-The app is **Penthouse**: the owner's box, where the staff hands you a call sheet of three moves
-before kickoff. Rebranded from "Edge" to "The Booth" and then to Penthouse — black and chrome,
+The app is **Penthouse**: the owner's box, where the staff hands you a **Debrief** of the
+week's moves before kickoff. Rebranded from "Edge" to "The Booth" and then to Penthouse — black and chrome,
 dark by default — with every screen rebuilt around that, deployed and live.
 
 | | |
@@ -18,7 +18,7 @@ dark by default — with every screen rebuilt around that, deployed and live.
 | Web | https://fantasy-tool-alpha.vercel.app (Vercel, Root Directory `web/`) |
 | API | https://edge-api-gi8d.onrender.com (Render) |
 | Production branch | `claude/edge-fantasy-app-launch-alo0rr` — **there is no `main`** |
-| Tests | 1022 pytest (+44 skipped: 17 want a Postgres in `TEST_DATABASE_URL`), node + Playwright |
+| Tests | 1126 pytest (+51 skipped: 17 want a Postgres in `TEST_DATABASE_URL`), 289 node, 14 Playwright |
 
 Shipping the web app is a push to the production branch. Rolling back is the same push aimed
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
@@ -46,7 +46,41 @@ Three things about it that a future session will otherwise rediscover the hard w
 It is week 2 of 2026, so a player has **one** completed game. Every surface here was built for
 that case first: one game plus last season is the normal report until November, not an edge case.
 
-## The owner's box shipped (2026-09-21)
+## The front page is the Debrief (2026-09-21) — built, not shipped
+
+`docs/PLAN-DEBRIEF.md`, all five steps, one commit each on
+`claude/wizardly-edison-vpfgli`. All five CI gates green. **It is not on production** —
+Andrew says "ship" first, and production is `claude/edge-fantasy-app-launch-alo0rr`.
+
+What a user sees that they did not before: the home screen is four memos, one per
+department, signed by whoever is talking ("From the head coach"), each holding one call
+and a door; a strip of the week's starters on the one dark plate, with a struck-through
+badge wherever our lineup differs from what is actually set; and a thumbs-down that takes
+an item off the page for the week. Gone: the ON AIR hero, the collapsible bench rows, the
+stack of action cards, "Sheet clean" and "Check back Sunday". `TASKS.md` has the full
+write-up and every decision.
+
+Four things a future session will otherwise rediscover the hard way.
+
+- **The fixture league cannot show this page full.** Its week-2 lineup is genuinely
+  settled, so the head coach's memo is correctly the clear one and the starters plate
+  correctly wears no badge — which means no fixture request will ever photograph the share
+  button, a lineup call, or the swap badge. `web/e2e/smoke.spec.ts` splices a start call
+  and a changed slot into the real feed in the browser to test them; `npm run shots` shoots
+  the **mock** build for the same reason the last-week line already had to.
+- **A Playwright page route outranks a context route, and `route.fetch()` does not fall
+  back through it.** A context route adding `x-edge-user: free@example.com` never saw the
+  patched `/actions` request, so the free-tier assertions ran against a fully unlocked feed
+  and proved nothing while passing. The identity header has to go on the same handler.
+- **A locator is re-queried on every use.** Finding a memo by the thumbs-down inside it and
+  then clicking that thumb makes the filter match a different memo, because the button it
+  matched on has been replaced by the reason chips. Resolve to an index first.
+- **`useCached` re-stamped the cache on every mount, cache hits included.** Harmless until
+  the entries carried an age; after that a key opting into the focus refresh could never
+  have aged past one tab switch and would never have refetched. Only a read that actually
+  went to the API stamps now.
+
+## The owner’s box shipped (2026-09-21)
 
 `docs/PLAN-OWNERS-BOX.md`, all eight workstreams, run as eight siloed agents with the
 lead applying every lead-only file. Deployed to production: Andrew answered D7 "ship".
@@ -169,10 +203,12 @@ Ground rules that matter most here:
   web/src/lib/mocks.ts changes nothing in production.
 - Work on the designated feature branch. Shipping is a push to
   claude/edge-fantasy-app-launch-alo0rr — there is no main branch.
-- Before pushing: uv run pytest -q, and in web/ npm test && npx eslint && npm run build.
+- Before pushing: CI gates on all five (.github/workflows/ci.yml), not two — uv run
+  pytest -q; in web/ npm run lint && npm test && npm run build; npm run demo &&
+  npm run demo:pack; npm run test:e2e.
 - Report failures plainly. If something is unverified, say so before saying anything else.
 
-Brand, in one line: the owner's box, where the staff hands you a call sheet — confident,
+Brand, in one line: the owner's box, where the staff hands you a debrief — confident,
 clipped, verb first, fewest words possible. Stamps are for decisions only. Colour never
 carries meaning alone. All motion collapses under prefers-reduced-motion except the
 loading ring, which slows instead of stopping.

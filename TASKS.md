@@ -10,11 +10,48 @@ and a door, a headshot strip of the week's starters in place of the hero, and a 
 that removes the item from the page. Every decision (D1-D7) is made and recorded at the end
 of the plan; the build starts at DB-1.
 
-- [ ] **DB-1** Vocabulary: Call sheet -> Debrief, `DEPARTMENTS` eyebrows, the copy rows in the plan.
-- [ ] **DB-2** `lib/sheet.ts` `memos()`, the dismissed store, the cache stamp. Node-tested.
-- [ ] **DB-3** `Memo.tsx` and the new home page; hero, `SheetGroup` and the card stack come out.
-- [ ] **DB-4** `Starters.tsx`: the strip, the countdown, swap badges tied to ticks, refetch on focus.
-- [ ] **DB-5** Docs, map, screenshots both themes at 320 and 390, the five gates.
+All five are done, on the working branch, with all five CI gates green. Not shipped:
+production is `claude/edge-fantasy-app-launch-alo0rr` and Andrew says "ship" first.
+
+- [x] **DB-1** Vocabulary. "Call sheet" -> **Debrief** everywhere a user reads it (D1): tab,
+      title, gate, the landing's second beat and third step, the OG title and description,
+      the opening checklist, the matchup fallback, the weekly email's eyebrow, its links and
+      its plain-text header, and the descriptor on the unfurl card (re-rendered). Code names
+      do **not** move -- `CallSheet`, `.callsheet`, `sheet.ts` and every `booth.*` key keep
+      theirs. New `DEPARTMENTS`/`DEPARTMENT_ORDER`. `vocab.test.ts` now fails on any copy
+      string still saying "call sheet", so a half-applied rename cannot survive a test run.
+- [x] **DB-2** Pure logic. `memos(actions, dismissed)` in `lib/sheet.ts`, `dismissedKey`,
+      `loadDismissed`/`saveDismissed`, and a cache that stamps each entry and can
+      `refreshIfStale`. **`more` counts what the Debrief has left, not what the tab holds** --
+      a dismissed item is gone from this page and still on the tab, so counting it would
+      advertise a card the thumb already refused. A locked teaser and a hold are not
+      dismissable. Fixed a real bug on the way: `useCached` re-stamped the cache on every
+      mount including cache hits, so a key could never have aged past one tab switch.
+- [x] **DB-3** The memos. Four per page, in tab order, always all four. Out: the hero, the
+      bench rows, the card stack, and with them `SheetGroup`, `ActionCard`, `sheetRows`,
+      `groupStatus`, `CLOSED`, `CheckBack`, `sheetStatus`. Kept and moved: the **Lock share
+      button** onto the head coach's memo (it would have died with the card it lived on), the
+      standing and last-week lines onto the film room's memo (D6), the deadline notes into
+      each header. A **tense** deadline outranks the "2 more" count: only one thing fits
+      beside the eyebrow at 320px, and a waiver night about to run costs you a player.
+- [x] **DB-4** The starters plate (D4). A disc per starting slot with its confidence ring, the
+      projected total, and the kickoff clock -- the page's one dark surface, which is the only
+      place the brand's red may run. **It draws the lineup we would play**, so a swap badge is
+      the gap between our answer and what is set, and the tick closes it. The row scrolls
+      inside its own box, because `body { overflow-x: hidden }` would have hidden the last
+      slots entirely. No generated art: a likeness of a named player is a right-of-publicity
+      question with no CDN to point at, it is priced per repaint on a free surface, and it
+      cannot be recorded into the fixture the weekly freeze snapshots.
+- [x] **DB-5** Docs, map, screenshots both themes at 320 and 390 (`npm run shots`), five gates.
+
+Two things a reader sees that the plan did not spell out, both fixed before the screenshots:
+a department's clear stamp was printing *beside* an item ("Holding" over "Add Khalil
+Shakir"), and at 320px the plate's band clipped the clock to "6d 14:" while the memo
+headers cut their signatures to "FROM THE HEAD CO...". Both headers wrap now.
+
+Phase 2, written down so it is not lost: the server-rendered "Starting lineup" share card
+through `edge/graphics.py`, a one-line department intro from the Claude API, and pairing
+dismissals with outcomes once `scripts/score_runs.py` has graded a real week.
 
 ## The owner's box (docs/PLAN-OWNERS-BOX.md, 2026-09-20)
 

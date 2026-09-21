@@ -372,6 +372,59 @@ test("the Debrief shows a player without a click, for a reader who has bought no
   await assertNoHorizontalOverflow(page);
 });
 
+test("the swap badge is the gap between our lineup and yours, and the tick closes it", async ({ page }) => {
+  // The headline behaviour of the starters plate. The Megalabowl's week-2 lineup is
+  // genuinely settled -- `advise` finds no swap worth calling -- so the badge has to be
+  // put there to be tested, the same way the share button's start call is above. What is
+  // real is the wiring: the plate pairs a slot with the feed's call by the incoming
+  // player's id, and the memo's tick is what drops the badge.
+  const lineupUrl = `${API_URL}/api/league/${CONNECTION.platform}/${CONNECTION.league_id}/team/${CONNECTION.team_id}/lineup`;
+  const real = await page.request.get(lineupUrl, { headers: { "x-edge-user": DEV_USER } }).then((r) => r.json());
+  const slot = real.slots.find((s: { player: unknown }) => s.player);
+  expect(slot, "the fixture lineup has no slot with a player in it").toBeTruthy();
+  // Initials that cannot collide with any face already on the strip.
+  const OUT = { id: "out-test", name: "Quentin Zeller", position: "RB" };
+
+  await page.route("**/lineup*", async (route) => {
+    const res = await route.fetch({ headers: { ...route.request().headers(), "x-edge-user": DEV_USER } });
+    const lineup = await res.json();
+    const target = lineup.slots.find((s: { player: { id: string } | null }) => s.player?.id === slot.player.id);
+    target.change = true;
+    lineup.changes = [
+      { slot: target.slot, out: OUT, in: { id: slot.player.id, name: slot.player.name }, gain: 4.3, confidence: "Lock", reason: "Zeller is out." },
+    ];
+    await route.fulfill({ response: res, json: lineup });
+  });
+  await page.route("**/actions*", async (route) => {
+    const res = await route.fetch({ headers: { ...route.request().headers(), "x-edge-user": DEV_USER } });
+    const feed = await res.json();
+    feed.actions = [
+      {
+        ...START_CALL,
+        id: `start:${slot.slot}:${slot.player.id}`,
+        title: `Start ${slot.player.name} over ${OUT.name}`,
+        players: [slot.player, OUT],
+      },
+      ...(feed.actions ?? []),
+    ];
+    await route.fulfill({ response: res, json: feed });
+  });
+
+  await page.goto("/home");
+  const plate = page.getByRole("link", { name: new RegExp(STARTERS.head, "i") });
+  const badge = plate.getByText("QZ", { exact: true });
+  await expect(badge, "no swap badge on the slot the engine wants changed").toBeVisible();
+
+  const coach = page.locator("main ol > li").filter({ hasText: DEPARTMENTS.team });
+  await coach.getByRole("button", { name: "Make the call" }).click();
+  await expect(badge, "the badge survived the call being ticked").toHaveCount(0);
+
+  // And untick: the strip is a live read of the gap, not a one-way animation.
+  await coach.getByRole("button", { name: /called/i }).click();
+  await expect(badge).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+});
+
 test("a thumbs-down takes the item off the Debrief, and a reload keeps it off", async ({ page }) => {
   // D5, end to end in the browser: the thumb is a real control now, so the page has to
   // answer it. The item is hidden here and nowhere else -- the depth chart, the wire and

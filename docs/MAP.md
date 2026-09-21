@@ -49,7 +49,8 @@ the value is visible and the names are not.
 | A start/sit call, or what "Lock" means | `edge/engine/lineup.py`; thresholds also `edge/calibration.py` | `tests/test_lineup.py`; read docs/CALIBRATION.md first — Lock is **not** calibrated |
 | The waiver plan, a bid, or the pool ranking | `edge/engine/waiver_plan.py`, `waivers.py`, `values.py` | `tests/test_waiver_plan.py`, `test_waivers_values.py` |
 | A trade verdict or counteroffer | `edge/engine/trade.py`, `tendencies.py`; wording in `explain.py` | `tests/test_trade.py` |
-| Who shows up on the call sheet, and in what order | `edge/engine/actions.py` | `tests/test_actions.py`, `test_feed_performance.py` |
+| Who shows up on the Debrief, and in what order | `edge/engine/actions.py` | `tests/test_actions.py`, `test_feed_performance.py` |
+| The Debrief itself — which memo shows what, the thumbs-down, the starters plate | `web/src/lib/sheet.ts` (`memos`), `web/src/components/Memo.tsx`, `Starters.tsx`, `web/src/app/home/page.tsx` | `web/src/lib/sheet.test.ts`, `web/e2e/smoke.spec.ts`; read docs/WEB.md first |
 | A letter grade | `edge/engine/grades.py` — **read its docstring first**, it exists to stop one specific bug coming back | `tests/test_grades.py` |
 | Scoring for some league format | `edge/data/scoring.py` | `tests/test_scoring.py`, `test_league_formats.py` |
 | An API route | `edge/api/app.py` (+ `service.py` for the data it needs), contract in `docs/API.md` | mirror the shape in `web/src/lib/types.ts` **and** `web/src/lib/mocks.ts`; `tests/test_api.py` |
@@ -87,6 +88,7 @@ the value is visible and the names are not.
 uv run pytest -q                                  # the whole engine, offline, against fixtures
 cd web && npm run lint && npm test && npm run build
 cd web && npm run demo && npm run demo:pack       # the static export breaks on its own
+cd web && npm run shots                           # the Debrief, both themes, 320 and 390
 cd web && npm run test:e2e                        # browser smoke at 375px, needs a Chromium
 
 uv run pytest tests/test_lineup.py -q             # one file; -k <name> for one test
@@ -197,7 +199,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/LineupView.tsx` | Two reads on the same team: this week's board, and how the roster grades out. | 265 |
 | `web/src/components/Locked.tsx` | Premium teaser, not a wall: says what we found, then offers the pass or the bundle. | 110 |
 | `web/src/components/MatchupCell.tsx` | The week's scoreboard, directly under the page title: you, them, and the door | 93 |
-| `web/src/components/Memo.tsx` | One department's memo on the Debrief: who is talking, the one thing they want, and the door. | 399 |
+| `web/src/components/Memo.tsx` | One department's memo on the Debrief: who is talking, the one thing they want, and the door. | 422 |
 | `web/src/components/PlayerSearch.tsx` | The front door to the scout report: any player in the league, by name. | 262 |
 | `web/src/components/Players.tsx` | Name over position/team, with a headshot. The name column always gets the slack. | 33 |
 | `web/src/components/Pricing.tsx` | What each entitlement actually buys, in the user's words rather than the API's. | 106 |
@@ -211,7 +213,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Shell.tsx` | The room itself: top bar, league ribbon, tab bar, and the shell every page mounts. | 226 |
 | `web/src/components/Standing.tsx` | Where you stand, in one line on the film room's memo: grade, rank, record. | 102 |
 | `web/src/components/Standings.tsx` | The table: every team in the league, by record, and what the rosters are worth from here. | 90 |
-| `web/src/components/Starters.tsx` | The week's starters in a row on the Debrief's one dark plate, and the clock over them. | 177 |
+| `web/src/components/Starters.tsx` | The week's starters in a row on the Debrief's one dark plate, and the clock over them. | 189 |
 | `web/src/components/TradeFinderView.tsx` | The board. Who to call, what to offer, and what it is worth to each side. | 405 |
 | `web/src/components/Unlocking.tsx` | The gap between a cleared card and a written entitlement, made visible instead of confusing. | 131 |
 | `web/src/components/WaiverPlanView.tsx` | The waiver plan: the claim we are asking for, its bid, and the backup claims under it. | 190 |

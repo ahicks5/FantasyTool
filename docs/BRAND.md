@@ -101,8 +101,16 @@ reason to rename the sheet.
 | GM's Office | `/trade` | Trade Lab: verdict and counter |
 | The film | `/report` | The weekly report |
 
-Verbs: *make the call · board's set · sheet's clean · we'd start him*.
+Verbs: *make the call · board's set · lineup's set · we'd start him*.
 "The wire" stays valid in body copy — it's what managers already call the free-agent pool.
+
+**The Debrief is signed, not titled** — **shipping**, `DEPARTMENTS` in `vocab.ts`. Each
+memo carries the department it came from rather than the name of the tab it opens: *From
+the head coach · From the head of scouting · From the GM's Office · From the film room*.
+"Depth chart" as a card title says a screen exists; "From the head coach" says somebody
+looked. The door underneath still names the room, so the signature never has to carry the
+navigation as well. Twenty-six characters is the ceiling — it shares a 320px line with the
+memo's status.
 
 ### Copy lines — **shipping**, `LINES` in `web/src/lib/vocab.ts`
 

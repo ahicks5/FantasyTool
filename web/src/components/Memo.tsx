@@ -83,15 +83,28 @@ function NoteLine({ note }: { note: DeadlineNote }) {
  * show, the department's **stamp** — which is a verdict and is therefore never printed
  * beside an item, exactly as a clear bench's stamp never sat beside a card.
  */
-function MemoStatus({ dept, more, note }: { dept: DepartmentKey; more: number; note: DeadlineNote | null }) {
+function MemoStatus({
+  dept,
+  more,
+  note,
+  clear,
+}: {
+  dept: DepartmentKey;
+  more: number;
+  note: DeadlineNote | null;
+  /** True only when the memo has no item at all. The stamp is a verdict on that. */
+  clear: boolean;
+}) {
   if (note && note.urgency !== "open") return <NoteLine note={note} />;
   if (more > 0) {
     return <span className="tnum shrink-0 text-[11px] font-bold text-muted">{more} more</span>;
   }
   if (note) return <NoteLine note={note} />;
-  // `report` has no bench and so no stamp: nothing on the feed measures the film, and a
-  // verdict invented to fill this corner would be a claim we cannot make.
-  if (dept === "report") return null;
+  // The stamp says "nothing here worth calling", so it may never appear beside something
+  // we are calling: "Holding" over "Add Khalil Shakir" is the card contradicting itself
+  // in its own header. `report` never takes one at all — nothing on the feed measures the
+  // film, and a verdict invented to fill this corner would be a claim we cannot make.
+  if (!clear || dept === "report") return null;
   return (
     <Stamp ink="text-start" className="shrink-0">
       {GROUPS[dept].stamp}
@@ -125,10 +138,20 @@ function MemoCard({
   return (
     <section className={`card min-w-0 overflow-hidden ${animate ? `rise rise-${Math.min(delay, 5)}` : ""}`}>
       {/* The eyebrow is the signature on the memo, so it sits on its own ruled band the
-          way a letterhead does, rather than floating above the first line of the body. */}
-      <div className="flex items-center justify-between gap-2 border-b border-line bg-soft px-4 py-2">
-        <span className="eyebrow min-w-0 truncate">{DEPARTMENTS[dept]}</span>
-        {status}
+          way a letterhead does, rather than floating above the first line of the body.
+
+          It is a step smaller and less tracked than the app's `.eyebrow`, and it wraps
+          rather than truncates. "From the head of scouting" plus "Runs Wed 3:00" wants
+          about 270px and a 320px screen leaves the band 268 — at `.eyebrow`'s 11px and
+          0.14em that landed as "FROM THE HEAD OF SCOU…", which cuts the signature in
+          half to save a line. Wrapping instead means the status drops underneath on the
+          one or two memos that need it and nothing is ever half-printed. `ml-auto` keeps
+          it on the right edge whichever line it ends up on. */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-line bg-soft px-4 py-2">
+        <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.08em] text-muted">
+          {DEPARTMENTS[dept]}
+        </span>
+        <span className="ml-auto flex min-w-0 shrink-0 justify-end">{status}</span>
       </div>
       <div className="p-4">{children}</div>
       <Link
@@ -339,7 +362,7 @@ export function ActionMemo({
   return (
     <MemoCard
       dept={dept}
-      status={<MemoStatus dept={dept} more={item ? more : 0} note={note} />}
+      status={<MemoStatus dept={dept} more={item ? more : 0} note={note} clear={!item} />}
       door={item ? { label: item.cta.label, href: item.cta.href } : { label: section.title, href: section.href }}
       animate={animate}
       delay={delay}
@@ -388,7 +411,7 @@ export function FilmMemo({
   return (
     <MemoCard
       dept="report"
-      status={<MemoStatus dept="report" more={0} note={null} />}
+      status={<MemoStatus dept="report" more={0} note={null} clear />}
       door={{ label: SECTIONS.report.title, href: SECTIONS.report.href }}
       animate={animate}
       delay={delay}

@@ -64,12 +64,58 @@ full minute. Inside 24h the seconds tick and it healed in one, which is how it h
 colour inside 24h, and inside 2h it goes to the brand red, the label reads "Locks in", and the
 ON AIR lamp beats faster (`OnAirLive`, `.lamp-fast`). The words always change with the colour.
 
-## The call sheet is checkable
+## The Debrief
 
-Each call has "Make the call", stored per league and per week (`calledKey`,
-`booth.called.<league>.<week>` in localStorage). It is a checklist, **not** a lineup
-submission — we never write back to Sleeper or ESPN. When every call is ticked, the sheet
-stamps itself clean.
+The front page is four memos, one per department, in tab order, always all four: the head
+coach, the head of scouting, the GM's Office and the film room (`DEPARTMENTS` in
+`vocab.ts`, `memos()` in `lib/sheet.ts`). Each holds the one call that department most
+wants seen and a door into the room where it is worked. The quiet memo is the point — a
+settled lineup produces no action at all, so a page built from the feed alone could only
+fail to mention it.
+
+The **code names did not move with the rename.** `CallSheet` the component, `.callsheet`
+the CSS class, `sheet.ts`, and every `booth.*` key still say sheet. None of them is a
+word a user reads, and the storage keys sign people out if renamed (below).
+
+**It is checkable.** Each item has "Make the call", stored per league and per week
+(`calledKey`, `booth.called.<league>.<week>`). It is a checklist, **not** a lineup
+submission — we never write back to Sleeper or ESPN.
+
+**And it is dismissable.** A thumbs-down posts the feedback and then takes that item off
+this page for the rest of the week, on this device (`dismissedKey`,
+`booth.dismissed.<league>.<week>`). The next-ranked call for that department takes its
+place; when there is none the memo prints the department's clear line. It is a second
+list rather than a verdict field on the ticks, because a thumb must not be able to
+corrupt a tick. **It hides the item on the Debrief and nowhere else** — the depth chart,
+the wire and the trade board stay complete. A locked teaser and a hold are exempt:
+there is nothing in a teaser to be wrong about yet, and a hold is the reason the wire is
+quiet rather than a move.
+
+**The starters plate is the page's one dark surface**, which is what makes it the only
+place the brand's red may run (the kickoff clock). It draws `lineup.slots`, which is the
+lineup *we* would play — so a swap badge is the gap between our answer and what is
+actually set, and it drops when the matching call is ticked. The row scrolls inside its
+own box (`.strip`): nine 36px discs plus gaps is about 380px, and `body { overflow-x:
+hidden }` would swallow the overflow without a scrollbar, so the last slots would simply
+never be reachable.
+
+**Two headers wrap rather than truncate**, and both learned it the same way. The kickoff
+clock reserves its widest string so it never resizes as it ticks, which is 166px in the
+display face; at 320px the band has 246 and the label beside it read "YOUR S…". A memo's
+eyebrow plus its deadline note is the same squeeze. Both are a step smaller than
+`.eyebrow` and both drop the right-hand item to its own line rather than half-printing
+either one.
+
+**The reads come back on focus.** `useCached(..., { refreshMs })` re-reads a key when the
+tab regains focus and what is cached is over five minutes old. This is for one case: you
+leave for the Sleeper app, swap a starter, and come back to a strip drawing the lineup
+you left. The old value stays on screen until the new one lands, and a failed refresh
+leaves it there — `refreshIfStale` never clears what it is replacing.
+
+Screenshots: `cd web && npm run demo && npm run demo:pack && npm run shots`. It shoots the
+**mock** build on purpose — the fixture league's lineup is settled and its only recorded
+week never played, so no fixture request will ever show the swap badge, a call on the
+head coach's memo, or the last-week line.
 
 ## Layout
 
