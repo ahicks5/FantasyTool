@@ -24,22 +24,27 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
-## The opening is an elevator (2026-09-21)
+## The opening is an elevator, then the office (2026-09-21)
 
 Andrew's direction: Penthouse should feel like MyGM, an owner with a staff and a building.
-The first piece shipped is the opening: the first open of the day rides up to the office.
-`web/src/lib/elevator.ts` owns every number (the doors, the floors, the staff lines, the
-skip); `components/Elevator.tsx` draws it; `lib/wait.ts` derives the narrated floor from
-the ride's total. Once a day per browser, again after `/connect`, tap to skip, `?ride=1` to
-replay. `docs/WEB.md` has the wiring, `TASKS.md` (VG-1 to VG-4) has what comes next: sound,
-the GM's phone call, and closing the doors on the connect form itself.
+The first piece shipped is the opening: the first open of the day rides up to the office,
+walks to the desk, and the papers on it become the call sheet. Andrew decided the desk is
+the last frame before the call sheet and not a new home screen. `web/src/lib/elevator.ts`
+owns every number (the doors, the floors, the staff lines, the walk, the skip);
+`components/Elevator.tsx` draws it, the office in CSS 3D; `lib/wait.ts` derives the
+narrated floor from the ride's total. Once a day per browser, again after `/connect`, tap
+to skip, `?ride=1` to replay. `docs/WEB.md` has the wiring and the three 3D traps that cost
+time; `TASKS.md` (VG-1 to VG-4) has what comes next: sound, the GM's phone call, and
+closing the doors on the connect form itself.
 
 **What it cost, so it is not paid twice.** The overlay used to fade in as a whole, so the
 page showed through it for its first third of a second; the wall is solid from frame one
 now and only the car fades in. The floor number reused the app's 240ms `tick`, and
 mid-ascent a floor lasts about 100ms, so the plate never reached full white; it has a 100ms
-tick of its own. And the door highlight was a fixed hex that striped in light mode; it is
-mixed from `--color-hero` now.
+tick of its own. The office went black the first time it was wired in because the floor
+plane was named `.ride-floor`, which is the plate's number, and the plate's ding flattened
+the plane over the whole room; and because the car's fade-in animation kept overriding the
+plate's fade-out. Both are written up in `docs/WEB.md`.
 
 ## Scouting is now a board, not just a search box (2026-09-21)
 

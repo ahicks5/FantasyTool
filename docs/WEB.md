@@ -31,19 +31,33 @@ instead. Once the narration starts it is owed `MIN_NARRATED_MS`, so a warm API c
 off mid-sentence. Both loaders render through the call sheet's own frame (`WaitHero`), so the
 swap to content changes the text and nothing else.
 
-**The opening is an elevator.** The first narrated wait of the day is the ride up
-(`components/Elevator.tsx`): a full-screen car over the quiet skeleton, the doors close,
-the floors go by while the API's real phases tick on the car's display, the car stops at
-PH, the lamp comes on, and the doors open onto the page that loaded underneath. Every
-duration lives in `lib/elevator.ts` and nowhere else: the component reads the clock
-through `rideState`, the CSS gets the door timings as custom properties, and
-`MIN_NARRATED_MS` in `lib/wait.ts` *is* `RIDE_TOTAL_MS`, so the page cannot swap to
-content while the doors are still moving. A tap skips to the doors opening, which lifts
-the floor early (`liftFloor`). It plays once a day per browser (`booth.ride`, a local day
-stamp), again after every `/connect` (`saveConnection` clears the stamp), never without a
-team, never under reduced motion, and `?ride=1` forces it for a demo. Every other cold
-load is a quiet skeleton with no floor at all. Screenshot it in both themes: the car's wall
-is the page colour, the doors are the hero's dark metal in both.
+**The opening is an elevator, and then the office.** The first narrated wait of the day
+is the ride up (`components/Elevator.tsx`): a full-screen car over the quiet skeleton, the
+doors close, the floors go by while the API's real phases tick on the car's display, the
+car stops at PH, the lamp comes on, and the doors open onto the office. The office is CSS
+3D: a handful of planes (wall with window and nameplate, floor, the desk as a slab) placed
+around the desk top's centre, and the camera is the room's own transform. It walks in,
+turns around the desk to the owner's chair, tilts down onto three papers (the call sheet,
+the depth chart, the scouting report, with the team's name on them), and the papers fade
+into the call sheet that loaded underneath. Every duration lives in `lib/elevator.ts` and
+nowhere else: the component reads the clock through `rideState`, the CSS gets the
+timings as custom properties, and `MIN_NARRATED_MS` in `lib/wait.ts` *is*
+`RIDE_TOTAL_MS`, so the page cannot swap to content while the camera is still moving. A
+tap skips to the landing, which lifts the floor early (`liftFloor`). It plays once a day
+per browser (`booth.ride`, a local day stamp), again after every `/connect`
+(`saveConnection` clears the stamp), never without a team, never under reduced motion,
+and `?ride=1` forces it for a demo. Every other cold load is a quiet skeleton with no
+floor at all. Screenshot it in both themes: the car's wall is the page colour, the doors
+and the office are dark in both.
+
+Three things the office taught, so they are not paid for twice. **A plane that reaches
+behind the camera is painted over the whole scene**, so the wall and floor are sized to
+the room and no larger, and they fade out during the tilt as a second guard. **An
+animation overrides a transition on the same property, even once it has finished**: the
+car's fade-in had to be switched off for every phase after the doors open, or the plate
+could not fade and the fade-in replayed on each phase change. **`.ride-floor` is the
+number on the plate**; the floor plane is `.ride-ground`, because sharing the name gave
+the plane the plate's ding, which flattened it into a rectangle over the room.
 
 **Nothing ever looks stalled.** Every wait shows a turning ring: `<Spinner>` on its own,
 `<Button busy>` for any async control, the shape of the page plus a ring for a page-level

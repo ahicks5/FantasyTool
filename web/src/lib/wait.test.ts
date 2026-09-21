@@ -14,7 +14,7 @@ import {
   subscribeWaits,
   waitsOnScreen,
 } from "./wait.ts";
-import { OPEN_AT, OPEN_MS, RIDE_TOTAL_MS, RISE_AT } from "./elevator.ts";
+import { LAND_AT, LAND_MS, OPEN_AT, RIDE_TOTAL_MS, RISE_AT } from "./elevator.ts";
 
 beforeEach(resetWaits);
 
@@ -135,11 +135,11 @@ const LAST_TICK_AT = RISE_AT + TICK_EVERY_LINE;
 test("the floor outlasts the ride it is protecting", () => {
   assert.ok(OPENING_LINES.length > 0 && OPENING_STEP_MS > 0, "there is a sequence to protect");
   assert.ok(LAST_TICK_AT <= OPEN_AT, `the last line (${LAST_TICK_AT}ms) must tick before the doors open (${OPEN_AT}ms)`);
-  assert.ok(OPEN_MS > 0, "the doors are owed their time to open before content lands");
+  assert.ok(LAND_MS > 0, "the desk is owed its fade onto the page before content lands");
   assert.equal(MIN_NARRATED_MS, RIDE_TOTAL_MS, "and the floor is the whole ride, derived");
 });
 
-test("a warm API cannot release the screen before the doors have opened", (t) => {
+test("a warm API cannot release the screen before the desk has become the page", (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"] });
   assert.equal(claimWait(), "narrated");
   t.mock.timers.tick(LAST_TICK_AT - OPENING_STEP_MS);
@@ -148,7 +148,9 @@ test("a warm API cannot release the screen before the doors have opened", (t) =>
   assert.equal(narratedFloorPassed(), false, "the final check has only just landed");
   t.mock.timers.tick(OPEN_AT - LAST_TICK_AT);
   assert.equal(narratedFloorPassed(), false, "the doors are still opening");
-  t.mock.timers.tick(OPEN_MS);
+  t.mock.timers.tick(LAND_AT - OPEN_AT);
+  assert.equal(narratedFloorPassed(), false, "the camera is still on its way to the desk");
+  t.mock.timers.tick(LAND_MS);
   assert.equal(narratedFloorPassed(), true, "and then the room is yours");
 });
 

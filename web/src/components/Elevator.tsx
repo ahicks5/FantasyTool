@@ -1,11 +1,14 @@
 "use client";
-/** The ride up: the opening, played as an elevator to the top floor. Tap to skip. */
+/** The ride up: the opening, played as an elevator to the office and a walk to the desk. Tap to skip. */
 import { useEffect, useRef, useState } from "react";
 import {
   BOARD_MS,
   CLOSE_MS,
   dayStamp,
+  DESK_MS,
   FLOORS,
+  LAND_MS,
+  OFFICE_MS,
   OPEN_MS,
   OPENING_LINES,
   pastSkipping,
@@ -13,14 +16,17 @@ import {
   type RideState,
 } from "@/lib/elevator";
 import { loadConnection, saveRideDay } from "@/lib/storage";
-import { RIDE } from "@/lib/vocab";
+import { RIDE, SECTIONS } from "@/lib/vocab";
 import { liftFloor } from "@/lib/wait";
 import { IconCheck, IconMark } from "./icons";
 
 /* ---------------------------------------------------------------- the car ---
    The owner steps into the elevator, the doors close, the floors go by while the
    staff brief them on the car's display, the car stops at PH, the lamp comes on,
-   and the doors open onto the call sheet. The office is the app itself: nothing is
+   and the doors open onto the office: a room built from a handful of planes in CSS
+   3D (the wall with its window and nameplate, the floor, the desk). The camera walks
+   in, comes around the desk to the owner's chair, looks down at the papers on it, and
+   the papers fade into the call sheet. The office is the app itself: nothing is
    revealed except the page that was loading underneath all along.
 
    The whole ride is one clock read against `rideState` in `lib/elevator.ts`, which
@@ -69,7 +75,7 @@ export function ElevatorRide() {
     skippedAt.current = performance.now() - startedAt.current;
   };
 
-  const arrived = s.phase === "arrived" || s.phase === "opening";
+  const arrived = s.phase !== "boarding" && s.phase !== "closing" && s.phase !== "sealed" && s.phase !== "rising";
   const rising = s.phase === "rising";
 
   return (
@@ -84,6 +90,9 @@ export function ElevatorRide() {
           "--ride-board": `${BOARD_MS}ms`,
           "--ride-close": `${CLOSE_MS}ms`,
           "--ride-open": `${OPEN_MS}ms`,
+          "--ride-office": `${OFFICE_MS}ms`,
+          "--ride-desk": `${DESK_MS}ms`,
+          "--ride-land": `${LAND_MS}ms`,
         } as React.CSSProperties
       }
       onClick={skip}
@@ -102,6 +111,50 @@ export function ElevatorRide() {
       </div>
 
       <div className="ride-car">
+        {/* The office, behind the doors. Only lit once the car has arrived, so the
+            lobby is dark through the ajar doors at boarding. The room is placed around
+            the desk top's centre; the camera is the room's own transform. */}
+        <div className="ride-office" aria-hidden>
+          <div className="ride-room">
+            <div className="ride-wall">
+              <div className="ride-nameplate display">
+                <span className="chrome-type">PENTHOUSE</span>
+                <span className="lamp" />
+              </div>
+              <div className="ride-window" />
+            </div>
+            <div className="ride-ground" />
+            <div className="ride-desk-front" />
+            <div className="ride-desk-side ride-desk-side-l" />
+            <div className="ride-desk-side ride-desk-side-r" />
+            <div className="ride-desk-top">
+              {/* The papers, laid to read from the owner's chair. The sheet on top is
+                  the one the doors are about to become. */}
+              <div className="ride-papers">
+                <div className="ride-paper ride-paper-1">
+                  <div className="ride-paper-eyebrow">{SECTIONS.team.label}</div>
+                  <div className="ride-paper-title display">{SECTIONS.team.title}</div>
+                  <div className="ride-paper-rule" />
+                  <div className="ride-paper-rule short" />
+                </div>
+                <div className="ride-paper ride-paper-hero ride-paper-2">
+                  <div className="ride-paper-eyebrow">{c ? `Week ${c.week} · ${c.team_name}` : SECTIONS.home.label}</div>
+                  <div className="ride-paper-title display">{SECTIONS.home.title}</div>
+                  <div className="ride-paper-rule" />
+                  <div className="ride-paper-rule" />
+                  <div className="ride-paper-rule short" />
+                </div>
+                <div className="ride-paper ride-paper-3">
+                  <div className="ride-paper-eyebrow">{c?.league_name ?? SECTIONS.waivers.label}</div>
+                  <div className="ride-paper-title display">{SECTIONS.waivers.title}</div>
+                  <div className="ride-paper-rule" />
+                  <div className="ride-paper-rule short" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* The doors. Brushed steel, the mark engraved across the seam, and while the
             car climbs a light from the shaft passes down them. */}
         <div className="ride-doors" aria-hidden>

@@ -335,7 +335,7 @@ which slows rather than stops, because a frozen ring says "stalled".
 | `tick` | changed | a number |
 | `lamp` | pulses | ON AIR |
 | `sweep` | sheen crosses metal | a plan loading |
-| `ride` | the elevator: doors, floors, ding, doors | the first open of the day, once a team is known |
+| `ride` | the elevator, then the office: doors, floors, ding, the walk to the desk, the papers | the first open of the day, once a team is known |
 
 The kit has no motion. It should list these — they are brand, and no competitor has a
 stamp that slams.
@@ -392,10 +392,13 @@ logo. Both shapes are built:
 **Loading screen.** The first open of the day is the ride up (`web/src/components/Elevator.tsx`):
 you step into the car, the doors close over the mark, the floors go by on the plate while
 the staff's checklist ticks on the wall display, the car stops at PH, the ON AIR lamp comes
-on, and the doors open onto the call sheet. The office is the app; nothing is revealed
-except the page. The lamp obeys its rule (it has the words beside it, and it comes on only
-when the car stops), the mark is engraved across the seam, and the doors are the hero's
-dark metal in both themes. Tap to skip. Every later wait is the quiet skeleton.
+on, and the doors open onto the office: the nameplate on the wall over the city at night,
+and the desk. The camera walks in, comes around to the owner's chair, and looks down at
+three papers with the team's name on them; the papers become the call sheet. The office
+is the app; nothing is revealed except the page. The lamp obeys its rule (it has the words
+beside it, and it comes on only when the car stops), the mark is engraved across the
+seam, and the doors and the office are dark in both themes. Tap to skip. Every later wait
+is the quiet skeleton.
 
 **Email cannot be chrome.** Gmail strips `<style>`; Outlook renders no gradients, no
 `background-clip`, no SVG. The email is flat silver capitals (`METAL` in

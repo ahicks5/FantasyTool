@@ -7,14 +7,17 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 Andrew wants Penthouse to play like MyGM: an owner, a staff, a building. The first piece is
 the opening.
 
-- [x] **VG-1** **The ride up.** The opening is an elevator: doors close over the mark, the
-      plate climbs L to PH while the API's real phases tick on the car's display, the car
-      stops, the ON AIR lamp comes on, the doors open onto the call sheet. Pure schedule in
-      `web/src/lib/elevator.ts` (10 tests), the floor in `lib/wait.ts` derived from it (the
-      old checklist-floor tests rewritten around the ride), the overlay in
-      `components/Elevator.tsx`, CSS only, no dependency. Once a day per browser, again
-      after every `/connect`, tap to skip, `?ride=1` to replay. Two browser tests.
-      Screenshotted frame by frame at 375px in both themes.
+- [x] **VG-1** **The ride up, and the office.** The opening is an elevator: doors close
+      over the mark, the plate climbs L to PH while the API's real phases tick on the car's
+      display, the car stops, the ON AIR lamp comes on, the doors open onto the office. The
+      office is CSS 3D (wall, window, nameplate, floor, desk): the camera walks in, comes
+      around the desk to the owner's chair, looks down at three papers with the team's name
+      on them, and the papers fade into the call sheet. About six seconds, tap to skip. Pure
+      schedule in `web/src/lib/elevator.ts` (10 tests), the floor in `lib/wait.ts` derived
+      from it, the overlay in `components/Elevator.tsx`, CSS only, no dependency. Once a day
+      per browser, again after every `/connect`, `?ride=1` to replay. Two browser tests.
+      Screenshotted frame by frame at 375px in both themes. Andrew's call (2026-09-21): the
+      desk is the last frame before the call sheet, not a new home screen.
 - [ ] **VG-2** Sound. A chime at PH and a door roll would sell it, but a cold load has no
       user gesture so autoplay is blocked; the `/connect` hand-off does have one. Decide
       whether sound is worth an "audio on" switch in the top bar.
