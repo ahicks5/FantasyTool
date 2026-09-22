@@ -1,0 +1,36 @@
+{
+  "season": 2026,
+  "week": 2,
+  "algo_version": "score_runs.v1",
+  "generated": "2026-09-22",
+  "kickoff": "2026-09-18T00:15:00+00:00",
+  "runs": 0,
+  "teams_graded": 0,
+  "calls": 0,
+  "hits": 0,
+  "skipped": {
+    "after_kickoff": 0,
+    "no_actuals": 0,
+    "no_calls": 0
+  },
+  "confidence": {
+    "Lock": {
+      "n": 0,
+      "right": 0,
+      "hit_rate": null,
+      "publishable": false
+    },
+    "Lean": {
+      "n": 0,
+      "right": 0,
+      "hit_rate": null,
+      "publishable": false
+    },
+    "Coin flip": {
+      "n": 0,
+      "right": 0,
+      "hit_rate": null,
+      "publishable": false
+    }
+  }
+}
