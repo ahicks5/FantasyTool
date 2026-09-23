@@ -34,6 +34,16 @@ def trade_deadline_week(settings: dict) -> int | None:
     return None if settings.get("disable_trades") else wk
 
 
+def playoff_settings(settings: dict) -> tuple[int | None, int | None]:
+    """(teams in the playoffs, first playoff week), or None for either the league left unset.
+
+    Sleeper writes 0 for "not set" on both, as the Megalabowl fixture does for the start
+    week, so anything outside a real range is None rather than week 0.
+    """
+    return (_as_int(settings.get("playoff_teams"), 1, 32),
+            _as_int(settings.get("playoff_week_start"), 1, FANTASY_LAST_WEEK + 1))
+
+
 def waiver_window(settings: dict) -> tuple[int | None, int | None, bool]:
     """(day, hour, daily) this league's claims process, in US/Eastern, 0 = Sunday ... 6 = Saturday.
 
@@ -250,6 +260,8 @@ def build_league(
         waiver_day=waiver_day,
         waiver_hour=waiver_hour,
         waiver_daily=waiver_daily,
+        playoff_teams=playoff_settings(settings)[0],
+        playoff_week_start=playoff_settings(settings)[1],
     )
     if projections_raw is not None:
         apply_projections(league, projections_raw, players)

@@ -14,20 +14,22 @@ import json
 import sys
 from pathlib import Path
 
+from edge.data import frozen
 from edge.data import sleeper_api as api
 
-OUT = Path("docs/frozen")
+OUT = frozen.directory()
 
 
 def path(season: int, week: int) -> Path:
     # gzipped: 18 weeks of raw JSON is 8 MB in the repo, 1 MB compressed.
-    return OUT / f"projections_{season}_{week}.json.gz"
+    return frozen.path(season, week)
 
 
 def load(season: int, week: int) -> list[dict] | None:
-    """The frozen projections for a week, or None if that week was never frozen."""
-    f = path(season, week)
-    return json.loads(gzip.decompress(f.read_bytes())) if f.exists() else None
+    """The frozen projections for a week, or None if that week was never frozen.
+
+    One reader for the backtest and the film: `edge/data/frozen.py`."""
+    return frozen.load(season, week)
 
 
 def main() -> None:

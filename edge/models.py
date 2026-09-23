@@ -172,6 +172,11 @@ class League:
     # stated rather than inferred from `waiver_day is None` -- that also means "the
     # platform did not tell us", and the two must never be read as each other.
     waiver_daily: bool = False
+    # How many teams make the playoffs, and the first week of them, as the league set it.
+    # None when the platform did not say; the playoff picture then says nothing rather than
+    # assume a six-team bracket.
+    playoff_teams: int | None = None
+    playoff_week_start: int | None = None
     free_agents: list[Player] = field(default_factory=list)
 
     def __post_init__(self) -> None:

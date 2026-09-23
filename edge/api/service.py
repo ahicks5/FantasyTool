@@ -37,6 +37,9 @@ class Bundle:
     # the on-disk cache instead, which costs no network.
     raw: dict = field(default_factory=dict)
     users_raw: list[dict] = field(default_factory=list)
+    # This season's transactions (and last season's), already fetched for the tendencies.
+    # Kept because the film's swing names a waiver claim that started; small JSON.
+    transactions: list[dict] = field(default_factory=list)
     loaded_at: float = field(default_factory=time.time)
 
     def hoarded(self, roster_id: str) -> list[str]:
@@ -47,11 +50,14 @@ _cache: dict[tuple[str, str, str], Bundle] = {}
 
 
 def _transactions_history(league_raw: dict, week: int) -> list[dict]:
+    """This season's transactions and last season's, each stamped with the league it came
+    from: Sleeper's rows carry no league id, and the film must not read a claim from last
+    season as one from this (`claims`)."""
     lid = league_raw["league_id"]
     tx: list[dict] = []
     for w in range(1, week + 1):
         try:
-            tx += api.transactions(lid, w)
+            tx += [{**t, "league_id": lid} for t in api.transactions(lid, w)]
         except Exception:  # noqa: BLE001
             break
     prev = league_raw.get("previous_league_id")
@@ -63,7 +69,7 @@ def _transactions_history(league_raw: dict, week: int) -> list[dict]:
                 break
             if not t:
                 continue
-            tx += t
+            tx += [{**row, "league_id": prev} for row in t]
     return tx
 
 
@@ -100,7 +106,7 @@ def load_sleeper(league_id: str, week: int | None = None) -> Bundle:
         league=league, ros=ros, byes=byes, bid_stats=league_bid_stats(tx),
         profiles=profile_managers(tx, players),
         pos_counts=position_counts({str(r["roster_id"]): r.get("players") or [] for r in rosters}, players),
-        matchups=matchups, trending=trending, raw=raw, users_raw=users,
+        matchups=matchups, trending=trending, raw=raw, users_raw=users, transactions=tx,
     )
 
 
@@ -259,3 +265,114 @@ def standings(platform: str, league_id: str, b: Bundle, auth=None) -> dict:
     columns go null. See `edge/engine/standings.py`.
     """
     return standings_mod.build(b.league, b.ros, played_weeks(platform, league_id, b, auth=auth))
+
+
+# ---------------------------------------------------------------------------
+# The film's inputs (edge/engine/film.py)
+# ---------------------------------------------------------------------------
+#
+# The film engine never learns where a past projection or a stat line came from (SPEC-FILM
+# D5): it takes a {player_id: (points, source)} map and a stat log. Everything that knows
+# the sources is below, so swapping one later touches this file only.
+
+PAST_SOURCES = ("freeze", "runs", "platform")
+
+
+def past_projections(league: League, week: int, recorded: dict[str, float] | None = None,
+                     ids: set[str] | None = None, provider=None,
+                     frozen_rows: list[dict] | None = None) -> dict[str, tuple[float, str]]:
+    """{player_id: (projected points, source)} for a finished week, in SPEC-FILM D4's order.
+
+    1. **freeze** — the Thursday freeze in `docs/frozen/`, scored in this league's scoring.
+       The only number provably made before kickoff.
+    2. **runs** — what we logged showing this reader at the time (`recap.projections_from_runs`),
+       already in league points.
+    3. **platform** — the vendor's stored projection for that week, through the provider door
+       (`edge/data/providers.py`), scored here. The vendor may have revised it after the
+       games, so the web prints "as Sleeper has it now" beside this source and nothing else.
+
+    Per player, first source wins. Nothing is ever rebuilt from today's data. `ids` narrows
+    the answer to the players a caller needs; `frozen_rows` lets the caller pass a freeze it
+    already read. A source that fails is skipped, never raised: a missing number is a
+    shorter film, not an error.
+    """
+    from edge.data import frozen
+    from edge.data.scoring import score
+
+    out: dict[str, tuple[float, str]] = {}
+
+    def keep(pid: str, pts: float, source: str) -> None:
+        if (ids is None or pid in ids) and pid not in out:
+            out[pid] = (round(float(pts), 2), source)
+
+    rows = frozen_rows if frozen_rows is not None else frozen.load(league.season, week)
+    for pid, pts in frozen.projected_points(rows or [], league.scoring).items():
+        keep(pid, pts, "freeze")
+    for pid, pts in (recorded or {}).items():
+        keep(str(pid), pts, "runs")
+    if ids is not None and ids <= out.keys():
+        return out
+    try:
+        weekly = (provider or get_provider()).weekly(league.season, week)
+    except Exception:  # noqa: BLE001 — the vendor being down costs the third source only
+        weekly = []
+    for proj in weekly:
+        if proj.stats:
+            keep(str(proj.player_id), score(proj.stats, league.scoring), "platform")
+    return out
+
+
+def pregame_status(season: int, week: int, frozen_rows: list[dict] | None = None) -> dict[str, str | None] | None:
+    """The injury tags as frozen before kickoff, or None when the week was never frozen.
+
+    Only the freeze counts. A vendor's stored row for a past week carries the tag as it
+    stands today, and "Out" written on Wednesday of the next week is not a pregame tag.
+    """
+    from edge.data import frozen
+    rows = frozen_rows if frozen_rows is not None else frozen.load(season, week)
+    return frozen.pregame_status(rows) if rows else None
+
+
+def stat_log(season: int, through_week: int) -> dict[str, list]:
+    """player_id -> every weekly stat line we can fetch: last season's, then this one's.
+
+    The film's norms read a player's last eight games and "best since" reads the earliest
+    week held (SPEC-FILM D6), so last season is included. Each week is its own cached request
+    in `edge/data/nfl_stats.py`; one that fails is a shorter log, never an error.
+    """
+    from edge.data import nfl_stats
+    from edge.data.schedule import REGULAR_SEASON_WEEKS
+    log: dict[str, list] = {}
+    for part in (nfl_stats.game_log(season - 1, REGULAR_SEASON_WEEKS + 1),
+                 nfl_stats.game_log(season, through_week)):
+        for pid, lines in part.items():
+            log.setdefault(pid, []).extend(lines)
+    return log
+
+
+def week_results(season: int, week: int) -> dict[str, dict]:
+    """{nfl_team: {"opp", "for", "against", "home"}} for a finished NFL week, or {}."""
+    from edge.data import schedule
+    try:
+        games = schedule.load_week_games(season, week)
+    except Exception:  # noqa: BLE001
+        return {}
+    return schedule.results_for({str(week): games}, week)
+
+
+def claims(transactions: list[dict], season_league_id: str, roster_id: str) -> dict[str, int]:
+    """{player_id: the week this roster added him} for this season's waiver and free-agent adds.
+
+    Last season's transactions ride in the same list (for the tendencies), so only rows from
+    this season's league id count. A later add of the same man wins: it is the one that put
+    him on the roster he played for.
+    """
+    out: dict[str, int] = {}
+    rows = [t for t in transactions if str(t.get("league_id")) == str(season_league_id)]
+    for t in sorted(rows, key=lambda t: int(t.get("leg") or 0)):
+        if t.get("status") != "complete" or t.get("type") not in ("waiver", "free_agent"):
+            continue
+        for pid, rid in (t.get("adds") or {}).items():
+            if str(rid) == str(roster_id):
+                out[str(pid)] = int(t.get("leg") or 0)
+    return out

@@ -288,6 +288,20 @@ def waiver_window(settings: dict) -> tuple[int | None, int | None]:
     return day, None
 
 
+def playoff_settings(settings: dict) -> tuple[int | None, int | None]:
+    """(teams in the playoffs, first playoff week) from ESPN's `scheduleSettings`.
+
+    ESPN counts regular-season matchup periods (`matchupPeriodCount`, 14 in the fixture)
+    and one period is one week in every league we have seen, so the playoffs start the week
+    after. A league with multi-week periods is not guessed at: the start week is None.
+    """
+    sched = settings.get("scheduleSettings") or {}
+    teams = sched.get("playoffTeamCount")
+    count, length = sched.get("matchupPeriodCount"), sched.get("matchupPeriodLength")
+    start = count + 1 if isinstance(count, int) and count > 0 and length in (1, None) else None
+    return (teams if isinstance(teams, int) and teams > 0 else None), start
+
+
 def build_league(
     raw: dict,
     week: int | None = None,
@@ -346,6 +360,7 @@ def build_league(
             waiver_position=t.get("waiverRank"),
         ))
 
+    playoff_teams, playoff_week_start = playoff_settings(settings)
     league = League(
         id=str(raw.get("id")),
         platform="espn",
@@ -360,6 +375,8 @@ def build_league(
         waiver_day=waiver_day,
         waiver_hour=waiver_hour,
         waiver_daily=waiver_daily,
+        playoff_teams=playoff_teams,
+        playoff_week_start=playoff_week_start,
         # ESPN gives an epoch-millisecond timestamp (`tradeSettings.deadlineDate`, e.g.
         # 1795044000000 = Wed 18 Nov 2026 19:20 ET in the fixture) and never a week, and
         # there is nothing here to turn a date into a week with. `edge/data/schedule.py`

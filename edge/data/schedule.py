@@ -34,8 +34,23 @@ def _game(event: dict) -> dict:
     comps = event["competitions"][0]["competitors"]
     home = next(c for c in comps if c.get("homeAway") == "home")
     away = next(c for c in comps if c.get("homeAway") == "away")
-    return {"home": home["team"]["abbreviation"], "away": away["team"]["abbreviation"],
+    game = {"home": home["team"]["abbreviation"], "away": away["team"]["abbreviation"],
             "kickoff": event["date"]}
+    # The result, when the scoreboard has one. A game that has not kicked off carries a
+    # "0" score, so a score is only kept alongside a status that says the game started.
+    state = (((event.get("status") or {}).get("type") or {}).get("state"))
+    if state in ("in", "post"):
+        game["status"] = "final" if state == "post" else "in"
+        game["home_score"] = _score(home)
+        game["away_score"] = _score(away)
+    return game
+
+
+def _score(competitor: dict) -> int | None:
+    try:
+        return int(float(competitor.get("score")))
+    except (TypeError, ValueError):
+        return None
 
 
 def fetch_all(season: int) -> dict:
@@ -96,6 +111,41 @@ def games_for(games: dict[str, list[dict]], week: int) -> dict[str, dict]:
         out[home] = {"opp": away, "kickoff": g["kickoff"], "home": True}
         out[away] = {"opp": home, "kickoff": g["kickoff"], "home": False}
     return out
+
+
+def results_for(games: dict[str, list[dict]], week: int) -> dict[str, dict]:
+    """One week's finals, indexed by team: {team: {"opp", "for", "against", "home"}}.
+
+    Only games the scoreboard calls final. A game in progress is not a result, and a week
+    with no scores stored (a schedule cached before kickoff) is simply empty.
+    """
+    out: dict[str, dict] = {}
+    for g in games.get(str(week), []):
+        if g.get("status") != "final" or g.get("home_score") is None or g.get("away_score") is None:
+            continue
+        home, away = norm_team(g["home"]), norm_team(g["away"])
+        out[home] = {"opp": away, "for": g["home_score"], "against": g["away_score"], "home": True}
+        out[away] = {"opp": home, "for": g["away_score"], "against": g["home_score"], "home": False}
+    return out
+
+
+def load_week_games(season: int, week: int) -> list[dict]:
+    """One week off the scoreboard, scores included, for the film.
+
+    The season file above is cached for a week, so it can hold Thursday's picture of a
+    Sunday. This one is per week and keyed on finality: once every game is final the file
+    never changes again and is kept for good; until then it is re-read after 15 minutes.
+    """
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    f = CACHE_DIR / f"scores_{season}_{week}.json"
+    if f.exists():
+        games = json.loads(f.read_text())
+        final = bool(games) and all(g.get("status") == "final" for g in games)
+        if final or time.time() - f.stat().st_mtime < 15 * 60:
+            return games
+    games = sorted((_game(e) for e in _events(season, week)), key=lambda g: (g["kickoff"], g["home"]))
+    f.write_text(json.dumps(games))
+    return games
 
 
 def bye_weeks(weeks: dict[str, list[str]]) -> dict[str, int]:
