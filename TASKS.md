@@ -1091,3 +1091,33 @@ actually opens a fantasy app to ask. One board, on `/waivers`, above the Wire Pa
       same commit that moved the room.
 - [ ] The board pages at 50 rows behind a button. No virtualisation — a 12-team league's
       universe is a few hundred rows, and a list that long is cheaper than the machinery.
+
+## The film, rebuilt as the replay (docs/SPEC-FILM.md, 2026-09-23)
+
+Andrew's brief: the tab is Spotify Wrapped for your week — the replay of how you did and
+*why* (attribution per player: usage, efficiency, TD luck, game script, injuries before and
+during), then how you compare to the league (superlatives, position groups, expectation,
+the gauntlet, a trade and waiver ledger graded so far, the playoff picture), week by week,
+with a projector opening. The carrot for The Penthouse. Sections F-1 to F-10 in the spec;
+build order in §8.
+
+- [ ] **F-1** Data spine: read `docs/frozen/` for past-week projections, keep game scores in
+      the schedule, playoff settings on `League`.
+- [ ] **F-2** `engine/film.py`: attribution, the swing, the takeaway. Pure, tested offline.
+- [ ] **F-3** `/film` route, cover free, story 402 with the cover as teaser.
+- [ ] **F-4** The replay on the web: cover, story cards, per-starter attribution sheet.
+- [ ] **F-5** The league: superlatives, position groups, expectation, the gauntlet, charts.
+- [ ] **F-6** The ledger: every trade and claim, graded on points since, "so far".
+- [ ] **F-7** The playoff picture (arithmetic first, odds later).
+- [ ] **F-8** ESPN boxscores so ESPN readers get the line-by-line.
+- [ ] **F-9** The projector opening, once per graded week, skippable.
+- [ ] **F-10** The Tuesday ritual: desk notebook, email cover line, film share card.
+
+### Decisions needed from Andrew
+
+- D5: run the Thursday freeze inside the API so production has the "had" column.
+- D6: pull older seasons for "best since…" lines, or say "since 2025".
+- D2: cover free and the story paid, or the whole replay paid.
+- D7: LLM prose on the replay or templates at launch.
+- Name: keep "The film" with "The replay" inside it, or rename the tab.
+
