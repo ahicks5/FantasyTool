@@ -388,6 +388,7 @@ def attribute(ctx: Context, p: Player, slot: str, week: int, went: float, starte
         elif tag and low:
             v = "hurt_pregame"
             reasons.append(_reason("injury", f"Played through a {tag} tag: {_pct(share or 0)} of the snaps", -1))
+            snap = None     # the injury line already says it
         elif low and share is not None and share < LEFT_EARLY:
             v = "hurt_in_game"
             why = "no injury tag before kickoff" if known else "read off the snap count"

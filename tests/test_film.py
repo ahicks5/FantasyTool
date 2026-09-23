@@ -212,6 +212,7 @@ def test_playing_through_a_tag_on_a_fraction_of_the_snaps_is_pregame_not_in_game
     a = _attr(_ctx(log, pregame={WEEK: {"wr": "Questionable"}}), went=3.0)
     assert a["verdict"] == "hurt_pregame"
     assert a["reasons"][0]["line"] == "Played through a Questionable tag: 30% of the snaps"
+    assert "snaps" not in _kinds(a), "the snap share is said once"
 
 
 def test_a_starter_on_bye_did_not_play_and_the_line_says_why():
