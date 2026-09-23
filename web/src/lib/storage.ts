@@ -143,6 +143,27 @@ export function saveScoutSeen(): void {
   }
 }
 
+/* ---------------------------------------------------------------- the call ---
+   Whether this browser has taken the GM's call on the GM's Office (`lib/call.ts`). */
+
+const CALL_KEY = "booth.call";
+
+export function loadCallSeen(): boolean {
+  try {
+    return window.localStorage.getItem(CALL_KEY) === "1";
+  } catch {
+    return true;
+  }
+}
+
+export function saveCallSeen(): void {
+  try {
+    window.localStorage.setItem(CALL_KEY, "1");
+  } catch {
+    /* blocked storage: loadCallSeen already answers seen */
+  }
+}
+
 /* ------------------------------------------------------------ the lineup stamp ---
    The head coach's stamp on /team lands once per league per week (Andrew, 2026-09-23:
    "it should only be once"). It used to land on every arrival at the tab.            */
@@ -166,12 +187,13 @@ export function saveBoomSeen(leagueId: string, week: number): void {
 }
 
 /**
- * Every one-time opening, back to unseen: the scout's seat and the lineup stamp. `?ride=1`
+ * Every one-time opening, back to unseen: the scout's seat, the GM's call, the lineup stamp. `?ride=1`
  * calls it, so replaying the elevator replays the whole first impression, not one room of it.
  */
 export function resetOpenings(): void {
   try {
     window.localStorage.removeItem(SCOUT_KEY);
+    window.localStorage.removeItem(CALL_KEY);
     for (let i = window.localStorage.length - 1; i >= 0; i--) {
       const k = window.localStorage.key(i);
       if (k && k.startsWith(BOOM_SEEN_PREFIX)) window.localStorage.removeItem(k);

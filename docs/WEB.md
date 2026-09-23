@@ -212,6 +212,30 @@ once per league per week (`booth.boom.<league>`), no longer on every arrival. `O
 calls `resetOpenings()` when the ride is forced, which clears the scout's and the lineup's
 stamps too.
 
+## The GM's Office is Scouting's grammar (Andrew, 2026-09-23)
+
+`/trade`, top down: **Calls to return** (`OfficeDeals.tsx`): the roster's shape in one line
+(`Posture`: what you can spare, where you are short), then the engine's first three
+partners as panels in one row, each the face you get with the face you send tucked on it,
+"for Diggs", your ROS gain and how fair it is, an arrow into `/trade/deal?team=` (a query
+string, for the demo export). The stamp is `lib/office.heat`: the **hot line** only on the
+first deal and only at +10 ROS or more (the one pulsing thing on the tab, like the must-add),
+"Worth a call" at +4, else "Long shot". **Every GM**: one row per partner (rank chip in the
+heat colour, has/needs chips, the best deal in one line, the gain). **Build your own offer**:
+the old grader, collapsed until opened (`?build=1`, or any `their`/`give` link opens it).
+The Find / Grade tab bar is gone. Free, the panels keep the partner and withhold the deal,
+and the lock sits under the list. `/trade/deal` is one partner: hero with the heat stamp,
+his headline and roster shape, every offer (`Offer` from `TradeFinderView.tsx`), and "Build
+your own with him".
+
+**The call** (`CallOpening.tsx`, `lib/call.ts`): the first open of the office, once per
+browser (`booth.call`), the phone rings: the best partner's GM (initials on a chrome disc,
+rings pulsing out, the screen buzzing in bursts, `navigator.vibrate` where allowed). Answer,
+or it answers itself at 2.8s; "On the line" with a running clock, two bubbles ("Got a
+minute?", then how many deals), and it lands through the same clearing blur as the scout.
+Decline or any tap once connected lands it. `?call=1` replays it; `?ride=1` resets it with
+the other openings; it never rings over the day's first ride.
+
 ## Theme
 
 **Dark is the default, and it is not read off the OS.** `prefers-color-scheme: light` also

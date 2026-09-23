@@ -2,6 +2,21 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## The GM's Office (2026-09-23, evening)
+
+Andrew's brief: the other tabs' principles (pointed summaries up top, detail one tap down),
+a phone-call opening once per browser. Look and feel now; the math and strategy later.
+
+- [x] **GM-1** Calls to return: roster shape line + three deal panels (hot line / worth a
+      call / long shot), `lib/office.ts`, tested.
+- [x] **GM-2** Every GM: one row per partner, arrow into `/trade/deal?team=`.
+- [x] **GM-3** Deal page: the partner's shape, every offer, build your own with him.
+- [x] **GM-4** Build your own offer: the grader collapsed at the bottom; the tab bar is gone.
+- [x] **GM-5** The call: ring, answer, two lines, land. Once per browser; `?call=1`.
+- [ ] **GM-6** Andrew's pass on the math: the heat thresholds (+10 / +4 ROS), which partner
+      calls, what he says (his tendencies from `engine/tendencies.py` would make the second
+      line his own), and whether the free preview should ring at all.
+
 ## The Scouting tab (2026-09-23)
 
 Andrew's brief: the tab answers "what few are worth picking up (why, who goes)" and then

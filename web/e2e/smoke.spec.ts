@@ -3,7 +3,7 @@ import { DEV_USER } from "../playwright.config";
 import { DESK, LINEUP, PLAN, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
-import { SCOUT, SCOUT_OPEN, WIRE } from "../src/lib/vocab";
+import { CALL, OFFICE, SCOUT, SCOUT_OPEN, WIRE } from "../src/lib/vocab";
 import { AVAILABILITY_LABELS, BOARD_LABELS } from "../src/lib/board";
 
 /**
@@ -120,6 +120,8 @@ test.beforeEach(async ({ context, page }) => {
         // The scout's opening plays once per browser; the one test that wants it asks
         // with ?scout=1. Must match `SCOUT_KEY` in web/src/lib/storage.ts.
         window.localStorage.setItem("booth.scout", "1");
+        // Same for the GM's call on /trade; its own test asks with ?call=1.
+        window.localStorage.setItem("booth.call", "1");
       } catch {
         /* blocked storage: the test will fail on content instead */
       }
@@ -274,8 +276,9 @@ const PAGES: PageCase[] = [
     path: "/trade",
     name: "trade lab",
     check: async (page) => {
-      await expect(page.getByRole("tab", { name: /find a trade/i })).toBeVisible();
-      await expect(page.getByRole("tab", { name: /grade an offer/i })).toBeVisible();
+      // The office, top down: the deals worth a call, every GM, and the table.
+      await expect(page.getByRole("heading", { name: OFFICE.title })).toBeVisible();
+      await expect(page.getByRole("heading", { name: OFFICE.build })).toBeVisible();
       await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
     },
   },
@@ -520,6 +523,32 @@ test("the scout takes his seat once, and a tap lands on the page", async ({ page
   await page.getByRole("button", { name: SCOUT_OPEN.skip }).click();
   await expect(scene).toHaveCount(0, { timeout: 5_000 });
   await expect(page.getByRole("heading", { name: WIRE.title })).toBeVisible();
+});
+
+test("the GM calls once: answer it, hear him out, the office is underneath", async ({ page }) => {
+  const { status } = await visit(page, "/trade?call=1");
+  expect(status).toBe(200);
+  const call = page.getByRole("dialog", { name: CALL.aria });
+  await expect(call).toBeVisible();
+  await expect(call.getByText(CALL.incoming)).toBeVisible();
+  await call.getByRole("button", { name: CALL.answer }).click();
+  await expect(call.getByText(CALL.hello)).toBeVisible();
+  await call.getByRole("button", { name: CALL.skip }).click();
+  await expect(call).toHaveCount(0, { timeout: 5_000 });
+  await expect(page.getByRole("heading", { name: OFFICE.title })).toBeVisible();
+});
+
+test("a GM's row opens his page, with the offers and the way back", async ({ page }) => {
+  const { status } = await visit(page, "/trade");
+  expect(status).toBe(200);
+  const row = page.locator("#every-gm a").first();
+  await expect(row).toBeVisible({ timeout: 10_000 });
+  await row.click();
+  await expect(page).toHaveURL(/\/trade\/deal\?team=/);
+  await expect(page.getByRole("link", { name: OFFICE.deal.back }).first()).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+  await page.getByRole("link", { name: OFFICE.deal.back }).first().click();
+  await expect(page).toHaveURL(/\/trade$/);
 });
 
 test("the API really is the fixture server, not mocks", async ({ page }) => {

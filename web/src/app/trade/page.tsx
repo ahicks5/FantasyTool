@@ -1,5 +1,8 @@
 "use client";
-/** GM's Office: the Trade Finder board, and the Trade Lab verdict on a trade you propose. */
+/**
+ * GM's Office: the three deals worth a call, every GM in one line each, and the table for
+ * grading an offer of your own. The first open rings (`CallOpening`).
+ */
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/Shell";
@@ -10,12 +13,15 @@ import { PlayerLine } from "@/components/Players";
 import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, Stamp, StatusMeter, Why } from "@/components/ui";
 import { createShare, evaluateTrade, findTrades, getLeague, getRoster, getTeamGrades, PaywallError } from "@/lib/api";
 import { once } from "@/lib/cache";
-import { TradeFinderView, TradeFinderWait } from "@/components/TradeFinderView";
+import { TradeFinderWait } from "@/components/TradeFinderView";
+import { CallOpening } from "@/components/CallOpening";
+import { PartnerList, TopDeals } from "@/components/OfficeDeals";
 import { Compare } from "@/components/Compare";
 import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { Grades, LeagueSummary, Player, TeamGrades, TradeFinderResponse, TradeResult } from "@/lib/types";
-import { TRADE } from "@/lib/vocab";
+import { OFFICE, TRADE } from "@/lib/vocab";
+import { officeKey } from "@/lib/office";
 
 function sortRoster(players: Player[]): Player[] {
   return [...players].sort((a, b) => (b.ros ?? b.projected ?? 0) - (a.ros ?? a.projected ?? 0));
@@ -163,7 +169,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   // gets `{preview: true, ...}` from /trades/find — the same board with the offers taken
   // out — rather than a 402. See `edge/engine/trade_finder.preview`.
   const [found, setFound] = useState<(TradeFinderResponse & { preview?: boolean }) | null>(null);
-  const [tab, setTab] = useState<"find" | "grade">(params.get("give") ? "grade" : "find");
+  const [build, setBuild] = useState(params.get("build") === "1");
 
   useEffect(() => {
     Promise.all([
@@ -180,7 +186,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
   useEffect(() => {
     let alive = true;
-    once(`findTrades:${c.platform}:${c.league_id}:${c.team_id}`, () => findTrades(c.platform, c.league_id, c.team_id))
+    once(officeKey(c.platform, c.league_id, c.team_id), () => findTrades(c.platform, c.league_id, c.team_id))
       .then((f) => alive && setFound(f))
       .catch(() => undefined);
     return () => {
@@ -274,34 +280,25 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   if (error && !league) return <ErrorBox error={error} />;
   if (!league) return <SkeletonList rows={3} />;
 
-  // Free (D3): the finder's partner list, then the lock. There is no second tab to offer
-  // — "Grade an offer" is the thing being sold — so the tab bar goes with it.
-  const active = preview ? "find" : tab;
+  const building = build || !!prefilled || !!params.get("their");
 
   return (
-    <div className="grid gap-5">
-      {!preview && (
-        <div className="grid grid-cols-2 gap-1 rounded-2xl border border-line bg-soft p-1" role="tablist" aria-label="Trade lab mode">
-          {(["find", "grade"] as const).map((t) => (
-            <button
-              key={t}
-              role="tab"
-              aria-selected={tab === t}
-              onClick={() => setTab(t)}
-              className={`min-h-0 rounded-xl py-2.5 text-[13px] font-bold transition-colors ${
-                tab === t ? "bg-paper text-ink shadow-[var(--shadow-card)]" : "text-muted"
-              }`}
-            >
-              {t === "find" ? "Find a trade" : "Grade an offer"}
-            </button>
-          ))}
-        </div>
+    <div className="grid gap-7">
+      {/* The first time: the phone rings. Once per browser (`lib/call.ts`). */}
+      <CallOpening c={c} />
+
+      {/* The office, top down (Andrew, 2026-09-23): the three deals worth a call, every
+          GM in one line each, and the table for your own idea at the bottom. */}
+      {found ? (
+        <>
+          <TopDeals board={found} preview={preview} />
+          <PartnerList board={found} preview={preview} />
+        </>
+      ) : (
+        <TradeFinderWait />
       )}
 
-      {active === "find" && (found ? <TradeFinderView found={found} preview={preview} /> : <TradeFinderWait />)}
-
-      {/* Once, under the whole list. One lock per card would be eleven walls on a board
-          of three partners, and would read as a shakedown rather than an upsell. */}
+      {/* Once, under the whole list. One lock per card would read as a shakedown. */}
       {preview && (
         <Locked
           signedIn={signedIn}
@@ -312,7 +309,24 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
         />
       )}
 
-      {active === "grade" && (
+      {/* Free, there is no builder to offer: grading an offer is the thing being sold. */}
+      {!preview && (
+      <section id="build" className="office-build grid scroll-mt-20 gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="display text-[20px] leading-tight">{OFFICE.build}</h2>
+            <p className="mt-1 text-[12px] leading-snug text-muted">{OFFICE.buildHint}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setBuild((b) => !b)}
+            aria-expanded={building}
+            className="min-h-0 shrink-0 rounded-full bg-ink px-3.5 py-2 text-[12px] font-black text-paper"
+          >
+            {building ? OFFICE.buildClose : OFFICE.buildOpen}
+          </button>
+        </div>
+      {building && (
       <>
       <section className="card p-4">
         <label htmlFor="their-team" className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
@@ -471,6 +485,8 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
         </div>
       )}
       </>
+      )}
+      </section>
       )}
     </div>
   );

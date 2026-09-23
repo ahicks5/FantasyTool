@@ -125,7 +125,7 @@ function Figures({ o }: { o: FinderOffer }) {
   );
 }
 
-function Offer({ o }: { o: FinderOffer }) {
+export function Offer({ o }: { o: FinderOffer }) {
   return (
     <div className="p-4">
       <div className="grid gap-2.5">
@@ -180,7 +180,7 @@ function Offer({ o }: { o: FinderOffer }) {
  * so two teams a whole tier apart looked like rounding. The tier word says the same thing
  * and says it in English.
  */
-function PartnerHead({ tier, p }: { tier: string; p: BoardPartner }) {
+export function PartnerHead({ tier, p }: { tier: string; p: BoardPartner }) {
   return (
     <span className="block min-w-0">
       <span className="flex items-center gap-2">

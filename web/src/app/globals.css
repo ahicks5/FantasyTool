@@ -2553,3 +2553,213 @@ li + li > .board-row { border-top: 1px solid var(--color-line); }
   font-size: 11.5px; font-weight: 800; color: var(--color-muted);
 }
 .board-view-on { color: var(--color-paper); background: var(--color-ink); }
+
+/* ============================================================== GM's Office ===
+   The top of the office: the roster's shape in one line, three deal panels in a row
+   (the same grammar as Scouting's pickups), and every GM one line each. */
+.office-posture {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
+  padding: 9px 12px;
+  border-radius: 12px; border: 1px solid var(--color-line); background: var(--color-paper);
+}
+.office-posture-label { flex: none; font-size: 11px; font-weight: 800; color: var(--color-muted); }
+.office-posture-none { font-size: 11px; font-weight: 700; color: var(--color-muted); }
+.office-chip {
+  flex: none; padding: 1px 6px; border-radius: 5px;
+  font-size: 10.5px; font-weight: 900; line-height: 16px;
+}
+.office-chip-start { color: var(--color-start); background: var(--color-start-soft); }
+.office-chip-sit { color: var(--color-sit); background: var(--color-sit-soft); }
+
+.deal {
+  position: relative; display: flex; flex-direction: column; height: 100%;
+  padding: 28px 6px 22px;
+  border-radius: 14px; border: 1.5px solid var(--color-line-2);
+  background: var(--color-paper); box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: transform 0.15s ease;
+}
+@media (hover: hover) { a.deal:hover { transform: translateY(-2px); } }
+a.deal:active { transform: scale(0.98); }
+.deal-hot {
+  border: 2px solid var(--color-signal);
+  box-shadow: 0 0 0 3px rgb(255 77 58 / 0.16), 0 10px 28px -12px rgb(255 77 58 / 0.55);
+  animation: pickup-pulse 2.4s ease-in-out infinite;
+}
+.deal-call { border-color: var(--color-lean); }
+@media (prefers-reduced-motion: reduce) { .deal-hot { animation: none; } }
+.deal-band {
+  position: absolute; inset: 0 0 auto 0; padding: 5px 4px 4px;
+  text-align: center; font-family: var(--font-display);
+  font-size: 10px; font-weight: 900; letter-spacing: 0.02em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--color-muted); background: var(--color-soft); border-bottom: 1px solid var(--color-line);
+}
+.deal-band-hot { color: #fff; background: var(--color-signal); border-bottom-color: transparent; font-size: 11px; }
+.deal-band-call { color: #fff; background: var(--color-lean); border-bottom-color: transparent; }
+.deal-team {
+  display: block; text-align: center;
+  font-size: 10px; font-weight: 800; color: var(--color-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.deal-give-face {
+  position: absolute; right: -8px; bottom: -4px;
+  border-radius: 999px; box-shadow: 0 0 0 2px var(--color-paper), 0 0 0 3.5px var(--color-sit);
+}
+.deal-foot {
+  margin-top: auto; padding-top: 6px; border-top: 1px solid var(--color-line);
+  text-align: center; font-size: 10.5px; font-weight: 700; color: var(--color-muted);
+}
+.deal-go {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 16px;
+  display: grid; place-items: center; color: var(--color-muted); background: var(--color-soft);
+}
+.deal-hot .deal-go { color: #fff; background: var(--color-signal); }
+.deal-locked { animation: none; }
+
+.office-list {
+  border-radius: 16px; border: 1px solid var(--color-line);
+  background: var(--color-paper); box-shadow: var(--shadow-card); overflow: hidden;
+}
+.office-row {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 60px; padding: 10px 12px;
+}
+li + li > .office-row { border-top: 1px solid var(--color-line); }
+@media (hover: hover) { .office-row:hover { background: var(--color-soft); } }
+.office-row:active { background: var(--color-soft); }
+.office-rank {
+  flex: none; display: grid; place-items: center;
+  width: 26px; height: 26px; border-radius: 8px;
+  font-size: 12px; font-weight: 900;
+  color: var(--color-muted); background: var(--color-soft);
+}
+.office-rank-hot { color: #fff; background: var(--color-signal); }
+.office-rank-call { color: #fff; background: var(--color-lean); }
+
+.office-build {
+  border-radius: 16px; border: 1px dashed var(--color-line-2);
+  background: var(--color-paper); padding: 14px;
+}
+
+/* ================================================================= the call ===
+   An incoming call, full screen, dark in both themes. It rings (the rings pulse out
+   from the face and the screen buzzes in bursts), connects (the timer runs, the lines
+   come in as bubbles) and lands through a clearing blur. */
+.call {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; justify-content: center;
+  background: #06080c;
+  color: #f4f3f0;
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  animation: scout-in 0.3s ease-out both;
+  transition:
+    background-color calc(var(--call-land) * 0.8) cubic-bezier(0.4, 0, 0.2, 1) calc(var(--call-land) * 0.15),
+    backdrop-filter var(--call-land) cubic-bezier(0.4, 0, 0.2, 1),
+    -webkit-backdrop-filter var(--call-land) cubic-bezier(0.4, 0, 0.2, 1),
+    opacity calc(var(--call-land) * 0.35) ease calc(var(--call-land) * 0.65);
+}
+.call[data-phase="land"], .call[data-phase="done"] {
+  background-color: rgb(6 8 12 / 0); -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0);
+  opacity: 0; pointer-events: none;
+}
+.call-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(60% 40% at 50% 28%, rgb(91 141 239 / 0.22), transparent 70%),
+    radial-gradient(80% 50% at 50% 110%, rgb(34 164 104 / 0.14), transparent 70%);
+  transition: opacity 0.6s ease;
+}
+.call[data-phase="talk"] .call-glow { opacity: 0.6; }
+.call-body {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  width: 100%; max-width: 420px; height: 100%;
+  padding: max(56px, env(safe-area-inset-top)) 28px max(28px, env(safe-area-inset-bottom));
+  transition: transform calc(var(--call-land) * 0.8) cubic-bezier(0.4, 0, 0.2, 1), opacity calc(var(--call-land) * 0.6) ease;
+}
+.call[data-phase="ring"] .call-body { animation: call-buzz 1.4s ease-in-out infinite; }
+.call[data-phase="land"] .call-body { transform: scale(0.92) translateY(-4%); opacity: 0; }
+@keyframes call-buzz {
+  0%, 30%, 100% { transform: translateX(0); }
+  3%, 11%, 19% { transform: translateX(-3px) rotate(-0.4deg); }
+  7%, 15%, 23% { transform: translateX(3px) rotate(0.4deg); }
+}
+.call-status {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.02em; color: rgb(244 243 240 / 0.6);
+}
+.call[data-phase="talk"] .call-status { color: #22a468; }
+.call-face { position: relative; margin-top: 40px; width: 128px; height: 128px; }
+.call-avatar {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  font-family: var(--font-display); font-weight: 900; font-size: 44px; letter-spacing: -0.02em;
+  color: #0e1116;
+  background: var(--chrome-silver);
+  box-shadow: 0 10px 40px -10px rgb(0 0 0 / 0.9), inset 0 -4px 10px rgb(0 0 0 / 0.2);
+  transition: transform var(--call-answer) cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+.call[data-phase="answer"] .call-avatar, .call[data-phase="talk"] .call-avatar { transform: scale(0.72); }
+.call-ring {
+  position: absolute; inset: 0; border-radius: 999px;
+  border: 2px solid rgb(205 210 217 / 0.5);
+  opacity: 0;
+}
+.call[data-phase="ring"] .call-ring { animation: call-pulse 1.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite; }
+.call[data-phase="ring"] .call-ring-2 { animation-delay: 0.35s; }
+@keyframes call-pulse { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.7); opacity: 0; } }
+.call-name {
+  margin-top: 22px; max-width: 100%;
+  font-family: var(--font-display); font-weight: 900; font-size: 30px; line-height: 1.05; letter-spacing: -0.02em;
+  text-align: center; overflow-wrap: anywhere;
+  transition: margin var(--call-answer) ease, font-size var(--call-answer) ease;
+}
+.call[data-phase="talk"] .call-name, .call[data-phase="answer"] .call-name { margin-top: 4px; font-size: 26px; }
+.call-sub { margin-top: 6px; font-size: 14px; font-weight: 600; color: rgb(244 243 240 / 0.55); }
+
+.call-lines {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  width: 100%; margin-top: 28px; min-height: 120px;
+}
+.call-bubble {
+  max-width: 88%;
+  padding: 11px 15px;
+  border-radius: 20px 20px 20px 6px;
+  font-size: 16px; font-weight: 600; line-height: 1.3;
+  color: #0e1116; background: #f4f3f0;
+  box-shadow: 0 8px 24px -10px rgb(0 0 0 / 0.8);
+  opacity: 0; transform: translateY(10px) scale(0.96); transform-origin: 0 100%;
+}
+.call[data-phase="talk"] .call-bubble, .call[data-phase="land"] .call-bubble {
+  animation: call-say 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) var(--at) forwards;
+}
+@keyframes call-say { to { opacity: 1; transform: none; } }
+
+.call-controls {
+  margin-top: auto;
+  display: flex; justify-content: space-around; align-items: flex-start;
+  width: 100%;
+}
+.call-btn-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.call-btn {
+  display: grid; place-items: center;
+  width: 72px; height: 72px; border-radius: 999px;
+  color: #fff;
+  transition: transform 0.12s ease;
+}
+.call-btn:active { transform: scale(0.94); }
+.call-btn-decline { background: #e2554e; }
+.call-btn-answer { background: #22a468; }
+.call[data-phase="ring"] .call-btn-answer { animation: call-nudge 1.4s ease-in-out infinite; }
+@keyframes call-nudge { 0%, 60%, 100% { transform: none; } 70% { transform: translateY(-6px); } 80% { transform: none; } 88% { transform: translateY(-3px); } }
+.call-btn-label { font-size: 13px; font-weight: 600; color: rgb(244 243 240 / 0.75); }
+.call-hint {
+  margin-top: 18px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+  background: linear-gradient(90deg, rgb(244 243 240 / 0.35) 0%, #fff 50%, rgb(244 243 240 / 0.35) 100%) 0 0 / 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: call-shimmer 2s linear infinite;
+}
+@keyframes call-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }

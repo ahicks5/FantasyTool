@@ -23,6 +23,8 @@ import {
   SCOUT,
   SCOUT_OPEN,
   WIRE,
+  OFFICE,
+  CALL,
 } from "./vocab.ts";
 
 /**
@@ -94,6 +96,15 @@ const ALL_COPY: string[] = [
   WIRE.page.priorityLine, WIRE.page.numbers, WIRE.page.thisWeek, WIRE.page.restOfSeason, WIRE.page.fit, WIRE.page.adds, WIRE.page.report,
   WIRE.page.how, ...WIRE.page.howLines, WIRE.page.gone, WIRE.page.others,
   ...Object.values(SCOUT_OPEN).map((v) => (typeof v === "function" ? v(2) : v)),
+  // The GM's Office and its call.
+  OFFICE.title, OFFICE.seeAll(11), ...Object.values(OFFICE.heat), OFFICE.youGet, OFFICE.forWord, OFFICE.ros, OFFICE.fair,
+  OFFICE.spare, OFFICE.short, OFFICE.nothingSpare, OFFICE.noHoles, OFFICE.none, OFFICE.locked, OFFICE.lockedLine,
+  OFFICE.partners, OFFICE.partnersHint, OFFICE.has, OFFICE.needs, OFFICE.offers(2), OFFICE.build, OFFICE.buildHint,
+  OFFICE.buildOpen, OFFICE.buildClose, OFFICE.deal.back, OFFICE.deal.rank(1), OFFICE.deal.offers, OFFICE.deal.theirShape,
+  OFFICE.deal.gone, OFFICE.deal.grade, OFFICE.deal.why,
+  OFFICE.goAria("FxxxKroenke"), OFFICE.offers(1), OFFICE.deal.build("FxxxKroenke"),
+  CALL.aria, CALL.incoming, CALL.connected, CALL.yourGm, CALL.staff, CALL.answer, CALL.decline, CALL.slide, CALL.hello,
+  CALL.deals(1), CALL.deals(3), CALL.preview, CALL.quiet, CALL.skip, CALL.gmOf("FxxxKroenke"),
 ];
 
 test("the must-add stamp is the one exclamation mark in the house", () => {

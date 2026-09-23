@@ -895,6 +895,67 @@ export const TRADE = {
   lockTeaser: "We build the offer, grade the one you send back, and write the counter.",
 } as const;
 
+/**
+ * The GM's Office, rebuilt like Scouting (Andrew, 2026-09-23): the few deals worth a call
+ * at the top, every GM in one line each under them, one page per partner, and the offer
+ * builder at the bottom for when you have your own idea.
+ */
+export const OFFICE = {
+  title: "Calls to return",
+  seeAll: (n: number) => `Every GM (${n})`,
+  heat: { hot: "Hot line", call: "Worth a call", long: "Long shot" },
+  youGet: "You get",
+  forWord: "for",
+  ros: "ROS",
+  fair: "fair",
+  spare: "You can spare",
+  short: "You're short at",
+  nothingSpare: "Nothing spare",
+  noHoles: "No holes",
+  none: "Nobody in the league has what you need for what you can spare. Quiet week.",
+  locked: "Locked",
+  lockedLine: "Three GMs worth a call, and the deal for each. Trade Lab names them.",
+  goAria: (team: string) => `The deal with ${team}`,
+  partners: "Every GM",
+  partnersHint: "Best fit first. What they have, what they need, the best deal.",
+  has: "Has",
+  needs: "Needs",
+  offers: (n: number) => `${n} offer${n === 1 ? "" : "s"}`,
+  build: "Build your own offer",
+  buildHint: "Pick the players, we grade it on both rosters and write the counter.",
+  buildOpen: "Open the table",
+  buildClose: "Close the table",
+  /** One partner's page, `/trade/deal?team=`. */
+  deal: {
+    back: "Back to the office",
+    rank: (n: number) => `Call ${n} of the week`,
+    offers: "The offers",
+    theirShape: "Their roster",
+    build: (team: string) => `Build your own with ${team}`,
+    gone: "That GM is off the board. The league moved since you opened it.",
+    grade: "Grade it",
+    why: "Why?",
+  },
+} as const;
+
+/** The call that opens the GM's Office the first time. */
+export const CALL = {
+  aria: "A GM is calling",
+  incoming: "Incoming call",
+  connected: "On the line",
+  gmOf: (team: string) => `GM · ${team}`,
+  yourGm: "Your general manager",
+  staff: "Front office",
+  answer: "Answer",
+  decline: "Decline",
+  slide: "slide to answer",
+  hello: "Got a minute?",
+  deals: (n: number) => (n === 1 ? "I've got one deal that works for both of us." : `I've got ${n} deals that work for both of us.`),
+  preview: "I've got names for you. Pull up the board.",
+  quiet: "Quiet week. Nobody has what you need yet.",
+  skip: "Tap to skip",
+} as const;
+
 /** The weekly-email opt-in on /login. */
 export const EMAIL = {
   eyebrow: "Thursday email",
