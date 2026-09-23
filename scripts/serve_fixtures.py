@@ -42,13 +42,18 @@ def install_fixture_sleeper() -> None:
     from edge.data import sleeper_api as api
 
     players = load("sleeper/players_subset.json")
+    # Week 1 of the same league, really played (tests/fixtures/sleeper/replay_week1): the
+    # one finished week the film can replay. Its players are merged in so every name on a
+    # week-1 roster resolves; the week-2 subset wins where both have a man.
+    players = {**load("sleeper/replay_week1/players_subset.json"), **players}
     weekly = load("sleeper/projections_2026_2.json")
+    weekly_by_week = {1: load("sleeper/replay_week1/megalabowl/projections_2026_1.json"), 2: weekly}
     season = load("sleeper/projections_2026_season.json")
     state = load("sleeper/state.json")
     league_raw = load("sleeper/league.json")
     users_raw = load("sleeper/users.json")
     rosters_raw = load("sleeper/rosters.json")
-    matchups = {2: load("sleeper/matchups_2.json")}
+    matchups = {1: load("sleeper/replay_week1/megalabowl/matchups_1.json"), 2: load("sleeper/matchups_2.json")}
     transactions = {1: load("sleeper/transactions_1.json"), 2: load("sleeper/transactions_2.json")}
     sched = load("schedule_2026.json")
     weeks, games = sched["weeks"], sched.get("games", {})
@@ -60,7 +65,8 @@ def install_fixture_sleeper() -> None:
     api.players = lambda: players
     api.matchups = lambda league_id, week: matchups.get(int(week), [])
     api.transactions = lambda league_id, week: transactions.get(int(week), [])
-    api.projections = lambda season_, week, positions=None: weekly
+    # Each week's own projections: a past week read with this week's numbers would be a lie.
+    api.projections = lambda season_, week, positions=None: weekly_by_week.get(int(week), [])
     api.projections_season = lambda season_, positions=None: season
     api.trending_adds = lambda hours=48, limit=100: []
     # Recorded NFL stat lines, for the scouting tab's player profiles. Weeks we did not
@@ -104,6 +110,9 @@ def install_fixture_sleeper() -> None:
     service_mod.load_schedule = lambda season_: weeks
     # The close calls on the lineup read who each team plays and when it kicks off.
     schedule_mod.load_games = lambda season_: games
+    # The film's finals. The recorded schedule has no scores, so no week has a result and
+    # the replay prints no game-script line, which is the honest answer offline.
+    schedule_mod.load_week_games = lambda season_, week: games.get(str(week), [])
 
 
 def build_app(user: str, skus: tuple[str, ...]):
@@ -116,6 +125,9 @@ def build_app(user: str, skus: tuple[str, ...]):
     os.environ.setdefault("EDGE_SEASON", str(SEASON))
     os.environ.pop("EDGE_USE_CLAUDE", None)            # template explanations: offline + deterministic
     os.environ["EDGE_CACHE_DIR"] = str(ROOT / ".cache")
+    # The film's Thursday freeze: the test one, which holds five of roster 1's week-1
+    # starters, so the replay shows a frozen number beside a vendor's one.
+    os.environ["EDGE_FROZEN_DIR"] = str(FIX / "frozen")
 
     install_fixture_sleeper()
 

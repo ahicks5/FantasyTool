@@ -1147,3 +1147,80 @@ export const PLAYER = {
     empty: "No numbers on him yet this season.",
   },
 } as const;
+
+/**
+ * The film, as the replay (SPEC-FILM F-4): your week told as a story, card by card.
+ *
+ * The engine writes the sentences about a player and the swing (`edge/engine/film.py`),
+ * because they are built from his numbers. Everything around them lives here. The voice is
+ * the staff's, reading the tape back to you: plain, kind in order, never kind in fact.
+ */
+export const FILM = {
+  eyebrow: "The replay",
+  week: (n: number) => `Week ${n}`,
+  vs: (opp: string) => `vs ${opp}`,
+  score: (mine: number, theirs: number | null) =>
+    theirs === null ? mine.toFixed(1) : `${mine.toFixed(1)}–${theirs.toFixed(1)}`,
+  result: { W: "Win", L: "Loss", T: "Tie" } as Record<"W" | "L" | "T", string>,
+  bye: "No opponent this week",
+  margin: (result: "W" | "L" | "T", by: number) =>
+    result === "T" ? "A tie" : `${result === "W" ? "Won" : "Lost"} by ${by.toFixed(1)}`,
+  weeks: "Pick a week",
+  weekChip: (n: number) => `Wk ${n}`,
+  story: "The story",
+  railAria: (i: number, n: number) => `Card ${i} of ${n}`,
+  card: {
+    game: "The game",
+    swing: "What decided it",
+    lineup: "Your lineup",
+    standout: "The one who carried you",
+    dud: "The one who let you down",
+    injuries: "The injuries",
+    starters: "Every starter",
+    takeaway: "Before Thursday",
+  },
+  control: { outside: "Out of your hands", decision: "Your call" },
+  lineup: {
+    scored: "You scored",
+    best: "Best you had",
+    perfect: "You started the best lineup you had.",
+    left: (pts: number) => `${pts.toFixed(1)} points sat on your bench.`,
+  },
+  verdict: {
+    went_off: "Went off",
+    flopped: "Flopped",
+    as_expected: "As expected",
+    hurt_pregame: "Hurt before kickoff",
+    hurt_in_game: "Left early",
+    did_not_play: "Did not play",
+  },
+  had: "Had",
+  went: "Went",
+  noHad: "No number",
+  delta: (d: number) => `${d > 0 ? "+" : ""}${d.toFixed(1)}`,
+  source: {
+    freeze: "Frozen Thursday",
+    runs: "What we showed you",
+    platform: "As Sleeper has it now",
+  },
+  platformMark: "Projection as Sleeper has it now",
+  sourceNote: "A marked projection is as Sleeper has it now. It may have moved after the games.",
+  why: "Why",
+  whyAria: (name: string) => `Why ${name} scored what he did`,
+  quiet: "Nothing unusual for him. A normal week.",
+  history: {
+    since: (season: number, week: number) => `His best game since week ${week} of ${season}`,
+    earliest: (season: number) => `His best game since ${season}, as far back as we have`,
+    rank: (rank: number, weeks: number) => `His ${ordinal(rank)} best of ${weeks} games this season`,
+  },
+  next: { start: "Start him", move_on: "Move on", hold: "Hold" },
+  go: "Go",
+  takeawayNone: "Nothing to change off this week. Keep the lineup honest and go.",
+  noSwing: "No single play decided it.",
+  noInjuries: "Nobody got hurt.",
+  none: "No finished week yet. The replay opens the Tuesday after your first game.",
+  noneHead: "Nothing on tape",
+  lineByLine: "This platform sends the scoreline but not who scored it, so the line-by-line is not here yet.",
+  product: "The replay: every week, told",
+  season: "Week by week",
+} as const;

@@ -1033,6 +1033,8 @@ export interface PaywallDetail {
   feature: string;
   teaser?: string | null;
   upsell: Product[];
+  /** The film's free cover, riding its 402 (`/film`). */
+  cover?: FilmCover | null;
 }
 
 // ---------------------------------------------------------------------------

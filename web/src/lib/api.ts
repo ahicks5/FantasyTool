@@ -29,6 +29,7 @@ import type {
   Waivers,
   SeasonRecap,
   FilmSeason,
+  FilmCover,
   TeamGrades,
   PlayerHit,
   PlayerProfile,
@@ -50,12 +51,14 @@ export class PaywallError extends Error {
   feature: string;
   teaser: string | null;
   upsell: PaywallDetail["upsell"];
+  cover: FilmCover | null;
   constructor(d: PaywallDetail) {
     super(d.error);
     this.name = "PaywallError";
     this.feature = d.feature;
     this.teaser = d.teaser ?? null;
     this.upsell = d.upsell;
+    this.cover = d.cover ?? null;
   }
 }
 
@@ -276,18 +279,33 @@ export async function getRecap(platform: Platform, leagueId: string, teamId: str
 }
 
 /**
- * The replay: every finished week told as a story (docs/API.md §The film).
+ * The replay: every finished week told as a story (docs/API.md §The replay).
  *
- * The mock branch returns the empty film, never `mocks.FILM`, for the reason `getRecap`
- * gives: a demo build must not show a season nobody played. `mocks.FILM` pins the shape.
+ * A free reader's 402 carries the newest cover, which is free, so it comes back here as
+ * `locked` with the cover rather than as an error: the page draws the cover over the
+ * paywall. The mock branch returns the empty film, never `mocks.FILM`, for the reason
+ * `getRecap` gives: a demo build must not show a season nobody played.
  */
-export async function getFilm(platform: Platform, leagueId: string, teamId: string): Promise<FilmSeason> {
+export interface FilmRead {
+  locked: boolean;
+  cover: FilmCover | null;
+  film: FilmSeason | null;
+}
+
+export async function getFilm(platform: Platform, leagueId: string, teamId: string): Promise<FilmRead> {
   if (USE_MOCKS) {
-    return { team: teamId, league: mocks.LEAGUE.name, cover: null, weeks: [], algo_version: mocks.FILM.algo_version };
+    const film = { team: teamId, league: mocks.LEAGUE.name, cover: null, weeks: [], algo_version: mocks.FILM.algo_version };
+    return { locked: false, cover: null, film };
   }
-  return request<FilmSeason>(
-    `/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/film`,
-  );
+  try {
+    const film = await request<FilmSeason>(
+      `/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/film`,
+    );
+    return { locked: false, cover: film.cover, film };
+  } catch (e) {
+    if (e instanceof PaywallError && e.feature === "full_report") return { locked: true, cover: e.cover, film: null };
+    throw e;
+  }
 }
 
 export async function getTeamGrades(

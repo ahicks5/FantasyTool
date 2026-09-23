@@ -240,6 +240,28 @@ minute?", then how many deals), and it lands through the same clearing blur as t
 Decline or any tap once connected lands it. `?call=1` replays it; `?ride=1` resets it with
 the other openings; it never rings over the day's first ride.
 
+## The film opens on the replay (SPEC-FILM F-4, 2026-09-23)
+
+`/report` is one scroll in three parts: **the replay** (`components/film/Replay.tsx`), the
+free table (`Standings.tsx`), then the paid season week by week (`Film.tsx`, the old recap).
+
+- **The cover is free.** A free reader's `/film` is a 402 whose detail carries the newest
+  cover; `api.getFilm` turns that into `{locked: true, cover}` rather than an error, and the
+  page draws the cover over `Locked`, with the cover line as the teaser.
+- **The story is a column of cards** in the spec's order, and `lib/film.ts` decides which
+  ones a week earns (no flop, no "let you down" card; an ESPN week is the game and the
+  takeaway). The rail on the right lights the card in view (IntersectionObserver) and jumps
+  on tap. The spec's scroll-snap is left out for now: snapping would have to be set on the
+  app's own scroller, which every tab shares. Revisit with the projector (F-9).
+- **Every number and every player sentence is the engine's.** A projection whose `source`
+  is `platform` wears a small `*` and the starters card carries the "as Sleeper has it now"
+  note. A starter row's name opens his page; the rest of the row opens his reasons.
+- **The demo build shows no replay**, the same rule as the recap: `getFilm` in mock mode
+  returns the empty film. `mocks.FILM` exists only to pin the type.
+- **The fixture server serves the Megalabowl's real week 1** (`replay_week1/megalabowl`)
+  and the test freeze, so e2e and screenshots show a replay. Its schedule has no scores, so
+  no game-script line appears offline.
+
 ## Theme
 
 **Dark is the default, and it is not read off the OS.** `prefers-color-scheme: light` also

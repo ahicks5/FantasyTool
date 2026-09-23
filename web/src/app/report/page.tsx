@@ -1,30 +1,34 @@
 "use client";
-/** The film: the standings for everyone, then the season looked back on week by week. */
+/** The film: the replay of your week first, then the standings for everyone, then the season week by week. */
+import { useState } from "react";
 import { AppShell } from "@/components/Shell";
+import { Cover, Story, WeekPicker } from "@/components/film/Replay";
 import { Locked } from "@/components/Locked";
 import { Film } from "@/components/Film";
 import { Standings } from "@/components/Standings";
 import { ErrorBox, Opening, SkeletonList, useHeldWait } from "@/components/ui";
-import { getRecap, getStandings } from "@/lib/api";
+import { getFilm, getRecap, getStandings, type FilmRead } from "@/lib/api";
 import { useCached } from "@/lib/cache";
-import { RECAP_COPY, standingsView } from "@/lib/recap";
+import { standingsView } from "@/lib/recap";
 import type { Connection } from "@/lib/storage";
 import type { SeasonRecap, Standings as StandingsPayload } from "@/lib/types";
+import { FILM } from "@/lib/vocab";
 
 /**
- * The film is the one tab that looks backwards, and now it has two halves.
+ * The film is the one tab that looks backwards, in three parts, one scroll (SPEC-FILM §9).
  *
- * **The top half is free.** The table is the "how am I doing" screen — every team's record,
- * points and roster strength — and it is the reason to open the app on a Tuesday. A reader
- * who has never paid gets the whole of it.
+ * **The replay leads.** Your newest finished week, told as a story (`film/Replay.tsx`). Its
+ * cover is free: the result, the score and one true line, drawn for everyone. The story
+ * under it is part of the Full Report; a free reader gets the cover over the paywall, and
+ * the paywall's teaser is that cover line.
  *
- * **The bottom half is the film itself, and it is paid.** Week by week, every call we made
- * and what actually came in. For a free reader it is a `Locked` whose teaser is built out of
- * the free row directly above it: his own record against his own scoring rank, which gives
- * nothing away because it is already on screen, and which beats any sentence about a product.
+ * **The table is free.** Every team's record, points and roster strength, and the reason to
+ * open the app on a Tuesday.
  *
- * The two halves fetch separately on purpose. A season history that fails upstream must not
- * take the table down with it, and a free reader never asks for the recap at all.
+ * **The season is paid.** Week by week, every starter and what came in (`Film.tsx`).
+ *
+ * The three fetch separately on purpose: a history that fails upstream must not take the
+ * table down with it, and a free reader never asks for the season at all.
  */
 function ReportBody({ c, paid, signedIn, refresh }: {
   c: Connection;
@@ -39,6 +43,16 @@ function ReportBody({ c, paid, signedIn, refresh }: {
 
   return (
     <div className="grid min-w-0 gap-7">
+      <ReplaySection
+        c={c}
+        paid={paid}
+        signedIn={signedIn}
+        refresh={refresh}
+        // Null only while the table is still loading or failed, and `Locked` falls back
+        // to the product blurb for that.
+        fallbackTeaser={data ? standingsView(data, c.team_id).teaser : null}
+      />
+
       {error ? (
         <ErrorBox message={error} onRetry={reload} />
       ) : data ? (
@@ -47,19 +61,51 @@ function ReportBody({ c, paid, signedIn, refresh }: {
         <SkeletonList rows={6} />
       )}
 
-      {paid ? (
-        <FilmBody c={c} />
-      ) : (
+      {paid && <FilmBody c={c} />}
+    </div>
+  );
+}
+
+function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
+  c: Connection;
+  paid: boolean;
+  signedIn: boolean;
+  refresh: () => void;
+  fallbackTeaser: string | null;
+}) {
+  const { data, error, reload } = useCached<FilmRead>(
+    `film:${c.platform}:${c.league_id}:${c.team_id}:${paid ? "paid" : "free"}`,
+    () => getFilm(c.platform, c.league_id, c.team_id),
+  );
+  const [pick, setPick] = useState<number | null>(null);
+
+  if (error) return <ErrorBox message={error} onRetry={reload} />;
+  if (!data) return <SkeletonList rows={3} />;
+
+  if (!paid || data.locked) {
+    return (
+      <div className="grid min-w-0 gap-3">
+        {data.cover && <Cover cover={data.cover} week={data.cover.week ?? 0} />}
         <Locked
           signedIn={signedIn}
           sku="full_report"
-          what={RECAP_COPY.product}
-          // Null only while the table is still loading or failed, and `Locked` falls back
-          // to the product blurb for that. It is never the blurb when we have the numbers.
-          teaser={data ? standingsView(data, c.team_id).teaser : null}
+          what={FILM.product}
+          teaser={data.cover?.line ?? fallbackTeaser}
           onUnlocked={refresh}
         />
-      )}
+      </div>
+    );
+  }
+
+  // Nothing over yet: the season below says so, once.
+  const weeks = data.film?.weeks ?? [];
+  if (weeks.length === 0) return null;
+  const w = weeks.find((x) => x.week === pick) ?? weeks[0];
+  return (
+    <div className="grid min-w-0 gap-3">
+      <WeekPicker weeks={weeks.map((x) => x.week)} value={w.week} onPick={setPick} />
+      <Cover cover={w.cover} week={w.week} />
+      <Story key={w.week} w={w} />
     </div>
   );
 }

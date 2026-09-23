@@ -1117,7 +1117,10 @@ build order in §8.
       rest 402 with the cover as teaser. Contract in `docs/API.md` §The replay, mirrored in
       `types.ts` (`FilmSeason`, `WeekFilm`, ...), `api.getFilm`, and `mocks.FILM` (shape only,
       never served: a demo must not show a season nobody played).
-- [ ] **F-4** The replay on the web: cover, story cards, per-starter attribution sheet.
+- [x] **F-4** The replay on the web (2026-09-23): `components/film/Replay.tsx` leads `/report`.
+      Free cover (also over the paywall), then the story cards with a rail; every starter
+      opens his reasons, season and next move; the takeaway links into its tab. Copy in
+      `FILM` (vocab.ts), card rules in `lib/film.ts` (tested), e2e for paid and free.
 - [ ] **F-5** The league: superlatives, position groups, expectation, the gauntlet, charts.
 - [ ] **F-6** The ledger: every trade and claim, graded on points since, "so far".
 - [ ] **F-7** The playoff picture (arithmetic first, odds later).
@@ -1132,13 +1135,17 @@ build order in §8.
   projections fall through freeze → runs → Sleeper's stored number, tagged by source.
   The backend may change, so `film.py` never calls a data module. Older seasons later.
 
-### Next session: F-4 (the replay on the web)
+### Next session: F-5, F-6, F-7 (the league, the ledger, the playoffs)
 
-Build `web/src/components/film/Replay.tsx` on `api.getFilm`, per SPEC-FILM F-4. Print
-"as Sleeper has it now" beside a `source: "platform"` projection. `/report` still renders
-the old recap; swap it once the replay can stand on its own.
+Per SPEC-FILM §8. The superlatives and the playoff picture can reuse `film.py`'s cover facts
+and `League.playoff_teams`.
 
-### Decisions for Andrew (film, after F-1 to F-3)
+### Decisions for Andrew (film, after F-1 to F-4)
+
+- **Three parts, one scroll** (SPEC-FILM §9): the replay, then the table, then the season.
+  Look at it live and say if it should be sub-tabs instead.
+- **The season list under the replay repeats each week in the old style.** Keep it as the
+  archive, or let a week chip on the replay be the only way back to an older week?
 
 - **Render needs `EDGE_DEMO_UNLOCK=1`** to see the story while we test; without it the
   route serves only the cover (402 teaser), exactly as a free reader will.

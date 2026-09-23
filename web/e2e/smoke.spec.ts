@@ -3,7 +3,7 @@ import { DEV_USER } from "../playwright.config";
 import { DESK, LINEUP, PLAN, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
-import { CALL, OFFICE, SCOUT, SCOUT_OPEN, WIRE } from "../src/lib/vocab";
+import { CALL, FILM, OFFICE, SCOUT, SCOUT_OPEN, WIRE } from "../src/lib/vocab";
 import { AVAILABILITY_LABELS, BOARD_LABELS } from "../src/lib/board";
 
 /**
@@ -293,27 +293,17 @@ const PAGES: PageCase[] = [
     path: "/report",
     name: "full report",
     check: async (page) => {
-      // The film looks backwards now, so it is no longer a restatement of the other
-      // tabs and the old section headings are gone with them.
-      //
-      // The fixture league's only recorded week is the 2026 week 2, which was recorded
-      // mid-week and scores 0.0 across all twelve rosters — so it is correctly not a
-      // played week and this asserts the **empty** film. That is the state a new signup
-      // sees in preseason, and it is worth pinning: a page whose whole subject is the
-      // past has to say so plainly rather than render a blank screen.
-      //
-      // The populated path is covered where the data actually exists: `tests/test_recap.py`
-      // and `src/lib/recap.test.ts` both run against a genuinely played 12-team season.
-      // Serving those weeks here instead was considered and rejected — they are a
-      // different season, so their player ids are absent from this league's player set
-      // and their ten starters do not fit its nine starting slots. A fixture that lies
-      // is worse than one that is thin.
+      // The fixture league's week 1 is really played (tests/fixtures/sleeper/replay_week1,
+      // served by scripts/serve_fixtures.py), so the film opens on its replay: the cover,
+      // then the story. Week 2 is the one being played and is nowhere on this page.
+      await expect(page.getByRole("region", { name: `${FILM.eyebrow}, ${FILM.week(1)}` })).toBeVisible();
+      await expect(page.getByRole("region", { name: FILM.story })).toBeVisible();
+      await expect(page.getByText(FILM.card.swing, { exact: true })).toBeVisible();
+      // The week below it, in the season, is the same week 1.
       await expect(page.getByText(RECAP_COPY.weeksHead, { exact: true }).first()).toBeVisible();
-      await expect(page.getByText(RECAP_COPY.nothingPlayedHead, { exact: true })).toBeVisible();
-      await expect(page.getByText(RECAP_COPY.nothingPlayed)).toBeVisible();
       await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
       // The table is the free half and is the reason this page exists for someone who has
-      // bought nothing. It renders for THIS (paid) reader too, above the film.
+      // bought nothing. It renders for THIS (paid) reader too, between the replay and the season.
       await expect(page.getByText(STANDINGS_COPY.head, { exact: true })).toBeVisible();
       const rows = page.locator("main li").filter({ hasText: /\d+-\d+/ });
       expect(await rows.count(), "the table rendered no team rows").toBeGreaterThanOrEqual(12);
@@ -799,4 +789,32 @@ test("tapping the ride opens the doors early", async ({ page }) => {
   // The whole ride is over ten seconds; a skip is the landing's fade and no more.
   expect(Date.now() - t0).toBeLessThan(2500);
   await expect(page.getByRole("region", { name: DESK.aria })).toBeVisible();
+});
+
+
+test("the replay tells a finished week, opens a starter, and marks the vendor's numbers", async ({ page }) => {
+  await visit(page, "/report");
+  const story = page.getByRole("region", { name: FILM.story });
+  await expect(story).toBeVisible();
+  await expect(story.getByText(FILM.card.starters, { exact: true })).toBeVisible();
+  // Every projection in the fixture week is the vendor's stored one, and says so.
+  await expect(story.getByText(FILM.sourceNote)).toBeVisible();
+  const row = story.getByRole("button", { name: FILM.whyAria("Matthew Stafford") });
+  await row.click();
+  await expect(row).toHaveAttribute("aria-expanded", "true");
+  await expect(story.getByText(FILM.source.platform).first()).toBeVisible();
+  // The takeaway is a door into the tab that acts on it.
+  await expect(story.getByRole("link", { name: FILM.go })).toHaveAttribute("href", /\/team\/decide\?role=/);
+  await assertNoHorizontalOverflow(page);
+});
+
+test("a free reader gets the replay's cover over the paywall, and not the story", async ({ context, page }) => {
+  await context.route("**/api/**", (route) => {
+    const headers = { ...route.request().headers(), "x-edge-user": "free@example.com" };
+    route.continue({ headers });
+  });
+  await page.goto("/report");
+  await expect(page.getByRole("region", { name: `${FILM.eyebrow}, ${FILM.week(1)}` })).toBeVisible();
+  await expect(page.getByRole("region", { name: FILM.story })).toHaveCount(0);
+  await expect(page.getByText(FILM.product)).toBeVisible();
 });

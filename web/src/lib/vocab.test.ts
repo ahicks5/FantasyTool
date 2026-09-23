@@ -24,8 +24,7 @@ import {
   SCOUT_OPEN,
   WIRE,
   OFFICE,
-  CALL,
-} from "./vocab.ts";
+  CALL, FILM } from "./vocab.ts";
 
 /**
  * The vocabulary is the one file that is allowed to say a section's name, so it is also
@@ -107,6 +106,14 @@ const ALL_COPY: string[] = [
   OFFICE.buildOpen, OFFICE.buildClose, OFFICE.deal.back, OFFICE.deal.rank(1), OFFICE.deal.offers, OFFICE.deal.theirShape,
   OFFICE.deal.gone, OFFICE.deal.grade, OFFICE.deal.why,
   OFFICE.goAria("FxxxKroenke"), OFFICE.offers(1), OFFICE.deal.build("FxxxKroenke"),
+  // The film, as the replay.
+  FILM.eyebrow, FILM.week(3), FILM.vs("Trent"), FILM.score(128.4, 101.2), FILM.score(90, null), ...Object.values(FILM.result), FILM.bye, FILM.margin("W", 9.9), FILM.margin("L", 30.3), FILM.margin("T", 0),
+  FILM.weeks, FILM.weekChip(3), FILM.story, FILM.railAria(1, 7), ...Object.values(FILM.card), ...Object.values(FILM.control),
+  FILM.lineup.scored, FILM.lineup.best, FILM.lineup.perfect, FILM.lineup.left(12.4), ...Object.values(FILM.verdict),
+  FILM.had, FILM.went, FILM.noHad, FILM.delta(4.2), FILM.delta(-3), ...Object.values(FILM.source), FILM.platformMark, FILM.sourceNote,
+  FILM.why, FILM.whyAria("Drake Maye"), FILM.quiet, FILM.history.since(2025, 11), FILM.history.earliest(2025), FILM.history.rank(2, 5),
+  ...Object.values(FILM.next), FILM.go, FILM.takeawayNone, FILM.noSwing, FILM.noInjuries, FILM.none, FILM.noneHead, FILM.lineByLine,
+  FILM.product, FILM.season,
   CALL.aria, CALL.incoming, CALL.connected, CALL.title, CALL.staff, CALL.answer, CALL.decline, CALL.slide, CALL.hello,
   CALL.deals(1, 1), CALL.deals(3, 3), CALL.deals(3, 11), CALL.preview, CALL.quiet, CALL.skip,
 ];
