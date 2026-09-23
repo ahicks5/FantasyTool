@@ -160,6 +160,33 @@ wait, and the tapped tab swapping its icon for one while a route arrives. That l
 `useLinkStatus`, which only reports pending from inside a `<Link>` and only fires when the
 route was not already prefetched.
 
+## Scouting is two questions (Andrew, 2026-09-23)
+
+`/waivers` answers "what few are worth picking up, why, and who do I drop" first, then "who
+is out there". **Top pickups** (`TopPickups.tsx`) are the wire's first three as panels in
+one row, each a link to `/waivers/pickup?id=` (the full read: numbers, the case, who goes,
+the bid, a button into his scout report). The stamp is `lib/wire.urgency` on the engine's
+`fit_score` (must >= 2.0, the same line `suggest_bid` trusts the market at; claim >= 0.75;
+stash >= 0.25; else depth), and **only the first pick can be a must-add**, which gets the
+signal border and a slow pulse. "Must add!" is the one exclamation mark the vocab allows,
+pinned by `vocab.test.ts`. "See more" opens picks 4-10. Locked, the row stays with the
+faces withheld and the offer stays under the board. The page reads `GET .../waivers` (not
+`/waivers/plan`; `WaiverPlanView` and `WaiversView` are no longer mounted).
+
+**The research room** is the free board with the scout's lenses on top (`LensBar` in
+`PlayerBoard.tsx`, server in `edge/api/lenses.py`): My handcuffs, Next man up, Defense runs
+(three schedule chips, green soft / red tough by the opponent offense's rank), Bye cover,
+Risers. A lens owns the order, so the sort control hides while one is on; each opens on
+its own availability (`withLens`: handcuffs `all`, the rest `free`).
+
+**The scout takes his seat** (`ScoutOpening.tsx`, `lib/scout.ts`): the first open of the
+tab, once per browser (`booth.scout`), a night game from the stands, the glasses close on a
+back running a route and ring him, the camera drops to a notepad where the top three write
+themselves in and the first gets "Must add!" circled. ~6.5s, a tap lands it, `?scout=1`
+replays it. It never plays over the day's first ride: it decides in a passive effect,
+after `Opening` has claimed the ride's floor, and yields if the floor is up. Dark in both
+themes; the zoom centres on the marked back by measuring him (`--tx`/`--ty`).
+
 ## Theme
 
 **Dark is the default, and it is not read off the OS.** `prefers-color-scheme: light` also

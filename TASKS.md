@@ -2,6 +2,24 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## The Scouting tab (2026-09-23)
+
+Andrew's brief: the tab answers "what few are worth picking up (why, who goes)" and then
+"who is out there", with a research lens a generic filter does not have, and a scout
+animation the first time it opens.
+
+- [x] **SC-1** Top pickups: three panels in a row (face, urgency stamp, week gain, cut, bid,
+      arrow), "See more" for 4-10, `/waivers/pickup?id=` full read. Only #1 can be "Must add!".
+- [x] **SC-2** Scout's lenses on the free board: handcuffs, next man up (open jobs first),
+      defense runs (3-week schedule chips), bye cover, risers; counts per lens
+      (`edge/api/lenses.py`, `tests/test_lenses.py`, e2e).
+- [x] **SC-3** The scout's opening: stands, binoculars, the mark, the notepad. Once per browser.
+- [ ] **SC-4** Lens ideas not built: player-vs-player compare, "stash for the playoffs"
+      (weeks 15-17 schedule), a K lens for leagues that start one.
+- [ ] **SC-5** The waiver plan's claim order (primary + "if he is gone") is off the tab now;
+      `/waivers/plan` still logs runs for the accuracy program. Decide whether the pickup
+      page should show the fallback claim.
+
 ## The Lineup tab (2026-09-21, late)
 
 Andrew's brief: the tab answers "is my starting lineup right for this week?" by splitting the
