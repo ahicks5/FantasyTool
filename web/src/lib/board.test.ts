@@ -23,6 +23,8 @@ import {
   positionTabs,
   pressColumn,
   tabPositions,
+  posRankLabel,
+  withView,
 } from "./board.ts";
 import type { BoardQuery, BoardRow } from "./types";
 
@@ -189,7 +191,18 @@ test("a table cell's add count, and the projection bar", () => {
   assert.equal(compactCount(12345), "12k");
   assert.equal(compactCount(1200), "1.2k");
   assert.equal(compactCount(3000), "3k");
+  assert.equal(compactCount(4_141_000), "4.1M", "millions read as millions, not 4141k");
+  assert.equal(compactCount(999_700), "1M");
+  assert.equal(compactCount(12_400_000), "12M");
   assert.equal(barPct(null, 20), 0);
   assert.equal(barPct(20, 20), 100);
   assert.equal(barPct(0.1, 20), 4, "anything real shows a sliver");
+});
+
+test("the view switch keeps a sort the new view still shows, and moves one it does not", () => {
+  assert.deepEqual(withView({ sort: "projected", order: "desc" }, "market"), { sort: "trending", order: "desc" });
+  assert.deepEqual(withView({ sort: "name", order: "asc" }, "market"), { sort: "name", order: "asc" });
+  assert.deepEqual(withView({ sort: "season", order: "desc" }, "market"), { sort: "season", order: "desc" });
+  assert.equal(posRankLabel({ position: "WR", pos_rank: 14 }), "WR14");
+  assert.equal(posRankLabel({ position: "WR", pos_rank: null }), "—");
 });

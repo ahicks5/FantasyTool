@@ -375,6 +375,7 @@ export async function getPlayerBoard(
   if (query.limit != null) p.set("limit", String(query.limit));
   if (query.offset) p.set("offset", String(query.offset));
   if (query.lens) p.set("lens", query.lens);
+  if (query.season) p.set("season", "true");
   if (teamId) p.set("team_id", teamId);
   return request<PlayerBoard>(
     `/league/${platform}/${encodeURIComponent(leagueId)}/players?${p.toString()}`,

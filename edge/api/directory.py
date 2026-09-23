@@ -44,7 +44,7 @@ POSITION_ORDER = ("QB", "RB", "WR", "TE", "K", "DEF")
 
 # What a row may be sorted by. Every one of these is a number the player owns himself;
 # there is deliberately no "fit" and no "bid" here, because those are the wire's.
-SORTS = ("projected", "ros", "trending", "name", "position")
+SORTS = ("projected", "ros", "trending", "season", "name", "position")
 DEFAULT_SORT = "projected"
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
@@ -74,6 +74,34 @@ def _owner(team: Any, team_id: str | None) -> dict | None:
         return None
     return {"team_id": team.id, "team_name": team.name,
             "is_me": bool(team_id) and team.id == team_id}
+
+
+def season_ranks(lines: dict[str, Any], scoring: dict[str, float]) -> dict[str, tuple[float, int, int]]:
+    """Sleeper id -> (points so far, rank at his position, games), in this league's scoring.
+
+    What he has actually done this season, not what anyone projects: the season-total lines
+    (`nfl_stats.season_line`) scored by the league's own settings, ranked within position
+    across every player who has taken the field. Rank 1 is the most points. Description, not
+    a claim: the same numbers the scout report prints.
+    """
+    from edge.data import scoring as scoring_mod
+
+    scored: dict[str, tuple[str, float, int]] = {}
+    for pid, ln in lines.items():
+        pos = (ln.meta or {}).get("position")
+        gp = int(ln.stats.get("gp") or 0)
+        if not pos or not gp:
+            continue
+        scored[pid] = (pos, round(scoring_mod.score(ln.stats, scoring), 1), gp)
+    by_pos: dict[str, list[tuple[float, str]]] = {}
+    for pid, (pos, pts, _) in scored.items():
+        by_pos.setdefault(pos, []).append((pts, pid))
+    out: dict[str, tuple[float, int, int]] = {}
+    for rows in by_pos.values():
+        rows.sort(key=lambda t: (-t[0], t[1]))
+        for rank, (pts, pid) in enumerate(rows, 1):
+            out[pid] = (pts, rank, scored[pid][2])
+    return out
 
 
 def _row(p: Any, team: Any, b: service.Bundle, team_id: str | None) -> dict:
@@ -106,6 +134,10 @@ def _row(p: Any, team: Any, b: service.Bundle, team_id: str | None) -> dict:
         # Sleeper's own trending feed is keyed by Sleeper id, so this one is `pid`.
         "trending_adds": int(b.trending.get(pid, 0)),
         "rostered_by": _owner(team, team_id),
+        # Filled by `query` when the caller asked for the season so far; null otherwise,
+        # and null for a player who has not taken the field.
+        "season_pts": None,
+        "pos_rank": None,
     }
 
 
@@ -154,6 +186,7 @@ def _topup(known: set[str], q: str, limit: int) -> list[dict]:
             "photo": photo_url(_HitPlayer(h)), "team_logo": team_logo_url(h.team),
             "injury_status": None, "injury_body_part": None, "bye_week": None,
             "projected": None, "ros": None, "trending_adds": 0, "rostered_by": None,
+            "season_pts": None, "pos_rank": None,
         })
     return out
 
@@ -199,7 +232,7 @@ def _sort_key(row: dict, sort: str, desc: bool):
         pos = row["position"]
         rank = POSITION_ORDER.index(pos) if pos in POSITION_ORDER else len(POSITION_ORDER)
         return (0, -rank if desc else rank, name)
-    value = row.get({"projected": "projected", "ros": "ros", "trending": "trending_adds"}[sort])
+    value = row.get({"projected": "projected", "ros": "ros", "trending": "trending_adds", "season": "season_pts"}[sort])
     if value is None:
         return (1, 0.0, name)
     return (0, -float(value) if desc else float(value), name)
@@ -226,7 +259,8 @@ def query(b: service.Bundle, *, q: str = "", pos: str = "", nfl_team: str = "",
           avail: str = "all", owner: str | None = None, sort: str = DEFAULT_SORT,
           order: str = "desc", limit: int = DEFAULT_LIMIT, offset: int = 0,
           team_id: str | None = None, lens: str = "",
-          ctx: lenses_mod.LensContext | None = None) -> dict:
+          ctx: lenses_mod.LensContext | None = None,
+          season: dict[str, tuple[float, int, int]] | None = None) -> dict:
     """The board: the matching slice, the count it was cut from, and the filter controls.
 
     `total` counts every match, not the page, because a board that cannot say how many it
@@ -253,6 +287,12 @@ def query(b: service.Bundle, *, q: str = "", pos: str = "", nfl_team: str = "",
     # One letter still filters the league's own rows -- that costs a pass over a few
     # hundred names and is worth doing -- but it does not reach into the 11k-row platform
     # dump, which is the cost `SEARCH_MIN` exists to avoid.
+    if season:
+        for r in rows:
+            hit = season.get(r["id"])
+            if hit:
+                r["season_pts"], r["pos_rank"] = hit[0], hit[1]
+
     if lens:
         rows = lenses_mod.apply(lens, rows, b, ctx or lenses_mod.LensContext(), team_id)
 

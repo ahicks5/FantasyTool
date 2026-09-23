@@ -1182,6 +1182,8 @@ export function playerBoard(query: BoardQuery = {}, teamId?: string): PlayerBoar
       projected: p.projected,
       ros: p.ros ?? Math.round(p.projected * (10 + (seed(p.id) % 6)) * 10) / 10,
       trending_adds: seed(p.id) % 3 === 0 ? seed(p.id) % 40000 : 0,
+      season_pts: query.season ? Math.round(p.projected * 2 * 10) / 10 : null,
+      pos_rank: null,
       rostered_by: owner
         ? { team_id: owner.id, team_name: owner.name, is_me: owner.id === (teamId ?? MY_TEAM_ID) }
         : null,
@@ -1194,6 +1196,12 @@ export function playerBoard(query: BoardQuery = {}, teamId?: string): PlayerBoar
     teams: ROSTERS.map((r) => ({ id: r.id, name: r.name })),
   };
 
+  if (query.season) {
+    // Rank within position on the mock's points so far, the server's rule.
+    const byPos = new Map<string, BoardRow[]>();
+    for (const r of rows) byPos.set(r.position, [...(byPos.get(r.position) ?? []), r]);
+    for (const list of byPos.values()) [...list].sort((a, b) => (b.season_pts ?? 0) - (a.season_pts ?? 0)).forEach((r, i) => (r.pos_rank = i + 1));
+  }
   const lensed = query.lens ? mockLens(query.lens, rows) : null;
   const pos = new Set((query.pos ?? []).map((x) => x.toUpperCase()));
   const nflTeams = new Set((query.nfl_team ?? []).map((x) => x.toUpperCase()));
@@ -1217,6 +1225,7 @@ export function playerBoard(query: BoardQuery = {}, teamId?: string): PlayerBoar
     projected: (r) => r.projected,
     ros: (r) => r.ros,
     trending: (r) => r.trending_adds,
+    season: (r) => r.season_pts ?? null,
   };
   if (!lensed) matched = [...matched].sort((a, b) => {
     if (sort === "name") return a.name.localeCompare(b.name) * (desc ? -1 : 1);

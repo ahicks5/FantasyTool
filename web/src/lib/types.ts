@@ -919,7 +919,7 @@ export interface PaywallDetail {
  * is the four fields a human uses to tell two Josh Allens apart.
  */
 /** How a board row may be ordered. Mirrors `SORTS` in `edge/api/directory.py`. */
-export type BoardSort = "projected" | "ros" | "trending" | "name" | "position";
+export type BoardSort = "projected" | "ros" | "trending" | "season" | "name" | "position";
 
 /** Who holds him, from this league's point of view. Mirrors `AVAILABILITY` there. */
 export type BoardAvailability = "all" | "free" | "rostered" | "mine";
@@ -953,6 +953,10 @@ export interface BoardRow {
   trending_adds: number;
   /** Null means nobody in this league holds him. `is_me` needs a `team_id` on the request. */
   rostered_by: { team_id: string; team_name: string; is_me: boolean } | null;
+  /** Points so far this season in this league's scoring, and his rank at his position on
+   *  them. Only on a board asked for with `season`; null for a player who has not played. */
+  season_pts?: number | null;
+  pos_rank?: number | null;
   /** The one fact that put him in a lens. Only on a board asked for with `lens`. */
   lens?: LensFact;
 }
@@ -1039,6 +1043,8 @@ export interface BoardQuery {
   limit?: number;
   offset?: number;
   lens?: Lens | null;
+  /** Ask for the season so far (`season_pts`, `pos_rank`). */
+  season?: boolean;
 }
 
 export interface PlayerHit {

@@ -92,7 +92,7 @@ function Read({ pick, rank, picks }: { pick: WaiverPick; rank: number; picks: Wa
             <div className="mt-2 flex min-w-0 items-center gap-2">
               <Avatar name={pick.drop.name} photo={(pick.drop as { photo?: string | null }).photo} size="sm" ring="sit" />
               <div className="min-w-0">
-                <div className="truncate text-[14px] font-black text-sit"><PlayerName p={pick.drop} /></div>
+                <div className="text-[14px] font-black leading-tight text-sit [overflow-wrap:anywhere]"><PlayerName p={pick.drop} /></div>
                 <div className="text-[11px] text-muted">{pick.drop.position}</div>
               </div>
             </div>

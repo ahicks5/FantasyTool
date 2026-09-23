@@ -401,9 +401,8 @@ test("the board: filter to free-agent running backs, then re-sort them", async (
   for (const row of await rows.all()) {
     // Every row is a running back, by the position cell on its meta line.
     await expect(row.locator(".board-pos")).toHaveText("RB");
-    // And none of them repeats what the filter already said. `showsOwner` in lib/board.ts
-    // drops the owner mark here: "FA" on every row of a free-agent board is noise.
-    await expect(row.locator(".board-fa")).toHaveCount(0);
+    // And every one of them is flagged open for pickup, down the left.
+    await expect(row.locator(".board-flag-fa")).toHaveCount(1);
   }
 
   // Re-sorting is a column heading: a different order, not a different list.
@@ -412,6 +411,11 @@ test("the board: filter to free-agent running backs, then re-sort them", async (
   await expect.poll(async () => rows.first().textContent(), { timeout: 10_000 }).not.toBe(first);
   // And the heading says what it did.
   await expect(page.getByRole("button", { name: `${BOARD_LABELS.sortBy} ${BOARD_LABELS.player}` })).toHaveAttribute("aria-pressed", "true");
+
+  // The market view swaps the two numbers for adds and the position rank so far.
+  await page.getByRole("button", { name: BOARD_LABELS.views.market, exact: true }).click();
+  await expect(page.getByRole("button", { name: `${BOARD_LABELS.sortBy} ${BOARD_LABELS.season}` })).toBeVisible();
+  await expect(page.getByRole("button", { name: `${BOARD_LABELS.sortBy} ${BOARD_LABELS.ros}` })).toHaveCount(0);
 
   await assertNoHorizontalOverflow(page);
   expect(problems, "the board logged browser errors").toEqual([]);

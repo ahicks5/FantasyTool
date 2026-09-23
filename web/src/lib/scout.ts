@@ -22,8 +22,9 @@ export const STANDS_MS = 1700;
 export const FOCUS_MS = 1500;
 /** The camera drops to the pad on your lap. */
 export const DROP_MS = 700;
-/** The three names write themselves in, the first one circled. */
-export const NOTES_MS = 2100;
+/** The three names write themselves in, the first one circled, and then the finished page
+ *  sits in your lap long enough to read it (Andrew: "let that final frame sit a bit more"). */
+export const NOTES_MS = 3400;
 /** The pad becomes the page: it settles back down to the lap while the stands dissolve,
  *  and the page comes up through a blur that clears. Long and eased on purpose: Andrew's
  *  note on the first cut was that the cut to the page was too abrupt. */

@@ -339,7 +339,8 @@ def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
                      nfl_team: str = "", avail: str = "all", owner: str | None = None,
                      sort: str = directory_mod.DEFAULT_SORT, order: str = "desc",
                      limit: int = directory_mod.DEFAULT_LIMIT, offset: int = 0,
-                     team_id: str | None = None, lens: str = "", auth=Depends(espn_auth)):
+                     team_id: str | None = None, lens: str = "", season: bool = False,
+                     auth=Depends(espn_auth)):
     """The scouting board: every player in the league, filtered and sorted.
 
     **Free, on the same line the search box and the profile are free on, and it opens
@@ -362,9 +363,17 @@ def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
         validate_id(owner, "team id")
     b = _bundle(platform, league_id, auth)
     ctx = lenses_mod.load_context(b) if lens in lenses_mod.LENSES else None
+    # The season so far (points and position rank) is one cached fetch, made only when the
+    # reader's view asks for it; a feed that fails leaves those two columns as dashes.
+    ranks = None
+    if season or sort == "season":
+        try:
+            ranks = directory_mod.season_ranks(nfl_stats.season_line(b.league.season), b.league.scoring)
+        except Exception:  # noqa: BLE001
+            ranks = None
     return directory_mod.query(b, q=q, pos=pos, nfl_team=nfl_team, avail=avail, owner=owner,
                                sort=sort, order=order, limit=limit, offset=offset,
-                               team_id=team_id, lens=lens, ctx=ctx)
+                               team_id=team_id, lens=lens, ctx=ctx, season=ranks)
 
 
 @app.get("/api/league/{platform}/{league_id}/players/lenses")

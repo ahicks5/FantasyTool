@@ -2481,21 +2481,23 @@ a.pickup:active { transform: scale(0.98); }
   color: var(--color-muted);
 }
 @media (hover: hover) { .board-th-btn:hover { color: var(--color-ink); } }
-.board-th-player { flex: 1; min-width: 0; justify-content: flex-start; padding-left: 44px; }
+.board-th-player { flex: 1; min-width: 0; justify-content: flex-start; padding-left: 90px; }
 .board-th-on { color: var(--color-ink); }
 .board-rank {
   flex: none; width: 18px;
   text-align: right; font-size: 11px; font-weight: 700; color: var(--color-muted);
 }
 .board-head .board-rank { font-size: 10.5px; font-weight: 900; }
-.board-num { flex: none; width: 42px; text-align: right; font-size: 13px; font-weight: 700; }
+/* Numbers are centred in fixed columns, so 1.9 and 18.4 sit on the same axis instead of
+   drifting with their width (Andrew: "a bit lopsided"). */
+.board-num { flex: none; width: 50px; text-align: center; justify-content: center; font-size: 13px; font-weight: 700; }
 .board-proj { font-size: 15px; font-weight: 900; color: var(--color-ink); }
 .board-bar {
-  display: block; height: 3px; margin: 3px 0 0 auto; width: 34px;
+  display: block; height: 3px; margin: 3px auto 0; width: 34px;
   border-radius: 2px; background: var(--color-line);
   overflow: hidden;
 }
-.board-bar > span { display: block; height: 100%; margin-left: auto; border-radius: 2px; background: var(--color-start); }
+.board-bar > span { display: block; height: 100%; border-radius: 2px; background: var(--color-start); }
 .board-row {
   display: flex; align-items: center; gap: 8px;
   width: 100%; min-width: 0; min-height: 56px;
@@ -2507,14 +2509,6 @@ li + li > .board-row { border-top: 1px solid var(--color-line); }
 @media (hover: hover) { .board-row:hover { background: var(--color-soft); } }
 .board-row:active { background: var(--color-soft); }
 .board-row:focus-visible { outline: none; background: var(--color-soft); box-shadow: inset 3px 0 0 var(--color-ink); }
-.board-fa, .board-mine, .board-held {
-  min-width: 0; padding: 0 5px; border-radius: 4px;
-  font-size: 9.5px; font-weight: 900; line-height: 15px; letter-spacing: 0.03em; text-transform: uppercase;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.board-fa { flex: none; color: var(--color-start); background: var(--color-start-soft); }
-.board-mine { flex: none; color: var(--color-lean); background: var(--color-lean-soft); }
-.board-held { flex: 0 1 auto; min-width: 54px; color: var(--color-muted); box-shadow: inset 0 0 0 1px var(--color-line-2); }
 .board-more {
   display: flex; align-items: center; justify-content: center;
   width: 100%; min-height: 46px;
@@ -2523,3 +2517,39 @@ li + li > .board-row { border-top: 1px solid var(--color-line); }
   background: var(--color-soft);
 }
 .board-more:disabled { opacity: 0.6; }
+
+/* The flag down the left of a row: open for pickup, yours, taken. */
+.board-flag {
+  flex: none; width: 42px; padding: 3px 0;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 9px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.board-flag-fa { color: var(--color-start); background: var(--color-start-soft); box-shadow: inset 0 0 0 1px var(--color-start); }
+.board-flag-mine { color: #fff; background: var(--color-lean); }
+.board-flag-taken { color: var(--color-muted); background: var(--color-soft); }
+/* Your own men: tinted, an accent down the edge, the name in your colour. */
+.board-row-mine { background: var(--color-lean-soft); box-shadow: inset 3px 0 0 var(--color-lean); }
+.board-row-mine .board-name { color: var(--color-lean); }
+@media (hover: hover) { .board-row-mine:hover { background: var(--color-lean-soft); } }
+.board-name { overflow-wrap: anywhere; }
+.board-owner {
+  display: block; margin-top: 1px;
+  font-size: 10.5px; line-height: 1.25; color: var(--color-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.board-caret { flex: none; margin-left: 2px; }
+.board-caret path { fill: currentColor; opacity: 0.3; }
+.board-caret .board-caret-on { opacity: 1; }
+.board-caret .board-caret-off { opacity: 0.15; }
+.board-head .board-num { display: inline-flex; }
+/* The view switch over the table. */
+.board-view {
+  display: flex; flex: none; gap: 2px; padding: 2px;
+  border-radius: 999px; background: var(--color-soft); border: 1px solid var(--color-line-2);
+}
+.board-view-btn {
+  min-height: 28px; padding: 0 11px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 800; color: var(--color-muted);
+}
+.board-view-on { color: var(--color-paper); background: var(--color-ink); }

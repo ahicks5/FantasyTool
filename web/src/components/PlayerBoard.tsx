@@ -32,22 +32,26 @@ import {
   PAGE_SIZE,
   activeFilterCount,
   activeTab,
+  BOARD_VIEWS,
+  VIEW_COLUMNS,
   barPct,
   boardNumber,
   compactCount,
   countLine,
   hasMore,
+  posRankLabel,
   positionTabs,
   pressColumn,
   queryKey,
-  showsOwner,
   tabPositions,
   weekTone,
   withLens,
+  withView,
+  type BoardView,
 } from "@/lib/board";
 import { NO_NFL_TEAM, SEARCH_DEBOUNCE_MS, SEARCH_LABELS, normalizeQuery, nextIndex } from "@/lib/search";
 import type { Connection } from "@/lib/storage";
-import type { BoardAvailability, BoardQuery, BoardRow, BoardSort, Lens, LensCounts, LensFact, PlayerBoard as Board } from "@/lib/types";
+import type { BoardQuery, BoardRow, BoardSort, Lens, LensCounts, LensFact, PlayerBoard as Board } from "@/lib/types";
 import { SCOUT } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { usePlayerSheet } from "./player/PlayerSheetProvider";
@@ -71,13 +75,13 @@ function IconSearch() {
   );
 }
 
-/** The column the table is sorted by carries a small arrow for its direction. */
+/** Every sortable heading carries a caret, so the reader can see the columns sort: dim
+ *  both ways when it is not the sort, one bright arrow for the direction when it is. */
 function SortMark({ on, order }: { on: boolean; order: "asc" | "desc" | undefined }) {
-  if (!on) return null;
   return (
-    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden
-         className={order === "asc" ? "rotate-180" : ""}>
-      <path d="M6 9l6 6 6-6" />
+    <svg width="8" height="11" viewBox="0 0 8 11" aria-hidden className="board-caret">
+      <path d="M4 0.5L7.5 4.5H0.5z" className={on && order === "asc" ? "board-caret-on" : on ? "board-caret-off" : ""} />
+      <path d="M4 10.5L0.5 6.5H7.5z" className={on && order !== "asc" ? "board-caret-on" : on ? "board-caret-off" : ""} />
     </svg>
   );
 }
@@ -102,12 +106,11 @@ function Th({ label, sort, query, onSort, className = "" }: { label: string; sor
   );
 }
 
-/** Who holds him, as one small mark on the meta line. */
-function Holder({ row }: { row: BoardRow }) {
+/** Who holds him, as the flag down the left of the row: open for pickup, yours, taken. */
+function Flag({ row }: { row: BoardRow }) {
   const held = row.rostered_by;
-  if (!held) return <span className="board-fa">{BOARD_LABELS.fa}</span>;
-  if (held.is_me) return <span className="board-mine">{BOARD_LABELS.mine}</span>;
-  return <span className="board-held">{held.team_name}</span>;
+  const kind = !held ? "fa" : held.is_me ? "mine" : "taken";
+  return <span className={`board-flag board-flag-${kind}`}>{BOARD_LABELS.flag[kind]}</span>;
 }
 
 /**
@@ -119,20 +122,20 @@ function Holder({ row }: { row: BoardRow }) {
  */
 function Row({
   row,
-  rank,
   max,
-  avail,
+  view,
   onKeyDown,
   bind,
 }: {
   row: BoardRow;
-  rank: number;
   max: number;
-  avail: BoardAvailability;
+  view: BoardView;
   onKeyDown: (e: React.KeyboardEvent) => void;
   bind: (el: HTMLButtonElement | null) => void;
 }) {
   const { open } = usePlayerSheet();
+  const held = row.rostered_by;
+  const mine = !!held?.is_me;
   return (
     <li>
       <button
@@ -142,12 +145,12 @@ function Row({
         // row the reader tapped rather than waiting on the fetch behind it.
         onClick={() => open(row)}
         onKeyDown={onKeyDown}
-        className="board-row"
+        className={`board-row ${mine ? "board-row-mine" : ""}`}
       >
-        <span className="board-rank tnum">{rank}</span>
+        <Flag row={row} />
         <Avatar name={row.name} photo={row.photo} teamLogo={row.team_logo} size="sm" />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[14px] font-bold leading-tight">
+          <span className="board-name block text-[14px] font-bold leading-tight">
             {row.name}
             <InjuryTag status={row.injury_status} />
           </span>
@@ -155,18 +158,27 @@ function Row({
             <span className="board-pos shrink-0 font-bold text-ink-2">{row.position}</span>
             <span className="shrink-0">{row.nfl_team || NO_NFL_TEAM}</span>
             {row.bye_week && <span className="min-w-0 truncate">{BOARD_LABELS.bye(row.bye_week)}</span>}
-            {showsOwner(avail) && <Holder row={row} />}
           </span>
+          {/* Somebody else's man: whose, on a line of its own, never squeezed. */}
+          {held && !mine && <span className="board-owner">{BOARD_LABELS.owner(held.team_name)}</span>}
           {row.lens && <Fact fact={row.lens} />}
         </span>
-        <span className="board-num board-proj tnum">
-          {boardNumber(row.projected)}
-          <span className="board-bar" aria-hidden>
-            <span style={{ width: `${barPct(row.projected, max)}%` }} />
-          </span>
-        </span>
-        <span className="board-num tnum text-ink-2">{boardNumber(row.ros, 0)}</span>
-        <span className={`board-num tnum ${row.trending_adds ? "text-ink-2" : "text-muted"}`}>{compactCount(row.trending_adds)}</span>
+        {view === "outlook" ? (
+          <>
+            <span className="board-num board-proj tnum">
+              {boardNumber(row.projected)}
+              <span className="board-bar" aria-hidden>
+                <span style={{ width: `${barPct(row.projected, max)}%` }} />
+              </span>
+            </span>
+            <span className="board-num tnum text-ink-2">{boardNumber(row.ros, 0)}</span>
+          </>
+        ) : (
+          <>
+            <span className={`board-num tnum ${row.trending_adds ? "board-proj" : "text-muted"}`}>{compactCount(row.trending_adds)}</span>
+            <span className={`board-num tnum ${row.pos_rank && row.pos_rank <= 12 ? "text-start" : "text-ink-2"}`}>{posRankLabel(row)}</span>
+          </>
+        )}
       </button>
     </li>
   );
@@ -409,6 +421,12 @@ export function PlayerBoard({ c }: { c: Connection }) {
   // The bar under each projection is against the best on the board, so it reads as "how
   // close to the top" rather than as an absolute scale nobody can hold in their head.
   const max = rows.reduce((m, r) => Math.max(m, r.projected ?? 0), 0);
+  const view: BoardView = query.season ? "market" : "outlook";
+  const setView = (v: BoardView) => setQuery((q) => ({ ...withView(q, v), season: v === "market" }));
+  const HEAD: Record<BoardSort, string> = {
+    projected: BOARD_LABELS.proj, ros: BOARD_LABELS.ros, trending: BOARD_LABELS.adds, season: BOARD_LABELS.season,
+    name: BOARD_LABELS.player, position: BOARD_LABELS.position,
+  };
 
   return (
     <section className="min-w-0">
@@ -495,14 +513,25 @@ export function PlayerBoard({ c }: { c: Connection }) {
         <LensBar on={query.lens} counts={counts} pick={(l) => setQuery((q) => withLens(q, l))} />
       </div>
 
+      {/* Over the table: the count, the way out of the filters, and the view switch. */}
       <div className="mt-3 flex min-w-0 items-center justify-between gap-3 px-1">
-        <p className="tnum text-[12px] font-bold text-muted">{current ? countLine(rows.length, current.board.total) : " "}</p>
-        {filters > 0 && (
-          <button type="button" onClick={clearFilters} className="min-h-0 shrink-0 text-[12px] font-bold text-lean hover:underline">
-            {BOARD_LABELS.clear}
-          </button>
-        )}
+        <p className="min-w-0 truncate tnum text-[12px] font-bold text-muted">
+          {current ? countLine(rows.length, current.board.total) : " "}
+          {filters > 0 && (
+            <button type="button" onClick={clearFilters} className="ml-2 min-h-0 font-bold text-lean hover:underline">
+              {BOARD_LABELS.clear}
+            </button>
+          )}
+        </p>
+        <div role="group" aria-label={BOARD_LABELS.views.outlook + " / " + BOARD_LABELS.views.market} className="board-view">
+          {BOARD_VIEWS.map((v) => (
+            <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} className={`board-view-btn ${view === v ? "board-view-on" : ""}`}>
+              {BOARD_LABELS.views[v]}
+            </button>
+          ))}
+        </div>
       </div>
+      <p className="mt-1 px-1 text-[11px] leading-snug text-muted">{BOARD_LABELS.viewHint[view]}</p>
 
       {/* One announcement per settled board. Nothing is said while a request is in flight. */}
       <p role="status" className="sr-only">
@@ -526,20 +555,18 @@ export function PlayerBoard({ c }: { c: Connection }) {
       ) : (
         <div className="board-table mt-1.5">
           <div className="board-head">
-            <span className="board-rank" aria-hidden>#</span>
             <Th label={BOARD_LABELS.player} sort="name" query={query} onSort={onSort} className="board-th-player" />
-            <Th label={BOARD_LABELS.proj} sort="projected" query={query} onSort={onSort} className="board-num" />
-            <Th label={BOARD_LABELS.ros} sort="ros" query={query} onSort={onSort} className="board-num" />
-            <Th label={BOARD_LABELS.adds} sort="trending" query={query} onSort={onSort} className="board-num" />
+            {VIEW_COLUMNS[view].map((col) => (
+              <Th key={col} label={HEAD[col]} sort={col} query={query} onSort={onSort} className="board-num" />
+            ))}
           </div>
           <ul id={listId} aria-busy={busy || undefined} className={`transition-opacity ${busy ? "opacity-60" : ""}`}>
             {rows.map((row, i) => (
               <Row
                 key={row.id}
                 row={row}
-                rank={i + 1}
                 max={max}
-                avail={query.avail ?? "all"}
+                view={view}
                 bind={(el) => {
                   links.current[i] = el;
                 }}

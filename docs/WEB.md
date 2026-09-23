@@ -174,6 +174,16 @@ pinned by `vocab.test.ts`. "See more" opens picks 4-10. No budget, waiver-order 
 faces withheld and the offer stays under the board. The page reads `GET .../waivers` (not
 `/waivers/plan`; `WaiverPlanView` and `WaiversView` are no longer mounted).
 
+**All players, round three** (Andrew, 2026-09-23 afternoon): a **flag down the left** of
+every row (FA green, You blue, Taken grey) instead of a rank; somebody else's player names
+his owner on a line of its own ("On Waddle Waddle"), never squeezed onto the meta line;
+**your own players** are tinted with a blue edge and a blue name. A **view switch** over the
+table picks two numbers a row: **Projections** (Proj, ROS) or **Market** (Adds, and the
+position rank on points so far: `season=true` on the board, `directory.season_ranks`,
+sort key `season`). Numbers are centred in fixed columns; every sortable heading carries a
+caret; adds read 4.1M rather than 4141k (`compactCount`). The scout's notepad holds 1.3s
+longer before the landing (`NOTES_MS` 3400).
+
 **All players** (round two, same day) is a real table (`PlayerBoard.tsx`, helpers in
 `lib/board.ts`): one controls panel (search; position tabs from the league's own facets,
 with FLEX = RB/WR/TE when all three exist; All/Free/Taken/Mine plus an NFL-team menu; the

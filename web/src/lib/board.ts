@@ -29,7 +29,7 @@ export const PAGE_SIZE = 50;
  * its own default rather than erroring, but the two lists drifting would mean the control
  * offers an order the board does not apply, which the reader reads as a broken sort.
  */
-export const BOARD_SORTS: readonly BoardSort[] = ["projected", "ros", "trending", "name", "position"];
+export const BOARD_SORTS: readonly BoardSort[] = ["projected", "ros", "trending", "season", "name", "position"];
 
 /** Mirrors `AVAILABILITY` in `edge/api/directory.py`. Same pin. */
 export const BOARD_AVAILABILITY: readonly BoardAvailability[] = ["all", "free", "rostered", "mine"];
@@ -45,6 +45,7 @@ export const SORT_LABELS: Record<BoardSort, { label: string; short: string; desc
   projected: { label: "This week", short: "Week", desc: true },
   ros: { label: "Rest of season", short: "ROS", desc: true },
   trending: { label: "Most added", short: "Adds", desc: true },
+  season: { label: "Season so far", short: "Pts", desc: true },
   name: { label: "Name", short: "Name", desc: false },
   position: { label: "Position", short: "Pos", desc: false },
 };
@@ -95,6 +96,15 @@ export const BOARD_LABELS = {
   proj: "Proj",
   ros: "ROS",
   adds: "Adds",
+  season: "Rank",
+  /** The view switch over the table, and what each view means in full. */
+  views: { outlook: "Projections", market: "Market" },
+  viewHint: {
+    outlook: "Proj is this week. ROS is the rest of the season. Both in your scoring.",
+    market: "Adds across the platform. Rank at his position on points so far.",
+  },
+  flag: { fa: "FA", mine: "You", taken: "Taken" },
+  owner: (team: string) => `On ${team}`,
 } as const;
 
 export const DEFAULT_QUERY: BoardQuery = {
@@ -183,6 +193,7 @@ export function queryKey(q: BoardQuery): string {
     q.sort ?? "projected",
     q.order ?? "desc",
     q.lens ?? "",
+    q.season ? 1 : 0,
   ]);
 }
 
@@ -292,7 +303,36 @@ export function compactCount(n: number): string {
   if (!n) return COLUMN_LABELS.unknown;
   if (n < 1000) return String(n);
   if (n < 10000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
-  return `${Math.round(n / 1000)}k`;
+  if (n < 999_500) return `${Math.round(n / 1000)}k`;
+  if (n < 10_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  return `${Math.round(n / 1_000_000)}M`;
+}
+
+/**
+ * The two ways to read the table (Andrew, 2026-09-23): the outlook (this week and the rest
+ * of the season, projected) or the market (how many managers are adding him, and where he
+ * ranks at his position on what he has actually scored so far). Two numbers a row either
+ * way, so the name keeps its room.
+ */
+export type BoardView = "outlook" | "market";
+export const BOARD_VIEWS: readonly BoardView[] = ["outlook", "market"];
+
+/** The columns a view draws, left to right, each with the sort it applies. */
+export const VIEW_COLUMNS: Record<BoardView, readonly BoardSort[]> = {
+  outlook: ["projected", "ros"],
+  market: ["trending", "season"],
+};
+
+/** Switching views: the sort follows to the new view's first column unless the reader
+ *  had already sorted by something that view still shows (or by name). */
+export function withView(q: BoardQuery, view: BoardView): BoardQuery {
+  const keep = q.sort === "name" || VIEW_COLUMNS[view].includes(q.sort ?? "projected");
+  return keep ? q : withSort(q, VIEW_COLUMNS[view][0]);
+}
+
+/** A position rank as the market column prints it: "WR14", or a dash. */
+export function posRankLabel(row: { position: string; pos_rank?: number | null }): string {
+  return row.pos_rank ? `${row.position}${row.pos_rank}` : COLUMN_LABELS.unknown;
 }
 
 /** How full the projection bar under a number is: its share of the best on the board. */

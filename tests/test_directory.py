@@ -286,3 +286,40 @@ def test_the_board_does_not_open_the_wire(client):
 
 def test_the_board_is_free_without_signing_in(client):
     assert client.get(f"{LG}/players").status_code == 200
+
+
+# ---------------------------------------------------------- the season so far ---
+
+def _season_lines():
+    from edge.data import nfl_stats
+    rows = _load("sleeper/stats/stats_2025_season.json")
+    return {str(r["player_id"]): nfl_stats.to_line(r, 2025) for r in rows}
+
+
+def test_season_ranks_are_points_so_far_ranked_within_position(league):
+    ranks = directory.season_ranks(_season_lines(), league.scoring)
+    assert ranks
+    lines = _season_lines()
+    by_pos: dict[str, list] = {}
+    for pid, (pts, rank, gp) in ranks.items():
+        assert gp > 0
+        by_pos.setdefault(lines[pid].meta["position"], []).append((rank, pts))
+    for rows in by_pos.values():
+        rows.sort()
+        assert [r for r, _ in rows] == list(range(1, len(rows) + 1)), "ranks are 1..n per position"
+        pts = [p for _, p in rows]
+        assert pts == sorted(pts, reverse=True), "rank 1 is the most points"
+
+
+def test_the_board_carries_the_season_only_when_asked(client, monkeypatch):
+    from edge.data import nfl_stats
+    monkeypatch.setattr(nfl_stats, "season_line", lambda season: _season_lines())
+    plain = _board(client)
+    assert all(r["season_pts"] is None and r["pos_rank"] is None for r in plain["rows"])
+    body = _board(client, season="true", sort="season", limit=20)
+    ranked = [r for r in body["rows"] if r["pos_rank"] is not None]
+    assert ranked, "a 2025 season line should match somebody in the league"
+    pts = [r["season_pts"] for r in ranked]
+    assert pts == sorted(pts, reverse=True)
+    # Still description only: no fit, no bid, no drop.
+    assert not any(k in r for r in body["rows"] for k in ("fit_score", "bid", "drop"))
