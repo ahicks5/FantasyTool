@@ -29,6 +29,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from edge.api import lenses as lenses_mod
 from edge.api import service
 from edge.data import player_index
 from edge.data import sleeper_api as api
@@ -224,11 +225,17 @@ def facets(rows: list[dict], b: service.Bundle) -> dict:
 def query(b: service.Bundle, *, q: str = "", pos: str = "", nfl_team: str = "",
           avail: str = "all", owner: str | None = None, sort: str = DEFAULT_SORT,
           order: str = "desc", limit: int = DEFAULT_LIMIT, offset: int = 0,
-          team_id: str | None = None) -> dict:
+          team_id: str | None = None, lens: str = "",
+          ctx: lenses_mod.LensContext | None = None) -> dict:
     """The board: the matching slice, the count it was cut from, and the filter controls.
 
     `total` counts every match, not the page, because a board that cannot say how many it
     found leaves the reader unable to tell a narrow filter from an empty league.
+
+    A `lens` (`lenses.py`) cuts the universe to one question -- my handcuffs, the next man
+    up, the defences with a soft run -- and hands back its own order and one fact per row.
+    Every other filter still narrows it; the column sort gives way to the lens's order,
+    because the lens *is* the order the reader asked for.
     """
     sort = sort if sort in SORTS else DEFAULT_SORT
     avail = avail if avail in AVAILABILITY else "all"
@@ -236,6 +243,7 @@ def query(b: service.Bundle, *, q: str = "", pos: str = "", nfl_team: str = "",
     limit = max(1, min(int(limit or DEFAULT_LIMIT), MAX_LIMIT))
     offset = max(0, int(offset or 0))
 
+    lens = lens if lens in lenses_mod.LENSES else ""
     rows = universe(b, team_id)
     # Built before the search tops the list up, and never from the filtered rows: the
     # controls describe the *league*, so they must not shrink as the reader types or tick
@@ -245,8 +253,11 @@ def query(b: service.Bundle, *, q: str = "", pos: str = "", nfl_team: str = "",
     # One letter still filters the league's own rows -- that costs a pass over a few
     # hundred names and is worth doing -- but it does not reach into the 11k-row platform
     # dump, which is the cost `SEARCH_MIN` exists to avoid.
+    if lens:
+        rows = lenses_mod.apply(lens, rows, b, ctx or lenses_mod.LensContext(), team_id)
+
     needle = normalize_name(q)
-    if needle and len(needle) >= player_index.SEARCH_MIN:
+    if needle and len(needle) >= player_index.SEARCH_MIN and not lens:
         rows += _topup({r["id"] for r in rows}, q, TOPUP_SCAN)
 
     positions = {p.strip().upper() for p in pos.split(",") if p.strip()}
@@ -266,7 +277,7 @@ def query(b: service.Bundle, *, q: str = "", pos: str = "", nfl_team: str = "",
                 scored.append((t, r))
         scored.sort(key=lambda s: (s[0], _sort_key(s[1], sort, desc)))
         matched = [r for _, r in scored]
-    else:
+    elif not lens:
         matched.sort(key=lambda r: _sort_key(r, sort, desc))
 
     return {
@@ -278,5 +289,6 @@ def query(b: service.Bundle, *, q: str = "", pos: str = "", nfl_team: str = "",
         "order": "desc" if desc else "asc",
         "rows": matched[offset:offset + limit],
         "facets": all_facets,
+        "lens": lens or None,
         "algo_version": "directory.v1",
     }

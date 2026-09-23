@@ -315,6 +315,7 @@ one list, cut and ordered by the reader.
 | `sort` | `projected` · `ros` · `trending` · `name` · `position` | `projected` |
 | `order` | `desc` · `asc` | `desc` |
 | `limit` / `offset` | page size (max 200) and where to start | 50 / 0 |
+| `lens` | `handcuffs` · `backups` · `defenses` · `byes` · `risers` (see below) | — |
 
 `total` counts every match, not the page. `facets` is built from this league's own rows, so
 a league with no kicker slot never offers a K chip — do not hard-code the lists.
@@ -332,6 +333,24 @@ that player.
 **Free, and it opens nothing.** These are each player's own numbers. Which of them fits
 *your* roster, what to bid and who to cut are the wire's, they stay behind Wire Pass, and
 no field on this payload carries a fit, a bid or a drop.
+
+#### Lenses (`edge/api/lenses.py`)
+
+A `lens` cuts the board to one question and hands back its own order (the column `sort` is
+ignored) plus one fact per row under `lens`:
+
+| Lens | Rows | `lens` fact | Order |
+|---|---|---|---|
+| `handcuffs` | the RB directly behind each of your RBs, wherever rostered (needs `team_id`) | `behind` (your back) | your back's projection |
+| `backups` | second on an RB/WR/TE depth-chart spot | `behind`, `opening` (starter Q/D/O/IR) | open jobs first, then ROS |
+| `defenses` | every DEF | `outlook`: this week and the next two, `{week, opp, home, rank, of, ppg}`; `opp` null is a bye; rank 1 = the offense that has scored the fewest fantasy points per game in this league's scoring | softest schedule first |
+| `byes` | players at a position where one of yours is off in the next three weeks | `covers: [{id, name, week}]` | ROS |
+| `risers` | anyone with platform adds | — | adds |
+
+`GET .../players/lenses?team_id=8` → `{"week":2,"counts":{"handcuffs":0,"backups":22,...}}`:
+how many **free agents** each lens holds, for the chips. Same rule as the board: every lens
+is a depth chart, a schedule or an add count, and none of them carries a fit, a bid or a
+drop (`tests/test_lenses.py::test_no_lens_ever_prices_a_claim`).
 
 ### Player profile (free)
 

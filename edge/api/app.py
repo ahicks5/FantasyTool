@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from edge import products
-from edge.api import desk, directory as directory_mod, scout as scout_mod, service, share as share_mod
+from edge.api import desk, directory as directory_mod, lenses as lenses_mod, scout as scout_mod, service, share as share_mod
 from edge.api.auth import current_user, optional_user
 from edge.api.limits import RateLimitMiddleware, cors_origins, validate_id, validate_platform
 from edge.api.store import open_store
@@ -339,7 +339,7 @@ def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
                      nfl_team: str = "", avail: str = "all", owner: str | None = None,
                      sort: str = directory_mod.DEFAULT_SORT, order: str = "desc",
                      limit: int = directory_mod.DEFAULT_LIMIT, offset: int = 0,
-                     team_id: str | None = None, auth=Depends(espn_auth)):
+                     team_id: str | None = None, lens: str = "", auth=Depends(espn_auth)):
     """The scouting board: every player in the league, filtered and sorted.
 
     **Free, on the same line the search box and the profile are free on, and it opens
@@ -361,9 +361,24 @@ def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
     if owner:
         validate_id(owner, "team id")
     b = _bundle(platform, league_id, auth)
+    ctx = lenses_mod.load_context(b) if lens in lenses_mod.LENSES else None
     return directory_mod.query(b, q=q, pos=pos, nfl_team=nfl_team, avail=avail, owner=owner,
                                sort=sort, order=order, limit=limit, offset=offset,
-                               team_id=team_id)
+                               team_id=team_id, lens=lens, ctx=ctx)
+
+
+@app.get("/api/league/{platform}/{league_id}/players/lenses")
+def player_lenses(platform: str, league_id: str, team_id: str | None = None, auth=Depends(espn_auth)):
+    """How many free agents each scouting lens holds (`edge/api/lenses.py`), for the chips.
+
+    Free, on the board's own line: every lens is a depth chart, a schedule or an add
+    count -- description -- and none of them prices a claim. Same `team_id` rule as the
+    board: without it there are no handcuffs and no byes to cover, because nobody is "me".
+    """
+    b = _bundle(platform, league_id, auth)
+    ctx = lenses_mod.load_context(b)
+    rows = directory_mod.universe(b, team_id)
+    return {"week": b.league.week, "counts": lenses_mod.counts(rows, b, ctx, team_id)}
 
 
 @app.get("/api/league/{platform}/{league_id}/player/{player_id}")
