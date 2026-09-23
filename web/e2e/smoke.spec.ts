@@ -245,13 +245,20 @@ const PAGES: PageCase[] = [
       expect(await slots.count()).toBeGreaterThanOrEqual(9);
       // The table adds up: a total row closes the starters.
       await expect(page.locator("main .roster-total")).toContainText(LINEUP.total);
-      // The arrow on a role opens its own page: the question, the coach's call, the others.
+      // The arrow on a role opens its own page: the question, the call, then every option
+      // side by side, a face per column and a read per row, the engine's notes folded under.
       const label = (await roles.first().locator(".role-label").textContent()) ?? "";
       await roles.first().getByRole("link").click();
       await expect(page.getByRole("heading", { name: LINEUP.role.question(label) })).toBeVisible();
-      await expect(page.getByText(LINEUP.coach.call)).toBeVisible();
-      await expect(page.getByRole("heading", { name: LINEUP.role.others })).toBeVisible();
+      await expect(page.getByText(/^Start /).first()).toBeVisible();
+      const grid = page.getByRole("table", { name: LINEUP.role.gridAria(label) });
+      await expect(grid).toBeVisible();
+      await expect(grid.getByText(LINEUP.role.band)).toBeVisible();
+      expect(await grid.locator("thead th").count(), "the pick and at least one other").toBeGreaterThanOrEqual(2);
+      await expect(grid.getByRole("rowheader", { name: LINEUP.factor.health })).toBeVisible();
+      await page.getByRole("button", { name: LINEUP.role.full }).click();
       await expect(page.locator(".factor").first()).toBeVisible();
+      await assertNoHorizontalOverflow(page);
       // Handled takes it off the list until next week.
       await page.getByRole("button", { name: LINEUP.role.handle }).click();
       await expect(page.getByText(LINEUP.role.handledLine(label))).toBeVisible();
@@ -391,6 +398,10 @@ test("the board: filter to free-agent running backs, then re-sort them", async (
   /** The number the count line ends on: how many matched, not how many fitted on the page. */
   const found = async () => Number(/(\d+) players?/.exec((await countLine.textContent()) ?? "")![1]);
 
+  // It opens on the shortlist; "Everyone" takes it off and opens the whole league.
+  await page.getByRole("button", { name: SCOUT.lenses.off, exact: true }).click();
+  await expect(page.getByRole("button", { name: SCOUT.lenses.shortlist.label })).toHaveAttribute("aria-pressed", "false");
+
   // Running backs, still across the whole league.
   await page.getByRole("button", { name: "RB", exact: true }).click();
   await expect.poll(async () => rows.count(), { timeout: 10_000 }).toBeGreaterThan(0);
@@ -479,6 +490,12 @@ test("the search box survives the Wire Pass paywall", async ({ page }) => {
   // his claims; a reader who has not bought opens it onto every player in the league,
   // and meets the price after the room has shown him something real. That order is the
   // growth loop, and it is the half a layout change could quietly reverse.
+  // It opens on the shortlist: free agents only, each with the board he made.
+  await expect(page.getByRole("button", { name: SCOUT.lenses.shortlist.label })).toHaveAttribute("aria-pressed", "true");
+  const listed = page.locator("main ul[id$='-list']").getByRole("listitem");
+  await expect(listed.first()).toBeVisible({ timeout: 10_000 });
+  await expect(listed.first().locator(".lens-top").first()).toBeVisible();
+  await expect(page.locator("main ul[id$='-list'] .board-flag-taken")).toHaveCount(0);
   const search = (await box.boundingBox())!;
   const lock = (await page.getByText("Wire Pass").first().boundingBox())!;
   expect(lock.y, "the lock should sit below the board, not above it").toBeGreaterThan(search.y);
@@ -536,6 +553,21 @@ test("the GM calls once: answer it, hear him out, the office is underneath", asy
   await call.getByRole("button", { name: CALL.skip }).click();
   await expect(call).toHaveCount(0, { timeout: 5_000 });
   await expect(page.getByRole("heading", { name: OFFICE.title })).toBeVisible();
+});
+
+test("the office leads with your roster and three deal rows, and skips to the trade room", async ({ page }) => {
+  const { status } = await visit(page, "/trade");
+  expect(status).toBe(200);
+  await expect(page.getByText(OFFICE.shape)).toBeVisible();
+  const tiles = page.locator(".office-tile");
+  expect(await tiles.count()).toBeGreaterThanOrEqual(4);
+  const deals = page.locator("a.deal-row");
+  await expect(deals.first()).toBeVisible({ timeout: 10_000 });
+  expect(await deals.count()).toBeLessThanOrEqual(3);
+  await expect(deals.first().getByText(OFFICE.youGive)).toBeVisible();
+  await page.getByRole("button", { name: OFFICE.jump }).click();
+  await expect(page.getByRole("button", { name: OFFICE.buildClose })).toBeVisible();
+  await assertNoHorizontalOverflow(page);
 });
 
 test("a GM's row opens his page, with the offers and the way back", async ({ page }) => {

@@ -1960,6 +1960,47 @@ button, a.btn, select, input { min-height: 44px; }
 /* One man in the frame on a role's page. */
 .frame-man { display: flex; align-items: center; gap: 10px; min-width: 0; }
 
+/* A role's page: every option a column, every read a row. The label column stays put
+   while a wide frame scrolls sideways under it. */
+.decide-flag { border-left: 3px solid var(--color-lean); background: var(--color-lean-soft); border-radius: 0 10px 10px 0; padding: 8px 10px; font-size: 12.5px; font-weight: 600; line-height: 1.4; color: var(--color-ink); }
+.dg-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; font-weight: 600; color: var(--color-muted); }
+.dg-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.dg-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; }
+.dg-edge-key { font-size: 9px; color: var(--color-start); }
+.dg-wrap { overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.dg { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; min-width: calc(76px + var(--cols, 3) * 88px); }
+.dg-label { position: sticky; left: 0; z-index: 1; width: 76px; background: var(--color-plane); padding: 8px 8px 8px 0; text-align: left; vertical-align: middle; font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-muted); line-height: 1.2; }
+.dg-head { padding: 0 4px 8px; text-align: center; vertical-align: bottom; font-weight: 400; }
+.dg-head > * { margin-left: auto; margin-right: auto; }
+.dg-band { display: block; width: max-content; margin-bottom: 6px; padding: 2px 7px; border-radius: 999px; background: var(--color-start); color: var(--color-paper); font-size: 9px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.dg-name { display: block; margin-top: 6px; font-size: 13px; font-weight: 900; line-height: 1.15; overflow-wrap: anywhere; }
+.dg-meta { display: block; margin-top: 2px; font-size: 10px; font-weight: 700; color: var(--color-muted); line-height: 1.3; }
+.dg-cell { position: relative; padding: 7px 6px; text-align: center; vertical-align: middle; border-top: 1px solid var(--color-line); background-clip: padding-box; }
+.dg tbody tr:first-child .dg-cell, .dg tbody tr:first-child .dg-label { border-top: 0; }
+.dg tbody .dg-label { border-top: 1px solid var(--color-line); }
+.dg tbody tr:first-child .dg-label { border-top: 0; }
+.dg-pick { background-color: var(--color-start-soft); }
+.dg thead .dg-pick { border-radius: 12px 12px 0 0; padding-top: 8px; }
+.dg tbody tr:last-child .dg-pick { border-radius: 0 0 12px 12px; }
+.dg-cell.dg-pick { box-shadow: inset 2px 0 0 var(--color-start), inset -2px 0 0 var(--color-start); }
+.dg thead .dg-pick { box-shadow: inset 2px 0 0 var(--color-start), inset -2px 0 0 var(--color-start), inset 0 2px 0 var(--color-start); }
+.dg tbody tr:last-child .dg-cell.dg-pick { box-shadow: inset 2px 0 0 var(--color-start), inset -2px 0 0 var(--color-start), inset 0 -2px 0 var(--color-start); }
+.dg-text { display: block; font-size: 12px; font-weight: 800; line-height: 1.2; }
+.dg-sub { display: block; margin-top: 2px; font-size: 10px; font-weight: 600; color: var(--color-muted); line-height: 1.25; overflow-wrap: anywhere; }
+.dg-none { color: var(--color-line-2); font-weight: 800; }
+.dg-num { display: block; font-family: var(--font-display, inherit); font-size: 17px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.dg-track { display: block; height: 4px; margin: 5px auto 0; width: 80%; border-radius: 4px; background: var(--color-line); overflow: hidden; }
+.dg-bar { display: block; height: 100%; border-radius: 4px; background: var(--color-ink-2); }
+.dg-pick .dg-bar { background: var(--color-start); }
+.dg-good .dg-text, .dg-good.dg-swatch { color: var(--color-start); }
+.dg-bad .dg-text, .dg-bad.dg-swatch { color: var(--color-sit); }
+.dg-cell.dg-good { background-color: var(--color-start-soft); }
+.dg-cell.dg-bad { background-color: var(--color-sit-soft); }
+.dg-swatch.dg-good { background: var(--color-start); }
+.dg-swatch.dg-bad { background: var(--color-sit); }
+.dg-flag .dg-num { color: var(--color-lean); }
+.dg-edge { position: absolute; top: 3px; right: 4px; font-size: 8px; line-height: 1; color: var(--color-start); }
+
 /* Reads on a pair, on a role's page. */
 .decision-game { font-size: 12px; font-weight: 700; color: var(--color-ink-2); }
 .factor { display: grid; grid-template-columns: 8px 62px minmax(0, 1fr); align-items: start; gap: 8px; padding: 6px 0; font-size: 12px; line-height: 1.35; }
@@ -2557,65 +2598,74 @@ li + li > .board-row { border-top: 1px solid var(--color-line); }
 /* ============================================================== GM's Office ===
    The top of the office: the roster's shape in one line, three deal panels in a row
    (the same grammar as Scouting's pickups), and every GM one line each. */
-.office-posture {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
-  padding: 9px 12px;
-  border-radius: 12px; border: 1px solid var(--color-line); background: var(--color-paper);
+/* Your roster: one tile per position across the full width. */
+.office-shape-title { font-size: 11px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted); }
+.office-shape { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 6px; }
+.office-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 4px 9px; border-radius: 12px;
+  border: 1.5px solid var(--color-line); background: var(--color-paper);
 }
-.office-posture-label { flex: none; font-size: 11px; font-weight: 800; color: var(--color-muted); }
-.office-posture-none { font-size: 11px; font-weight: 700; color: var(--color-muted); }
+.office-tile-pos { font-family: var(--font-display); font-size: 20px; font-weight: 900; line-height: 1; letter-spacing: -0.02em; }
+.office-tile-word { font-size: 10px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); }
+.office-tile-track { display: block; width: 70%; height: 4px; margin-top: 4px; border-radius: 4px; background: var(--color-line); overflow: hidden; }
+.office-tile-track > span { display: block; height: 100%; border-radius: 4px; background: var(--color-muted); }
+.office-tile-spare { border-color: var(--color-start); background: var(--color-start-soft); }
+.office-tile-spare .office-tile-word, .office-tile-spare .office-tile-pos { color: var(--color-start); }
+.office-tile-spare .office-tile-track > span { background: var(--color-start); }
+.office-tile-short { border-color: var(--color-sit); background: var(--color-sit-soft); }
+.office-tile-short .office-tile-word, .office-tile-short .office-tile-pos { color: var(--color-sit); }
+.office-tile-short .office-tile-track > span { background: var(--color-sit); }
+.office-tile-mixed .office-tile-word { color: var(--color-lean); }
 .office-chip {
   flex: none; padding: 1px 6px; border-radius: 5px;
   font-size: 10.5px; font-weight: 900; line-height: 16px;
 }
 .office-chip-start { color: var(--color-start); background: var(--color-start-soft); }
 .office-chip-sit { color: var(--color-sit); background: var(--color-sit-soft); }
+.office-posture-label { flex: none; font-size: 11px; font-weight: 800; color: var(--color-muted); }
+.office-jump {
+  display: inline-flex; align-items: center; gap: 5px; flex: none; min-height: 32px;
+  padding: 0 11px; border-radius: 999px; border: 1px solid var(--color-line-2);
+  font-size: 10.5px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-ink-2);
+}
+@media (hover: hover) { .office-jump:hover { color: var(--color-ink); border-color: var(--color-ink); } }
 
-.deal {
-  position: relative; display: flex; flex-direction: column; height: 100%;
-  padding: 28px 6px 22px;
-  border-radius: 14px; border: 1.5px solid var(--color-line-2);
-  background: var(--color-paper); box-shadow: var(--shadow-card);
-  overflow: hidden;
+/* A deal, one wide row: you get | the GM | you give. */
+.deal-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); align-items: center; gap: 6px;
+  padding: 12px 8px; border-radius: 14px;
+  border: 1.5px solid var(--color-line-2); background: var(--color-paper); box-shadow: var(--shadow-card);
   transition: transform 0.15s ease;
 }
-@media (hover: hover) { a.deal:hover { transform: translateY(-2px); } }
-a.deal:active { transform: scale(0.98); }
-.deal-hot {
+@media (hover: hover) { a.deal-row:hover { transform: translateY(-1px); } }
+a.deal-row:active { transform: scale(0.99); }
+.deal-row-hot {
   border: 2px solid var(--color-signal);
-  box-shadow: 0 0 0 3px rgb(255 77 58 / 0.16), 0 10px 28px -12px rgb(255 77 58 / 0.55);
+  box-shadow: 0 0 0 3px rgb(255 77 58 / 0.14), 0 10px 28px -14px rgb(255 77 58 / 0.55);
   animation: pickup-pulse 2.4s ease-in-out infinite;
 }
-.deal-call { border-color: var(--color-lean); }
-@media (prefers-reduced-motion: reduce) { .deal-hot { animation: none; } }
-.deal-band {
-  position: absolute; inset: 0 0 auto 0; padding: 5px 4px 4px;
-  text-align: center; font-family: var(--font-display);
-  font-size: 10px; font-weight: 900; letter-spacing: 0.02em; text-transform: uppercase;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  color: var(--color-muted); background: var(--color-soft); border-bottom: 1px solid var(--color-line);
+.deal-row-call { border-color: var(--color-lean); }
+@media (prefers-reduced-motion: reduce) { .deal-row-hot { animation: none; } }
+.deal-side { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; text-align: center; }
+.deal-side-label { font-size: 9px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.deal-side-start .deal-side-label { color: var(--color-start); }
+.deal-side-sit .deal-side-label { color: var(--color-sit); }
+.deal-faces { display: flex; }
+.deal-faces > * + * { margin-left: -10px; }
+.deal-names { font-size: 12.5px; font-weight: 900; line-height: 1.15; overflow-wrap: anywhere; }
+.deal-mid { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; text-align: center; }
+.deal-heat {
+  padding: 2px 7px; border-radius: 999px; font-family: var(--font-display);
+  font-size: 9.5px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
+  color: var(--color-muted); background: var(--color-soft);
 }
-.deal-band-hot { color: #fff; background: var(--color-signal); border-bottom-color: transparent; font-size: 11px; }
-.deal-band-call { color: #fff; background: var(--color-lean); border-bottom-color: transparent; }
-.deal-team {
-  display: block; text-align: center;
-  font-size: 10px; font-weight: 800; color: var(--color-muted);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.deal-give-face {
-  position: absolute; right: -8px; bottom: -4px;
-  border-radius: 999px; box-shadow: 0 0 0 2px var(--color-paper), 0 0 0 3.5px var(--color-sit);
-}
-.deal-foot {
-  margin-top: auto; padding-top: 6px; border-top: 1px solid var(--color-line);
-  text-align: center; font-size: 10.5px; font-weight: 700; color: var(--color-muted);
-}
-.deal-go {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 16px;
-  display: grid; place-items: center; color: var(--color-muted); background: var(--color-soft);
-}
-.deal-hot .deal-go { color: #fff; background: var(--color-signal); }
-.deal-locked { animation: none; }
+.deal-heat-hot { color: #fff; background: var(--color-signal); }
+.deal-heat-call { color: #fff; background: var(--color-lean); }
+.deal-mid-team { max-width: 100%; font-size: 11.5px; font-weight: 800; line-height: 1.2; color: var(--color-ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.deal-swap { color: var(--color-muted); line-height: 0; }
+.deal-mid-nums { font-size: 10.5px; font-weight: 700; color: var(--color-muted); white-space: nowrap; }
+.deal-mid-nums b { font-size: 13px; font-weight: 900; }
 
 .office-list {
   border-radius: 16px; border: 1px solid var(--color-line);
@@ -2763,3 +2813,14 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
   animation: call-shimmer 2s linear infinite;
 }
 @keyframes call-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+/* A row the head of scouting picked, down in All players: the wire's red, so the three at
+   the top of the tab are the same three men here. The top three are louder than the rest. */
+.board-flag-pick { color: #fff; background: var(--color-signal); letter-spacing: 0.02em; }
+.board-row-pick { box-shadow: inset 3px 0 0 var(--color-signal); background: rgb(255 77 58 / 0.05); }
+.board-row-top { background: rgb(255 77 58 / 0.1); }
+.board-row-top .board-name { color: var(--color-signal); }
+@media (hover: hover) { .board-row-pick:hover { background: rgb(255 77 58 / 0.12); } }
+/* The shortlist's reasons: "#2 WR proj". A first place is solid. */
+.lens-top { color: var(--color-ink-2); }
+.lens-top-1 { color: var(--color-paper); background: var(--color-ink); border-color: var(--color-ink); }

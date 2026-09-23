@@ -214,11 +214,14 @@ stamps too.
 
 ## The GM's Office is Scouting's grammar (Andrew, 2026-09-23)
 
-`/trade`, top down: **Calls to return** (`OfficeDeals.tsx`): the roster's shape in one line
-(`Posture`: what you can spare, where you are short), then the engine's first three
-partners as panels in one row, each the face you get with the face you send tucked on it,
-"for Diggs", your ROS gain and how fair it is, an arrow into `/trade/deal?team=` (a query
-string, for the demo export). The stamp is `lib/office.heat`: the **hot line** only on the
+`/trade`, top down: **Your roster** (`RosterShape`, `lib/office.rosterShape`): one tile per
+position, one word each (spare, short, set; "mixed" on the free preview, which has no
+values). The engine prices surplus and need separately and a deep bench behind a weak
+starter has both, so the tile nets them and the larger side wins. Then **Calls to return**
+with a "Skip to trade room" pill (opens the builder and scrolls to it): the engine's first
+three partners as wide rows, you get on the left, the GM in the middle with the heat word,
+your ROS gain and how fair it is, you give on the right; each row goes to
+`/trade/deal?team=` (a query string, for the demo export). The stamp is `lib/office.heat`: the **hot line** only on the
 first deal and only at +10 ROS or more (the one pulsing thing on the tab, like the must-add),
 "Worth a call" at +4, else "Long shot". **Every GM**: one row per partner (rank chip in the
 heat colour, has/needs chips, the best deal in one line, the gain). **Build your own offer**:
@@ -229,7 +232,8 @@ his headline and roster shape, every offer (`Offer` from `TradeFinderView.tsx`),
 your own with him".
 
 **The call** (`CallOpening.tsx`, `lib/call.ts`): the first open of the office, once per
-browser (`booth.call`), the phone rings: the best partner's GM (initials on a chrome disc,
+browser (`booth.call`), the phone rings: "General Manager", your own front office, never
+another manager (the house mark on a chrome disc,
 rings pulsing out, the screen buzzing in bursts, `navigator.vibrate` where allowed). Answer,
 or it answers itself at 2.8s; "On the line" with a running clock, two bubbles ("Got a
 minute?", then how many deals), and it lands through the same clearing blur as the scout.
@@ -262,11 +266,16 @@ flip can legitimately move down.
 
 A decision is one row here — the role in big letters, the pick ringed green, the other men
 in the frame, the tag, an arrow — and a page of its own at `/team/decide?role=RB2`
-(`DecisionView.tsx`, reading the same cached lineup): the head coach's call first, then every
-candidate with his number, his rank at his position in this league, who he plays, how likely
-the pick is to outscore him, and every read on the pair. The reads sit in the engine's key
-order on a fixed label column, and the engine's "A …; B …" line is split on the semicolon so
-each man reads on his own row. "Mark handled" (a line under the button says what it does)
+(`DecisionView.tsx`, `lib/decide.ts`, reading the same cached lineup): the call in one line
+("Start X", the tag, his chance against the closest man, always naming both men), then a
+grid: every option a column with his face, the pick first and outlined, every read a row
+(projected, rank, his chance to beat the pick, then matchup, stack, health, form, swing,
+rest, role). Each cell is the man's own read (`engine/decisions.card`: a word, the fact,
+tinted good or bad for this week); a ▲ marks the column that wins that read head to head
+(the pairwise `factors`). A man the projection has ahead of the pick gets a line under the
+call naming the reads that tip it back, so a 54% beside a benched man never looks like a
+mistake. The label column is sticky and a wide frame scrolls sideways inside its own box.
+The engine's pairwise sentences are folded under "Read every note". "Mark handled" (a line under the button says what it does)
 stores the role's label under `booth.handled` (per league, per week, `lib/storage.ts`) and
 it leaves the list until next week; a "N handled" line under the list puts them back. "Back
 to the lineup" is a button at both ends of the page. The roster below is one line per

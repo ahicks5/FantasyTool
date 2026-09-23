@@ -315,7 +315,7 @@ one list, cut and ordered by the reader.
 | `sort` | `projected` · `ros` · `trending` · `name` · `position` | `projected` |
 | `order` | `desc` · `asc` | `desc` |
 | `limit` / `offset` | page size (max 200) and where to start | 50 / 0 |
-| `lens` | `handcuffs` · `backups` · `defenses` · `byes` · `risers` (see below) | — |
+| `lens` | `shortlist` · `handcuffs` · `backups` · `defenses` · `byes` · `risers` (see below) | — |
 
 `total` counts every match, not the page. `facets` is built from this league's own rows, so
 a league with no kicker slot never offers a K chip — do not hard-code the lists.
@@ -346,6 +346,7 @@ ignored) plus one fact per row under `lens`:
 | `defenses` | every DEF | `outlook`: this week and the next two, `{week, opp, home, rank, of, ppg}`; `opp` null is a bye; rank 1 = the offense that has scored the fewest fantasy points per game in this league's scoring | softest schedule first |
 | `byes` | players at a position where one of yours is off in the next three weeks | `covers: [{id, name, week}]` | ROS |
 | `risers` | anyone with platform adds | — | adds |
+| `shortlist` | free agents top five at their position on any of this week's projection, ROS or adds (the board's default on the web) | `top: {proj?, ros?, adds?}`, the rank on each board he made | best rank, then boards made, then projection |
 
 `GET .../players/lenses?team_id=8` → `{"week":2,"counts":{"handcuffs":0,"backups":22,...}}`:
 how many **free agents** each lens holds, for the chips. Same rule as the board: every lens

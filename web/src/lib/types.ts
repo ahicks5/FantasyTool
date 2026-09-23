@@ -162,6 +162,17 @@ export interface DecisionFactor {
   line: string;
 }
 
+/** One man's read on his own, for the side-by-side grid (`engine/decisions.card`): a word
+ *  or two, the fact behind it, and how it sits with this week's call. */
+export interface ReadCell {
+  text: string;
+  sub: string | null;
+  tone: "good" | "bad" | null;
+}
+
+/** A man's card: one cell per read he has data for, keyed like `DecisionFactor.key`. */
+export type ReadCard = Partial<Record<DecisionFactor["key"], ReadCell>>;
+
 /** Your own matchup, as the close calls read it: chase the ceiling or protect the floor. */
 export interface DecisionGame {
   state: "ahead" | "behind" | "even";
@@ -200,6 +211,8 @@ export interface LineupCandidate {
   factors: DecisionFactor[];
   tilt: number;
   opp: string | null;
+  /** His reads on his own. Optional: an API deployed before the grid does not send it. */
+  card?: ReadCard;
 }
 
 /**
@@ -223,6 +236,8 @@ export interface LineupRole {
   reason: string;
   game: DecisionGame | null;
   opp: string | null;
+  /** The pick's reads on his own. Optional, like the candidates'. */
+  card?: ReadCard;
 }
 
 /** A slot nobody on the roster can fill this week. The fix is the wire. */
@@ -966,7 +981,7 @@ export interface BoardRow {
  * column sort cannot answer — my handcuffs, the next man up, a defence's next three weeks —
  * and every one of them is description: a depth chart, a schedule, an add count.
  */
-export type Lens = "handcuffs" | "backups" | "defenses" | "byes" | "risers";
+export type Lens = "shortlist" | "handcuffs" | "backups" | "defenses" | "byes" | "risers";
 
 /** The man a backup sits behind, as the platform's depth chart lists him. */
 export interface LensPerson {
@@ -995,6 +1010,8 @@ export interface LensFact {
   opening?: boolean;
   outlook?: LensWeek[];
   covers?: { id: string; name: string; week: number }[];
+  /** The shortlist: every board he is top five at his position on, and where. */
+  top?: Partial<Record<"proj" | "ros" | "adds", number>>;
 }
 
 /** How many free agents each lens holds, for the chip beside its name. */

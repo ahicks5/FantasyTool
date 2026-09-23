@@ -61,7 +61,7 @@ function Rooms({ c, refresh, signedIn }: { c: Connection; refresh: () => void; s
         <TopPickups waivers={data} />
       )}
 
-      <PlayerBoard c={c} />
+      <PlayerBoard c={c} picks={data?.picks} />
 
       {locked && <Locked signedIn={signedIn} sku="waivers" what="Wire Pass" teaser={paywallTeaser(cause, WIRE.lockedLine)} onUnlocked={refresh} />}
     </div>

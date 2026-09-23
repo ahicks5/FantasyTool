@@ -2,16 +2,17 @@
 /**
  * The call: the first time the GM's Office opens, your phone rings.
  *
- * The best trade partner's GM is calling (your own GM when nobody is). The screen is an
- * incoming call: his initials in a ring that pulses with each ring, the name, and two
- * buttons. The screen buzzes in bursts, and the phone itself does too where it can. Answer
+ * Your own General Manager is calling, never another manager (Andrew, 2026-09-23). The
+ * screen is an incoming call: the house mark in a ring that pulses with each ring, the
+ * title, and two buttons. The screen buzzes in bursts, and the phone itself does too where it can. Answer
  * it, or let it ring and it answers itself; the line connects, the timer runs, and he says
- * two things: "Got a minute?" and how many deals he has. Then the call gives way to the
+ * two things: "Got a minute?" and how many trades he leads with out of every one on the
+ * board ("3 of 11"). Then the call gives way to the
  * office, through the same clearing blur the scout lands on.
  *
- * Every number is `lib/call.ts`'s. The caller and his line come from the board the page is
- * fetching underneath (`officeKey`), polled in the frame loop, so the name can arrive a
- * beat after the ring starts. Dark in both themes, like the ride and the scout.
+ * Every number is `lib/call.ts`'s. His second line comes from the board the page is
+ * fetching underneath (`officeKey`), polled in the frame loop, so it can arrive a beat
+ * after the ring starts. Dark in both themes, like the ride and the scout.
  *
  * Once per browser (`booth.call`), never over the day's first ride, never under reduced
  * motion. `?call=1` replays it; a tap on Decline, or anywhere once connected, lands it.
@@ -20,17 +21,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cacheGet } from "@/lib/cache";
 import { ANSWER_MS, LAND_MS, LINE_AT, RING_MS, callClock, callDue, callForced, callPhase, landAt, type CallPhase } from "@/lib/call";
 import { advance, dayStamp } from "@/lib/elevator";
-import { caller, officeKey, type OfficeBoard } from "@/lib/office";
+import { dealCount, officeKey, type OfficeBoard } from "@/lib/office";
 import { loadCallSeen, loadRideDay, saveCallSeen, type Connection } from "@/lib/storage";
 import { CALL } from "@/lib/vocab";
 import { narratedFloorPassed } from "@/lib/wait";
 import { IconMark } from "./icons";
-
-function initials(name: string): string {
-  const parts = name.replace(/[^A-Za-z0-9' ]/g, " ").split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return ((parts[0]?.[0] ?? "") + (parts[parts.length - 1]?.[0] ?? "")).toUpperCase();
-}
 
 function PhoneIcon({ down = false }: { down?: boolean }) {
   return (
@@ -40,12 +35,13 @@ function PhoneIcon({ down = false }: { down?: boolean }) {
   );
 }
 
-/** What he says second: how many deals, or that there are names behind the pass. */
+/** What he says second: the deals he leads with out of every offer, or that there are
+ *  names behind the pass. */
 function secondLine(board: OfficeBoard | undefined): string | null {
-  if (!board) return null;
-  const withOffers = board.partners.filter((p) => (p.offers?.length ?? 0) > 0).length;
-  if (board.partners.length && !withOffers) return CALL.preview;
-  return withOffers ? CALL.deals(withOffers) : CALL.quiet;
+  const n = dealCount(board);
+  if (!board || !n) return null;
+  if (board.partners.length && !n.total) return CALL.preview;
+  return n.top ? CALL.deals(n.top, n.total) : CALL.quiet;
 }
 
 export function CallOpening({ c }: { c: Connection }) {
@@ -114,9 +110,6 @@ export function CallOpening({ c }: { c: Connection }) {
     elapsed.current = Math.max(elapsed.current, landAt(answeredAt.current));
   }
 
-  const who = caller(board);
-  const name = who.name ?? CALL.yourGm;
-  const sub = who.team ? CALL.gmOf(who.team) : CALL.staff;
   const line2 = secondLine(board);
   const ringing = phase === "ring";
 
@@ -144,11 +137,11 @@ export function CallOpening({ c }: { c: Connection }) {
           <span className="call-ring call-ring-1" aria-hidden />
           <span className="call-ring call-ring-2" aria-hidden />
           <span className="call-avatar">
-            {who.name ? initials(name) : <IconMark size={34} />}
+            <IconMark size={34} />
           </span>
         </div>
-        <div className="call-name">{name}</div>
-        <div className="call-sub">{sub}</div>
+        <div className="call-name">{CALL.title}</div>
+        <div className="call-sub">{CALL.staff}</div>
 
         <div className="call-lines" aria-live="polite">
           <p className="call-bubble" style={{ ["--at" as string]: `${LINE_AT[0]}ms` }}>{CALL.hello}</p>

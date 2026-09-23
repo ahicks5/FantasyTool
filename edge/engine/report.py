@@ -77,9 +77,9 @@ def _ranked(p: Player | None, ranks: dict[str, tuple[int, int]]) -> dict | None:
 def _role_dict(r, ranks: dict[str, tuple[int, int]]) -> dict:
     return {"slot": r.slot, "label": r.label, "pick": _ranked(r.pick, ranks), "was": _ranked(r.was, ranks),
             "confidence": r.confidence, "p": r.p, "decision": r.decision, "change": r.change,
-            "tipped": r.tipped, "reason": r.reason, "game": r.game, "opp": r.opp,
+            "tipped": r.tipped, "reason": r.reason, "game": r.game, "opp": r.opp, "card": r.card,
             "candidates": [{"player": _ranked(c.player, ranks), "p": round(c.p, 3), "confidence": c.confidence,
-                            "factors": c.factors, "tilt": c.tilt, "opp": c.opp} for c in r.candidates]}
+                            "factors": c.factors, "tilt": c.tilt, "opp": c.opp, "card": c.card} for c in r.candidates]}
 
 
 def lineup_dict(adv: LineupAdvice) -> dict:

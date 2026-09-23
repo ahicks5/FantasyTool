@@ -28,6 +28,7 @@ import {
   AVAILABILITY_LABELS,
   BOARD_AVAILABILITY,
   BOARD_LABELS,
+  DEFAULT_QUERY,
   LENSES,
   PAGE_SIZE,
   activeFilterCount,
@@ -44,14 +45,16 @@ import {
   pressColumn,
   queryKey,
   tabPositions,
+  topTags,
   weekTone,
   withLens,
+  withText,
   withView,
   type BoardView,
 } from "@/lib/board";
 import { NO_NFL_TEAM, SEARCH_DEBOUNCE_MS, SEARCH_LABELS, normalizeQuery, nextIndex } from "@/lib/search";
 import type { Connection } from "@/lib/storage";
-import type { BoardQuery, BoardRow, BoardSort, Lens, LensCounts, LensFact, PlayerBoard as Board } from "@/lib/types";
+import type { BoardQuery, BoardRow, BoardSort, Lens, LensCounts, LensFact, PlayerBoard as Board, WaiverPick } from "@/lib/types";
 import { SCOUT } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { usePlayerSheet } from "./player/PlayerSheetProvider";
@@ -124,11 +127,14 @@ function Row({
   row,
   max,
   view,
+  pick,
   onKeyDown,
   bind,
 }: {
   row: BoardRow;
   max: number;
+  /** His place in the head of scouting's top ten, when he is in it. */
+  pick?: number;
   view: BoardView;
   onKeyDown: (e: React.KeyboardEvent) => void;
   bind: (el: HTMLButtonElement | null) => void;
@@ -145,9 +151,15 @@ function Row({
         // row the reader tapped rather than waiting on the fetch behind it.
         onClick={() => open(row)}
         onKeyDown={onKeyDown}
-        className={`board-row ${mine ? "board-row-mine" : ""}`}
+        className={`board-row ${mine ? "board-row-mine" : ""} ${pick ? `board-row-pick ${pick <= 3 ? "board-row-top" : ""}` : ""}`}
       >
-        <Flag row={row} />
+        {pick ? (
+          <span className="board-flag board-flag-pick" aria-label={SCOUT.fact.pickAria(pick)}>
+            {SCOUT.fact.pick(pick)}
+          </span>
+        ) : (
+          <Flag row={row} />
+        )}
         <Avatar name={row.name} photo={row.photo} teamLogo={row.team_logo} size="sm" />
         <span className="min-w-0 flex-1">
           <span className="board-name block text-[14px] font-bold leading-tight">
@@ -161,7 +173,7 @@ function Row({
           </span>
           {/* Somebody else's man: whose, on a line of its own, never squeezed. */}
           {held && !mine && <span className="board-owner">{BOARD_LABELS.owner(held.team_name)}</span>}
-          {row.lens && <Fact fact={row.lens} />}
+          {row.lens && <Fact fact={row.lens} pos={row.position} />}
         </span>
         {view === "outlook" ? (
           <>
@@ -188,10 +200,16 @@ function Row({
  * The one fact that put a row in its lens: the man he sits behind, a defence's next three
  * games, the bye he covers. Words from `SCOUT.fact`; the facts are the server's.
  */
-function Fact({ fact }: { fact: LensFact }) {
+function Fact({ fact, pos }: { fact: LensFact; pos: string }) {
   const F = SCOUT.fact;
   return (
     <span className="mt-1 flex flex-wrap items-center gap-1">
+      {fact.top &&
+        topTags(fact.top).map(({ n, boards }) => (
+          <span key={n} className={`lens-fact lens-top ${n === 1 ? "lens-top-1" : ""}`}>
+            {F.topLine(n, pos, boards.map((b) => F.top[b]).join(" · "))}
+          </span>
+        ))}
       {fact.behind && (
         <span className={`lens-fact ${fact.behind.is_mine ? "lens-fact-mine" : ""}`}>
           {fact.behind.is_mine ? F.behindMine(fact.behind.name) : F.behind(fact.behind.name)}
@@ -223,6 +241,8 @@ function Fact({ fact }: { fact: LensFact }) {
 
 /** A small mark per lens, so the row reads at a glance before the words do. */
 const LENS_ICON: Record<Lens, React.ReactNode> = {
+  // a star: picked out for you
+  shortlist: <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />,
   // two linked rings: a cuff
   handcuffs: <><circle cx="8" cy="12" r="4" /><circle cx="16" cy="12" r="4" /></>,
   // a step up the ladder
@@ -275,9 +295,9 @@ function LensBar({ on, counts, pick }: { on: Lens | null | undefined; counts: Le
   );
 }
 
-export function PlayerBoard({ c }: { c: Connection }) {
+export function PlayerBoard({ c, picks = [] }: { c: Connection; picks?: readonly WaiverPick[] }) {
   const [raw, setRaw] = useState("");
-  const [query, setQuery] = useState<BoardQuery>({ pos: [], nfl_team: [], avail: "all", sort: "projected", order: "desc" });
+  const [query, setQuery] = useState<BoardQuery>(DEFAULT_QUERY);
   /**
    * The last board that came back, tagged with the filters that asked for it, and every
    * page fetched for them.
@@ -314,7 +334,7 @@ export function PlayerBoard({ c }: { c: Connection }) {
   // The text is debounced into the query; every other control writes it immediately,
   // because a chip is one deliberate press and waiting on it reads as lag.
   useEffect(() => {
-    const t = setTimeout(() => setQuery((q) => (q.q === normalizeQuery(raw) ? q : { ...q, q: normalizeQuery(raw) })), SEARCH_DEBOUNCE_MS);
+    const t = setTimeout(() => setQuery((q) => withText(q, normalizeQuery(raw))), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [raw]);
 
@@ -421,6 +441,8 @@ export function PlayerBoard({ c }: { c: Connection }) {
   // The bar under each projection is against the best on the board, so it reads as "how
   // close to the top" rather than as an absolute scale nobody can hold in their head.
   const max = rows.reduce((m, r) => Math.max(m, r.projected ?? 0), 0);
+  // The wire's own ten, by id: those rows wear the pick's colours down here too.
+  const pickRank = new Map(picks.map((p, i) => [p.player.id, i + 1]));
   const view: BoardView = query.season ? "market" : "outlook";
   const setView = (v: BoardView) => setQuery((q) => ({ ...withView(q, v), season: v === "market" }));
   const HEAD: Record<BoardSort, string> = {
@@ -567,6 +589,7 @@ export function PlayerBoard({ c }: { c: Connection }) {
                 row={row}
                 max={max}
                 view={view}
+                pick={pickRank.get(row.id)}
                 bind={(el) => {
                   links.current[i] = el;
                 }}

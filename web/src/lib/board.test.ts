@@ -2,6 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   AVAILABILITY_LABELS,
+  DEFAULT_QUERY,
+  topTags,
+  withText,
+  withLens,
   BOARD_AVAILABILITY,
   BOARD_SORTS,
   COLUMN_LABELS,
@@ -205,4 +209,22 @@ test("the view switch keeps a sort the new view still shows, and moves one it do
   assert.deepEqual(withView({ sort: "season", order: "desc" }, "market"), { sort: "season", order: "desc" });
   assert.equal(posRankLabel({ position: "WR", pos_rank: 14 }), "WR14");
   assert.equal(posRankLabel({ position: "WR", pos_rank: null }), "—");
+});
+
+test("the shortlist opens free-only, steps aside for a typed name, and takes free-only away when turned off", () => {
+  assert.equal(DEFAULT_QUERY.lens, "shortlist");
+  assert.equal(DEFAULT_QUERY.avail, "free");
+  const typed = withText(DEFAULT_QUERY, "kelce");
+  assert.equal(typed.lens, null);
+  assert.equal(typed.avail, "all");
+  assert.equal(typed.q, "kelce");
+  const held = withText({ ...DEFAULT_QUERY, lens: "backups" }, "kelce");
+  assert.equal(held.lens, "backups", "a lens the reader chose holds");
+  assert.equal(withLens(DEFAULT_QUERY, null).avail, "all");
+  assert.equal(withLens({ ...DEFAULT_QUERY, lens: "risers" }, null).avail, "free");
+});
+
+test("shortlist reasons are one tag per rank, best first", () => {
+  assert.deepEqual(topTags({ proj: 1, ros: 1, adds: 4 }), [{ n: 1, boards: ["proj", "ros"] }, { n: 4, boards: ["adds"] }]);
+  assert.deepEqual(topTags({}), []);
 });

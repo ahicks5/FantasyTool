@@ -20,7 +20,7 @@ import { IconChevron } from "@/components/icons";
 import { ErrorBox, SkeletonList, Stamp } from "@/components/ui";
 import { findTrades } from "@/lib/api";
 import { useCached } from "@/lib/cache";
-import { heat, officeKey, posList } from "@/lib/office";
+import { heat, officeKey, shapeLists } from "@/lib/office";
 import type { Connection } from "@/lib/storage";
 import type { TradeFinderResponse } from "@/lib/types";
 import { OFFICE, TRADE } from "@/lib/vocab";
@@ -88,11 +88,11 @@ function DealBody({ c, refresh, signedIn }: { c: Connection; refresh: () => void
         <div className="mt-4 grid gap-2 border-t border-white/10 pt-3.5">
           <span className="flex flex-wrap items-center gap-1.5">
             <span className="w-14 text-[11px] font-bold text-white/50">{OFFICE.has}</span>
-            <Chips items={posList(p.positions.surplus)} tone="start" />
+            <Chips items={shapeLists(p.positions, 3).has} tone="start" />
           </span>
           <span className="flex flex-wrap items-center gap-1.5">
             <span className="w-14 text-[11px] font-bold text-white/50">{OFFICE.needs}</span>
-            <Chips items={posList(p.positions.need)} tone="sit" />
+            <Chips items={shapeLists(p.positions, 3).needs} tone="sit" />
           </span>
         </div>
       </section>

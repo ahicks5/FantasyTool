@@ -1,11 +1,10 @@
 "use client";
 /**
- * The top of the GM's Office: your roster's shape in one line, then the three deals worth
- * a call as panels in one row (the face you get, who you send, what it does for you), each
- * an arrow into that partner's page. Under them, every GM in one line each.
- *
- * Same grammar as Scouting's top pickups, on purpose: a stamp that says how hard to pick
- * up the phone, the one hot line pulsing, everything else quiet. The engine ranks the
+ * The top of the GM's Office: your roster, one tile per position (spare, short, set), then
+ * the three deals worth a call as wide rows (Andrew, 2026-09-23: not Scouting's panels):
+ * who you get on the left, the GM in the middle, who you send on the right, each row a
+ * door into that partner's page. Under them, every GM in one line each. A word on how hard
+ * to pick up the phone, the one hot line pulsing, everything else quiet. The engine ranks the
  * partners and prices the offers (`edge/engine/trade_finder.py`); `lib/office.ts` only
  * puts a word on its numbers.
  *
@@ -14,7 +13,7 @@
  */
 import Link from "next/link";
 import type { FinderOffer } from "@/lib/types";
-import { dealHref, heat, lastName, posList, topDeals, type Heat, type OfficeBoard, type OfficePartner } from "@/lib/office";
+import { dealHref, heat, lastName, posList, rosterShape, shapeLists, topDeals, type OfficeBoard, type OfficePartner } from "@/lib/office";
 import { OFFICE } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { IconChevron, IconLock } from "./icons";
@@ -31,120 +30,139 @@ function Chips({ items, tone }: { items: string[]; tone: "start" | "sit" | "hero
   );
 }
 
-/** Your roster in one line: what you can spare, where you are short. */
-export function Posture({ board }: { board: OfficeBoard }) {
-  const spare = posList(board.my_positions.surplus);
-  const short = posList(board.my_positions.need);
+/**
+ * Your roster, one tile per position across the full width: the position, one word (spare,
+ * short, set) and a bar for how much. What every deal below is built on, so it leads.
+ */
+export function RosterShape({ board }: { board: OfficeBoard }) {
+  const tiles = rosterShape(board);
   return (
-    <div className="office-posture">
-      <span className="flex min-w-0 items-center gap-1.5">
-        <span className="office-posture-label">{OFFICE.spare}</span>
-        {spare.length ? <Chips items={spare} tone="start" /> : <span className="office-posture-none">{OFFICE.nothingSpare}</span>}
-      </span>
-      <span className="flex min-w-0 items-center gap-1.5">
-        <span className="office-posture-label">{OFFICE.short}</span>
-        {short.length ? <Chips items={short} tone="sit" /> : <span className="office-posture-none">{OFFICE.noHoles}</span>}
-      </span>
+    <div className="grid gap-1.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="office-shape-title">{OFFICE.shape}</span>
+      </div>
+      <ul className="office-shape" style={{ ["--n" as string]: tiles.length }}>
+        {tiles.map((t) => (
+          <li key={t.pos} className={`office-tile office-tile-${t.shape}`} aria-label={OFFICE.shapeAria(t.pos, OFFICE.shapeWord[t.shape])}>
+            <span className="office-tile-pos">{t.pos}</span>
+            <span className="office-tile-word">{OFFICE.shapeWord[t.shape]}</span>
+            <span className="office-tile-track" aria-hidden>
+              <span style={{ width: `${Math.round(t.weight * 100)}%` }} />
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-[11px] leading-snug text-muted">{OFFICE.shapeHint}</p>
     </div>
   );
 }
 
-function Band({ h }: { h: Heat }) {
-  return <span className={`deal-band deal-band-${h}`}>{OFFICE.heat[h]}</span>;
+/** One side of a deal: the faces (two when it is two for one) and the last names. */
+function Side({ players, names, tone, label }: { players: FinderOffer["get_players"]; names: string[]; tone: "start" | "sit"; label: string }) {
+  return (
+    <span className={`deal-side deal-side-${tone}`}>
+      <span className="deal-side-label">{label}</span>
+      <span className="deal-faces">
+        {names.slice(0, 2).map((n, i) => {
+          const p = players[i];
+          return <Avatar key={n} name={p?.name ?? n} photo={p?.photo} teamLogo={p?.team_logo} size="sm" ring={tone} />;
+        })}
+      </span>
+      <span className="deal-names">{names.map(lastName).join(" + ")}</span>
+    </span>
+  );
 }
 
-/** One of the three: the whole panel is the door into the partner's page. */
-function DealPanel({ partner, offer, rank }: { partner: OfficePartner; offer: FinderOffer; rank: number }) {
+/**
+ * One deal, one wide row: who you get on the left, the GM across the table in the middle
+ * with how hot it is and what it does for you, who you send on the right. The whole row is
+ * the door into that partner's page.
+ */
+function DealRow({ partner, offer, rank }: { partner: OfficePartner; offer: FinderOffer; rank: number }) {
   const h = heat(offer, rank);
-  const get = offer.get_players[0];
-  const give = offer.give_players[0];
   return (
     <li className={`min-w-0 rise rise-${rank}`}>
-      <Link href={dealHref(partner.team_id)} aria-label={OFFICE.goAria(partner.team_name)} className={`deal deal-${h}`}>
-        <Band h={h} />
-        <span className="deal-team">{partner.team_name}</span>
-        <span className="mt-1.5 flex justify-center">
-          <span className="relative">
-            <Avatar name={get?.name ?? offer.get_names[0]} photo={get?.photo} teamLogo={get?.team_logo} size="md" ring={h === "hot" ? "sit" : h === "call" ? "lean" : undefined} />
-            {give && (
-              <span className="deal-give-face" aria-hidden>
-                <Avatar name={give.name} photo={give.photo} size="xs" />
-              </span>
-            )}
+      <Link href={dealHref(partner.team_id)} aria-label={OFFICE.goAria(partner.team_name)} className={`deal-row deal-row-${h}`}>
+        <Side players={offer.get_players} names={offer.get_names} tone="start" label={OFFICE.youGetShort} />
+        <span className="deal-mid">
+          <span className={`deal-heat deal-heat-${h}`}>{OFFICE.heat[h]}</span>
+          <span className="deal-mid-team">{partner.team_name}</span>
+          <span className="deal-swap" aria-hidden>
+            <svg width="22" height="12" viewBox="0 0 22 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 1L1 4l4 3M1 4h16M17 5l4 3-4 3M21 8H5" />
+            </svg>
+          </span>
+          <span className="tnum deal-mid-nums">
+            <b className={offer.my_gain_ros > 0 ? "text-start" : "text-muted"}>+{offer.my_gain_ros.toFixed(0)}</b> {OFFICE.ros}
+            <span className="mx-1 text-line-2">·</span>
+            {Math.round(offer.fairness * 100)}% {OFFICE.fair}
           </span>
         </span>
-        <span className="mt-1.5 block text-center text-[12.5px] font-black leading-[1.15] [overflow-wrap:anywhere]">
-          {offer.get_names.map(lastName).join(" + ")}
-        </span>
-        <span className="mt-0.5 block text-center text-[10.5px] text-muted">
-          {OFFICE.forWord} <span className="font-bold text-sit">{offer.give_names.map(lastName).join(" + ")}</span>
-        </span>
-        <span className="tnum mt-1 flex items-baseline justify-center gap-1 text-[14px] font-black">
-          <span className={offer.my_gain_ros > 0 ? "text-start" : "text-muted"}>+{offer.my_gain_ros.toFixed(0)}</span>
-          <span className="text-[10px] font-bold text-muted">{OFFICE.ros}</span>
-        </span>
-        <span className="deal-foot tnum">
-          {Math.round(offer.fairness * 100)}% {OFFICE.fair}
-        </span>
-        <span className="deal-go" aria-hidden>
-          <IconChevron size={13} />
-        </span>
+        <Side players={offer.give_players} names={offer.give_names} tone="sit" label={OFFICE.youGive} />
       </Link>
     </li>
   );
 }
 
-/** The same panel for the free board: the partner is named, the deal is not. */
-function LockedPanel({ partner, rank }: { partner: OfficePartner; rank: number }) {
+/** The same row on the free board: the GM is named, the players are Trade Lab's. */
+function LockedRow({ partner, rank }: { partner: OfficePartner; rank: number }) {
+  const lock = (
+    <span className="deal-side">
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-soft text-muted">
+        <IconLock size={15} />
+      </span>
+    </span>
+  );
   return (
     <li className={`min-w-0 rise rise-${rank}`}>
-      <Link href={dealHref(partner.team_id)} aria-label={OFFICE.goAria(partner.team_name)} className="deal deal-long deal-locked">
-        <span className="deal-band">{OFFICE.locked}</span>
-        <span className="deal-team">{partner.team_name}</span>
-        <span className="mt-1.5 flex justify-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-soft text-muted">
-            <IconLock size={18} />
+      <Link href={dealHref(partner.team_id)} aria-label={OFFICE.goAria(partner.team_name)} className="deal-row deal-row-long">
+        {lock}
+        <span className="deal-mid">
+          <span className="deal-heat">{OFFICE.locked}</span>
+          <span className="deal-mid-team">{partner.team_name}</span>
+          <span className="mt-1 flex flex-wrap justify-center gap-1">
+            <Chips items={posList(partner.positions.surplus, 2)} tone="start" />
           </span>
         </span>
-        <span className="mt-2 flex flex-wrap justify-center gap-1">
-          <Chips items={posList(partner.positions.surplus, 2)} tone="start" />
-        </span>
-        <span className="deal-foot">{OFFICE.has}</span>
-        <span className="deal-go" aria-hidden>
-          <IconChevron size={13} />
-        </span>
+        {lock}
       </Link>
     </li>
   );
 }
 
-export function TopDeals({ board, preview }: { board: OfficeBoard; preview: boolean }) {
+/** The top of the office: the roster, then the three deals worth a call. */
+export function TopDeals({ board, preview, onJump }: { board: OfficeBoard; preview: boolean; onJump?: () => void }) {
   const deals = topDeals(board);
   return (
-    <section className="grid min-w-0 gap-2.5">
-      <div className="flex min-w-0 items-baseline justify-between gap-3">
-        <h2 className="display text-[22px] leading-none">{OFFICE.title}</h2>
-        {board.partners.length > 0 && (
-          <a href="#every-gm" className="min-h-0 shrink-0 text-[13px] font-bold text-lean hover:underline">
-            {OFFICE.seeAll(board.partners.length)}
-          </a>
-        )}
-      </div>
-      <Posture board={board} />
-      {deals.length === 0 ? (
-        <p className="card p-5 text-center text-[14px] text-ink-2">{OFFICE.none}</p>
-      ) : (
-        <ol className="grid min-w-0 grid-cols-3 gap-2">
-          {deals.map((d) =>
-            d.offer && !preview ? (
-              <DealPanel key={d.partner.team_id} partner={d.partner} offer={d.offer} rank={d.rank} />
-            ) : (
-              <LockedPanel key={d.partner.team_id} partner={d.partner} rank={d.rank} />
-            ),
+    <section className="grid min-w-0 gap-4">
+      <RosterShape board={board} />
+      <div className="grid min-w-0 gap-2.5">
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <h2 className="display text-[22px] leading-none">{OFFICE.title}</h2>
+          {onJump && !preview && (
+            <button type="button" onClick={onJump} className="office-jump">
+              {OFFICE.jump}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 5v14M6 13l6 6 6-6" />
+              </svg>
+            </button>
           )}
-        </ol>
-      )}
-      {preview && deals.length > 0 && <p className="text-center text-[12px] text-muted">{OFFICE.lockedLine}</p>}
+        </div>
+        {deals.length === 0 ? (
+          <p className="card p-5 text-center text-[14px] text-ink-2">{OFFICE.none}</p>
+        ) : (
+          <ol className="grid min-w-0 gap-2">
+            {deals.map((d) =>
+              d.offer && !preview ? (
+                <DealRow key={d.partner.team_id} partner={d.partner} offer={d.offer} rank={d.rank} />
+              ) : (
+                <LockedRow key={d.partner.team_id} partner={d.partner} rank={d.rank} />
+              ),
+            )}
+          </ol>
+        )}
+        {preview && deals.length > 0 && <p className="text-center text-[12px] text-muted">{OFFICE.lockedLine}</p>}
+      </div>
     </section>
   );
 }
@@ -159,6 +177,7 @@ export function PartnerList({ board, preview }: { board: OfficeBoard; preview: b
       <ol className="office-list mt-2.5">
         {board.partners.map((p, i) => {
           const best = preview ? null : p.offers?.[0] ?? null;
+          const shape = shapeLists(p.positions);
           const h = heat(best, i + 1);
           return (
             <li key={p.team_id}>
@@ -168,9 +187,9 @@ export function PartnerList({ board, preview }: { board: OfficeBoard; preview: b
                   <span className="block truncate text-[14px] font-bold leading-tight">{p.team_name}</span>
                   <span className="mt-1 flex min-w-0 flex-wrap items-center gap-1">
                     <span className="office-posture-label">{OFFICE.has}</span>
-                    <Chips items={posList(p.positions.surplus, 2)} tone="start" />
+                    <Chips items={shape.has} tone="start" />
                     <span className="office-posture-label ml-1">{OFFICE.needs}</span>
-                    <Chips items={posList(p.positions.need, 2)} tone="sit" />
+                    <Chips items={shape.needs} tone="sit" />
                   </span>
                   {best && (
                     <span className="mt-1 block truncate text-[11.5px] text-muted">

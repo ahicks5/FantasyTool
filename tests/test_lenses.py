@@ -125,6 +125,28 @@ def test_risers_are_the_add_count_highest_first(bundle, ctx):
     assert [r["trending_adds"] for r in got] == [500, 400, 300, 200, 100]
 
 
+def test_the_shortlist_is_free_agents_top_five_at_their_position_on_any_board(bundle, ctx):
+    rows = _rows(bundle)
+    got = lenses.shortlist(rows)
+    assert got and all(not r["rostered_by"] for r in got)
+    free = [r for r in rows if not r["rostered_by"]]
+    for r in got:
+        top = r["lens"]["top"]
+        assert top and set(top) <= {"proj", "ros", "adds"} and all(1 <= n <= lenses.SHORTLIST_TOP for n in top.values())
+        # The rank is true: exactly n - 1 free agents at his position sit above him on that board.
+        for tag, key in lenses.SHORTLIST_BOARDS:
+            if tag in top:
+                above = [x for x in free if x["position"] == r["position"] and (x.get(key) or 0) > (r.get(key) or 0)]
+                assert len(above) <= top[tag] - 1
+    best = [min(r["lens"]["top"].values()) for r in got]
+    assert best == sorted(best), "best rank anywhere leads"
+    positions = {r["position"] for r in got}
+    assert len(positions) >= 3, "ranked within position, so it is not all quarterbacks"
+    # A man on no board is not on the list.
+    on = {r["id"] for r in got}
+    assert len(on) < len(free)
+
+
 # ---------------------------------------------------------------------- the API ---
 
 @pytest.fixture()

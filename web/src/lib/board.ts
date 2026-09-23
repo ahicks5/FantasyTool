@@ -12,7 +12,7 @@
  * from `SCOUT` in `lib/vocab.ts` and are never restated here.
  */
 
-import type { BoardAvailability, BoardQuery, BoardRow, BoardSort, Lens, LensWeek } from "./types";
+import type { BoardAvailability, BoardQuery, BoardRow, BoardSort, Lens, LensFact, LensWeek } from "./types";
 
 /**
  * How many rows a page asks for. Big enough that scrolling is the main gesture rather than
@@ -107,13 +107,18 @@ export const BOARD_LABELS = {
   owner: (team: string) => `On ${team}`,
 } as const;
 
+/**
+ * Where the board opens: the shortlist, free agents only (Andrew, 2026-09-23: "all
+ * players doesn't help"). Everyone is one tap away, on the lens's own "Everyone".
+ */
 export const DEFAULT_QUERY: BoardQuery = {
   q: "",
   pos: [],
   nfl_team: [],
-  avail: "all",
+  avail: "free",
   sort: "projected",
   order: "desc",
+  lens: "shortlist",
 };
 
 /**
@@ -198,7 +203,29 @@ export function queryKey(q: BoardQuery): string {
 }
 
 /** The lenses, in the order the chips offer them. Mirrors `LENSES` in `edge/api/lenses.py`. */
-export const LENSES: readonly Lens[] = ["handcuffs", "backups", "defenses", "byes", "risers"];
+export const LENSES: readonly Lens[] = ["shortlist", "handcuffs", "backups", "defenses", "byes", "risers"];
+
+/**
+ * The shortlist's reasons as tags, one per rank: #1 on this week and the rest of the season
+ * is one tag, "#1 QB proj · ROS", not two. Best rank first.
+ */
+export function topTags(top: NonNullable<LensFact["top"]>): { n: number; boards: ("proj" | "ros" | "adds")[] }[] {
+  const by = new Map<number, ("proj" | "ros" | "adds")[]>();
+  for (const b of ["proj", "ros", "adds"] as const) {
+    const n = top[b];
+    if (n) by.set(n, [...(by.get(n) ?? []), b]);
+  }
+  return [...by.entries()].sort((a, b) => a[0] - b[0]).map(([n, boards]) => ({ n, boards }));
+}
+
+/**
+ * A name typed over the shortlist is a search for that man wherever he is, so the shortlist
+ * steps aside for it. Every other lens is a question the reader chose and holds.
+ */
+export function withText(q: BoardQuery, text: string): BoardQuery {
+  if (q.q === text) return q;
+  return text && q.lens === "shortlist" ? { ...withLens(q, null), q: text } : { ...q, q: text };
+}
 
 /**
  * Turning a lens on. Each one opens on the availability its question means: a handcuff is
@@ -207,7 +234,8 @@ export const LENSES: readonly Lens[] = ["handcuffs", "backups", "defenses", "bye
  * Pressing the lens already on turns it off.
  */
 export function withLens(q: BoardQuery, lens: Lens | null): BoardQuery {
-  if (!lens || q.lens === lens) return { ...q, lens: null };
+  // Off the shortlist is "everyone": the shortlist brought free-only with it, so it takes it away.
+  if (!lens || q.lens === lens) return { ...q, lens: null, avail: q.lens === "shortlist" ? "all" : q.avail };
   return { ...q, lens, avail: lens === "handcuffs" ? "all" : "free", owner: null };
 }
 

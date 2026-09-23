@@ -455,6 +455,7 @@ class Candidate:
     factors: list[dict] = field(default_factory=list)
     tilt: int = 0
     opp: str | None = None
+    card: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -483,6 +484,7 @@ class Role:
     reason: str
     game: dict | None = None
     opp: str | None = None
+    card: dict = field(default_factory=dict)
 
 
 def role_labels(slots: list[str], lineup: list[Player | None]) -> list[str]:
@@ -524,6 +526,7 @@ def roles(team: Team, slots: list[str], settled: Settled, ctx: decisions_mod.Con
     bench = [p for p in team.players if p.id not in starter_ids and _healthy(p)]
     labels = role_labels(slots, lineup)
     tipped_by = {d.start.id: d for d in settled.decisions if d.change}
+    state = ((decisions_mod.game_state(ctx) or {}).get("state")) if ctx else None
 
     # Every (role, bench man) pair the man fits, then each man kept at his best seat.
     pairs: dict[str, list[tuple[float, int]]] = {}
@@ -549,7 +552,8 @@ def roles(team: Team, slots: list[str], settled: Settled, ctx: decisions_mod.Con
                 continue
             tag, p = _tag(effective(pick), effective(b))
             reads = decisions_mod.read(ctx, pick, b, others)
-            cands.append(Candidate(b, p, tag, reads["factors"], reads["tilt"], decisions_mod.game_line(ctx, b)))
+            cands.append(Candidate(b, p, tag, reads["factors"], reads["tilt"], decisions_mod.game_line(ctx, b),
+                                   decisions_mod.card(ctx, b, others, state)))
         cands.sort(key=lambda c: c.p)
         closest = cands[0] if cands else None
         tipped = tipped_by.get(pick.id)
@@ -563,7 +567,7 @@ def roles(team: Team, slots: list[str], settled: Settled, ctx: decisions_mod.Con
         game = (tipped.game if tipped else None) or (decisions_mod.game_state(ctx) if ctx else None)
         out.append(Role(slot, label, pick, was, cands, tag, round(p, 3), decision,
                         pick.id not in set_ids, tipped is not None, reason, game,
-                        decisions_mod.game_line(ctx, pick)))
+                        decisions_mod.game_line(ctx, pick), decisions_mod.card(ctx, pick, others, state)))
     return out
 
 

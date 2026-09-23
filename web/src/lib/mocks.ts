@@ -22,6 +22,8 @@ import type {
   LineupChange,
   LineupDecision,
   LineupRole,
+  ReadCard,
+  ReadCell,
   LineupSlot,
   Me,
   Player,
@@ -512,6 +514,20 @@ export function lineupFor(teamId: string): Lineup {
     same.sort((a, b) => (slots[b].player?.projected ?? -1) - (slots[a].player?.projected ?? -1) || a - b);
     return `${sl}${same.indexOf(i) + 1}`;
   });
+  // A card per man for the side-by-side grid, made up from his id: the demo has no schedule.
+  const mockCard = (p: Player): ReadCard => {
+    const h = [...p.id].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+    const rank = (h % 32) + 1;
+    const opp: ReadCell = rank > 21 ? { text: "Soft", sub: `${rank}th/32`, tone: "good" } : rank <= 10 ? { text: "Tough", sub: `${rank}th/32`, tone: "bad" } : { text: "Average", sub: `${rank}th/32`, tone: null };
+    const last = round1(p.projected * (0.4 + (h % 13) / 10));
+    const form: ReadCell = last >= p.projected * 1.5 ? { text: "Hot", sub: `${last} last wk`, tone: "good" } : last <= p.projected * 0.5 ? { text: "Cold", sub: `${last} last wk`, tone: "bad" } : { text: `${last}`, sub: "last wk", tone: null };
+    return {
+      opponent: opp,
+      stack: h % 5 === 0 ? { text: "w/ QB", sub: "same team", tone: "good" } : { text: "None", sub: null, tone: null },
+      health: p.injury_status ? { text: p.injury_status, sub: null, tone: "bad" } : { text: "Clear", sub: null, tone: "good" },
+      form,
+    };
+  };
   const pBeats = (a: number, b: number) => {
     const sa = Math.max(1.5, 2.8 + 0.35 * a);
     const sb = Math.max(1.5, 2.8 + 0.35 * b);
@@ -537,7 +553,7 @@ export function lineupFor(teamId: string): Lineup {
       .map((b) => {
         const p = pBeats(pick!.projected, b.projected);
         const d = decisions.find((x) => (x.start.id === pick!.id && x.sit.id === b.id) || (x.sit.id === pick!.id && x.start.id === b.id));
-        return { player: ranked(b), p, confidence: tagFor(p), factors: d?.factors ?? [], tilt: d?.tilt ?? 0, opp: null };
+        return { player: ranked(b), p, confidence: tagFor(p), factors: d?.factors ?? [], tilt: d?.tilt ?? 0, opp: null, card: mockCard(b) };
       })
       .sort((a, b) => a.p - b.p);
     const closest = candidates[0];
@@ -557,6 +573,7 @@ export function lineupFor(teamId: string): Lineup {
       reason: tipped?.reason ?? (closest ? `${pick?.name} projects ${pick?.projected.toFixed(1)} to ${closest.player.name}’s ${closest.player.projected.toFixed(1)}.` : `${pick?.name} is the only man who can play ${labels[i]}.`),
       game: tipped?.game ?? { state: "behind", margin: -9.4, live: false, line: "Projected 9.4 behind: chase the ceiling" },
       opp: null,
+      card: pick ? mockCard(pick) : undefined,
     };
   });
   const others = ROSTERS.filter((x) => x.id !== teamId).map((x) => x.starters.reduce((a, p) => a + p.projected, 0));
@@ -1268,6 +1285,18 @@ function mockLens(lens: Lens, rows: BoardRow[]): BoardRow[] {
       .filter((o) => o.id !== r.id && o.nfl_team === r.nfl_team && o.position === r.position)
       .sort((a, b) => (b.projected ?? 0) - (a.projected ?? 0))[0];
   const tag = (r: BoardRow, lens: LensFact): BoardRow => ({ ...r, lens });
+  if (lens === "shortlist") {
+    const free = rows.filter((r) => !r.rostered_by);
+    const tops = new Map<string, NonNullable<LensFact["top"]>>();
+    for (const [t, get] of [["proj", (r: BoardRow) => r.projected ?? 0], ["ros", (r: BoardRow) => r.ros ?? 0], ["adds", (r: BoardRow) => r.trending_adds]] as const) {
+      const byPos = new Map<string, BoardRow[]>();
+      for (const r of free) if (get(r) > 0) byPos.set(r.position, [...(byPos.get(r.position) ?? []), r]);
+      for (const group of byPos.values())
+        group.sort((a, b) => get(b) - get(a)).slice(0, 5).forEach((r, i) => tops.set(r.id, { ...(tops.get(r.id) ?? {}), [t]: i + 1 }));
+    }
+    const best = (r: BoardRow) => Math.min(...Object.values(tops.get(r.id) ?? { x: 99 }));
+    return free.filter((r) => tops.has(r.id)).map((r) => tag(r, { top: tops.get(r.id) })).sort((a, b) => best(a) - best(b) || (b.projected ?? 0) - (a.projected ?? 0));
+  }
   if (lens === "handcuffs") {
     return rows
       .filter((r) => r.rostered_by?.is_me && r.position === "RB")
@@ -1319,7 +1348,7 @@ function avgRank(r: BoardRow): number {
 }
 
 export function lensCounts(teamId?: string): LensCounts {
-  const lenses: Lens[] = ["handcuffs", "backups", "defenses", "byes", "risers"];
+  const lenses: Lens[] = ["shortlist", "handcuffs", "backups", "defenses", "byes", "risers"];
   const counts = Object.fromEntries(
     lenses.map((l) => [l, playerBoard({ lens: l, avail: "free", limit: 200 }, teamId).total]),
   ) as Record<Lens, number>;

@@ -2,6 +2,27 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Round 5: the grid, the shortlist, the office rows (2026-09-23, night)
+
+- [x] **R5-1** Lineup decision page is a comparison grid: every option a column with his
+      face, every read a row (`engine/decisions.card` gives each man his own cell per read:
+      a word, the fact, good/bad for this week). The call in one line on top; a man the
+      projection has ahead of the pick is called out with what tips it back. Chances always
+      name both men ("46% chance Ferguson outscores Kelce"). Engine sentences folded under.
+- [x] **R5-2** Scouting's All players opens on a new `shortlist` lens ("For you"): free
+      agents top five at their position this week, ROS or adds, tagged with why. Typing a
+      name steps it aside; "Everyone" turns it off. The wire's ten are tinted in the table
+      ("Pick 1"), the top three louder.
+- [x] **R5-3** The call is "General Manager", never another manager, and says "3 of N
+      potential trades to consider".
+- [x] **R5-4** Office: your roster as one tile per position (spare / short / set / mixed),
+      one word per position (the larger side wins, so WR is never both spare and short);
+      the three deals as wide rows (you get | the GM | you give); "Skip to trade room".
+- [ ] **R5-5** Andrew: the per-man thresholds on the grid (boom-bust CV 0.6 / steady 0.35;
+      soft defence top third / tough bottom third) and the shortlist's top five are labels
+      for now, not calibrated. The engine still prices surplus and need separately; the
+      tiles only net them for display.
+
 ## The GM's Office (2026-09-23, evening)
 
 Andrew's brief: the other tabs' principles (pointed summaries up top, detail one tap down),

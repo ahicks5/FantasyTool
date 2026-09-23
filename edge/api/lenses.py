@@ -1,6 +1,6 @@
 """Scouting lenses: the questions a manager asks the wire that a column sort cannot answer.
 
-"Who are my handcuffs?" "Who is one injury from a starting job?" "Which defence has a soft
+"Who on the wire is worth a look at all?" "Who are my handcuffs?" "Who is one injury from a starting job?" "Which defence has a soft
 run coming?" "Who covers my bye?" "Who is the league piling onto?" Each lens is a cut of
 the same board (`directory.py`) plus the one fact that makes the cut worth reading -- the
 starter a backup sits behind, a defence's next three opponents -- so the reader sees *why*
@@ -27,7 +27,11 @@ from edge.data.depth_charts import Slot
 from edge.data.nfl_stats import StatLine
 from edge.data.schedule import games_for
 
-LENSES = ("handcuffs", "backups", "defenses", "byes", "risers")
+LENSES = ("shortlist", "handcuffs", "backups", "defenses", "byes", "risers")
+# The shortlist keeps a free agent who is this high at his position on any one board.
+SHORTLIST_TOP = 5
+# The three boards the shortlist reads, as (tag, row field).
+SHORTLIST_BOARDS = (("proj", "projected"), ("ros", "ros"), ("adds", "trending_adds"))
 # How many weeks out the forward-looking lenses read: this one and the two after it.
 HORIZON = 3
 # The positions whose backup inherits a real fantasy role when the starter goes down.
@@ -260,6 +264,39 @@ def risers(rows: list[dict]) -> list[dict]:
     return hot
 
 
+def shortlist(rows: list[dict]) -> list[dict]:
+    """The free agents worth a look: top `SHORTLIST_TOP` at his position this week, over
+    the rest of the season, or in adds across the platform (Andrew, 2026-09-23: "only
+    those that are free, and who is up and coming, or high projection, or high in adds").
+
+    Ranked within his position, because a fifth quarterback out-projects the best free
+    tight end every week and a shortlist of quarterbacks helps nobody. The fact is every
+    board he made and where: {"proj": 2, "adds": 1}. Order is his best rank anywhere, then
+    how many boards he made, then this week's projection.
+    """
+    free = [r for r in rows if not r["rostered_by"]]
+    tops: dict[str, dict[str, int]] = {}
+    for tag, key in SHORTLIST_BOARDS:
+        by_pos: dict[str, list[dict]] = {}
+        for r in free:
+            if (r.get(key) or 0) > 0:
+                by_pos.setdefault(r["position"], []).append(r)
+        for group in by_pos.values():
+            group.sort(key=lambda r: (-(r.get(key) or 0), r["name"]))
+            for i, r in enumerate(group[:SHORTLIST_TOP], 1):
+                tops.setdefault(r["id"], {})[tag] = i
+    got: list[tuple[tuple, dict]] = []
+    for r in free:
+        top = tops.get(r["id"])
+        if not top:
+            continue
+        row = dict(r)
+        row["lens"] = {"top": top}
+        got.append(((min(top.values()), -len(top), -(r.get("projected") or 0.0), r["name"]), row))
+    got.sort(key=lambda t: t[0])
+    return [r for _, r in got]
+
+
 def apply(lens: str, rows: list[dict], b: Any, ctx: LensContext, team_id: str | None) -> list[dict]:
     """The rows this lens holds, in its own order, each annotated with its `lens` fact."""
     my_rows = [r for r in rows if r["rostered_by"] and r["rostered_by"]["is_me"]]
@@ -274,6 +311,8 @@ def apply(lens: str, rows: list[dict], b: Any, ctx: LensContext, team_id: str | 
         return byes(rows, b.league.week, my_rows)
     if lens == "risers":
         return risers(rows)
+    if lens == "shortlist":
+        return shortlist(rows)
     return rows
 
 

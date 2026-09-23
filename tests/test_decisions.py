@@ -260,3 +260,37 @@ def test_every_decision_on_the_real_league_carries_reads_that_are_true_of_the_da
                     assert c.games[d.start.nfl_team]["opp"] in f["line"] and c.games[d.sit.nfl_team]["opp"] in f["line"]
     assert n >= 10, "the fixture league should throw up plenty of close calls"
     assert {"opponent", "form"} <= seen_keys, f"the recorded week should produce these reads: {seen_keys}"
+
+
+# ---------------------------------------------------------------- one man's card
+
+def test_a_card_reads_one_man_on_his_own_with_the_same_rules_as_the_pair():
+    a = P(1, "WR", 12.0, team="KC", inj="Questionable", part="Hamstring")
+    qb = P(9, "QB", 20.0, team="KC")
+    allowed = {(f"D{i}", "WR"): (float(i), 2) for i in range(1, 33)}
+    games = {"KC": {"opp": "D30", "kickoff": "2026-09-27T17:00Z", "home": True}}
+    log = {"1": [line("1", w, "Z", rec=6, rec_yd=y) for w, y in ((1, 20), (2, 200))]}   # 5.0, 23.0 last week
+    c = D.card(ctx(allowed=allowed, games=games, log=log), a, [qb, a], "behind")
+    assert c["opponent"] == {"text": "Soft", "sub": "vs D30 · 30th/32", "tone": "good"}
+    assert c["health"]["text"] == "Questionable" and c["health"]["sub"] == "hamstring" and c["health"]["tone"] == "bad"
+    assert c["stack"] == {"text": "w/ QB", "sub": "P9", "tone": "good"}, "behind, a stack is the ceiling"
+    assert D.card(ctx(games=games), a, [qb, a], "ahead")["stack"]["tone"] == "bad"
+    assert c["form"]["text"] == "Hot" and c["form"]["tone"] == "good"
+    assert "variance" not in c, "two games is not a swing"
+    games["KC"]["opp"] = "D2"
+    assert D.card(ctx(allowed=allowed, games=games), a, [], None)["opponent"]["tone"] == "bad"
+    clean = D.card(ctx(), P(2, "WR", 12.0, team="DAL"), [], None)
+    assert clean["health"]["text"] == "Clear" and clean["stack"]["text"] == "None" and "opponent" not in clean
+    assert D.card(None, a, [], None) == {}
+
+
+def test_every_role_on_the_real_league_carries_a_card_for_every_man(real_ctx, league):
+    t = league.teams[0]
+    c = real_ctx[t.id]
+    rs = L.roles(t, league.starting_slots, L.settle(t, league.starting_slots, c), c)
+    men = [r.card for r in rs if r.pick] + [cand.card for r in rs for cand in r.candidates]
+    assert men and all(set(m) <= set(D.KEYS) and "health" in m for m in men)
+    assert any("opponent" in m for m in men)
+    for m in men:
+        for cell in m.values():
+            assert cell["text"] and cell["tone"] in {"good", "bad", None}

@@ -72,14 +72,63 @@ export function officeKey(platform: string, leagueId: string, teamId: string): s
   return `findTrades:${platform}:${leagueId}:${teamId}`;
 }
 
-/** Who is calling: the best partner's manager, or your own GM when nobody is. */
-export function caller(board: OfficeBoard | undefined): { name: string | null; team: string | null } {
-  const p = board?.partners[0];
-  if (!p) return { name: null, team: null };
-  return { name: p.owner_name || p.team_name, team: p.team_name };
+/**
+ * What the GM says on the call: the deals he leads with, out of every offer on the board
+ * (Andrew, 2026-09-23: "I have 3 / X potential trades to consider"). Null before the board
+ * lands; zero offers on the free preview, which has names but no deals.
+ */
+export function dealCount(board: OfficeBoard | undefined): { top: number; total: number } | null {
+  if (!board) return null;
+  const total = board.partners.reduce((n, p) => n + (p.offers?.length ?? 0), 0);
+  const withOffers = board.partners.filter((p) => (p.offers?.length ?? 0) > 0).length;
+  return { top: Math.min(TOP_DEALS, withOffers), total };
+}
+
+export type Shape = "spare" | "short" | "set" | "mixed";
+
+/** The positions every roster is read at, in roster order; anything else follows. */
+const SHAPE_ORDER = ["QB", "RB", "WR", "TE", "K", "DEF"];
+const ALWAYS = ["QB", "RB", "WR", "TE"];
+
+/**
+ * Your roster, one tile per position: spare, short, or set.
+ *
+ * The engine prices both sides of a position separately (`trade_finder.position_profile`):
+ * surplus is bench value that would start elsewhere, need is how far your starters fall
+ * below the league's. A deep bench behind a weak starter has both, which is how the old
+ * line came to say "spare WR" and "short at WR" at once. One tile says one thing: the
+ * larger side wins, by value. The free preview sends names without values, so a position
+ * on both lists there reads "mixed" rather than a guess. `weight` (0..1) is the winning
+ * side against the largest on the roster, for the tile's bar.
+ */
+export function rosterShape(board: Pick<OfficeBoard, "my_positions">): { pos: string; shape: Shape; weight: number }[] {
+  const val = (v: Record<string, number> | string[], pos: string): number =>
+    Array.isArray(v) ? (v.includes(pos) ? 1 : 0) : Math.max(0, v[pos] ?? 0);
+  const { surplus, need } = board.my_positions;
+  const listed = Array.isArray(surplus) || Array.isArray(need);
+  const keys = new Set([...ALWAYS, ...posList(surplus, 99), ...posList(need, 99)]);
+  const order = [...SHAPE_ORDER.filter((p) => keys.has(p)), ...[...keys].filter((p) => !SHAPE_ORDER.includes(p))];
+  const rows = order.map((pos) => {
+    const s = val(surplus, pos);
+    const n = val(need, pos);
+    const shape: Shape = s > 0 && n > 0 ? (listed || s === n ? "mixed" : s > n ? "spare" : "short") : s > 0 ? "spare" : n > 0 ? "short" : "set";
+    return { pos, shape, amount: shape === "spare" ? s - (listed ? 0 : n) : shape === "short" ? n - (listed ? 0 : s) : 0 };
+  });
+  const top = Math.max(...rows.map((r) => r.amount), 0);
+  return rows.map(({ pos, shape, amount }) => ({ pos, shape, weight: top > 0 ? amount / top : shape === "set" ? 0 : 1 }));
 }
 
 /** A last name, which is all a 110px panel has room for. */
 export function lastName(name: string): string {
   return name.split(" ").slice(-1)[0];
+}
+
+/** Any roster's spare and short positions, biggest first, never the same position on both
+ *  sides: the same rule as the tiles, for a partner's one-line row. */
+export function shapeLists(positions: OfficeBoard["my_positions"], max = 2): { has: string[]; needs: string[] } {
+  const tiles = rosterShape({ my_positions: positions }).sort((a, b) => b.weight - a.weight);
+  return {
+    has: tiles.filter((t) => t.shape === "spare").map((t) => t.pos).slice(0, max),
+    needs: tiles.filter((t) => t.shape === "short").map((t) => t.pos).slice(0, max),
+  };
 }

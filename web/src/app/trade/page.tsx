@@ -291,7 +291,15 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
           GM in one line each, and the table for your own idea at the bottom. */}
       {found ? (
         <>
-          <TopDeals board={found} preview={preview} />
+          <TopDeals
+            board={found}
+            preview={preview}
+            onJump={() => {
+              setBuild(true);
+              // After the open lands, so the scroll finds the room at its full height.
+              requestAnimationFrame(() => document.getElementById("build")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+            }}
+          />
           <PartnerList board={found} preview={preview} />
         </>
       ) : (

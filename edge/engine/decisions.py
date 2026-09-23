@@ -389,21 +389,27 @@ def role(ctx: Context, a: Player, b: Player) -> dict | None:
 
 
 def _role(ctx: Context, p: Player) -> list[tuple[int, str]]:
+    return [(score, line) for score, line, _ in _role_moves(ctx, p)]
+
+
+def _role_moves(ctx: Context, p: Player) -> list[tuple[int, str, str]]:
+    """(+1 role opens / -1 QB1 down, the sentence, the three-word version for a grid cell)."""
     if p.position not in SKILL:
         return []
     roster = ctx.charts.get(p.nfl_team or "", [])
     me = _me(ctx, p)
-    out: list[tuple[int, str]] = []
+    out: list[tuple[int, str, str]] = []
     for s in roster:
         if s.id == sid(p) or (s.injury_status or "").upper() not in DOWN:
             continue
         if s.position == "QB" and s.starter and p.position in {"RB", "WR", "TE"}:
-            out.append((-1, f"{p.name}’s QB1 {s.name} is {s.injury_status.title()}"))
+            out.append((-1, f"{p.name}’s QB1 {s.name} is {s.injury_status.title()}", f"QB {_last(s.name)} {s.injury_status.title()}"))
         elif s.position == p.position and s.starter and p.position in {"RB", "WR", "TE"} \
                 and not (me and me.starter and (me.depth_order or 9) <= (s.depth_order or 9)
                          and me.depth_position == s.depth_position):
             what = "targets" if p.position in {"WR", "TE"} else "carries"
-            out.append((1, f"{s.name} is {s.injury_status.title()} ahead of {p.name}: the {what} open up"))
+            out.append((1, f"{s.name} is {s.injury_status.title()} ahead of {p.name}: the {what} open up",
+                        f"{_last(s.name)} {s.injury_status.title()}"))
     return out
 
 
@@ -444,3 +450,104 @@ def read(ctx: Context | None, start: Player, sit: Player, starters: list[Player]
     ) if f]
     tilt = sum(1 if f["favors"] == "start" else -1 if f["favors"] == "sit" else 0 for f in factors)
     return {"game": game, "factors": factors, "tilt": tilt}
+
+
+# --------------------------------------------------------------------------- one man's card
+
+# A season's swing, as a coefficient of variation: above this he is boom-or-bust, below
+# `STEADY_CV` he is a floor. Labels for a grid cell; the pairwise read still decides on `CV_GAP`.
+BOOM_CV, STEADY_CV = 0.6, 0.35
+
+
+def _last(name: str) -> str:
+    return name.split(" ")[-1] if name else name
+
+
+def _cell(text: str, sub: str | None = None, tone: str | None = None) -> dict:
+    return {"text": text, "sub": sub, "tone": tone}
+
+
+def card(ctx: Context | None, p: Player, others: list[Player], state: str | None = None) -> dict[str, dict]:
+    """One man's reads on his own, for the page that lines every option up side by side.
+
+    Each key in `KEYS` maps to {"text", "sub", "tone"}: a word or two, the fact behind it,
+    and "good" / "bad" / None for how that read sits with this week's call -- the same rules
+    the pairwise reads use (behind wants the swing and the stack, ahead wants the floor; a
+    soft defence, a clean bill, a full week, a hot hand and an opened role are good). A key
+    with no data is left out. `others` are the starters he would line up beside.
+    """
+    if ctx is None:
+        return {}
+    out: dict[str, dict] = {}
+
+    pts = [x for _, x in _points(ctx, p)]
+    if len(pts) >= MIN_GAMES and (cv := _cv(pts)) is not None:
+        rng = f"{min(pts):.0f}–{max(pts):.0f} pts"
+        if cv >= BOOM_CV:
+            out["variance"] = _cell("Boom-bust", rng, "good" if state == "behind" else "bad" if state == "ahead" else None)
+        elif cv <= STEADY_CV:
+            out["variance"] = _cell("Steady", rng, "good" if state == "ahead" else "bad" if state == "behind" else None)
+        else:
+            out["variance"] = _cell("Normal", rng)
+
+    mate = next((s for s in others if s.id != p.id and s.position in SKILL and s.nfl_team and s.nfl_team == p.nfl_team), None)
+    if mate:
+        out["stack"] = _cell(f"w/ {mate.position}", _last(mate.name),
+                             "good" if state == "behind" else "bad" if state == "ahead" else None)
+    else:
+        out["stack"] = _cell("None")
+
+    g = ctx.games.get(p.nfl_team or "")
+    where = game_line(ctx, p)
+    if g and p.position in GRADED and (r := defence_rank(ctx.allowed, g["opp"], p.position)):
+        rank, of, _ = r
+        if rank > of * 2 / 3:
+            out["opponent"] = _cell("Soft", f"{where} · {_ordinal(rank)}/{of}", "good")
+        elif rank <= of / 3:
+            out["opponent"] = _cell("Tough", f"{where} · {_ordinal(rank)}/{of}", "bad")
+        else:
+            out["opponent"] = _cell("Average", f"{where} · {_ordinal(rank)}/{of}")
+    elif where:
+        out["opponent"] = _cell(where, None, "bad" if where == "Bye" else None)
+
+    me = _me(ctx, p)
+    status = _status(p) or ((me.injury_status or "").upper() if me else "")
+    practice = (me.practice or "").upper() if me else ""
+    if status in FLAGGED:
+        part = p.injury_body_part or (me.injury_body_part if me else None)
+        out["health"] = _cell(status.title(), part.lower() if part else None, "bad")
+    elif practice in LIMITED:
+        out["health"] = _cell("Limited", "in practice", "bad")
+    else:
+        out["health"] = _cell("Clear", None, "good")
+
+    days, _ = _rest_days(ctx, p)
+    if days is not None:
+        day = _weekday(_kickoff(g["kickoff"])) if g and _kickoff(g.get("kickoff")) else None
+        if ctx.byes.get(p.nfl_team or "") == ctx.week - 1:
+            out["rest"] = _cell("Off bye", day, "good")
+        elif days <= SHORT_WEEK_DAYS:
+            out["rest"] = _cell(f"{days} days", day, "bad")
+        else:
+            out["rest"] = _cell("Full week", day)
+
+    played = _points(ctx, p)
+    if played and _proj(p) >= FORM_FLOOR:
+        week, last = played[-1]
+        when = "last wk" if week == ctx.week - 1 else f"wk {week}"
+        ratio = last / _proj(p)
+        if ratio >= HOT:
+            out["form"] = _cell("Hot", f"{last:.1f} {when}", "good")
+        elif ratio <= COLD:
+            out["form"] = _cell("Cold", f"{last:.1f} {when}", "bad")
+        else:
+            out["form"] = _cell(f"{last:.1f}", when)
+
+    moves = _role_moves(ctx, p)
+    if moves:
+        net = sum(s for s, _, _ in moves)
+        out["role"] = _cell("Up" if net > 0 else "Down" if net < 0 else "Mixed", moves[0][2],
+                            "good" if net > 0 else "bad" if net < 0 else None)
+    elif p.position in SKILL:
+        out["role"] = _cell("Same")
+    return out

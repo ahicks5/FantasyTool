@@ -527,6 +527,7 @@ export const SCOUT = {
     eyebrow: "Lenses",
     /** The chip that turns the lens off. */
     off: "Everyone",
+    shortlist: { label: "For you", blurb: "Free agents in the top five at their position this week, rest of season or adds." },
     handcuffs: { label: "My handcuffs", blurb: "The back directly behind each of yours, wherever he is rostered." },
     backups: { label: "Next man up", blurb: "Second on the depth chart at RB, WR and TE. A starter in doubt leads." },
     defenses: { label: "Defense runs", blurb: "Each defense’s next three games, softest schedule first. Green is an offense that has struggled." },
@@ -543,9 +544,16 @@ export const SCOUT = {
     at: "@",
     week: (w: number) => `Wk ${w}`,
     softAria: (opp: string, rank: number, of: number) => `${opp}: offense ranks ${rank} of ${of} for fewest points`,
+    /** The shortlist's reasons: "#2 WR proj". */
+    top: { proj: "proj", ros: "ROS", adds: "adds" } as const,
+    topLine: (n: number, pos: string, board: string) => `#${n} ${pos} ${board}`,
+    /** A row the head of scouting put at the top of the tab. */
+    pick: (n: number) => `Pick ${n}`,
+    pickAria: (n: number) => `Top pickup number ${n}`,
   },
   /** A lens with nobody in it says why, in its own terms. */
   lensEmpty: {
+    shortlist: "Nobody on the wire makes a top five this week.",
     handcuffs: "None of your backs has a listed backup we can find.",
     backups: "No depth charts to read right now.",
     defenses: "No defenses on the board.",
@@ -797,8 +805,35 @@ export const LINEUP = {
     considered: "Also in the frame",
     /** The other men, in a list on the role's page. */
     others: "The other options",
-    /** Beside a candidate's number: P(pick outscores him), rendered from the engine. */
-    odds: "the pick outscores him",
+    /** A chance, always with both names: never "the pick" or "him", which read both ways. */
+    odds: (pct: number, a: string, b: string) => `${pct}% chance ${a} outscores ${b}`,
+    /** The top of the page: the call, in two words. */
+    start: (name: string) => `Start ${name}`,
+    /** The grid, every option side by side. */
+    grid: "Side by side",
+    gridAria: (label: string) => `Every option for ${label}, side by side`,
+    band: "The call",
+    rows: {
+      proj: "Projected",
+      rank: "Rank",
+      chance: (pick: string) => `Beats ${pick}`,
+      edge: "Head to head",
+    },
+    /** The last row: the reads between him and the pick, counted. */
+    edge: {
+      pick: (n: number) => `Pick +${n}`,
+      him: (n: number) => `Him +${n}`,
+      even: "Even",
+    },
+    /** When another man projects ahead of the pick, say so before anyone asks. */
+    flag: (him: string, pct: number, pick: string) => `The projection has ${him} ahead: ${pct}% chance he outscores ${pick}.`,
+    tips: (pick: string, reads: string) => `What tips it to ${pick}: ${reads}.`,
+    legend: { good: "Helps this week", bad: "Hurts this week", edge: "Wins the head to head" },
+    empty: "\u2014",
+    /** The pairwise sentences, folded under the grid. */
+    full: "Read every note",
+    fullHide: "Hide the notes",
+    vs: (a: string, b: string) => `${a} vs ${b}`,
     reads: "What separates them",
     none: "Nothing else separates them this week.",
     game: "Your game",
@@ -908,10 +943,15 @@ export const OFFICE = {
   forWord: "for",
   ros: "ROS",
   fair: "fair",
-  spare: "You can spare",
-  short: "You're short at",
-  nothingSpare: "Nothing spare",
-  noHoles: "No holes",
+  /** Your roster, one tile per position. */
+  shape: "Your roster",
+  shapeWord: { spare: "Spare", short: "Short", set: "Set", mixed: "Mixed" },
+  shapeHint: "Spare is bench that would start elsewhere. Short is starters below the league's average.",
+  shapeAria: (pos: string, word: string) => `${pos}: ${word}`,
+  /** The jump down to the builder, like the lineup's jump to the roster. */
+  jump: "Skip to trade room",
+  youGive: "You give",
+  youGetShort: "You get",
   none: "Nobody in the league has what you need for what you can spare. Quiet week.",
   locked: "Locked",
   lockedLine: "Three GMs worth a call, and the deal for each. Trade Lab names them.",
@@ -921,7 +961,7 @@ export const OFFICE = {
   has: "Has",
   needs: "Needs",
   offers: (n: number) => `${n} offer${n === 1 ? "" : "s"}`,
-  build: "Build your own offer",
+  build: "Trade room",
   buildHint: "Pick the players, we grade it on both rosters and write the counter.",
   buildOpen: "Open the table",
   buildClose: "Close the table",
@@ -943,14 +983,18 @@ export const CALL = {
   aria: "A GM is calling",
   incoming: "Incoming call",
   connected: "On the line",
-  gmOf: (team: string) => `GM · ${team}`,
-  yourGm: "Your general manager",
+  /** Your own GM on the line, never another manager (Andrew, 2026-09-23). */
+  title: "General Manager",
   staff: "Front office",
   answer: "Answer",
   decline: "Decline",
   slide: "slide to answer",
   hello: "Got a minute?",
-  deals: (n: number) => (n === 1 ? "I've got one deal that works for both of us." : `I've got ${n} deals that work for both of us.`),
+  /** "3 / X": the deals he leads with, out of every offer on the board. */
+  deals: (top: number, total: number) =>
+    total <= top
+      ? top === 1 ? "I've got one trade worth a look." : `I've got ${top} trades worth a look.`
+      : `I've got ${top} of ${total} potential trades to consider.`,
   preview: "I've got names for you. Pull up the board.",
   quiet: "Quiet week. Nobody has what you need yet.",
   skip: "Tap to skip",
