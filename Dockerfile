@@ -6,6 +6,9 @@ COPY pyproject.toml uv.lock ./
 # --extra postgres: the image must be able to talk to DATABASE_URL when one is set.
 RUN uv sync --frozen --no-dev --no-install-project --extra postgres
 COPY edge ./edge
+# The Thursday freezes: the film's first source for a past week's projection and the only
+# proof of a pregame injury tag (edge/data/frozen.py reads /app/docs/frozen). Small.
+COPY docs/frozen ./docs/frozen
 ENV PATH="/app/.venv/bin:$PATH" EDGE_CACHE_DIR=/data/cache EDGE_DB=/data/edge.db
 
 # Headless Chromium for the share card. The `playwright` package alone is not enough — it

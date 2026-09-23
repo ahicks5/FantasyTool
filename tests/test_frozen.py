@@ -221,3 +221,12 @@ def test_the_history_loader_stamps_the_league_each_row_came_from(monkeypatch):
     monkeypatch.setattr(service.api, "transactions", lambda lid, w: seen.get((lid, w), []))
     tx = service._transactions_history({"league_id": "NOW", "previous_league_id": "OLD"}, 2)
     assert [t["league_id"] for t in tx] == ["NOW", "OLD"]
+
+
+def test_the_image_ships_the_freezes_where_the_reader_looks():
+    """The API image once copied only `edge/`, so production never saw a freeze and every
+    past projection fell to the vendor's number. The reader resolves `docs/frozen` beside
+    `edge/`; the Dockerfile must put it there."""
+    root = Path(__file__).resolve().parents[1]
+    assert "COPY docs/frozen ./docs/frozen" in (root / "Dockerfile").read_text()
+    assert frozen.ROOT == root / "docs" / "frozen"
