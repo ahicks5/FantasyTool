@@ -4,7 +4,7 @@ import { DESK, LINEUP, PLAN, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { SCOUT, SCOUT_OPEN, WIRE } from "../src/lib/vocab";
-import { AVAILABILITY_LABELS, BOARD_LABELS, SORT_LABELS } from "../src/lib/board";
+import { AVAILABILITY_LABELS, BOARD_LABELS } from "../src/lib/board";
 
 /**
  * Every page of the app at 375px, against the fixture API (`scripts/serve_fixtures.py`).
@@ -399,25 +399,19 @@ test("the board: filter to free-agent running backs, then re-sort them", async (
   await expect.poll(async () => rows.count(), { timeout: 10_000 }).toBeGreaterThan(0);
 
   for (const row of await rows.all()) {
-    // Every row is a running back. Matched against the meta line's own shape
-    // ("RB \u00b7 GB \u00b7 Bye 11") rather than a bare word: a row's text content runs the
-    // avatar initials and the name straight into it, so "Chris Brooks" at RB reads as
-    // "...BrooksRB \u00b7 GB" and there is no word boundary to anchor to.
-    await expect(row).toContainText(/RB \u00b7 /);
+    // Every row is a running back, by the position cell on its meta line.
+    await expect(row.locator(".board-pos")).toHaveText("RB");
     // And none of them repeats what the filter already said. `showsOwner` in lib/board.ts
-    // drops the badge here: "Free agent" on all of them is noise, and it wrapped under the
-    // meta line on some rows and not others, which left the list visibly ragged.
-    await expect(row).not.toContainText(SCOUT.free);
+    // drops the owner mark here: "FA" on every row of a free-agent board is noise.
+    await expect(row.locator(".board-fa")).toHaveCount(0);
   }
 
-  // Re-sorting is a different order, not a different list.
+  // Re-sorting is a column heading: a different order, not a different list.
   const first = await rows.first().textContent();
-  await page.getByLabel(BOARD_LABELS.sortBy).selectOption("name");
+  await page.getByRole("button", { name: `${BOARD_LABELS.sortBy} ${BOARD_LABELS.player}` }).click();
   await expect.poll(async () => rows.first().textContent(), { timeout: 10_000 }).not.toBe(first);
-
-  // And the control says what it did.
-  await expect(page.getByLabel(BOARD_LABELS.sortBy)).toHaveValue("name");
-  expect(SORT_LABELS.name.label).toBe("Name");
+  // And the heading says what it did.
+  await expect(page.getByRole("button", { name: `${BOARD_LABELS.sortBy} ${BOARD_LABELS.player}` })).toHaveAttribute("aria-pressed", "true");
 
   await assertNoHorizontalOverflow(page);
   expect(problems, "the board logged browser errors").toEqual([]);
@@ -507,10 +501,10 @@ test("a lens cuts the board: defenses carry their next three weeks", async ({ pa
   await expect(page.getByText(SCOUT.lenses.defenses.blurb)).toBeVisible();
   const rows = page.locator("main ul[id$='-list']").getByRole("listitem");
   await expect(rows.first()).toBeVisible({ timeout: 10_000 });
-  await expect(rows.first()).toContainText(/DEF \u00b7 /);
+  await expect(rows.first().locator(".board-pos")).toHaveText("DEF");
   await expect(rows.first().locator(".lens-week")).toHaveCount(3);
-  // The lens owns the order, so the sort control steps aside.
-  await expect(page.getByLabel(BOARD_LABELS.sortBy)).toHaveCount(0);
+  // The lens owns the order, so the column headings stop being sort buttons.
+  await expect(page.getByRole("button", { name: `${BOARD_LABELS.sortBy} ${BOARD_LABELS.proj}` })).toHaveCount(0);
   await assertNoHorizontalOverflow(page);
 });
 

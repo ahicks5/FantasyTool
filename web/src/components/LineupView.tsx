@@ -27,7 +27,7 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useState } from "react";
 import type { Lineup, LineupChange, LineupHole, LineupRole, Player } from "@/lib/types";
 import { signed } from "@/lib/format";
-import { handledKey, loadConnection, loadHandled, saveHandled } from "@/lib/storage";
+import { boomSeen, handledKey, loadConnection, loadHandled, saveBoomSeen, saveHandled } from "@/lib/storage";
 import { CONFIDENCE_LABEL, LINEUP, SECTIONS } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { PlayerName, PlayerTarget } from "./Players";
@@ -307,25 +307,18 @@ export function LineupView({
   const bench = lineup.bench.filter((b) => !RESERVE.has((b.player.injury_status ?? "").toUpperCase()));
   const reserve = lineup.bench.filter((b) => RESERVE.has((b.player.injury_status ?? "").toUpperCase()));
 
-  // The stamp lands on every arrival at the tab -- a fresh open, a tap over from another
-  // room -- never in the report's compact embed, and not on the way back from a role's
-  // page, which leaves a marker so the summary does not re-land mid-decision. (It used to
-  // land once per browser session; a phone keeps that session for days, so it never came
-  // back, and a summary the owner never sees again is not a summary.)
+  // The stamp lands once per league per week (Andrew, 2026-09-23: "it should only be
+  // once"), never in the report's compact embed. It used to land on every arrival at the
+  // tab, which made a summary into a toll. `?ride=1` resets it with the other openings.
   const [boom, setBoom] = useState(false);
   useBeforePaint(() => {
     if (compact) return;
     // A shared link straight to a player opens his page over the lineup; the stamp would
     // land on top of it, two dialogs deep. He came for the player: let him have it.
     if (new URLSearchParams(window.location.search).has("player")) return;
-    try {
-      if (window.sessionStorage.getItem(BOOM_KEY) === BOOM_SKIP) {
-        window.sessionStorage.removeItem(BOOM_KEY);
-        return;
-      }
-    } catch {
-      /* blocked storage: it lands every time */
-    }
+    const league = loadConnection()?.league_id ?? "";
+    if (boomSeen(league, lineup.week)) return;
+    saveBoomSeen(league, lineup.week);
     setBoom(true);
   }, [compact, lineup.week]);
   const dismiss = () => setBoom(false);

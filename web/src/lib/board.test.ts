@@ -17,6 +17,12 @@ import {
   showsOwner,
   toggle,
   withSort,
+  activeTab,
+  barPct,
+  compactCount,
+  positionTabs,
+  pressColumn,
+  tabPositions,
 } from "./board.ts";
 import type { BoardQuery, BoardRow } from "./types";
 
@@ -157,4 +163,33 @@ test("every sort and every availability the board offers has a word for it", () 
   for (const a of BOARD_AVAILABILITY) assert.ok(AVAILABILITY_LABELS[a], a);
   assert.equal(Object.keys(SORT_LABELS).length, BOARD_SORTS.length);
   assert.equal(Object.keys(AVAILABILITY_LABELS).length, BOARD_AVAILABILITY.length);
+});
+
+test("the position tabs: All, the league's own positions, and FLEX when it has all three", () => {
+  assert.deepEqual(positionTabs(["QB", "RB", "WR", "TE", "DEF"]), ["ALL", "QB", "RB", "WR", "TE", "FLEX", "DEF"]);
+  assert.deepEqual(positionTabs(["QB", "RB", "WR"]), ["ALL", "QB", "RB", "WR"], "no TE, no FLEX");
+  assert.equal(activeTab([]), "ALL");
+  assert.equal(activeTab(["WR"]), "WR");
+  assert.equal(activeTab(["TE", "RB", "WR"]), "FLEX");
+  assert.equal(activeTab(["RB", "WR"]), null);
+  assert.deepEqual(tabPositions("FLEX"), ["RB", "WR", "TE"]);
+  assert.deepEqual(tabPositions("ALL"), []);
+});
+
+test("a column heading sorts by it, and a second press flips it", () => {
+  const q = { sort: "projected" as const, order: "desc" as const };
+  assert.deepEqual(pressColumn(q, "ros"), { sort: "ros", order: "desc" });
+  assert.deepEqual(pressColumn(q, "projected"), { sort: "projected", order: "asc" });
+  assert.deepEqual(pressColumn(q, "name"), { sort: "name", order: "asc" });
+});
+
+test("a table cell's add count, and the projection bar", () => {
+  assert.equal(compactCount(0), "—");
+  assert.equal(compactCount(940), "940");
+  assert.equal(compactCount(12345), "12k");
+  assert.equal(compactCount(1200), "1.2k");
+  assert.equal(compactCount(3000), "3k");
+  assert.equal(barPct(null, 20), 0);
+  assert.equal(barPct(20, 20), 100);
+  assert.equal(barPct(0.1, 20), 4, "anything real shows a sliver");
 });

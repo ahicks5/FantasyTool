@@ -20,7 +20,7 @@ import { pickupHref, splitPicks, urgency, type Urgency } from "@/lib/wire";
 import { WIRE } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { IconChevron, IconLock } from "./icons";
-import { Eyebrow, InjuryTag } from "./ui";
+import { InjuryTag } from "./ui";
 
 const FRAME: Record<Urgency, string> = {
   must: "pickup-must",
@@ -37,35 +37,51 @@ function bidText(p: WaiverPick): string {
   return p.bid.amount === null ? WIRE.priority : `$${p.bid.amount}`;
 }
 
-/** One of the three. The whole panel is the door; nothing inside it is a second button. */
+/** His last name, which is all a 110px panel has room for and all a manager needs to
+ *  recognise his own man. */
+function lastName(name: string): string {
+  return name.split(" ").slice(-1)[0];
+}
+
+/**
+ * One of the three. The whole panel is the door; nothing inside it is a second button.
+ * Band, face, name, the week's gain (and the bid, when this league bids money), then the
+ * cut on its own line so the name is never clipped.
+ */
 function Panel({ p, i }: { p: WaiverPick; i: number }) {
   const u = urgency(p, i + 1);
   return (
     <li className={`min-w-0 rise rise-${i + 1}`}>
       <Link href={pickupHref(p.player.id)} aria-label={WIRE.goAria(p.player.name)} className={`pickup ${FRAME[u]}`}>
         <Band u={u} />
-        <span className="pickup-rank slug">{i + 1}</span>
-        <span className="mt-3 flex justify-center">
-          <Avatar name={p.player.name} photo={p.player.photo} teamLogo={p.player.team_logo} size="lg" ring={u === "must" ? "sit" : u === "claim" ? "lean" : undefined} />
+        <span className="flex justify-center">
+          <Avatar name={p.player.name} photo={p.player.photo} teamLogo={p.player.team_logo} size="md" ring={u === "must" ? "sit" : u === "claim" ? "lean" : undefined} />
         </span>
-        <span className="mt-2 block min-h-[2.4em] text-center text-[13px] font-black leading-[1.2] [overflow-wrap:anywhere]">
+        <span className="mt-1.5 block text-center text-[13px] font-black leading-[1.15] [overflow-wrap:anywhere]">
           {p.player.name}
           <InjuryTag status={p.player.injury_status} />
         </span>
-        <span className="mt-0.5 block text-center text-[10px] font-semibold uppercase tracking-wide text-muted">
+        <span className="mt-0.5 block text-center text-[10px] font-semibold text-muted">
           {p.player.position} · {p.player.nfl_team ?? "FA"}
         </span>
-        <span className={`tnum mt-1.5 block text-center text-[15px] font-black ${p.weekly_gain > 0 ? "text-start" : "text-muted"}`}>
-          {signed(p.weekly_gain)} <span className="text-[10px] font-bold uppercase">{WIRE.week}</span>
-        </span>
-        <span className="mt-auto flex items-center justify-between gap-1 border-t border-line pt-2 text-[11px]">
-          <span className="min-w-0 truncate text-muted">
-            {p.drop ? <>{WIRE.cut} <span className="font-bold text-sit">{p.drop.name.split(" ").slice(-1)[0]}</span></> : WIRE.open}
+        <span className="tnum mt-1 flex items-baseline justify-center gap-1.5 text-[14px] font-black">
+          <span className={p.weekly_gain > 0 ? "text-start" : "text-muted"}>
+            {signed(p.weekly_gain)}
+            <span className="ml-0.5 text-[10px] font-bold">{WIRE.week}</span>
           </span>
-          <span className="display tnum shrink-0 text-[14px] leading-none">{bidText(p)}</span>
+          {p.bid.amount !== null && <span className="text-ink">${p.bid.amount}</span>}
+        </span>
+        <span className="pickup-cut">
+          {p.drop ? (
+            <>
+              {WIRE.cut} <span className="font-bold text-sit">{lastName(p.drop.name)}</span>
+            </>
+          ) : (
+            WIRE.open
+          )}
         </span>
         <span className="pickup-go" aria-hidden>
-          <IconChevron size={14} />
+          <IconChevron size={13} />
         </span>
       </Link>
     </li>
@@ -94,11 +110,16 @@ function MoreRow({ p, n }: { p: WaiverPick; n: number }) {
   );
 }
 
-function Header() {
+/** The title, and on its right the door to the rest of the wire. No eyebrow, no clock. */
+function Header({ more, open, toggle }: { more?: number; open?: boolean; toggle?: () => void }) {
   return (
-    <div className="min-w-0">
-      <Eyebrow>{WIRE.eyebrow}</Eyebrow>
-      <h2 className="display mt-0.5 text-[22px] leading-none">{WIRE.title}</h2>
+    <div className="flex min-w-0 items-baseline justify-between gap-3">
+      <h2 className="display text-[22px] leading-none">{WIRE.title}</h2>
+      {!!more && toggle && (
+        <button type="button" onClick={toggle} aria-expanded={open} className="min-h-0 shrink-0 text-[13px] font-bold text-lean hover:underline">
+          {open ? WIRE.less : WIRE.more(more)}
+        </button>
+      )}
     </div>
   );
 }
@@ -108,8 +129,8 @@ export function TopPickups({ waivers }: { waivers: Waivers }) {
   const { top, more } = splitPicks(waivers.picks);
 
   return (
-    <section className="grid min-w-0 gap-3">
-      <Header />
+    <section className="grid min-w-0 gap-2.5">
+      <Header more={more.length} open={open} toggle={() => setOpen((o) => !o)} />
       {top.length === 0 ? (
         <p className="card p-5 text-center text-[14px] text-ink-2">{WIRE.none}</p>
       ) : (
@@ -119,24 +140,12 @@ export function TopPickups({ waivers }: { waivers: Waivers }) {
           ))}
         </ol>
       )}
-      {more.length > 0 && (
-        <>
-          {open && (
-            <ol className="grid min-w-0 gap-1.5">
-              {more.map((p, i) => (
-                <MoreRow key={p.player.id} p={p} n={i + 4} />
-              ))}
-            </ol>
-          )}
-          <button
-            type="button"
-            onClick={() => setOpen((o) => !o)}
-            aria-expanded={open}
-            className="w-full rounded-xl border border-line-2 bg-soft py-2.5 text-[13px] font-black text-ink transition-colors hover:border-ink"
-          >
-            {open ? WIRE.less : WIRE.more(more.length)}
-          </button>
-        </>
+      {open && more.length > 0 && (
+        <ol className="grid min-w-0 gap-1.5">
+          {more.map((p, i) => (
+            <MoreRow key={p.player.id} p={p} n={i + 4} />
+          ))}
+        </ol>
       )}
     </section>
   );
@@ -152,9 +161,8 @@ export function TopPickupsLocked() {
           <li key={i} className={`min-w-0 rise rise-${i + 1}`}>
             <div className="pickup pickup-stash pickup-locked">
               <span className="pickup-band">{WIRE.mystery}</span>
-              <span className="pickup-rank slug">{i + 1}</span>
-              <span className="mt-3 flex justify-center">
-                <span className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-soft text-muted">
+              <span className="flex justify-center">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-soft text-muted">
                   <IconLock size={20} />
                 </span>
               </span>

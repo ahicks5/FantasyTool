@@ -60,7 +60,7 @@ export const SORT_LABELS: Record<BoardSort, { label: string; short: string; desc
 export const AVAILABILITY_LABELS: Record<BoardAvailability, string> = {
   all: "All",
   free: "Free",
-  rostered: "Rostered",
+  rostered: "Taken",
   mine: "Mine",
 };
 
@@ -84,6 +84,17 @@ export const BOARD_LABELS = {
   /** The badge on a row somebody in this league already has, when that somebody is the
    *  reader. His own team name would be true and useless — he knows what he called it. */
   mine: "Yours",
+  /** A player nobody in the league holds, on the table's meta line. */
+  fa: "FA",
+  bye: (w: number) => `Bye ${w}`,
+  position: "Position",
+  allPositions: "All",
+  anyTeamShort: "Team",
+  /** The table's column headings. */
+  player: "Player",
+  proj: "Proj",
+  ros: "ROS",
+  adds: "Adds",
 } as const;
 
 export const DEFAULT_QUERY: BoardQuery = {
@@ -234,4 +245,58 @@ export function flipOrder(order: "asc" | "desc" | undefined): "asc" | "desc" {
 export function withSort(q: BoardQuery, sort: BoardSort): BoardQuery {
   if (q.sort === sort) return q;
   return { ...q, sort, order: SORT_LABELS[sort].desc ? "desc" : "asc" };
+}
+
+/* ------------------------------------------------------------------ the table ---
+   The board as a table (Andrew, 2026-09-23: "better than ESPN's player search"). One
+   row of position tabs, sortable column headers, and three numbers a row. */
+
+/** FLEX is a tab of its own: the three positions a flex slot takes, in one press. */
+export const FLEX_POSITIONS = ["RB", "WR", "TE"] as const;
+
+/** The tabs this league can offer: All, its positions in roster order, and FLEX when it
+ *  has all three flex positions. Built from `facets.positions`, never a constant. */
+export function positionTabs(positions: readonly string[]): string[] {
+  const tabs = ["ALL", ...positions];
+  if (FLEX_POSITIONS.every((p) => positions.includes(p))) tabs.splice(tabs.indexOf("TE") + 1, 0, "FLEX");
+  return tabs;
+}
+
+/** Which tab the current position filter is. A mix no tab names reads as none. */
+export function activeTab(pos: readonly string[] | undefined): string | null {
+  const p = [...(pos ?? [])].sort();
+  if (p.length === 0) return "ALL";
+  if (p.length === 1) return p[0];
+  if (p.join(",") === [...FLEX_POSITIONS].sort().join(",")) return "FLEX";
+  return null;
+}
+
+/** Pressing a tab: the positions it stands for. */
+export function tabPositions(tab: string): string[] {
+  if (tab === "ALL") return [];
+  if (tab === "FLEX") return [...FLEX_POSITIONS];
+  return [tab];
+}
+
+/**
+ * Pressing a column heading. A new column opens in its natural direction (`withSort`);
+ * the column already sorted flips, which is what every table on earth does.
+ */
+export function pressColumn(q: BoardQuery, sort: BoardSort): BoardQuery {
+  if (q.sort === sort) return { ...q, order: flipOrder(q.order) };
+  return withSort(q, sort);
+}
+
+/** An add count the width of a table cell: 940, 12.3k, 41k. Zero is a dash. */
+export function compactCount(n: number): string {
+  if (!n) return COLUMN_LABELS.unknown;
+  if (n < 1000) return String(n);
+  if (n < 10000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  return `${Math.round(n / 1000)}k`;
+}
+
+/** How full the projection bar under a number is: its share of the best on the board. */
+export function barPct(value: number | null | undefined, max: number): number {
+  if (value == null || !Number.isFinite(value) || max <= 0 || value <= 0) return 0;
+  return Math.max(4, Math.min(100, Math.round((value / max) * 100)));
 }

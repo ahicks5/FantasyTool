@@ -46,6 +46,10 @@ function Read({ pick, rank, picks }: { pick: WaiverPick; rank: number; picks: Wa
   const others = picks.filter((o) => o.player.id !== p.id).slice(0, 3);
   return (
     <div className="grid min-w-0 gap-4">
+      {/* At both ends: the way back is the first thing on the page and the last. */}
+      <div className="-mb-2 -mt-2">
+        <Back />
+      </div>
       <section className={`hero rise pickup-hero pickup-hero-${u} overflow-hidden p-5`}>
         <div className="flex items-center justify-between gap-3">
           <span className="truncate text-[10px] font-black uppercase tracking-[0.14em] text-white/60">{WIRE.page.rank(rank)}</span>

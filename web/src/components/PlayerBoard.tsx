@@ -1,27 +1,24 @@
 "use client";
 /**
- * The scouting board: every player in the league, cut and ordered by the reader.
+ * All players: every player in the league, as a table the reader cuts and orders.
  *
- * This is the front door to Scouting and it replaced the old name-only search box, which
- * could answer "where is Ja'Marr Chase" and nothing else. Two boxes on one screen would
- * have been the obvious way to keep both and the wrong one: the search here is a filter
- * like every other control, so a name and a position chip narrow the same list rather than
- * running two lists that disagree.
+ * Rebuilt as a real table (Andrew, 2026-09-23: "make it a table, make it clean, better than
+ * ESPN's player search"). The controls sit in one panel, top to bottom in the order a
+ * manager narrows: a name, a position (one row of tabs, FLEX included), who holds him and
+ * which NFL team, then the scout's lenses, the questions a plain filter cannot ask. Under
+ * it the table: a rank, the face, the name with one quiet meta line, and three numbers in
+ * fixed columns: this week (with a bar against the best on the board), rest of season,
+ * adds. Tap a column heading to sort by it; tap it again to flip it.
  *
  * **It is free, and it opens nothing.** Every number on a row is that player's own — this
  * week in this league's scoring, the rest of the season, how many managers are adding him.
  * Which of them fits *your* roster, what to bid and who to cut are the wire's, and they
- * stay behind `Locked` further down the page. Nothing here reads an entitlement and
- * nothing here should start: `edge/products.py` is the only source of truth for that, and
- * the API answers 402 for the plan regardless of what this component does.
+ * stay behind `Locked` further down the page. `edge/products.py` is the only source of
+ * truth for that, and the API answers 402 for the wire regardless of this component.
  *
- * Every row opens the player sheet rather than navigating, because that is now the house
- * rule everywhere a name appears (`components/Players.tsx`): the page rises over the room
- * you are in and the tab you came from stays lit. The *whole row* is the door here, not
- * just the name inside it — `PlayerName` is built for a name sitting inline in a sentence
- * and deliberately refuses the house 44px target, which is right there and wrong on a
- * browse board where tapping the row is the entire gesture. Arrow keys move DOM focus
- * through the rows rather than painting a selection that only looks like focus.
+ * Every row opens the player sheet: the *whole row* is the door, so the name inside it is
+ * not a second button (`names.test.ts` allows this file for that reason). Arrow keys move
+ * DOM focus through the rows.
  */
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
@@ -31,24 +28,22 @@ import {
   AVAILABILITY_LABELS,
   BOARD_AVAILABILITY,
   BOARD_LABELS,
-  BOARD_SORTS,
-  COLUMN_LABELS,
   LENSES,
   PAGE_SIZE,
-  SORT_LABELS,
   activeFilterCount,
-  addsLabel,
+  activeTab,
+  barPct,
   boardNumber,
+  compactCount,
   countLine,
-  flipOrder,
   hasMore,
+  positionTabs,
+  pressColumn,
   queryKey,
-  rowMeta,
   showsOwner,
-  toggle,
+  tabPositions,
   weekTone,
   withLens,
-  withSort,
 } from "@/lib/board";
 import { NO_NFL_TEAM, SEARCH_DEBOUNCE_MS, SEARCH_LABELS, normalizeQuery, nextIndex } from "@/lib/search";
 import type { Connection } from "@/lib/storage";
@@ -56,14 +51,7 @@ import type { BoardAvailability, BoardQuery, BoardRow, BoardSort, Lens, LensCoun
 import { SCOUT } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { usePlayerSheet } from "./player/PlayerSheetProvider";
-import { IconChevron } from "./icons";
 import { ErrorBox, H2, InjuryTag, SkeletonList, Spinner } from "./ui";
-
-const FIELD =
-  "w-full min-w-0 rounded-xl border border-line-2 bg-soft py-3 pl-4 pr-[4.75rem] text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none [&::-webkit-search-cancel-button]:appearance-none";
-
-const SELECT =
-  "min-w-0 flex-1 appearance-none truncate rounded-xl border border-line-2 bg-soft py-2.5 pl-3 pr-8 text-[13px] font-bold text-ink focus:border-ink focus:outline-none";
 
 /** Two strokes; too small a thing to earn a place in the shared icon set. */
 function IconX({ size = 17 }: { size?: number }) {
@@ -74,62 +62,76 @@ function IconX({ size = 17 }: { size?: number }) {
   );
 }
 
-/** The arrow on a `<select>`, drawn rather than left to the platform's own chrome. */
-function SelectWrap({ children }: { children: React.ReactNode }) {
+function IconSearch() {
   return (
-    <span className="relative flex min-w-0 flex-1">
-      {children}
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted">
-        <path d="M6 9l6 6 6-6" />
-      </svg>
-    </span>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M16 16l4.5 4.5" />
+    </svg>
   );
 }
 
-/** A filter chip. Pressed state is `aria-pressed`, so it is a fact and not just a colour. */
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+/** The column the table is sorted by carries a small arrow for its direction. */
+function SortMark({ on, order }: { on: boolean; order: "asc" | "desc" | undefined }) {
+  if (!on) return null;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={on}
-      className={`shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-black uppercase tracking-wide transition-colors ${
-        on
-          ? "border-ink bg-ink text-paper"
-          : "border-line-2 bg-soft text-muted hover:border-ink hover:text-ink"
-      }`}
-    >
-      {children}
-    </button>
+    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden
+         className={order === "asc" ? "rotate-180" : ""}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
   );
 }
 
 /**
- * One row.
+ * One column heading. A button while the reader owns the order; plain text while a lens
+ * does, because the lens *is* the order he asked for.
+ */
+function Th({ label, sort, query, onSort, className = "" }: { label: string; sort: BoardSort; query: BoardQuery; onSort: ((s: BoardSort) => void) | null; className?: string }) {
+  const on = query.sort === sort && !query.lens;
+  const body = (
+    <>
+      {label}
+      <SortMark on={on} order={query.order} />
+    </>
+  );
+  if (!onSort) return <span className={`board-th ${className}`}>{label}</span>;
+  return (
+    <button type="button" onClick={() => onSort(sort)} aria-pressed={on} aria-label={`${BOARD_LABELS.sortBy} ${label}`} className={`board-th board-th-btn ${on ? "board-th-on" : ""} ${className}`}>
+      {body}
+    </button>
+  );
+}
+
+/** Who holds him, as one small mark on the meta line. */
+function Holder({ row }: { row: BoardRow }) {
+  const held = row.rostered_by;
+  if (!held) return <span className="board-fa">{BOARD_LABELS.fa}</span>;
+  if (held.is_me) return <span className="board-mine">{BOARD_LABELS.mine}</span>;
+  return <span className="board-held">{held.team_name}</span>;
+}
+
+/**
+ * One row of the table.
  *
- * The two numbers on the right are the point of the board, so they are the only things
- * allowed to be typographically loud, and they are `tnum` so a column of them lines up.
- * `boardNumber` draws the dash for a player we never priced — never a zero, which would be
- * a claim about him rather than a gap in what we know.
+ * Rank, face, name and a single meta line on the left; three numbers in fixed columns on
+ * the right. The projection is the loud one and carries a bar against the best on the
+ * board; `boardNumber` draws a dash for a player we never priced, never a zero.
  */
 function Row({
   row,
-  sort,
+  rank,
+  max,
   avail,
-  lens,
   onKeyDown,
   bind,
 }: {
   row: BoardRow;
-  sort: string;
+  rank: number;
+  max: number;
   avail: BoardAvailability;
-  lens?: Lens | null;
   onKeyDown: (e: React.KeyboardEvent) => void;
   bind: (el: HTMLButtonElement | null) => void;
 }) {
-  const adds = addsLabel(row);
-  const held = row.rostered_by;
-  const owner = showsOwner(avail);
   const { open } = usePlayerSheet();
   return (
     <li>
@@ -140,42 +142,31 @@ function Row({
         // row the reader tapped rather than waiting on the fetch behind it.
         onClick={() => open(row)}
         onKeyDown={onKeyDown}
-        className="flex min-h-14 w-full min-w-0 items-center gap-3 rounded-2xl border border-line px-3 py-2.5 text-left transition-colors hover:bg-soft focus:border-ink focus:bg-soft focus:outline-none"
+        className="board-row"
       >
-        <Avatar name={row.name} photo={row.photo} teamLogo={row.team_logo} size="md" />
+        <span className="board-rank tnum">{rank}</span>
+        <Avatar name={row.name} photo={row.photo} teamLogo={row.team_logo} size="sm" />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-bold leading-tight">
+          <span className="block truncate text-[14px] font-bold leading-tight">
             {row.name}
             <InjuryTag status={row.injury_status} />
           </span>
-          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-              {rowMeta(row, NO_NFL_TEAM)}
-            </span>
-            {owner &&
-              (held ? (
-                <span className="max-w-[9rem] truncate rounded px-1.5 py-px text-[10px] font-black uppercase tracking-wide text-muted ring-1 ring-line-2">
-                  {held.is_me ? BOARD_LABELS.mine : held.team_name}
-                </span>
-              ) : (
-                <span className="rounded bg-start-soft px-1.5 py-px text-[10px] font-black uppercase tracking-wide text-start">
-                  {SCOUT.free}
-                </span>
-              ))}
-            {/* Only worth ink on the board that is actually ranked by it. */}
-            {adds && (sort === "trending" || lens === "risers") && (
-              <span className="tnum text-[11px] font-semibold text-muted">{adds}</span>
-            )}
+          <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-muted">
+            <span className="board-pos shrink-0 font-bold text-ink-2">{row.position}</span>
+            <span className="shrink-0">{row.nfl_team || NO_NFL_TEAM}</span>
+            {row.bye_week && <span className="min-w-0 truncate">{BOARD_LABELS.bye(row.bye_week)}</span>}
+            {showsOwner(avail) && <Holder row={row} />}
           </span>
           {row.lens && <Fact fact={row.lens} />}
         </span>
-        <span className="tnum shrink-0 text-right">
-          <span className="block text-[15px] font-black leading-tight">{boardNumber(row.projected)}</span>
-          <span className="mt-0.5 block text-[11px] font-bold leading-tight text-muted">
-            {boardNumber(row.ros, 0)} {COLUMN_LABELS.ros}
+        <span className="board-num board-proj tnum">
+          {boardNumber(row.projected)}
+          <span className="board-bar" aria-hidden>
+            <span style={{ width: `${barPct(row.projected, max)}%` }} />
           </span>
         </span>
-        <IconChevron size={16} className="shrink-0 text-muted" />
+        <span className="board-num tnum text-ink-2">{boardNumber(row.ros, 0)}</span>
+        <span className={`board-num tnum ${row.trending_adds ? "text-ink-2" : "text-muted"}`}>{compactCount(row.trending_adds)}</span>
       </button>
     </li>
   );
@@ -188,7 +179,7 @@ function Row({
 function Fact({ fact }: { fact: LensFact }) {
   const F = SCOUT.fact;
   return (
-    <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+    <span className="mt-1 flex flex-wrap items-center gap-1">
       {fact.behind && (
         <span className={`lens-fact ${fact.behind.is_mine ? "lens-fact-mine" : ""}`}>
           {fact.behind.is_mine ? F.behindMine(fact.behind.name) : F.behind(fact.behind.name)}
@@ -222,27 +213,29 @@ function Fact({ fact }: { fact: LensFact }) {
 function LensBar({ on, counts, pick }: { on: Lens | null | undefined; counts: LensCounts | null; pick: (l: Lens | null) => void }) {
   const L = SCOUT.lenses;
   return (
-    <div className="mt-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-muted">{L.eyebrow}</span>
-        {on && (
-          <button type="button" onClick={() => pick(null)} className="min-h-0 text-[12px] font-bold text-lean hover:underline">
+    <div className="board-tools-row">
+      <div className="flex items-center gap-2">
+        <span className="board-label">{L.eyebrow}</span>
+        <div role="group" aria-label={L.eyebrow} className="-my-1 flex min-w-0 flex-1 gap-1.5 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {LENSES.map((l) => {
+            const n = counts?.counts[l];
+            return (
+              <button key={l} type="button" aria-pressed={on === l} onClick={() => pick(l)} className={`lens-chip ${on === l ? "lens-chip-on" : ""}`}>
+                <span>{L[l].label}</span>
+                {typeof n === "number" && n > 0 && <span className="lens-chip-n tnum">{n}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {on && (
+        <p className="mt-2 flex items-start justify-between gap-3 text-[12px] leading-snug text-ink-2">
+          <span>{L[on].blurb}</span>
+          <button type="button" onClick={() => pick(null)} className="min-h-0 shrink-0 font-bold text-lean hover:underline">
             {L.off}
           </button>
-        )}
-      </div>
-      <div role="group" aria-label={L.eyebrow} className="-mx-1 mt-1.5 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {LENSES.map((l) => {
-          const n = counts?.counts[l];
-          return (
-            <button key={l} type="button" aria-pressed={on === l} onClick={() => pick(l)} className={`lens-chip ${on === l ? "lens-chip-on" : ""}`}>
-              <span>{L[l].label}</span>
-              {typeof n === "number" && n > 0 && <span className="lens-chip-n tnum">{n}</span>}
-            </button>
-          );
-        })}
-      </div>
-      {on && <p className="mt-1.5 text-[12px] leading-snug text-ink-2">{L[on].blurb}</p>}
+        </p>
+      )}
     </div>
   );
 }
@@ -387,131 +380,102 @@ export function PlayerBoard({ c }: { c: Connection }) {
   }
 
   const filters = activeFilterCount(query);
+  const tab = activeTab(query.pos);
+  const tabs = facets ? positionTabs(facets.positions) : [];
+  const onSort = query.lens ? null : (s: BoardSort) => setQuery((q) => pressColumn(q, s));
+  // The bar under each projection is against the best on the board, so it reads as "how
+  // close to the top" rather than as an absolute scale nobody can hold in their head.
+  const max = rows.reduce((m, r) => Math.max(m, r.projected ?? 0), 0);
 
   return (
     <section className="min-w-0">
       <H2>{SCOUT.research}</H2>
-      <p className="mt-1 text-[13px] leading-relaxed text-muted">{SCOUT.researchHint}</p>
 
-      <LensBar on={query.lens} counts={counts} pick={(l) => setQuery((q) => withLens(q, l))} />
-
-      <div className="relative mt-2.5">
-        <input
-          ref={inputRef}
-          type="search"
-          value={raw}
-          onChange={(e) => setRaw(e.target.value)}
-          onKeyDown={onInputKey}
-          placeholder={SCOUT.placeholder}
-          aria-label={SCOUT.placeholder}
-          aria-controls={rows.length ? listId : undefined}
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="none"
-          spellCheck={false}
-          enterKeyHint="search"
-          className={FIELD}
-        />
-        {busy && !firstLoad && (
-          <span className="pointer-events-none absolute right-12 top-1/2 -translate-y-1/2 text-muted">
-            <Spinner size={16} label={SEARCH_LABELS.searching} />
+      <div className="board-tools mt-2.5">
+        <div className="relative">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted">
+            <IconSearch />
           </span>
-        )}
-        {raw && (
-          <button
-            type="button"
-            onClick={clearText}
-            aria-label={SEARCH_LABELS.clear}
-            className="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-muted transition-colors hover:text-ink focus:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ink"
-          >
-            <IconX />
-          </button>
-        )}
-      </div>
-
-      {/* Who has him. Four short words, so a segmented row beats a menu. */}
-      <div role="group" aria-label={BOARD_LABELS.filters} className="mt-3 flex min-w-0 gap-1 rounded-xl border border-line-2 bg-soft p-1">
-        {BOARD_AVAILABILITY.map((a) => (
-          <button
-            key={a}
-            type="button"
-            onClick={() => patch({ avail: a, owner: null })}
-            aria-pressed={query.avail === a}
-            className={`min-w-0 flex-1 truncate rounded-lg px-1 py-1.5 text-[12px] font-black transition-colors ${
-              query.avail === a ? "bg-paper text-ink shadow-[var(--shadow-card)]" : "text-muted hover:text-ink"
-            }`}
-          >
-            {AVAILABILITY_LABELS[a]}
-          </button>
-        ))}
-      </div>
-
-      {/* Positions, from the league's own rows — a league with no kicker gets no K chip. */}
-      {facets && facets.positions.length > 1 && (
-        <div role="group" aria-label="Position" className="-mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {facets.positions.map((pos) => (
-            <Chip key={pos} on={!!query.pos?.includes(pos)} onClick={() => patch({ pos: toggle(query.pos ?? [], pos) })}>
-              {pos}
-            </Chip>
-          ))}
+          <input
+            ref={inputRef}
+            type="search"
+            value={raw}
+            onChange={(e) => setRaw(e.target.value)}
+            onKeyDown={onInputKey}
+            placeholder={SCOUT.placeholder}
+            aria-label={SCOUT.placeholder}
+            aria-controls={rows.length ? listId : undefined}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            enterKeyHint="search"
+            className="board-search"
+          />
+          {busy && !firstLoad && (
+            <span className="pointer-events-none absolute right-12 top-1/2 -translate-y-1/2 text-muted">
+              <Spinner size={16} label={SEARCH_LABELS.searching} />
+            </span>
+          )}
+          {raw && (
+            <button
+              type="button"
+              onClick={clearText}
+              aria-label={SEARCH_LABELS.clear}
+              className="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-muted transition-colors hover:text-ink focus:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+            >
+              <IconX />
+            </button>
+          )}
         </div>
-      )}
 
-      <div className="mt-2 flex min-w-0 items-stretch gap-1.5">
-        <SelectWrap>
-          <select
-            aria-label={BOARD_LABELS.nflTeam}
-            value={query.nfl_team?.[0] ?? ""}
-            onChange={(e) => patch({ nfl_team: e.target.value ? [e.target.value] : [] })}
-            className={SELECT}
-          >
-            <option value="">{BOARD_LABELS.anyTeam}</option>
-            {facets?.nfl_teams.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
+        {/* Positions: one row of tabs, the league's own, FLEX when it has all three. */}
+        {tabs.length > 2 && (
+          <div role="group" aria-label={BOARD_LABELS.position} className="board-tabs">
+            {tabs.map((t) => (
+              <button key={t} type="button" aria-pressed={tab === t} onClick={() => patch({ pos: tabPositions(t) })} className={`board-tab ${tab === t ? "board-tab-on" : ""}`}>
+                {t === "ALL" ? BOARD_LABELS.allPositions : t}
+              </button>
             ))}
-          </select>
-        </SelectWrap>
-
-        {!query.lens && (
-        <SelectWrap>
-          <select
-            aria-label={BOARD_LABELS.sortBy}
-            value={query.sort}
-            onChange={(e) => setQuery((q) => withSort(q, e.target.value as BoardSort))}
-            className={SELECT}
-          >
-            {BOARD_SORTS.map((s) => (
-              <option key={s} value={s}>
-                {SORT_LABELS[s].label}
-              </option>
-            ))}
-          </select>
-        </SelectWrap>
+          </div>
         )}
 
-        {!query.lens && (
-        <button
-          type="button"
-          onClick={() => patch({ order: flipOrder(query.order) })}
-          aria-label={BOARD_LABELS.reverse}
-          className="flex w-11 shrink-0 items-center justify-center rounded-xl border border-line-2 bg-soft text-muted transition-colors hover:border-ink hover:text-ink focus:border-ink focus:outline-none"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden
-               className={`transition-transform ${query.order === "asc" ? "rotate-180" : ""}`}>
-            <path d="M12 5v14M6 13l6 6 6-6" />
-          </svg>
-        </button>
-        )}
+        {/* Who has him, and which NFL team: one row, a segmented control and a menu. */}
+        <div className="board-tools-row flex min-w-0 items-center gap-2">
+          <div role="group" aria-label={BOARD_LABELS.filters} className="board-seg">
+            {BOARD_AVAILABILITY.map((a) => (
+              <button key={a} type="button" onClick={() => patch({ avail: a, owner: null })} aria-pressed={query.avail === a} className={`board-seg-btn ${query.avail === a ? "board-seg-on" : ""}`}>
+                {AVAILABILITY_LABELS[a]}
+              </button>
+            ))}
+          </div>
+          <span className="relative flex w-[86px] shrink-0">
+            <select
+              aria-label={BOARD_LABELS.nflTeam}
+              value={query.nfl_team?.[0] ?? ""}
+              onChange={(e) => patch({ nfl_team: e.target.value ? [e.target.value] : [] })}
+              className="board-select"
+            >
+              <option value="">{BOARD_LABELS.anyTeamShort}</option>
+              {facets?.nfl_teams.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </span>
+        </div>
+
+        <LensBar on={query.lens} counts={counts} pick={(l) => setQuery((q) => withLens(q, l))} />
       </div>
 
-      <div className="mt-3 flex min-w-0 items-center justify-between gap-3">
-        <p className="tnum text-[12px] font-bold uppercase tracking-wide text-muted">
-          {current ? countLine(rows.length, current.board.total) : " "}
-        </p>
+      <div className="mt-3 flex min-w-0 items-center justify-between gap-3 px-1">
+        <p className="tnum text-[12px] font-bold text-muted">{current ? countLine(rows.length, current.board.total) : " "}</p>
         {filters > 0 && (
-          <button type="button" onClick={clearFilters} className="shrink-0 text-[12px] font-bold text-lean hover:underline">
+          <button type="button" onClick={clearFilters} className="min-h-0 shrink-0 text-[12px] font-bold text-lean hover:underline">
             {BOARD_LABELS.clear}
           </button>
         )}
@@ -523,7 +487,7 @@ export function PlayerBoard({ c }: { c: Connection }) {
       </p>
 
       {error ? (
-        <div className="mt-3">
+        <div className="mt-2">
           <ErrorBox error={error} onRetry={() => setRetry((n) => n + 1)} />
         </div>
       ) : firstLoad ? (
@@ -537,15 +501,22 @@ export function PlayerBoard({ c }: { c: Connection }) {
           {query.q ? SCOUT.empty : query.lens && activeFilterCount(query) <= 1 ? SCOUT.lensEmpty[query.lens] : SCOUT.noMatch}
         </p>
       ) : (
-        <>
-          <ul id={listId} aria-busy={busy || undefined} className={`mt-1 grid min-w-0 gap-2 transition-opacity ${busy ? "opacity-60" : ""}`}>
+        <div className="board-table mt-1.5">
+          <div className="board-head">
+            <span className="board-rank" aria-hidden>#</span>
+            <Th label={BOARD_LABELS.player} sort="name" query={query} onSort={onSort} className="board-th-player" />
+            <Th label={BOARD_LABELS.proj} sort="projected" query={query} onSort={onSort} className="board-num" />
+            <Th label={BOARD_LABELS.ros} sort="ros" query={query} onSort={onSort} className="board-num" />
+            <Th label={BOARD_LABELS.adds} sort="trending" query={query} onSort={onSort} className="board-num" />
+          </div>
+          <ul id={listId} aria-busy={busy || undefined} className={`transition-opacity ${busy ? "opacity-60" : ""}`}>
             {rows.map((row, i) => (
               <Row
                 key={row.id}
                 row={row}
-                sort={query.sort ?? "projected"}
+                rank={i + 1}
+                max={max}
                 avail={query.avail ?? "all"}
-                lens={query.lens}
                 bind={(el) => {
                   links.current[i] = el;
                 }}
@@ -554,16 +525,11 @@ export function PlayerBoard({ c }: { c: Connection }) {
             ))}
           </ul>
           {current && hasMore(rows.length, current.board.total) && (
-            <button
-              type="button"
-              onClick={more}
-              disabled={paging}
-              className="mt-3 w-full rounded-xl border border-line-2 bg-soft py-3 text-[13px] font-black text-ink transition-colors hover:border-ink disabled:opacity-60"
-            >
+            <button type="button" onClick={more} disabled={paging} className="board-more">
               {paging ? <Spinner size={15} label={SEARCH_LABELS.searching} /> : BOARD_LABELS.more}
             </button>
           )}
-        </>
+        </div>
       )}
     </section>
   );

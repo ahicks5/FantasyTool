@@ -1982,14 +1982,19 @@ button, a.btn, select, input { min-height: 44px; }
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 212px;
-  padding: 26px 8px 22px;
-  border-radius: 16px;
+  padding: 30px 6px 22px;
+  border-radius: 14px;
   border: 1.5px solid var(--color-line-2);
   background: var(--color-paper);
   box-shadow: var(--shadow-card);
   overflow: hidden;
   transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.pickup-cut {
+  margin-top: auto; padding-top: 6px;
+  border-top: 1px solid var(--color-line);
+  text-align: center; font-size: 11px; line-height: 1.2; color: var(--color-muted);
+  overflow-wrap: anywhere;
 }
 a.pickup:hover { transform: translateY(-2px); }
 a.pickup:active { transform: scale(0.98); }
@@ -2009,28 +2014,24 @@ a.pickup:active { transform: scale(0.98); }
   padding: 5px 4px 4px;
   text-align: center;
   font-family: var(--font-display);
-  font-size: 9.5px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;
+  font-size: 10px; font-weight: 900; letter-spacing: 0.02em; text-transform: uppercase;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   color: var(--color-muted);
   background: var(--color-soft);
   border-bottom: 1px solid var(--color-line);
 }
 .pickup-band-must { color: #fff; background: var(--color-signal); border-bottom-color: transparent; font-size: 11px; }
+.pickup-must .pickup-cut { border-top-color: rgb(255 77 58 / 0.3); }
 .pickup-band-claim { color: #fff; background: var(--color-lean); border-bottom-color: transparent; }
-.pickup-rank {
-  position: absolute; top: 28px; left: 8px;
-  font-size: 13px; line-height: 1; color: var(--color-muted);
-}
 .pickup-go {
   position: absolute; bottom: 0; left: 0; right: 0;
   display: grid; place-items: center;
-  height: 18px;
+  height: 16px;
   color: var(--color-muted);
   background: var(--color-soft);
 }
 .pickup-must .pickup-go { color: #fff; background: var(--color-signal); }
 .pickup-locked { animation: none; }
-.pickup-locked .pickup-rank { color: var(--color-line-2); }
 @media (prefers-reduced-motion: reduce) { .pickup-must { animation: none; } }
 
 /* The pickup's own page: the hero carries the stamp's colour down its edge. */
@@ -2050,7 +2051,7 @@ a.pickup:active { transform: scale(0.98); }
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 .lens-chip:hover { border-color: var(--color-ink); color: var(--color-ink); }
-.lens-chip-on {
+.lens-chip-on, .lens-chip-on:hover {
   color: #0e1116;
   border-color: transparent;
   background: var(--chrome-silver);
@@ -2097,9 +2098,25 @@ a.pickup:active { transform: scale(0.98); }
   cursor: pointer;
   user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
   animation: scout-in 0.35s ease-out both;
-  transition: opacity var(--scout-land) ease-in;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  transition:
+    background-color calc(var(--scout-land) * 0.8) cubic-bezier(0.4, 0, 0.2, 1) calc(var(--scout-land) * 0.15),
+    backdrop-filter var(--scout-land) cubic-bezier(0.4, 0, 0.2, 1),
+    -webkit-backdrop-filter var(--scout-land) cubic-bezier(0.4, 0, 0.2, 1),
+    opacity calc(var(--scout-land) * 0.35) ease calc(var(--scout-land) * 0.65);
 }
-.scout[data-phase="land"], .scout[data-phase="done"] { opacity: 0; }
+/* The landing: the stands dissolve first, the pad goes back down to the lap, and the page
+   underneath comes into focus through a blur that clears, rather than a cut. */
+.scout[data-phase="land"], .scout[data-phase="done"] {
+  background-color: rgb(4 6 10 / 0);
+  -webkit-backdrop-filter: blur(0);
+  backdrop-filter: blur(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.scout[data-phase="land"] .scout-world { opacity: 0 !important; transition: opacity calc(var(--scout-land) * 0.5) ease; }
+.scout[data-phase="land"] .scout-hud, .scout[data-phase="land"] .scout-skip { opacity: 0; transition: opacity 0.3s ease; }
 @keyframes scout-in { from { opacity: 0; } to { opacity: 1; } }
 
 /* The camera: the glasses bring the marked back to the middle of the screen and close
@@ -2264,8 +2281,12 @@ a.pickup:active { transform: scale(0.98); }
   transition: transform var(--scout-drop) cubic-bezier(0.2, 0.8, 0.25, 1);
 }
 .scout[data-phase="drop"] .scout-pad,
-.scout[data-phase="notes"] .scout-pad,
-.scout[data-phase="land"] .scout-pad { transform: translate(-50%, 0) rotate(-1deg); }
+.scout[data-phase="notes"] .scout-pad { transform: translate(-50%, 0) rotate(-1deg); }
+.scout[data-phase="land"] .scout-pad {
+  transform: translate(-50%, 40%) rotate(0deg) scale(0.94);
+  opacity: 0;
+  transition: transform calc(var(--scout-land) * 0.8) cubic-bezier(0.4, 0, 0.2, 1), opacity calc(var(--scout-land) * 0.6) ease calc(var(--scout-land) * 0.2);
+}
 .scout-pad-rings {
   position: absolute; top: -9px; left: 16px; right: 16px; height: 18px;
   background: radial-gradient(circle at 50% 50%, #cdd2d9 0 4px, #6e757f 4.5px 5.5px, transparent 6px) 0 0 / 22px 18px repeat-x;
@@ -2362,3 +2383,131 @@ a.pickup:active { transform: scale(0.98); }
   background: rgb(0 0 0 / 0.45);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
 }
+
+/* ============================================================== all players ===
+   The board as a table. The controls sit in one panel; the table is one card with
+   hairline rows and three fixed numeric columns, so the eye runs straight down them. */
+.board-tools {
+  display: grid; gap: 0; grid-template-columns: minmax(0, 1fr);
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid var(--color-line);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+}
+.board-tools-row { padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--color-line); }
+.board-search {
+  width: 100%; min-width: 0;
+  padding: 11px 44px 11px 40px;
+  border-radius: 11px;
+  border: 1px solid var(--color-line-2);
+  background: var(--color-soft);
+  color: var(--color-ink);
+  font-size: 16px;
+}
+.board-search::placeholder { color: var(--color-muted); }
+.board-search:focus { outline: none; border-color: var(--color-ink); background: var(--color-paper); }
+.board-search::-webkit-search-cancel-button { appearance: none; }
+
+/* Position tabs: underline style, one row, the chosen tab in chrome. */
+.board-tabs {
+  display: flex; gap: 2px;
+  margin-top: 8px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.board-tabs::-webkit-scrollbar { display: none; }
+.board-tab {
+  flex: 1 0 auto; min-height: 36px; padding: 0 9px;
+  border-bottom: 2px solid transparent;
+  font-size: 12px; font-weight: 900; color: var(--color-muted);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.board-tab:hover { color: var(--color-ink); }
+.board-tab-on { color: var(--color-ink); border-bottom-color: var(--color-ink); }
+
+/* Who holds him: a compact segmented control. */
+.board-seg {
+  display: flex; flex: 1; min-width: 0; gap: 2px;
+  padding: 3px; border-radius: 10px;
+  background: var(--color-soft); border: 1px solid var(--color-line-2);
+}
+.board-seg-btn {
+  flex: 1; min-width: 0; min-height: 30px; padding: 0 4px;
+  border-radius: 7px;
+  font-size: 12px; font-weight: 800; color: var(--color-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.board-seg-on { color: var(--color-ink); background: var(--color-paper); box-shadow: var(--shadow-card); }
+.board-select {
+  width: 100%; min-height: 38px; appearance: none;
+  padding: 0 24px 0 10px;
+  border-radius: 10px; border: 1px solid var(--color-line-2);
+  background: var(--color-soft); color: var(--color-ink);
+  font-size: 12px; font-weight: 800;
+}
+.board-select:focus { outline: none; border-color: var(--color-ink); }
+.board-label { flex: none; font-size: 11px; font-weight: 800; color: var(--color-muted); }
+.board-tools .lens-chip { min-height: 32px; padding: 4px 10px; }
+
+/* The table. */
+.board-table {
+  border-radius: 16px;
+  border: 1px solid var(--color-line);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.board-head {
+  display: flex; align-items: center; gap: 8px;
+  min-height: 34px; padding: 0 10px;
+  border-bottom: 1px solid var(--color-line-2);
+  background: var(--color-soft);
+}
+.board-th {
+  display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px;
+  min-height: 34px;
+  font-size: 10.5px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--color-muted);
+}
+.board-th-btn:hover { color: var(--color-ink); }
+.board-th-player { flex: 1; min-width: 0; justify-content: flex-start; padding-left: 44px; }
+.board-th-on { color: var(--color-ink); }
+.board-rank {
+  flex: none; width: 18px;
+  text-align: right; font-size: 11px; font-weight: 700; color: var(--color-muted);
+}
+.board-head .board-rank { font-size: 10.5px; font-weight: 900; }
+.board-num { flex: none; width: 42px; text-align: right; font-size: 13px; font-weight: 700; }
+.board-proj { font-size: 15px; font-weight: 900; color: var(--color-ink); }
+.board-bar {
+  display: block; height: 3px; margin: 3px 0 0 auto; width: 34px;
+  border-radius: 2px; background: var(--color-line);
+  overflow: hidden;
+}
+.board-bar > span { display: block; height: 100%; margin-left: auto; border-radius: 2px; background: var(--color-start); }
+.board-row {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; min-width: 0; min-height: 56px;
+  padding: 8px 10px;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+li + li > .board-row { border-top: 1px solid var(--color-line); }
+.board-row:hover { background: var(--color-soft); }
+.board-row:focus-visible { outline: none; background: var(--color-soft); box-shadow: inset 3px 0 0 var(--color-ink); }
+.board-fa, .board-mine, .board-held {
+  min-width: 0; padding: 0 5px; border-radius: 4px;
+  font-size: 9.5px; font-weight: 900; line-height: 15px; letter-spacing: 0.03em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.board-fa { flex: none; color: var(--color-start); background: var(--color-start-soft); }
+.board-mine { flex: none; color: var(--color-lean); background: var(--color-lean-soft); }
+.board-held { flex: 0 1 auto; min-width: 54px; color: var(--color-muted); box-shadow: inset 0 0 0 1px var(--color-line-2); }
+.board-more {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; min-height: 46px;
+  border-top: 1px solid var(--color-line-2);
+  font-size: 13px; font-weight: 900; color: var(--color-ink);
+  background: var(--color-soft);
+}
+.board-more:disabled { opacity: 0.6; }

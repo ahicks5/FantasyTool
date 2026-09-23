@@ -174,11 +174,18 @@ pinned by `vocab.test.ts`. "See more" opens picks 4-10. No budget, waiver-order 
 faces withheld and the offer stays under the board. The page reads `GET .../waivers` (not
 `/waivers/plan`; `WaiverPlanView` and `WaiversView` are no longer mounted).
 
-**The research room** is the free board with the scout's lenses on top (`LensBar` in
-`PlayerBoard.tsx`, server in `edge/api/lenses.py`): My handcuffs, Next man up, Defense runs
-(three schedule chips, green soft / red tough by the opponent offense's rank), Bye cover,
-Risers. A lens owns the order, so the sort control hides while one is on; each opens on
-its own availability (`withLens`: handcuffs `all`, the rest `free`).
+**All players** (round two, same day) is a real table (`PlayerBoard.tsx`, helpers in
+`lib/board.ts`): one controls panel (search; position tabs from the league's own facets,
+with FLEX = RB/WR/TE when all three exist; All/Free/Taken/Mine plus an NFL-team menu; the
+lenses row), then one card with a rank column, the face and one meta line (position, team,
+bye, an FA / Yours / team mark), and three fixed numeric columns: Proj (with a bar against
+the best on the board), ROS, Adds (`compactCount`). **Sorting is the column headings**
+(`pressColumn`: a new column opens in its natural direction, the same one flips); there is
+no sort menu. While a lens is on the headings are plain text, because the lens owns the
+order. Lenses (`edge/api/lenses.py`): My handcuffs, Next man up, Defense runs (three
+schedule chips, green soft / red tough), Bye cover, Risers; each opens on its own
+availability (`withLens`). The top pickups are compact on purpose so the search box is on
+the first screen of a phone.
 
 **The scout takes his seat** (`ScoutOpening.tsx`, `lib/scout.ts`): the first open of the
 tab, once per browser (`booth.scout`), a night game from the stands, the glasses close on a
@@ -186,7 +193,14 @@ back running a route and ring him, the camera drops to a notepad where the top t
 themselves in and the first gets "Must add!" circled. ~6.5s, a tap lands it, `?scout=1`
 replays it. It never plays over the day's first ride: it decides in a passive effect,
 after `Opening` has claimed the ride's floor, and yields if the floor is up. Dark in both
-themes; the zoom centres on the marked back by measuring him (`--tx`/`--ty`).
+themes; the zoom centres on the marked back by measuring him (`--tx`/`--ty`). The landing
+is 1.2s: the stands dissolve, the pad slides back down and the page comes up through a
+backdrop blur that clears (Andrew: the first cut to the page was too abrupt).
+
+**Every opening is once, and `?ride=1` resets them all.** The lineup stamp (`Boom`) lands
+once per league per week (`booth.boom.<league>`), no longer on every arrival. `Opening`
+calls `resetOpenings()` when the ride is forced, which clears the scout's and the lineup's
+stamps too.
 
 ## Theme
 
@@ -230,11 +244,11 @@ role's, not the slot call's, so a starter with nobody in the frame for his seat 
 Lock. IR and PUP men get their own "Injured reserve" list.
 
 The stamp that lands on a fresh open (`Boom`) is a dialog with a close button and stays
-until dismissed; it lands on every arrival at the tab, never in the report's compact embed,
-and not on the way back from a role's page (`DecisionView` writes `booth.boom = skip` to
-sessionStorage and the lineup consumes it), nor when the page opened on a `?player=` link,
-where his page is already the dialog. It used to land once per browser session, and a
-phone keeps a session for days, so it never came back. Every word is in `LINEUP` in `lib/vocab.ts`; the probability beside a
+until dismissed; it lands once per league per week (`booth.boom.<league>` in localStorage,
+Andrew 2026-09-23: "it should only be once"), never in the report's compact embed, nor when
+the page opened on a `?player=` link, where his page is already the dialog. `?ride=1`
+resets it. (History: once per browser session never came back on a phone; every arrival
+was a toll.) Every word is in `LINEUP` in `lib/vocab.ts`; the probability beside a
 candidate is rendered from the engine's `p` beside a label, because the vocab sweep forbids
 a percentage in copy. The seven read keys in `LINEUP.factor` mirror `engine/decisions.KEYS`
 and `vocab.test.ts` pins the list. The engine's third confidence band is still the string

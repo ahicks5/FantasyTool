@@ -18,7 +18,7 @@ import { describeError, isOnline } from "@/lib/errors";
 import { CLOSED, CONFIDENCE_HIT_LINE, CONFIDENCE_LABEL } from "@/lib/vocab";
 import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitPhase } from "@/lib/wait";
 import { dayStamp, liftRideBoot, rideDue, rideForced } from "@/lib/elevator";
-import { loadConnection, loadRideDay } from "@/lib/storage";
+import { loadConnection, loadRideDay, resetOpenings } from "@/lib/storage";
 import { ElevatorRide } from "./Elevator";
 import { Loading } from "./Loading";
 import { IconCheck, IconChevron, IconClock, IconMark, IconMoon, IconSun, IconThumbDown, IconThumbUp } from "./icons";
@@ -520,8 +520,10 @@ export function Opening() {
     // no floor, so that reader is never held on a skeleton for an animation that is
     // not running.
     const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const due =
-      !reduce && loadConnection() !== null && rideDue(loadRideDay(), dayStamp(new Date()), rideForced(window.location.search));
+    const forced = rideForced(window.location.search);
+    // Replaying the ride replays every first impression: the scout's seat, the lineup stamp.
+    if (forced) resetOpenings();
+    const due = !reduce && loadConnection() !== null && rideDue(loadRideDay(), dayStamp(new Date()), forced);
     const p = claimWait(due);
     setPhase(p);
     const riding = p === "narrated" && due;

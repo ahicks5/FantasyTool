@@ -522,10 +522,9 @@ export const SCOUT = {
    */
   back: "All players",
   /** The research half of the tab: who is out there, through a lens a filter cannot be. */
-  research: "Who’s out there",
-  researchHint: "Every player in the league, scored by your rules. Pick a lens to ask a sharper question.",
+  research: "All players",
   lenses: {
-    eyebrow: "Scout’s lenses",
+    eyebrow: "Lenses",
     /** The chip that turns the lens off. */
     off: "Everyone",
     handcuffs: { label: "My handcuffs", blurb: "The back directly behind each of yours, wherever he is rostered." },
@@ -564,7 +563,6 @@ export const SCOUT = {
  * voice rule, and `vocab.test.ts` pins that it stays the only one.
  */
 export const WIRE = {
-  eyebrow: "Head of scouting",
   title: "Top pickups",
   urgency: {
     must: "Must add!",

@@ -24,8 +24,10 @@ export const FOCUS_MS = 1500;
 export const DROP_MS = 700;
 /** The three names write themselves in, the first one circled. */
 export const NOTES_MS = 2100;
-/** The pad becomes the page. */
-export const LAND_MS = 500;
+/** The pad becomes the page: it settles back down to the lap while the stands dissolve,
+ *  and the page comes up through a blur that clears. Long and eased on purpose: Andrew's
+ *  note on the first cut was that the cut to the page was too abrupt. */
+export const LAND_MS = 1200;
 
 export const FOCUS_AT = STANDS_MS;
 export const DROP_AT = FOCUS_AT + FOCUS_MS;

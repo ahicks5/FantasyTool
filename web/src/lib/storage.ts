@@ -143,6 +143,44 @@ export function saveScoutSeen(): void {
   }
 }
 
+/* ------------------------------------------------------------ the lineup stamp ---
+   The head coach's stamp on /team lands once per league per week (Andrew, 2026-09-23:
+   "it should only be once"). It used to land on every arrival at the tab.            */
+
+const BOOM_SEEN_PREFIX = "booth.boom.";
+
+export function boomSeen(leagueId: string, week: number): boolean {
+  try {
+    return window.localStorage.getItem(BOOM_SEEN_PREFIX + leagueId) === String(week);
+  } catch {
+    return false;
+  }
+}
+
+export function saveBoomSeen(leagueId: string, week: number): void {
+  try {
+    window.localStorage.setItem(BOOM_SEEN_PREFIX + leagueId, String(week));
+  } catch {
+    /* blocked storage: it lands again next time */
+  }
+}
+
+/**
+ * Every one-time opening, back to unseen: the scout's seat and the lineup stamp. `?ride=1`
+ * calls it, so replaying the elevator replays the whole first impression, not one room of it.
+ */
+export function resetOpenings(): void {
+  try {
+    window.localStorage.removeItem(SCOUT_KEY);
+    for (let i = window.localStorage.length - 1; i >= 0; i--) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith(BOOM_SEEN_PREFIX)) window.localStorage.removeItem(k);
+    }
+  } catch {
+    /* blocked storage: nothing was remembered to forget */
+  }
+}
+
 /* --------------------------------------------------------------- the sheet ---
    Which calls you have made this week. Scoped per league and per week by
    `calledKey`, so a new week starts with a clean sheet instead of inheriting
