@@ -1996,7 +1996,7 @@ button, a.btn, select, input { min-height: 44px; }
   text-align: center; font-size: 11px; line-height: 1.2; color: var(--color-muted);
   overflow-wrap: anywhere;
 }
-a.pickup:hover { transform: translateY(-2px); }
+@media (hover: hover) { a.pickup:hover { transform: translateY(-2px); } }
 a.pickup:active { transform: scale(0.98); }
 .pickup-must {
   border: 2px solid var(--color-signal);
@@ -2042,27 +2042,38 @@ a.pickup:active { transform: scale(0.98); }
 /* The scout's lenses: five questions, each a chip with its count of free agents. */
 .lens-chip {
   display: inline-flex; flex: none; align-items: center; gap: 6px;
-  min-height: 36px; padding: 6px 12px;
-  border-radius: 10px;
+  min-height: 36px; padding: 6px 11px 6px 9px;
+  border-radius: 999px;
   border: 1px solid var(--color-line-2);
   background: var(--color-soft);
   color: var(--color-ink-2);
   font-size: 12px; font-weight: 800; letter-spacing: 0.01em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
-.lens-chip:hover { border-color: var(--color-ink); color: var(--color-ink); }
-.lens-chip-on, .lens-chip-on:hover {
-  color: #0e1116;
-  border-color: transparent;
-  background: var(--chrome-silver);
-  box-shadow: var(--shadow-card);
+.lens-chip svg { flex: none; color: var(--color-muted); transition: color 0.15s ease; }
+.lens-chip:active { transform: scale(0.97); }
+/* Hover only where there is a real pointer: a phone keeps :hover stuck on the chip it
+   just tapped, which painted the chosen chip's text in the wrong colour until the next
+   scroll (Andrew, 2026-09-23). */
+@media (hover: hover) {
+  .lens-chip:not(.lens-chip-on):hover { border-color: var(--color-ink); color: var(--color-ink); }
 }
+/* On: solid ink, the one filled thing in the row, in whichever theme. The text is the
+   page colour, so it is always the opposite of the fill. */
+.lens-chip-on {
+  color: var(--color-paper);
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  box-shadow: 0 4px 14px -6px rgb(0 0 0 / 0.5);
+}
+.lens-chip-on svg { color: var(--color-paper); }
 .lens-chip-n {
   min-width: 18px; padding: 1px 5px; border-radius: 999px;
-  font-size: 10px; font-weight: 900; text-align: center;
+  font-size: 10px; font-weight: 900; text-align: center; line-height: 14px;
   color: var(--color-paper); background: var(--color-muted);
 }
-.lens-chip-on .lens-chip-n { color: #fff; background: #0e1116; }
+.lens-chip-on .lens-chip-n { color: var(--color-ink); background: var(--color-paper); }
 .lens-fact {
   display: inline-flex; align-items: center;
   max-width: 100%;
@@ -2422,7 +2433,7 @@ a.pickup:active { transform: scale(0.98); }
   font-size: 12px; font-weight: 900; color: var(--color-muted);
   transition: color 0.15s ease, border-color 0.15s ease;
 }
-.board-tab:hover { color: var(--color-ink); }
+@media (hover: hover) { .board-tab:hover { color: var(--color-ink); } }
 .board-tab-on { color: var(--color-ink); border-bottom-color: var(--color-ink); }
 
 /* Who holds him: a compact segmented control. */
@@ -2447,7 +2458,7 @@ a.pickup:active { transform: scale(0.98); }
 }
 .board-select:focus { outline: none; border-color: var(--color-ink); }
 .board-label { flex: none; font-size: 11px; font-weight: 800; color: var(--color-muted); }
-.board-tools .lens-chip { min-height: 32px; padding: 4px 10px; }
+.board-tools .lens-chip { min-height: 34px; }
 
 /* The table. */
 .board-table {
@@ -2469,7 +2480,7 @@ a.pickup:active { transform: scale(0.98); }
   font-size: 10.5px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--color-muted);
 }
-.board-th-btn:hover { color: var(--color-ink); }
+@media (hover: hover) { .board-th-btn:hover { color: var(--color-ink); } }
 .board-th-player { flex: 1; min-width: 0; justify-content: flex-start; padding-left: 44px; }
 .board-th-on { color: var(--color-ink); }
 .board-rank {
@@ -2493,7 +2504,8 @@ a.pickup:active { transform: scale(0.98); }
   transition: background 0.12s ease;
 }
 li + li > .board-row { border-top: 1px solid var(--color-line); }
-.board-row:hover { background: var(--color-soft); }
+@media (hover: hover) { .board-row:hover { background: var(--color-soft); } }
+.board-row:active { background: var(--color-soft); }
 .board-row:focus-visible { outline: none; background: var(--color-soft); box-shadow: inset 3px 0 0 var(--color-ink); }
 .board-fa, .board-mine, .board-held {
   min-width: 0; padding: 0 5px; border-radius: 4px;

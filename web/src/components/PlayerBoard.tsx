@@ -209,6 +209,28 @@ function Fact({ fact }: { fact: LensFact }) {
   );
 }
 
+/** A small mark per lens, so the row reads at a glance before the words do. */
+const LENS_ICON: Record<Lens, React.ReactNode> = {
+  // two linked rings: a cuff
+  handcuffs: <><circle cx="8" cy="12" r="4" /><circle cx="16" cy="12" r="4" /></>,
+  // a step up the ladder
+  backups: <><path d="M12 19V6" /><path d="M7 11l5-5 5 5" /></>,
+  // a shield
+  defenses: <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />,
+  // a calendar
+  byes: <><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></>,
+  // a line going up
+  risers: <><path d="M4 17l6-6 4 4 6-7" /><path d="M15 8h5v5" /></>,
+};
+
+function LensIcon({ lens }: { lens: Lens }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {LENS_ICON[lens]}
+    </svg>
+  );
+}
+
 /** The five questions, as chips with a count of the free agents inside each. */
 function LensBar({ on, counts, pick }: { on: Lens | null | undefined; counts: LensCounts | null; pick: (l: Lens | null) => void }) {
   const L = SCOUT.lenses;
@@ -221,6 +243,7 @@ function LensBar({ on, counts, pick }: { on: Lens | null | undefined; counts: Le
             const n = counts?.counts[l];
             return (
               <button key={l} type="button" aria-pressed={on === l} onClick={() => pick(l)} className={`lens-chip ${on === l ? "lens-chip-on" : ""}`}>
+                <LensIcon lens={l} />
                 <span>{L[l].label}</span>
                 {typeof n === "number" && n > 0 && <span className="lens-chip-n tnum">{n}</span>}
               </button>
