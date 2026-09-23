@@ -418,6 +418,119 @@ export interface SeasonRecap {
   points_rank: number | null;
 }
 
+// ---------------------------------------------------------------------------
+// The film, as the replay (docs/API.md §The film; edge/engine/film.py)
+// ---------------------------------------------------------------------------
+
+/** Where a past projection came from. "platform" is the vendor's stored number, which may
+ * have been revised after the games; the page says "as Sleeper has it now" beside it. */
+export type FilmSource = "freeze" | "runs" | "platform";
+
+export type FilmVerdict = "went_off" | "flopped" | "as_expected" | "hurt_pregame" | "hurt_in_game" | "did_not_play";
+
+export interface FilmPlayerRef {
+  id: string;
+  name: string;
+  position: string;
+  nfl_team: string | null;
+}
+
+/** One reason a man scored what he did. Printed only when the number is unusual for him. */
+export interface FilmReason {
+  kind: "td_luck" | "usage" | "game_script" | "snaps" | "efficiency" | "turnover" | "injury" | "bye";
+  line: string;
+  /** +1 helped him, -1 hurt him. */
+  sign: 1 | -1;
+}
+
+export interface FilmHistory {
+  /** 1 = his best game this season. */
+  rank_this_season: number;
+  weeks: number;
+  /** Set only on his best game of the season: the last game he scored as much, or, with
+   * `earliest`, the first week the log holds (2025 today). */
+  best_since: { season: number; week: number; earliest: boolean } | null;
+}
+
+export interface FilmNext {
+  kind: "start" | "move_on" | "hold";
+  line: string;
+  /** The tab that acts on it, or null for "hold". */
+  href: string | null;
+}
+
+export interface FilmAttribution {
+  player: FilmPlayerRef;
+  /** The slot he started in, or "BN". */
+  slot: string;
+  started: boolean;
+  had: number | null;
+  source: FilmSource | null;
+  went: number;
+  delta: number | null;
+  /** Null when no projection is on record for him. */
+  verdict: FilmVerdict | null;
+  reasons: FilmReason[];
+  history: FilmHistory | null;
+  /** Only on the newest graded week. */
+  next: FilmNext | null;
+}
+
+export interface FilmSwing {
+  kind: "opponent" | "turnover" | "injury" | "bench" | "swap" | "claim" | null;
+  control: "outside" | "decision" | null;
+  points: number | null;
+  /** Null only when there was no opponent (a bye). */
+  line: string | null;
+}
+
+export interface FilmCover {
+  /** Absent on a week's own cover; set on the season's newest. */
+  week?: number;
+  /** The one kind and true line, or null when the scoreline is the cover. */
+  line: string | null;
+  result: "W" | "L" | "T" | null;
+  my_points: number;
+  their_points: number | null;
+  opponent: string | null;
+}
+
+export interface FilmFact {
+  kind: "all_play" | "top_score" | "season_best" | "perfect_lineup";
+  line: string;
+}
+
+export interface WeekFilm {
+  week: number;
+  opponent: string | null;
+  result: "W" | "L" | "T" | null;
+  my_points: number;
+  their_points: number | null;
+  cover: FilmCover;
+  facts: FilmFact[];
+  swing: FilmSwing | null;
+  /** The manager's lineup against the best he had. Null without per-player points. */
+  lineup: { points: number; best_possible: number; left: number; perfect: boolean } | null;
+  injuries: { player: FilmPlayerRef; verdict: FilmVerdict; line: string | null }[];
+  /** Starters in slot order, then the bench men worth a line. */
+  attributions: FilmAttribution[];
+  /** False when the platform gave a scoreline and nobody's points (ESPN, until F-8). */
+  line_by_line: boolean;
+  /** How many starters' projections came from each source. */
+  sources: Partial<Record<FilmSource, number>>;
+  takeaway: (FilmNext & { player: FilmPlayerRef }) | null;
+}
+
+export interface FilmSeason {
+  team: string;
+  league: string;
+  /** The newest week's cover, with its week. Null before any week is over. */
+  cover: FilmCover | null;
+  /** Newest first. Only weeks that are over. */
+  weeks: WeekFilm[];
+  algo_version: string;
+}
+
 export interface Bid {
   amount: number | null;
   range: [number, number] | null;

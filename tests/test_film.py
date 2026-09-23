@@ -482,3 +482,113 @@ def test_the_week_in_progress_is_never_filmed_even_when_it_has_points(real):
     ctx, _ = real
     live = replace(ctx, league=replace(ctx.league, week=12))
     assert max(w["week"] for w in film.build(live, ME)["weeks"]) == 11
+
+
+# ---------------------------------------------------------------- the endpoint (F-3)
+
+from fastapi.testclient import TestClient  # noqa: E402
+
+from edge.api import app as app_mod  # noqa: E402
+from edge.api.store import Store  # noqa: E402
+from edge.data.providers import from_sleeper  # noqa: E402
+
+FILM_URL = "/api/league/sleeper/1204456178218708992/team/1/film"
+H = {"X-Edge-User": "andrew@example.com"}
+
+
+class _Vendor:
+    """The vendor door, answering from the league's recorded weekly projections."""
+
+    name = "sleeper"
+
+    def weekly(self, season, week, positions=None):
+        f = PPR / f"projections_2025_{week}.json"
+        return [from_sleeper(r) for r in json.loads(f.read_text())] if f.exists() else []
+
+
+@pytest.fixture()
+def film_client(real, monkeypatch):
+    ctx, _ = real
+    bundle = service.Bundle(league=ctx.league, ros={}, byes={}, bid_stats={}, profiles={}, pos_counts={})
+    monkeypatch.setattr(service, "get_bundle", lambda platform, league_id, auth=None: bundle)
+    monkeypatch.setattr(service, "played_weeks", lambda platform, league_id, b, auth=None: ctx.weeks)
+    monkeypatch.setattr(service, "stat_log", lambda season, through: ctx.log)
+    monkeypatch.setattr(service, "week_results", lambda season, week: {})
+    monkeypatch.setattr(service, "get_provider", lambda: _Vendor())
+    monkeypatch.setattr(app_mod, "_decision_context", lambda b, team: None)
+    monkeypatch.setattr(app_mod, "store", Store(":memory:"))
+    monkeypatch.setenv("EDGE_DEV", "1")
+    monkeypatch.setenv("EDGE_FROZEN_DIR", str(FIX / "frozen"))     # no 2025 freeze in it
+    monkeypatch.delenv("EDGE_DEMO_UNLOCK", raising=False)
+    return TestClient(app_mod.app)
+
+
+def test_a_free_reader_gets_the_cover_as_the_teaser_and_nothing_else(film_client):
+    r = film_client.get(FILM_URL, headers=H)
+    assert r.status_code == 402
+    detail = r.json()["detail"]
+    assert detail["feature"] == "full_report"
+    assert detail["cover"]["week"] == 12 and detail["cover"]["result"] == "W"
+    assert "attributions" not in json.dumps(detail), "the story stays behind the pass"
+
+
+def test_a_paid_reader_gets_every_finished_week_newest_first_with_sources(film_client):
+    app_mod.store.grant("andrew@example.com", "full_report", 2025, source="test")
+    app_mod.store.grant("andrew@example.com", "full_report", 2026, source="test")
+    r = film_client.get(FILM_URL, headers=H)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert [w["week"] for w in body["weeks"]] == [12, 11, 10, 9, 8]
+    w12 = body["weeks"][0]
+    assert w12["sources"] == {"platform": 10}, "no freeze, no runs: the vendor's stored number, tagged"
+    assert body["algo_version"] == film.ALGO_VERSION
+
+
+def test_what_we_logged_outranks_the_vendor_and_one_week_has_its_own_route(film_client):
+    app_mod.store.grant("andrew@example.com", "full_report", 2026, source="test")
+    app_mod.store.log_run("andrew@example.com", "sleeper", "1204456178218708992", "1", 12,
+                          "actions", "v1", {"actions": [{"players": [{"id": "3200", "projected": 6.25}]}]})
+    wk = film_client.get(f"{FILM_URL}/12", headers=H).json()
+    shep = next(a for a in wk["attributions"] if a["player"]["id"] == "3200")
+    assert (shep["had"], shep["source"]) == (6.25, "runs")
+    assert film_client.get(f"{FILM_URL}/13", headers=H).status_code == 404, "week 13 is being played"
+
+
+def test_the_demo_unlock_opens_the_film_for_testing(film_client, monkeypatch):
+    monkeypatch.setenv("EDGE_DEMO_UNLOCK", "1")
+    assert film_client.get(FILM_URL).status_code == 200
+
+
+def test_the_endpoint_never_scores_penthouse(film_client, monkeypatch):
+    monkeypatch.setenv("EDGE_DEMO_UNLOCK", "1")
+    body = film_client.get(FILM_URL).json()
+    assert not _walk_keys(body, set()) & BANNED_KEYS
+    blob = json.dumps(body).lower()
+    for word in ("hit_rate", "accuracy", "accurate", "win_rate", "beat_us"):
+        assert word not in blob
+
+
+def test_the_paid_card_is_still_paid_beside_the_film(film_client):
+    """A free film cover must not open anything else that is paid."""
+    assert film_client.get("/api/league/sleeper/1204456178218708992/team/1/recap", headers=H).status_code == 402
+
+
+# ---------------------------------------------------------------- the TypeScript contract
+
+def _interface(name: str) -> set[str]:
+    src = (Path(__file__).resolve().parents[1] / "web/src/lib/types.ts").read_text()
+    m = re.search(rf"export interface {name} \{{(.*?)\n\}}", src, re.S)
+    assert m, f"{name} is missing from types.ts"
+    body = re.sub(r"/\*.*?\*/", "", m.group(1), flags=re.S)
+    return set(re.findall(r"^\s{2}(\w+)\??:", body, re.M))
+
+
+def test_types_ts_mirrors_the_film_payload(real):
+    _, season = real
+    w = season["weeks"][0]
+    a = w["attributions"][0]
+    assert _interface("FilmSeason") == set(season)
+    assert _interface("WeekFilm") == set(w)
+    assert _interface("FilmAttribution") == set(a)
+    assert _interface("FilmSwing") == set(w["swing"])
+    assert _interface("FilmCover") == set(w["cover"]) | {"week"}

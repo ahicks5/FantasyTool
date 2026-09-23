@@ -1101,10 +1101,22 @@ the gauntlet, a trade and waiver ledger graded so far, the playoff picture), wee
 with a projector opening. The carrot for The Penthouse. Sections F-1 to F-10 in the spec;
 build order in §8.
 
-- [ ] **F-1** Data spine: read `docs/frozen/` for past-week projections, keep game scores in
-      the schedule, playoff settings on `League`.
-- [ ] **F-2** `engine/film.py`: attribution, the swing, the takeaway. Pure, tested offline.
-- [ ] **F-3** `/film` route, cover free, story 402 with the cover as teaser.
+- [x] **F-1** Data spine (2026-09-23). `edge/data/frozen.py` reads and scores the freeze;
+      `service.past_projections` falls through freeze → runs → the vendor's stored week,
+      tagged by source, and `pregame_status` reads tags from the freeze only. Schedule games
+      keep final scores; `load_week_games` caches a week for good once final. `League` has
+      `playoff_teams` / `playoff_week_start` (Sleeper and ESPN). Transactions are stamped
+      with their league so last season's claims never count. The lineup call already lands
+      in `runs` (`/lineup`, app.py). Tests: `tests/test_frozen.py`.
+- [x] **F-2** `edge/engine/film.py` (2026-09-23): per-player attribution (had → went,
+      verdict, reasons only when unusual for him, TD luck named, in-game injury inferred and
+      said so, history with best-since, next looked up from roles / ROS / the waiver plan),
+      the swing, the cover facts, the lineup against his best. Pure; a test fails if it
+      imports `edge.data`. Tests: `tests/test_film.py`, one per §5 rule plus a real 2025 league.
+- [x] **F-3** `GET .../team/{t}/film` and `.../film/{week}` (2026-09-23): cover free, the
+      rest 402 with the cover as teaser. Contract in `docs/API.md` §The replay, mirrored in
+      `types.ts` (`FilmSeason`, `WeekFilm`, ...), `api.getFilm`, and `mocks.FILM` (shape only,
+      never served: a demo must not show a season nobody played).
 - [ ] **F-4** The replay on the web: cover, story cards, per-starter attribution sheet.
 - [ ] **F-5** The league: superlatives, position groups, expectation, the gauntlet, charts.
 - [ ] **F-6** The ledger: every trade and claim, graded on points since, "so far".
@@ -1119,3 +1131,25 @@ build order in §8.
   the free/paid line is drawn later. Nothing waits on the Thursday freeze: past
   projections fall through freeze → runs → Sleeper's stored number, tagged by source.
   The backend may change, so `film.py` never calls a data module. Older seasons later.
+
+### Next session: F-4 (the replay on the web)
+
+Build `web/src/components/film/Replay.tsx` on `api.getFilm`, per SPEC-FILM F-4. Print
+"as Sleeper has it now" beside a `source: "platform"` projection. `/report` still renders
+the old recap; swap it once the replay can stand on its own.
+
+### Decisions for Andrew (film, after F-1 to F-3)
+
+- **Render needs `EDGE_DEMO_UNLOCK=1`** to see the story while we test; without it the
+  route serves only the cover (402 teaser), exactly as a free reader will.
+- **Thresholds are first guesses, not measured**: "unusual" is one deviation off his last
+  eight games (three minimum) with a floor per stat; "left early" is under half his snaps;
+  a blowout is 14 points; touchdown luck needs two TDs over a scoreless norm. Say if any
+  line reads wrong on a real week.
+- **Game script uses final margins**, not halftime: the scoreboard feed we store has finals
+  only. "BUF lost by 21, so they threw" is printed only beside an unusual volume line.
+- **The live stat log reads all of last season** (18 cached requests the first time) so
+  "best since" can reach 2025. First film load on a cold server is slow; after that, cached.
+- **Pregame tags come from the freeze only.** Weeks never frozen say "read off the snap
+  count" instead of "no injury tag before kickoff". Keep the Thursday freeze running.
+

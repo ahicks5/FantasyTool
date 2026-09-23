@@ -2,6 +2,7 @@
 // half-PPR projections come from tests/fixtures/sleeper/* ("The Megalabowl").
 import { withArticle } from "./format";
 import type {
+  FilmSeason,
   Desk,
   NewsItem,
   Plan,
@@ -1603,3 +1604,54 @@ export function planFor(teamId: string, kind: string, mineId: string, aboutId: s
     synced_at: Date.now() / 1000 - 120,
   };
 }
+
+/**
+ * The film's shape (docs/API.md §The film), written out once so the type checker holds the
+ * contract. **Never served**: `api.getFilm` returns the empty film in a mock build, because a
+ * demo must not show a season nobody played. The numbers below are illustrative, not a week.
+ */
+export const FILM: FilmSeason = {
+  team: "GoldenPP",
+  league: "The Megalabowl",
+  cover: { week: 1, line: "You'd have beaten 9 of 11 teams this week", result: "L", my_points: 128.4,
+           their_points: 131.2, opponent: "TrentDuckworth" },
+  weeks: [
+    {
+      week: 1,
+      opponent: "TrentDuckworth",
+      result: "L",
+      my_points: 128.4,
+      their_points: 131.2,
+      cover: { line: "You'd have beaten 9 of 11 teams this week", result: "L", my_points: 128.4,
+               their_points: 131.2, opponent: "TrentDuckworth" },
+      facts: [{ kind: "all_play", line: "You'd have beaten 9 of 11 teams this week" }],
+      swing: { kind: "opponent", control: "outside", points: 131.2,
+               line: "TrentDuckworth put up 131.2, the 2nd highest score in the league this week" },
+      lineup: { points: 128.4, best_possible: 134.9, left: 6.5, perfect: false },
+      injuries: [],
+      attributions: [
+        {
+          player: { id: "6786", name: "CeeDee Lamb", position: "WR", nfl_team: "DAL" },
+          slot: "WR1",
+          started: true,
+          had: 14.2,
+          source: "freeze",
+          went: 27.9,
+          delta: 13.7,
+          verdict: "went_off",
+          reasons: [
+            { kind: "td_luck", line: "2 TDs on 3 red-zone looks, against 0.4 a game: touchdown luck", sign: 1 },
+            { kind: "usage", line: "14 targets, his season high (norm 8)", sign: 1 },
+          ],
+          history: { rank_this_season: 1, weeks: 1, best_since: { season: 2025, week: 11, earliest: false } },
+          next: { kind: "hold", line: "One week: his share of the snaps did not move", href: null },
+        },
+      ],
+      line_by_line: true,
+      sources: { freeze: 5, platform: 4 },
+      takeaway: { kind: "hold", line: "One week: his share of the snaps did not move", href: null,
+                  player: { id: "6786", name: "CeeDee Lamb", position: "WR", nfl_team: "DAL" } },
+    },
+  ],
+  algo_version: "film.v1",
+};

@@ -28,6 +28,7 @@ import type {
   TradeResult,
   Waivers,
   SeasonRecap,
+  FilmSeason,
   TeamGrades,
   PlayerHit,
   PlayerProfile,
@@ -271,6 +272,21 @@ export async function getRecap(platform: Platform, leagueId: string, teamId: str
   }
   return request<SeasonRecap>(
     `/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/recap`,
+  );
+}
+
+/**
+ * The replay: every finished week told as a story (docs/API.md §The film).
+ *
+ * The mock branch returns the empty film, never `mocks.FILM`, for the reason `getRecap`
+ * gives: a demo build must not show a season nobody played. `mocks.FILM` pins the shape.
+ */
+export async function getFilm(platform: Platform, leagueId: string, teamId: string): Promise<FilmSeason> {
+  if (USE_MOCKS) {
+    return { team: teamId, league: mocks.LEAGUE.name, cover: null, weeks: [], algo_version: mocks.FILM.algo_version };
+  }
+  return request<FilmSeason>(
+    `/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/film`,
   );
 }
 

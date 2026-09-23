@@ -574,3 +574,58 @@ Things a caller has to handle, none of which are error states:
   is 14 serial calls on a cold process. Finished weeks are cached for the life of the
   process and cannot change, so steady state is roughly one call. A week that fails is
   dropped and the rest are returned: a season is never an error page.
+
+### The replay (`edge/engine/film.py`, SPEC-FILM F-3)
+
+Every finished week told as a story: why each man scored what he did, what decided the week,
+and the next move. The cover is free and is the teaser; the rest is `full_report`.
+
+`GET /api/league/{platform}/{league_id}/team/{team_id}/film` → `FilmSeason`, newest week first
+`GET /api/league/{platform}/{league_id}/team/{team_id}/film/{week}` → one `WeekFilm`; 404 for a
+week that is not over
+
+```json
+{"team":"I Feel Purdy","league":"...","algo_version":"film.v1",
+ "cover":{"week":12,"line":"You'd have beaten 9 of 11 teams this week","result":"W","my_points":109.26,"their_points":99.4,"opponent":"DSaunTouchdownThereWatson"},
+ "weeks":[{"week":12,"opponent":"DSaunTouchdownThereWatson","result":"W","my_points":109.26,"their_points":99.4,
+   "cover":{"line":"You'd have beaten 9 of 11 teams this week","result":"W","my_points":109.26,"their_points":99.4,"opponent":"..."},
+   "facts":[{"kind":"all_play","line":"You'd have beaten 9 of 11 teams this week"}],
+   "swing":{"kind":"claim","control":"decision","points":16.4,"line":"Christian Kirk, your pickup, scored 16.4; you won by 9.9"},
+   "lineup":{"points":109.26,"best_possible":148.14,"left":38.88,"perfect":false},
+   "injuries":[{"player":{...},"verdict":"hurt_in_game","line":"Left early: 18% of the snaps, no injury tag before kickoff"}],
+   "attributions":[{"player":{"id":"11564","name":"Drake Maye","position":"QB","nfl_team":"NE"},
+     "slot":"QB","started":true,"had":26.01,"source":"platform","went":17.96,"delta":-8.05,"verdict":"as_expected",
+     "reasons":[{"kind":"usage","line":"35 pass attempts, his season high (norm 31.3)","sign":1}],
+     "history":{"rank_this_season":2,"weeks":4,"best_since":null},
+     "next":{"kind":"start","line":"He's your FLEX2 pick next week","href":"/team/decide?role=FLEX2"}}],
+   "line_by_line":true,"sources":{"platform":10},
+   "takeaway":{"kind":"move_on","line":"... is worth more from here","href":"/waivers","player":{...}}}]}
+```
+
+A free reader gets `402` with `detail = {"feature":"full_report","teaser":<cover line>,"cover":<FilmCover>,"upsell":...}`.
+`EDGE_DEMO_UNLOCK=1` opens it while we test (SPEC-FILM D2).
+
+What a caller has to handle:
+
+- **`source` says where `had` came from:** `freeze` (the Thursday freeze in `docs/frozen/`,
+  the only number provably made before kickoff), `runs` (what we logged showing this reader),
+  or `platform` (the vendor's stored projection for that week, which may have been revised
+  after the games; print "as Sleeper has it now" beside it). `had`, `delta` and `verdict` are
+  null when no source has him. `sources` counts starters per source.
+- **`verdict`** is relative to the projection: `went_off` is at least +6 and +60%, `flopped`
+  at least −6 and −50%. `hurt_pregame` (a tag in the freeze, then no snaps or few),
+  `hurt_in_game` (no tag, under half his usual snaps: **inferred**, and the line says so),
+  and `did_not_play` override both.
+- **`reasons` are printed only when the number is unusual for him**: more than one deviation
+  from his own last eight games, three at least. An empty list is the normal answer.
+  `td_luck` always comes first and names the luck. `sign` is +1 for a reason that helped.
+- **`history.best_since`** is set only on his best game of the season: the last game he
+  scored as much, or with `earliest: true` the first week the stat log holds (2025 today).
+- **`next`** is read from the lineup, ROS values and the waiver plan for the week being
+  played, and only on the newest week. `href` is the tab that acts on it; null for `hold`.
+- **`swing.line`** is always set when there was an opponent, including "No swing: you were
+  outscored by 12.4". `control` says whether it was outside his hands or his decision.
+- **`line_by_line: false`** is ESPN until F-8: a real scoreline, `attributions: []`,
+  `lineup: null`, and nothing invented to fill them.
+- **Nothing here scores Penthouse.** No hit rate, no summed points-gained, no "right N% of
+  the time" (CLAUDE.md), and `tests/test_film.py` fails if one appears.

@@ -677,6 +677,107 @@ def season_recap(platform: str, league_id: str, team_id: str, email: str | None 
     return recap_mod.build(b.league, t.id, weeks, _recorded_projections(email, platform, league_id, t.id))
 
 
+def _film_context(email: str | None, platform: str, league_id: str, b, t, weeks, full: bool):
+    """Everything `engine/film.py` reads, gathered here so the engine never touches a source.
+
+    `full=False` is the free reader: the cover needs only the scoreboard, so no stat log,
+    projection or next-week read is fetched for someone who will only see the cover.
+
+    Each source is additive. A stat feed, a schedule or a vendor that fails upstream costs
+    the film its reasons or its projections, never the page (the same rule the recap and
+    the decisions follow).
+    """
+    from edge.data.scoring import score
+    from edge.engine import film
+
+    league = b.league
+    ctx = film.Context(league=league, score=lambda stats: score(stats, league.scoring), weeks=weeks)
+    if not full:
+        return ctx
+    rows = _recorded(email, platform, league_id, t.id)
+    recorded = recap_mod.projections_from_runs(rows)
+    ctx.calls = recap_mod.calls_from_runs(rows)
+    over = [w for w in weeks if w.week < league.week and w.played]
+    from edge.data import frozen
+    for w in over:
+        team = w.teams.get(t.id)
+        ids = {p.id for p in team.players} if team else set()
+        rows_frozen = frozen.load(league.season, w.week)
+        if ids:
+            ctx.projected[w.week] = service.past_projections(league, w.week, recorded.get(w.week), ids=ids,
+                                                             frozen_rows=rows_frozen or [])
+        pregame = service.pregame_status(league.season, w.week, rows_frozen)
+        if pregame is not None:
+            ctx.pregame[w.week] = pregame
+        ctx.results[w.week] = service.week_results(league.season, w.week)
+    try:
+        ctx.log = service.stat_log(league.season, league.week - 1)
+    except Exception:  # noqa: BLE001
+        ctx.log = {}
+    # Next week's reads, from the engines that own them (SPEC-FILM §5: never computed here).
+    ctx.next_week = league.week
+    ctx.ros = b.ros
+    try:
+        ctx.roles = lineup_mod.advise(league, t, _decision_context(b, t)).roles
+    except Exception:  # noqa: BLE001
+        ctx.roles = []
+    try:
+        plan_ = waiver_plan.build(league, t, b.ros, b.byes, bid_stats=b.bid_stats, trending=b.trending)
+        ctx.pickups = [c.add for c in plan_.claims]
+    except Exception:  # noqa: BLE001
+        ctx.pickups = []
+    ctx.claims = service.claims(b.transactions, league.id, t.id)
+    return ctx
+
+
+def _film(email: str | None, platform: str, league_id: str, team_id: str, auth, week: int | None = None) -> dict:
+    """The film for one team: the whole season, or one week of it.
+
+    The cover is free and is the teaser; the story is part of the Full Report (SPEC-FILM
+    D2 draws the final line later, and `EDGE_DEMO_UNLOCK=1` opens it while we test).
+    """
+    from edge.engine import film
+
+    b = _bundle(platform, league_id, auth)
+    t = _team(b, team_id)
+    weeks = service.played_weeks(platform, league_id, b, auth=auth)
+    if week is not None:
+        weeks_for = [w for w in weeks if w.week == week]
+        if not weeks_for or week >= b.league.week:
+            raise HTTPException(404, f"week {week} is not a finished week in this league")
+    full = products.can(_skus(email), "full_report")
+    if not full:
+        cover = film.build(_film_context(email, platform, league_id, b, t, weeks, full=False), t.id)["cover"]
+        raise HTTPException(402, detail={
+            "error": "full_report requires a purchase", "feature": "full_report",
+            "teaser": (cover or {}).get("line"), "cover": cover,
+            "upsell": products.upsell(_skus(email), "full_report")})
+    ctx = _film_context(email, platform, league_id, b, t, weeks, full=True)
+    out = film.build(ctx, t.id)
+    if week is not None:
+        return next(w for w in out["weeks"] if w["week"] == week)
+    return out
+
+
+@app.get("/api/league/{platform}/{league_id}/team/{team_id}/film")
+def film_season(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user),
+                auth=Depends(espn_auth)):
+    """The replay: every finished week told as a story, newest first, with the newest cover.
+
+    Every projection beside a player carries its source (the freeze, what we logged, or the
+    vendor's stored number) and every reason is printed only when the number is unusual for
+    that player. No hit rate, no summed points-gained: see `edge/engine/film.py`.
+    """
+    return _film(email, platform, league_id, team_id, auth)
+
+
+@app.get("/api/league/{platform}/{league_id}/team/{team_id}/film/{week}")
+def film_week(platform: str, league_id: str, team_id: str, week: int,
+              email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
+    """One finished week of the replay. 404 for a week not over yet."""
+    return _film(email, platform, league_id, team_id, auth, week=week)
+
+
 class ShareIn(BaseModel):
     kind: str = "trade"
     league_name: str = ""
