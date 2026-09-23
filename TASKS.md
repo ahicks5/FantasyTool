@@ -1092,11 +1092,9 @@ build order in §8.
 - [ ] **F-9** The projector opening, once per graded week, skippable.
 - [ ] **F-10** The Tuesday ritual: desk notebook, email cover line, film share card.
 
-### Decisions needed from Andrew
+### Decisions taken (Andrew, 2026-09-23)
 
-- D5: run the Thursday freeze inside the API so production has the "had" column.
-- D6: pull older seasons for "best since…" lines, or say "since 2025".
-- D2: cover free and the story paid, or the whole replay paid.
-- D7: LLM prose on the replay or templates at launch.
-- Name: keep "The film" with "The replay" inside it, or rename the tab.
-
+- Keep the name **The film**. Everything available while we test (`EDGE_DEMO_UNLOCK=1`);
+  the free/paid line is drawn later. Nothing waits on the Thursday freeze: past
+  projections fall through freeze → runs → Sleeper's stored number, tagged by source.
+  The backend may change, so `film.py` never calls a data module. Older seasons later.

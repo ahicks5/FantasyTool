@@ -36,20 +36,18 @@ story. It is the carrot for The Penthouse.
 
 ## 2. Decisions
 
-Answered by Andrew where marked. The rest are proposed and need his call.
+Answered by Andrew on 2026-09-23 unless marked proposed. Not up for re-litigation.
 
 | # | Decision | Status |
 |---|---|---|
-| D1 | The tab keeps the name **The film** and the route `/report`. Inside it: **The replay** (your week), **The league** (everyone), **The season** (week by week + playoffs). | proposed |
-| D2 | **Free:** the standings table, the replay's *cover* (headline line, one fun fact, the stamp) and the share card. **Paid (`full_report`):** everything under the cover. The cover is the growth loop, like a Wrapped card. | proposed — changes `products.py` copy only, not the SKU |
-| D3 | **Sleeper first.** ESPN gives a scoreline with nobody's points attached (`docs/API.md` §Season recap). ESPN readers get the cover, the league and the season; the per-player replay says "line-by-line needs a boxscore we don't fetch yet" until F-8 lands. | proposed |
-| D4 | Past-week projections come from the **Thursday freeze** (`docs/frozen/projections_*.json.gz`, already in the repo) first, then `runs`. A week without a freeze says "no record" for the "had" column; it never rebuilds a projection after the fact. | proposed |
-| D5 | The freeze **must run in production**, not only as a GitHub PR. Today it is a workflow that opens a PR (`.github/workflows/weekly.yml`); if the PR is not merged by Tuesday the film has no "had" column. Move the freeze into the API (Thursday job writes to the store) or auto-merge the PR. | **needs Andrew** |
-| D6 | "Best week in a decade" needs a decade. We have 2025 and 2026 stat lines. Either pull older seasons from Sleeper (`/stats/nfl/regular/<year>`, one call per season, cached forever) or say "since 2025". Never fake the range. | **needs Andrew** |
-| D7 | Prose. The engine produces every fact and every ranking; a Claude-written three-sentence recap over those facts is allowed under the trade-explanation rule (`EDGE_USE_CLAUDE=1`, `explain.py`). Off by default; templates until the cost per reader per week is known. | proposed |
-| D8 | The opening animation plays **once per graded week per browser** (`booth.film.<season>.<week>`), is skippable by tap, and respects `prefers-reduced-motion`. Same discipline as the elevator (`lib/elevator.ts`, `MIN_NARRATED_MS`). | proposed |
-
----
+| D1 | The tab is **The film**, route `/report`. Inside it: **The replay** (your week), **The league** (everyone), **The season** (week by week + playoffs). | **Andrew: keep the name** |
+| D2 | **While we test, everything is available.** Build every section unlocked and use `EDGE_DEMO_UNLOCK=1` on Render to see it paid. The free/paid line is drawn later; when it is, the cover and the share card stay free (the growth loop) and the story goes behind `full_report`. Build the `Locked` branch, but do not spend a session on it. | **Andrew: make everything available now** |
+| D3 | **Sleeper first.** ESPN gives a scoreline with nobody's points attached (`docs/API.md` §Season recap). ESPN readers get the cover, the league and the season; the per-player replay says the line-by-line is not fetched yet, until F-8. | proposed |
+| D4 | **Past-week projections, in this order:** the Thursday freeze (`docs/frozen/`) → what we logged in `runs` → **Sleeper's stored projection for that week** (`sleeper_api.projections(season, week)`), each row tagged with its `source`. The third is allowed because nothing may block testing; the UI prints "as Sleeper has it now" on that source and nothing else changes. Never rebuild a projection from today's data. | **Andrew: nothing waits on the freeze** |
+| D5 | The backend may change (raw stats pulled in the app, league rules applied to score actuals). So **nothing in the film depends on where projections or actuals come from**: `engine/film.py` takes `PlayedWeek`, a stat log and a `{player_id: projected}` map and never calls a data module. Swapping the source later touches `service.py` only. | **Andrew: backend may change** |
+| D6 | "Best week since…" says **since 2025** for now. Older seasons are pulled later and the line widens on its own: `history.best_since` reports the earliest week in the log, whatever the log holds. | **Andrew: later** |
+| D7 | Prose is **templates** at launch (`explain.py` style). Claude-written recaps stay behind `EDGE_USE_CLAUDE=1` as with trades, and only after the cost per reader per week is known. | proposed |
+| D8 | The projector plays **once per graded week per browser** (`booth.film.<season>.<week>`), is skippable by tap, and respects `prefers-reduced-motion`. Same discipline as the elevator (`lib/elevator.ts`, `MIN_NARRATED_MS`). | proposed |
 
 ## 3. The tab, in one picture
 
@@ -190,7 +188,10 @@ home, away and kickoff only; `grep playoff edge/models.py` is empty.
 **Build.**
 - `edge/data/frozen.py`: read `docs/frozen/projections_<season>_<week>.json.gz` into
   `{player_id: stats}`; `None` when absent. Score through `edge/data/scoring.py` with the
-  league's settings. `recap` uses it before `runs`.
+  league's settings.
+- `service.past_projections(league, week) -> dict[str, tuple[float, str]]`: the D4 order,
+  freeze → `runs` → `sleeper_api.projections(season, week)`, each value tagged with its
+  source. This is the **only** place that knows where a past projection comes from (D5).
 - `schedule._game` keeps `home_score`, `away_score`, `status` when present; a
   `results_for(games, week)` helper. Cache rule unchanged (a finished week never changes).
 - `League.playoff_teams`, `League.playoff_week_start` from Sleeper settings; ESPN
@@ -198,9 +199,10 @@ home, away and kickoff only; `grep playoff edge/models.py` is empty.
 - Log the call sheet on every load (`/actions` already does, `app.py:484`); confirm the
   lineup call that the desk makes also lands in `runs` so the "did you follow the call"
   read has a record.
-- Decide D5: a Thursday freeze that production can read.
 
-**Acceptance.** For the Megalabowl fixture week 2, every starter has a non-null `had`.
+**Acceptance.** For the Megalabowl fixture week 2, every starter has a non-null `had` and a
+`source`; with the freeze file removed the source falls to `platform` and nothing else
+changes.
 
 **Tests.** `tests/test_frozen.py` (reads a small fixture freeze, scores it under half PPR and
 under standard, differs), `test_schedule.py` (scores present and absent), `test_recap.py`
@@ -304,12 +306,41 @@ updated with what shipped.
 
 ---
 
-## 9. Open questions for Andrew
+## 9. Still open
 
-1. D5: may the Thursday freeze run inside the API (Render cron, stored in Postgres), so
-   production always has the "had" column? Today it is a PR that needs a merge.
-2. D6: pull older seasons for "best since…" lines, or say "since 2025"?
-3. D2: is the cover free, or is the whole replay paid? The cover is the share card.
-4. D7: LLM prose on the replay, or templates only for launch?
-5. Is "The film" still the name, with "The replay" inside it? Or does the tab become
-   "The replay"? `BRAND.md` and `vocab.ts` change either way.
+1. D3: Sleeper-first is assumed. Say so if ESPN line-by-line must ship in the same round.
+2. D7: templates at launch is assumed.
+3. Whether `/report` should render the three parts as one long scroll or as three
+   sub-tabs under the film's header. The build starts with one scroll (the replay first)
+   and asks Andrew after he has seen it live.
+
+---
+
+## 10. Kickoff — paste this into a new tab
+
+```
+Read CLAUDE.md, docs/MAP.md, then docs/SPEC-FILM.md in full. You are rebuilding the
+Film tab (/report) as the replay. Work on the branch you were given; production is
+claude/edge-fantasy-app-launch-alo0rr and there is no main.
+
+This session: F-1 (data spine) and F-2 (engine/film.py), then F-3 (the /film route)
+if there is time. Everything unlocked while we test (D2). Nothing waits on the
+Thursday freeze (D4): past projections come from the freeze, then runs, then
+Sleeper's stored projection for that week, tagged by source. The engine takes
+PlayedWeek + a stat log + a {player_id: projected} map and never calls a data module
+(D5). "Best since" reports the earliest week in the log, which is 2025 today (D6).
+
+Honesty rules that are not negotiable: no hit rate, no summed points-gained, no
+accuracy claim about Penthouse anywhere in the payload (CLAUDE.md). Grading the
+manager is fine. Every reason line is printed only when the number is unusual for
+that player (section 5). TD luck is named as luck. In-game injury is inferred and
+the line says so. The "next" verdict comes from lineup.roles / values / waiver_plan
+passed in through ctx, never computed in film.py.
+
+Build order inside the session: fixtures first (tests/fixtures/sleeper/stats has
+2026 week 2 and the 2025 season; the Megalabowl league fixture is week 2), then
+tests/test_film.py with one test per rule in section 5, then the code. Run the five
+gates before pushing. After adding the module: uv run python scripts/gen_map.py.
+Update docs/API.md with the /film contract and mirror it in web/src/lib/types.ts and
+mocks.ts. End with TASKS.md current: what shipped, what is next, decisions for Andrew.
+```
