@@ -20,7 +20,7 @@ import { pickupHref, splitPicks, urgency, type Urgency } from "@/lib/wire";
 import { WIRE } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { IconChevron, IconLock } from "./icons";
-import { Countdown, Eyebrow, InjuryTag } from "./ui";
+import { Eyebrow, InjuryTag } from "./ui";
 
 const FRAME: Record<Urgency, string> = {
   must: "pickup-must",
@@ -94,22 +94,11 @@ function MoreRow({ p, n }: { p: WaiverPick; n: number }) {
   );
 }
 
-function Header({ waivers }: { waivers?: Waivers }) {
+function Header() {
   return (
-    <div className="flex min-w-0 items-end justify-between gap-3">
-      <div className="min-w-0">
-        <Eyebrow>{WIRE.eyebrow}</Eyebrow>
-        <h2 className="display mt-0.5 text-[22px] leading-none">{WIRE.title}</h2>
-      </div>
-      <div className="shrink-0 text-right">
-        {waivers && (
-          <div className="tnum text-[11px] font-bold uppercase tracking-wide text-muted">
-            {waivers.faab_remaining === null ? WIRE.priority : `$${waivers.faab_remaining}`}{" "}
-            {waivers.faab_remaining === null ? WIRE.order : WIRE.left}
-          </div>
-        )}
-        <Countdown className="mt-0.5 text-[11px]" />
-      </div>
+    <div className="min-w-0">
+      <Eyebrow>{WIRE.eyebrow}</Eyebrow>
+      <h2 className="display mt-0.5 text-[22px] leading-none">{WIRE.title}</h2>
     </div>
   );
 }
@@ -120,7 +109,7 @@ export function TopPickups({ waivers }: { waivers: Waivers }) {
 
   return (
     <section className="grid min-w-0 gap-3">
-      <Header waivers={waivers} />
+      <Header />
       {top.length === 0 ? (
         <p className="card p-5 text-center text-[14px] text-ink-2">{WIRE.none}</p>
       ) : (

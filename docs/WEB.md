@@ -169,7 +169,8 @@ the bid, a button into his scout report). The stamp is `lib/wire.urgency` on the
 `fit_score` (must >= 2.0, the same line `suggest_bid` trusts the market at; claim >= 0.75;
 stash >= 0.25; else depth), and **only the first pick can be a must-add**, which gets the
 signal border and a slow pulse. "Must add!" is the one exclamation mark the vocab allows,
-pinned by `vocab.test.ts`. "See more" opens picks 4-10. Locked, the row stays with the
+pinned by `vocab.test.ts`. "See more" opens picks 4-10. No budget, waiver-order or kickoff clock over the row
+(Andrew: the header is the title and nothing else). Locked, the row stays with the
 faces withheld and the offer stays under the board. The page reads `GET .../waivers` (not
 `/waivers/plan`; `WaiverPlanView` and `WaiversView` are no longer mounted).
 

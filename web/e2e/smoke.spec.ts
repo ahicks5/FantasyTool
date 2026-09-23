@@ -261,10 +261,9 @@ const PAGES: PageCase[] = [
     path: "/waivers",
     name: "top pickups",
     check: async (page) => {
-      // Paid page, unlocked for this user: the budget line, then either the three panels
-      // (each a link into its full read) or the hold line a quiet week gets instead.
+      // Paid page, unlocked for this user: the heading and the three panels. No budget
+      // line and no kickoff clock over them (Andrew, 2026-09-23).
       await expect(page.getByRole("heading", { name: WIRE.title })).toBeVisible();
-      await expect(page.getByText(/(left|waiver order)$/i).first()).toBeVisible();
       // Three panels, each a link into its own full read (the fixture league has five picks).
       await expect(page.locator("a.pickup")).toHaveCount(3);
       await expect(page.locator("a.pickup").first()).toHaveAttribute("href", /\/waivers\/pickup\?id=/);

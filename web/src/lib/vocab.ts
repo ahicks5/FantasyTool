@@ -578,8 +578,6 @@ export const WIRE = {
   open: "Open spot",
   bid: "Bid",
   priority: "Priority",
-  left: "left",
-  order: "waiver order",
   more: (n: number) => `See ${n} more`,
   less: "Show fewer",
   goAria: (name: string) => `The full read on ${name}`,
