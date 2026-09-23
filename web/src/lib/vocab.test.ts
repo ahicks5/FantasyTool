@@ -72,7 +72,7 @@ const ALL_COPY: string[] = [
   // The lineup tab: every string, and every templated line rendered once.
   ...Object.values(LINEUP.coach), LINEUP.projected(2), LINEUP.standingLabel, LINEUP.standing(1, 12), LINEUP.standing(2, 12), LINEUP.standing(3, 12), LINEUP.standing(11, 12),
   LINEUP.required(1), LINEUP.required(2), LINEUP.decisions(1), LINEUP.decisions(3), LINEUP.clear,
-  LINEUP.stamp.fix(2), LINEUP.stamp.decide(3), LINEUP.stamp.clear, LINEUP.stamp.aria, LINEUP.stamp.then, LINEUP.stamp.close, LINEUP.stamp.closeAria,
+  LINEUP.stamp.urgent, LINEUP.stamp.clear, LINEUP.stamp.aria, LINEUP.stamp.then, LINEUP.stamp.close, LINEUP.stamp.closeAria,
   LINEUP.jump, LINEUP.total, ...Object.values(LINEUP.section), LINEUP.mark.lock, LINEUP.mark.flag("RB2"), LINEUP.mark.out, LINEUP.requiredClear, LINEUP.requiredClearLine, LINEUP.decisionsQuiet,
   LINEUP.handled(2), LINEUP.showHandled, LINEUP.change.empty, LINEUP.change.forced, LINEUP.change.settled, LINEUP.change.saves, LINEUP.change.outAria("Alec Pierce"), LINEUP.change.inAria("Romeo Doubs"), LINEUP.change.hole, LINEUP.change.wire,
   LINEUP.role.question("RB2"), LINEUP.role.aria("RB2"), LINEUP.role.change, LINEUP.role.keep, LINEUP.role.tipped, LINEUP.role.considered,

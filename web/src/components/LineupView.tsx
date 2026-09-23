@@ -239,12 +239,12 @@ function RoleRow({ r, animate, i }: { r: LineupRole; animate: boolean; i: number
 }
 
 /**
- * The stamp that lands when the tab opens: the two numbers and the faces. It stays until
+ * The stamp that lands when the tab opens: an alarm, no numbers, and the faces. It stays until
  * dismissed, by the button or a tap on the shade, so the summary is seen. Never under
  * reduced motion, where the CSS hides it.
  */
 function Boom({ required, decisions, faces, onDone }: { required: number; decisions: number; faces: Player[]; onDone: () => void }) {
-  const words = required + decisions === 0 ? [LINEUP.stamp.clear] : [required > 0 && LINEUP.stamp.fix(required), decisions > 0 && LINEUP.stamp.decide(decisions)].filter(Boolean);
+  const clear = required + decisions === 0;
   return (
     <div className="boom" role="dialog" aria-label={LINEUP.stamp.aria} onClick={onDone}>
       <div className="boom-card" onClick={(e) => e.stopPropagation()}>
@@ -258,11 +258,11 @@ function Boom({ required, decisions, faces, onDone }: { required: number; decisi
           {LINEUP.coach.notes}
         </span>
         <Stamp size="xl" ink={required > 0 ? "text-sit" : decisions > 0 ? "text-flip" : "text-start"} slam className="text-[30px]">
-          {words.join(" · ")}
+          {clear ? LINEUP.stamp.clear : LINEUP.stamp.urgent}
         </Stamp>
+        {!clear && <span className="boom-then">{LINEUP.stamp.then}</span>}
         {faces.length > 0 && (
           <>
-            <span className="boom-then">{LINEUP.stamp.then}</span>
             <span className="boom-faces">
               {faces.map((p) => (
                 <Avatar key={p.id} name={p.name} photo={p.photo} teamLogo={p.team_logo} size="md" />

@@ -632,7 +632,7 @@ export const LINEUP = {
   /** Beside the number: where the projection ranks in the league this week, as an eyebrow
    *  and a figure. Not a margin against your own lineup, which a tipped coin flip can
    *  legitimately move down. */
-  standingLabel: "League rank",
+  standingLabel: "Weekly rank",
   standing: (rank: number, of: number) => `${ordinal(rank)} of ${of}`,
   /** The split, stated plainly under the number: two chips on one row. */
   required: (n: number) => `${n} required change${n === 1 ? "" : "s"}`,
@@ -641,12 +641,12 @@ export const LINEUP = {
   clear: "Lineup\u2019s set",
   /** The stamp that lands when the tab opens. It stays until dismissed. */
   stamp: {
-    fix: (n: number) => `Fix ${n}`,
-    decide: (n: number) => `Decide ${n}`,
+    /** Something to fix or decide. No numbers: the chips under the hero carry those. */
+    urgent: "Urgent",
     clear: "All set",
     aria: "The head coach\u2019s summary",
-    then: "Then have a look at",
-    close: "Got it",
+    then: "Mandatory review required",
+    close: "Show me",
     closeAria: "Dismiss the head coach\u2019s summary",
   },
   /** The hero's link down to the roster, which sits below both piles. */

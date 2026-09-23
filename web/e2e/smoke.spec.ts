@@ -207,7 +207,7 @@ const PAGES: PageCase[] = [
       // The head coach's stamp lands first and stays until dismissed: the summary is seen.
       const boom = page.getByRole("dialog", { name: LINEUP.stamp.aria });
       await expect(boom).toBeVisible();
-      await expect(boom.getByText(/^(Fix \d+|Decide \d+|All set)/)).toBeVisible();
+      await expect(boom.getByText(/^(Urgent|All set)/)).toBeVisible();
       await boom.getByRole("button", { name: LINEUP.stamp.closeAria }).click();
       await expect(boom).toHaveCount(0);
       await expect(page.getByText(/Projected/i).first()).toBeVisible();
