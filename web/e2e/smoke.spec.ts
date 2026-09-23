@@ -3,7 +3,7 @@ import { DEV_USER } from "../playwright.config";
 import { DESK, LINEUP, PLAN, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
-import { SCOUT } from "../src/lib/vocab";
+import { SCOUT, SCOUT_OPEN, WIRE } from "../src/lib/vocab";
 import { AVAILABILITY_LABELS, BOARD_LABELS, SORT_LABELS } from "../src/lib/board";
 
 /**
@@ -117,6 +117,9 @@ test.beforeEach(async ({ context, page }) => {
         // below open straight onto their content; the one test that wants the ride
         // asks for it with ?ride=1. Must match `RIDE_KEY` in web/src/lib/storage.ts.
         window.localStorage.setItem(rideKey, today);
+        // The scout's opening plays once per browser; the one test that wants it asks
+        // with ?scout=1. Must match `SCOUT_KEY` in web/src/lib/storage.ts.
+        window.localStorage.setItem("booth.scout", "1");
       } catch {
         /* blocked storage: the test will fail on content instead */
       }
@@ -256,16 +259,15 @@ const PAGES: PageCase[] = [
   },
   {
     path: "/waivers",
-    name: "waiver plan",
+    name: "top pickups",
     check: async (page) => {
-      // Paid page, unlocked for this user: the budget strip, then either claims or an
-      // explained hold. A paywall or an error box here means the smoke test failed.
-      // Both words, because the strip reads one or the other off `plan.waiver_type`.
-      // Anchored: the hero collapsed to one line and the label is now its own node.
-      await expect(page.getByText(/^(left|waiver order)$/i).first()).toBeVisible();
-      // Either the first claim's CTA, or the Hold stamp a quiet week gets instead.
-      // Anchored, so the word "hold" inside a sentence of prose does not satisfy it.
-      await expect(page.getByText(/^(Claim him|Hold)$/).first()).toBeVisible();
+      // Paid page, unlocked for this user: the budget line, then either the three panels
+      // (each a link into its full read) or the hold line a quiet week gets instead.
+      await expect(page.getByRole("heading", { name: WIRE.title })).toBeVisible();
+      await expect(page.getByText(/(left|waiver order)$/i).first()).toBeVisible();
+      // Three panels, each a link into its own full read (the fixture league has five picks).
+      await expect(page.locator("a.pickup")).toHaveCount(3);
+      await expect(page.locator("a.pickup").first()).toHaveAttribute("href", /\/waivers\/pickup\?id=/);
       await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
     },
   },
@@ -426,7 +428,7 @@ test("the board is free, and clicking a row opens that player", async ({ page })
   // The other half of the growth decision, in the browser. The API half is pinned by
   // `tests/test_directory.py::test_the_board_does_not_open_the_wire`; this is the half a
   // page refactor could quietly undo, by moving the board inside the lock.
-  await page.route("**/waivers/plan*", (route) =>
+  await page.route("**/team/*/waivers", (route) =>
     route.fulfill({
       status: 402,
       contentType: "application/json",
@@ -456,7 +458,7 @@ test("the search box survives the Wire Pass paywall", async ({ page }) => {
   //
   // The fixture server grants every SKU, so the 402 is injected here rather than by
   // booting a second server without them.
-  await page.route("**/waivers/plan*", (route) =>
+  await page.route("**/team/*/waivers", (route) =>
     route.fulfill({
       status: 402,
       contentType: "application/json",
@@ -481,6 +483,46 @@ test("the search box survives the Wire Pass paywall", async ({ page }) => {
   const lock = (await page.getByText("Wire Pass").first().boundingBox())!;
   expect(lock.y, "the lock should sit below the board, not above it").toBeGreaterThan(search.y);
   await assertNoHorizontalOverflow(page);
+});
+
+test("a pickup's arrow opens its full read, and back returns to Scouting", async ({ page }) => {
+  const { status } = await visit(page, "/waivers");
+  expect(status).toBe(200);
+  // The fixture league gives every team five pickups, so the panels are owed here.
+  await expect(page.getByRole("heading", { name: WIRE.title })).toBeVisible();
+  const panel = page.locator("a.pickup").first();
+  await expect(panel).toBeVisible();
+  await panel.click();
+  await expect(page).toHaveURL(/\/waivers\/pickup\?id=/);
+  await expect(page.getByText(WIRE.page.why)).toBeVisible();
+  await expect(page.getByText(WIRE.page.bid)).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+  await page.getByRole("link", { name: WIRE.page.back }).first().click();
+  await expect(page).toHaveURL(/\/waivers$/);
+});
+
+test("a lens cuts the board: defenses carry their next three weeks", async ({ page }) => {
+  const { status } = await visit(page, "/waivers");
+  expect(status).toBe(200);
+  await page.getByRole("button", { name: SCOUT.lenses.defenses.label }).click();
+  await expect(page.getByText(SCOUT.lenses.defenses.blurb)).toBeVisible();
+  const rows = page.locator("main ul[id$='-list']").getByRole("listitem");
+  await expect(rows.first()).toBeVisible({ timeout: 10_000 });
+  await expect(rows.first()).toContainText(/DEF \u00b7 /);
+  await expect(rows.first().locator(".lens-week")).toHaveCount(3);
+  // The lens owns the order, so the sort control steps aside.
+  await expect(page.getByLabel(BOARD_LABELS.sortBy)).toHaveCount(0);
+  await assertNoHorizontalOverflow(page);
+});
+
+test("the scout takes his seat once, and a tap lands on the page", async ({ page }) => {
+  const { status } = await visit(page, "/waivers?scout=1");
+  expect(status).toBe(200);
+  const scene = page.getByRole("dialog", { name: SCOUT_OPEN.aria });
+  await expect(scene).toBeVisible();
+  await page.getByRole("button", { name: SCOUT_OPEN.skip }).click();
+  await expect(scene).toHaveCount(0, { timeout: 5_000 });
+  await expect(page.getByRole("heading", { name: WIRE.title })).toBeVisible();
 });
 
 test("the API really is the fixture server, not mocks", async ({ page }) => {

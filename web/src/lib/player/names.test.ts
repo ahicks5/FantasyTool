@@ -34,6 +34,17 @@ const RENDERED_NAME = /(^|[^$=])\{\s*[A-Za-z_$][\w.?[\]"']*\.name\s*(\?\?[^}]*)?
  */
 const ALLOWED: Record<string, string> = {
   "src/components/Players.tsx": "PlayerName itself: this is the one place a name is printed.",
+  "src/components/TopPickups.tsx":
+    "Scouting's top pickups. Every panel and every See-more row is a link into that pickup's " +
+    "full read (/waivers/pickup), whose button opens his page, so the name inside cannot also " +
+    "be a button: a link cannot hold one.",
+  "src/app/waivers/pickup/page.tsx":
+    "A pickup's full read: the header is about him and carries an 'Open his scout report' " +
+    "button right under it; the other rows are links to their own full reads. The cut man " +
+    "does go through PlayerName.",
+  "src/components/ScoutOpening.tsx":
+    "The scout's opening animation. Names are written onto a notepad in a scene where any " +
+    "tap skips to the page; there is nothing to open until it lands.",
   "src/components/player/PlayerSheet.tsx": "The player page's own header. It is already his page.",
   "src/components/Locked.tsx": "A product's name on the paywall, not a player's.",
   "src/components/LineupView.tsx":

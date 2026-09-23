@@ -25,13 +25,15 @@
  */
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { getPlayerBoard } from "@/lib/api";
+import { getLensCounts, getPlayerBoard } from "@/lib/api";
+import { once } from "@/lib/cache";
 import {
   AVAILABILITY_LABELS,
   BOARD_AVAILABILITY,
   BOARD_LABELS,
   BOARD_SORTS,
   COLUMN_LABELS,
+  LENSES,
   PAGE_SIZE,
   SORT_LABELS,
   activeFilterCount,
@@ -44,11 +46,13 @@ import {
   rowMeta,
   showsOwner,
   toggle,
+  weekTone,
+  withLens,
   withSort,
 } from "@/lib/board";
 import { NO_NFL_TEAM, SEARCH_DEBOUNCE_MS, SEARCH_LABELS, normalizeQuery, nextIndex } from "@/lib/search";
 import type { Connection } from "@/lib/storage";
-import type { BoardAvailability, BoardQuery, BoardRow, BoardSort, PlayerBoard as Board } from "@/lib/types";
+import type { BoardAvailability, BoardQuery, BoardRow, BoardSort, Lens, LensCounts, LensFact, PlayerBoard as Board } from "@/lib/types";
 import { SCOUT } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { usePlayerSheet } from "./player/PlayerSheetProvider";
@@ -112,12 +116,14 @@ function Row({
   row,
   sort,
   avail,
+  lens,
   onKeyDown,
   bind,
 }: {
   row: BoardRow;
   sort: string;
   avail: BoardAvailability;
+  lens?: Lens | null;
   onKeyDown: (e: React.KeyboardEvent) => void;
   bind: (el: HTMLButtonElement | null) => void;
 }) {
@@ -157,10 +163,11 @@ function Row({
                 </span>
               ))}
             {/* Only worth ink on the board that is actually ranked by it. */}
-            {adds && sort === "trending" && (
+            {adds && (sort === "trending" || lens === "risers") && (
               <span className="tnum text-[11px] font-semibold text-muted">{adds}</span>
             )}
           </span>
+          {row.lens && <Fact fact={row.lens} />}
         </span>
         <span className="tnum shrink-0 text-right">
           <span className="block text-[15px] font-black leading-tight">{boardNumber(row.projected)}</span>
@@ -171,6 +178,72 @@ function Row({
         <IconChevron size={16} className="shrink-0 text-muted" />
       </button>
     </li>
+  );
+}
+
+/**
+ * The one fact that put a row in its lens: the man he sits behind, a defence's next three
+ * games, the bye he covers. Words from `SCOUT.fact`; the facts are the server's.
+ */
+function Fact({ fact }: { fact: LensFact }) {
+  const F = SCOUT.fact;
+  return (
+    <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+      {fact.behind && (
+        <span className={`lens-fact ${fact.behind.is_mine ? "lens-fact-mine" : ""}`}>
+          {fact.behind.is_mine ? F.behindMine(fact.behind.name) : F.behind(fact.behind.name)}
+          {fact.behind.injury_status && <span className="ml-1 font-black text-sit">{fact.behind.injury_status.slice(0, 1).toUpperCase()}</span>}
+        </span>
+      )}
+      {fact.opening && <span className="lens-fact lens-fact-open">{F.opening}</span>}
+      {fact.outlook?.map((w) => {
+        const tone = weekTone(w);
+        return (
+          <span
+            key={w.week}
+            className={`lens-week lens-week-${tone}`}
+            aria-label={w.opp && w.rank && w.of ? F.softAria(w.opp, w.rank, w.of) : undefined}
+          >
+            <span className="lens-week-n">{F.week(w.week)}</span>
+            {w.opp ? `${w.home ? "" : F.at}${w.opp}` : F.bye}
+          </span>
+        );
+      })}
+      {fact.covers?.map((cv) => (
+        <span key={cv.id + cv.week} className="lens-fact">
+          {F.covers(cv.name, cv.week)}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** The five questions, as chips with a count of the free agents inside each. */
+function LensBar({ on, counts, pick }: { on: Lens | null | undefined; counts: LensCounts | null; pick: (l: Lens | null) => void }) {
+  const L = SCOUT.lenses;
+  return (
+    <div className="mt-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-muted">{L.eyebrow}</span>
+        {on && (
+          <button type="button" onClick={() => pick(null)} className="min-h-0 text-[12px] font-bold text-lean hover:underline">
+            {L.off}
+          </button>
+        )}
+      </div>
+      <div role="group" aria-label={L.eyebrow} className="-mx-1 mt-1.5 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {LENSES.map((l) => {
+          const n = counts?.counts[l];
+          return (
+            <button key={l} type="button" aria-pressed={on === l} onClick={() => pick(l)} className={`lens-chip ${on === l ? "lens-chip-on" : ""}`}>
+              <span>{L[l].label}</span>
+              {typeof n === "number" && n > 0 && <span className="lens-chip-n tnum">{n}</span>}
+            </button>
+          );
+        })}
+      </div>
+      {on && <p className="mt-1.5 text-[12px] leading-snug text-ink-2">{L[on].blurb}</p>}
+    </div>
   );
 }
 
@@ -198,6 +271,17 @@ export function PlayerBoard({ c }: { c: Connection }) {
   const listId = `${id}-list`;
 
   const { platform, league_id, team_id } = c;
+
+  const [counts, setCounts] = useState<LensCounts | null>(null);
+  useEffect(() => {
+    let alive = true;
+    once(`lenses:${platform}:${league_id}:${team_id}`, () => getLensCounts(platform, league_id, team_id))
+      .then((n) => alive && setCounts(n))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [platform, league_id, team_id]);
 
   // The text is debounced into the query; every other control writes it immediately,
   // because a chip is one deliberate press and waiting on it reads as lag.
@@ -306,8 +390,10 @@ export function PlayerBoard({ c }: { c: Connection }) {
 
   return (
     <section className="min-w-0">
-      <H2>{SCOUT.head}</H2>
-      <p className="mt-1 text-[13px] leading-relaxed text-muted">{SCOUT.hint}</p>
+      <H2>{SCOUT.research}</H2>
+      <p className="mt-1 text-[13px] leading-relaxed text-muted">{SCOUT.researchHint}</p>
+
+      <LensBar on={query.lens} counts={counts} pick={(l) => setQuery((q) => withLens(q, l))} />
 
       <div className="relative mt-2.5">
         <input
@@ -388,6 +474,7 @@ export function PlayerBoard({ c }: { c: Connection }) {
           </select>
         </SelectWrap>
 
+        {!query.lens && (
         <SelectWrap>
           <select
             aria-label={BOARD_LABELS.sortBy}
@@ -402,7 +489,9 @@ export function PlayerBoard({ c }: { c: Connection }) {
             ))}
           </select>
         </SelectWrap>
+        )}
 
+        {!query.lens && (
         <button
           type="button"
           onClick={() => patch({ order: flipOrder(query.order) })}
@@ -414,6 +503,7 @@ export function PlayerBoard({ c }: { c: Connection }) {
             <path d="M12 5v14M6 13l6 6 6-6" />
           </svg>
         </button>
+        )}
       </div>
 
       <div className="mt-3 flex min-w-0 items-center justify-between gap-3">
@@ -444,7 +534,7 @@ export function PlayerBoard({ c }: { c: Connection }) {
         <p className="mt-2 rounded-2xl border border-dashed border-line-2 px-4 py-6 text-center text-[14px] text-muted">
           {/* A name that matched nobody is a different answer from a cut that is too
               narrow, and the reader can only act on the second one. */}
-          {query.q ? SCOUT.empty : SCOUT.noMatch}
+          {query.q ? SCOUT.empty : query.lens && activeFilterCount(query) <= 1 ? SCOUT.lensEmpty[query.lens] : SCOUT.noMatch}
         </p>
       ) : (
         <>
@@ -455,6 +545,7 @@ export function PlayerBoard({ c }: { c: Connection }) {
                 row={row}
                 sort={query.sort ?? "projected"}
                 avail={query.avail ?? "all"}
+                lens={query.lens}
                 bind={(el) => {
                   links.current[i] = el;
                 }}

@@ -119,6 +119,30 @@ export function saveRideDay(day: string): void {
   }
 }
 
+/* --------------------------------------------------------------- the scout ---
+   Whether this browser has seen the scout take his seat (`lib/scout.ts`). Once, and
+   no need after: Andrew's brief. `?scout=1` replays it for a demo.                */
+
+const SCOUT_KEY = "booth.scout";
+
+export function loadScoutSeen(): boolean {
+  try {
+    return window.localStorage.getItem(SCOUT_KEY) === "1";
+  } catch {
+    // Blocked storage: say seen, so a browser that cannot remember is never shown it
+    // on every visit.
+    return true;
+  }
+}
+
+export function saveScoutSeen(): void {
+  try {
+    window.localStorage.setItem(SCOUT_KEY, "1");
+  } catch {
+    /* blocked storage: loadScoutSeen already answers seen */
+  }
+}
+
 /* --------------------------------------------------------------- the sheet ---
    Which calls you have made this week. Scoped per league and per week by
    `calledKey`, so a new week starts with a clean sheet instead of inheriting

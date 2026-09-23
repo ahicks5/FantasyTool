@@ -20,6 +20,9 @@ import {
   STANDING,
   TAB_ORDER,
   TRADE,
+  SCOUT,
+  SCOUT_OPEN,
+  WIRE,
 } from "./vocab.ts";
 
 /**
@@ -79,7 +82,25 @@ const ALL_COPY: string[] = [
   LINEUP.role.others, LINEUP.role.odds, LINEUP.role.reads, LINEUP.role.none, LINEUP.role.game, LINEUP.role.proj, LINEUP.role.handle,
   LINEUP.role.handleLine("RB2"), LINEUP.role.handled, LINEUP.role.handledLine("RB2"), LINEUP.role.unhandle, LINEUP.role.back, LINEUP.role.missing,
   ...Object.values(LINEUP.factor), ...Object.values(CONFIDENCE_LABEL), ...Object.values(TICKER.segment),
+  // Scouting: the lenses, the facts on a row, the top pickups and the scout's opening. The
+  // must-add stamp is left out on purpose and pinned on its own below.
+  SCOUT.research, SCOUT.researchHint, SCOUT.lenses.eyebrow, SCOUT.lenses.off,
+  ...(["handcuffs", "backups", "defenses", "byes", "risers"] as const).flatMap((l) => [SCOUT.lenses[l].label, SCOUT.lenses[l].blurb, SCOUT.lensEmpty[l]]),
+  SCOUT.fact.behindMine("Saquon Barkley"), SCOUT.fact.behind("J.K. Dobbins"), SCOUT.fact.opening, SCOUT.fact.covers("Nacua", 5), SCOUT.fact.bye, SCOUT.fact.week(3),
+  SCOUT.fact.softAria("DEN", 2, 32),
+  WIRE.eyebrow, WIRE.title, WIRE.urgency.claim, WIRE.urgency.stash, WIRE.urgency.depth, WIRE.cut, WIRE.open, WIRE.bid, WIRE.priority,
+  WIRE.more(7), WIRE.less, WIRE.goAria("Chris Brooks"), WIRE.none, WIRE.mystery, WIRE.lockedLine,
+  WIRE.page.title, WIRE.page.back, WIRE.page.rank(1), WIRE.page.why, WIRE.page.cut, WIRE.page.cutNone, WIRE.page.bid, WIRE.page.budget,
+  WIRE.page.priorityLine, WIRE.page.numbers, WIRE.page.thisWeek, WIRE.page.restOfSeason, WIRE.page.fit, WIRE.page.adds, WIRE.page.report,
+  WIRE.page.how, ...WIRE.page.howLines, WIRE.page.gone, WIRE.page.others,
+  ...Object.values(SCOUT_OPEN).map((v) => (typeof v === "function" ? v(2) : v)),
 ];
+
+test("the must-add stamp is the one exclamation mark in the house", () => {
+  // Andrew's call, 2026-09-23: a must-add is an event and the stamp shouts. Only there.
+  assert.equal(WIRE.urgency.must, "Must add!");
+  assert.ok(!ALL_COPY.includes(WIRE.urgency.must));
+});
 
 test("the lineup is called Lineup everywhere, and depth chart is left to the NFL", () => {
   assert.equal(SECTIONS.team.label, "Lineup");

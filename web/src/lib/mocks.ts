@@ -41,6 +41,9 @@ import type {
   BoardFacets,
   BoardQuery,
   BoardRow,
+  Lens,
+  LensCounts,
+  LensFact,
   PlayerProfile,
   ScoutGame,
   ScoutSplit,
@@ -1191,12 +1194,13 @@ export function playerBoard(query: BoardQuery = {}, teamId?: string): PlayerBoar
     teams: ROSTERS.map((r) => ({ id: r.id, name: r.name })),
   };
 
+  const lensed = query.lens ? mockLens(query.lens, rows) : null;
   const pos = new Set((query.pos ?? []).map((x) => x.toUpperCase()));
   const nflTeams = new Set((query.nfl_team ?? []).map((x) => x.toUpperCase()));
   const needle = (query.q ?? "").trim().toLowerCase();
   const avail = query.avail ?? "all";
 
-  let matched = rows.filter((r) => {
+  let matched = (lensed ?? rows).filter((r) => {
     if (pos.size && !r.positions.some((x) => pos.has(x.toUpperCase()))) return false;
     if (nflTeams.size && !nflTeams.has((r.nfl_team ?? "").toUpperCase())) return false;
     if (avail === "free" && r.rostered_by) return false;
@@ -1214,7 +1218,7 @@ export function playerBoard(query: BoardQuery = {}, teamId?: string): PlayerBoar
     ros: (r) => r.ros,
     trending: (r) => r.trending_adds,
   };
-  matched = [...matched].sort((a, b) => {
+  if (!lensed) matched = [...matched].sort((a, b) => {
     if (sort === "name") return a.name.localeCompare(b.name) * (desc ? -1 : 1);
     if (sort === "position") return a.position.localeCompare(b.position) * (desc ? -1 : 1) || a.name.localeCompare(b.name);
     const get = numeric[sort] ?? numeric.projected;
@@ -1236,8 +1240,81 @@ export function playerBoard(query: BoardQuery = {}, teamId?: string): PlayerBoar
     order: desc ? "desc" : "asc",
     rows: matched.slice(offset, offset + limit),
     facets,
+    lens: lensed ? query.lens : null,
     algo_version: "directory.v1-mock",
   };
+}
+
+const MOCK_OPPS = ["NYJ", "CAR", "TEN", "NE", "CLE", "LV", "NYG", "IND", "MIA", "ARI"];
+
+/**
+ * The lenses on the mock path, drawn from the same rows so a demo reviewer can click every
+ * chip. Invented facts, on the mock path only: which teammate a back sits behind, and a
+ * defence's run of opponents. `edge/api/lenses.py` is the real one.
+ */
+function mockLens(lens: Lens, rows: BoardRow[]): BoardRow[] {
+  const person = (r: BoardRow) => ({ id: r.id, name: r.name, position: r.position, injury_status: r.injury_status, is_mine: !!r.rostered_by?.is_me, depth: 1 });
+  const byTeamPos = (r: BoardRow) =>
+    rows
+      .filter((o) => o.id !== r.id && o.nfl_team === r.nfl_team && o.position === r.position)
+      .sort((a, b) => (b.projected ?? 0) - (a.projected ?? 0))[0];
+  const tag = (r: BoardRow, lens: LensFact): BoardRow => ({ ...r, lens });
+  if (lens === "handcuffs") {
+    return rows
+      .filter((r) => r.rostered_by?.is_me && r.position === "RB")
+      .flatMap((mine) => {
+        const cuff = rows.find((o) => o.id !== mine.id && o.nfl_team === mine.nfl_team && o.position === "RB" && (o.projected ?? 0) < (mine.projected ?? 0));
+        return cuff ? [tag(cuff, { behind: person(mine) })] : [];
+      });
+  }
+  if (lens === "backups") {
+    return rows
+      .filter((r) => ["RB", "WR", "TE"].includes(r.position))
+      .flatMap((r) => {
+        const ahead = byTeamPos(r);
+        if (!ahead || (ahead.projected ?? 0) <= (r.projected ?? 0)) return [];
+        return [tag(r, { behind: person(ahead), opening: !!ahead.injury_status })];
+      })
+      .sort((a, b) => Number(!!b.lens?.opening) - Number(!!a.lens?.opening) || (b.ros ?? 0) - (a.ros ?? 0));
+  }
+  if (lens === "defenses") {
+    return rows
+      .filter((r) => r.position === "DEF")
+      .map((r) =>
+        tag(r, {
+          outlook: [0, 1, 2].map((k) => {
+            const n = seed(r.id + k);
+            const bye = r.bye_week === WEEK + k;
+            return { week: WEEK + k, opp: bye ? null : MOCK_OPPS[n % MOCK_OPPS.length], home: bye ? null : n % 2 === 0, rank: bye ? null : (n % 32) + 1, of: bye ? null : 32, ppg: bye ? null : 40 + (n % 70) };
+          }),
+        }),
+      )
+      .sort((a, b) => avgRank(a) - avgRank(b));
+  }
+  if (lens === "byes") {
+    const holes = rows.filter((r) => r.rostered_by?.is_me && r.bye_week && r.bye_week >= WEEK && r.bye_week < WEEK + 3 && (r.ros ?? 0) > 0);
+    return rows
+      .filter((r) => !r.rostered_by?.is_me)
+      .flatMap((r) => {
+        const covers = holes.filter((h) => h.position === r.position && h.bye_week !== r.bye_week).map((h) => ({ id: h.id, name: h.name, week: h.bye_week as number }));
+        return covers.length ? [tag(r, { covers })] : [];
+      })
+      .sort((a, b) => (b.ros ?? 0) - (a.ros ?? 0));
+  }
+  return rows.filter((r) => r.trending_adds > 0).sort((a, b) => b.trending_adds - a.trending_adds);
+}
+
+function avgRank(r: BoardRow): number {
+  const ranks = (r.lens?.outlook ?? []).map((w) => w.rank ?? 33);
+  return ranks.reduce((a, b) => a + b, 0) / Math.max(ranks.length, 1);
+}
+
+export function lensCounts(teamId?: string): LensCounts {
+  const lenses: Lens[] = ["handcuffs", "backups", "defenses", "byes", "risers"];
+  const counts = Object.fromEntries(
+    lenses.map((l) => [l, playerBoard({ lens: l, avail: "free", limit: 200 }, teamId).total]),
+  ) as Record<Lens, number>;
+  return { week: WEEK, counts };
 }
 
 export function searchPlayers(q: string): PlayerHit[] {

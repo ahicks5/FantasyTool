@@ -953,6 +953,50 @@ export interface BoardRow {
   trending_adds: number;
   /** Null means nobody in this league holds him. `is_me` needs a `team_id` on the request. */
   rostered_by: { team_id: string; team_name: string; is_me: boolean } | null;
+  /** The one fact that put him in a lens. Only on a board asked for with `lens`. */
+  lens?: LensFact;
+}
+
+/**
+ * The scouting lenses. Mirrors `LENSES` in `edge/api/lenses.py`. Each one is a question a
+ * column sort cannot answer — my handcuffs, the next man up, a defence's next three weeks —
+ * and every one of them is description: a depth chart, a schedule, an add count.
+ */
+export type Lens = "handcuffs" | "backups" | "defenses" | "byes" | "risers";
+
+/** The man a backup sits behind, as the platform's depth chart lists him. */
+export interface LensPerson {
+  id: string;
+  name: string;
+  position: string;
+  injury_status: string | null;
+  is_mine: boolean;
+  depth: number | null;
+}
+
+/** One week of a defence's run: who, where, and how that offence has scored (rank 1 = least). */
+export interface LensWeek {
+  week: number;
+  /** Null is a bye. */
+  opp: string | null;
+  home: boolean | null;
+  rank: number | null;
+  of: number | null;
+  ppg: number | null;
+}
+
+export interface LensFact {
+  behind?: LensPerson;
+  /** The man in front is in doubt this week: the job may already be open. */
+  opening?: boolean;
+  outlook?: LensWeek[];
+  covers?: { id: string; name: string; week: number }[];
+}
+
+/** How many free agents each lens holds, for the chip beside its name. */
+export interface LensCounts {
+  week: number;
+  counts: Record<Lens, number>;
 }
 
 /**
@@ -979,6 +1023,7 @@ export interface PlayerBoard {
   order: "desc" | "asc";
   rows: BoardRow[];
   facets: BoardFacets;
+  lens?: Lens | null;
   algo_version?: string;
 }
 
@@ -993,6 +1038,7 @@ export interface BoardQuery {
   order?: "desc" | "asc";
   limit?: number;
   offset?: number;
+  lens?: Lens | null;
 }
 
 export interface PlayerHit {

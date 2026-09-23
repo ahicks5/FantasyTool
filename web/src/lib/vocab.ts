@@ -521,6 +521,106 @@ export const SCOUT = {
    * a back link reading the same word directly under it looks like a mistake.
    */
   back: "All players",
+  /** The research half of the tab: who is out there, through a lens a filter cannot be. */
+  research: "Who’s out there",
+  researchHint: "Every player in the league, scored by your rules. Pick a lens to ask a sharper question.",
+  lenses: {
+    eyebrow: "Scout’s lenses",
+    /** The chip that turns the lens off. */
+    off: "Everyone",
+    handcuffs: { label: "My handcuffs", blurb: "The back directly behind each of yours, wherever he is rostered." },
+    backups: { label: "Next man up", blurb: "Second on the depth chart at RB, WR and TE. A starter in doubt leads." },
+    defenses: { label: "Defense runs", blurb: "Each defense’s next three games, softest schedule first. Green is an offense that has struggled." },
+    byes: { label: "Bye cover", blurb: "Players at a spot where one of yours is off in the next three weeks." },
+    risers: { label: "Risers", blurb: "Who the rest of the platform is adding, most first." },
+  },
+  /** The one fact on a row that put him in the lens. */
+  fact: {
+    behindMine: (name: string) => `Behind your ${name}`,
+    behind: (name: string) => `Behind ${name}`,
+    opening: "Job may be open",
+    covers: (name: string, week: number) => `Covers ${name} · Wk ${week}`,
+    bye: "Bye",
+    at: "@",
+    week: (w: number) => `Wk ${w}`,
+    softAria: (opp: string, rank: number, of: number) => `${opp}: offense ranks ${rank} of ${of} for fewest points`,
+  },
+  /** A lens with nobody in it says why, in its own terms. */
+  lensEmpty: {
+    handcuffs: "None of your backs has a listed backup we can find.",
+    backups: "No depth charts to read right now.",
+    defenses: "No defenses on the board.",
+    byes: "None of yours is off in the next three weeks.",
+    risers: "Nobody is being added this week.",
+  },
+} as const;
+
+/**
+ * The top of Scouting: the head of scouting's three names, each a panel with a face, the
+ * stamp that says how hard to go after him, and an arrow into his full read.
+ *
+ * **The one exclamation mark in the house.** Andrew's call (2026-09-23): a must-add is an
+ * event and the stamp shouts. It is on the `must` stamp only; every other line keeps the
+ * voice rule, and `vocab.test.ts` pins that it stays the only one.
+ */
+export const WIRE = {
+  eyebrow: "Head of scouting",
+  title: "Top pickups",
+  urgency: {
+    must: "Must add!",
+    claim: "Put in a claim",
+    stash: "Worth a stash",
+    depth: "Depth only",
+  },
+  week: "wk",
+  ros: "ROS",
+  cut: "Cut",
+  open: "Open spot",
+  bid: "Bid",
+  priority: "Priority",
+  left: "left",
+  order: "waiver order",
+  more: (n: number) => `See ${n} more`,
+  less: "Show fewer",
+  goAria: (name: string) => `The full read on ${name}`,
+  none: "Nothing on the wire beats your bench this week. Hold.",
+  mystery: "Locked",
+  lockedLine: "Three names worth a claim this week, with the drop and the bid. Unlock them below the board.",
+  /** The pickup's own page, `/waivers/pickup?id=`. */
+  page: {
+    title: "The full read",
+    back: "Back to Scouting",
+    rank: (n: number) => `Pickup ${n} of the week`,
+    why: "The case",
+    cut: "Who goes",
+    cutNone: "Nobody. You have an open spot.",
+    bid: "What to bid",
+    budget: "of your budget",
+    priorityLine: "No money here. Claims run in order.",
+    numbers: "The numbers",
+    thisWeek: "This week",
+    restOfSeason: "Rest of season",
+    fit: "Fit",
+    adds: "Adds",
+    report: "Open his scout report",
+    how: "How is this ranked?",
+    howLines: [
+      "Fit is 40 parts this week’s lineup gain, 60 parts rest-of-season gain per week, plus depth.",
+      "The bid scales with fit, weeks left, this league’s bid history and how many managers are adding him.",
+    ],
+    gone: "He is off the board. The wire moved since you opened it.",
+    others: "Also on the board",
+  },
+} as const;
+
+/** The scout's opening on Scouting: a seat in the stands, a man marked, the notes. */
+export const SCOUT_OPEN = {
+  aria: "Taking your seat in the scouts’ section",
+  seat: "Section 212 · Row F",
+  eyebrow: "Scouting",
+  pad: "Scouting report",
+  week: (w: number) => `Week ${w}`,
+  skip: "Tap to skip",
 } as const;
 
 /**

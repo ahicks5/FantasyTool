@@ -12,7 +12,7 @@
  * from `SCOUT` in `lib/vocab.ts` and are never restated here.
  */
 
-import type { BoardAvailability, BoardQuery, BoardRow, BoardSort } from "./types";
+import type { BoardAvailability, BoardQuery, BoardRow, BoardSort, Lens, LensWeek } from "./types";
 
 /**
  * How many rows a page asks for. Big enough that scrolling is the main gesture rather than
@@ -171,7 +171,34 @@ export function queryKey(q: BoardQuery): string {
     q.owner ?? "",
     q.sort ?? "projected",
     q.order ?? "desc",
+    q.lens ?? "",
   ]);
+}
+
+/** The lenses, in the order the chips offer them. Mirrors `LENSES` in `edge/api/lenses.py`. */
+export const LENSES: readonly Lens[] = ["handcuffs", "backups", "defenses", "byes", "risers"];
+
+/**
+ * Turning a lens on. Each one opens on the availability its question means: a handcuff is
+ * worth knowing about wherever he is rostered, every other lens is a question about who
+ * you can actually add. The reader can still widen it; the first press lands on the answer.
+ * Pressing the lens already on turns it off.
+ */
+export function withLens(q: BoardQuery, lens: Lens | null): BoardQuery {
+  if (!lens || q.lens === lens) return { ...q, lens: null };
+  return { ...q, lens, avail: lens === "handcuffs" ? "all" : "free", owner: null };
+}
+
+/**
+ * How a defence's week reads: soft (an offence in the bottom third for points), tough (the
+ * top third), even, a bye, or unknown before a game has been played.
+ */
+export function weekTone(w: LensWeek): "soft" | "tough" | "even" | "bye" | "unknown" {
+  if (!w.opp) return "bye";
+  if (w.rank == null || w.of == null) return "unknown";
+  if (w.rank <= w.of / 3) return "soft";
+  if (w.rank > (2 * w.of) / 3) return "tough";
+  return "even";
 }
 
 /** Whether there is another page behind the rows already in hand. */

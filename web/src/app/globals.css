@@ -1972,3 +1972,393 @@ button, a.btn, select, input { min-height: 44px; }
 .factor-sit .factor-key { color: var(--color-sit); }
 .factor-line { color: var(--color-ink-2); display: grid; gap: 2px; }
 .factor-line span + span { padding-top: 2px; border-top: 1px dashed var(--color-line); }
+
+/* ================================================================ scouting ===
+   The top of Scouting: three pickup panels in one row. The must-add is the one
+   event on the tab: the signal border, a slow pulse, a red band. Everything else
+   is chrome and hairline. */
+.pickup {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 212px;
+  padding: 26px 8px 22px;
+  border-radius: 16px;
+  border: 1.5px solid var(--color-line-2);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+a.pickup:hover { transform: translateY(-2px); }
+a.pickup:active { transform: scale(0.98); }
+.pickup-must {
+  border: 2px solid var(--color-signal);
+  box-shadow: 0 0 0 3px rgb(255 77 58 / 0.16), 0 10px 28px -12px rgb(255 77 58 / 0.55);
+  animation: pickup-pulse 2.4s ease-in-out infinite;
+}
+.pickup-claim { border-color: var(--color-lean); }
+.pickup-depth { border-style: dashed; }
+@keyframes pickup-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgb(255 77 58 / 0.16), 0 10px 28px -12px rgb(255 77 58 / 0.55); }
+  50% { box-shadow: 0 0 0 6px rgb(255 77 58 / 0.06), 0 12px 34px -10px rgb(255 77 58 / 0.7); }
+}
+.pickup-band {
+  position: absolute; inset: 0 0 auto 0;
+  padding: 5px 4px 4px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 9.5px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--color-muted);
+  background: var(--color-soft);
+  border-bottom: 1px solid var(--color-line);
+}
+.pickup-band-must { color: #fff; background: var(--color-signal); border-bottom-color: transparent; font-size: 11px; }
+.pickup-band-claim { color: #fff; background: var(--color-lean); border-bottom-color: transparent; }
+.pickup-rank {
+  position: absolute; top: 28px; left: 8px;
+  font-size: 13px; line-height: 1; color: var(--color-muted);
+}
+.pickup-go {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  display: grid; place-items: center;
+  height: 18px;
+  color: var(--color-muted);
+  background: var(--color-soft);
+}
+.pickup-must .pickup-go { color: #fff; background: var(--color-signal); }
+.pickup-locked { animation: none; }
+.pickup-locked .pickup-rank { color: var(--color-line-2); }
+@media (prefers-reduced-motion: reduce) { .pickup-must { animation: none; } }
+
+/* The pickup's own page: the hero carries the stamp's colour down its edge. */
+.pickup-hero { border-left: 4px solid var(--color-metal-2); }
+.pickup-hero-must { border-left-color: var(--color-signal); }
+.pickup-hero-claim { border-left-color: var(--color-lean); }
+
+/* The scout's lenses: five questions, each a chip with its count of free agents. */
+.lens-chip {
+  display: inline-flex; flex: none; align-items: center; gap: 6px;
+  min-height: 36px; padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--color-line-2);
+  background: var(--color-soft);
+  color: var(--color-ink-2);
+  font-size: 12px; font-weight: 800; letter-spacing: 0.01em;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.lens-chip:hover { border-color: var(--color-ink); color: var(--color-ink); }
+.lens-chip-on {
+  color: #0e1116;
+  border-color: transparent;
+  background: var(--chrome-silver);
+  box-shadow: var(--shadow-card);
+}
+.lens-chip-n {
+  min-width: 18px; padding: 1px 5px; border-radius: 999px;
+  font-size: 10px; font-weight: 900; text-align: center;
+  color: var(--color-paper); background: var(--color-muted);
+}
+.lens-chip-on .lens-chip-n { color: #fff; background: #0e1116; }
+.lens-fact {
+  display: inline-flex; align-items: center;
+  max-width: 100%;
+  padding: 2px 6px; border-radius: 6px;
+  font-size: 10.5px; font-weight: 800;
+  color: var(--color-ink-2); background: var(--color-soft);
+  box-shadow: inset 0 0 0 1px var(--color-line-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lens-fact-mine { color: var(--color-lean); box-shadow: inset 0 0 0 1px var(--color-lean); background: var(--color-lean-soft); }
+.lens-fact-open { color: var(--color-sit); box-shadow: inset 0 0 0 1px var(--color-sit); background: var(--color-sit-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.lens-week {
+  display: inline-flex; flex-direction: column; align-items: center;
+  min-width: 42px; padding: 2px 5px 3px; border-radius: 6px;
+  font-size: 11px; font-weight: 900; line-height: 1.1;
+  color: var(--color-ink-2); background: var(--color-soft);
+  box-shadow: inset 0 0 0 1px var(--color-line-2);
+}
+.lens-week-n { font-size: 8.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); }
+.lens-week-soft { color: var(--color-start); background: var(--color-start-soft); box-shadow: inset 0 0 0 1px var(--color-start); }
+.lens-week-tough { color: var(--color-sit); background: var(--color-sit-soft); box-shadow: inset 0 0 0 1px var(--color-sit); }
+.lens-week-bye { color: var(--color-muted); box-shadow: inset 0 0 0 1px dashed var(--color-line-2); }
+
+/* ============================================================ the scout ===
+   The first open of Scouting: a seat in the stands at a night game. The world
+   (sky, towers, field, crowd) sits in one layer the camera moves; the pad is its
+   own layer that rises over it. Dark in both themes, like the ride: every colour
+   here is pinned rather than read off a theme token. */
+.scout {
+  position: fixed; inset: 0; z-index: 60;
+  overflow: hidden;
+  background: #04060a;
+  cursor: pointer;
+  user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  animation: scout-in 0.35s ease-out both;
+  transition: opacity var(--scout-land) ease-in;
+}
+.scout[data-phase="land"], .scout[data-phase="done"] { opacity: 0; }
+@keyframes scout-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* The camera: the glasses bring the marked back to the middle of the screen and close
+   in on him (translate, then scale about his own point), then the camera drops to the
+   lap and the stands go soft behind the pad. */
+.scout-world {
+  position: absolute; inset: 0;
+  transform-origin: var(--tx) var(--ty);
+  transition: transform var(--scout-focus) cubic-bezier(0.45, 0, 0.2, 1), opacity var(--scout-drop) ease, filter var(--scout-drop) ease;
+}
+.scout[data-phase="focus"] .scout-world { transform: translate(calc(50vw - var(--tx)), calc(50vh - var(--ty))) scale(2.4); }
+.scout[data-phase="drop"] .scout-world,
+.scout[data-phase="notes"] .scout-world,
+.scout[data-phase="land"] .scout-world {
+  transform: translate(calc(50vw - var(--tx)), calc(50vh - var(--ty) - 30vh)) scale(2.4);
+  transition: transform var(--scout-drop) cubic-bezier(0.55, 0, 0.3, 1), opacity var(--scout-drop) ease, filter var(--scout-drop) ease;
+  opacity: 0.3;
+  filter: blur(4px);
+}
+
+.scout-sky {
+  position: absolute; inset: 0 0 45% 0;
+  background:
+    radial-gradient(60% 50% at 50% 100%, rgb(120 150 200 / 0.22), transparent 70%),
+    linear-gradient(180deg, #02040a 0%, #0a1222 60%, #16223a 100%);
+}
+/* The light towers: a lamp bank on a mast, and the glow it throws. */
+.scout-tower {
+  position: absolute; top: 6%;
+  width: 2px; height: 30%;
+  background: linear-gradient(180deg, #3a414c, #1a1e25);
+  transform: translateX(-50%);
+}
+.scout-tower-lamps {
+  position: absolute; top: -10px; left: 50%;
+  width: 34px; height: 14px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background:
+    radial-gradient(circle, #fffbe8 0 1.6px, transparent 2.2px) 0 0 / 6px 6px,
+    #2a2f37;
+  box-shadow: 0 0 22px 10px rgb(255 248 220 / 0.35), 0 0 80px 36px rgb(255 248 220 / 0.14);
+  animation: scout-lamp 3.1s ease-in-out infinite;
+}
+.scout-tower-1 .scout-tower-lamps, .scout-tower-2 .scout-tower-lamps { width: 26px; animation-delay: 0.7s; }
+.scout-tower-1, .scout-tower-2 { top: 11%; height: 24%; }
+@keyframes scout-lamp { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.18); } }
+
+/* The far stands: a dark bowl flecked with the crowd and the odd flash. */
+.scout-bowl {
+  position: absolute; left: -5%; right: -5%; top: 36%; height: 16%;
+  border-radius: 50% 50% 0 0 / 30% 30% 0 0;
+  background:
+    radial-gradient(circle, rgb(255 255 255 / 0.5) 0 0.7px, transparent 1.2px) 0 0 / 7px 5px,
+    radial-gradient(circle, rgb(190 200 215 / 0.35) 0 0.6px, transparent 1.1px) 3px 2px / 9px 6px,
+    linear-gradient(180deg, #0d1118, #151a22);
+  box-shadow: inset 0 -6px 12px rgb(0 0 0 / 0.6);
+}
+.scout-bowl::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle, #fff 0 1px, transparent 1.5px) 0 0 / 53px 17px;
+  opacity: 0; animation: scout-flash 1.7s steps(1, end) infinite;
+}
+@keyframes scout-flash { 0%, 100% { opacity: 0; } 12% { opacity: 0.9; } 16% { opacity: 0; } 61% { opacity: 0.7; } 64% { opacity: 0; } }
+
+/* The field, in perspective from the sideline: the mow stripes and yard lines run
+   away from you and converge. */
+.scout-field-wrap {
+  position: absolute; left: -40%; right: -40%; top: 50%; bottom: 0;
+  perspective: 700px;
+  perspective-origin: 50% 0%;
+}
+.scout-field {
+  position: absolute; inset: 0 0 -25% 0;
+  transform: rotateX(50deg);
+  transform-origin: 50% 0;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(5% - 1.5px), rgb(255 255 255 / 0.55) calc(5% - 1.5px) 5%),
+    repeating-linear-gradient(90deg, #11502d 0 10%, #0e4527 10% 20%);
+  box-shadow: inset 0 40px 60px -20px rgb(255 248 220 / 0.18);
+}
+.scout-field::before, .scout-field::after {
+  /* the hash marks, top and bottom */
+  content: ""; position: absolute; left: 0; right: 0; height: 6px;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(1% - 1px), rgb(255 255 255 / 0.5) calc(1% - 1px) 1%);
+}
+.scout-field::before { top: 36%; }
+.scout-field::after { top: 62%; }
+.scout-los { position: absolute; left: 49.2%; top: 0; bottom: 30%; width: 3px; background: rgb(91 141 239 / 0.55); }
+.scout-man {
+  position: absolute; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px;
+  border-radius: 50%;
+  animation: scout-route calc(var(--scout-stands) - 450ms) cubic-bezier(0.3, 0.1, 0.4, 1) 0.25s both;
+}
+.scout-man-o { background: #f4f3f0; box-shadow: 0 0 0 2px #0e1116, 0 3px 4px rgb(0 0 0 / 0.5); }
+.scout-man-d { background: #8b929d; box-shadow: 0 0 0 2px #0e1116, 0 3px 4px rgb(0 0 0 / 0.5); }
+.scout-man-target { background: #fff; }
+@keyframes scout-route { from { transform: none; } to { transform: translate(var(--dx), var(--dy)); } }
+/* The mark: a red ring drawn round the back the glasses found. */
+.scout-ring {
+  position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px;
+  overflow: visible;
+}
+.scout-ring circle {
+  fill: none; stroke: #ff4d3a; stroke-width: 3; stroke-linecap: round;
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+  filter: drop-shadow(0 0 4px rgb(255 77 58 / 0.8));
+}
+.scout[data-phase="focus"] .scout-ring circle,
+.scout[data-phase="drop"] .scout-ring circle,
+.scout[data-phase="notes"] .scout-ring circle {
+  transition: stroke-dashoffset 0.6s ease-out calc(var(--scout-focus) * 0.45);
+  stroke-dashoffset: 0;
+}
+
+/* The row in front of you: heads and shoulders, bobbing. */
+.scout-crowd { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; }
+.scout-head {
+  position: absolute; bottom: -12px;
+  width: 16%; height: var(--h);
+  border-radius: 48% 48% 12px 12px / 60% 60% 12px 12px;
+  background: #06080c;
+  box-shadow: inset 0 3px 6px rgb(255 248 220 / 0.07);
+  animation: scout-bob 1.6s ease-in-out var(--b) infinite;
+}
+@keyframes scout-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* The glasses: black everywhere but two overlapping lenses, which close in during the
+   focus. A mask with both holes intersected, so the lenses are a union, not a lens. */
+.scout-glass {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: #000;
+  opacity: 0;
+  --lens: 62vmin;
+  -webkit-mask:
+    radial-gradient(circle calc(var(--lens) / 2) at calc(50% - var(--lens) * 0.3) 50%, transparent 98%, #000 100%),
+    radial-gradient(circle calc(var(--lens) / 2) at calc(50% + var(--lens) * 0.3) 50%, transparent 98%, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask:
+    radial-gradient(circle calc(var(--lens) / 2) at calc(50% - var(--lens) * 0.3) 50%, transparent 98%, #000 100%),
+    radial-gradient(circle calc(var(--lens) / 2) at calc(50% + var(--lens) * 0.3) 50%, transparent 98%, #000 100%);
+  mask-composite: intersect;
+  transition: opacity 0.35s ease, --lens var(--scout-focus) ease;
+}
+.scout[data-phase="focus"] .scout-glass { opacity: 0.94; }
+
+/* The pad on your lap: comes up from the bottom as the camera drops. */
+.scout-pad {
+  position: absolute; left: 50%; bottom: 0;
+  width: min(88vw, 380px); height: min(58vh, 420px);
+  padding: 34px 20px 20px 46px;
+  border-radius: 10px 10px 0 0;
+  color: #1a2740;
+  background:
+    linear-gradient(90deg, transparent 0 33px, rgb(224 45 27 / 0.45) 33px 34.5px, transparent 34.5px),
+    repeating-linear-gradient(180deg, transparent 0 33px, rgb(40 90 170 / 0.22) 33px 34px),
+    #f5f3ec;
+  background-position: 0 0, 0 58px, 0 0;
+  box-shadow: 0 -20px 60px rgb(0 0 0 / 0.6);
+  transform: translate(-50%, 104%) rotate(-2deg);
+  transition: transform var(--scout-drop) cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+.scout[data-phase="drop"] .scout-pad,
+.scout[data-phase="notes"] .scout-pad,
+.scout[data-phase="land"] .scout-pad { transform: translate(-50%, 0) rotate(-1deg); }
+.scout-pad-rings {
+  position: absolute; top: -9px; left: 16px; right: 16px; height: 18px;
+  background: radial-gradient(circle at 50% 50%, #cdd2d9 0 4px, #6e757f 4.5px 5.5px, transparent 6px) 0 0 / 22px 18px repeat-x;
+}
+.scout-pad-head {
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--font-display); font-weight: 900;
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: #2d3748;
+}
+.scout-pad-mark { color: #2d3748; }
+.scout-pad-week { margin-left: auto; color: #e02d1b; }
+.scout-pad-lines { margin-top: 26px; display: grid; gap: 0; }
+.scout-line {
+  position: relative;
+  display: flex; align-items: baseline; gap: 8px;
+  min-height: 68px; padding-top: 6px;
+}
+.scout-line-n { flex: none; font-family: var(--font-display); font-weight: 900; font-size: 18px; color: #7d858f; }
+.scout-line-ink {
+  position: relative;
+  display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  clip-path: inset(0 100% 0 0);
+}
+.scout[data-phase="notes"] .scout-line-ink,
+.scout[data-phase="land"] .scout-line-ink {
+  animation: scout-write var(--scout-line) cubic-bezier(0.4, 0.1, 0.5, 1) var(--d) forwards;
+}
+@keyframes scout-write { to { clip-path: inset(0 -20% 0 0); } }
+.scout-line-name { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; transform: rotate(-1.2deg); }
+.scout-line-pos { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #4b5563; font-style: normal; }
+.scout-line-rule { width: 70%; height: 10px; margin-top: 12px; border-radius: 6px; background: rgb(26 39 64 / 0.16); }
+.scout-line-must {
+  position: relative;
+  margin-top: 2px; padding: 3px 9px;
+  font-style: normal;
+  font-size: 12px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #e02d1b;
+  transform: rotate(-4deg);
+}
+.scout-line-must svg { position: absolute; inset: -4px -6px; width: calc(100% + 12px); height: calc(100% + 8px); overflow: visible; }
+.scout-line-must ellipse {
+  fill: none; stroke: #e02d1b; stroke-width: 2.4; stroke-linecap: round;
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+}
+.scout[data-phase="notes"] .scout-line-must ellipse,
+.scout[data-phase="land"] .scout-line-must ellipse {
+  animation: scout-circle 0.5s ease-out calc(var(--d) + var(--scout-line)) forwards;
+}
+@keyframes scout-circle { to { stroke-dashoffset: 0; } }
+/* The pen follows the writing down the page. */
+.scout-pen {
+  position: absolute; left: 60px; top: 96px;
+  width: 8px; height: 88px;
+  border-radius: 2px 2px 4px 4px;
+  background: linear-gradient(90deg, #6e757f, #f2f4f7 45%, #8b929d);
+  transform-origin: 50% 100%;
+  transform: translate(0, -80px) rotate(28deg);
+  opacity: 0;
+}
+.scout-pen::after { content: ""; position: absolute; left: 1px; bottom: -8px; border: 3px solid transparent; border-top: 8px solid #1a2740; }
+.scout[data-phase="notes"] .scout-pen { opacity: 1; animation: scout-pen calc(var(--scout-line) * 3 + 700ms) linear 250ms both; }
+@keyframes scout-pen {
+  0% { transform: translate(0, -80px) rotate(28deg); }
+  28% { transform: translate(200px, -80px) rotate(24deg); }
+  33% { transform: translate(0, -12px) rotate(28deg); }
+  61% { transform: translate(200px, -12px) rotate(24deg); }
+  66% { transform: translate(0, 56px) rotate(28deg); }
+  94% { transform: translate(200px, 56px) rotate(24deg); }
+  100% { transform: translate(260px, 120px) rotate(34deg); opacity: 0; }
+}
+
+.scout-hud {
+  position: absolute; top: max(18px, env(safe-area-inset-top)); left: 18px;
+  display: grid; gap: 3px;
+  transition: opacity 0.3s ease;
+}
+.scout[data-phase="drop"] .scout-hud, .scout[data-phase="notes"] .scout-hud { opacity: 0; }
+.scout-hud-eyebrow {
+  font-family: var(--font-display); font-weight: 900; font-size: 20px; letter-spacing: -0.02em;
+  background: var(--chrome-silver); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.scout-hud-seat { font-size: 10px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: rgb(247 246 243 / 0.55); }
+.scout-skip {
+  position: absolute; right: 14px; bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 2;
+  min-height: 36px; padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  color: rgb(247 246 243 / 0.7);
+  background: rgb(0 0 0 / 0.45);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
+}

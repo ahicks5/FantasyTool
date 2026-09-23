@@ -33,6 +33,7 @@ import type {
   PlayerProfile,
   PlayerBoard,
   BoardQuery,
+  LensCounts,
 } from "./types";
 import * as mocks from "./mocks";
 import { espnAuthHeaders } from "./espnAuth";
@@ -373,10 +374,18 @@ export async function getPlayerBoard(
   if (query.order) p.set("order", query.order);
   if (query.limit != null) p.set("limit", String(query.limit));
   if (query.offset) p.set("offset", String(query.offset));
+  if (query.lens) p.set("lens", query.lens);
   if (teamId) p.set("team_id", teamId);
   return request<PlayerBoard>(
     `/league/${platform}/${encodeURIComponent(leagueId)}/players?${p.toString()}`,
   );
+}
+
+/** How many free agents each scouting lens holds. Free, like the board it cuts. */
+export async function getLensCounts(platform: Platform, leagueId: string, teamId?: string): Promise<LensCounts> {
+  if (USE_MOCKS) return mocks.lensCounts(teamId);
+  const q = teamId ? `?team_id=${encodeURIComponent(teamId)}` : "";
+  return request<LensCounts>(`/league/${platform}/${encodeURIComponent(leagueId)}/players/lenses${q}`);
 }
 
 
