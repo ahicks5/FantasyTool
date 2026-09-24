@@ -7,13 +7,18 @@ import { SeasonLine } from "./SeasonLine";
 import { ordinal, RECAP_COPY as COPY, seasonView, type SeasonView } from "@/lib/recap";
 import type { SeasonRecap } from "@/lib/types";
 
-export function Film({ recap }: { recap: SeasonRecap }) {
+/**
+ * `archive` draws every week's old write-up under the panel. `/report` turns it off: the
+ * replay's week picker opens any finished week in full, so the list said it twice.
+ */
+export function Film({ recap, archive = true }: { recap: SeasonRecap; archive?: boolean }) {
   const season = useMemo(() => seasonView(recap), [recap]);
   return (
     <div className="grid grid-cols-1 gap-7">
       <SeasonPanel season={season} />
       {season.chart && <SeasonLine chart={season.chart} />}
 
+      {(archive || season.played === 0) && (
       <section>
         <H2>{COPY.weeksHead}</H2>
         {season.played === 0 ? (
@@ -39,6 +44,7 @@ export function Film({ recap }: { recap: SeasonRecap }) {
           </>
         )}
       </section>
+      )}
     </div>
   );
 }

@@ -531,6 +531,118 @@ export interface FilmSeason {
   algo_version: string;
 }
 
+// ---------------------------------------------------------------------------
+// The film's league half (docs/API.md §The league; edge/engine/league_film.py)
+// ---------------------------------------------------------------------------
+
+export interface FilmTeamRef {
+  id: string;
+  name: string;
+}
+
+export interface FilmSuperlative {
+  kind: "top_score" | "unluckiest" | "luckiest" | "blowout" | "best_manager" | "most_left" | "best_claim";
+  team: FilmTeamRef;
+  value: number;
+  line: string;
+}
+
+export interface FilmGroups {
+  positions: string[];
+  teams: { team: FilmTeamRef; overall: string; overall_rank: number; positions: Record<string, { grade: string; rank: number }> }[];
+}
+
+export interface FilmExpectation {
+  team: FilmTeamRef;
+  week: { points: number; projected: number; delta: number } | null;
+  /** Only the weeks where every starter had a number; `weeks` says how many. */
+  season: { points: number; projected: number; delta: number; weeks: number } | null;
+}
+
+export interface FilmGauntlet {
+  team: FilmTeamRef;
+  points_against: number;
+  per_game: number | null;
+  /** 1 = the most points faced. */
+  rank: number;
+}
+
+export interface FilmTradeSide {
+  team: FilmTeamRef;
+  /** What this side received. */
+  players: { id: string; name: string }[];
+  /** Points those players scored for this side since, while on its roster. So far. */
+  points: number;
+  /** Rest-of-season value of what it received: a projection, labelled as one. */
+  ros: number;
+  /** Draft picks received: named, not valued. */
+  picks: number;
+  net: number;
+  ros_from_here: number;
+}
+
+export interface FilmTrade {
+  week: number;
+  weeks_since: number;
+  /** False for a trade under two weeks old: shown, never ranked. */
+  ranked: boolean;
+  sides: FilmTradeSide[];
+}
+
+export interface FilmClaim {
+  week: number;
+  team: FilmTeamRef;
+  add: { id: string; name: string };
+  drop: { id: string; name: string }[];
+  /** What the pickup scored for this team while on it. */
+  points: number;
+  /** What the dropped men scored since, wherever they went. */
+  dropped_points: number;
+  net: number;
+  ranked: boolean;
+}
+
+export interface FilmLedger {
+  through_week: number | null;
+  trades: FilmTrade[];
+  best_claims: FilmClaim[];
+  worst_claims: FilmClaim[];
+  teams: { team: FilmTeamRef; moves: number; net: number }[];
+}
+
+export interface FilmSeed {
+  seed: number;
+  team: FilmTeamRef;
+  wins: number;
+  losses: number;
+  ties: number;
+  points_for: number;
+  in: boolean;
+  /** Inside the line: games clear of the first team out. Outside: games back of the last seed. */
+  games: number;
+}
+
+export interface FilmPlayoffs {
+  teams: number;
+  start_week: number | null;
+  weeks_left: number | null;
+  seeds: FilmSeed[];
+}
+
+export interface LeagueFilm {
+  league: string;
+  /** The newest finished week, which the superlatives are about. */
+  week: number | null;
+  superlatives: FilmSuperlative[];
+  groups: FilmGroups;
+  expectation: FilmExpectation[];
+  gauntlet: FilmGauntlet[];
+  ledger: FilmLedger;
+  /** Null when the league did not say how many make it, or nobody has played. */
+  playoffs: FilmPlayoffs | null;
+  algo_version: string;
+}
+
 export interface Bid {
   amount: number | null;
   range: [number, number] | null;

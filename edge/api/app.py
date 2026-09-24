@@ -778,6 +778,38 @@ def film_week(platform: str, league_id: str, team_id: str, week: int,
     return _film(email, platform, league_id, team_id, auth, week=week)
 
 
+@app.get("/api/league/{platform}/{league_id}/film/league")
+def film_league(platform: str, league_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
+    """The film's league half: superlatives, position groups, expectation, the gauntlet, the
+    ledger and the playoff picture. Part of the Full Report; the standings stay free.
+    """
+    from edge.data.scoring import score
+    from edge.engine import league_film
+
+    b = _bundle(platform, league_id, auth)
+    _require(email, "full_report", teaser="This week's superlatives, the trade ledger and the playoff line are in.")
+    league = b.league
+    weeks = service.played_weeks(platform, league_id, b, auth=auth)
+    over = [w for w in weeks if w.week < league.week and w.played]
+    projected = {}
+    for w in over:
+        ids = {pid for t in w.teams.values() for pid in t.starters if pid and pid != "0"}
+        if ids:
+            projected[w.week] = service.past_projections(league, w.week, ids=ids)
+    try:
+        log = service.stat_log(league.season, league.week - 1)
+    except Exception:  # noqa: BLE001
+        log = {}
+    this_season = [t for t in b.transactions if str(t.get("league_id")) == str(league.id)]
+    ids = {str(pid) for t in this_season for pid in list((t.get("adds") or {})) + list((t.get("drops") or {}))}
+    names = {p.id: p.name for t in league.teams for p in t.players}
+    names.update({k: v for k, v in service.player_names(ids - names.keys()).items()})
+    ctx = league_film.LeagueContext(league=league, weeks=weeks, score=lambda stats: score(stats, league.scoring),
+                                    log=log, projected=projected, transactions=this_season, ros=b.ros, names=names)
+    claims = {t.id: service.claims(b.transactions, league.id, t.id) for t in league.teams}
+    return league_film.build(ctx, claims)
+
+
 class ShareIn(BaseModel):
     kind: str = "trade"
     league_name: str = ""

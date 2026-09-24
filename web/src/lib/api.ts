@@ -30,6 +30,7 @@ import type {
   SeasonRecap,
   FilmSeason,
   FilmCover,
+  LeagueFilm,
   TeamGrades,
   PlayerHit,
   PlayerProfile,
@@ -304,6 +305,21 @@ export async function getFilm(platform: Platform, leagueId: string, teamId: stri
     return { locked: false, cover: film.cover, film };
   } catch (e) {
     if (e instanceof PaywallError && e.feature === "full_report") return { locked: true, cover: e.cover, film: null };
+    throw e;
+  }
+}
+
+/**
+ * The film's league half (docs/API.md §The league). Paid; a free reader's 402 comes back as
+ * `locked`. The mock branch has no league to compare, for the same reason as `getFilm`.
+ */
+export async function getLeagueFilm(platform: Platform, leagueId: string): Promise<{ locked: boolean; film: LeagueFilm | null }> {
+  if (USE_MOCKS) return { locked: false, film: null };
+  try {
+    const film = await request<LeagueFilm>(`/league/${platform}/${encodeURIComponent(leagueId)}/film/league`);
+    return { locked: false, film };
+  } catch (e) {
+    if (e instanceof PaywallError && e.feature === "full_report") return { locked: true, film: null };
     throw e;
   }
 }

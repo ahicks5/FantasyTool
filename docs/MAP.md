@@ -110,11 +110,11 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (53 modules, 13,575 lines)
+### `edge/` — the Python engine and API (54 modules, 14,046 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
-| `edge/api/app.py` | Penthouse API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload | api, compliance +9 | 884 |
+| `edge/api/app.py` | Penthouse API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload | api, compliance +10 | 916 |
 | `edge/api/auth.py` | Who is calling? Supabase JWT (HS256) in production, X-Edge-User header in dev. Stdlib only. | api | 52 |
 | `edge/api/desk.py` | The owner's desk: the front page, assembled. What landed, who is next, and the binders. | desk_api, plan | 141 |
 | `edge/api/directory.py` | Every player in the league, in one browsable board: filter, sort, page. | directory, cross_language_contracts +1 | 334 |
@@ -122,24 +122,24 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/api/limits.py` | Per-IP rate limiting and request validation. Stdlib only. | limits | 186 |
 | `edge/api/payments.py` | Stripe Checkout + webhook. Prices are created inline from products.py, so there's nothing to set | api | 110 |
 | `edge/api/scout.py` | Assemble a player's scouting report: search the league, then read one player. | scout_api | 185 |
-| `edge/api/service.py` | Loads a league with everything the engine needs (ROS values, byes, bid history, tendencies), | service, api +10 | 378 |
+| `edge/api/service.py` | Loads a league with everything the engine needs (ROS values, byes, bid history, tendencies), | service, api +11 | 397 |
 | `edge/api/share.py` | Public share snapshots — the organic loop. | share, compliance | 69 |
-| `edge/api/store.py` | Tiny persistence: users' purchases and connected leagues. SQLite (stdlib) — zero cost, zero setup. | store_contract, api +10 | 225 |
+| `edge/api/store.py` | Tiny persistence: users' purchases and connected leagues. SQLite (stdlib) — zero cost, zero setup. | store_contract, api +11 | 225 |
 | `edge/api/store_pg.py` | The same store, on Postgres. Selected by DATABASE_URL; see store.open_store(). | store_contract | 221 |
 | `edge/business/economics.py` | Unit economics: what a sale is actually worth after everyone else takes their cut. | economics | 292 |
 | `edge/calibration.py` | How sure are we, really? Confidence from measured projection error, not from raw margin. | calibration, decisions +3 | 222 |
 | `edge/cli.py` | Demo commands. Live network. Usage: | espn_connector, send | 214 |
 | `edge/connectors/espn.py` | ESPN (public league) -> normalized League. `build_league` is pure so tests run offline. | espn_connector, espn_corpus +6 | 470 |
-| `edge/connectors/sleeper.py` | Sleeper -> normalized League. Pure mapping functions take raw JSON so tests run offline. | sleeper_connector, deadlines +9 | 391 |
+| `edge/connectors/sleeper.py` | Sleeper -> normalized League. Pure mapping functions take raw JSON so tests run offline. | sleeper_connector, deadlines +10 | 391 |
 | `edge/data/depth_charts.py` | Who is on each NFL team, at what depth, and what the platform last said about him. | decisions, desk_api +3 | 119 |
 | `edge/data/espn_api.py` | Thin HTTP layer for ESPN fantasy football (v3 "lm-api-reads"). | espn_connector, espn_private | 160 |
 | `edge/data/frozen.py` | The Thursday freeze, read back: what the projections said before the games were played. | frozen | 80 |
-| `edge/data/nfl_stats.py` | Real NFL production, week by week — what a player actually did, not what anyone projected. | nfl_stats, decisions +4 | 228 |
+| `edge/data/nfl_stats.py` | Real NFL production, week by week — what a player actually did, not what anyone projected. | nfl_stats, decisions +5 | 228 |
 | `edge/data/player_index.py` | Search every player in the league by name, fast enough to run on every keystroke. | player_index, directory +2 | 166 |
 | `edge/data/player_map.py` | Match players from other platforms (ESPN, ...) to Sleeper player ids by name. | espn_connector, espn_live_fixture | 87 |
 | `edge/data/providers.py` | Projection providers — the engine's only door to projection data. | providers, compliance +2 | 272 |
 | `edge/data/schedule.py` | NFL schedule / bye weeks from ESPN's free scoreboard endpoint. Cached per season. | actions, api +23 | 160 |
-| `edge/data/scoring.py` | Score a raw stat line against a league's scoring settings (Sleeper stat vocabulary). | scoring, evaluate_moves +2 | 16 |
+| `edge/data/scoring.py` | Score a raw stat line against a league's scoring settings (Sleeper stat vocabulary). | scoring, evaluate_moves +3 | 16 |
 | `edge/data/sleeper_api.py` | Thin HTTP layer for Sleeper. Everything public, no auth. Cached players file on disk. | directory, evaluate_moves +6 | 106 |
 | `edge/delivery/send.py` | Actually putting the weekly email in someone's inbox. | send | 169 |
 | `edge/delivery/weekly_email.py` | The weekly email: the call sheet, delivered before the user thinks to open the app. | weekly_email, send | 298 |
@@ -147,13 +147,14 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/engine/copy.py` | Small helpers for prose the user actually reads. | copy | 37 |
 | `edge/engine/decisions.py` | The close calls, decided: the reads that tip a start/sit the projection alone cannot settle. | decisions | 553 |
 | `edge/engine/explain.py` | Trade explanation text. Template by default (free). Claude API when EDGE_USE_CLAUDE=1 and | trade | 76 |
-| `edge/engine/film.py` | The replay: why each man scored what he did, what decided the week, and what to do next. | film | 653 |
-| `edge/engine/grades.py` | Letter grades for a roster, position by position — the draft-grade idea, kept live. | grades, standings | 287 |
+| `edge/engine/film.py` | The replay: why each man scored what he did, what decided the week, and what to do next. | film | 654 |
+| `edge/engine/grades.py` | Letter grades for a roster, position by position — the draft-grade idea, kept live. | grades, league_film +1 | 287 |
+| `edge/engine/league_film.py` | The film's league half: everyone, compared (SPEC-FILM F-5, F-6, F-7). | league_film | 419 |
 | `edge/engine/lineup.py` | Lineup optimizer + start/sit calls with confidence and one-line reasons. | lineup, actions +13 | 706 |
 | `edge/engine/newsdesk.py` | The news desk: what just happened in the NFL that changes this roster, and nothing else. | newsdesk, plan | 205 |
 | `edge/engine/plan.py` | The action plan: one story off the news desk, and every door out of it. | plan | 171 |
 | `edge/engine/profile.py` | The scouting report: one player's season, counted rather than predicted. | profile, scout_api | 624 |
-| `edge/engine/recap.py` | The film: what actually happened, week by week, against what we said at the time. | recap, film +1 | 425 |
+| `edge/engine/recap.py` | The film: what actually happened, week by week, against what we said at the time. | recap, film +2 | 425 |
 | `edge/engine/report.py` | Full Report: everything for one team this week, in one payload (+ simple HTML). | report, espn_live_fixture +3 | 220 |
 | `edge/engine/standings.py` | The standings, and the power ranking underneath them: how everyone is actually doing. | standings | 150 |
 | `edge/engine/tendencies.py` | Manager tendency profiles from a league's transaction history (this season + last). | tendencies_products, api +3 | 141 |
@@ -183,7 +184,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/not-found.tsx` | The 404 page, deliberately not indexed. | 30 |
 | `web/src/app/page.tsx` | The landing page: the pitch, one worked example and the pricing table. Indexable. | 301 |
 | `web/src/app/privacy/page.tsx` | The privacy policy. docs/DATA_INVENTORY.md is the source of truth; if they disagree this page is stale. | 145 |
-| `web/src/app/report/page.tsx` | The film: the replay of your week first, then the standings for everyone, then the season week by week. | 138 |
+| `web/src/app/report/page.tsx` | The film: the replay of your week first, then the standings for everyone, then the season week by week. | 165 |
 | `web/src/app/robots.ts` | robots.txt, built from the indexable paths in lib/site.ts. | 19 |
 | `web/src/app/s/[id]/page.tsx` | The public share snapshot: opens with no account, unfurls with a rendered card. | 351 |
 | `web/src/app/sitemap.ts` | The sitemap, built from the indexable paths in lib/site.ts. | 18 |
@@ -196,7 +197,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/waivers/page.tsx` | Scouting, in the order a manager reads it: the three worth adding, then who is out there. | 77 |
 | `web/src/app/waivers/pickup/page.tsx` | One pickup, read in full: the arrow on each of Scouting's top panels lands here. | 189 |
 
-### `web/src/components/` — the view (43 files)
+### `web/src/components/` — the view (44 files)
 
 | File | What it is | Lines |
 |---|---|---|
@@ -209,7 +210,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Elevator.tsx` | The ride up: the opening, played as an elevator to the office and a walk to the desk. Tap to skip. | 319 |
 | `web/src/components/EmailOptIn.tsx` | The weekly-email opt-in: one checkbox, on /login, under the signed-in block. | 104 |
 | `web/src/components/EspnAuthForm.tsx` | The two ESPN cookies a private league needs, asked for in the shape of a form rather than | 167 |
-| `web/src/components/Film.tsx` | The film: the season looked back on, the record read against the scoring, week by week. | 130 |
+| `web/src/components/Film.tsx` | The film: the season looked back on, the record read against the scoring, week by week. | 136 |
 | `web/src/components/FilmWeek.tsx` | One week of the film: the final, then every call and what happened, stated flat. | 179 |
 | `web/src/components/LegalPage.tsx` | Shared chrome and typography for /terms and /privacy. Plain, readable, no app shell. | 66 |
 | `web/src/components/LineupView.tsx` | Lineup: is my starting lineup right for this week? Two piles, then the roster. | 492 |
@@ -236,6 +237,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Unlocking.tsx` | The gap between a cleared card and a written entitlement, made visible instead of confusing. | 131 |
 | `web/src/components/WaiverPlanView.tsx` | The waiver plan: the claim we are asking for, its bid, and the backup claims under it. | 210 |
 | `web/src/components/WaiversView.tsx` | The board: every free agent worth a claim, ranked. This is a long scannable | 93 |
+| `web/src/components/film/League.tsx` | The film's league half (SPEC-FILM F-5 to F-7): everyone, compared. | 305 |
 | `web/src/components/film/Replay.tsx` | The replay: one finished week told as a story, card by card (SPEC-FILM F-4). | 346 |
 | `web/src/components/icons.tsx` | Line icons at a common 24px grid. Emoji read as placeholder art in a paid product. | 147 |
 | `web/src/components/player/PlayerSheet.tsx` | The player page: a full-height sheet that rises over whatever you were reading. | 381 |
@@ -244,11 +246,11 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/player/VibesView.tsx` | Vibes: the player in words, and **not one digit**. | 99 |
 | `web/src/components/ui.tsx` | The kit: the shared devices every screen is built from — cards, stamps, meters, waits, the wordmark. | 846 |
 
-### `web/src/lib/` — client logic (35 files)
+### `web/src/lib/` — client logic (36 files)
 
 | File | What it is | Lines |
 |---|---|---|
-| `web/src/lib/api.ts` | API client for docs/API.md. With NEXT_PUBLIC_API_URL unset, every call is | 473 |
+| `web/src/lib/api.ts` | API client for docs/API.md. With NEXT_PUBLIC_API_URL unset, every call is | 489 |
 | `web/src/lib/board.ts` | The scouting board, minus React. | 370 |
 | `web/src/lib/cache.ts` | A tiny in-memory cache for the session's fetched data. | 156 |
 | `web/src/lib/call.ts` | The call: the first time you open the GM's Office, your phone rings. | 64 |
@@ -261,10 +263,11 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/film.ts` | The replay, worked out: one finished week turned into the cards the page draws. | 80 |
 | `web/src/lib/format.ts` | Pure helpers (no React, no DOM) so they can be unit tested with node:test. | 312 |
 | `web/src/lib/gameday.ts` | Pure helpers (no React, no DOM, no clock read at load) so they can be unit tested | 495 |
+| `web/src/lib/leagueFilm.ts` | The film's league half, minus React: bar geometry, grade shading and orders. | 59 |
 | `web/src/lib/leagueInput.ts` | One box for Sleeper, because asking someone to know whether they have a "username" or a | 100 |
 | `web/src/lib/legal.ts` | The handful of facts the Terms and Privacy pages cannot work out for themselves. | 51 |
 | `web/src/lib/matchup.ts` | The week's head-to-head, worked out slot by slot. | 131 |
-| `web/src/lib/mocks.ts` | Mock data matching docs/API.md exactly. Player names, rosters and week-2 | 1657 |
+| `web/src/lib/mocks.ts` | Mock data matching docs/API.md exactly. Player names, rosters and week-2 | 1674 |
 | `web/src/lib/office.ts` | The GM's Office, minus React: which deals lead, how hot each one is, and your roster's | 134 |
 | `web/src/lib/player/sheet.ts` | The player sheet's gesture and mode rules. Pure (no React, no DOM), so the one part of | 86 |
 | `web/src/lib/player/vibes.ts` | Vibes, built: what he *is*, then which way he is going. | 293 |
@@ -278,9 +281,9 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/supabase.ts` | Supabase magic-link auth. Only active when both public env vars are set. | 43 |
 | `web/src/lib/teaser.ts` | Which sentence goes in a paywall. | 21 |
 | `web/src/lib/ticker.ts` | The ticker: the desk's news as one line running along the bottom of every screen. Pure. | 124 |
-| `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 1358 |
+| `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 1470 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 1226 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 1280 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 168 |
 | `web/src/lib/wire.ts` | The top of Scouting, minus React: how hard to go after each pickup, and which ones lead. | 55 |
 

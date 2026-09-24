@@ -297,7 +297,7 @@ the cover). Growth loop stays free.
 |---|---|---|
 | 1 | F-1, F-2 | Without the spine nothing else is honest. Engine first, fully tested offline. **Shipped 2026-09-23, with F-3.** |
 | 2 | ~~F-3~~, ~~F-4~~ | **Shipped 2026-09-23.** The replay is the product. Ship it Sleeper-first behind the paywall with a free cover. |
-| 3 | F-5, F-6, F-7 | The league and the ledger: the comparisons and the charts. |
+| 3 | ~~F-5, F-6, F-7~~ **Shipped 2026-09-24.** | The league and the ledger: the comparisons and the charts. |
 | 4 | F-9, F-10 | The projector and the Tuesday habit. |
 | 5 | F-8 | ESPN catches up. |
 

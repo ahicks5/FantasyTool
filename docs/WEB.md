@@ -242,8 +242,18 @@ the other openings; it never rings over the day's first ride.
 
 ## The film opens on the replay (SPEC-FILM F-4, 2026-09-23)
 
-`/report` is one scroll in three parts: **the replay** (`components/film/Replay.tsx`), the
-free table (`Standings.tsx`), then the paid season week by week (`Film.tsx`, the old recap).
+`/report` is one scroll in three parts under a sticky jump bar (Replay · League · Season):
+**the replay** (`components/film/Replay.tsx`), **the league** (the free table, then the paid
+`components/film/League.tsx`: superlatives, the playoff line, the grade grid, the
+projection bars, the gauntlet, the ledger), then **the season** panel and chart (`Film.tsx`
+with `archive={false}`: the replay's week picker replaced the old week-by-week list).
+
+The league half's charts are plain HTML bars, one axis each, a value printed on every row.
+Above/below a projection is **blue/amber**, not green/red: the dataviz validator fails
+green/red for colour-blind readers on both themes and passes blue/amber. Every bar also
+sits on its own side of zero and carries its sign. Grades are one hue in four steps with the
+letter printed. Team names go through a `teamLabel()` string, player names through
+`PlayerName`.
 
 - **The cover is free.** A free reader's `/film` is a 402 whose detail carries the newest
   cover; `api.getFilm` turns that into `{locked: true, cover}` rather than an error, and the

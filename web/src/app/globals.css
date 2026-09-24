@@ -2885,3 +2885,58 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
 .film-slot { width: 38px; flex-shrink: 0; font-size: 10px; font-weight: 900; letter-spacing: 0.04em; color: var(--color-muted); }
 .film-row-open { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; padding-left: 4px; color: var(--color-muted); }
 .film-row-body { padding: 0 0 12px 46px; }
+
+/* ------------------------------------------------------------------ the league half ---
+   components/film/League.tsx. Above/below a projection is blue/amber (validated for
+   colour-blind separation on both themes; green/red is not), and every bar carries its
+   sign on its own side of zero. Grades are one hue in four steps with the letter printed. */
+
+.lg-you { display: inline-block; margin-left: 4px; border-radius: 4px; padding: 1px 5px; vertical-align: 1px;
+  font-size: 9px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; background: var(--color-ink); color: var(--color-paper); }
+.lg-super { padding: 12px; min-width: 0; }
+.card.lg-mine, .lg-super.lg-mine { box-shadow: inset 0 0 0 2px var(--color-lean); }
+.lg-rows { padding: 4px 14px; display: grid; }
+.lg-row { display: grid; grid-template-columns: minmax(0, 104px) minmax(0, 1fr) 48px; align-items: center; gap: 8px;
+  padding: 7px 0; border-top: 1px solid var(--color-line); font-size: 12px; font-weight: 700; }
+.lg-rows > :first-child { border-top: 0; }
+.lg-row.lg-mine .lg-row-name, .lg-claim.lg-mine, .lg-seed.lg-mine { color: var(--color-lean); }
+.lg-row-val { text-align: right; font-weight: 900; }
+.lg-div { display: grid; grid-template-columns: 1fr 1fr; height: 12px; }
+.lg-div-half { position: relative; display: flex; align-items: center; }
+.lg-div-below { justify-content: flex-end; border-right: 1px solid var(--color-muted); }
+.lg-track { height: 10px; border-radius: 999px; background: var(--color-soft); overflow: hidden; }
+.lg-bar { display: block; height: 10px; border-radius: 4px; }
+.lg-bar-above { background: var(--color-lean); }
+.lg-bar-below { background: var(--color-flip); }
+.lg-bar-mag { background: var(--color-muted); height: 100%; }
+.lg-key { display: flex; gap: 12px; font-size: 11px; font-weight: 700; color: var(--color-muted); }
+.lg-key span { display: inline-flex; align-items: center; gap: 5px; }
+.lg-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; }
+.lg-up { color: var(--color-lean); }
+.lg-down { color: var(--color-flip); }
+
+.lg-grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.lg-grid { width: 100%; border-collapse: separate; border-spacing: 2px; table-layout: fixed; min-width: calc(110px + var(--cols, 6) * 36px); }
+.lg-grid th { font-size: 10px; font-weight: 900; letter-spacing: 0.05em; color: var(--color-muted); padding: 2px; }
+.lg-grid td { height: 30px; text-align: center; font-size: 12px; font-weight: 900; border-radius: 6px; background: var(--color-soft); color: var(--color-ink); }
+.lg-grid .lg-grid-team { width: 110px; text-align: left; font-size: 12px; font-weight: 700; color: var(--color-ink); letter-spacing: 0; }
+.lg-grid thead .lg-grid-team { color: var(--color-muted); font-size: 10px; font-weight: 900; }
+.lg-grid tr.lg-mine .lg-grid-team { color: var(--color-lean); }
+.lg-grid td.lg-s0 { background: color-mix(in srgb, var(--color-lean) 8%, var(--color-paper)); }
+.lg-grid td.lg-s1 { background: color-mix(in srgb, var(--color-lean) 24%, var(--color-paper)); }
+.lg-grid td.lg-s2 { background: color-mix(in srgb, var(--color-lean) 48%, var(--color-paper)); }
+.lg-grid td.lg-s3 { background: var(--color-lean); color: #fff; }
+
+.lg-trade { padding: 12px 14px; }
+.lg-mine-side { border-left: 2px solid var(--color-lean); padding-left: 8px; }
+.lg-claim { padding: 8px 0; border-top: 1px solid var(--color-line); }
+.lg-seed { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--color-line); }
+.lg-seed-last { border-bottom: 2px dashed var(--color-lean); }
+.lg-seed-last + .lg-seed { border-top: 0; }
+.lg-line-key { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--color-muted); }
+.lg-line-key i { display: inline-block; width: 18px; border-top: 2px dashed var(--color-lean); }
+
+.film-parts { position: sticky; top: 0; z-index: 5; display: flex; gap: 6px; padding: 6px 0; background: var(--color-plane); }
+.film-parts a { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--color-line); font-size: 12px; font-weight: 800; color: var(--color-muted); background: var(--color-paper); }
+.film-anchor { scroll-margin-top: 110px; }

@@ -1121,9 +1121,11 @@ build order in §8.
       Free cover (also over the paywall), then the story cards with a rail; every starter
       opens his reasons, season and next move; the takeaway links into its tab. Copy in
       `FILM` (vocab.ts), card rules in `lib/film.ts` (tested), e2e for paid and free.
-- [ ] **F-5** The league: superlatives, position groups, expectation, the gauntlet, charts.
-- [ ] **F-6** The ledger: every trade and claim, graded on points since, "so far".
-- [ ] **F-7** The playoff picture (arithmetic first, odds later).
+- [x] **F-5** The league (2026-09-24): `edge/engine/league_film.py` + `components/film/League.tsx`.
+      Superlatives, the grade grid, points against projection, the gauntlet. `/film/league`.
+- [x] **F-6** The ledger (2026-09-24): trades and pickups on points scored for the new team
+      while rostered; drops counted wherever they went; ranked after two weeks; picks named.
+- [x] **F-7** The playoff picture (2026-09-24): seeds, the line, games clear/back, weeks left.
 - [ ] **F-8** ESPN boxscores so ESPN readers get the line-by-line.
 - [ ] **F-9** The projector opening, once per graded week, skippable.
 - [ ] **F-10** The Tuesday ritual: desk notebook, email cover line, film share card.
@@ -1135,18 +1137,18 @@ build order in §8.
   projections fall through freeze → runs → Sleeper's stored number, tagged by source.
   The backend may change, so `film.py` never calls a data module. Older seasons later.
 
-### Next session: F-5, F-6, F-7 (the league, the ledger, the playoffs)
-
-Per SPEC-FILM §8. The superlatives and the playoff picture can reuse `film.py`'s cover facts
-and `League.playoff_teams`.
+### Next session: F-9, F-10 (the projector, the Tuesday ritual), then F-8 (ESPN boxscores)
 
 ### Decisions for Andrew (film, after F-1 to F-4)
 
-- **Three parts, one scroll** (SPEC-FILM §9): the replay, then the table, then the season.
-  Look at it live and say if it should be sub-tabs instead.
-- **The season list under the replay repeats each week in the old style.** Keep it as the
-  archive, or let a week chip on the replay be the only way back to an older week?
-
+- **Decided (2026-09-24, Andrew said decide):** one scroll with a sticky jump bar (Replay ·
+  League · Season) rather than sub-tabs, and the old week-by-week list is gone: the replay's
+  week picker opens any week. Say if either reads wrong.
+- **Ledger rules to judge:** points count only while the man is on the new roster; a
+  dropped man counts wherever he went; nothing ranks until it is two weeks old; draft picks
+  are counted, not valued; three-way trades are left out.
+- **Playoff tiebreak is points for.** Leagues with divisions or another tiebreak will read
+  wrong until their settings are mapped. No odds yet (F-7 v2 would simulate from ROS).
 - **Render needs `EDGE_DEMO_UNLOCK=1`** to see the story while we test; without it the
   route serves only the cover (402 teaser), exactly as a free reader will.
 - **Thresholds are first guesses, not measured**: "unusual" is one deviation off his last

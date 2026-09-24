@@ -299,8 +299,11 @@ const PAGES: PageCase[] = [
       await expect(page.getByRole("region", { name: `${FILM.eyebrow}, ${FILM.week(1)}` })).toBeVisible();
       await expect(page.getByRole("region", { name: FILM.story })).toBeVisible();
       await expect(page.getByText(FILM.card.swing, { exact: true })).toBeVisible();
-      // The week below it, in the season, is the same week 1.
-      await expect(page.getByText(RECAP_COPY.weeksHead, { exact: true }).first()).toBeVisible();
+      // The league half, under the free table: the playoff line and the grade grid.
+      await expect(page.getByRole("heading", { name: FILM.league.playoffs })).toBeVisible();
+      await expect(page.getByRole("heading", { name: FILM.league.groups })).toBeVisible();
+      // The old week-by-week list is gone: the replay's week picker opens any week.
+      await expect(page.getByText(RECAP_COPY.weeksHead, { exact: true })).toHaveCount(0);
       await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
       // The table is the free half and is the reason this page exists for someone who has
       // bought nothing. It renders for THIS (paid) reader too, between the replay and the season.
@@ -817,4 +820,15 @@ test("a free reader gets the replay's cover over the paywall, and not the story"
   await expect(page.getByRole("region", { name: `${FILM.eyebrow}, ${FILM.week(1)}` })).toBeVisible();
   await expect(page.getByRole("region", { name: FILM.story })).toHaveCount(0);
   await expect(page.getByText(FILM.product)).toBeVisible();
+});
+
+
+test("the jump bar lands on the league, where your team is marked and the playoff line drawn", async ({ page }) => {
+  await visit(page, "/report");
+  await page.getByRole("navigation", { name: FILM.partsAria }).getByRole("link", { name: FILM.parts.league }).click();
+  await expect(page).toHaveURL(/#league$/);
+  const playoffs = page.locator("section").filter({ has: page.getByRole("heading", { name: FILM.league.playoffs }) }).last();
+  await expect(playoffs.getByText(FILM.league.you)).toBeVisible();
+  await expect(playoffs.locator(".lg-seed")).toHaveCount(12);
+  await assertNoHorizontalOverflow(page);
 });

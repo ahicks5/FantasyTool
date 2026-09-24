@@ -376,3 +376,22 @@ def claims(transactions: list[dict], season_league_id: str, roster_id: str) -> d
             if str(rid) == str(roster_id):
                 out[str(pid)] = int(t.get("leg") or 0)
     return out
+
+
+def player_names(ids: set[str]) -> dict[str, str]:
+    """{player_id: name} for men the ledger names who may be on no roster now.
+
+    Read off the players dump, which is cached on disk; one that fails is an empty map and
+    the ledger prints the id's own name field rather than nothing.
+    """
+    try:
+        players = api.players()
+    except Exception:  # noqa: BLE001
+        return {}
+    out: dict[str, str] = {}
+    for pid in ids:
+        p = players.get(pid) or {}
+        name = p.get("full_name") or " ".join(x for x in (p.get("first_name"), p.get("last_name")) if x)
+        if name:
+            out[pid] = name
+    return out
