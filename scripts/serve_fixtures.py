@@ -123,6 +123,9 @@ def build_app(user: str, skus: tuple[str, ...]):
     # unlucky enough to be running. Production keeps the cap; this server is test-only.
     os.environ.setdefault("EDGE_RATE_LIMIT", "0")
     os.environ.setdefault("EDGE_SEASON", str(SEASON))
+    # The dev-header identity is the admin, so the browser suite can open the front office.
+    os.environ.setdefault("EDGE_ADMINS", user)
+    os.environ.pop("STRIPE_SECRET_KEY", None)           # upgrades are grants, as on an API with no Stripe key
     os.environ.pop("EDGE_USE_CLAUDE", None)            # template explanations: offline + deterministic
     os.environ["EDGE_CACHE_DIR"] = str(ROOT / ".cache")
     # The film's Thursday freeze: the test one, which holds five of roster 1's week-1

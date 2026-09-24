@@ -37,12 +37,14 @@ LG = "/api/league/sleeper/1403186749361901568"
 
 def test_products_and_me(client):
     r = client.get("/api/products")
-    assert r.status_code == 200 and [p["sku"] for p in r.json()["products"]] == ["free", "waivers", "trade_lab", "full_report"]
+    assert r.status_code == 200 and [p["sku"] for p in r.json()["products"]] == ["free", "waivers", "trade_lab", "full_report", "league_slot"]
     anon = client.get("/api/me")
     assert anon.status_code == 200, "a signed-out visitor still gets the free tier"
     assert anon.json()["signed_in"] is False and anon.json()["entitlements"] == ["my_team"]
     me = client.get("/api/me", headers=H).json()
-    assert me["signed_in"] is True and me["entitlements"] == ["my_team"] and me["leagues_allowed"] == 1
+    assert me["signed_in"] is True and me["entitlements"] == ["my_team"] and me["leagues_allowed"] == 3
+    assert me["account"]["plan"]["tier"] == "free" and me["account"]["is_admin"] is False
+    assert anon.json()["account"] is None
 
 
 def test_league_summary_and_lineup_are_free(client, league):
@@ -71,6 +73,7 @@ def test_paid_features_are_gated_then_unlocked(client, league):
     assert r.status_code == 200 and "<h2>Waivers" in r.json()["html"]
     me = client.get("/api/me", headers=H).json()
     assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"} and me["leagues_allowed"] == 5
+    assert me["account"]["plan"] == {"tier": "premium", "name": "The Penthouse", "skus": ["full_report"]}
 
 
 def test_trade_endpoint_returns_verdict_and_graphic(client, league):
@@ -88,30 +91,45 @@ def test_trade_endpoint_returns_verdict_and_graphic(client, league):
     assert r.status_code == 400
 
 
-def test_a_stranger_can_connect_without_signing_up(client, league):
-    """The whole funnel depends on this: value before signup."""
+def test_a_stranger_can_look_but_linking_a_league_needs_an_account(client, league):
+    """Looking is free; keeping a league on file is the account's job (Andrew, 2026-09-24)."""
     body = {"platform": "sleeper", "league_id": "1", "team_id": league.teams[0].id}
-    r = client.post("/api/connect", json=body)
-    assert r.status_code == 200
-    out = r.json()
-    assert out["ok"] and out["saved"] is False, "nothing is stored for an anonymous visitor"
-    assert out["league"]["name"] and out["league"]["team_name"] and out["league"]["week"]
-    # and the free tier works straight away, still signed out
+    assert client.post("/api/connect", json=body).status_code == 401, "sign in before linking"
+    # The free tier still reads for a stranger, so the value is visible before the form.
     tid = league.teams[0].id
+    assert client.get(LG).status_code == 200
     assert client.get(f"{LG}/team/{tid}/lineup").status_code == 200
     assert client.get(f"{LG}/team/{tid}/actions").status_code == 200
-    # but the paid features still hold the line
+    # and the paid features still hold the line
     assert client.get(f"{LG}/team/{tid}/waivers").status_code == 402
     assert client.get(f"{LG}/team/{tid}/report").status_code == 402
+    # Signed in, the league is saved with the team's name, and comes back on /api/me.
+    r = client.post("/api/connect", headers=H, json=body)
+    assert r.status_code == 200
+    out = r.json()
+    assert out["saved"] is True and out["league"]["team_name"] and out["leagues_allowed"] == 3
+    me = client.get("/api/me", headers=H).json()
+    assert [l["league_id"] for l in me["leagues"]] == ["1"]
+    assert me["leagues"][0]["team_name"] == league.teams[0].name and me["leagues"][0]["last_used"]
 
 
 def test_connect_respects_league_limit(client, league):
     body = {"platform": "sleeper", "league_id": "1", "team_id": league.teams[0].id}
-    assert client.post("/api/connect", headers=H, json=body).status_code == 200
+    for lid in ("1", "2", "3"):
+        assert client.post("/api/connect", headers=H, json=body | {"league_id": lid}).status_code == 200
     assert client.post("/api/connect", headers=H, json=body).status_code == 200   # same league: idempotent
-    r = client.post("/api/connect", headers=H, json=body | {"league_id": "2"})
-    assert r.status_code == 402 and r.json()["detail"]["upsell"][0]["sku"] == "full_report"
+    r = client.post("/api/connect", headers=H, json=body | {"league_id": "4"})
+    assert r.status_code == 402, "three is the cap for every account"
+    assert [u["sku"] for u in r.json()["detail"]["upsell"]] == ["league_slot", "full_report"]
     assert r.json()["detail"]["teaser"]
+    # A slot is one more league; the bundle is five. Both count.
+    app_mod.store.grant("andrew@example.com", "league_slot", 2026, source="test", ref="s1")
+    assert client.get("/api/me", headers=H).json()["leagues_allowed"] == 4
+    assert client.post("/api/connect", headers=H, json=body | {"league_id": "4"}).status_code == 200
+    assert client.post("/api/connect", headers=H, json=body | {"league_id": "5"}).status_code == 402
+    # Forgetting one frees the slot.
+    assert client.delete("/api/leagues/sleeper/1", headers=H).status_code == 200
+    assert client.post("/api/connect", headers=H, json=body | {"league_id": "5"}).status_code == 200
 
 
 def test_stripe_webhook_grants_entitlement(client, monkeypatch):

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from edge import products
 from edge.api import desk, directory as directory_mod, lenses as lenses_mod, scout as scout_mod, service, share as share_mod
+from edge.api import accounts, auth
 from edge.api.auth import current_user, optional_user
 from edge.api.limits import RateLimitMiddleware, cors_origins, validate_id, validate_platform
 from edge.api.store import open_store
@@ -28,6 +29,8 @@ app.add_middleware(CORSMiddleware, allow_origins=cors_origins(),
 # Outermost, so a refused request costs a dict lookup rather than an upstream fetch.
 app.add_middleware(RateLimitMiddleware)
 store = open_store()
+# Bearer tokens are looked up in whichever store the app holds *now*: the tests swap it.
+auth.session_lookup = lambda hashed: store.session_email(hashed)
 
 
 def _season() -> int:
@@ -49,6 +52,57 @@ def _skus(email: str | None) -> list[str]:
     if _demo_unlock():
         return [p["sku"] for p in products.PRODUCTS if p["price_cents"] > 0]
     return store.skus(email, _season()) if email else []
+
+
+def _slots(email: str | None) -> int:
+    return store.count_sku(email, products.ADD_ON_SKU, _season()) if email else 0
+
+
+def _leagues_allowed(email: str | None) -> int:
+    return products.leagues_allowed(_skus(email), _slots(email))
+
+
+def _stripe_configured() -> bool:
+    return bool(os.environ.get("STRIPE_SECRET_KEY"))
+
+
+def _account(email: str) -> dict:
+    """The account block on `/api/me`: who, the role, and the plan flag the views check."""
+    skus = _skus(email)
+    out = accounts.public_user(store.get_user(email), email)
+    out["plan"] = products.plan(skus)
+    out["is_admin"] = out["role"] == "admin"
+    out["league_slots"] = _slots(email)
+    return out
+
+
+def _me(email: str | None) -> dict:
+    skus = _skus(email)
+    return {"email": email, "signed_in": bool(email), "skus": skus,
+            "entitlements": sorted(products.features_for(skus)),
+            "leagues_allowed": _leagues_allowed(email),
+            "leagues": store.leagues(email) if email else [],
+            "email_opt_in": store.email_opt_in(email) if email else False,
+            "account": _account(email) if email else None,
+            # The web shows "Upgrade" as a checkout when Stripe is wired and as a direct grant
+            # when it is not (docs/DEPLOY.md, "Upgrades without Stripe").
+            "checkout": _stripe_configured()}
+
+
+def _open_session(email: str) -> dict:
+    """Sign an account in: a fresh token, its hash in the store, the account in the reply."""
+    token = accounts.new_token()
+    store.create_session(email, accounts.token_hash(token), accounts.session_expiry())
+    store.touch_login(email)
+    return {"token": token, "me": _me(email)}
+
+
+def require_admin(email: str = Depends(current_user)) -> str:
+    """The signed-in caller, if they are an admin by role or by `EDGE_ADMINS`; else 403."""
+    user = store.get_user(email)
+    if not accounts.is_admin(email, (user or {}).get("role")):
+        raise HTTPException(403, "admin only")
+    return email
 
 
 def _require(email: str | None, feature: str, teaser: str | None = None) -> None:
@@ -114,12 +168,220 @@ def get_products():
 @app.get("/api/me")
 def me(email: str | None = Depends(optional_user)):
     """Works signed out. An anonymous visitor gets the free tier so they can see value first."""
-    skus = _skus(email)
-    return {"email": email, "signed_in": bool(email), "skus": skus,
-            "entitlements": sorted(products.features_for(skus)),
-            "leagues_allowed": products.leagues_allowed(skus),
-            "leagues": store.leagues(email) if email else [],
-            "email_opt_in": store.email_opt_in(email) if email else False}
+    return _me(email)
+
+
+# ---- accounts: register, sign in, sign out, reset ----
+# First-party: an email and a password, a bearer token in the browser's storage, its hash in
+# the store. The rules (hashing, token shape, lifetimes) are in edge/api/accounts.py.
+
+class RegisterIn(BaseModel):
+    email: str
+    password: str
+    name: str = ""
+
+
+class LoginIn(BaseModel):
+    email: str
+    password: str
+
+
+class ForgotIn(BaseModel):
+    email: str
+
+
+class ResetIn(BaseModel):
+    token: str
+    password: str
+
+
+@app.post("/api/auth/register")
+def register(body: RegisterIn):
+    """Create an account and sign it in. 409 when the address already has one."""
+    email = accounts.normalize_email(body.email)
+    if not accounts.valid_email(email):
+        raise HTTPException(400, "enter a real email address")
+    problem = accounts.password_problem(body.password)
+    if problem:
+        raise HTTPException(400, problem)
+    if not store.create_user(email, accounts.hash_password(body.password), body.name.strip()[:80]):
+        raise HTTPException(409, "that email already has an account; sign in instead")
+    return _open_session(email)
+
+
+@app.post("/api/auth/login")
+def login(body: LoginIn):
+    """Sign in. One message for a wrong password and an unknown address, so the form
+    cannot be used to find out who has an account."""
+    email = accounts.normalize_email(body.email)
+    user = store.get_user(email)
+    if not user or not accounts.check_password(body.password, user["password_hash"]):
+        raise HTTPException(401, "wrong email or password")
+    return _open_session(email)
+
+
+@app.post("/api/auth/logout")
+def logout(authorization: str | None = Header(default=None), email: str = Depends(current_user)):
+    """Drop this session. Other devices stay signed in."""
+    token = auth.bearer_token(authorization)
+    if token:
+        store.delete_session(accounts.token_hash(token))
+    return {"ok": True}
+
+
+@app.post("/api/auth/forgot")
+def forgot_password(body: ForgotIn):
+    """Start a password reset. Always `ok`, whether or not the address has an account.
+
+    The link goes out through `edge/delivery/send.py`, which is a dry run until an email
+    provider is configured (docs/DEPLOY.md); until then the admin page can issue the same
+    link by hand, and the reply says which of the two happened so the screen can too.
+    """
+    email = accounts.normalize_email(body.email)
+    sent = False
+    if store.get_user(email):
+        link = _reset_link(email)
+        try:
+            from edge.delivery import send
+            result = send.sender_from_env().send(
+                to=email, subject="Reset your Penthouse password",
+                html=f'<p>Set a new password here: <a href="{link}">{link}</a></p><p>The link lasts two hours.</p>',
+                text=f"Set a new password here: {link}\nThe link lasts two hours.")
+            sent = not result.dry_run
+        except Exception:  # noqa: BLE001 — a mail failure must not say whether the account exists
+            sent = False
+    return {"ok": True, "sent": sent}
+
+
+def _reset_link(email: str) -> str:
+    token = accounts.new_token()
+    store.create_reset(email, accounts.token_hash(token), accounts.reset_expiry())
+    base = os.environ.get("EDGE_WEB_URL", "http://localhost:3000").rstrip("/")
+    return f"{base}/reset?token={token}"
+
+
+@app.post("/api/auth/reset")
+def reset_password(body: ResetIn):
+    """Spend a reset token: set the password, sign out everywhere, sign in here."""
+    problem = accounts.password_problem(body.password)
+    if problem:
+        raise HTTPException(400, problem)
+    email = store.consume_reset(accounts.token_hash(body.token))
+    if not email:
+        raise HTTPException(400, "that reset link has expired or was already used")
+    store.set_password(email, accounts.hash_password(body.password))
+    store.delete_sessions(email)
+    return _open_session(email)
+
+
+# ---- the account: upgrade, leagues on file ----
+
+class UpgradeIn(BaseModel):
+    sku: str
+    success_url: str | None = None
+    cancel_url: str | None = None
+
+
+@app.post("/api/account/upgrade")
+def upgrade(body: UpgradeIn, email: str = Depends(current_user)):
+    """Buy a pass, the bundle or a league slot.
+
+    With Stripe configured this is Checkout and the reply carries its `url`; the webhook
+    writes the grant. Without Stripe there is no way to take money, so the grant is written
+    here and recorded as `complimentary`, and the reply says so (`granted`). That is a real
+    paywall opening and it is deliberate for launch week -- docs/DEPLOY.md, "Upgrades
+    without Stripe". Set `STRIPE_SECRET_KEY` and the same button becomes a payment.
+    """
+    if body.sku not in products.BY_SKU or products.BY_SKU[body.sku]["price_cents"] == 0:
+        raise HTTPException(400, "unknown or free sku")
+    if _stripe_configured():
+        from edge.api import payments
+        url = payments.create_checkout(email, body.sku, _season(), body.success_url, body.cancel_url)
+        return {"url": url, "granted": False, "me": None}
+    import uuid
+    store.grant(email, body.sku, _season(), source="complimentary", ref=f"comp_{uuid.uuid4().hex}")
+    return {"url": None, "granted": True, "me": _me(email)}
+
+
+@app.post("/api/leagues/{platform}/{league_id}/use")
+def use_league(platform: str, league_id: str, email: str = Depends(current_user)):
+    """Mark the league being read, so the next sign-in on any device opens on it."""
+    validate_platform(platform)
+    validate_id(league_id, "league id")
+    store.touch_league(email, platform, league_id)
+    return {"ok": True}
+
+
+@app.delete("/api/leagues/{platform}/{league_id}")
+def forget_league(platform: str, league_id: str, email: str = Depends(current_user)):
+    """Take a league off the account. Frees a slot; nothing on the platform changes."""
+    validate_platform(platform)
+    validate_id(league_id, "league id")
+    store.disconnect_league(email, platform, league_id)
+    return {"ok": True, "leagues": store.leagues(email)}
+
+
+# ---- admin ----
+# Andrew's desk: every account, its plan and its leagues, and the levers. Admin by role in
+# the store or by `EDGE_ADMINS`; nothing here is reachable by anyone else.
+
+class GrantIn(BaseModel):
+    sku: str
+
+
+class RoleIn(BaseModel):
+    role: str
+
+
+@app.get("/api/admin/users")
+def admin_users(_: str = Depends(require_admin)):
+    season = _season()
+    out = []
+    for u in store.users():
+        skus = store.skus(u["email"], season)
+        out.append(u | {"plan": products.plan(skus), "skus": skus,
+                        "leagues": store.leagues(u["email"]),
+                        "leagues_allowed": products.leagues_allowed(skus, store.count_sku(u["email"], products.ADD_ON_SKU, season)),
+                        "is_admin": accounts.is_admin(u["email"], u["role"])})
+    return {"users": out, "season": season, "checkout": _stripe_configured()}
+
+
+@app.post("/api/admin/users/{email}/grant")
+def admin_grant(email: str, body: GrantIn, admin: str = Depends(require_admin)):
+    """Hand an account a pass, the bundle or one more league slot. Source `admin`."""
+    if body.sku not in products.BY_SKU or products.BY_SKU[body.sku]["price_cents"] == 0:
+        raise HTTPException(400, "unknown or free sku")
+    import uuid
+    store.grant(accounts.normalize_email(email), body.sku, _season(), source="admin", ref=f"admin_{uuid.uuid4().hex}")
+    return {"ok": True, "me": _me(accounts.normalize_email(email))}
+
+
+@app.post("/api/admin/users/{email}/revoke")
+def admin_revoke(email: str, body: GrantIn, admin: str = Depends(require_admin)):
+    """Take a sku back: every live grant of it this season. Rows stay, marked revoked."""
+    n = store.revoke_sku(accounts.normalize_email(email), body.sku, _season())
+    return {"ok": True, "revoked": n, "me": _me(accounts.normalize_email(email))}
+
+
+@app.post("/api/admin/users/{email}/role")
+def admin_role(email: str, body: RoleIn, admin: str = Depends(require_admin)):
+    if body.role not in accounts.ROLES:
+        raise HTTPException(400, f"role must be one of {', '.join(accounts.ROLES)}")
+    target = accounts.normalize_email(email)
+    if target == admin and body.role != "admin":
+        raise HTTPException(400, "you cannot take your own admin role away")
+    if not store.set_role(target, body.role):
+        raise HTTPException(404, "no such account")
+    return {"ok": True, "account": _account(target)}
+
+
+@app.post("/api/admin/users/{email}/reset")
+def admin_reset_link(email: str, admin: str = Depends(require_admin)):
+    """A reset link for an account that cannot get one by email yet. Hand it over yourself."""
+    target = accounts.normalize_email(email)
+    if not store.get_user(target):
+        raise HTTPException(404, "no such account")
+    return {"ok": True, "url": _reset_link(target), "hours": accounts.RESET_HOURS}
 
 
 class EmailPrefIn(BaseModel):
@@ -168,29 +430,29 @@ class ConnectIn(BaseModel):
 
 
 @app.post("/api/connect")
-def connect(body: ConnectIn, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
-    """Connect a league. No account required — value first, signup only when it buys something.
+def connect(body: ConnectIn, email: str = Depends(current_user), auth=Depends(espn_auth)):
+    """Connect a league to the account. Signed in only (Andrew, 2026-09-24: sign in before
+    linking), so a league is on file and comes back on any device.
 
-    Signed out, we validate the league and team and hand them back; the browser remembers the
-    choice. Signed in, we also save it, which is what league limits are actually about.
+    Looking is still free: every league route answers a stranger. What needs the account is
+    keeping the league, which is what the cap is about. Over the cap is a 402 whose upsell
+    is the slot add-on, then the bundle.
     """
     b = _bundle(body.platform, body.league_id, auth)
     t = _team(b, body.team_id)
-    saved = False
-    if email:
-        have = store.leagues(email)
-        already = any(l["platform"] == body.platform and l["league_id"] == body.league_id for l in have)
-        if not already and len(have) >= products.leagues_allowed(_skus(email)):
-            raise HTTPException(402, detail={"error": "league limit reached", "feature": "leagues",
-                                             "teaser": f"You are saving {len(have)} league"
-                                                       f"{'s' if len(have) != 1 else ''}. Full Report keeps up to "
-                                                       f"{products.BY_SKU['full_report']['leagues']}.",
-                                             "upsell": [products.BY_SKU["full_report"]]})
-        store.connect_league(email, body.platform, body.league_id, t.id, b.league.name)
-        saved = True
-    return {"ok": True, "saved": saved,
+    have = store.leagues(email)
+    already = any(l["platform"] == body.platform and l["league_id"] == body.league_id for l in have)
+    allowed = _leagues_allowed(email)
+    if not already and len(have) >= allowed:
+        raise HTTPException(402, detail={"error": "league limit reached", "feature": "leagues",
+                                         "teaser": f"Your account keeps {allowed} league{'s' if allowed != 1 else ''} "
+                                                   f"and all {allowed} are taken. Add a slot for one more.",
+                                         "upsell": products.league_upsell(_skus(email))})
+    store.connect_league(email, body.platform, body.league_id, t.id, b.league.name, t.name)
+    return {"ok": True, "saved": True,
             "league": {"platform": body.platform, "league_id": body.league_id, "team_id": t.id,
-                       "team_name": t.name, "name": b.league.name, "week": b.league.week}}
+                       "team_name": t.name, "name": b.league.name, "week": b.league.week},
+            "leagues": store.leagues(email), "leagues_allowed": allowed}
 
 
 class CheckoutIn(BaseModel):

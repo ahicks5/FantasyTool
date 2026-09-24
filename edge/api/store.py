@@ -1,4 +1,4 @@
-"""Tiny persistence: users' purchases and connected leagues. SQLite (stdlib) — zero cost, zero setup.
+"""Tiny persistence: accounts, sessions, purchases and connected leagues. SQLite (stdlib) — zero cost, zero setup.
 Point EDGE_DB at a file for persistence; defaults to .cache/edge.db. Swap for Supabase Postgres later
 by re-implementing these five functions."""
 from __future__ import annotations
@@ -13,7 +13,12 @@ CREATE TABLE IF NOT EXISTS purchases (email TEXT, sku TEXT, season INTEGER, sour
   payment_ref TEXT DEFAULT '', revoked REAL,
   UNIQUE(email, sku, season, ref));
 CREATE TABLE IF NOT EXISTS leagues (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, name TEXT, created REAL,
+  team_name TEXT DEFAULT '', last_used REAL,
   UNIQUE(email, platform, league_id));
+CREATE TABLE IF NOT EXISTS users (email TEXT PRIMARY KEY, password_hash TEXT NOT NULL, name TEXT DEFAULT '',
+  role TEXT NOT NULL DEFAULT 'user', created REAL, last_login REAL);
+CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, created REAL, expires REAL);
+CREATE TABLE IF NOT EXISTS resets (token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, created REAL, expires REAL, used REAL);
 CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, payload TEXT, created REAL, views INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS runs (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, week INTEGER,
   kind TEXT, algo_version TEXT, payload TEXT, created REAL);
@@ -45,6 +50,13 @@ class Store:
             self.db.execute("ALTER TABLE purchases ADD COLUMN payment_ref TEXT DEFAULT ''")
         if "revoked" not in columns:
             self.db.execute("ALTER TABLE purchases ADD COLUMN revoked REAL")
+        # A league on file remembers the team's name and when it was last opened, so a
+        # returning account lands on the league it was reading without re-entering it.
+        league_cols = {row[1] for row in self.db.execute("PRAGMA table_info(leagues)")}
+        if "team_name" not in league_cols:
+            self.db.execute("ALTER TABLE leagues ADD COLUMN team_name TEXT DEFAULT ''")
+        if "last_used" not in league_cols:
+            self.db.execute("ALTER TABLE leagues ADD COLUMN last_used REAL")
         self.db.commit()
 
     def grant(self, email: str, sku: str, season: int, source: str = "stripe", ref: str = "",
@@ -85,15 +97,121 @@ class Store:
             (email.lower(), season))
         return [r[0] for r in rows]
 
-    def connect_league(self, email: str, platform: str, league_id: str, team_id: str, name: str) -> None:
-        self.db.execute("INSERT OR REPLACE INTO leagues VALUES (?,?,?,?,?,?)",
-                        (email.lower(), platform, league_id, team_id, name, time.time()))
+    def count_sku(self, email: str, sku: str, season: int) -> int:
+        """How many live purchases of one sku this account holds: the add-on that stacks."""
+        row = self.db.execute(
+            "SELECT COUNT(*) FROM purchases WHERE email=? AND sku=? AND season=? AND revoked IS NULL",
+            (email.lower(), sku, season)).fetchone()
+        return int(row[0]) if row else 0
+
+    def revoke_sku(self, email: str, sku: str, season: int, at: float | None = None) -> int:
+        """Withdraw every live grant of one sku from one account: the admin's undo."""
+        cur = self.db.execute("UPDATE purchases SET revoked=? WHERE email=? AND sku=? AND season=? AND revoked IS NULL",
+                              (at or time.time(), email.lower(), sku, season))
+        self.db.commit()
+        return cur.rowcount
+
+    def connect_league(self, email: str, platform: str, league_id: str, team_id: str, name: str,
+                       team_name: str = "") -> None:
+        now = time.time()
+        self.db.execute(
+            "INSERT INTO leagues (email, platform, league_id, team_id, name, created, team_name, last_used) "
+            "VALUES (?,?,?,?,?,?,?,?) "
+            "ON CONFLICT(email, platform, league_id) DO UPDATE SET team_id=excluded.team_id, name=excluded.name, "
+            "team_name=excluded.team_name, last_used=excluded.last_used",
+            (email.lower(), platform, league_id, team_id, name, now, team_name or "", now))
         self.db.commit()
 
     def leagues(self, email: str) -> list[dict]:
-        rows = self.db.execute("SELECT platform, league_id, team_id, name FROM leagues WHERE email=? ORDER BY created",
-                               (email.lower(),))
-        return [{"platform": r[0], "league_id": r[1], "team_id": r[2], "name": r[3]} for r in rows]
+        rows = self.db.execute(
+            "SELECT platform, league_id, team_id, name, team_name, last_used FROM leagues WHERE email=? ORDER BY created",
+            (email.lower(),))
+        return [{"platform": r[0], "league_id": r[1], "team_id": r[2], "name": r[3], "team_name": r[4] or "",
+                 "last_used": r[5]} for r in rows]
+
+    def touch_league(self, email: str, platform: str, league_id: str) -> None:
+        """Mark a league as the one being read, so the next sign-in opens on it."""
+        self.db.execute("UPDATE leagues SET last_used=? WHERE email=? AND platform=? AND league_id=?",
+                        (time.time(), email.lower(), platform, league_id))
+        self.db.commit()
+
+    # ---- accounts ------------------------------------------------------------------
+    # One row per account. The password is a scrypt hash from `api/accounts.py`; the
+    # session and reset tables hold hashed tokens, so a copy of this file signs nobody in.
+
+    def create_user(self, email: str, password_hash: str, name: str = "") -> bool:
+        """Register. False when the address is already taken, so the caller can say so."""
+        cur = self.db.execute(
+            "INSERT OR IGNORE INTO users (email, password_hash, name, role, created, last_login) VALUES (?,?,?,?,?,NULL)",
+            (email.lower(), password_hash, name or "", "user", time.time()))
+        self.db.commit()
+        return cur.rowcount == 1
+
+    def get_user(self, email: str) -> dict | None:
+        row = self.db.execute(
+            "SELECT email, password_hash, name, role, created, last_login FROM users WHERE email=?",
+            (email.lower(),)).fetchone()
+        if not row:
+            return None
+        return {"email": row[0], "password_hash": row[1], "name": row[2] or "", "role": row[3],
+                "created": row[4], "last_login": row[5]}
+
+    def users(self, limit: int = 500) -> list[dict]:
+        """Every account, oldest first, without the hashes: the admin's list."""
+        rows = self.db.execute(
+            "SELECT email, name, role, created, last_login FROM users ORDER BY created, email LIMIT ?", (limit,))
+        return [{"email": r[0], "name": r[1] or "", "role": r[2], "created": r[3], "last_login": r[4]} for r in rows]
+
+    def set_password(self, email: str, password_hash: str) -> bool:
+        cur = self.db.execute("UPDATE users SET password_hash=? WHERE email=?", (password_hash, email.lower()))
+        self.db.commit()
+        return cur.rowcount == 1
+
+    def set_role(self, email: str, role: str) -> bool:
+        cur = self.db.execute("UPDATE users SET role=? WHERE email=?", (role, email.lower()))
+        self.db.commit()
+        return cur.rowcount == 1
+
+    def touch_login(self, email: str) -> None:
+        self.db.execute("UPDATE users SET last_login=? WHERE email=?", (time.time(), email.lower()))
+        self.db.commit()
+
+    def create_session(self, email: str, token_hash: str, expires: float) -> None:
+        self.db.execute("INSERT OR REPLACE INTO sessions (token_hash, email, created, expires) VALUES (?,?,?,?)",
+                        (token_hash, email.lower(), time.time(), expires))
+        self.db.commit()
+
+    def session_email(self, token_hash: str, now: float | None = None) -> str | None:
+        """Who holds this token, or None once it has expired or been signed out."""
+        row = self.db.execute("SELECT email, expires FROM sessions WHERE token_hash=?", (token_hash,)).fetchone()
+        if not row or (row[1] is not None and row[1] < (now or time.time())):
+            return None
+        return row[0]
+
+    def delete_session(self, token_hash: str) -> None:
+        self.db.execute("DELETE FROM sessions WHERE token_hash=?", (token_hash,))
+        self.db.commit()
+
+    def delete_sessions(self, email: str) -> int:
+        """Sign an account out everywhere: after a password reset, or by the admin."""
+        cur = self.db.execute("DELETE FROM sessions WHERE email=?", (email.lower(),))
+        self.db.commit()
+        return cur.rowcount
+
+    def create_reset(self, email: str, token_hash: str, expires: float) -> None:
+        self.db.execute("INSERT OR REPLACE INTO resets (token_hash, email, created, expires, used) VALUES (?,?,?,?,NULL)",
+                        (token_hash, email.lower(), time.time(), expires))
+        self.db.commit()
+
+    def consume_reset(self, token_hash: str, now: float | None = None) -> str | None:
+        """Spend a reset token: the email it belongs to, once, before it expires; else None."""
+        now = now or time.time()
+        row = self.db.execute("SELECT email, expires, used FROM resets WHERE token_hash=?", (token_hash,)).fetchone()
+        if not row or row[2] is not None or (row[1] is not None and row[1] < now):
+            return None
+        self.db.execute("UPDATE resets SET used=? WHERE token_hash=?", (now, token_hash))
+        self.db.commit()
+        return row[0]
 
     # ---- the weekly email ----------------------------------------------------------
     # One row per account, written only when someone ticks or unticks the box. An address
@@ -181,7 +299,9 @@ class Store:
     # promise is cheap to keep because we hold so little: an email, which leagues it picked,
     # what it bought, and what we recommended.
 
-    USER_TABLES = ("purchases", "leagues", "runs", "feedback", "email_prefs")
+    USER_TABLES = ("users", "purchases", "leagues", "runs", "feedback", "email_prefs", "sessions", "resets")
+    # Columns that are secrets rather than data about the person: never in an export.
+    HIDDEN_COLUMNS = ("password_hash", "token_hash")
 
     def export_user(self, email: str) -> dict:
         """Everything we hold that is keyed to this email. The answer to 'what do you have?'."""
@@ -190,7 +310,7 @@ class Store:
         for table in self.USER_TABLES:
             cur = self.db.execute(f"SELECT * FROM {table} WHERE email=?", (email,))  # noqa: S608 — fixed tuple
             cols = [d[0] for d in cur.description]
-            out[table] = [dict(zip(cols, row)) for row in cur.fetchall()]
+            out[table] = [{k: v for k, v in zip(cols, row) if k not in self.HIDDEN_COLUMNS} for row in cur.fetchall()]
         return {"email": email, "data": out}
 
     def delete_user(self, email: str) -> dict[str, int]:

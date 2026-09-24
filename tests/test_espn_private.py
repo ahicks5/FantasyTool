@@ -213,8 +213,11 @@ def test_half_a_credential_is_no_credential(client, monkeypatch, league):
 def test_the_database_has_nowhere_to_put_a_cookie():
     store = Store(":memory:")
     schema = " ".join(r[0] or "" for r in store.db.execute("SELECT sql FROM sqlite_master"))
-    for word in ("espn_s2", "swid", "cookie", "credential", "secret", "token"):
+    for word in ("espn_s2", "swid", "cookie", "credential", "secret"):
         assert word not in schema.lower(), f"schema mentions {word}; credentials must not be stored"
+    # Our own sign-in tokens are the one exception, and only as hashes (`sessions`, `resets`):
+    # a column holding a raw token would be a credential store by another name.
+    assert "token" not in schema.lower().replace("token_hash", ""), "a raw token column has appeared"
 
 
 def test_connecting_a_private_league_writes_no_part_of_the_credential(client, monkeypatch, league):

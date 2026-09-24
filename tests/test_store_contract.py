@@ -32,7 +32,7 @@ def store(request, tmp_path):
     s = PostgresStore(TEST_DSN)
     # Each test starts from nothing, so ordering assertions mean something.
     with s.db.cursor() as cur:
-        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback, email_prefs")
+        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback, email_prefs, users, sessions, resets")
     yield s
     s.close()
 
@@ -245,3 +245,93 @@ def test_both_backends_expose_the_same_surface():
     # connection to :memory: has nothing to hand back to a pool.
     postgres_only = public(PostgresStore) - public(Store) - {"close"}
     assert not postgres_only, f"Store is missing: {sorted(postgres_only)}"
+
+
+# ---- accounts and sessions ------------------------------------------------------------
+# The rows behind register / sign in. The hashes are opaque strings here; what the store
+# owes is uniqueness, case-folding, expiry and one-shot resets, on both backends.
+
+def test_an_email_registers_once_whatever_its_case(store):
+    assert store.create_user("Owner@Example.com", "h1", "Andrew") is True
+    assert store.create_user("owner@example.com", "h2") is False, "second registration is refused, not overwritten"
+    u = store.get_user("OWNER@EXAMPLE.COM")
+    assert u["email"] == "owner@example.com" and u["password_hash"] == "h1" and u["name"] == "Andrew"
+    assert u["role"] == "user" and u["last_login"] is None
+    assert store.get_user("ghost@example.com") is None
+
+
+def test_the_admin_list_is_oldest_first_without_hashes(store):
+    for who in ("one@b.c", "two@b.c"):
+        store.create_user(who, "h")
+        time.sleep(0.002)
+    users = store.users()
+    assert [u["email"] for u in users] == ["one@b.c", "two@b.c"]
+    assert all("password_hash" not in u for u in users)
+    assert store.set_role("two@b.c", "admin") and store.users()[1]["role"] == "admin"
+    assert store.set_role("ghost@b.c", "admin") is False
+
+
+def test_a_session_lives_until_it_expires_or_is_dropped(store):
+    store.create_user("a@b.c", "h")
+    store.create_session("a@b.c", "t1", expires=time.time() + 60)
+    store.create_session("a@b.c", "t2", expires=time.time() + 60)
+    store.create_session("a@b.c", "old", expires=time.time() - 1)
+    assert store.session_email("t1") == "a@b.c"
+    assert store.session_email("old") is None, "expired"
+    assert store.session_email("t1", now=time.time() + 120) is None
+    assert store.session_email("nope") is None
+    store.delete_session("t1")
+    assert store.session_email("t1") is None and store.session_email("t2") == "a@b.c"
+    assert store.delete_sessions("a@b.c") >= 1
+    assert store.session_email("t2") is None
+
+
+def test_a_reset_token_is_spent_once_and_dies_on_time(store):
+    store.create_user("a@b.c", "h")
+    store.create_reset("a@b.c", "r1", expires=time.time() + 60)
+    store.create_reset("a@b.c", "late", expires=time.time() - 1)
+    assert store.consume_reset("late") is None
+    assert store.consume_reset("r1") == "a@b.c"
+    assert store.consume_reset("r1") is None, "one shot"
+    assert store.set_password("a@b.c", "h2") and store.get_user("a@b.c")["password_hash"] == "h2"
+    store.touch_login("a@b.c")
+    assert store.get_user("a@b.c")["last_login"]
+
+
+def test_the_add_on_counts_by_row_and_the_admin_can_take_a_sku_back(store):
+    store.grant("a@b.c", "league_slot", 2026, source="admin", ref="s1")
+    store.grant("a@b.c", "league_slot", 2026, source="admin", ref="s2")
+    store.grant("a@b.c", "waivers", 2026, source="admin", ref="w1")
+    assert store.count_sku("a@b.c", "league_slot", 2026) == 2
+    assert store.count_sku("a@b.c", "league_slot", 2025) == 0
+    assert store.revoke_sku("a@b.c", "league_slot", 2026) == 2
+    assert store.count_sku("a@b.c", "league_slot", 2026) == 0
+    assert store.skus("a@b.c", 2026) == ["waivers"], "only the sku named"
+    assert store.revoke_sku("a@b.c", "league_slot", 2026) == 0
+
+
+def test_a_league_remembers_the_team_and_when_it_was_last_opened(store):
+    store.connect_league("a@b.c", "sleeper", "L1", "8", "The Megalabowl", team_name="HusH")
+    store.connect_league("a@b.c", "sleeper", "L2", "3", "Other", team_name="Two")
+    first = store.leagues("a@b.c")
+    assert first[0]["team_name"] == "HusH" and first[0]["last_used"]
+    time.sleep(0.002)
+    store.touch_league("a@b.c", "sleeper", "L1")
+    again = store.leagues("a@b.c")
+    assert [x["league_id"] for x in again] == ["L1", "L2"], "order is still by connection"
+    assert again[0]["last_used"] > again[1]["last_used"], "but the one just opened is marked"
+
+
+def test_deleting_an_account_takes_its_sessions_and_resets_with_it(store):
+    store.create_user("a@b.c", "h")
+    store.create_session("a@b.c", "t1", expires=time.time() + 60)
+    store.create_reset("a@b.c", "r1", expires=time.time() + 60)
+    store.create_user("other@b.c", "h")
+    store.create_session("other@b.c", "t9", expires=time.time() + 60)
+    counts = store.delete_user("a@b.c")
+    assert counts["users"] == 1 and counts["sessions"] == 1 and counts["resets"] == 1
+    assert store.get_user("a@b.c") is None and store.session_email("t1") is None
+    assert store.session_email("t9") == "other@b.c", "only theirs"
+    export = store.export_user("other@b.c")["data"]
+    assert export["users"][0]["email"] == "other@b.c" and "password_hash" not in export["users"][0]
+    assert "token_hash" not in export["sessions"][0]

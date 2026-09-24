@@ -26,8 +26,22 @@ CREATE INDEX IF NOT EXISTS purchases_payment_ref ON purchases (payment_ref);
 
 CREATE TABLE IF NOT EXISTS leagues (
   email TEXT NOT NULL, platform TEXT NOT NULL, league_id TEXT NOT NULL, team_id TEXT, name TEXT,
-  created DOUBLE PRECISION,
+  created DOUBLE PRECISION, team_name TEXT NOT NULL DEFAULT '', last_used DOUBLE PRECISION,
   UNIQUE (email, platform, league_id));
+ALTER TABLE leagues ADD COLUMN IF NOT EXISTS team_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE leagues ADD COLUMN IF NOT EXISTS last_used DOUBLE PRECISION;
+
+CREATE TABLE IF NOT EXISTS users (
+  email TEXT PRIMARY KEY, password_hash TEXT NOT NULL, name TEXT NOT NULL DEFAULT '',
+  role TEXT NOT NULL DEFAULT 'user', created DOUBLE PRECISION, last_login DOUBLE PRECISION);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, created DOUBLE PRECISION, expires DOUBLE PRECISION);
+CREATE INDEX IF NOT EXISTS sessions_email ON sessions (email);
+
+CREATE TABLE IF NOT EXISTS resets (
+  token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, created DOUBLE PRECISION, expires DOUBLE PRECISION,
+  used DOUBLE PRECISION);
 
 CREATE TABLE IF NOT EXISTS shares (
   id TEXT PRIMARY KEY, payload TEXT, created DOUBLE PRECISION, views INTEGER DEFAULT 0);
@@ -96,20 +110,111 @@ class PostgresStore:
                          (email.lower(), season))
         return [r[0] for r in cur.fetchall()]
 
+    def count_sku(self, email: str, sku: str, season: int) -> int:
+        cur = self._exec("SELECT COUNT(*) FROM purchases WHERE email=%s AND sku=%s AND season=%s AND revoked IS NULL",
+                         (email.lower(), sku, season))
+        row = cur.fetchone()
+        return int(row[0]) if row else 0
+
+    def revoke_sku(self, email: str, sku: str, season: int, at: float | None = None) -> int:
+        cur = self._exec("UPDATE purchases SET revoked=%s WHERE email=%s AND sku=%s AND season=%s AND revoked IS NULL",
+                         (at or time.time(), email.lower(), sku, season))
+        return cur.rowcount
+
     # ---- leagues ------------------------------------------------------------------
 
-    def connect_league(self, email: str, platform: str, league_id: str, team_id: str, name: str) -> None:
+    def connect_league(self, email: str, platform: str, league_id: str, team_id: str, name: str,
+                       team_name: str = "") -> None:
+        now = time.time()
         self._exec(
-            "INSERT INTO leagues (email, platform, league_id, team_id, name, created) "
-            "VALUES (%s,%s,%s,%s,%s,%s) "
+            "INSERT INTO leagues (email, platform, league_id, team_id, name, created, team_name, last_used) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) "
             "ON CONFLICT (email, platform, league_id) DO UPDATE SET team_id=EXCLUDED.team_id, "
-            "name=EXCLUDED.name, created=EXCLUDED.created",
-            (email.lower(), platform, league_id, team_id, name, time.time()))
+            "name=EXCLUDED.name, team_name=EXCLUDED.team_name, last_used=EXCLUDED.last_used",
+            (email.lower(), platform, league_id, team_id, name, now, team_name or "", now))
 
     def leagues(self, email: str) -> list[dict]:
-        cur = self._exec("SELECT platform, league_id, team_id, name FROM leagues WHERE email=%s ORDER BY created",
+        cur = self._exec(
+            "SELECT platform, league_id, team_id, name, team_name, last_used FROM leagues WHERE email=%s ORDER BY created",
+            (email.lower(),))
+        return [{"platform": r[0], "league_id": r[1], "team_id": r[2], "name": r[3], "team_name": r[4] or "",
+                 "last_used": r[5]} for r in cur.fetchall()]
+
+    def touch_league(self, email: str, platform: str, league_id: str) -> None:
+        self._exec("UPDATE leagues SET last_used=%s WHERE email=%s AND platform=%s AND league_id=%s",
+                   (time.time(), email.lower(), platform, league_id))
+
+    # ---- accounts -----------------------------------------------------------------
+    # Mirrors the SQLite store method for method; see the notes there.
+
+    def create_user(self, email: str, password_hash: str, name: str = "") -> bool:
+        cur = self._exec(
+            "INSERT INTO users (email, password_hash, name, role, created, last_login) VALUES (%s,%s,%s,%s,%s,NULL) "
+            "ON CONFLICT (email) DO NOTHING",
+            (email.lower(), password_hash, name or "", "user", time.time()))
+        return cur.rowcount == 1
+
+    def get_user(self, email: str) -> dict | None:
+        cur = self._exec("SELECT email, password_hash, name, role, created, last_login FROM users WHERE email=%s",
                          (email.lower(),))
-        return [{"platform": r[0], "league_id": r[1], "team_id": r[2], "name": r[3]} for r in cur.fetchall()]
+        row = cur.fetchone()
+        if not row:
+            return None
+        return {"email": row[0], "password_hash": row[1], "name": row[2] or "", "role": row[3],
+                "created": row[4], "last_login": row[5]}
+
+    def users(self, limit: int = 500) -> list[dict]:
+        cur = self._exec("SELECT email, name, role, created, last_login FROM users ORDER BY created, email LIMIT %s",
+                         (limit,))
+        return [{"email": r[0], "name": r[1] or "", "role": r[2], "created": r[3], "last_login": r[4]}
+                for r in cur.fetchall()]
+
+    def set_password(self, email: str, password_hash: str) -> bool:
+        cur = self._exec("UPDATE users SET password_hash=%s WHERE email=%s", (password_hash, email.lower()))
+        return cur.rowcount == 1
+
+    def set_role(self, email: str, role: str) -> bool:
+        cur = self._exec("UPDATE users SET role=%s WHERE email=%s", (role, email.lower()))
+        return cur.rowcount == 1
+
+    def touch_login(self, email: str) -> None:
+        self._exec("UPDATE users SET last_login=%s WHERE email=%s", (time.time(), email.lower()))
+
+    def create_session(self, email: str, token_hash: str, expires: float) -> None:
+        self._exec(
+            "INSERT INTO sessions (token_hash, email, created, expires) VALUES (%s,%s,%s,%s) "
+            "ON CONFLICT (token_hash) DO UPDATE SET email=EXCLUDED.email, created=EXCLUDED.created, expires=EXCLUDED.expires",
+            (token_hash, email.lower(), time.time(), expires))
+
+    def session_email(self, token_hash: str, now: float | None = None) -> str | None:
+        cur = self._exec("SELECT email, expires FROM sessions WHERE token_hash=%s", (token_hash,))
+        row = cur.fetchone()
+        if not row or (row[1] is not None and row[1] < (now or time.time())):
+            return None
+        return row[0]
+
+    def delete_session(self, token_hash: str) -> None:
+        self._exec("DELETE FROM sessions WHERE token_hash=%s", (token_hash,))
+
+    def delete_sessions(self, email: str) -> int:
+        cur = self._exec("DELETE FROM sessions WHERE email=%s", (email.lower(),))
+        return cur.rowcount
+
+    def create_reset(self, email: str, token_hash: str, expires: float) -> None:
+        self._exec(
+            "INSERT INTO resets (token_hash, email, created, expires, used) VALUES (%s,%s,%s,%s,NULL) "
+            "ON CONFLICT (token_hash) DO UPDATE SET email=EXCLUDED.email, created=EXCLUDED.created, "
+            "expires=EXCLUDED.expires, used=NULL",
+            (token_hash, email.lower(), time.time(), expires))
+
+    def consume_reset(self, token_hash: str, now: float | None = None) -> str | None:
+        now = now or time.time()
+        cur = self._exec("SELECT email, expires, used FROM resets WHERE token_hash=%s", (token_hash,))
+        row = cur.fetchone()
+        if not row or row[2] is not None or (row[1] is not None and row[1] < now):
+            return None
+        self._exec("UPDATE resets SET used=%s WHERE token_hash=%s", (now, token_hash))
+        return row[0]
 
     def disconnect_league(self, email: str, platform: str, league_id: str) -> None:
         self._exec("DELETE FROM leagues WHERE email=%s AND platform=%s AND league_id=%s",
@@ -191,7 +296,8 @@ class PostgresStore:
     # and deletion, and the promise has to hold on the backend that actually holds a
     # paying customer's rows — which is this one.
 
-    USER_TABLES = ("purchases", "leagues", "runs", "feedback", "email_prefs")
+    USER_TABLES = ("users", "purchases", "leagues", "runs", "feedback", "email_prefs", "sessions", "resets")
+    HIDDEN_COLUMNS = ("password_hash", "token_hash")
 
     def export_user(self, email: str) -> dict:
         """Everything we hold that is keyed to this email. The answer to 'what do you have?'."""
@@ -200,7 +306,7 @@ class PostgresStore:
         for table in self.USER_TABLES:
             cur = self._exec(f"SELECT * FROM {table} WHERE email=%s", (email,))  # noqa: S608 — fixed tuple
             cols = [d[0] for d in cur.description]
-            out[table] = [dict(zip(cols, row)) for row in cur.fetchall()]
+            out[table] = [{k: v for k, v in zip(cols, row) if k not in self.HIDDEN_COLUMNS} for row in cur.fetchall()]
         return {"email": email, "data": out}
 
     def delete_user(self, email: str) -> dict[str, int]:

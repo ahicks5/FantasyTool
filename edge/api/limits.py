@@ -99,8 +99,9 @@ class SlidingWindow:
 # restarter.
 EXEMPT_PREFIXES = ("/api/stripe/webhook", "/api/health")
 
-# Upstream-hitting reads get the tighter cap; everything else gets the loose one.
-COSTLY_PREFIX = "/api/league/"
+# Upstream-hitting reads get the tighter cap, and so do the sign-in routes, where the loose
+# cap would be a password-guessing budget. Everything else gets the loose one.
+COSTLY_PREFIX = ("/api/league/", "/api/auth/")
 
 
 def _int_env(name: str, default: int) -> int:
