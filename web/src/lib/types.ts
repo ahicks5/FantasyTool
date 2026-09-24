@@ -4,7 +4,7 @@ export type Platform = "sleeper" | "espn";
 
 export type Feature = "my_team" | "waivers" | "trade_lab" | "full_report";
 
-export type Sku = "free" | "waivers" | "trade_lab" | "full_report";
+export type Sku = "free" | "waivers" | "trade_lab" | "full_report" | "league_slot";
 
 export interface Product {
   sku: Sku;
@@ -13,8 +13,9 @@ export interface Product {
   features: Feature[];
   leagues: number;
   blurb: string;
-  /** `edge/products.py` has always sent this; the Pricing badge infers it from `sku` instead. */
-  kind?: "free" | "a_la_carte" | "bundle";
+  /** `edge/products.py` has always sent this; the Pricing badge infers it from `sku` instead.
+   *  `add_on` is the league slot: it unlocks nothing and stacks. */
+  kind?: "free" | "a_la_carte" | "bundle" | "add_on";
 }
 
 export interface ProductsResponse {
@@ -26,6 +27,32 @@ export interface MeLeague {
   league_id: string;
   name: string;
   team_id: string;
+  /** The team's name when it was linked; an older row has "". */
+  team_name?: string;
+  /** Unix seconds when this league was last opened on any device; null on an older row. */
+  last_used?: number | null;
+}
+
+/** The flag on the account: `free` or `premium`, and the name the user reads. */
+export interface AccountPlan {
+  tier: "free" | "premium";
+  name: string;
+  skus: Sku[];
+}
+
+export type Role = "user" | "admin";
+
+/** The account block on `/api/me`. Never a password hash. */
+export interface Account {
+  email: string;
+  name: string;
+  role: Role;
+  is_admin: boolean;
+  plan: AccountPlan;
+  /** How many league-slot add-ons this account holds this season. */
+  league_slots: number;
+  created?: number | null;
+  last_login?: number | null;
 }
 
 export interface Me {
@@ -36,6 +63,43 @@ export interface Me {
   leagues: MeLeague[];
   /** Whether this account asked for the Thursday email. Absent on old payloads = off. */
   email_opt_in?: boolean;
+  /** Null when signed out. */
+  account?: Account | null;
+  /** True when Stripe is configured on the API, so an upgrade is a checkout rather than a grant. */
+  checkout?: boolean;
+}
+
+/** `POST /api/auth/register|login|reset`: a bearer token and who it belongs to. */
+export interface AuthResponse {
+  token: string;
+  me: Me;
+}
+
+/** `POST /api/account/upgrade`: a checkout `url` when Stripe is wired, else the grant is written and `me` says so. */
+export interface UpgradeResponse {
+  url: string | null;
+  granted: boolean;
+  me: Me | null;
+}
+
+/** One row on the admin's list: the account, its plan and its leagues. */
+export interface AdminUser {
+  email: string;
+  name: string;
+  role: Role;
+  is_admin: boolean;
+  created?: number | null;
+  last_login?: number | null;
+  plan: AccountPlan;
+  skus: Sku[];
+  leagues: MeLeague[];
+  leagues_allowed: number;
+}
+
+export interface AdminUsersResponse {
+  users: AdminUser[];
+  season: number;
+  checkout: boolean;
 }
 
 /** GET/PUT /api/me/email */

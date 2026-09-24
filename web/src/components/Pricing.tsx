@@ -48,7 +48,8 @@ export function Pricing() {
       </p>
 
       <ul className="mt-5 grid gap-3">
-        {(products ?? []).map((p) => {
+        {/* The league slot is an add-on sold from the account page, not a tier to compare here. */}
+        {(products ?? []).filter((p) => p.kind !== "add_on").map((p) => {
           const everything = p.sku === "full_report";
           return (
             <li
@@ -98,7 +99,7 @@ export function Pricing() {
           Take me upstairs
         </LinkButton>
         <p className="mt-2.5 text-center text-[12px] text-muted">
-          Start free on one team. Pay only when you want the rest.
+          Start free with up to three leagues. Pay only when you want the rest.
         </p>
       </div>
     </section>

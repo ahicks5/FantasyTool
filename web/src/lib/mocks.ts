@@ -2,6 +2,7 @@
 // half-PPR projections come from tests/fixtures/sleeper/* ("The Megalabowl").
 import { withArticle } from "./format";
 import type {
+  AdminUsersResponse,
   FilmSeason,
   Desk,
   NewsItem,
@@ -58,10 +59,11 @@ export const MY_TEAM_ID = "8";
 export const WEEK = 2;
 
 export const PRODUCTS: Product[] = [
-  { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 1, blurb: "Start/sit for one team." },
-  { sku: "waivers", name: "Wire Pass", price_cents: 300, features: ["waivers"], leagues: 1, blurb: "The wire, ranked. Bid and drop included." },
-  { sku: "trade_lab", name: "Trade Lab", price_cents: 500, features: ["trade_lab"], leagues: 1, blurb: "Verdicts and counters, rest of season." },
-  { sku: "full_report", name: "The Penthouse", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, blurb: "The whole Penthouse. Five leagues." },
+  { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 3, kind: "free", blurb: "Start/sit for up to three leagues." },
+  { sku: "waivers", name: "Wire Pass", price_cents: 300, features: ["waivers"], leagues: 3, kind: "a_la_carte", blurb: "The wire, ranked. Bid and drop included." },
+  { sku: "trade_lab", name: "Trade Lab", price_cents: 500, features: ["trade_lab"], leagues: 3, kind: "a_la_carte", blurb: "Verdicts and counters, rest of season." },
+  { sku: "full_report", name: "The Penthouse", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "bundle", blurb: "The whole Penthouse. Five leagues." },
+  { sku: "league_slot", name: "League slot", price_cents: 200, features: [], leagues: 1, kind: "add_on", blurb: "One more league on your account. Rest of season." },
 ];
 
 export const SLEEPER_LEAGUES: SleeperLeagueRef[] = [
@@ -388,9 +390,33 @@ export const ME: Me = {
   // Pass for free, which contradicted the product catalogue and made the wire impossible to
   // see in its locked state. Everything above this comes from `mockExtraEntitlements`.
   entitlements: ["my_team"],
-  leagues_allowed: 1,
-  leagues: [{ platform: "sleeper", league_id: LEAGUE_ID, name: "The Megalabowl", team_id: MY_TEAM_ID }],
+  leagues_allowed: 3,
+  leagues: [{ platform: "sleeper", league_id: LEAGUE_ID, name: "The Megalabowl", team_id: MY_TEAM_ID, team_name: "HusH", last_used: 1_790_000_000 }],
   email_opt_in: false,
+  signed_in: true,
+  account: {
+    email: "you@example.com",
+    name: "You",
+    role: "user",
+    is_admin: false,
+    plan: { tier: "free", name: "Free", skus: [] },
+    league_slots: 0,
+  },
+  // The demo has no Stripe, so an upgrade is a grant, the same as the API without a key.
+  checkout: false,
+};
+
+/** The admin's list in the demo: two accounts, one of them the owner. */
+export const ADMIN_USERS: AdminUsersResponse = {
+  season: 2026,
+  checkout: false,
+  users: [
+    { email: "you@example.com", name: "You", role: "admin", is_admin: true, created: 1_789_000_000, last_login: 1_790_000_000,
+      plan: { tier: "premium", name: "The Penthouse", skus: ["full_report"] }, skus: ["full_report"], leagues_allowed: 5,
+      leagues: [{ platform: "sleeper", league_id: LEAGUE_ID, name: "The Megalabowl", team_id: MY_TEAM_ID, team_name: "HusH", last_used: 1_790_000_000 }] },
+    { email: "fan@example.com", name: "", role: "user", is_admin: false, created: 1_789_500_000, last_login: null,
+      plan: { tier: "free", name: "Free", skus: [] }, skus: [], leagues_allowed: 3, leagues: [] },
+  ],
 };
 
 // ---------- Lineup ----------

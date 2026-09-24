@@ -30,8 +30,9 @@ export default function PrivacyPage() {
         <Bullets
           items={[
             <>
-              <strong>Your email address</strong>, if you sign in. Sign-in is a magic link, so there is no password to
-              store. It is the key that purchases and connected leagues hang off.
+              <strong>Your email address, your name if you gave one, and a hash of your password</strong>, if you
+              create an account. The password itself is never stored, only a salted scrypt hash of it, which cannot be
+              turned back into the password. The email is the key that purchases and connected leagues hang off.
             </>,
             <>
               <strong>The leagues you connect</strong>: the platform, the league and team identifiers, and the league

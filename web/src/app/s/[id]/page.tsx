@@ -329,7 +329,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
           {[
             "Start/sit calls free, forever",
             "Every projection re-scored to your league's scoring",
-            "No account, no password. Hook up a league and look",
+            "Free to look. Hook up a league and see",
           ].map((l) => (
             <li key={l} className="flex items-start gap-2">
               <IconCheck size={14} strokeWidth={3} className="mt-[3px] shrink-0 text-start" />

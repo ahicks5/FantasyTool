@@ -645,6 +645,140 @@ export const CONNECT = {
 } as const;
 
 /**
+ * The account: register, sign in, the plan flag, the leagues on file, the upgrade sheet,
+ * the reset, and the owner's admin desk. Every word on those screens and in the two
+ * popups is here, so the sheet and the page can never disagree.
+ *
+ * Voice: the staff at the door. Short, verb first, no apology. Sign-in is first-party
+ * (an email and a password), so nothing here promises a magic link.
+ */
+export const ACCOUNT = {
+  title: "Your account",
+  eyebrow: "Owner",
+  /** The two tabs on the sheet and the two controls everywhere else. */
+  signIn: "Sign in",
+  register: "Create account",
+  signOut: "Sign out",
+  /** Fields. */
+  email: "Email",
+  password: "Password",
+  newPassword: "New password",
+  name: "Name",
+  nameHint: "Optional. What the staff should call you.",
+  passwordHint: "At least 8 characters.",
+  /** The lines under the two headings. */
+  signInLead: "Your leagues and your passes are on your account. Sign in and they come with you.",
+  registerLead: "One account keeps your leagues on file and every pass you buy. Up to three leagues, more as an add-on.",
+  /** Swapping between the two. */
+  haveAccount: "Already have an account?",
+  noAccount: "New here?",
+  forgot: "Forgot your password?",
+  busySignIn: "Signing in\u2026",
+  busyRegister: "Setting up\u2026",
+  /** What a page asks for when a visitor is not signed in. */
+  gate: {
+    title: "Sign in first",
+    body: "Free to look. Sign in to keep a league on file, so you never enter it twice.",
+    cta: "Sign in or create an account",
+  },
+  /** The one line at the top of the popup saying why it opened. */
+  reason: {
+    connect: "Sign in to link a league. It stays on your account, on every device.",
+    upgrade: "Sign in so the pass follows you.",
+    account: "Sign in to open your account.",
+  },
+  /** The plan flag. */
+  plan: {
+    eyebrow: "Plan",
+    free: "Free",
+    premium: "Premium",
+    admin: "Admin",
+    upgrade: "Upgrade",
+    current: "Your plan",
+    freeLine: "Start/sit calls, the desk, the standings and the board. Every week.",
+    premiumLine: "Every room open for the rest of the season.",
+  },
+  /** Leagues on file. */
+  leagues: {
+    eyebrow: "Leagues on file",
+    add: "Link a league",
+    addSlot: "Add a slot",
+    full: "Every slot is taken. Add one, or forget a league.",
+    forget: "Forget",
+    forgetAria: (name: string) => `Forget ${name}`,
+    open: "Open",
+    openAria: (name: string) => `Open ${name}`,
+    reading: "Reading now",
+    none: "No league on file yet.",
+    slot: "slot",
+  },
+  /** The upgrade sheet. */
+  upgrade: {
+    title: "Upgrade",
+    lead: "One payment, rest of the season. No subscription.",
+    /** Shown while the API has no Stripe key: the grant is written on the spot. */
+    comp: "Launch week: no card, no charge. Tap it and the floor is yours.",
+    get: (name: string) => `Get ${name}`,
+    done: "Done. The floor is open.",
+    slotLead: "One more league on your account.",
+    busy: "Opening\u2026",
+    close: "Close",
+    /** Why this sheet is up, when a locked room asked for it. */
+    for: (what: string) => `Unlock ${what}`,
+    limit: "Your leagues are full",
+  },
+  /** Forgot and reset. */
+  reset: {
+    title: "Reset your password",
+    lead: "Tell us the address on the account.",
+    cta: "Send a reset link",
+    sent: "If that address has an account, a link is on its way.",
+    /** No email provider is wired yet, and a screen that says a link is coming when it is not is a lie. */
+    notSent: "Email is not wired up yet, so nothing was sent. Ask the owner for a reset link.",
+    newTitle: "Set a new password",
+    save: "Save and sign in",
+    missing: "This link is missing its token. Ask for a new one.",
+    back: "Back to sign in",
+  },
+  /** The owner's desk. */
+  admin: {
+    title: "Front office",
+    eyebrow: "Admin",
+    lead: "Every account, its plan and its leagues. The levers are yours.",
+    count: (n: number) => `${n} account${n === 1 ? "" : "s"}`,
+    search: "Find an account",
+    none: "No accounts yet.",
+    notYou: "This desk is the owner\u2019s.",
+    grant: "Grant",
+    revoke: "Revoke",
+    slot: "+1 league",
+    promote: "Make admin",
+    demote: "Remove admin",
+    resetLink: "Reset link",
+    copied: "Copied. Hand it over yourself; it lasts two hours.",
+    joined: "Joined",
+    lastSeen: "Last seen",
+    never: "never",
+    leagues: (n: number, allowed: number) => `${n} of ${allowed} leagues`,
+    you: "you",
+  },
+  /** The top bar. */
+  topbar: {
+    signIn: "Sign in",
+    account: (email: string) => `Account ${email}`,
+  },
+  /** The account page's data controls. */
+  data: {
+    eyebrow: "Your data",
+    line: "Everything we hold is yours to take or erase.",
+    export: "Download my data",
+    erase: "Delete my account",
+    eraseConfirm: "This erases your leagues and any pass you bought. Type delete to confirm.",
+    erased: "Deleted. The door is behind you.",
+  },
+} as const;
+
+/**
  * The landing page, which is the only surface a cold visitor reads.
  *
  * Two rules hold every line here.

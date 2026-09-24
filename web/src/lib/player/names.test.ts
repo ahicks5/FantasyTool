@@ -73,6 +73,10 @@ const ALLOWED: Record<string, string> = {
     "untouched and still the deep link (SPEC-PLAYER-PAGE.md, D-8).",
   "src/app/s/[id]/page.tsx": "The shared verdict page. Same `SharedPlayer` with no id, and it is read signed-out.",
   "src/app/connect/page.tsx": "League and team names on the way in, before there is a league to score anyone by.",
+  "src/app/account/page.tsx": "The account: plan names, league names and product names. No player is ever on this page.",
+  "src/app/admin/page.tsx": "The admin's list: account names, plan names and league names. No player is ever on this page.",
+  "src/components/account/AccountGate.tsx": "The upgrade sheet prints product names (Wire Pass, The Penthouse), never a player's.",
+  "src/components/account/AuthForm.tsx": "The register form's Name field label. It is the visitor's own name, not a player's.",
   "src/app/trade/page.tsx":
     "The selected-player chips are themselves buttons that remove the man from the offer, " +
     "and a button cannot hold another button. The roster rows they are built from go " +

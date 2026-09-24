@@ -6,8 +6,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { checkout, getProducts } from "@/lib/api";
+import { usePathname } from "next/navigation";
+import { getProducts } from "@/lib/api";
+import { useAccountGate } from "./account/AccountGate";
 import { formatCents } from "@/lib/format";
 import type { Product, Sku } from "@/lib/types";
 import { PRODUCTS as FALLBACK } from "@/lib/mocks";
@@ -19,7 +20,7 @@ const BTN =
   "btn inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-bold transition-[transform,background-color] duration-150 active:scale-[0.985] disabled:opacity-50 disabled:active:scale-100";
 
 export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku: Sku; what: string; teaser?: string | null; signedIn?: boolean; onUnlocked?: () => void }) {
-  const router = useRouter();
+  const gate = useAccountGate();
   const pathname = usePathname();
   const [busy, setBusy] = useState(false);
   const [products, setProducts] = useState<Product[]>(FALLBACK);
@@ -30,19 +31,12 @@ export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku
   const full = products.find((p) => p.sku === "full_report");
 
   async function buy(s: Sku) {
-    if (!signedIn) {
-      // Payment is the first moment an account is genuinely needed.
-      router.push(`/login?next=${encodeURIComponent(pathname)}`);
-      return;
-    }
+    // The sheet signs the visitor in first if it has to (payment is the first moment an
+    // account is genuinely needed), then either grants or hands off to Stripe, coming back
+    // to the page they were on rather than whatever the API defaults to.
     setBusy(true);
     try {
-      // Come back to the page they were on, not whatever the API defaults to.
-      const { url } = await checkout(s, pathname);
-      if (url) window.location.href = url;
-      else onUnlocked?.();
-    } catch (e) {
-      window.alert((e as Error).message);
+      if (await gate.upgrade(s, { what, returnTo: pathname })) onUnlocked?.();
     } finally {
       setBusy(false);
     }
@@ -63,7 +57,7 @@ export function Locked({ sku, what, teaser, signedIn = true, onUnlocked }: { sku
       <div className="mt-6 grid gap-2.5">
         <Button variant="start" className="w-full" onClick={() => buy(sku)} busy={busy}>
           {busy ? (
-            "Opening checkout…"
+            "Opening…"
           ) : (
             <>
               Unlock {product?.name ?? what}

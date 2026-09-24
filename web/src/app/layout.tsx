@@ -4,6 +4,7 @@ import { Archivo, Inter } from "next/font/google";
 import "./globals.css";
 import { SITE_URL } from "@/lib/site";
 import { RIDE_BOOT } from "@/lib/elevator";
+import { AccountGateProvider } from "@/components/account/AccountGate";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 // Archivo carries the scoreboard weight the app is going for, and its numerals are
@@ -87,7 +88,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* When the elevator is about to play, cover the page before it can flash. */}
         <script dangerouslySetInnerHTML={{ __html: RIDE_BOOT }} />
       </head>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {/* The sign-in and upgrade popups, reachable from every room: see components/account/AccountGate.tsx. */}
+        <AccountGateProvider>{children}</AccountGateProvider>
+      </body>
     </html>
   );
 }

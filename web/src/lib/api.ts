@@ -1,7 +1,10 @@
 // API client for docs/API.md. With NEXT_PUBLIC_API_URL unset, every call is
 // served from src/lib/mocks.ts; when set, it fetches `${NEXT_PUBLIC_API_URL}/api/...`.
 import type {
+  MeLeague as AccountLeague,
   ActionFeed,
+  AdminUsersResponse,
+  AuthResponse,
   Desk,
   Plan,
   EmailPref,
@@ -36,9 +39,12 @@ import type {
   PlayerBoard,
   BoardQuery,
   LensCounts,
+  Role,
+  UpgradeResponse,
 } from "./types";
 import * as mocks from "./mocks";
 import { espnAuthHeaders } from "./espnAuth";
+import { clearToken, loadToken, saveToken } from "./auth";
 import { HttpError } from "./errors";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -76,24 +82,19 @@ export class EspnAuthError extends Error {
 }
 
 /**
- * Auth headers for the API. Dev: NEXT_PUBLIC_DEV_USER → X-Edge-User (API must run with EDGE_DEV=1).
- * Prod: Supabase session → Authorization: Bearer <jwt>.
+ * Auth headers for the API. A session token from `lib/auth.ts` wins: Authorization: Bearer.
+ * Dev, with no token: NEXT_PUBLIC_DEV_USER → X-Edge-User (the API must run with EDGE_DEV=1).
  */
-export async function getAuthHeaders(): Promise<Record<string, string>> {
+export function getAuthHeaders(): Record<string, string> {
+  const token = typeof window === "undefined" ? null : loadToken();
+  if (token) return { Authorization: `Bearer ${token}` };
   const dev = process.env.NEXT_PUBLIC_DEV_USER;
   if (dev) return { "X-Edge-User": dev };
-  try {
-    const { getAccessToken } = await import("./supabase");
-    const token = await getAccessToken();
-    if (token) return { Authorization: `Bearer ${token}` };
-  } catch {
-    /* supabase not configured */
-  }
   return {};
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const auth = await getAuthHeaders();
+  const auth = getAuthHeaders();
   const res = await fetch(`${API_URL}/api${path}`, {
     ...init,
     // ESPN cookies go on every call, because any of them may hit a private league. They are
@@ -110,7 +111,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (res.status === 403 && d && typeof d === "object" && "needs_espn_auth" in d) {
       throw new EspnAuthError(d.error, d.needs_espn_auth !== false);
     }
-    if (res.status === 401) throw new HttpError(401, "Sign in to continue.");
+    if (res.status === 401) {
+      // The API says which: a token that has died reads differently from no token at all.
+      throw new HttpError(401, typeof d === "string" && /expired/.test(d) ? "Your session expired. Sign in again." : "Sign in to continue.");
+    }
     throw new HttpError(res.status, typeof d === "string" ? d : (body?.error ?? `HTTP ${res.status}`));
   }
   return body;
@@ -158,10 +162,7 @@ export async function getProducts(): Promise<ProductsResponse> {
 }
 
 export async function getMe(): Promise<Me> {
-  if (USE_MOCKS) {
-    const extra = mockExtraEntitlements();
-    return { ...mocks.ME, entitlements: Array.from(new Set([...mocks.ME.entitlements, ...extra])) };
-  }
+  if (USE_MOCKS) return mockMe();
   return request<Me>("/me");
 }
 
@@ -193,6 +194,179 @@ export async function checkout(sku: Sku, returnTo?: string): Promise<CheckoutRes
   return request<CheckoutResponse>("/checkout", { method: "POST", body: JSON.stringify(body) });
 }
 
+/* ------------------------------------------------------------------ the account ---
+   Register, sign in, sign out, reset, upgrade. The mock path keeps a fake account under
+   `booth.mock.user` so the demo can be clicked through; nothing in it reaches a backend. */
+
+const MOCK_USER_KEY = "booth.mock.user";
+
+function mockUser(): string | null {
+  try {
+    const v = window.localStorage.getItem(MOCK_USER_KEY);
+    // Unset means the demo's default signed-in visitor; "" means they signed out.
+    return v === null ? mocks.ME.email : v || null;
+  } catch {
+    return mocks.ME.email;
+  }
+}
+
+function mockMe(): Me {
+  const email = mockUser();
+  const extra = mockExtraEntitlements();
+  const premium = extra.length > mocks.ME.entitlements.length;
+  if (!email) return { ...mocks.ME, email: null, signed_in: false, leagues: [], account: null, entitlements: mocks.ME.entitlements };
+  return {
+    ...mocks.ME,
+    email,
+    entitlements: Array.from(new Set([...mocks.ME.entitlements, ...extra])),
+    account: {
+      ...mocks.ME.account!,
+      email,
+      name: email.split("@")[0],
+      plan: premium ? { tier: "premium", name: "The Penthouse", skus: ["full_report"] } : { tier: "free", name: "Free", skus: [] },
+    },
+  };
+}
+
+function mockSignIn(email: string): AuthResponse {
+  try {
+    window.localStorage.setItem(MOCK_USER_KEY, email.trim().toLowerCase());
+  } catch {
+    /* ignore */
+  }
+  saveToken("mock-session");
+  return { token: "mock-session", me: mockMe() };
+}
+
+export async function register(email: string, password: string, name = ""): Promise<AuthResponse> {
+  if (USE_MOCKS) return mockSignIn(email);
+  const out = await request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ email, password, name }) });
+  saveToken(out.token);
+  return out;
+}
+
+export async function login(email: string, password: string): Promise<AuthResponse> {
+  if (USE_MOCKS) return mockSignIn(email);
+  const out = await request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+  saveToken(out.token);
+  return out;
+}
+
+export async function logout(): Promise<void> {
+  if (USE_MOCKS) {
+    try {
+      window.localStorage.setItem(MOCK_USER_KEY, "");
+    } catch {
+      /* ignore */
+    }
+    clearToken();
+    return;
+  }
+  try {
+    await request<unknown>("/auth/logout", { method: "POST" });
+  } finally {
+    // The token goes whatever the API said: a sign-out that fails on the wire still signs out here.
+    clearToken();
+  }
+}
+
+export async function forgotPassword(email: string): Promise<{ ok: boolean; sent: boolean }> {
+  if (USE_MOCKS) return { ok: true, sent: false };
+  return request("/auth/forgot", { method: "POST", body: JSON.stringify({ email }) });
+}
+
+export async function resetPassword(token: string, password: string): Promise<AuthResponse> {
+  if (USE_MOCKS) return mockSignIn("you@example.com");
+  const out = await request<AuthResponse>("/auth/reset", { method: "POST", body: JSON.stringify({ token, password }) });
+  saveToken(out.token);
+  return out;
+}
+
+/**
+ * Upgrade: a checkout when Stripe is wired (the reply carries its `url`), a direct grant
+ * when it is not (`granted`). `returnTo` is where a checkout should bring the buyer back.
+ */
+export async function upgrade(sku: Sku, returnTo?: string): Promise<UpgradeResponse> {
+  if (USE_MOCKS) {
+    const product = mocks.PRODUCTS.find((p) => p.sku === sku);
+    try {
+      const current = mockExtraEntitlements();
+      window.localStorage.setItem(MOCK_ENTITLEMENTS_KEY, JSON.stringify([...current, ...(product?.features ?? [])]));
+    } catch {
+      /* ignore */
+    }
+    return { url: null, granted: true, me: mockMe() };
+  }
+  const body: { sku: Sku; success_url?: string; cancel_url?: string } = { sku };
+  if (returnTo && typeof window !== "undefined") {
+    const origin = window.location.origin;
+    const sep = returnTo.includes("?") ? "&" : "?";
+    body.success_url = `${origin}${returnTo}${sep}paid=${encodeURIComponent(sku)}`;
+    body.cancel_url = `${origin}${returnTo}${sep}canceled=1`;
+  }
+  return request<UpgradeResponse>("/account/upgrade", { method: "POST", body: JSON.stringify(body) });
+}
+
+/** Mark the league being read, so the next sign-in on any device opens on it. */
+export async function markLeagueUsed(platform: Platform, leagueId: string): Promise<void> {
+  if (USE_MOCKS) return;
+  await request<unknown>(`/leagues/${platform}/${encodeURIComponent(leagueId)}/use`, { method: "POST" });
+}
+
+/** Take a league off the account. Frees a slot. */
+export async function forgetLeague(platform: Platform, leagueId: string): Promise<AccountLeague[]> {
+  if (USE_MOCKS) return [];
+  const out = await request<{ leagues: AccountLeague[] }>(`/leagues/${platform}/${encodeURIComponent(leagueId)}`, { method: "DELETE" });
+  return out.leagues;
+}
+
+/** Everything the API holds on this account, as JSON, for the download button. */
+export async function exportMyData(): Promise<unknown> {
+  if (USE_MOCKS) return { email: mockUser(), data: {} };
+  return request<unknown>("/me/data");
+}
+
+/** Erase the account. The API wants the word, so a stray call cannot do it. */
+export async function deleteMyAccount(): Promise<void> {
+  if (USE_MOCKS) {
+    await logout();
+    return;
+  }
+  try {
+    await request<unknown>("/me?confirm=delete", { method: "DELETE" });
+  } finally {
+    clearToken();
+  }
+}
+
+/* --------------------------------------------------------------------- admin ---- */
+
+export async function adminUsers(): Promise<AdminUsersResponse> {
+  if (USE_MOCKS) return mocks.ADMIN_USERS;
+  return request<AdminUsersResponse>("/admin/users");
+}
+
+export async function adminGrant(email: string, sku: Sku): Promise<void> {
+  if (USE_MOCKS) return;
+  await request<unknown>(`/admin/users/${encodeURIComponent(email)}/grant`, { method: "POST", body: JSON.stringify({ sku }) });
+}
+
+export async function adminRevoke(email: string, sku: Sku): Promise<void> {
+  if (USE_MOCKS) return;
+  await request<unknown>(`/admin/users/${encodeURIComponent(email)}/revoke`, { method: "POST", body: JSON.stringify({ sku }) });
+}
+
+export async function adminSetRole(email: string, role: Role): Promise<void> {
+  if (USE_MOCKS) return;
+  await request<unknown>(`/admin/users/${encodeURIComponent(email)}/role`, { method: "POST", body: JSON.stringify({ role }) });
+}
+
+export async function adminResetLink(email: string): Promise<string> {
+  if (USE_MOCKS) return `${window.location.origin}/reset?token=mock`;
+  const out = await request<{ url: string }>(`/admin/users/${encodeURIComponent(email)}/reset`, { method: "POST" });
+  return out.url;
+}
+
 export async function getSleeperLeagues(username: string): Promise<SleeperLeagueRef[]> {
   if (USE_MOCKS) return mocks.SLEEPER_LEAGUES;
   return request<SleeperLeagueRef[]>(`/sleeper/leagues?username=${encodeURIComponent(username)}`);
@@ -205,6 +379,8 @@ export async function getLeague(platform: Platform, leagueId: string): Promise<L
 
 export async function connect(req: ConnectRequest): Promise<void> {
   if (USE_MOCKS) return;
+  // Signed in only: the API answers 401 to a stranger, which the connect page turns into
+  // the sign-in sheet rather than an error box.
   await request<unknown>("/connect", { method: "POST", body: JSON.stringify(req) });
 }
 

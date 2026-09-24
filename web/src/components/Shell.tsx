@@ -8,7 +8,8 @@ import { PlayerSheetProvider } from "./player/PlayerSheetProvider";
 import { Ticker } from "./Ticker";
 import { UnlockingBanner, useUnlockOnReturn } from "./Unlocking";
 import { LinkButton, OnAir, Opening, Spinner, ThemeToggle, Wordmark } from "./ui";
-import { NAMEPLATE, SECTIONS, TAB_ORDER, type SectionKey, type TabKey } from "@/lib/vocab";
+import { ACCOUNT, NAMEPLATE, SECTIONS, TAB_ORDER, type SectionKey, type TabKey } from "@/lib/vocab";
+import { initialOf } from "@/lib/account";
 
 // Coach vocabulary, and every label still says what the screen is: scouting is the
 // free-agent pool, the GM's office is where deals get made, film is the weekly recap.
@@ -31,7 +32,8 @@ const TAB_ICONS: Record<TabKey, (p: { size?: number; strokeWidth?: number }) => 
  * the title band on the right — see `Nameplate`.
  */
 export function TopBar({ session }: { session: Session }) {
-  const email = session.me?.email;
+  const account = session.account;
+  const premium = session.premium;
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4">
@@ -39,14 +41,29 @@ export function TopBar({ session }: { session: Session }) {
           <Wordmark className="text-[20px]" />
         </Link>
         <ThemeToggle />
-        <Link
-          href="/login"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-2 text-[11px] font-black uppercase text-ink-2 hover:bg-soft"
-          title={email ?? "Sign in"}
-          aria-label={email ? `Account ${email}` : "Sign in"}
-        >
-          {email ? email[0] : "—"}
-        </Link>
+        {/* The account: an initial once signed in (ringed in the start colour on a premium
+            account, so the flag is visible from every room), else the two words. */}
+        {account ? (
+          <Link
+            href="/account"
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-[13px] font-black uppercase hover:bg-soft ${
+              premium ? "border-start bg-start-soft text-start ring-1 ring-start" : "border-line-2 text-ink-2"
+            }`}
+            title={account.email}
+            aria-label={ACCOUNT.topbar.account(account.email)}
+            data-plan={premium ? "premium" : "free"}
+          >
+            {initialOf(account)}
+          </Link>
+        ) : (
+          <Link
+            href="/login"
+            className="flex h-11 shrink-0 items-center justify-center rounded-full border border-line-2 px-3.5 text-[12px] font-bold text-ink-2 hover:bg-soft"
+            aria-label={ACCOUNT.topbar.signIn}
+          >
+            {session.loading ? "\u00a0" : ACCOUNT.topbar.signIn}
+          </Link>
+        )}
       </div>
     </header>
   );
@@ -197,7 +214,7 @@ export function AppShell({
             <OnAir className="text-white/45" label="Off air" />
             <div className="display mt-3 text-[26px] leading-tight">The room&rsquo;s empty</div>
             <p className="mx-auto mb-6 mt-2 max-w-[17rem] text-[15px] leading-relaxed text-white/70">
-              Hook up a Sleeper or ESPN league and {gate} shows up here. No account, no password.
+              Hook up a Sleeper or ESPN league and {gate} shows up here. Sign in once and it stays on file.
             </p>
             <LinkButton href="/connect" variant="onHero" className="w-full">
               Take me upstairs

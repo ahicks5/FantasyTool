@@ -1,9 +1,12 @@
 "use client";
 /** Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, two cookies. */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { EspnAuthError, connect, getLeague, getSleeperLeagues } from "@/lib/api";
+import { EspnAuthError, PaywallError, connect, getLeague, getSleeperLeagues } from "@/lib/api";
+import { useAccountGate } from "@/components/account/AccountGate";
+import { HttpError } from "@/lib/errors";
+import { useSession } from "@/lib/session";
 import { resolveSleeperInput } from "@/lib/leagueInput";
 import { saveConnection } from "@/lib/storage";
 import { EspnAuthForm } from "@/components/EspnAuthForm";
@@ -11,7 +14,7 @@ import { clearEspnAuth, useEspnAuth } from "@/lib/espnAuth";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck } from "@/components/icons";
 import { Button, Countdown, ErrorBox, Eyebrow, ThemeToggle, Wordmark } from "@/components/ui";
-import { CONNECT, LINES } from "@/lib/vocab";
+import { ACCOUNT, CONNECT, LINES } from "@/lib/vocab";
 
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
@@ -37,6 +40,17 @@ function initials(name: string): string {
 
 export default function ConnectPage() {
   const router = useRouter();
+  const session = useSession();
+  const gate = useAccountGate();
+  // Sign in before linking (Andrew, 2026-09-24). The sheet opens once the session is
+  // known; dismissed, the page stays with a card that reopens it, and the form under it
+  // still works for looking. Only the save at the end needs the account.
+  const asked = useRef(false);
+  useEffect(() => {
+    if (session.loading || session.signedIn || asked.current) return;
+    asked.current = true;
+    void gate.signIn("connect");
+  }, [session.loading, session.signedIn, gate]);
   // Nothing is chosen on arrival. The page is a question, not a filled-in form, and every
   // field below is the answer to the platform button rather than something to scroll past.
   const [platform, setPlatform] = useState<Platform | null>(null);
@@ -127,8 +141,25 @@ export default function ConnectPage() {
   async function submit() {
     if (!platform || !league || !teamId) return;
     const team = league.teams.find((t) => t.id === teamId);
+    if (!(await gate.signIn("connect"))) return;
     const ok = await run(async () => {
-      await connect({ platform, league_id: league.id, team_id: teamId });
+      try {
+        await connect({ platform, league_id: league.id, team_id: teamId });
+      } catch (e) {
+        // Over the cap: the slot sheet, then the same save again once it has landed.
+        if (e instanceof PaywallError && e.feature === "leagues") {
+          if (!(await gate.upgrade("league_slot", { what: ACCOUNT.upgrade.limit, returnTo: "/connect" }))) return false;
+          await connect({ platform, league_id: league.id, team_id: teamId });
+          return true;
+        }
+        // A token that died between the sheet and the save: ask again, then save again.
+        if (e instanceof HttpError && e.status === 401) {
+          if (!(await gate.signIn("connect"))) return false;
+          await connect({ platform, league_id: league.id, team_id: teamId });
+          return true;
+        }
+        throw e;
+      }
       return true;
     });
     if (ok) {
@@ -156,6 +187,19 @@ export default function ConnectPage() {
       </header>
 
       <main id="content">
+
+      {/* Not signed in: the sheet has already opened once; this is the way back to it. */}
+      {!session.loading && !session.signedIn && (
+        <div className="mt-2 flex items-center justify-between gap-3 rounded-[var(--radius-card)] border border-line-2 bg-paper px-4 py-3" data-testid="connect-gate">
+          <span className="min-w-0">
+            <span className="display block text-[15px] leading-tight">{ACCOUNT.gate.title}</span>
+            <span className="mt-0.5 block text-[12px] leading-snug text-muted">{ACCOUNT.gate.body}</span>
+          </span>
+          <Button size="sm" onClick={() => void gate.signIn("connect")} className="shrink-0">
+            {ACCOUNT.signIn}
+          </Button>
+        </div>
+      )}
 
       {/* Two steps, and the bar says which one you are on without reading anything. */}
       <div className="mt-2 flex items-center gap-2">

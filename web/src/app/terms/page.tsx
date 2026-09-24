@@ -42,7 +42,7 @@ export default function TermsPage() {
               pay.
             </>,
             <>
-              Each pass covers the number of leagues stated on the pricing page. The free tier covers one team.
+              Each pass covers the number of leagues stated on the pricing page. The free tier covers up to three leagues; more can be added as an add-on.
             </>,
           ]}
         />

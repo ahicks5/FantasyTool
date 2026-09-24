@@ -24,7 +24,7 @@ import {
   SCOUT_OPEN,
   WIRE,
   OFFICE,
-  CALL, FILM } from "./vocab.ts";
+  CALL, FILM, ACCOUNT } from "./vocab.ts";
 
 /**
  * The vocabulary is the one file that is allowed to say a section's name, so it is also
@@ -116,6 +116,10 @@ const ALL_COPY: string[] = [
   FILM.product, FILM.season,
   CALL.aria, CALL.incoming, CALL.connected, CALL.title, CALL.staff, CALL.answer, CALL.decline, CALL.slide, CALL.hello,
   CALL.deals(1, 1), CALL.deals(3, 3), CALL.deals(3, 11), CALL.preview, CALL.quiet, CALL.skip,
+  // The account: every string, every templated line rendered once.
+  ...Object.values(ACCOUNT).flatMap((v) =>
+    typeof v === "string" ? [v] : Object.values(v).map((x) => (typeof x === "function" ? (x as (a: never, b: never) => string)("Wire Pass" as never, 3 as never) : x)),
+  ),
 ];
 
 test("the must-add stamp is the one exclamation mark in the house", () => {
@@ -210,6 +214,22 @@ test("every feature card names a room the app actually has", () => {
 test("the free cards are the ones a visitor can open without paying", () => {
   const free = LANDING.features.filter((f) => f.tag === "Free").map((f) => f.key);
   assert.deepEqual(free.sort(), ["report", "team"]);
+});
+
+test("the account's words are the staff at the door: sign in, create, no magic link", () => {
+  assert.equal(ACCOUNT.signIn, "Sign in");
+  assert.equal(ACCOUNT.register, "Create account");
+  for (const line of [ACCOUNT.signInLead, ACCOUNT.registerLead, ACCOUNT.gate.body, ACCOUNT.reason.connect]) {
+    assert.doesNotMatch(line, /magic link|Supabase/i, `${line}: sign-in is an email and a password now`);
+  }
+  assert.match(ACCOUNT.registerLead, /three leagues/, "the cap is said where the account is made");
+  assert.equal(ACCOUNT.plan.free, "Free");
+  assert.equal(ACCOUNT.plan.premium, "Premium");
+  assert.equal(ACCOUNT.admin.leagues(2, 3), "2 of 3 leagues");
+  assert.equal(ACCOUNT.admin.count(1), "1 account");
+  // The sheet says plainly when a grant is free and when nothing was sent.
+  assert.match(ACCOUNT.upgrade.comp, /no charge/);
+  assert.match(ACCOUNT.reset.notSent, /nothing was sent/);
 });
 
 test("connect's control says what it hands you", () => {

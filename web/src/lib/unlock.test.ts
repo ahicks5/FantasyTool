@@ -13,7 +13,7 @@ const me = (entitlements: Feature[]): Me => ({
   email: "a@b.c",
   signed_in: true,
   entitlements,
-  leagues_allowed: 1,
+  leagues_allowed: 3,
   leagues: [],
 });
 
