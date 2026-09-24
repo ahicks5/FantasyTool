@@ -122,7 +122,7 @@ def superlatives(ctx: LeagueContext, pw: PlayedWeek, claims: dict[str, dict[str,
     if left:
         best = min(left, key=lambda t: (left[t], -totals[t]))
         title("best_manager", best, left[best],
-              "Started the best lineup he had" if left[best] == 0 else f"Left only {left[best]:.1f} on the bench")
+              "A perfect lineup: nobody better on the bench" if left[best] == 0 else f"Left only {left[best]:.1f} on the bench")
         worst = max(left, key=lambda t: left[t])
         if left[worst] > 0 and worst != best:
             title("most_left", worst, left[worst], f"Left {left[worst]:.1f} on the bench")

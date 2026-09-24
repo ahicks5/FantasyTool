@@ -80,7 +80,7 @@ def test_a_perfect_lineup_is_named_as_one():
                     teams={t1.id: t1}, player_points={t1.id: pts})
     best = next(s for s in lf.superlatives(lf.LeagueContext(league=league, weeks=[pw]), pw)
                 if s["kind"] == "best_manager")
-    assert best["line"] == "Started the best lineup he had"
+    assert best["line"] == "A perfect lineup: nobody better on the bench"
 
 
 # ---------------------------------------------------------------- F-5 groups, expectation, gauntlet
