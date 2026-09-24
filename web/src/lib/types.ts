@@ -740,7 +740,7 @@ export interface SharedPlayer {
   team_logo: string | null;
 }
 
-export type ShareKind = "trade" | "lock";
+export type ShareKind = "trade" | "lock" | "film";
 
 /** What the Lock share button sends. Display fields only; the API strips ids again anyway. */
 export interface LockCall {
@@ -776,8 +776,30 @@ export interface SharedVerdict {
   get_players: SharedPlayer[];
 }
 
-/** Either kind of snapshot. Shares written before Lock sharing existed carry no `kind`. */
-export type SharedSnapshot = SharedVerdict | SharedLock;
+/** What the film's share button sends: the replay cover and at most one player. */
+export interface FilmShare {
+  result: "W" | "L" | "T" | null;
+  my_points: number;
+  their_points: number | null;
+  opponent: string | null;
+  line: string | null;
+  team: string;
+  star: (SharedPlayer & { went: number }) | null;
+}
+
+/** The public snapshot behind /s/{id} for last week's replay cover. Free, like a Lock. */
+export interface SharedFilm extends FilmShare {
+  kind: "film";
+  league_name: string;
+  week: number;
+}
+
+/** Any kind of snapshot. Shares written before Lock sharing existed carry no `kind`. */
+export type SharedSnapshot = SharedVerdict | SharedLock | SharedFilm;
+
+export function isSharedFilm(s: SharedSnapshot): s is SharedFilm {
+  return s.kind === "film";
+}
 
 export function isSharedLock(s: SharedSnapshot): s is SharedLock {
   return s.kind === "lock";

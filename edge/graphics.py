@@ -376,6 +376,63 @@ def _face_or_initials(p: dict, size: int = 152) -> str:
             f'font-weight:800;color:{PAPER}.55)">{e(_initials(p.get("name", "")))}</span>')
 
 
+def film_card_html(snap: dict, league_name: str = "", week: int | None = None) -> str:
+    """Last week's replay cover, 1080x1080. Free, like the Lock card: the result stamped,
+    the scoreline, who it was against, the cover line, and the man who carried the week."""
+    e = html.escape
+    result = snap.get("result")
+    word = {"W": "Win", "L": "Loss", "T": "Tie"}.get(result or "", "")
+    colour = COLORS["Accept"] if result == "W" else COLORS["Reject"] if result == "L" else PAPER + ".8)"
+    mine, theirs = snap.get("my_points") or 0.0, snap.get("their_points")
+    score = f"{mine:.1f}&ndash;{theirs:.1f}" if theirs is not None else f"{mine:.1f}"
+    sub = f"{e(league_name)} · Week {week}" if league_name and week else e(league_name)
+    opp = f"vs {e(snap.get('opponent') or '')}" if snap.get("opponent") else ""
+    line = _first_sentences(snap.get("line") or "", limit=120)
+    star = snap.get("star") or None
+    star_html = ""
+    if star and star.get("name"):
+        went = star.get("went")
+        star_html = f"""
+  <div style="display:flex;align-items:center;gap:28px;margin-top:40px">
+    {_face_or_initials(star, 120)}
+    <div>
+      <div style="font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:{PAPER}.45);font-weight:700">Carried the week</div>
+      <div style="font-size:48px;font-weight:900;margin-top:6px">{e(star.get("name", ""))}{f' <span style="color:{COLORS["Accept"]}">{went:.1f}</span>' if went is not None else ""}</div>
+    </div>
+  </div>"""
+    stamp = (f'<span style="display:inline-block;transform:rotate(-3.5deg);border:11px solid {colour};border-radius:22px;'
+             f'padding:12px 28px 17px;color:{colour};font-size:96px;font-weight:900;line-height:1;letter-spacing:.04em;'
+             f'text-transform:uppercase;opacity:.93;-webkit-mask-image:repeating-linear-gradient(58deg,#000 0 38px,'
+             f'rgba(0,0,0,.88) 38px 44px)">{e(word).upper()}</span>') if word else ""
+    return f"""<!doctype html><html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  html,body{{margin:0;background:{INK};color:#f7f6f3;
+    font-family:Archivo,-apple-system,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;
+    font-variant-numeric:tabular-nums}}
+  .card{{width:1080px;height:1080px;box-sizing:border-box;padding:72px;display:flex;
+    flex-direction:column;background:{PLATE}}}
+</style></head><body><div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;font-size:27px">
+    {_on_air(27)}
+    <span style="color:{PAPER}.55);font-weight:700;max-width:620px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{sub}</span>
+  </div>
+  <div style="margin-top:40px;font-size:26px;letter-spacing:.16em;text-transform:uppercase;color:{PAPER}.45);font-weight:700">The replay &middot; {e(snap.get("team") or "")}</div>
+  <div style="margin-top:26px">{stamp}</div>
+  <div style="margin-top:34px;font-size:124px;font-weight:900;line-height:.95;letter-spacing:-.03em;white-space:nowrap">{score}</div>
+  <div style="margin-top:14px;font-size:40px;font-weight:700;color:{PAPER}.6)">{opp}</div>
+  {f'<div style="margin-top:34px;font-size:44px;font-weight:800;line-height:1.2">{e(line)}</div>' if line else ""}
+  {star_html}
+  <div style="margin-top:auto;padding-top:24px;border-top:1px solid rgba(255,255,255,.12);
+    display:flex;align-items:center;justify-content:space-between">
+    {_nameplate(30)}
+    <span style="font-size:24px;font-weight:700;letter-spacing:.14em;
+      text-transform:uppercase;color:{PAPER}.45)">{TAGLINE}</span>
+  </div>
+</div></body></html>"""
+
+
 def card_html(snap: dict, shape: str = "square") -> str:
     """Render whichever card this snapshot is. One door, so the API never branches on kind.
 
@@ -384,6 +441,8 @@ def card_html(snap: dict, shape: str = "square") -> str:
     """
     if snap.get("kind") == "lock":
         return lock_card_html(snap, snap.get("league_name", ""), snap.get("week") or None)
+    if snap.get("kind") == "film":
+        return film_card_html(snap, snap.get("league_name", ""), snap.get("week") or None)
     return verdict_card_html(snap, snap.get("explanation", ""), snap.get("league_name", ""),
                              snap.get("week") or None, shape=shape)
 
@@ -391,7 +450,7 @@ def card_html(snap: dict, shape: str = "square") -> str:
 def card_shape(snap: dict, shape: str) -> str:
     """The shape a snapshot will actually render at, so the caller sizes the viewport to
     match what `card_html` returns rather than to what it asked for."""
-    return "square" if snap.get("kind") == "lock" else shape
+    return "square" if snap.get("kind") in ("lock", "film") else shape
 
 
 def render_png(html_str: str, out: str | Path, width: int = 1080, height: int = 1080) -> Path:

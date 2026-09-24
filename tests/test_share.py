@@ -202,3 +202,49 @@ def test_a_lock_story_falls_back_to_the_square_rather_than_letterboxing(client, 
     sid = client.post("/api/share", json=LOCK_BODY).json()["id"]
     assert client.get(f"/api/share/{sid}/story.png").status_code == 200
     assert sizes == [(1080, 1080)], "a Lock story renders at square size"
+
+
+# ---------------------------------------------------------------- the film card (SPEC-FILM F-10)
+
+FILM_BODY = {"kind": "film", "league_name": "Test League", "week": 2,
+             "film": {"result": "W", "my_points": 130.08, "their_points": 116.08, "opponent": "2KSports",
+                      "line": "Your best score of the season", "team": "GoldenPP",
+                      "star": {"name": "Jaxon Smith-Njigba", "position": "WR", "nfl_team": "SEA", "id": "9488",
+                               "photo": None, "team_logo": None, "went": 40.0, "had": 16.2},
+                      "league_id": "1403186749361901568", "attributions": [{"player": {"id": "1"}}]}}
+
+
+def test_a_film_share_costs_nothing_and_carries_only_the_cover(client):
+    r = client.post("/api/share", json=FILM_BODY)          # no account: the cover is free
+    assert r.status_code == 200, r.text
+    snap = client.get(f"/api/share/{r.json()['id']}").json()
+    assert snap["kind"] == "film" and snap["result"] == "W" and snap["my_points"] == 130.08
+    assert snap["star"]["name"] == "Jaxon Smith-Njigba" and snap["star"]["went"] == 40.0
+    blob = json.dumps(snap)
+    assert "1403186749361901568" not in blob, "never a league id"
+    assert "attributions" not in blob and "9488" not in blob and "had" not in blob, "the story stays in the app"
+
+
+def test_a_film_share_needs_a_score(client):
+    assert client.post("/api/share", json={"kind": "film", "film": {"result": "W"}}).status_code == 422
+
+
+def test_a_film_share_renders_the_film_card(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("EDGE_CACHE_DIR", str(tmp_path))
+    rendered = []
+    import edge.graphics as g
+
+    def fake_render(html, out, **kw):
+        rendered.append((html, kw))
+        from pathlib import Path
+        Path(out).parent.mkdir(parents=True, exist_ok=True)
+        Path(out).write_bytes(b"\x89PNG\r\n\x1a\n")
+        return out
+
+    monkeypatch.setattr(g, "render_png", fake_render)
+    sid = client.post("/api/share", json=FILM_BODY).json()["id"]
+    assert client.get(f"/api/share/{sid}/story.png").status_code == 200
+    html_, kw = rendered[0]
+    assert "130.1" in html_ and "WIN" in html_ and "Your best score of the season" in html_
+    assert "Own the week" in html_
+    assert kw.get("height") == 1080, "no story layout yet: the square, not a letterbox"

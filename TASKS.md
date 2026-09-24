@@ -1131,11 +1131,10 @@ build order in §8.
       `lib/projector.ts`. Leader 3-2-1 with a sweep, a shutter flicker, the result, the page.
       Once per graded week per browser (`booth.film.<league>.<season>.<week>`), never over the
       day's ride, tap skips, reduced motion shows the result and fades. `?film=1` replays.
-- [x] **F-10** The Tuesday ritual (2026-09-24), two of three: the desk's film notebook carries
-      the replay's cover line and lights until that week is opened; the weekly email leads
-      with last week (cover free, the reader's superlative only with the Full Report).
-      **Not done: the film share card** (a new share kind through graphics.py and the
-      snapshot contract; next session).
+- [x] **F-10** The Tuesday ritual (2026-09-24): the desk's film notebook carries the replay's
+      cover line and lights until that week is opened; the weekly email leads with last week
+      (cover free, the reader's superlative only with the Full Report); "Share this week" on
+      the cover makes a free `kind: "film"` link and a 1080 film card (graphics.py, /s/{id}).
 
 ### Decisions taken (Andrew, 2026-09-23)
 
@@ -1144,11 +1143,11 @@ build order in §8.
   projections fall through freeze → runs → Sleeper's stored number, tagged by source.
   The backend may change, so `film.py` never calls a data module. Older seasons later.
 
-### Next session: the film share card (F-10's last third), then F-8 (ESPN boxscores)
+### Next session: F-8 (ESPN boxscores)
 
-The share card needs a `kind: "film"` snapshot (display-only: never an email, a league id
-or a roster; CLAUDE.md) and a layout in `graphics.py` and `ShareCard.tsx`. F-8 fetches
-`mBoxscore` per finished week so ESPN readers get the line-by-line.
+Fetch `mBoxscore` per finished week in `edge/data/espn_api.py`, map it into `PlayedWeek`
+starters and bench, cache forever; then ESPN readers get the whole replay and ledger. Needs a
+recorded fixture of one ESPN week.
 
 ### Decisions for Andrew (film, after F-1 to F-4)
 
@@ -1158,6 +1157,9 @@ or a roster; CLAUDE.md) and a layout in `graphics.py` and `ShareCard.tsx`. F-8 f
 - **Ledger rules to judge:** points count only while the man is on the new roster; a
   dropped man counts wherever he went; nothing ranks until it is two weeks old; draft picks
   are counted, not valued; three-way trades are left out.
+- **The film share card says "Your best score of the season"** as the engine wrote it for the
+  reader; a friend reading the card sees "Your" meaning the sharer. Say if it should read in
+  the third person on the card.
 - **The projector plays for paid readers only** (it opens the story). A free reader sees
   the cover without the countdown. Say if the free cover should roll too.
 - **The weekly email's film panel** is free (the cover); the superlative rides only with

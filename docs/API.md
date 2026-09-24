@@ -667,6 +667,11 @@ What a caller has to handle:
   weeks old: shown, not in any total. Draft picks are counted, not valued. `ros` and
   `ros_from_here` are rest-of-season projections and must be labelled as such. Three-way
   trades are left out rather than half-read.
+- **Sharing the replay:** `POST /api/share` with `{"kind":"film","league_name","week","film":{"result",
+  "my_points","their_points","opponent","line","team","star":{"name","position","nfl_team","went"}|null}}`.
+  Free (`my_team`), like a Lock. The snapshot keeps those fields and nothing else: no league
+  id, no roster, no story. `/api/share/{id}/card.png` renders the 1080 film card; a story
+  shape falls back to the square.
 - **Playoffs** are arithmetic only: record, then points for; `games` is games clear of the
   first team out for a seed, games back of the last seed for everyone else. Null when the
   league does not say how many make it. No odds, no divisions yet.

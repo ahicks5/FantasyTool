@@ -1228,6 +1228,17 @@ export const FILM = {
   lineByLine: "This platform sends the scoreline but not who scored it, so the line-by-line is not here yet.",
   product: "The replay: every week, told",
   season: "Week by week",
+  /** Sharing the cover: free, like a Lock card (SPEC-FILM D2). */
+  share: {
+    button: "Share this week",
+    busy: "Making the link",
+    copy: "Copy",
+    copied: "Copied",
+    copyFail: "Could not copy. Select the link and copy it by hand.",
+    carried: "Carried the week",
+    pitch: "Somebody watched their week back on Penthouse: the result, why it went that way, and what to do before Thursday.",
+    title: (team: string, result: string, score: string) => `${team}: ${result} ${score}`,
+  },
   /** The projector: the film's opening, once per graded week. */
   projector: { aria: "The film is rolling", skip: "Tap to skip" },
   /** The jump bar under the title: the three parts of the one scroll. */

@@ -369,6 +369,7 @@ export async function createShare(body: {
   give_players?: unknown[];
   get_players?: unknown[];
   call?: unknown;
+  film?: unknown;
 }): Promise<ShareResponse> {
   if (USE_MOCKS) return { id: "demo1234", url: `${window.location.origin}/s/demo1234` };
   return request<ShareResponse>("/share", { method: "POST", body: JSON.stringify(body) });

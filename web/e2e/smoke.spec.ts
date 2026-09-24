@@ -848,3 +848,9 @@ test("the projector rolls the week once when asked, and a tap skips it", async (
   await expect(room).toHaveCount(0);
   await expect(page.getByRole("region", { name: FILM.story })).toBeVisible();
 });
+
+test("the replay's cover is shared as a free link", async ({ page }) => {
+  await visit(page, "/report");
+  await page.getByRole("button", { name: FILM.share.button }).click();
+  await expect(page.locator("code").filter({ hasText: "/s/" })).toBeVisible();
+});

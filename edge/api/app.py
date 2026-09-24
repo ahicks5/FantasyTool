@@ -839,6 +839,8 @@ class ShareIn(BaseModel):
     get_players: list[dict] | None = None
     # kind="lock": a start/sit call
     call: dict | None = None
+    # kind="film": last week's replay cover
+    film: dict | None = None
 
 
 @app.post("/api/share")
@@ -856,7 +858,12 @@ def create_share(body: ShareIn, email: str | None = Depends(optional_user)):
     if not products.can(_skus(email), feature):
         raise HTTPException(402, detail={"error": f"{feature} requires a purchase", "feature": feature,
                                          "teaser": None, "upsell": products.upsell(_skus(email), feature)})
-    if kind == "lock":
+    if kind == "film":
+        f = body.film or {}
+        if f.get("my_points") is None:
+            raise HTTPException(422, "a film share needs the week's score")
+        snap = share_mod.film_snapshot(f, body.league_name, body.week or 0)
+    elif kind == "lock":
         call = body.call or {}
         if not (call.get("start") or {}).get("name"):
             raise HTTPException(422, "a start/sit share needs the player to start")

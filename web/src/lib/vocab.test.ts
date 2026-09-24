@@ -113,7 +113,7 @@ const ALL_COPY: string[] = [
   FILM.had, FILM.went, FILM.noHad, FILM.delta(4.2), FILM.delta(-3), ...Object.values(FILM.source), FILM.platformMark, FILM.sourceNote,
   FILM.why, FILM.whyAria("Drake Maye"), FILM.quiet, FILM.history.since(2025, 11), FILM.history.earliest(2025), FILM.history.rank(2, 5),
   ...Object.values(FILM.next), FILM.go, FILM.takeawayNone, FILM.noSwing, FILM.noInjuries, FILM.none, FILM.noneHead, FILM.lineByLine,
-  FILM.product, FILM.season, FILM.projector.aria, FILM.projector.skip, ...Object.values(FILM.parts), FILM.partsAria,
+  FILM.product, FILM.season, FILM.projector.aria, FILM.projector.skip, FILM.share.button, FILM.share.busy, FILM.share.copy, FILM.share.copied, FILM.share.copyFail, FILM.share.carried, FILM.share.pitch, FILM.share.title("GoldenPP", "Win", "130.1–116.1"), ...Object.values(FILM.parts), FILM.partsAria,
   FILM.league.head, FILM.league.locked, FILM.league.supers(3), ...Object.values(FILM.league.title), FILM.league.you,
   FILM.league.groups, FILM.league.groupsHint, FILM.league.team, FILM.league.expect, FILM.league.expectHint(1), FILM.league.expectHint(4),
   FILM.league.above, FILM.league.below, FILM.league.gauntlet, FILM.league.gauntletHint, FILM.league.perGame(121.4),

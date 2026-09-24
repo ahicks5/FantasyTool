@@ -5,6 +5,9 @@ import { AppShell } from "@/components/Shell";
 import { Cover, Story, WeekPicker } from "@/components/film/Replay";
 import { League } from "@/components/film/League";
 import { Projector } from "@/components/film/Projector";
+import { ShareFilm } from "@/components/film/ShareFilm";
+import { standout } from "@/lib/film";
+import type { FilmCover, FilmShare, WeekFilm } from "@/lib/types";
 import { Locked } from "@/components/Locked";
 import { Film } from "@/components/Film";
 import { Standings } from "@/components/Standings";
@@ -94,6 +97,17 @@ function LeagueSection({ c }: { c: Connection }) {
   return <League f={data.film} me={c.team_id} />;
 }
 
+/** What a film share carries: the cover, the team, and the man who carried the week. */
+function shareOf(cover: FilmCover, team: string, w?: WeekFilm): FilmShare {
+  const star = w ? standout(w) : null;
+  return {
+    result: cover.result, my_points: cover.my_points, their_points: cover.their_points,
+    opponent: cover.opponent, line: cover.line, team,
+    star: star ? { name: star.player.name, position: star.player.position, nfl_team: star.player.nfl_team ?? "FA",
+                   photo: null, team_logo: null, went: star.went } : null,
+  };
+}
+
 function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
   c: Connection;
   paid: boolean;
@@ -114,6 +128,7 @@ function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
     return (
       <div className="grid min-w-0 gap-3">
         {data.cover && <Cover cover={data.cover} week={data.cover.week ?? 0} />}
+        {data.cover && <ShareFilm film={shareOf(data.cover, c.team_name)} leagueName={c.league_name} week={data.cover.week ?? 0} />}
         <Locked
           signedIn={signedIn}
           sku="full_report"
@@ -135,6 +150,7 @@ function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
       <Projector cover={weeks[0].cover} leagueId={c.league_id} season={data.film!.season} week={weeks[0].week} />
       <WeekPicker weeks={weeks.map((x) => x.week)} value={w.week} onPick={setPick} />
       <Cover cover={w.cover} week={w.week} />
+      <ShareFilm key={`share-${w.week}`} film={shareOf(w.cover, c.team_name, w)} leagueName={c.league_name} week={w.week} />
       <Story key={w.week} w={w} />
     </div>
   );
