@@ -95,7 +95,7 @@ export function Pricing() {
       </ul>
 
       <div className="mt-6">
-        <LinkButton href="/connect" variant="start" className="w-full">
+        <LinkButton href="/register" variant="start" className="w-full">
           Take me upstairs
         </LinkButton>
         <p className="mt-2.5 text-center text-[12px] text-muted">

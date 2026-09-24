@@ -680,11 +680,28 @@ export const ACCOUNT = {
   forgot: "Forgot your password?",
   busySignIn: "Signing in\u2026",
   busyRegister: "Setting up\u2026",
-  /** What a page asks for when a visitor is not signed in. */
+  /** The door on /connect for a visitor with no account: the account comes first, the league second. */
   gate: {
-    title: "Sign in first",
-    body: "Free to look. Sign in to keep a league on file, so you never enter it twice.",
-    cta: "Sign in or create an account",
+    eyebrow: "Step 1 of 2 · Your account",
+    title: "Your account first.",
+    body: "Create an account, then link a league. It stays on file, so you never enter it twice.",
+    register: "Create account",
+    signIn: "I have one, sign me in",
+  },
+  /** The first thing a new account sees: it is set, and one thing is left. */
+  welcome: {
+    eyebrow: "Step 2 of 2 · Your league",
+    title: (name: string) => (name ? `You\u2019re in, ${name}.` : "You\u2019re in."),
+    body: "Your account is set. Link a league and the staff gets to work on this week.",
+    cta: "Link a league",
+  },
+  /** The empty room on every tab, for an account with nothing on file and for a stranger. */
+  room: {
+    signedOut: "Create an account, hook up a Sleeper or ESPN league, and",
+    signedIn: "Hook up a Sleeper or ESPN league and",
+    tail: "shows up here.",
+    register: "Create an account",
+    link: "Link a league",
   },
   /** The one line at the top of the popup saying why it opened. */
   reason: {

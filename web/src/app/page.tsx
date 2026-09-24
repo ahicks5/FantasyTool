@@ -58,14 +58,14 @@ const FEATURE_ART: Record<
 };
 
 /**
- * Every card, and the header pill, opens the connect page.
+ * Every card, and the header pill, opens the register page.
  *
  * They used to point at `/team`, `/waivers` and `/trade`, which is where the feature
- * lives once you have a league — and a cold visitor has no league, so the whole
- * landing page led into "The room's empty". One door, and it is the one that fills
- * the room.
+ * lives once you have a league, and then at `/connect`. A cold visitor has no account
+ * and no league, and the account comes first (Andrew, 2026-09-24): register, land on
+ * your account, then link the league. One door, and it is the first step.
  */
-const WAY_IN = "/connect";
+const WAY_IN = "/register";
 
 const STEPS = [
   { n: "1", title: "Hook up your league", body: "A Sleeper username or a league ID. No password, nothing to sign." },
@@ -158,7 +158,7 @@ export default function Landing() {
           offer, by Sunday. One line of why on every call, and the number under it.
         </p>
         <div className="mt-6 grid gap-2.5">
-          <LinkButton href="/connect" variant="start" className="w-full">
+          <LinkButton href={WAY_IN} variant="start" className="w-full">
             Open the Penthouse · free
           </LinkButton>
           <a

@@ -214,10 +214,11 @@ export function AppShell({
             <OnAir className="text-white/45" label="Off air" />
             <div className="display mt-3 text-[26px] leading-tight">The room&rsquo;s empty</div>
             <p className="mx-auto mb-6 mt-2 max-w-[17rem] text-[15px] leading-relaxed text-white/70">
-              Hook up a Sleeper or ESPN league and {gate} shows up here. Sign in once and it stays on file.
+              {session.signedIn ? ACCOUNT.room.signedIn : ACCOUNT.room.signedOut} {gate} {ACCOUNT.room.tail}
             </p>
-            <LinkButton href="/connect" variant="onHero" className="w-full">
-              Take me upstairs
+            {/* The account first, then the league: a stranger's door is /register. */}
+            <LinkButton href={session.signedIn ? "/connect" : "/register"} variant="onHero" className="w-full">
+              {session.signedIn ? ACCOUNT.room.link : ACCOUNT.room.register}
             </LinkButton>
           </div>
         )}

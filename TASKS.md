@@ -29,7 +29,12 @@ the store contract on both backends, `web/e2e/account.spec.ts`).
       running Render service still needs it set by hand) or `role = admin`. `/admin` lists every
       account with plan and leagues; grant/revoke passes, +1 league, promote/demote, reset link.
 - [x] **AC-6** Sign in before linking: `POST /api/connect` is 401 to a stranger; `/connect`
-      opens the sheet on arrival and at the save. Looking at a league stays free.
+      shows the door to an account in place of the league form and asks again at the save.
+      Looking at a league stays free.
+- [x] **AC-11** The account is step one (Andrew: "more about your account, then link a
+      league"). Landing, pricing and the share page lead to `/register`; a new account lands
+      on `/account` as a welcome with "Link a league" as the one door; the empty room on
+      every tab sends a stranger to `/register`. `web/e2e/account.spec.ts` walks it.
 - [x] **AC-7** Three leagues per account (`products.BASE_LEAGUES`), five with the bundle, plus
       one per `league_slot` ($2, `kind: add_on`, stacks by row). Over the cap: 402 with the slot
       and the bundle as the upsell; the connect page opens the slot sheet and saves again.

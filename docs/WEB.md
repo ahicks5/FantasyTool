@@ -286,9 +286,14 @@ root layout and hands every room two promises through `useAccountGate()`: `signI
 opens the sign-in sheet (sign in / create account / forgot, one `AuthForm`) and resolves true
 once the API has signed the visitor in; `upgrade(sku, {what, returnTo})` signs in first if it
 has to, then opens the upgrade sheet, which either grants on the spot (no Stripe key on the
-API: the sheet says "no card, no charge") or leaves for Checkout. `Locked` calls `upgrade`;
-`/connect` calls `signIn` on arrival and again at the save, and `upgrade("league_slot")` on a
-402 over the cap. `/account` and `/admin` ask on arrival and fall back to `/login?next=` when
+API: the sheet says "no card, no charge") or leaves for Checkout. `Locked` calls `upgrade`.
+**The account comes first** (Andrew, 2026-09-24): every door on the landing page, the pricing
+table and the share page is `/register`; a new account lands on `/account`, which opens as a
+welcome ("You're in, Andrew.") with one thing left, the league; `/connect` for a visitor with
+no account shows the door to one in place of the league form, with `?next=/connect` on both
+buttons, and calls `signIn` only at the save as a safety net, plus `upgrade("league_slot")` on
+a 402 over the cap. The empty room on every tab sends a stranger to `/register` and an
+account to `/connect`. `/account` and `/admin` ask on arrival and fall back to `/login?next=` when
 the sheet is dismissed. The sign-in check asks the API (`currentMe()`), never the token, so a
 dead token reads as signed out; the e2e suite relies on that to play a stranger by stripping
 the dev header at the network layer.

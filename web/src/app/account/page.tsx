@@ -8,7 +8,7 @@ import { useAccountGate } from "@/components/account/AccountGate";
 import { DoorFrame } from "@/components/account/Door";
 import { IconCheck, IconChevron } from "@/components/icons";
 import { Loading } from "@/components/Loading";
-import { Button, Card, ErrorBox, Eyebrow, LinkButton } from "@/components/ui";
+import { Button, Card, ErrorBox, Eyebrow, LinkButton, OnAir } from "@/components/ui";
 import { deleteMyAccount, exportMyData, forgetLeague, getLeague, getProducts, logout, markLeagueUsed } from "@/lib/api";
 import { leagueRoom, upgradesFor } from "@/lib/account";
 import { formatCents } from "@/lib/format";
@@ -130,16 +130,29 @@ function AccountBody() {
   const room = leagueRoom(me.leagues.length, me.leagues_allowed);
   const offers = upgradesFor(products, account);
   const current = session.connection;
+  const fresh = me.leagues.length === 0;
 
   return (
     <>
       <div className="pt-6 rise">
-        <Eyebrow>{ACCOUNT.eyebrow}</Eyebrow>
-        <h1 className="display mt-2 text-[34px] leading-[1.04]">{ACCOUNT.title}</h1>
+        <Eyebrow>{fresh ? ACCOUNT.welcome.eyebrow : ACCOUNT.eyebrow}</Eyebrow>
+        <h1 className="display mt-2 text-[34px] leading-[1.04]">{fresh ? ACCOUNT.welcome.title(account.name) : ACCOUNT.title}</h1>
       </div>
 
+      {/* A new account: it is set, and the one thing left is the league. The hero is the
+          door to it; everything about the account waits underneath. */}
+      {fresh && (
+        <div className="hero mt-6 p-6 rise rise-1" data-testid="welcome">
+          <OnAir className="text-white/45" label="Off air" />
+          <p className="mt-3 max-w-[20rem] text-[16px] leading-relaxed text-white/80">{ACCOUNT.welcome.body}</p>
+          <LinkButton href="/connect" variant="onHero" className="mt-5 w-full">
+            {ACCOUNT.welcome.cta}
+          </LinkButton>
+        </div>
+      )}
+
       {/* The plan flag: the one thing every view checks, said plainly at the top. */}
-      <Card className="mt-6 rise rise-1">
+      <Card className={`mt-6 rise ${fresh ? "rise-2" : "rise-1"}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <Eyebrow>{ACCOUNT.plan.eyebrow}</Eyebrow>
@@ -213,7 +226,7 @@ function AccountBody() {
                 <span className="tnum">{formatCents(products.find((p) => p.sku === "league_slot")?.price_cents ?? 200)}</span>
               </Button>
             </>
-          ) : (
+          ) : fresh ? null : (
             <LinkButton href="/connect" className="w-full">
               {ACCOUNT.leagues.add}
             </LinkButton>

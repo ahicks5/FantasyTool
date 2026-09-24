@@ -78,36 +78,36 @@ test.beforeEach(async ({ context, page }) => {
   page.setDefaultTimeout(15_000);
 });
 
-test("a stranger on /connect meets the sign-in sheet, creates an account, links a league, and the account shows it", async ({ context, page }) => {
+test("a stranger's door is the account: register, land on it, then link a league, and the account shows it", async ({ context, page }) => {
   await beAStranger(context);
   const email = freshEmail("owner");
-  await page.goto("/connect");
 
-  // The sheet is up before anything else, and says why.
-  const sheet = page.getByRole("dialog", { name: ACCOUNT.signIn });
-  await expect(sheet).toBeVisible();
-  await expect(sheet.getByText(ACCOUNT.reason.connect)).toBeVisible();
-  // Dismissed, the page keeps a card that reopens it; the form under it still works.
-  // The X in the header (the backdrop is also a close, but the panel sits over its centre).
-  await sheet.getByRole("button", { name: ACCOUNT.upgrade.close }).last().click();
-  await expect(sheet).toHaveCount(0);
+  // /connect with no account is the door to one, not a league form.
+  await page.goto("/connect");
   const gate = page.getByTestId("connect-gate");
   await expect(gate).toBeVisible();
-  await gate.getByRole("button", { name: ACCOUNT.signIn }).click();
-  const again = page.getByRole("dialog", { name: ACCOUNT.signIn });
-  await expect(again).toBeVisible();
+  await expect(gate.getByText(ACCOUNT.gate.title)).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Sleeper" })).toHaveCount(0);
 
-  // Create the account inside the sheet.
-  await again.getByRole("button", { name: ACCOUNT.register }).click();
-  const reg = page.getByRole("dialog", { name: ACCOUNT.register });
-  await expect(reg).toBeVisible();
-  await reg.getByLabel(ACCOUNT.name).fill("Andrew");
-  await reg.getByLabel(ACCOUNT.email).fill(email);
-  await reg.getByLabel(new RegExp(`^${ACCOUNT.password}`)).fill(PASSWORD);
-  await reg.getByRole("button", { name: ACCOUNT.register, exact: true }).click();
-  await expect(reg).toHaveCount(0);
-  await expect(gate).toHaveCount(0);
+  // The landing page leads to /register; create the account there.
+  await page.goto("/");
+  await page.locator('a[href="/register"]:visible').first().click();
+  await page.waitForURL("**/register");
+  await page.getByLabel(ACCOUNT.name).fill("Andrew");
+  await page.getByLabel(ACCOUNT.email).fill(email);
+  await page.getByLabel(new RegExp(`^${ACCOUNT.password}`)).fill(PASSWORD);
+  await page.getByRole("button", { name: ACCOUNT.register, exact: true }).click();
+
+  // A new account lands on its own page: you're in, one thing left.
+  await page.waitForURL("**/account");
   expect(await page.evaluate(() => localStorage.getItem("booth.session"))).toBeTruthy();
+  await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.welcome.title("Andrew") })).toBeVisible();
+  const welcome = page.getByTestId("welcome");
+  await expect(welcome).toBeVisible();
+  await expect(page.getByTestId("league-room")).toHaveText("0 of 3 leagues");
+  await welcome.getByRole("link", { name: ACCOUNT.welcome.cta }).click();
+  await page.waitForURL("**/connect");
+  await expect(gate).toHaveCount(0);
 
   // Link the fixture league the way a visitor does.
   await page.getByRole("radio", { name: "Sleeper" }).click();

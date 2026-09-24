@@ -380,7 +380,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
             </li>
           ))}
         </ul>
-        <LinkButton href="/connect" variant="start" className="mt-6 w-full">
+        <LinkButton href="/register" variant="start" className="mt-6 w-full">
           Take me upstairs · free
         </LinkButton>
         <p className="mt-3.5 text-[12px] font-bold text-muted">{LINES.tagline}</p>

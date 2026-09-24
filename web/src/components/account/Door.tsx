@@ -59,7 +59,9 @@ export function SignedInCard({ next }: { next: string }) {
 
 function LoginInner({ start }: { start: AuthMode }) {
   const router = useRouter();
-  const next = safeNext(useSearchParams().get("next"));
+  // A sign-in goes back upstairs; a new account lands on its own page first, where the
+  // one thing left is to link a league. `?next=` overrides both (the connect gate uses it).
+  const next = safeNext(useSearchParams().get("next"), start === "register" ? "/account" : "/home");
   const [mode, setMode] = useState<AuthMode>(start);
   const session = useSession();
   const title = mode === "register" ? ACCOUNT.register : mode === "forgot" ? ACCOUNT.reset.title : ACCOUNT.signIn;

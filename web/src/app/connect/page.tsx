@@ -1,6 +1,6 @@
 "use client";
 /** Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, two cookies. */
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { EspnAuthError, PaywallError, connect, getLeague, getSleeperLeagues } from "@/lib/api";
@@ -13,7 +13,7 @@ import { EspnAuthForm } from "@/components/EspnAuthForm";
 import { clearEspnAuth, useEspnAuth } from "@/lib/espnAuth";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck } from "@/components/icons";
-import { Button, Countdown, ErrorBox, Eyebrow, ThemeToggle, Wordmark } from "@/components/ui";
+import { Button, Countdown, ErrorBox, Eyebrow, LinkButton, ThemeToggle, Wordmark } from "@/components/ui";
 import { ACCOUNT, CONNECT, LINES } from "@/lib/vocab";
 
 const FIELD =
@@ -42,15 +42,9 @@ export default function ConnectPage() {
   const router = useRouter();
   const session = useSession();
   const gate = useAccountGate();
-  // Sign in before linking (Andrew, 2026-09-24). The sheet opens once the session is
-  // known; dismissed, the page stays with a card that reopens it, and the form under it
-  // still works for looking. Only the save at the end needs the account.
-  const asked = useRef(false);
-  useEffect(() => {
-    if (session.loading || session.signedIn || asked.current) return;
-    asked.current = true;
-    void gate.signIn("connect");
-  }, [session.loading, session.signedIn, gate]);
+  // The account comes first (Andrew, 2026-09-24): a visitor with no account gets the
+  // door to one in place of the league form, and comes back here once it exists. The
+  // sheet at the save is only a safety net for a token that dies mid-form.
   // Nothing is chosen on arrival. The page is a question, not a filled-in form, and every
   // field below is the answer to the platform button rather than something to scroll past.
   const [platform, setPlatform] = useState<Platform | null>(null);
@@ -188,18 +182,23 @@ export default function ConnectPage() {
 
       <main id="content">
 
-      {/* Not signed in: the sheet has already opened once; this is the way back to it. */}
-      {!session.loading && !session.signedIn && (
-        <div className="mt-2 flex items-center justify-between gap-3 rounded-[var(--radius-card)] border border-line-2 bg-paper px-4 py-3" data-testid="connect-gate">
-          <span className="min-w-0">
-            <span className="display block text-[15px] leading-tight">{ACCOUNT.gate.title}</span>
-            <span className="mt-0.5 block text-[12px] leading-snug text-muted">{ACCOUNT.gate.body}</span>
-          </span>
-          <Button size="sm" onClick={() => void gate.signIn("connect")} className="shrink-0">
-            {ACCOUNT.signIn}
-          </Button>
+      {/* No account yet: the door to one, and nothing about a league until it exists. */}
+      {!session.loading && !session.signedIn ? (
+        <div className="mt-4 rise" data-testid="connect-gate">
+          <Eyebrow>{ACCOUNT.gate.eyebrow}</Eyebrow>
+          <h1 className="display mt-2 text-[34px] leading-[1.04]">{ACCOUNT.gate.title}</h1>
+          <p className="mt-2 max-w-[22rem] text-[15px] leading-relaxed text-muted">{ACCOUNT.gate.body}</p>
+          <div className="mt-6 grid gap-2.5">
+            <LinkButton href="/register?next=%2Fconnect" variant="start" className="w-full">
+              {ACCOUNT.gate.register}
+            </LinkButton>
+            <LinkButton href="/login?next=%2Fconnect" variant="secondary" className="w-full">
+              {ACCOUNT.gate.signIn}
+            </LinkButton>
+          </div>
         </div>
-      )}
+      ) : session.loading ? null : (
+      <>
 
       {/* Two steps, and the bar says which one you are on without reading anything. */}
       <div className="mt-2 flex items-center gap-2">
@@ -438,6 +437,8 @@ export default function ConnectPage() {
             </Button>
           </div>
         </section>
+      )}
+      </>
       )}
       </main>
     </div>

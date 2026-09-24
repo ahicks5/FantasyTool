@@ -231,6 +231,11 @@ test("the account's words are the staff at the door: sign in, create, no magic l
     assert.doesNotMatch(line, /magic link|Supabase/i, `${line}: sign-in is an email and a password now`);
   }
   assert.match(ACCOUNT.registerLead, /three leagues/, "the cap is said where the account is made");
+  // The order of the door: the account is step 1, the league is step 2 (Andrew, 2026-09-24).
+  assert.match(ACCOUNT.gate.eyebrow, /^Step 1/);
+  assert.match(ACCOUNT.welcome.eyebrow, /^Step 2/);
+  assert.equal(ACCOUNT.welcome.title("Andrew"), "You\u2019re in, Andrew.");
+  assert.equal(ACCOUNT.welcome.title(""), "You\u2019re in.");
   assert.equal(ACCOUNT.plan.free, "Free");
   assert.equal(ACCOUNT.plan.premium, "Premium");
   assert.equal(ACCOUNT.admin.leagues(2, 3), "2 of 3 leagues");

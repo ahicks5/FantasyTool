@@ -156,7 +156,8 @@ const PAGES: PageCase[] = [
       // pill is deliberately hidden below 512px -- so the first match became an invisible
       // one and this went red while the page was fine. Ask the real question instead: at
       // this width, is there a way in that a thumb can actually reach?
-      await expect(page.locator('a[href="/connect"]:visible').first()).toBeVisible();
+      // The door is the account now (2026-09-24): register first, then the league.
+      await expect(page.locator('a[href="/register"]:visible').first()).toBeVisible();
     },
   },
   {
