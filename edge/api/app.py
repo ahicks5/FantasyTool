@@ -723,13 +723,16 @@ def _film_context(email: str | None, platform: str, league_id: str, b, t, weeks,
         rows_frozen = frozen.load(league.season, w.week)
         if ids:
             ctx.projected[w.week] = service.past_projections(league, w.week, recorded.get(w.week), ids=ids,
-                                                             frozen_rows=rows_frozen or [])
+                                                             frozen_rows=rows_frozen or [],
+                                                             platform_own=w.projected)
         pregame = service.pregame_status(league.season, w.week, rows_frozen)
         if pregame is not None:
             ctx.pregame[w.week] = pregame
         ctx.results[w.week] = service.week_results(league.season, w.week)
     try:
         ctx.log = service.stat_log(league.season, league.week - 1)
+        if platform == "espn":
+            ctx.log = service.log_for_platform_ids(ctx.log, over)
     except Exception:  # noqa: BLE001
         ctx.log = {}
     # Next week's reads, from the engines that own them (SPEC-FILM §5: never computed here).
@@ -813,9 +816,11 @@ def film_league(platform: str, league_id: str, email: str | None = Depends(optio
     for w in over:
         ids = {pid for t in w.teams.values() for pid in t.starters if pid and pid != "0"}
         if ids:
-            projected[w.week] = service.past_projections(league, w.week, ids=ids)
+            projected[w.week] = service.past_projections(league, w.week, ids=ids, platform_own=w.projected)
     try:
         log = service.stat_log(league.season, league.week - 1)
+        if platform == "espn":
+            log = service.log_for_platform_ids(log, over)
     except Exception:  # noqa: BLE001
         log = {}
     this_season = [t for t in b.transactions if str(t.get("league_id")) == str(league.id)]

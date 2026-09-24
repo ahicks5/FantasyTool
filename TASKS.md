@@ -1126,7 +1126,10 @@ build order in §8.
 - [x] **F-6** The ledger (2026-09-24): trades and pickups on points scored for the new team
       while rostered; drops counted wherever they went; ranked after two weeks; picks named.
 - [x] **F-7** The playoff picture (2026-09-24): seeds, the line, games clear/back, weeks left.
-- [ ] **F-8** ESPN boxscores so ESPN readers get the line-by-line.
+- [x] **F-8** ESPN line-by-line (2026-09-24): `espn_api.boxscore` per finished week, cached for
+      good, mapped in `service._espn_boxscore_week`; ESPN's own stored projection is the
+      week's platform number; the stat log is re-keyed to ESPN ids by name. Fixture: league
+      521131 week 1, recorded by `scripts/record_espn_boxscore.py`; `tests/test_espn_film.py`.
 - [x] **F-9** The projector (2026-09-24): `components/film/Projector.tsx`, timeline in
       `lib/projector.ts`. Leader 3-2-1 with a sweep, a shutter flicker, the result, the page.
       Once per graded week per browser (`booth.film.<league>.<season>.<week>`), never over the
@@ -1143,11 +1146,12 @@ build order in §8.
   projections fall through freeze → runs → Sleeper's stored number, tagged by source.
   The backend may change, so `film.py` never calls a data module. Older seasons later.
 
-### Next session: F-8 (ESPN boxscores)
+### The film is built (F-1 to F-10). What would come next
 
-Fetch `mBoxscore` per finished week in `edge/data/espn_api.py`, map it into `PlayedWeek`
-starters and bench, cache forever; then ESPN readers get the whole replay and ledger. Needs a
-recorded fixture of one ESPN week.
+- F-7 v2: playoff odds, simulated from ROS values (a projection, labelled as one).
+- Divisions and non-points tiebreaks in the playoff picture (map each platform's setting).
+- Photos on the film share card's star (the replay's attribution carries no photo today).
+- ESPN pregame tags: the freeze is keyed by Sleeper id; re-key it like the stat log.
 
 ### Decisions for Andrew (film, after F-1 to F-4)
 

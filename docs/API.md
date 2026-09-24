@@ -562,10 +562,11 @@ Things a caller has to handle, none of which are error states:
   week is recoverable after the fact, so the only honest source is what we recorded at the
   time — and nothing currently logs a lineup, so there is almost nothing to read back.
   Build the "no record" state as the primary one.
-- **`starters` and `bench` are empty on ESPN, and `best_possible` is null.** ESPN gives the
-  scoreline for every past week in one call, but who was started and what each player scored
-  sits behind its `mBoxscore` view, one week at a time, which `edge/data/espn_api.py` does
-  not fetch. Real weeks, no line-by-line.
+- **ESPN is line-by-line now (SPEC-FILM F-8).** The scoreline comes from `mMatchup` in one
+  call; each finished week's lineup, per-player points and ESPN's own stored projection come
+  from `espn_api.boxscore` (`mBoxscore`), one request a week, cached for good. A week whose
+  boxscore fails falls back to the scoreline alone: `starters` and `bench` empty and
+  `best_possible` null, never a lineup rebuilt from today's roster.
 - `weeks` is newest first and holds played weeks only. `won` is `my > theirs`, so a tie
   reads `false`; `null` is reserved for a week with no opponent on record.
 - `bench` is worst miss first, and a bench player only counts against slots he was eligible
@@ -625,8 +626,11 @@ What a caller has to handle:
   played, and only on the newest week. `href` is the tab that acts on it; null for `hold`.
 - **`swing.line`** is always set when there was an opponent, including "No swing: you were
   outscored by 12.4". `control` says whether it was outside his hands or his decision.
-- **`line_by_line: false`** is ESPN until F-8: a real scoreline, `attributions: []`,
-  `lineup: null`, and nothing invented to fill them.
+- **`line_by_line: false`** is a week the platform gave a scoreline for and nobody's points
+  (an ESPN week whose boxscore failed): `attributions: []`, `lineup: null`, nothing invented.
+  On ESPN, `source: "platform"` is ESPN's own stored projection for that week, and the
+  reasons read the stat log through a name match to Sleeper ids (most men match; a man who
+  does not simply gets no reasons).
 - **Nothing here scores Penthouse.** No hit rate, no summed points-gained, no "right N% of
   the time" (CLAUDE.md), and `tests/test_film.py` fails if one appears.
 

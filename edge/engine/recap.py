@@ -54,6 +54,9 @@ class PlayedWeek:
     opponents: dict[str, str | None] = field(default_factory=dict)   # team_id -> opposing team_id
     teams: dict[str, Team] = field(default_factory=dict)             # roster + starters, frozen at that week
     player_points: dict[str, dict[str, float]] = field(default_factory=dict)  # team_id -> {player_id: points}
+    # The platform's own stored projection for the week, where it keeps one (ESPN does, in
+    # the league's scoring): {player_id: points}. The film's third source for that platform.
+    projected: dict[str, float] = field(default_factory=dict)
 
     @property
     def played(self) -> bool:

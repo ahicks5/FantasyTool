@@ -299,7 +299,7 @@ the cover). Growth loop stays free.
 | 2 | ~~F-3~~, ~~F-4~~ | **Shipped 2026-09-23.** The replay is the product. Ship it Sleeper-first behind the paywall with a free cover. |
 | 3 | ~~F-5, F-6, F-7~~ **Shipped 2026-09-24.** | The league and the ledger: the comparisons and the charts. |
 | 4 | ~~F-9, F-10~~ | **Shipped 2026-09-24.** The projector and the Tuesday habit. |
-| 5 | F-8 | ESPN catches up. |
+| 5 | ~~F-8~~ **Shipped 2026-09-24.** | ESPN catches up. |
 
 Every session ends with the five gates green, `TASKS.md` current and this file's table
 updated with what shipped.
