@@ -495,9 +495,27 @@ def owners_desk(platform: str, league_id: str, team_id: str, email: str | None =
     feed = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats,
                              trending=b.trending, profiles=b.profiles, matchups_raw=b.matchups,
                              last_week=_last_week(email, platform, league_id, b, t, auth))
-    out = desk.build(t, feed, ents, league=b.league, ros=b.ros, matchups_raw=b.matchups)
+    out = desk.build(t, feed, ents, league=b.league, ros=b.ros, matchups_raw=b.matchups,
+                     film_cover=_film_cover(platform, league_id, b, t, auth))
     out["synced_at"] = b.loaded_at
     return out
+
+
+def _film_cover(platform: str, league_id: str, b, t, auth) -> dict | None:
+    """The replay's cover for the newest finished week, for the desk's film notebook.
+
+    Free, like the cover on /report. One finished week is fetched (cached for good once
+    over), not the season, because this is the front page. Additive: a history that fails
+    upstream costs the notebook its line, never the desk.
+    """
+    from edge.data.scoring import score
+    from edge.engine import film
+    try:
+        weeks = service.played_weeks(platform, league_id, b, auth=auth, only_latest=True)
+        ctx = film.Context(league=b.league, score=lambda stats: score(stats, b.league.scoring), weeks=weeks)
+        return film.build(ctx, t.id)["cover"]
+    except Exception:  # noqa: BLE001
+        return None
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/desk/plan/{kind}/{mine_id}/{about_id}")

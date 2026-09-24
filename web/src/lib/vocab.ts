@@ -277,6 +277,11 @@ export const DESK = {
       const line = result !== null && opp !== null ? `${result} ${score.toFixed(0)}–${opp.toFixed(0)} · ` : "";
       return `${line}${hits} of ${total} call${total === 1 ? "" : "s"} hit`;
     },
+    /** The film's cover line from the replay, for a week with no recorded call. */
+    filmCover: (result: string | null, score: number, opp: number | null, line: string | null) => {
+      const head = result !== null && opp !== null ? `${result} ${score.toFixed(0)}–${opp.toFixed(0)}` : "";
+      return [head, line].filter(Boolean).join(" · ");
+    },
     /** The film's cover line before a week has been graded. */
     filmNone: "No week graded yet",
   },
@@ -1223,6 +1228,8 @@ export const FILM = {
   lineByLine: "This platform sends the scoreline but not who scored it, so the line-by-line is not here yet.",
   product: "The replay: every week, told",
   season: "Week by week",
+  /** The projector: the film's opening, once per graded week. */
+  projector: { aria: "The film is rolling", skip: "Tap to skip" },
   /** The jump bar under the title: the three parts of the one scroll. */
   parts: { replay: "Replay", league: "League", season: "Season" },
   partsAria: "Jump to a part of the film",

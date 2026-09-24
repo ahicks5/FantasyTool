@@ -10,8 +10,8 @@
  * A card is left out rather than drawn empty. A week with no flop has no "let you down"
  * card, and an ESPN week with a scoreline and no players is the game and nothing else.
  */
-import type { FilmAttribution, FilmHistory, WeekFilm } from "./types";
-import { FILM } from "./vocab.ts";
+import type { Film, FilmAttribution, FilmHistory, WeekFilm } from "./types";
+import { DESK, FILM } from "./vocab.ts";
 
 export type CardKey = keyof typeof FILM.card;
 
@@ -77,4 +77,14 @@ export function verdictTone(v: FilmAttribution["verdict"]): "good" | "bad" | nul
   if (v === "went_off") return "good";
   if (v === "flopped" || v === "hurt_pregame" || v === "hurt_in_game" || v === "did_not_play") return "bad";
   return null;
+}
+
+/**
+ * The film notebook's line on the desk and in the ride: last week's result and how the
+ * calls landed when we recorded any, else the replay's own cover line.
+ */
+export function notebookLine(f: Film | null | undefined): string {
+  if (!f) return DESK.notebooks.filmNone;
+  if (f.hits !== null && f.total !== null) return DESK.notebooks.film(f.result, f.score, f.opp_score, f.hits, f.total);
+  return DESK.notebooks.filmCover(f.result, f.score, f.opp_score, f.line);
 }

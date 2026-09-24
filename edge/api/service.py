@@ -209,7 +209,8 @@ def _espn_played_weeks(raw: dict) -> list[recap_mod.PlayedWeek]:
     return [pw for _, pw in sorted(by_week.items())]
 
 
-def played_weeks(platform: str, league_id: str, b: Bundle, auth=None) -> list[recap_mod.PlayedWeek]:
+def played_weeks(platform: str, league_id: str, b: Bundle, auth=None,
+                 only_latest: bool = False) -> list[recap_mod.PlayedWeek]:
     """Every week of this season that has actually been played, oldest first.
 
     On Sleeper this is one request per week — the only way the platform will give up a past
@@ -233,7 +234,9 @@ def played_weeks(platform: str, league_id: str, b: Bundle, auth=None) -> list[re
         return []
     out: list[recap_mod.PlayedWeek] = []
     players_raw: dict | None = None
-    for week in range(1, int(b.league.week) + 1):
+    # `only_latest` is the desk's cover line: one request for last week, not a season.
+    first = max(1, int(b.league.week) - 1) if only_latest else 1
+    for week in range(first, int(b.league.week) + 1):
         key = (platform, league_id, week)
         pw = _played.get(key)
         if pw is None:

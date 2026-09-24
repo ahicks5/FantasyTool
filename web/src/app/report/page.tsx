@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { Cover, Story, WeekPicker } from "@/components/film/Replay";
 import { League } from "@/components/film/League";
+import { Projector } from "@/components/film/Projector";
 import { Locked } from "@/components/Locked";
 import { Film } from "@/components/Film";
 import { Standings } from "@/components/Standings";
@@ -130,6 +131,8 @@ function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
   const w = weeks.find((x) => x.week === pick) ?? weeks[0];
   return (
     <div className="grid min-w-0 gap-3">
+      {/* The newest week gets the showing, whichever week the picker is on. */}
+      <Projector cover={weeks[0].cover} leagueId={c.league_id} season={data.film!.season} week={weeks[0].week} />
       <WeekPicker weeks={weeks.map((x) => x.week)} value={w.week} onPick={setPick} />
       <Cover cover={w.cover} week={w.week} />
       <Story key={w.week} w={w} />

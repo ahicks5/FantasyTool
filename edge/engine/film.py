@@ -648,6 +648,7 @@ def build(ctx: Context, team_id: str, weeks: Iterable[PlayedWeek] | None = None)
     return {
         "team": team.name if team else team_id,
         "league": league.name,
+        "season": league.season,
         "cover": films[0]["cover"] | {"week": films[0]["week"]} if films else None,
         "weeks": films,
         "algo_version": ALGO_VERSION,

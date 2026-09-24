@@ -524,6 +524,8 @@ export interface WeekFilm {
 export interface FilmSeason {
   team: string;
   league: string;
+  /** The NFL season, for keys that must not repeat next year (the projector's). */
+  season: number;
   /** The newest week's cover, with its week. Null before any week is over. */
   cover: FilmCover | null;
   /** Newest first. Only weeks that are over. */
@@ -973,8 +975,13 @@ export interface Film {
   result: "W" | "L" | "T" | null;
   score: number;
   opp_score: number | null;
-  hits: number;
-  total: number;
+  /** Null when we recorded no call for this reader that week: the cover line stands alone. */
+  hits: number | null;
+  total: number | null;
+  /** The replay's cover line for that week, or null when the scoreline is the cover. */
+  line: string | null;
+  /** Keys the notebook's "not yet opened" light, with the league and the week. */
+  season: number | null;
 }
 
 /** Three numbers on the desk's nameplate. `ppg` is null before a game has been played. */

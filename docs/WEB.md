@@ -266,6 +266,12 @@ letter printed. Team names go through a `teamLabel()` string, player names throu
 - **Every number and every player sentence is the engine's.** A projection whose `source`
   is `platform` wears a small `*` and the starters card carries the "as Sleeper has it now"
   note. A starter row's name opens his page; the rest of the row opens his reasons.
+- **The projector** (`film/Projector.tsx`, `lib/projector.ts`) opens the replay once per
+  graded week per browser (`booth.film.<league>.<season>.<week>`, cleared by `?ride=1`),
+  never over the day's ride; `?film=1` replays it. The e2e harness seeds week 1 as seen.
+- **The desk's film notebook** shows the replay's cover line when no call was recorded
+  (`lib/film.notebookLine`, shared with the ride's third page) and lights until that week's
+  projector key is set.
 - **The demo build shows no replay**, the same rule as the recap: `getFilm` in mock mode
   returns the empty film. `mocks.FILM` exists only to pin the type.
 - **The fixture server serves the Megalabowl's real week 1** (`replay_week1/megalabowl`)

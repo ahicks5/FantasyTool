@@ -122,6 +122,9 @@ test.beforeEach(async ({ context, page }) => {
         window.localStorage.setItem("booth.scout", "1");
         // Same for the GM's call on /trade; its own test asks with ?call=1.
         window.localStorage.setItem("booth.call", "1");
+        // And the film's projector for the one graded week the fixtures carry; its own
+        // test asks with ?film=1. Must match `filmKey` in web/src/lib/storage.ts.
+        window.localStorage.setItem("booth.film.1403186749361901568.2026.1", "1");
       } catch {
         /* blocked storage: the test will fail on content instead */
       }
@@ -706,10 +709,13 @@ test("the desk: three stories on top, hardest first, the matchup, four notebooks
   await expect(lit.first()).toBeVisible();
   await expect(lit.first().locator(".notebook-badge")).toHaveText(/^\d+$/);
   // Every cover carries a line off the top of what is inside; a lit, bought one has the face
-  // on it. The film's line is last week's, and the recorded league has no graded week.
+  // on it. The film's line is the replay's cover for the league's one played week (week 1),
+  // which this reader lost with no line kinder than the score.
   for (let i = 0; i < 4; i++) await expect(notebooks.nth(i).locator(".notebook-line")).not.toBeEmpty();
   await expect(lit.first().locator(".notebook-face")).toHaveCount(1);
-  await expect(desk.locator(`a.notebook[href="${SECTIONS.report.href}"] .notebook-line`)).toHaveText(DESK.notebooks.filmNone);
+  await expect(desk.locator(`a.notebook[href="${SECTIONS.report.href}"] .notebook-line`)).toHaveText(
+    DESK.notebooks.filmCover("L", 116.3, 146.64, null),
+  );
   // The rings are whole: none is cut off at the notebook's edge.
   await assertNoHorizontalOverflow(page);
   await notebooks.first().click();
@@ -831,4 +837,14 @@ test("the jump bar lands on the league, where your team is marked and the playof
   await expect(playoffs.getByText(FILM.league.you)).toBeVisible();
   await expect(playoffs.locator(".lg-seed")).toHaveCount(12);
   await assertNoHorizontalOverflow(page);
+});
+
+
+test("the projector rolls the week once when asked, and a tap skips it", async ({ page }) => {
+  await visit(page, "/report?film=1");
+  const room = page.getByRole("dialog", { name: FILM.projector.aria });
+  await expect(room).toBeVisible();
+  await room.click();
+  await expect(room).toHaveCount(0);
+  await expect(page.getByRole("region", { name: FILM.story })).toBeVisible();
 });

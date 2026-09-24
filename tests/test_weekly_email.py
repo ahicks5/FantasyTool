@@ -233,3 +233,39 @@ def test_a_worthless_pickup_is_described_in_words_not_zeroes(league, ros_byes):
         plan = waiver_plan.build(league, t, ros, byes)
         if plan.hold_reason:
             assert "0.00 points" not in plan.hold_reason
+
+
+# ---------------------------------------------------------------- the film leads (SPEC-FILM F-10)
+
+COVER = {"week": 1, "line": "Your best score of the season", "result": "W", "my_points": 130.08,
+         "their_points": 116.08, "opponent": "2KSports"}
+SUPERS = [{"kind": "most_left", "team": {"id": "5", "name": "GoldenPP"}, "value": 25.8, "line": "Left 25.8 on the bench"},
+          {"kind": "top_score", "team": {"id": "5", "name": "GoldenPP"}, "value": 130.08, "line": "130.1, the most in the league"},
+          {"kind": "luckiest", "team": {"id": "7", "name": "Other"}, "value": 99.0, "line": "Won with 99.0"}]
+
+
+def test_last_weeks_film_leads_the_preview_and_the_body(league, ros_byes):
+    feed = _feed(league, league.teams[0], {"my_team"}, ros_byes)
+    film = em.film_lead(COVER, SUPERS, "5", full_report=False)
+    mail = em.build(feed, base_url="https://edge.example", film=film)
+    assert mail["preheader"].startswith("Last week: W 130-116. Your best score of the season.")
+    visible = em.visible_text(mail["html"])
+    assert "Your best score of the season" in visible and "Watch the replay" in visible
+    if "Matchup" in visible:
+        assert visible.index("The film") < visible.index("Matchup"), "last week leads, the week ahead follows"
+    assert "https://edge.example/report" in mail["text"]
+
+
+def test_a_free_reader_never_gets_the_paid_superlative(league, ros_byes):
+    feed = _feed(league, league.teams[0], {"my_team"}, ros_byes)
+    free = em.build(feed, film=em.film_lead(COVER, SUPERS, "5", full_report=False))
+    assert "the most in the league" not in em.visible_text(free["html"]) + free["text"]
+    paid = em.build(feed, film=em.film_lead(COVER, SUPERS, "5", full_report=True))
+    assert "Top score: 130.1, the most in the league" in paid["text"], "the headline title wins, not the joke"
+
+
+def test_no_finished_week_leaves_the_email_as_it_was(league, ros_byes):
+    feed = _feed(league, league.teams[0], {"my_team"}, ros_byes)
+    assert em.film_lead(None, SUPERS, "5", True) is None
+    assert em.build(feed) == em.build(feed, film=None)
+    assert "The film" not in em.visible_text(em.render_html(feed))

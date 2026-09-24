@@ -295,7 +295,7 @@ export interface FilmRead {
 
 export async function getFilm(platform: Platform, leagueId: string, teamId: string): Promise<FilmRead> {
   if (USE_MOCKS) {
-    const film = { team: teamId, league: mocks.LEAGUE.name, cover: null, weeks: [], algo_version: mocks.FILM.algo_version };
+    const film = { team: teamId, league: mocks.LEAGUE.name, season: mocks.FILM.season, cover: null, weeks: [], algo_version: mocks.FILM.algo_version };
     return { locked: false, cover: null, film };
   }
   try {

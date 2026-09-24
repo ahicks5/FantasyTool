@@ -123,8 +123,17 @@ def test_the_film_line_is_the_recaps_one_line_and_never_its_detail(league):
     landed = {"week": 1, "result": "W", "score": 127.78, "opp_score": 101.4, "hits": 2, "total": 3,
               "calls": [{"start": {"id": "1"}, "sit": {"id": "2"}, "hit": True, "margin": 5.0, "projected": None}],
               "algo_version": "x"}
-    assert desk.film(landed) == {"week": 1, "result": "W", "score": 127.78, "opp_score": 101.4, "hits": 2, "total": 3}
+    assert desk.film(landed) == {"week": 1, "result": "W", "score": 127.78, "opp_score": 101.4, "hits": 2, "total": 3,
+                                 "line": None, "season": None}
     assert desk.film(None) is None
+    # The replay's cover rides along, and stands on its own for a reader with no recorded call.
+    cover = {"week": 1, "line": "Your best score of the season", "result": "W", "my_points": 127.78,
+             "their_points": 101.4, "opponent": "Trent"}
+    assert desk.film(landed, cover, 2026)["line"] == "Your best score of the season"
+    assert desk.film(None, cover, 2026) == {"week": 1, "result": "W", "score": 127.78, "opp_score": 101.4,
+                                            "hits": None, "total": None, "line": "Your best score of the season",
+                                            "season": 2026}
+    assert desk.film(landed, {**cover, "week": 2}, 2026)["line"] is None, "another week's line is not this one's"
     fx = json.loads((FIX / "sleeper/depth_charts.json").read_text())
     charts = boil(fx["players"])
     d = desk.build(league.teams[0], {"actions": [], "last_week": landed}, {"my_team"}, charts=charts, clock_ms=fx["recorded_at"])

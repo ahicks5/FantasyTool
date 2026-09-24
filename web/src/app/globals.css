@@ -2940,3 +2940,38 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
 .film-parts a { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 999px;
   border: 1px solid var(--color-line); font-size: 12px; font-weight: 800; color: var(--color-muted); background: var(--color-paper); }
 .film-anchor { scroll-margin-top: 110px; }
+
+/* ------------------------------------------------------------------ the projector ---
+   components/film/Projector.tsx. Dark in both themes, like the ride and the call. The
+   flicker is `steps()`, a projector's shutter rather than a fade.                     */
+
+.proj {
+  position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: #050506; color: #f4f3f0; transition: opacity var(--proj-land) ease;
+}
+.proj[data-phase="land"] { opacity: 0; }
+.proj-leader { position: relative; width: 210px; height: 210px; border-radius: 999px; overflow: hidden;
+  background: #2a2c31; box-shadow: 0 0 0 6px #f4f3f0, 0 0 0 10px #050506, 0 0 0 12px rgb(244 243 240 / 0.4); }
+.proj-sweep { position: absolute; inset: 0;
+  background: conic-gradient(from 0deg, rgb(244 243 240 / 0.28) 0deg var(--turn), transparent var(--turn) 360deg); }
+.proj-cross { position: absolute; inset: 0;
+  background: linear-gradient(transparent calc(50% - 1px), rgb(244 243 240 / 0.5) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+              linear-gradient(90deg, transparent calc(50% - 1px), rgb(244 243 240 / 0.5) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)); }
+.proj-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display, inherit); font-size: 120px; font-weight: 900; line-height: 1; }
+.proj[data-phase="flicker"] { animation: proj-flicker 320ms steps(1, end) both; }
+@keyframes proj-flicker { 0% { background: #f4f3f0; } 25% { background: #050506; } 50% { background: #f4f3f0; } 75% { background: #1b1d21; } 100% { background: #050506; } }
+.proj-screen { max-width: 320px; padding: 0 20px; text-align: center; animation: proj-rise 500ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+@keyframes proj-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.proj-eyebrow { font-size: 11px; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; color: rgb(244 243 240 / 0.55); }
+.proj-result { margin-top: 14px; font-size: 22px; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; }
+.proj-win { color: #22a468; }
+.proj-loss { color: #e2554e; }
+.proj-score { margin-top: 6px; font-family: var(--font-display, inherit); font-size: clamp(32px, 11vw, 52px); font-weight: 900; line-height: 1; white-space: nowrap; }
+.proj-opp { margin-top: 8px; font-size: 15px; font-weight: 700; color: rgb(244 243 240 / 0.7); }
+.proj-line { margin-top: 18px; font-size: 16px; font-weight: 800; line-height: 1.35; }
+.proj-hint { position: absolute; bottom: 36px; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgb(244 243 240 / 0.4); }
+@media (prefers-reduced-motion: reduce) {
+  .proj-screen { animation: none; }
+  .proj[data-phase="flicker"] { animation: none; }
+}

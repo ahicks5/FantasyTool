@@ -1,12 +1,13 @@
 "use client";
 /** The owner's desk: the front page. Three stories, this week's matchup, and the staff's notebooks. */
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Avatar } from "./Avatar";
 import { IconArrowUp, IconChevron, IconMark } from "./icons";
 import { PlayerName } from "./Players";
-import type { Connection } from "@/lib/storage";
+import { filmKey, loadFilmSeen, type Connection } from "@/lib/storage";
 import { newsHeadline } from "@/lib/ticker.ts";
+import { notebookLine } from "@/lib/film";
 import type { Binder, Desk, DeskStanding, Film, Matchup, NewsItem, NewsSeverity, Player } from "@/lib/types";
 import { DESK, SECTIONS } from "@/lib/vocab";
 
@@ -329,14 +330,21 @@ function coverLine(b: Binder | undefined): string {
   return b.top_benefit ? DESK.notebooks.best(b.top_benefit) : DESK.notebooks.lit(b.count);
 }
 
-/** The film's cover line: last week's result and how the calls landed. */
-function filmLine(f: Film | null | undefined): string {
-  return f ? DESK.notebooks.film(f.result, f.score, f.opp_score, f.hits, f.total) : DESK.notebooks.filmNone;
+/** One to look at until this week's replay has been opened (the projector's own key). */
+function useFilmUnseen(f: Film | null | undefined, leagueId: string): number {
+  const [unseen, setUnseen] = useState(0);
+  useEffect(() => {
+    if (!f || f.season === null) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read once from storage the server cannot see
+    setUnseen(loadFilmSeen(filmKey(leagueId, f.season, f.week)) ? 0 : 1);
+  }, [f, leagueId]);
+  return unseen;
 }
 
 export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; animate: boolean }) {
   const byKey = Object.fromEntries(desk.binders.map((b) => [b.key, b])) as Record<Binder["key"], Binder>;
   const staff = (["team", "waivers", "trade"] as const).map((k) => ({ key: k, b: byKey[k] }));
+  const filmUnseen = useFilmUnseen(desk.film, c.league_id);
   return (
     <section className="desk" aria-label={DESK.aria}>
       {/* The nameplate on the far edge, read from the chair, and under it the three
@@ -396,7 +404,8 @@ export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; anim
             href={SECTIONS.report.href}
             title={DESK.notebooks.report.title}
             from={DESK.notebooks.report.from}
-            line={filmLine(desk.film)}
+            line={notebookLine(desk.film)}
+            count={filmUnseen}
             animate={animate}
             delay={5}
           />

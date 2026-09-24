@@ -94,6 +94,27 @@ def cmd_card(args):
     print(text)
 
 
+def _email_film(args, b, team, ents):
+    """Last week's replay cover for the email, and this team's superlative with the Full
+    Report. Additive: a history that fails upstream sends the email without it."""
+    from edge.api import service
+    from edge.data.scoring import score
+    from edge.delivery import weekly_email
+    from edge.engine import film, league_film
+    try:
+        weeks = service.played_weeks(args.platform, args.league_id, b)
+        cover = film.build(film.Context(league=b.league, score=lambda s: score(s, b.league.scoring), weeks=weeks),
+                           team.id)["cover"]
+        supers = []
+        if "full_report" in ents:
+            ctx = league_film.LeagueContext(league=b.league, weeks=weeks)
+            over = [w for w in weeks if w.week < b.league.week and w.played]
+            supers = league_film.superlatives(ctx, max(over, key=lambda w: w.week)) if over else []
+        return weekly_email.film_lead(cover, supers, team.id, "full_report" in ents)
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def cmd_email(args):
     """Render the weekly email for a team. Writes files; sending is a separate concern."""
     from pathlib import Path
@@ -110,7 +131,7 @@ def cmd_email(args):
     ents = set(args.features.split(",")) if args.features else {"my_team", "waivers", "trade_lab", "full_report"}
     feed = actions.build(b.league, team, b.ros, b.byes, ents, bid_stats=b.bid_stats,
                          trending=b.trending, profiles=b.profiles, matchups_raw=b.matchups)
-    mail = weekly_email.build(feed, base_url=args.base_url)
+    mail = weekly_email.build(feed, base_url=args.base_url, film=_email_film(args, b, team, ents))
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "weekly.html").write_text(mail["html"])

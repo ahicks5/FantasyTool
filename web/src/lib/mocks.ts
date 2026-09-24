@@ -1559,7 +1559,7 @@ export function deskFor(teamId: string, entitlements: Feature[]): Desk {
          { matchup_id: 2, teams: [{ id: "4", name: "FxxxKroenke", proj: 121.4, points: null }, { id: "3", name: "HusH", proj: 109.7, points: null }] }]
       : [],
     film: feed.last_week
-      ? { week: feed.last_week.week, result: feed.last_week.result, score: feed.last_week.score, opp_score: feed.last_week.opp_score, hits: feed.last_week.hits, total: feed.last_week.total }
+      ? { week: feed.last_week.week, result: feed.last_week.result, score: feed.last_week.score, opp_score: feed.last_week.opp_score, hits: feed.last_week.hits, total: feed.last_week.total, line: null, season: null }
       : null,
     entitlements, synced_at: feed.synced_at,
   };
@@ -1614,6 +1614,7 @@ export function planFor(teamId: string, kind: string, mineId: string, aboutId: s
 export const FILM: FilmSeason = {
   team: "GoldenPP",
   league: "The Megalabowl",
+  season: 2026,
   cover: { week: 1, line: "You'd have beaten 9 of 11 teams this week", result: "L", my_points: 128.4,
            their_points: 131.2, opponent: "TrentDuckworth" },
   weeks: [
