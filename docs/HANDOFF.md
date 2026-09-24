@@ -18,11 +18,42 @@ dark by default — with every screen rebuilt around that, deployed and live.
 | Web | https://fantasy-tool-alpha.vercel.app (Vercel, Root Directory `web/`) |
 | API | https://edge-api-gi8d.onrender.com (Render) |
 | Production branch | `claude/edge-fantasy-app-launch-alo0rr` — **there is no `main`** |
-| Tests | 1022 pytest (+44 skipped: 17 want a Postgres in `TEST_DATABASE_URL`), node + Playwright |
+| Tests | 1375 pytest (+58 skipped: 32 want a Postgres in `TEST_DATABASE_URL`; run against a scratch Postgres 16 on 2026-09-24, all green), 391 node, Playwright |
 
 Shipping the web app is a push to the production branch. Rolling back is the same push aimed
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
+
+## Accounts: register, sign in, the flag, the admin (2026-09-24)
+
+Andrew's brief, in his words: "a register / login system ... sleek popups, login page, register,
+checks by views, flags for premium or free accounts. Ability to upgrade (no stripe yet) ... an
+admin account ... make sure people login before linking an account. Max 3 fantasy per account,
+with more to be bought as an add on." `TASKS.md` "Accounts" has the ten items; `docs/API.md`
+"Accounts" and "Admin" the contract; `docs/WEB.md` "The account: two popups, one door" the
+wiring; `docs/DEPLOY.md` "Accounts, and upgrades without Stripe" what the deploy needs.
+
+**The one decision made without him:** sign-in is **first-party** (`edge/api/accounts.py`:
+scrypt password hashes, SHA-256 session-token hashes, both in the store on both backends),
+not Supabase. The magic link was never verified against a real project, the site had no way
+to make an admin, and every test had to run offline; a password store the API owns answers
+all three. The Supabase JWT path in `auth.py` still works when its secret is set, so nothing
+that existed broke, and `@supabase/supabase-js` is gone from the web. **The second:** while
+`STRIPE_SECRET_KEY` is unset, an upgrade is a complimentary grant (`source: complimentary`),
+which is the only honest reading of "ability to upgrade, no Stripe yet" and is a real paywall
+opening. Both are in "Decisions needed from Andrew".
+
+Traps this round. **The hooks lint reads any `use*` function as a hook**, so the API call to
+mark a league opened is `markLeagueUsed`, not `useLeague`. **`Plan` was already a type** (the
+action plan); the account's is `AccountPlan`. **A page file may export only the page**, so the
+shared door (frame, signed-in card, the /login body) lives in `components/account/Door.tsx`,
+and `/register` is the same component opened on the other tab. **The names sweep**
+(`lib/player/names.test.ts`) flags every `{x.name}` in a `.tsx`, so the account screens, which
+print plan, product and league names and never a player's, are on its allowlist with reasons.
+**The schema guard in `test_espn_private.py` forbade the word "token"**; it now allows only
+`token_hash`, which is the point of the guard. **The e2e web build carries the dev header**, so
+the account tests play a stranger by deleting `x-edge-user` at the network layer, and the
+sign-in check in the gate asks the API rather than the token so that works.
 
 ## The Lineup tab: two piles, and the reads that tip a close call (2026-09-21, late)
 
@@ -311,11 +342,12 @@ decide which league a three-league manager's single weekly email covers.
    environment. The code is deployed and waiting for it. As of the last check the API still
    answers 402, so either the variable is unset or Render has not redeployed.
 2. **`EDGE_DEV=1` is set on Render and must come off before launch.** It makes the API accept
-   an `X-Edge-User` header as proof of identity, so anyone can claim to be any email. Today
-   that only leaks a free-tier response; once purchases exist it exposes a paying user's
-   leagues and entitlements. Check with
-   `curl -s -H "X-Edge-User: x@example.com" https://edge-api-gi8d.onrender.com/api/me` — if
-   `signed_in` is `true`, it is still on.
+   an `X-Edge-User` header as proof of identity, so anyone can claim to be any email. With
+   accounts live this now exposes a user's leagues and lets a header-holder upgrade as anyone.
+   Check with `curl -s -H "X-Edge-User: x@example.com" https://edge-api-gi8d.onrender.com/api/me`
+   — if `signed_in` is `true`, it is still on.
+3. **Set `EDGE_ADMINS=ahicks5.nd@gmail.com` on the Render service**, then register with that
+   address on the site. `/admin` is the front office. Without the variable nobody is admin.
 
 ## Traps that already cost time
 

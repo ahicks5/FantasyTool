@@ -2,6 +2,45 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Accounts: register, sign in, the plan flag, the admin (2026-09-24)
+
+Andrew's brief: a register/login system with sleek popups, a login page, register, checks by
+view, premium/free flags, an upgrade that works before Stripe, an admin account, sign in before
+linking a league, three leagues per account with more as an add-on, and a returning account
+that does not re-enter its league. All of it is built and tested (`tests/test_accounts.py`,
+the store contract on both backends, `web/e2e/account.spec.ts`).
+
+- [x] **AC-1** First-party accounts in the API: `edge/api/accounts.py` (scrypt hashes, hashed
+      session and reset tokens, 30-day sessions, 2-hour resets), `users`/`sessions`/`resets`
+      tables in both stores, `POST /api/auth/register|login|logout|forgot|reset`. Supabase
+      sign-in is gone from the web; a Supabase JWT is still accepted by the API when its
+      secret is set. `@supabase/supabase-js` removed.
+- [x] **AC-2** The flag: `account.plan` on `/api/me` (`tier: free|premium`, `name`), `is_admin`,
+      `league_slots`; `useSession().premium / isAdmin / account`; the top-bar initial is ringed
+      green on a premium account.
+- [x] **AC-3** The popups: `AccountGateProvider` in the root layout; `useAccountGate().signIn()`
+      and `.upgrade(sku)`; `Locked` and `/connect` use them. Pages: `/login`, `/register`,
+      `/reset`, `/account` (plan, leagues on file with open/forget, upgrades, Thursday email,
+      export/delete, sign out), `/admin`.
+- [x] **AC-4** Upgrade without Stripe: `POST /api/account/upgrade` grants and records
+      `source: complimentary` while `STRIPE_SECRET_KEY` is unset; opens Checkout once it is set.
+      The sheet says "no card, no charge" in the first case.
+- [x] **AC-5** The admin: `EDGE_ADMINS` (set to Andrew's address in `deploy/render.yaml`; the
+      running Render service still needs it set by hand) or `role = admin`. `/admin` lists every
+      account with plan and leagues; grant/revoke passes, +1 league, promote/demote, reset link.
+- [x] **AC-6** Sign in before linking: `POST /api/connect` is 401 to a stranger; `/connect`
+      opens the sheet on arrival and at the save. Looking at a league stays free.
+- [x] **AC-7** Three leagues per account (`products.BASE_LEAGUES`), five with the bundle, plus
+      one per `league_slot` ($2, `kind: add_on`, stacks by row). Over the cap: 402 with the slot
+      and the bundle as the upsell; the connect page opens the slot sheet and saves again.
+- [x] **AC-8** Coming back: leagues carry `team_name` and `last_used`; `restoreConnection`
+      lands a signed-in browser with no stored league on the one opened last; `/account` opens
+      any league on file and tells the API (`/use`).
+- [ ] **AC-9** Password reset email needs an email provider (`EDGE_EMAIL_PROVIDER=resend`);
+      until then the admin hands the link over from `/admin` and the screen says so.
+- [ ] **AC-10** Rate limits on `/api/auth/*` share the league cap (60/min per IP). A per-account
+      lockout after N failures would be the next step if guessing shows up in the logs.
+
 ## Round 5: the grid, the shortlist, the office rows (2026-09-23, night)
 
 - [x] **R5-1** Lineup decision page is a comparison grid: every option a column with his
@@ -357,6 +396,16 @@ themes. All eight are done and on production.
 
 ## Decisions needed from Andrew
 
+- **Accounts (2026-09-24).** Four calls, none blocking a deploy. (a) **Sign-in is first-party**
+  (email + password in our own store), not Supabase: it works with zero configuration, offline
+  in every test, and gives you an admin account today; the price is that a password reset
+  cannot email itself until Resend is wired (`AC-9`). Say if you would rather go back to a
+  hosted provider. (b) **Upgrades are free while there is no Stripe key.** Anyone who registers
+  can grant themselves The Penthouse; the sheet says so. Set `STRIPE_SECRET_KEY` on Render the
+  day you want to charge, and the same button becomes Checkout. (c) **The free cap is 3 leagues
+  for every account, the bundle 5, a slot $2.** The numbers are `edge/products.py`. (d) **Set
+  `EDGE_ADMINS=ahicks5.nd@gmail.com` on the Render service** (it is in `deploy/render.yaml`,
+  which Render does not re-read), then register with that address; you are the admin.
 - **The desk (2026-09-21, overnight).** Three calls, none blocking: (a) the desk names what
   happened and never a point cost — keep it that way, or let the news paper quote the depth
   chart's margin? (b) line injuries are shown as a `note` for your starters only; if they
@@ -447,9 +496,9 @@ themes. All eight are done and on production.
 - [x] FastAPI endpoints backing each page
 
 ## Day 6 — Paywall + deploy
-- [~] Supabase magic-link auth — API verifies JWTs (tested); web /login built; needs a real project to verify
+- [x] Accounts: first-party email + password (2026-09-24, replaces the Supabase magic link). See "Accounts" at the top.
 - [x] Stripe Checkout (à la carte $3/$5 + Full Report $7) + webhook → entitlement (tested with a fake event; needs a real test-mode run)
-- [x] Free tier: 1 team; gate Trade Lab + extra teams
+- [x] Free tier: 3 leagues per account (was 1; Andrew, 2026-09-24), more as a $2 add-on; gate Trade Lab
 - [x] Web is deployed: **https://fantasy-tool-alpha.vercel.app**, Vercel, root dir `web/`,
       built from `claude/edge-fantasy-app-launch-alo0rr` (there is no `main`). See docs/DEPLOY.md.
 - [ ] **The live site runs on mock data.** `NEXT_PUBLIC_API_URL` is unset on the Vercel project,
@@ -490,7 +539,7 @@ themes. All eight are done and on production.
       chat before the API is deployed. Player headshots are the one thing it loses on a
       host that blocks third-party images; the Avatar initials underneath cover it.
 - [x] Wire web to the real API end-to-end in a browser (headless Chromium, 375px, live league, 0 console errors)
-- [~] Supabase magic-link login: /login page + JWT header wired; untested against a real Supabase project (needs your keys)
+- [x] Login: first-party accounts, tested offline and in the browser (2026-09-24). No third-party keys needed.
 - [ ] Real Stripe test-mode checkout run (needs STRIPE_SECRET_KEY / webhook secret)
 - [x] Deploy: web on Vercel, API on Render (https://edge-api-gi8d.onrender.com). Both live,
       and the web build talks to the API rather than to mocks. See docs/DEPLOY.md.

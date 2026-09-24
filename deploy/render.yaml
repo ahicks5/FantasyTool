@@ -18,6 +18,9 @@ services:
         sync: false
       - key: SUPABASE_JWT_SECRET
         sync: false
+      # The owner's account is the admin. Comma-separated for more than one.
+      - key: EDGE_ADMINS
+        value: ahicks5.nd@gmail.com
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET

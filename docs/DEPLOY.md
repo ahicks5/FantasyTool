@@ -134,8 +134,9 @@ Web (Vercel project settings → Environment Variables):
 | Name | Value | Why |
 |---|---|---|
 | `NEXT_PUBLIC_API_URL` | the API origin, **no `/api` suffix** | **Unset means the whole site runs on mock data from `web/src/lib/mocks.ts`.** It looks fine and is entirely fake. A trailing `/api` double-prefixes every call and 404s. |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Magic-link sign-in; without it `/login` says sign-in is not wired up. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | Same. |
+
+Sign-in needs nothing on the web side: accounts are first-party and the API holds them. The
+old `NEXT_PUBLIC_SUPABASE_*` variables are unused and can be removed from the project.
 
 `NEXT_PUBLIC_*` values are inlined at **build** time, so changing one needs a redeploy, not
 just a restart.
@@ -147,11 +148,32 @@ API (Railway):
 | `EDGE_DB` | a path on the mounted volume | SQLite via `edge/api/store.py`. On an ephemeral filesystem every entitlement is lost on restart. |
 | `EDGE_CACHE_DIR` | a path on the mounted volume | The 14MB Sleeper player file is cached here for 24h. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Stripe | The $7 pass and the webhook that grants it. |
-| `SUPABASE_JWT_SECRET` | Supabase | Verifies the JWT the web sends. |
+| `EDGE_ADMINS` | comma-separated emails | **The admin account.** Anyone who signs in with one of these addresses gets the front office (`/admin`): every account, grant or revoke a pass, add league slots, hand out reset links, promote another admin. `deploy/render.yaml` carries Andrew's address; the running service still has to be set by hand. An admin can also be made from the store (`role` column) once one exists. |
+| `SUPABASE_JWT_SECRET` | optional | A Supabase JWT is still accepted as a bearer token when set. Nothing in the web sends one any more. |
 | `EDGE_USE_CLAUDE`, `ANTHROPIC_API_KEY` | optional | LLM-written trade explanations. Without them the templates are used. |
 | `EDGE_CHROMIUM` | optional | Path to an existing Chromium. Only needed if the image does not install its own — see below. |
 
 Secrets live in the host's dashboard, never in the repo. `.env` is gitignored.
+
+## Accounts, and upgrades without Stripe
+
+Sign-in is first-party: email and password, scrypt hashes and hashed session tokens in the
+store (`edge/api/accounts.py`, `docs/API.md` "Accounts"). There is no third-party auth to
+configure. A password reset needs an email provider (`EDGE_EMAIL_PROVIDER=resend` and its
+key) to arrive on its own; until then `POST /api/auth/forgot` records the token and says
+`sent: false`, the screen says so, and the admin hands the link over from `/admin`.
+
+**While `STRIPE_SECRET_KEY` is unset, `POST /api/account/upgrade` grants the pass on the
+spot** and records the purchase with `source = complimentary`. This is deliberate for launch
+week (Andrew, 2026-09-24: "ability to upgrade, no Stripe yet") and it is a real paywall
+opening: every visitor who creates an account can give themselves The Penthouse. The upgrade
+sheet says "no card, no charge" while this is so. The day the key is set, the same button
+opens Checkout and the webhook writes the grant; nothing else changes. Comps stay valid for
+the season; `/admin` can revoke them per account.
+
+Every account keeps up to **3 leagues** on file (`products.BASE_LEAGUES`), the bundle 5, and a
+`league_slot` purchase adds one on top. `POST /api/connect` answers 401 to a stranger now:
+looking at a league is still free, keeping it is the account's job.
 
 ## The one that bites: the share card needs a browser
 

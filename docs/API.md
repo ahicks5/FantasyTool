@@ -5,7 +5,9 @@ FastAPI app in `edge/api/app.py`, served at `/api`. All responses JSON. Errors: 
   `teaser` is a concrete, name-free sentence; the web renders it as a locked state.
 - **403** from a private ESPN league: `{"error","needs_espn_auth":bool}`.
   true means ask for cookies, false means the ones supplied expired.
-Auth: `Authorization: Bearer <supabase jwt>` (optional in dev; `X-Edge-User: <email>` accepted when `EDGE_DEV=1`).
+Auth: `Authorization: Bearer <session token>` from `POST /api/auth/register|login` (a Supabase JWT is also
+accepted when `SUPABASE_JWT_SECRET` is set; `X-Edge-User: <email>` when `EDGE_DEV=1`). A dead token is a 401
+whose detail says `expired`.
 
 The package, the env vars and the header keep the `edge`/`EDGE_` spelling on purpose — only what a
 user reads says Penthouse. Wire names below are the contract; `web/src/lib/types.ts` mirrors them.
@@ -16,14 +18,58 @@ requires (Sleeper's docs ask for it on trending data). The UI must render it.
 ```json
 {"attribution":"Projections and trending data from Sleeper",
  "products":[
-  {"sku":"free","name":"Free","price_cents":0,"features":["my_team"],"leagues":1,"kind":"free","blurb":"Start/sit calls for one team, every week."},
-  {"sku":"waivers","name":"Wire Pass","price_cents":300,"features":["waivers"],"leagues":1,"kind":"a_la_carte","blurb":"The wire, ranked for your roster, with the bid and the drop. Rest of season."},
-  {"sku":"trade_lab","name":"Trade Lab","price_cents":500,"features":["trade_lab"],"leagues":1,"kind":"a_la_carte","blurb":"Trade verdicts and counters tuned to the other manager. Rest of season."},
-  {"sku":"full_report","name":"The Penthouse","price_cents":700,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","blurb":"The whole booth, every week, up to 5 leagues."}
+  {"sku":"free","name":"Free","price_cents":0,"features":["my_team"],"leagues":3,"kind":"free","blurb":"Start/sit calls for up to three leagues, every week."},
+  {"sku":"waivers","name":"Wire Pass","price_cents":300,"features":["waivers"],"leagues":3,"kind":"a_la_carte","blurb":"The wire, ranked for your roster, with the bid and the drop. Rest of season."},
+  {"sku":"trade_lab","name":"Trade Lab","price_cents":500,"features":["trade_lab"],"leagues":3,"kind":"a_la_carte","blurb":"Trade verdicts and counters tuned to the other manager. Rest of season."},
+  {"sku":"full_report","name":"The Penthouse","price_cents":700,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","blurb":"The whole Penthouse, every week, up to 5 leagues."},
+  {"sku":"league_slot","name":"League slot","price_cents":200,"features":[],"leagues":1,"kind":"add_on","blurb":"One more league on your account. Rest of season."}
 ]}
 ```
-`GET /api/me` → `{"email":"...","entitlements":["my_team","waivers"],"leagues_allowed":1,"leagues":[{"platform":"sleeper","league_id":"...","name":"...","team_id":"3"}]}
-`GET /api/me` also carries `"email_opt_in":false`.
+`league_slot` is an add-on: it unlocks nothing and stacks, one more league per purchase. `leagues_allowed` is
+the highest tier cap held (3 free, 5 bundle) plus one per slot.
+
+`GET /api/me` →
+```json
+{"email":"...","signed_in":true,"skus":["waivers"],"entitlements":["my_team","waivers"],"leagues_allowed":3,
+ "leagues":[{"platform":"sleeper","league_id":"...","name":"...","team_id":"3","team_name":"HusH","last_used":1790000000.0}],
+ "email_opt_in":false,"checkout":false,
+ "account":{"email":"...","name":"Andrew","role":"user","is_admin":false,"created":1789000000.0,"last_login":1790000000.0,
+            "plan":{"tier":"premium","name":"Wire Pass","skus":["waivers"]},"league_slots":0}}
+```
+Signed out: `signed_in:false`, `account:null`, the free tier, no leagues. `account.plan.tier` is the flag the
+views check (`free` | `premium`); `plan.name` is what the user reads. `checkout` is whether Stripe is configured,
+which decides what an upgrade does (below).
+
+## Accounts
+First-party. Email and password; the reply's `token` goes in `Authorization: Bearer` on every later call. The
+API keeps only its hash. Sessions last 30 days. The sign-in routes share the league routes' tighter rate cap.
+
+`POST /api/auth/register {"email","password","name"?}` → `{"token":"...","me":{...}}`. 400 on a bad address or a
+password under 8 characters; 409 when the address already has an account.
+`POST /api/auth/login {"email","password"}` → the same shape. 401 with one message for a wrong password and an
+unknown address alike.
+`POST /api/auth/logout` (signed in) → `{"ok":true}`. This session only.
+`POST /api/auth/forgot {"email"}` → `{"ok":true,"sent":false}` whether or not the address exists. `sent` is
+true only when an email provider is configured and delivered the link; otherwise the admin hands one over.
+`POST /api/auth/reset {"token","password"}` → `{"token","me"}`. The reset token is spent once, lasts two
+hours, and every other session on the account is signed out.
+
+`POST /api/account/upgrade {"sku","success_url"?,"cancel_url"?}` (signed in) →
+- Stripe configured: `{"url":"https://checkout.stripe.com/...","granted":false,"me":null}`; the webhook grants.
+- Stripe not configured: `{"url":null,"granted":true,"me":{...}}`; the grant is written now, `source:"complimentary"`.
+400 on a free or unknown sku.
+
+`POST /api/leagues/{platform}/{league_id}/use` (signed in) → marks the league last opened, so the next sign-in on any device lands on it.
+`DELETE /api/leagues/{platform}/{league_id}` (signed in) → `{"ok":true,"leagues":[...]}`; frees a slot.
+
+## Admin
+Signed in as an admin: `role = admin` in the store or an address in `EDGE_ADMINS`. Anyone else is 403.
+
+`GET /api/admin/users` → `{"season":2026,"checkout":false,"users":[{...account fields, "plan","skus","leagues","leagues_allowed"}]}`
+`POST /api/admin/users/{email}/grant {"sku"}` → grants a pass, the bundle or one `league_slot`; `source:"admin"`.
+`POST /api/admin/users/{email}/revoke {"sku"}` → `{"ok":true,"revoked":n,"me":{...}}`; every live grant of that sku this season.
+`POST /api/admin/users/{email}/role {"role":"user"|"admin"}` → 400 for an unknown role or your own demotion; 404 for no such account.
+`POST /api/admin/users/{email}/reset` → `{"ok":true,"url":"https://.../reset?token=...","hours":2}`.
 
 `GET /api/me/email` → `{"email":"...","email_opt_in":false}`
 `PUT /api/me/email {"email_opt_in":true}` → `{"email":"...","email_opt_in":true}`
@@ -40,8 +86,8 @@ dry run and the opt-in screen says so in as many words.
 ## Data subject requests
 Signed in only — an account acting on its own data. See `docs/DATA_INVENTORY.md`.
 
-`GET /api/me/data` → `{"email":"...","data":{"purchases":[...],"leagues":[...],"runs":[...],"feedback":[...],"email_prefs":[...]}}`
-`DELETE /api/me?confirm=delete` → `{"ok":true,"deleted":{"purchases":1,"leagues":2,"runs":9,"feedback":0,"email_prefs":1}}`
+`GET /api/me/data` → `{"email":"...","data":{"users":[...],"purchases":[...],"leagues":[...],"runs":[...],"feedback":[...],"email_prefs":[...],"sessions":[...],"resets":[...]}}` (never a password or token hash)
+`DELETE /api/me?confirm=delete` → `{"ok":true,"deleted":{"users":1,"purchases":1,"leagues":2,"runs":9,"feedback":0,"email_prefs":1,"sessions":1,"resets":0}}`
 
 Deletion revokes the season pass along with the data — that is the honest consequence and the
 `confirm` parameter exists so it cannot happen by accident. Public share links survive: they carry
@@ -55,7 +101,10 @@ no email (`edge/api/share.py`).
  "waiver_type":"faab","faab_budget":100,"starting_slots":["QB","RB",...],
  "teams":[{"id":"1","name":"HusH","owner_name":"HusH","record":"2-0","points_for":159.1,"faab_remaining":100}]}
 ```
-`POST /api/connect {"platform":"sleeper","league_id":"...","team_id":"1"}` → saves to the user's leagues (counts against `leagues_allowed`).
+`POST /api/connect {"platform":"sleeper","league_id":"...","team_id":"1"}` (signed in; 401 to a stranger) → saves to the
+account's leagues with the team's name and returns `{"ok","saved":true,"league":{...},"leagues":[...],"leagues_allowed":3}`.
+Over the cap: 402 with `feature:"leagues"` and `upsell:[league_slot, full_report]`. Linking a league already on file
+is idempotent and may change the team.
 
 ## Lineup (feature: my_team)
 

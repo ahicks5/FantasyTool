@@ -262,6 +262,29 @@ free table (`Standings.tsx`), then the paid season week by week (`Film.tsx`, the
   and the test freeze, so e2e and screenshots show a replay. Its schedule has no scores, so
   no game-script line appears offline.
 
+## The account: two popups, one door
+
+Sign-in is first-party (`lib/auth.ts` holds the token under `booth.session`; `lib/api.ts`
+puts it on every call as a Bearer, ahead of the dev header). `AccountGateProvider` sits in the
+root layout and hands every room two promises through `useAccountGate()`: `signIn(reason)`
+opens the sign-in sheet (sign in / create account / forgot, one `AuthForm`) and resolves true
+once the API has signed the visitor in; `upgrade(sku, {what, returnTo})` signs in first if it
+has to, then opens the upgrade sheet, which either grants on the spot (no Stripe key on the
+API: the sheet says "no card, no charge") or leaves for Checkout. `Locked` calls `upgrade`;
+`/connect` calls `signIn` on arrival and again at the save, and `upgrade("league_slot")` on a
+402 over the cap. `/account` and `/admin` ask on arrival and fall back to `/login?next=` when
+the sheet is dismissed. The sign-in check asks the API (`currentMe()`), never the token, so a
+dead token reads as signed out; the e2e suite relies on that to play a stranger by stripping
+the dev header at the network layer.
+
+`useSession` carries the flags the views check: `signedIn`, `premium` (`account.plan.tier`),
+`isAdmin`, and `account`. A sign-in or sign-out anywhere drops the cached `me` and wakes every
+mounted hook. **A returning account lands on its league without re-entering it**:
+`restoreConnection` runs once per session when there is no `booth.connection` and the account
+has leagues on file, picks the one with the newest `last_used` (`lib/account.pickLeague`),
+reads the league for the week and the team's name, and saves the connection. The account page
+switches leagues the same way and tells the API (`/use`). Every word is `ACCOUNT` in `vocab.ts`.
+
 ## Theme
 
 **Dark is the default, and it is not read off the OS.** `prefers-color-scheme: light` also

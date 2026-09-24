@@ -8,7 +8,8 @@ and launch is days out: **speed > polish**.
 3. **Trade Lab (paid)** — verdict on a proposed trade + a counteroffer tuned to the other
    manager's tendencies. Numbers from the engine; the Claude API writes the explanation.
 
-Free for 1 team, $7 unlocks the season (Stripe). Marketing via stamped verdict graphics.
+Free for up to 3 leagues per account (more as a $2 add-on), $7 unlocks the season (Stripe). Marketing via
+stamped verdict graphics.
 
 ## Where things are
 
@@ -48,7 +49,9 @@ Then only what you need:
 - Raw stats, never points, until `edge/data/scoring.py` says otherwise.
 - **The LLM explains; it never ranks, values or invents a number.**
 - Nothing outside `edge/data/providers.py` talks to a projection vendor.
-- `edge/products.py` is the only source of truth for what is free and what is paid.
+- `edge/products.py` is the only source of truth for what is free and what is paid, and for the league cap.
+- **Sign in before linking a league.** `POST /api/connect` is 401 to a stranger; looking at a league stays free.
+  Without `STRIPE_SECRET_KEY` an upgrade is a complimentary grant, not a sale (`docs/DEPLOY.md`).
 - Any word a user reads lives in `web/src/lib/vocab.ts`, never inline.
 - Keep secrets in `.env` (gitignored). Never commit keys, and never paste ESPN cookies
   anywhere — see `docs/DATA.md`.
@@ -126,7 +129,8 @@ offline replay fixtures with `scripts/record_replay_fixture.py <week>` when the 
 
 - `edge/` — Python 3.11 engine, league connectors and the FastAPI API. Andrew can read/tweak.
 - `web/` — Next.js (App Router, TypeScript, Tailwind), mobile-first. Talks to the API.
-- Supabase (magic-link auth + Postgres) · Stripe Checkout + webhook · Vercel + Render.
+- First-party accounts (email + password, `edge/api/accounts.py`, sessions in the store; `EDGE_ADMINS` names
+  the admin) · Supabase Postgres optional via `DATABASE_URL` · Stripe Checkout + webhook · Vercel + Render.
 - Persistence today is SQLite (`edge/api/store.py`), with a Postgres twin (`store_pg.py`)
   selected by `DATABASE_URL`. One contract, pinned by `tests/test_store_contract.py`.
 - Claude API is optional: `EDGE_USE_CLAUDE=1` turns on LLM-written trade explanations (model
