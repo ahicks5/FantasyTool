@@ -611,10 +611,11 @@ Things a caller has to handle, none of which are error states:
   week is recoverable after the fact, so the only honest source is what we recorded at the
   time — and nothing currently logs a lineup, so there is almost nothing to read back.
   Build the "no record" state as the primary one.
-- **`starters` and `bench` are empty on ESPN, and `best_possible` is null.** ESPN gives the
-  scoreline for every past week in one call, but who was started and what each player scored
-  sits behind its `mBoxscore` view, one week at a time, which `edge/data/espn_api.py` does
-  not fetch. Real weeks, no line-by-line.
+- **ESPN is line-by-line now (SPEC-FILM F-8).** The scoreline comes from `mMatchup` in one
+  call; each finished week's lineup, per-player points and ESPN's own stored projection come
+  from `espn_api.boxscore` (`mBoxscore`), one request a week, cached for good. A week whose
+  boxscore fails falls back to the scoreline alone: `starters` and `bench` empty and
+  `best_possible` null, never a lineup rebuilt from today's roster.
 - `weeks` is newest first and holds played weeks only. `won` is `my > theirs`, so a tie
   reads `false`; `null` is reserved for a week with no opponent on record.
 - `bench` is worst miss first, and a bench player only counts against slots he was eligible
@@ -674,7 +675,56 @@ What a caller has to handle:
   played, and only on the newest week. `href` is the tab that acts on it; null for `hold`.
 - **`swing.line`** is always set when there was an opponent, including "No swing: you were
   outscored by 12.4". `control` says whether it was outside his hands or his decision.
-- **`line_by_line: false`** is ESPN until F-8: a real scoreline, `attributions: []`,
-  `lineup: null`, and nothing invented to fill them.
+- **`line_by_line: false`** is a week the platform gave a scoreline for and nobody's points
+  (an ESPN week whose boxscore failed): `attributions: []`, `lineup: null`, nothing invented.
+  On ESPN, `source: "platform"` is ESPN's own stored projection for that week, and the
+  reasons read the stat log through a name match to Sleeper ids (most men match; a man who
+  does not simply gets no reasons).
 - **Nothing here scores Penthouse.** No hit rate, no summed points-gained, no "right N% of
   the time" (CLAUDE.md), and `tests/test_film.py` fails if one appears.
+
+### The league (`edge/engine/league_film.py`, SPEC-FILM F-5 to F-7)
+
+`GET /api/league/{platform}/{league_id}/film/league` → `LeagueFilm`. Part of the Full Report
+(the standings stay free at `/standings`); a free reader gets `402` with a name-free teaser.
+
+```json
+{"league":"...","week":12,"algo_version":"league_film.v1",
+ "superlatives":[{"kind":"top_score","team":{"id":"9","name":"Minioned"},"value":167.06,"line":"167.1, the most in the league"}],
+ "groups":{"positions":["QB","RB","WR","TE","K","DEF"],
+           "teams":[{"team":{...},"overall":"B+","overall_rank":1,"positions":{"QB":{"grade":"A","rank":1}}}]},
+ "expectation":[{"team":{...},"week":{"points":126.26,"projected":113.85,"delta":12.41},
+                 "season":{"points":494.18,"projected":458.85,"delta":35.33,"weeks":4}}],
+ "gauntlet":[{"team":{...},"points_against":1865.2,"per_game":133.23,"rank":1}],
+ "ledger":{"through_week":12,
+   "trades":[{"week":7,"weeks_since":6,"ranked":true,"sides":[{"team":{...},"players":[{"id":"4881","name":"Lamar Jackson"}],
+              "points":88.4,"ros":41.2,"picks":0,"net":12.6,"ros_from_here":-3.1}]}],
+   "best_claims":[{"week":3,"team":{...},"add":{"id":"19","name":"Joe Flacco"},"drop":[{"id":"11645","name":"Javon Baker"}],
+                   "points":90.5,"dropped_points":0.0,"net":90.5,"ranked":true}],
+   "worst_claims":[],"teams":[{"team":{...},"moves":17,"net":375.4}]},
+ "playoffs":{"teams":8,"start_week":15,"weeks_left":2,
+   "seeds":[{"seed":1,"team":{...},"wins":11,"losses":3,"ties":0,"points_for":1941.2,"in":true,"games":4.0}]}}
+```
+
+- **Superlatives** are the newest finished week's, one team each, only where the data holds
+  one: top score, unluckiest (the best score in a loss), luckiest (the worst in a win),
+  blowout, best manager (least left on the bench), most left, best pickup who started.
+- **Groups** are `grades.grade_team` per team, unchanged.
+- **Expectation** is each team's points against its starters' projections (same D4 sources
+  as the replay). A week where any starter had no number is left out, never half-summed;
+  `season.weeks` says how many weeks count.
+- **Gauntlet** is the platform's own points against; rank 1 is the hardest schedule.
+- **The ledger is "so far".** A side's `points` are what its new men scored **for it**, week
+  by week while on its roster. A dropped man counts wherever he went, the wire included
+  (scored from his stat line in league scoring). `ranked` is false for a move under two
+  weeks old: shown, not in any total. Draft picks are counted, not valued. `ros` and
+  `ros_from_here` are rest-of-season projections and must be labelled as such. Three-way
+  trades are left out rather than half-read.
+- **Sharing the replay:** `POST /api/share` with `{"kind":"film","league_name","week","film":{"result",
+  "my_points","their_points","opponent","line","team","star":{"name","position","nfl_team","went"}|null}}`.
+  Free (`my_team`), like a Lock. The snapshot keeps those fields and nothing else: no league
+  id, no roster, no story. `/api/share/{id}/card.png` renders the 1080 film card; a story
+  shape falls back to the square.
+- **Playoffs** are arithmetic only: record, then points for; `games` is games clear of the
+  first team out for a seed, games back of the last seed for everyone else. Null when the
+  league does not say how many make it. No odds, no divisions yet.

@@ -5,11 +5,14 @@ into a league chat, a subreddit or a Discord brings the next user in. The snapsh
 data only: names, the call and the numbers already printed on the card. No email, no league
 id, no roster beyond the players in the deal.
 
-Two kinds:
+Three kinds:
   trade  a Trade Lab verdict — paid, low volume, high drama.
   lock   a start/sit call — FREE, and therefore the one that actually runs the loop. Every
          user has one or three of these every week whether or not they ever pay us; gating
          sharing behind the $5 feature switched the loop off for almost everybody.
+  film   last week's replay cover — FREE for the same reason (SPEC-FILM D2: the cover and
+         the share card stay free). The result, the score, the opponent's team name, the
+         cover line and at most one player who carried the week. Nothing else of the story.
 """
 from __future__ import annotations
 
@@ -18,9 +21,10 @@ import secrets
 from edge import graphics
 
 ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"   # no i/l/o/0/1: a link should survive being read aloud
-KINDS = ("trade", "lock")
+KINDS = ("trade", "lock", "film")
 # The feature each kind needs. `my_team` is in the free tier, so a Lock share needs no account.
-KIND_FEATURE = {"trade": "trade_lab", "lock": "my_team"}
+KIND_FEATURE = {"trade": "trade_lab", "lock": "my_team", "film": "my_team"}
+FILM_FIELDS = ("result", "my_points", "their_points", "opponent", "line", "team")
 
 PUBLIC_FIELDS = ("verdict", "give", "get", "my_delta_ros", "their_delta_ros", "fairness", "style")
 CALL_FIELDS = ("gain", "confidence", "slot", "note")
@@ -54,6 +58,18 @@ def lock_snapshot(call: dict, league_name: str, week: int) -> dict:
     out["kind"] = "lock"
     out["start"] = _player(call.get("start") or {})
     out["bench"] = _player(call["bench"]) if call.get("bench") else None
+    out["league_name"] = league_name
+    out["week"] = week
+    return out
+
+
+def film_snapshot(film: dict, league_name: str, week: int) -> dict:
+    """Strip a replay cover down to the card: the result, the scoreline, the opponent's team
+    name, the cover line, and the one player who carried the week with what he scored."""
+    out = {k: film.get(k) for k in FILM_FIELDS}
+    out["kind"] = "film"
+    star = film.get("star") or None
+    out["star"] = ({**_player(star), "went": star.get("went")} if star and star.get("name") else None)
     out["league_name"] = league_name
     out["week"] = week
     return out

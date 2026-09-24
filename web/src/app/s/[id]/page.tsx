@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { IconArrowUp, IconCheck } from "@/components/icons";
 import { ConfidencePill, Eyebrow, LinkButton, OnAir, Stamp, Stat, StatusMeter, Wordmark } from "@/components/ui";
 import { signed, verdictBlurb } from "@/lib/format";
-import { isSharedLock, type SharedLock, type SharedSnapshot, type SharedVerdict } from "@/lib/types";
+import { isSharedFilm, isSharedLock, type SharedFilm, type SharedLock, type SharedSnapshot, type SharedVerdict } from "@/lib/types";
+import { FILM } from "@/lib/vocab";
 import { LINES } from "@/lib/vocab";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -42,12 +43,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   // is the app's separator.
   if (!v) return { title: "Penthouse · a call worth sharing" };
   const image = `${API}/api/share/${encodeURIComponent(id)}/card.png`;
-  const title = isSharedLock(v)
-    ? `${v.confidence}: start ${v.start.name}${v.bench ? ` over ${v.bench.name}` : ""}`
-    : `${v.verdict}: ${v.give.join(" + ")} for ${v.get.join(" + ")}`;
-  const description = isSharedLock(v)
-    ? v.note || `Worth ${signed(v.gain, 1)} projected points in that league's scoring.`
-    : v.explanation;
+  const title = isSharedFilm(v)
+    ? FILM.share.title(v.team, v.result ? FILM.result[v.result] : "", FILM.score(v.my_points, v.their_points))
+    : isSharedLock(v)
+      ? `${v.confidence}: start ${v.start.name}${v.bench ? ` over ${v.bench.name}` : ""}`
+      : `${v.verdict}: ${v.give.join(" + ")} for ${v.get.join(" + ")}`;
+  const description = isSharedFilm(v)
+    ? v.line || FILM.share.pitch
+    : isSharedLock(v)
+      ? v.note || `Worth ${signed(v.gain, 1)} projected points in that league's scoring.`
+      : v.explanation;
   return {
     title: `${title} · Penthouse`,
     description,
@@ -214,6 +219,44 @@ function LockBody({ v }: { v: SharedLock }) {
   );
 }
 
+/** Last week's replay cover: the same device as the 1080 film card, the story left behind. */
+function FilmShareBody({ v }: { v: SharedFilm }) {
+  return (
+    <article className="hero callsheet overflow-hidden rise">
+      <span aria-hidden className={`block h-[3px] w-full ${v.result === "W" ? "bg-start" : v.result === "L" ? "bg-sit" : "bg-lean"}`} />
+      <div className="px-6 pb-6 pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <OnAir className="text-white/70" />
+          <Eyebrow>{FILM.eyebrow}</Eyebrow>
+        </div>
+        <p className="mt-4 text-[13px] font-bold text-white/60">{v.team}</p>
+        <h1 className="mt-3 leading-none">
+          {v.result && (
+            <Stamp size="xl" ink="text-white" slam className="text-[clamp(30px,10vw,52px)]">
+              {FILM.result[v.result]}
+            </Stamp>
+          )}
+        </h1>
+        <p className="display tnum mt-4 text-[clamp(34px,11vw,48px)] leading-none text-white">{FILM.score(v.my_points, v.their_points)}</p>
+        <p className="mt-2 text-[14px] font-bold text-white/65">{v.opponent ? FILM.vs(v.opponent) : FILM.bye}</p>
+        {v.line && <p className="film-cover-line mt-5">{v.line}</p>}
+        {v.star && (
+          <div className="mt-5 flex items-center gap-3">
+            <Face name={v.star.name} photo={v.star.photo} logo={v.star.team_logo} />
+            <div className="min-w-0">
+              <Eyebrow>{FILM.share.carried}</Eyebrow>
+              <p className="display text-[18px] text-white">
+                {v.star.name} <span className="tnum text-start">{v.star.went.toFixed(1)}</span>
+              </p>
+            </div>
+          </div>
+        )}
+        <p className="mt-5 text-[14px] leading-relaxed text-white/65">{FILM.share.pitch}</p>
+      </div>
+    </article>
+  );
+}
+
 function TradeBody({ v }: { v: SharedVerdict }) {
   const tone = TONE[v.verdict] ?? { text: "text-ink", bar: "bg-ink" };
   return (
@@ -319,7 +362,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         </span>
       </header>
 
-      {isSharedLock(v) ? <LockBody v={v} /> : <TradeBody v={v} />}
+      {isSharedFilm(v) ? <FilmShareBody v={v} /> : isSharedLock(v) ? <LockBody v={v} /> : <TradeBody v={v} />}
 
       {/* The way in. Paper, not hero: the card above is this screen's one dark surface. */}
       <section className="card mt-3 p-6 text-center rise rise-2">

@@ -15,7 +15,7 @@ from edge.engine import standings as standings_mod
 from edge.engine.tendencies import Profile, hoarded_positions, league_bid_stats, position_counts, profile_managers
 from edge.engine.values import ros_values
 from edge.evaluate import rosters_from_matchups
-from edge.models import League
+from edge.models import League, Team
 
 TTL = 600
 
@@ -209,7 +209,54 @@ def _espn_played_weeks(raw: dict) -> list[recap_mod.PlayedWeek]:
     return [pw for _, pw in sorted(by_week.items())]
 
 
-def played_weeks(platform: str, league_id: str, b: Bundle, auth=None) -> list[recap_mod.PlayedWeek]:
+def _espn_boxscore_week(raw: dict, week: int, starting_slots: list[str],
+                        base: recap_mod.PlayedWeek | None = None) -> recap_mod.PlayedWeek:
+    """One ESPN week, line by line, from `espn_api.boxscore` (SPEC-FILM F-8).
+
+    Each side of each game carries its lineup that scoring period: who was in which slot,
+    what each man scored in this league's scoring (`appliedStatTotal`, the platform's number,
+    used as it arrives, like Sleeper's `players_points`) and ESPN's own stored projection for
+    him, which becomes the week's `projected`. `base` is the scoreline-only week from
+    `mMatchup`, whose totals and opponents are kept.
+    """
+    from edge.connectors import espn
+    pw = base or recap_mod.PlayedWeek(week=week)
+    for m in raw.get("schedule") or []:
+        if int(m.get("matchupPeriodId") or 0) != week:
+            continue
+        home, away = m.get("home") or {}, m.get("away") or {}
+        for side, other in ((home, away), (away, home)):
+            if side.get("teamId") is None:
+                continue
+            tid = str(side["teamId"])
+            entries = (side.get("rosterForCurrentScoringPeriod") or {}).get("entries") or []
+            if not entries:
+                continue
+            players = [espn._player_from_entry(e) for e in entries]
+            by_id = {p.id: p for p in players}
+            existing = pw.teams.get(tid)
+            pw.teams[tid] = Team(id=tid, name=existing.name if existing else tid, owner_id=None,
+                                           owner_name=None, players=players,
+                                           starters=espn._starters(entries, starting_slots, by_id))
+            pts: dict[str, float] = {}
+            for e in entries:
+                pid = str(e.get("playerId"))
+                ppe = e.get("playerPoolEntry") or {}
+                pts[pid] = round(float(ppe.get("appliedStatTotal") or 0.0), 2)
+                for st in (ppe.get("player") or {}).get("stats") or []:
+                    if st.get("statSourceId") == 1 and int(st.get("scoringPeriodId") or 0) == week \
+                            and st.get("appliedTotal") is not None:
+                        pw.projected[pid] = round(float(st["appliedTotal"]), 2)
+            pw.player_points[tid] = pts
+            if tid not in pw.totals and side.get("totalPoints") is not None:
+                pw.totals[tid] = round(float(side["totalPoints"]), 2)
+            if tid not in pw.opponents:
+                pw.opponents[tid] = str(other["teamId"]) if other.get("teamId") is not None else None
+    return pw
+
+
+def played_weeks(platform: str, league_id: str, b: Bundle, auth=None,
+                 only_latest: bool = False) -> list[recap_mod.PlayedWeek]:
     """Every week of this season that has actually been played, oldest first.
 
     On Sleeper this is one request per week — the only way the platform will give up a past
@@ -226,14 +273,34 @@ def played_weeks(platform: str, league_id: str, b: Bundle, auth=None) -> list[re
             raw = espn_api.league(b.league.season, league_id, views=("mMatchup",), auth=auth)
         except Exception:  # noqa: BLE001 — a failed history is an empty film, not a 500
             return []
-        return [w for w in _espn_played_weeks(raw) if w.played]
+        weeks = [w for w in _espn_played_weeks(raw) if w.played]
+        out = []
+        for w in weeks:
+            key = (platform, league_id, w.week)
+            cached = _played.get(key)
+            if cached is not None:
+                out.append(cached)
+                continue
+            if w.week >= int(b.league.week):
+                out.append(w)       # in progress: the scoreline only, and never cached
+                continue
+            try:
+                box = espn_api.boxscore(b.league.season, league_id, w.week, auth=auth)
+                w = _espn_boxscore_week(box, w.week, b.league.starting_slots, w)
+                _played[key] = w
+            except Exception:  # noqa: BLE001 — one week's boxscore failing costs its line-by-line only
+                pass
+            out.append(w)
+        return out
 
     league_raw, users_raw = b.raw, b.users_raw
     if not league_raw:
         return []
     out: list[recap_mod.PlayedWeek] = []
     players_raw: dict | None = None
-    for week in range(1, int(b.league.week) + 1):
+    # `only_latest` is the desk's cover line: one request for last week, not a season.
+    first = max(1, int(b.league.week) - 1) if only_latest else 1
+    for week in range(first, int(b.league.week) + 1):
         key = (platform, league_id, week)
         pw = _played.get(key)
         if pw is None:
@@ -280,7 +347,8 @@ PAST_SOURCES = ("freeze", "runs", "platform")
 
 def past_projections(league: League, week: int, recorded: dict[str, float] | None = None,
                      ids: set[str] | None = None, provider=None,
-                     frozen_rows: list[dict] | None = None) -> dict[str, tuple[float, str]]:
+                     frozen_rows: list[dict] | None = None,
+                     platform_own: dict[str, float] | None = None) -> dict[str, tuple[float, str]]:
     """{player_id: (projected points, source)} for a finished week, in SPEC-FILM D4's order.
 
     1. **freeze** — the Thursday freeze in `docs/frozen/`, scored in this league's scoring.
@@ -310,6 +378,10 @@ def past_projections(league: League, week: int, recorded: dict[str, float] | Non
         keep(pid, pts, "freeze")
     for pid, pts in (recorded or {}).items():
         keep(str(pid), pts, "runs")
+    # A platform that stores its own projection for the week (ESPN, `PlayedWeek.projected`),
+    # already in league points and keyed by that platform's ids, before the vendor's.
+    for pid, pts in (platform_own or {}).items():
+        keep(str(pid), pts, "platform")
     if ids is not None and ids <= out.keys():
         return out
     try:
@@ -376,3 +448,58 @@ def claims(transactions: list[dict], season_league_id: str, roster_id: str) -> d
             if str(rid) == str(roster_id):
                 out[str(pid)] = int(t.get("leg") or 0)
     return out
+
+
+def player_names(ids: set[str]) -> dict[str, str]:
+    """{player_id: name} for men the ledger names who may be on no roster now.
+
+    Read off the players dump, which is cached on disk; one that fails is an empty map and
+    the ledger prints the id's own name field rather than nothing.
+    """
+    try:
+        players = api.players()
+    except Exception:  # noqa: BLE001
+        return {}
+    out: dict[str, str] = {}
+    for pid in ids:
+        p = players.get(pid) or {}
+        name = p.get("full_name") or " ".join(x for x in (p.get("first_name"), p.get("last_name")) if x)
+        if name:
+            out[pid] = name
+    return out
+
+
+def platform_id_map(weeks: list) -> dict[str, str]:
+    """{platform player id: Sleeper id} for every man on a finished week's roster.
+
+    The stat log and the freeze are keyed by Sleeper id; an ESPN week names its players by
+    ESPN id. Each man is matched once through `player_map.sleeper_id_for`, the matcher the
+    connector uses. A man it cannot match is left out, and the film says less about him
+    rather than something wrong.
+    """
+    from edge.data.player_map import sleeper_id_for
+    try:
+        players = api.players()
+    except Exception:  # noqa: BLE001
+        return {}
+    out: dict[str, str] = {}
+    for w in weeks:
+        for team in w.teams.values():
+            for p in team.players:
+                if p.id in out:
+                    continue
+                sid = sleeper_id_for(p.name, p.position, p.nfl_team, players)
+                if sid:
+                    out[p.id] = sid
+    return out
+
+
+def log_for_platform_ids(log: dict[str, list], weeks: list, ids: dict[str, str] | None = None) -> dict[str, list]:
+    """The stat log re-keyed to a platform's own player ids (see `platform_id_map`)."""
+    ids = platform_id_map(weeks) if ids is None else ids
+    return {pid: log[sid] for pid, sid in ids.items() if sid in log}
+
+
+def pregame_for_platform_ids(pregame: dict[str, str | None], ids: dict[str, str]) -> dict[str, str | None]:
+    """The freeze's pregame tags re-keyed the same way. Unmatched men stay unknown."""
+    return {pid: pregame[sid] for pid, sid in ids.items() if sid in pregame}

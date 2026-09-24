@@ -33,6 +33,7 @@ import type {
   SeasonRecap,
   FilmSeason,
   FilmCover,
+  LeagueFilm,
   TeamGrades,
   PlayerHit,
   PlayerProfile,
@@ -470,7 +471,7 @@ export interface FilmRead {
 
 export async function getFilm(platform: Platform, leagueId: string, teamId: string): Promise<FilmRead> {
   if (USE_MOCKS) {
-    const film = { team: teamId, league: mocks.LEAGUE.name, cover: null, weeks: [], algo_version: mocks.FILM.algo_version };
+    const film = { team: teamId, league: mocks.LEAGUE.name, season: mocks.FILM.season, cover: null, weeks: [], algo_version: mocks.FILM.algo_version };
     return { locked: false, cover: null, film };
   }
   try {
@@ -480,6 +481,21 @@ export async function getFilm(platform: Platform, leagueId: string, teamId: stri
     return { locked: false, cover: film.cover, film };
   } catch (e) {
     if (e instanceof PaywallError && e.feature === "full_report") return { locked: true, cover: e.cover, film: null };
+    throw e;
+  }
+}
+
+/**
+ * The film's league half (docs/API.md §The league). Paid; a free reader's 402 comes back as
+ * `locked`. The mock branch has no league to compare, for the same reason as `getFilm`.
+ */
+export async function getLeagueFilm(platform: Platform, leagueId: string): Promise<{ locked: boolean; film: LeagueFilm | null }> {
+  if (USE_MOCKS) return { locked: false, film: null };
+  try {
+    const film = await request<LeagueFilm>(`/league/${platform}/${encodeURIComponent(leagueId)}/film/league`);
+    return { locked: false, film };
+  } catch (e) {
+    if (e instanceof PaywallError && e.feature === "full_report") return { locked: true, film: null };
     throw e;
   }
 }
@@ -529,6 +545,7 @@ export async function createShare(body: {
   give_players?: unknown[];
   get_players?: unknown[];
   call?: unknown;
+  film?: unknown;
 }): Promise<ShareResponse> {
   if (USE_MOCKS) return { id: "demo1234", url: `${window.location.origin}/s/demo1234` };
   return request<ShareResponse>("/share", { method: "POST", body: JSON.stringify(body) });

@@ -277,6 +277,11 @@ export const DESK = {
       const line = result !== null && opp !== null ? `${result} ${score.toFixed(0)}–${opp.toFixed(0)} · ` : "";
       return `${line}${hits} of ${total} call${total === 1 ? "" : "s"} hit`;
     },
+    /** The film's cover line from the replay, for a week with no recorded call. */
+    filmCover: (result: string | null, score: number, opp: number | null, line: string | null) => {
+      const head = result !== null && opp !== null ? `${result} ${score.toFixed(0)}–${opp.toFixed(0)}` : "";
+      return [head, line].filter(Boolean).join(" · ");
+    },
     /** The film's cover line before a week has been graded. */
     filmNone: "No week graded yet",
   },
@@ -1357,4 +1362,71 @@ export const FILM = {
   lineByLine: "This platform sends the scoreline but not who scored it, so the line-by-line is not here yet.",
   product: "The replay: every week, told",
   season: "Week by week",
+  /** Sharing the cover: free, like a Lock card (SPEC-FILM D2). */
+  share: {
+    button: "Share this week",
+    busy: "Making the link",
+    copy: "Copy",
+    copied: "Copied",
+    copyFail: "Could not copy. Select the link and copy it by hand.",
+    carried: "Carried the week",
+    pitch: "Somebody watched their week back on Penthouse: the result, why it went that way, and what to do before Thursday.",
+    title: (team: string, result: string, score: string) => `${team}: ${result} ${score}`,
+  },
+  /** The projector: the film's opening, once per graded week. */
+  projector: { aria: "The film is rolling", skip: "Tap to skip" },
+  /** The jump bar under the title: the three parts of the one scroll. */
+  parts: { replay: "Replay", league: "League", season: "Season" },
+  partsAria: "Jump to a part of the film",
+  /** The league half (SPEC-FILM F-5 to F-7). */
+  league: {
+    head: "The league",
+    locked: "Superlatives, the trade ledger and the playoff line",
+    supers: (week: number) => `Superlatives, week ${week}`,
+    title: {
+      top_score: "Top score",
+      unluckiest: "Unluckiest",
+      luckiest: "Luckiest",
+      blowout: "Blowout",
+      best_manager: "Best manager",
+      most_left: "Most left on the bench",
+      best_claim: "Best pickup",
+    },
+    you: "You",
+    groups: "Who's strong where",
+    groupsHint: "Rest-of-season grade at each position. Darker is a better room.",
+    team: "Team",
+    expect: "Above or below the projection",
+    expectHint: (weeks: number) => `Points against the starters' projections, over the ${weeks === 1 ? "one week" : `${weeks} weeks`} with a number for every starter.`,
+    above: "Above",
+    below: "Below",
+    gauntlet: "The gauntlet",
+    gauntletHint: "Points faced so far. The longest bar has had the hardest schedule.",
+    perGame: (pts: number) => `${pts.toFixed(1)} a game`,
+    ledger: "The ledger, so far",
+    ledgerHint: (week: number) => `Every trade and pickup, on the points each side has scored for its new team through week ${week}. So far, not final.`,
+    net: "Net so far",
+    moves: (n: number) => (n === 1 ? "1 move" : `${n} moves`),
+    trades: "Trades",
+    noTrades: "No trades yet.",
+    tradeWeek: (w: number) => `Week ${w}`,
+    tooNew: "Too new to judge",
+    tooEarly: "Too early to judge any move. The ledger ranks a trade or a pickup once it is two weeks old.",
+    got: "Got",
+    picks: (n: number) => (n === 1 ? "a pick" : `${n} picks`),
+    pts: (n: number) => `${n.toFixed(1)} pts`,
+    fromHere: (n: number) => `${n > 0 ? "+" : ""}${n.toFixed(1)} from here (projection)`,
+    bestClaims: "Best pickups",
+    worstClaims: "Pickups that cost",
+    cut: (names: string) => `cut ${names}`,
+    claimLine: (got: number, gave: number) => `${got.toFixed(1)} for you, ${gave.toFixed(1)} for the man you cut`,
+    playoffs: "The playoff picture",
+    playoffsHint: "If the season ended today. Record first, then points for.",
+    weeksLeft: (n: number) => (n === 1 ? "1 week left" : `${n} weeks left`),
+    line: "The line",
+    clear: (g: number) => (g === 0 ? "Level" : `${g} clear`),
+    back: (g: number) => (g === 0 ? "Level" : `${g} back`),
+    record: (w: number, l: number, t: number) => (t ? `${w}-${l}-${t}` : `${w}-${l}`),
+    empty: "The league half fills in after the first finished week.",
+  },
 } as const;

@@ -125,6 +125,18 @@ def league(season: int, league_id: str | int, views: tuple[str, ...] = DEFAULT_V
     return _get(url, params=[("view", v) for v in views], auth=auth)
 
 
+def boxscore(season: int, league_id: str | int, week: int, auth: EspnAuth | None = None) -> dict:
+    """One finished scoring period, line by line: every team's lineup that week, each
+    player's scored total (`appliedStatTotal`, in the league's own scoring) and ESPN's own
+    stored projection for him (`stats[statSourceId=1].appliedTotal`). One request a week;
+    the caller caches a finished week for good (`edge/api/service.played_weeks`)."""
+    if int(season) < MIN_SEASON:
+        raise EspnError(f"ESPN seasons before {MIN_SEASON} use the history API, which Penthouse doesn't support.")
+    url = f"{BASE}/seasons/{int(season)}/segments/0/leagues/{league_id}"
+    params = [("view", "mBoxscore"), ("view", "mMatchupScore"), ("scoringPeriodId", str(int(week)))]
+    return _get(url, params=params, auth=auth)
+
+
 def player_pool(season: int, limit: int = 50, slot_ids: list[int] | None = None) -> list[dict]:
     """Top players by % owned (any league defaults). Handy for checking ESPN's player JSON shape.
     Each item is a playerPoolEntry with `player` inside."""

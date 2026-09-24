@@ -186,8 +186,34 @@ export function saveBoomSeen(leagueId: string, week: number): void {
   }
 }
 
+/* ------------------------------------------------------------ the projector ---
+   The film's opening plays once per graded week per browser (SPEC-FILM D8): the key
+   carries the league, the season and the week, so a new week is a new showing.     */
+
+const FILM_PREFIX = "booth.film.";
+
+export function filmKey(leagueId: string, season: number, week: number): string {
+  return `${FILM_PREFIX}${leagueId}.${season}.${week}`;
+}
+
+export function loadFilmSeen(key: string): boolean {
+  try {
+    return window.localStorage.getItem(key) === "1";
+  } catch {
+    return true;
+  }
+}
+
+export function saveFilmSeen(key: string): void {
+  try {
+    window.localStorage.setItem(key, "1");
+  } catch {
+    /* blocked storage: loadFilmSeen already answers seen */
+  }
+}
+
 /**
- * Every one-time opening, back to unseen: the scout's seat, the GM's call, the lineup stamp. `?ride=1`
+ * Every one-time opening, back to unseen: the scout's seat, the GM's call, the lineup stamp, the projector. `?ride=1`
  * calls it, so replaying the elevator replays the whole first impression, not one room of it.
  */
 export function resetOpenings(): void {
@@ -196,7 +222,7 @@ export function resetOpenings(): void {
     window.localStorage.removeItem(CALL_KEY);
     for (let i = window.localStorage.length - 1; i >= 0; i--) {
       const k = window.localStorage.key(i);
-      if (k && k.startsWith(BOOM_SEEN_PREFIX)) window.localStorage.removeItem(k);
+      if (k && (k.startsWith(BOOM_SEEN_PREFIX) || k.startsWith(FILM_PREFIX))) window.localStorage.removeItem(k);
     }
   } catch {
     /* blocked storage: nothing was remembered to forget */

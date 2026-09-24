@@ -60,13 +60,26 @@ def top(action: dict) -> dict:
 FILM_KEYS = ("week", "result", "score", "opp_score", "hits", "total")
 
 
-def film(last_week: dict | None) -> dict | None:
-    """`engine/recap.last_week` cut to its one line: the result, the scoreline and how many
-    calls hit. Never a rate and never a sum, for the reason the recap gives. None whenever
-    the recap is None, which is every week 1 and every reader without a recorded call."""
-    if not last_week:
+def film(last_week: dict | None, cover: dict | None = None, season: int | None = None) -> dict | None:
+    """The film notebook's one line.
+
+    `last_week` is `engine/recap.last_week`, cut to the result, the scoreline and how many
+    calls hit: never a rate and never a sum, for the reason the recap gives. `cover` is the
+    replay's cover for the newest finished week (`engine/film.py`), whose line the notebook
+    carries, and which stands on its own for the reader we recorded no call for: `hits` and
+    `total` are then null. `season` keys the "not yet opened" light on the web.
+    None before any week is over.
+    """
+    if last_week:
+        out = {k: last_week.get(k) for k in FILM_KEYS}
+        out["line"] = cover.get("line") if cover and cover.get("week") == last_week.get("week") else None
+    elif cover:
+        out = {"week": cover.get("week"), "result": cover.get("result"), "score": cover.get("my_points"),
+               "opp_score": cover.get("their_points"), "hits": None, "total": None, "line": cover.get("line")}
+    else:
         return None
-    return {k: last_week.get(k) for k in FILM_KEYS}
+    out["season"] = season
+    return out
 
 
 def scoreboard(league, team, matchups_raw: list[dict] | None) -> list[dict]:
@@ -119,7 +132,7 @@ def standing(league, team, ros: dict[str, float], rows: list[dict] | None = None
 
 def build(team, feed: dict, entitlements: set[str], charts: dict | None = None,
           clock_ms: int | None = None, league=None, ros: dict[str, float] | None = None,
-          matchups_raw: list[dict] | None = None) -> dict:
+          matchups_raw: list[dict] | None = None, film_cover: dict | None = None) -> dict:
     """`feed` is `engine/actions.build(...)` for this team; `charts` defaults to the live
     boiled dump. `league` and `ros` are for the nameplate's standing; without them it is null.
     `matchups_raw` is the week's games, for the scoreboard the ticker runs after the news."""
@@ -134,7 +147,7 @@ def build(team, feed: dict, entitlements: set[str], charts: dict | None = None,
         "matchup": matchup_card(feed.get("matchup"), rows),
         "sheet": {"summary": feed.get("summary"), "moves": len(moves), "all_clear": feed.get("all_clear", False)},
         "binders": binders(feed, entitlements),
-        "film": film(feed.get("last_week")),
+        "film": film(feed.get("last_week"), film_cover, league.season if league is not None else None),
         # Every game this week, yours first, for the ticker.
         "scoreboard": scoreboard(league, team, matchups_raw) if league is not None else [],
         "entitlements": sorted(products.features_for([]) | set(entitlements)),

@@ -242,8 +242,18 @@ the other openings; it never rings over the day's first ride.
 
 ## The film opens on the replay (SPEC-FILM F-4, 2026-09-23)
 
-`/report` is one scroll in three parts: **the replay** (`components/film/Replay.tsx`), the
-free table (`Standings.tsx`), then the paid season week by week (`Film.tsx`, the old recap).
+`/report` is one scroll in three parts under a sticky jump bar (Replay · League · Season):
+**the replay** (`components/film/Replay.tsx`), **the league** (the free table, then the paid
+`components/film/League.tsx`: superlatives, the playoff line, the grade grid, the
+projection bars, the gauntlet, the ledger), then **the season** panel and chart (`Film.tsx`
+with `archive={false}`: the replay's week picker replaced the old week-by-week list).
+
+The league half's charts are plain HTML bars, one axis each, a value printed on every row.
+Above/below a projection is **blue/amber**, not green/red: the dataviz validator fails
+green/red for colour-blind readers on both themes and passes blue/amber. Every bar also
+sits on its own side of zero and carries its sign. Grades are one hue in four steps with the
+letter printed. Team names go through a `teamLabel()` string, player names through
+`PlayerName`.
 
 - **The cover is free.** A free reader's `/film` is a 402 whose detail carries the newest
   cover; `api.getFilm` turns that into `{locked: true, cover}` rather than an error, and the
@@ -256,6 +266,12 @@ free table (`Standings.tsx`), then the paid season week by week (`Film.tsx`, the
 - **Every number and every player sentence is the engine's.** A projection whose `source`
   is `platform` wears a small `*` and the starters card carries the "as Sleeper has it now"
   note. A starter row's name opens his page; the rest of the row opens his reasons.
+- **The projector** (`film/Projector.tsx`, `lib/projector.ts`) opens the replay once per
+  graded week per browser (`booth.film.<league>.<season>.<week>`, cleared by `?ride=1`),
+  never over the day's ride; `?film=1` replays it. The e2e harness seeds week 1 as seen.
+- **The desk's film notebook** shows the replay's cover line when no call was recorded
+  (`lib/film.notebookLine`, shared with the ride's third page) and lights until that week's
+  projector key is set.
 - **The demo build shows no replay**, the same rule as the recap: `getFilm` in mock mode
   returns the empty film. `mocks.FILM` exists only to pin the type.
 - **The fixture server serves the Megalabowl's real week 1** (`replay_week1/megalabowl`)

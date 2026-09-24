@@ -1170,12 +1170,23 @@ build order in §8.
       Free cover (also over the paywall), then the story cards with a rail; every starter
       opens his reasons, season and next move; the takeaway links into its tab. Copy in
       `FILM` (vocab.ts), card rules in `lib/film.ts` (tested), e2e for paid and free.
-- [ ] **F-5** The league: superlatives, position groups, expectation, the gauntlet, charts.
-- [ ] **F-6** The ledger: every trade and claim, graded on points since, "so far".
-- [ ] **F-7** The playoff picture (arithmetic first, odds later).
-- [ ] **F-8** ESPN boxscores so ESPN readers get the line-by-line.
-- [ ] **F-9** The projector opening, once per graded week, skippable.
-- [ ] **F-10** The Tuesday ritual: desk notebook, email cover line, film share card.
+- [x] **F-5** The league (2026-09-24): `edge/engine/league_film.py` + `components/film/League.tsx`.
+      Superlatives, the grade grid, points against projection, the gauntlet. `/film/league`.
+- [x] **F-6** The ledger (2026-09-24): trades and pickups on points scored for the new team
+      while rostered; drops counted wherever they went; ranked after two weeks; picks named.
+- [x] **F-7** The playoff picture (2026-09-24): seeds, the line, games clear/back, weeks left.
+- [x] **F-8** ESPN line-by-line (2026-09-24): `espn_api.boxscore` per finished week, cached for
+      good, mapped in `service._espn_boxscore_week`; ESPN's own stored projection is the
+      week's platform number; the stat log is re-keyed to ESPN ids by name. Fixture: league
+      521131 week 1, recorded by `scripts/record_espn_boxscore.py`; `tests/test_espn_film.py`.
+- [x] **F-9** The projector (2026-09-24): `components/film/Projector.tsx`, timeline in
+      `lib/projector.ts`. Leader 3-2-1 with a sweep, a shutter flicker, the result, the page.
+      Once per graded week per browser (`booth.film.<league>.<season>.<week>`), never over the
+      day's ride, tap skips, reduced motion shows the result and fades. `?film=1` replays.
+- [x] **F-10** The Tuesday ritual (2026-09-24): the desk's film notebook carries the replay's
+      cover line and lights until that week is opened; the weekly email leads with last week
+      (cover free, the reader's superlative only with the Full Report); "Share this week" on
+      the cover makes a free `kind: "film"` link and a 1080 film card (graphics.py, /s/{id}).
 
 ### Decisions taken (Andrew, 2026-09-23)
 
@@ -1184,18 +1195,31 @@ build order in §8.
   projections fall through freeze → runs → Sleeper's stored number, tagged by source.
   The backend may change, so `film.py` never calls a data module. Older seasons later.
 
-### Next session: F-5, F-6, F-7 (the league, the ledger, the playoffs)
+### The film is built (F-1 to F-10). What would come next
 
-Per SPEC-FILM §8. The superlatives and the playoff picture can reuse `film.py`'s cover facts
-and `League.playoff_teams`.
+- F-7 v2: playoff odds, simulated from ROS values (a projection, labelled as one).
+- Divisions and non-points tiebreaks in the playoff picture (map each platform's setting).
+- Photos on the film share card's star (the replay's attribution carries no photo today).
+- ESPN pregame tags: the freeze is keyed by Sleeper id; re-key it like the stat log.
 
 ### Decisions for Andrew (film, after F-1 to F-4)
 
-- **Three parts, one scroll** (SPEC-FILM §9): the replay, then the table, then the season.
-  Look at it live and say if it should be sub-tabs instead.
-- **The season list under the replay repeats each week in the old style.** Keep it as the
-  archive, or let a week chip on the replay be the only way back to an older week?
-
+- **Decided (2026-09-24, Andrew said decide):** one scroll with a sticky jump bar (Replay ·
+  League · Season) rather than sub-tabs, and the old week-by-week list is gone: the replay's
+  week picker opens any week. Say if either reads wrong.
+- **Ledger rules to judge:** points count only while the man is on the new roster; a
+  dropped man counts wherever he went; nothing ranks until it is two weeks old; draft picks
+  are counted, not valued; three-way trades are left out.
+- **The film share card says "Your best score of the season"** as the engine wrote it for the
+  reader; a friend reading the card sees "Your" meaning the sharer. Say if it should read in
+  the third person on the card.
+- **The projector plays for paid readers only** (it opens the story). A free reader sees
+  the cover without the countdown. Say if the free cover should roll too.
+- **The weekly email's film panel** is free (the cover); the superlative rides only with
+  the Full Report. Sending is still unwired (TASKS: Resend), so this shows in
+  `edge.cli email` renders until then.
+- **Playoff tiebreak is points for.** Leagues with divisions or another tiebreak will read
+  wrong until their settings are mapped. No odds yet (F-7 v2 would simulate from ROS).
 - **Render needs `EDGE_DEMO_UNLOCK=1`** to see the story while we test; without it the
   route serves only the cover (402 teaser), exactly as a free reader will.
 - **Thresholds are first guesses, not measured**: "unusual" is one deviation off his last

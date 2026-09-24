@@ -3,15 +3,20 @@
 import { useState } from "react";
 import { AppShell } from "@/components/Shell";
 import { Cover, Story, WeekPicker } from "@/components/film/Replay";
+import { League } from "@/components/film/League";
+import { Projector } from "@/components/film/Projector";
+import { ShareFilm } from "@/components/film/ShareFilm";
+import { standout } from "@/lib/film";
+import type { FilmCover, FilmShare, WeekFilm } from "@/lib/types";
 import { Locked } from "@/components/Locked";
 import { Film } from "@/components/Film";
 import { Standings } from "@/components/Standings";
 import { ErrorBox, Opening, SkeletonList, useHeldWait } from "@/components/ui";
-import { getFilm, getRecap, getStandings, type FilmRead } from "@/lib/api";
+import { getFilm, getLeagueFilm, getRecap, getStandings, type FilmRead } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { standingsView } from "@/lib/recap";
 import type { Connection } from "@/lib/storage";
-import type { SeasonRecap, Standings as StandingsPayload } from "@/lib/types";
+import type { LeagueFilm, SeasonRecap, Standings as StandingsPayload } from "@/lib/types";
 import { FILM } from "@/lib/vocab";
 
 /**
@@ -43,27 +48,64 @@ function ReportBody({ c, paid, signedIn, refresh }: {
 
   return (
     <div className="grid min-w-0 gap-7">
-      <ReplaySection
-        c={c}
-        paid={paid}
-        signedIn={signedIn}
-        refresh={refresh}
-        // Null only while the table is still loading or failed, and `Locked` falls back
-        // to the product blurb for that.
-        fallbackTeaser={data ? standingsView(data, c.team_id).teaser : null}
-      />
+      <nav className="film-parts" aria-label={FILM.partsAria}>
+        <a href="#replay">{FILM.parts.replay}</a>
+        <a href="#league">{FILM.parts.league}</a>
+        {paid && <a href="#season">{FILM.parts.season}</a>}
+      </nav>
 
-      {error ? (
-        <ErrorBox message={error} onRetry={reload} />
-      ) : data ? (
-        <Standings standings={data} teamId={c.team_id} />
-      ) : (
-        <SkeletonList rows={6} />
+      <div id="replay" className="film-anchor min-w-0">
+        <ReplaySection
+          c={c}
+          paid={paid}
+          signedIn={signedIn}
+          refresh={refresh}
+          // Null only while the table is still loading or failed, and `Locked` falls back
+          // to the product blurb for that.
+          fallbackTeaser={data ? standingsView(data, c.team_id).teaser : null}
+        />
+      </div>
+
+      <section id="league" className="film-anchor grid min-w-0 gap-5">
+        {error ? (
+          <ErrorBox message={error} onRetry={reload} />
+        ) : data ? (
+          <Standings standings={data} teamId={c.team_id} />
+        ) : (
+          <SkeletonList rows={6} />
+        )}
+        {paid && <LeagueSection c={c} />}
+      </section>
+
+      {paid && (
+        <div id="season" className="film-anchor min-w-0">
+          <FilmBody c={c} />
+        </div>
       )}
-
-      {paid && <FilmBody c={c} />}
     </div>
   );
+}
+
+function LeagueSection({ c }: { c: Connection }) {
+  const { data, error, reload } = useCached<{ locked: boolean; film: LeagueFilm | null }>(
+    `film-league:${c.platform}:${c.league_id}`,
+    () => getLeagueFilm(c.platform, c.league_id),
+  );
+  if (error) return <ErrorBox message={error} onRetry={reload} />;
+  if (!data) return <SkeletonList rows={4} />;
+  if (!data.film) return null;
+  return <League f={data.film} me={c.team_id} />;
+}
+
+/** What a film share carries: the cover, the team, and the man who carried the week. */
+function shareOf(cover: FilmCover, team: string, w?: WeekFilm): FilmShare {
+  const star = w ? standout(w) : null;
+  return {
+    result: cover.result, my_points: cover.my_points, their_points: cover.their_points,
+    opponent: cover.opponent, line: cover.line, team,
+    star: star ? { name: star.player.name, position: star.player.position, nfl_team: star.player.nfl_team ?? "FA",
+                   photo: null, team_logo: null, went: star.went } : null,
+  };
 }
 
 function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
@@ -86,6 +128,7 @@ function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
     return (
       <div className="grid min-w-0 gap-3">
         {data.cover && <Cover cover={data.cover} week={data.cover.week ?? 0} />}
+        {data.cover && <ShareFilm film={shareOf(data.cover, c.team_name)} leagueName={c.league_name} week={data.cover.week ?? 0} />}
         <Locked
           signedIn={signedIn}
           sku="full_report"
@@ -103,8 +146,11 @@ function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
   const w = weeks.find((x) => x.week === pick) ?? weeks[0];
   return (
     <div className="grid min-w-0 gap-3">
+      {/* The newest week gets the showing, whichever week the picker is on. */}
+      <Projector cover={weeks[0].cover} leagueId={c.league_id} season={data.film!.season} week={weeks[0].week} />
       <WeekPicker weeks={weeks.map((x) => x.week)} value={w.week} onPick={setPick} />
       <Cover cover={w.cover} week={w.week} />
+      <ShareFilm key={`share-${w.week}`} film={shareOf(w.cover, c.team_name, w)} leagueName={c.league_name} week={w.week} />
       <Story key={w.week} w={w} />
     </div>
   );
@@ -119,7 +165,7 @@ function FilmBody({ c }: { c: Connection }) {
 
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (waiting || !data) return <Opening />;
-  return <Film recap={data} />;
+  return <Film recap={data} archive={false} />;
 }
 
 export default function ReportPage() {

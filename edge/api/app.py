@@ -757,9 +757,27 @@ def owners_desk(platform: str, league_id: str, team_id: str, email: str | None =
     feed = actions_mod.build(b.league, t, b.ros, b.byes, ents, bid_stats=b.bid_stats,
                              trending=b.trending, profiles=b.profiles, matchups_raw=b.matchups,
                              last_week=_last_week(email, platform, league_id, b, t, auth))
-    out = desk.build(t, feed, ents, league=b.league, ros=b.ros, matchups_raw=b.matchups)
+    out = desk.build(t, feed, ents, league=b.league, ros=b.ros, matchups_raw=b.matchups,
+                     film_cover=_film_cover(platform, league_id, b, t, auth))
     out["synced_at"] = b.loaded_at
     return out
+
+
+def _film_cover(platform: str, league_id: str, b, t, auth) -> dict | None:
+    """The replay's cover for the newest finished week, for the desk's film notebook.
+
+    Free, like the cover on /report. One finished week is fetched (cached for good once
+    over), not the season, because this is the front page. Additive: a history that fails
+    upstream costs the notebook its line, never the desk.
+    """
+    from edge.data.scoring import score
+    from edge.engine import film
+    try:
+        weeks = service.played_weeks(platform, league_id, b, auth=auth, only_latest=True)
+        ctx = film.Context(league=b.league, score=lambda stats: score(stats, b.league.scoring), weeks=weeks)
+        return film.build(ctx, t.id)["cover"]
+    except Exception:  # noqa: BLE001
+        return None
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/desk/plan/{kind}/{mine_id}/{about_id}")
@@ -960,6 +978,8 @@ def _film_context(email: str | None, platform: str, league_id: str, b, t, weeks,
     recorded = recap_mod.projections_from_runs(rows)
     ctx.calls = recap_mod.calls_from_runs(rows)
     over = [w for w in weeks if w.week < league.week and w.played]
+    # The stat log and the freeze are keyed by Sleeper id; an ESPN week is not.
+    id_map = service.platform_id_map(over) if platform == "espn" else None
     from edge.data import frozen
     for w in over:
         team = w.teams.get(t.id)
@@ -967,13 +987,16 @@ def _film_context(email: str | None, platform: str, league_id: str, b, t, weeks,
         rows_frozen = frozen.load(league.season, w.week)
         if ids:
             ctx.projected[w.week] = service.past_projections(league, w.week, recorded.get(w.week), ids=ids,
-                                                             frozen_rows=rows_frozen or [])
+                                                             frozen_rows=rows_frozen or [],
+                                                             platform_own=w.projected)
         pregame = service.pregame_status(league.season, w.week, rows_frozen)
         if pregame is not None:
-            ctx.pregame[w.week] = pregame
+            ctx.pregame[w.week] = service.pregame_for_platform_ids(pregame, id_map) if id_map is not None else pregame
         ctx.results[w.week] = service.week_results(league.season, w.week)
     try:
         ctx.log = service.stat_log(league.season, league.week - 1)
+        if id_map is not None:
+            ctx.log = service.log_for_platform_ids(ctx.log, over, id_map)
     except Exception:  # noqa: BLE001
         ctx.log = {}
     # Next week's reads, from the engines that own them (SPEC-FILM §5: never computed here).
@@ -1040,6 +1063,40 @@ def film_week(platform: str, league_id: str, team_id: str, week: int,
     return _film(email, platform, league_id, team_id, auth, week=week)
 
 
+@app.get("/api/league/{platform}/{league_id}/film/league")
+def film_league(platform: str, league_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
+    """The film's league half: superlatives, position groups, expectation, the gauntlet, the
+    ledger and the playoff picture. Part of the Full Report; the standings stay free.
+    """
+    from edge.data.scoring import score
+    from edge.engine import league_film
+
+    b = _bundle(platform, league_id, auth)
+    _require(email, "full_report", teaser="This week's superlatives, the trade ledger and the playoff line are in.")
+    league = b.league
+    weeks = service.played_weeks(platform, league_id, b, auth=auth)
+    over = [w for w in weeks if w.week < league.week and w.played]
+    projected = {}
+    for w in over:
+        ids = {pid for t in w.teams.values() for pid in t.starters if pid and pid != "0"}
+        if ids:
+            projected[w.week] = service.past_projections(league, w.week, ids=ids, platform_own=w.projected)
+    try:
+        log = service.stat_log(league.season, league.week - 1)
+        if platform == "espn":
+            log = service.log_for_platform_ids(log, over)
+    except Exception:  # noqa: BLE001
+        log = {}
+    this_season = [t for t in b.transactions if str(t.get("league_id")) == str(league.id)]
+    ids = {str(pid) for t in this_season for pid in list((t.get("adds") or {})) + list((t.get("drops") or {}))}
+    names = {p.id: p.name for t in league.teams for p in t.players}
+    names.update({k: v for k, v in service.player_names(ids - names.keys()).items()})
+    ctx = league_film.LeagueContext(league=league, weeks=weeks, score=lambda stats: score(stats, league.scoring),
+                                    log=log, projected=projected, transactions=this_season, ros=b.ros, names=names)
+    claims = {t.id: service.claims(b.transactions, league.id, t.id) for t in league.teams}
+    return league_film.build(ctx, claims)
+
+
 class ShareIn(BaseModel):
     kind: str = "trade"
     league_name: str = ""
@@ -1051,6 +1108,8 @@ class ShareIn(BaseModel):
     get_players: list[dict] | None = None
     # kind="lock": a start/sit call
     call: dict | None = None
+    # kind="film": last week's replay cover
+    film: dict | None = None
 
 
 @app.post("/api/share")
@@ -1068,7 +1127,12 @@ def create_share(body: ShareIn, email: str | None = Depends(optional_user)):
     if not products.can(_skus(email), feature):
         raise HTTPException(402, detail={"error": f"{feature} requires a purchase", "feature": feature,
                                          "teaser": None, "upsell": products.upsell(_skus(email), feature)})
-    if kind == "lock":
+    if kind == "film":
+        f = body.film or {}
+        if f.get("my_points") is None:
+            raise HTTPException(422, "a film share needs the week's score")
+        snap = share_mod.film_snapshot(f, body.league_name, body.week or 0)
+    elif kind == "lock":
         call = body.call or {}
         if not (call.get("start") or {}).get("name"):
             raise HTTPException(422, "a start/sit share needs the player to start")

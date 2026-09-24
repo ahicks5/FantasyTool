@@ -76,14 +76,90 @@ def subject(feed: dict) -> str:
     return f"Week {week}: {title} (+{len(moves) - 1} more)"
 
 
-def preheader(feed: dict) -> str:
-    """The grey line after the subject in most inboxes. Wasting it is a wasted open."""
+def preheader(feed: dict, film: dict | None = None) -> str:
+    """The grey line after the subject in most inboxes. Wasting it is a wasted open.
+
+    With last week's film it leads with the film's cover line (SPEC-FILM F-10): the result
+    first, the week ahead second.
+    """
+    lead = _film_phrase(film)
+    if lead:
+        return f"{lead} {_calls_phrase(feed)}"
     m = feed.get("matchup") or {}
     tail = _calls_phrase(feed)
     if m.get("opponent") and m.get("win_prob") is not None:
         return (f"You {m['my_proj']:.0f}, {m['opponent']} {m['their_proj']:.0f} — "
                 f"{round(m['win_prob'] * 100)}% to win. {tail}")
     return f"{tail} {feed.get('footer', '')}".strip()
+
+
+# The league's titles, as the email says them. Same order as the web's superlatives.
+SUPERLATIVE_TITLE = {"top_score": "Top score", "best_manager": "Best manager", "best_claim": "Best pickup",
+                     "blowout": "Blowout", "unluckiest": "Unluckiest", "luckiest": "Luckiest",
+                     "most_left": "Most left on the bench"}
+
+
+def film_lead(cover: dict | None, superlatives: list[dict] | None, team_id: str, full_report: bool) -> dict | None:
+    """Last week's panel for this reader: the replay's cover (free), plus the first title
+    this team won in the league's superlatives, **only** with the Full Report.
+
+    The superlatives are the paid league half of the film; an email leaves our control the
+    moment it is sent, so a free reader's copy never carries one.
+    """
+    if not cover:
+        return None
+    out = dict(cover)
+    out["superlative"] = None
+    if full_report:
+        mine = [s for s in superlatives or [] if (s.get("team") or {}).get("id") == team_id]
+        mine.sort(key=lambda s: list(SUPERLATIVE_TITLE).index(s["kind"]) if s["kind"] in SUPERLATIVE_TITLE else 99)
+        if mine:
+            out["superlative"] = {"title": SUPERLATIVE_TITLE.get(mine[0]["kind"], mine[0]["kind"]), "line": mine[0]["line"]}
+    return out
+
+
+def _film_phrase(film: dict | None) -> str:
+    """'Last week: W 130-116. Your best score of the season.' No apostrophes, like the rest
+    of the preheader; the cover line is the engine's and is escaped where it is shown."""
+    if not film or film.get("my_points") is None:
+        return ""
+    res, mine, theirs = film.get("result"), film["my_points"], film.get("their_points")
+    score = f"{res} {mine:.0f}-{theirs:.0f}" if res and theirs is not None else f"{mine:.0f}"
+    line = film.get("line")
+    return f"Last week: {score}." + (f" {line}." if line else "")
+
+
+def _film_block(film: dict | None, base_url: str) -> str:
+    """Last week, in one panel: the replay's cover, and the superlative this reader won when
+    one was handed in. The caller hands one in only for a reader with the Full Report; the
+    cover itself is free everywhere, so it is free here."""
+    if not film or film.get("my_points") is None:
+        return ""
+    res, mine, theirs = film.get("result"), film["my_points"], film.get("their_points")
+    color = START if res == "W" else SIT if res == "L" else INK
+    score = (f'{mine:.1f} <span style="color:{MUTED};font-weight:400;">&ndash;</span> '
+             f'<span style="color:{MUTED};">{theirs:.1f}</span>') if theirs is not None else f"{mine:.1f}"
+    stamp = _stamp({"W": "Win", "L": "Loss", "T": "Tie"}[res], color) if res in ("W", "L", "T") else ""
+    line = (f'<div style="font-size:15px;font-weight:700;color:{INK};margin-top:8px;">{_esc(film.get("line"))}</div>'
+            if film.get("line") else "")
+    sup = film.get("superlative")
+    sup_html = (f'<div style="font-size:13px;color:{INK_2};margin-top:8px;">'
+                f'<b>{_esc(sup.get("title"))}:</b> {_esc(sup.get("line"))}</div>') if sup else ""
+    opp = f"vs {_esc(film.get('opponent'))}" if film.get("opponent") else ""
+    return f"""
+      <tr><td style="padding:0 0 12px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid {LINE};">
+          <tr><td style="padding:16px;">
+            {_eyebrow(f"The film &middot; Week {_esc(film.get('week'))}")}
+            <div style="margin-top:8px;">{stamp}</div>
+            <div style="font-size:26px;font-weight:800;color:{INK};margin-top:6px;">{score}</div>
+            <div style="font-size:13px;color:{MUTED};margin-top:2px;">{opp}</div>
+            {line}{sup_html}
+            <div style="font-size:13px;margin-top:10px;">
+              <a href="{_esc(base_url)}/report" style="color:{LEAN};font-weight:700;">Watch the replay</a></div>
+          </td></tr>
+        </table>
+      </td></tr>"""
 
 
 def _esc(s: object) -> str:
@@ -176,7 +252,8 @@ def _action_row(a: dict, n: int, base_url: str) -> str:
       </td></tr>"""
 
 
-def render_html(feed: dict, base_url: str = "https://penthouse.example", unsubscribe_url: str = "") -> str:
+def render_html(feed: dict, base_url: str = "https://penthouse.example", unsubscribe_url: str = "",
+                film: dict | None = None) -> str:
     m = feed.get("matchup") or {}
     actions = (feed.get("actions") or [])[:MAX_ACTIONS]
     matchup_block = ""
@@ -208,7 +285,7 @@ def render_html(feed: dict, base_url: str = "https://penthouse.example", unsubsc
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{_esc(subject(feed))}</title></head>
 <body style="margin:0;padding:0;background:{PLANE};">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">{_esc(preheader(feed))}</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">{_esc(preheader(feed, film))}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{PLANE};">
   <tr><td align="center" style="padding:24px 12px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
@@ -232,6 +309,7 @@ def render_html(feed: dict, base_url: str = "https://penthouse.example", unsubsc
       </td></tr>
       <tr><td style="padding:16px 20px 0 20px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          {_film_block(film, base_url)}
           {matchup_block}
           {''.join(_action_row(a, i, base_url) for i, a in enumerate(actions, 1))}
         </table>
@@ -251,7 +329,7 @@ def render_html(feed: dict, base_url: str = "https://penthouse.example", unsubsc
 </body></html>"""
 
 
-def render_text(feed: dict, base_url: str = "https://penthouse.example") -> str:
+def render_text(feed: dict, base_url: str = "https://penthouse.example", film: dict | None = None) -> str:
     """Plain-text alternative. Some clients show only this, and spam filters want it to exist.
 
     It carries the same margin numbers as the HTML, so a reply quoting "02" means the same
@@ -260,6 +338,13 @@ def render_text(feed: dict, base_url: str = "https://penthouse.example") -> str:
     lines = ["PENTHOUSE — CALL SHEET",
              f"Week {feed.get('week')} · {feed.get('team')}",
              feed.get("summary", ""), ""]
+    lead = _film_phrase(film)
+    if lead:
+        lines += [lead]
+        sup = (film or {}).get("superlative")
+        if sup:
+            lines += [f"{sup.get('title')}: {sup.get('line')}"]
+        lines += [f"Watch the replay: {base_url.rstrip('/')}/report", ""]
     m = feed.get("matchup") or {}
     if m.get("opponent") and m.get("win_prob") is not None:
         lines += [f"Matchup: you {m['my_proj']:.1f} vs {m['opponent']} {m['their_proj']:.1f} "
@@ -282,12 +367,16 @@ def render_text(feed: dict, base_url: str = "https://penthouse.example") -> str:
     return "\n".join(lines)
 
 
-def build(feed: dict, base_url: str = "https://penthouse.example", unsubscribe_url: str = "") -> dict:
+def build(feed: dict, base_url: str = "https://penthouse.example", unsubscribe_url: str = "",
+          film: dict | None = None) -> dict:
+    """`film` is last week's replay cover (`engine/film.py`, free), optionally with the
+    `superlative` this reader won ({"title", "line"}), which the caller includes only for a
+    reader with the Full Report."""
     return {
         "subject": subject(feed),
-        "preheader": preheader(feed),
-        "html": render_html(feed, base_url, unsubscribe_url),
-        "text": render_text(feed, base_url),
+        "preheader": preheader(feed, film),
+        "html": render_html(feed, base_url, unsubscribe_url, film),
+        "text": render_text(feed, base_url, film),
     }
 
 

@@ -588,10 +588,124 @@ export interface WeekFilm {
 export interface FilmSeason {
   team: string;
   league: string;
+  /** The NFL season, for keys that must not repeat next year (the projector's). */
+  season: number;
   /** The newest week's cover, with its week. Null before any week is over. */
   cover: FilmCover | null;
   /** Newest first. Only weeks that are over. */
   weeks: WeekFilm[];
+  algo_version: string;
+}
+
+// ---------------------------------------------------------------------------
+// The film's league half (docs/API.md §The league; edge/engine/league_film.py)
+// ---------------------------------------------------------------------------
+
+export interface FilmTeamRef {
+  id: string;
+  name: string;
+}
+
+export interface FilmSuperlative {
+  kind: "top_score" | "unluckiest" | "luckiest" | "blowout" | "best_manager" | "most_left" | "best_claim";
+  team: FilmTeamRef;
+  value: number;
+  line: string;
+}
+
+export interface FilmGroups {
+  positions: string[];
+  teams: { team: FilmTeamRef; overall: string; overall_rank: number; positions: Record<string, { grade: string; rank: number }> }[];
+}
+
+export interface FilmExpectation {
+  team: FilmTeamRef;
+  week: { points: number; projected: number; delta: number } | null;
+  /** Only the weeks where every starter had a number; `weeks` says how many. */
+  season: { points: number; projected: number; delta: number; weeks: number } | null;
+}
+
+export interface FilmGauntlet {
+  team: FilmTeamRef;
+  points_against: number;
+  per_game: number | null;
+  /** 1 = the most points faced. */
+  rank: number;
+}
+
+export interface FilmTradeSide {
+  team: FilmTeamRef;
+  /** What this side received. */
+  players: { id: string; name: string }[];
+  /** Points those players scored for this side since, while on its roster. So far. */
+  points: number;
+  /** Rest-of-season value of what it received: a projection, labelled as one. */
+  ros: number;
+  /** Draft picks received: named, not valued. */
+  picks: number;
+  net: number;
+  ros_from_here: number;
+}
+
+export interface FilmTrade {
+  week: number;
+  weeks_since: number;
+  /** False for a trade under two weeks old: shown, never ranked. */
+  ranked: boolean;
+  sides: FilmTradeSide[];
+}
+
+export interface FilmClaim {
+  week: number;
+  team: FilmTeamRef;
+  add: { id: string; name: string };
+  drop: { id: string; name: string }[];
+  /** What the pickup scored for this team while on it. */
+  points: number;
+  /** What the dropped men scored since, wherever they went. */
+  dropped_points: number;
+  net: number;
+  ranked: boolean;
+}
+
+export interface FilmLedger {
+  through_week: number | null;
+  trades: FilmTrade[];
+  best_claims: FilmClaim[];
+  worst_claims: FilmClaim[];
+  teams: { team: FilmTeamRef; moves: number; net: number }[];
+}
+
+export interface FilmSeed {
+  seed: number;
+  team: FilmTeamRef;
+  wins: number;
+  losses: number;
+  ties: number;
+  points_for: number;
+  in: boolean;
+  /** Inside the line: games clear of the first team out. Outside: games back of the last seed. */
+  games: number;
+}
+
+export interface FilmPlayoffs {
+  teams: number;
+  start_week: number | null;
+  weeks_left: number | null;
+  seeds: FilmSeed[];
+}
+
+export interface LeagueFilm {
+  league: string;
+  /** The newest finished week, which the superlatives are about. */
+  week: number | null;
+  superlatives: FilmSuperlative[];
+  groups: FilmGroups;
+  expectation: FilmExpectation[];
+  gauntlet: FilmGauntlet[];
+  ledger: FilmLedger;
+  /** Null when the league did not say how many make it, or nobody has played. */
+  playoffs: FilmPlayoffs | null;
   algo_version: string;
 }
 
@@ -690,7 +804,7 @@ export interface SharedPlayer {
   team_logo: string | null;
 }
 
-export type ShareKind = "trade" | "lock";
+export type ShareKind = "trade" | "lock" | "film";
 
 /** What the Lock share button sends. Display fields only; the API strips ids again anyway. */
 export interface LockCall {
@@ -726,8 +840,30 @@ export interface SharedVerdict {
   get_players: SharedPlayer[];
 }
 
-/** Either kind of snapshot. Shares written before Lock sharing existed carry no `kind`. */
-export type SharedSnapshot = SharedVerdict | SharedLock;
+/** What the film's share button sends: the replay cover and at most one player. */
+export interface FilmShare {
+  result: "W" | "L" | "T" | null;
+  my_points: number;
+  their_points: number | null;
+  opponent: string | null;
+  line: string | null;
+  team: string;
+  star: (SharedPlayer & { went: number }) | null;
+}
+
+/** The public snapshot behind /s/{id} for last week's replay cover. Free, like a Lock. */
+export interface SharedFilm extends FilmShare {
+  kind: "film";
+  league_name: string;
+  week: number;
+}
+
+/** Any kind of snapshot. Shares written before Lock sharing existed carry no `kind`. */
+export type SharedSnapshot = SharedVerdict | SharedLock | SharedFilm;
+
+export function isSharedFilm(s: SharedSnapshot): s is SharedFilm {
+  return s.kind === "film";
+}
 
 export function isSharedLock(s: SharedSnapshot): s is SharedLock {
   return s.kind === "lock";
@@ -925,8 +1061,13 @@ export interface Film {
   result: "W" | "L" | "T" | null;
   score: number;
   opp_score: number | null;
-  hits: number;
-  total: number;
+  /** Null when we recorded no call for this reader that week: the cover line stands alone. */
+  hits: number | null;
+  total: number | null;
+  /** The replay's cover line for that week, or null when the scoreline is the cover. */
+  line: string | null;
+  /** Keys the notebook's "not yet opened" light, with the league and the week. */
+  season: number | null;
 }
 
 /** Three numbers on the desk's nameplate. `ppg` is null before a game has been played. */

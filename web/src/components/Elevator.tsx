@@ -1,5 +1,6 @@
 "use client";
 /** The ride up: the opening, played as an elevator to the office and a walk to the desk. Tap to skip. */
+import { notebookLine } from "@/lib/film";
 import { useEffect, useRef, useState } from "react";
 import {
   advance,
@@ -257,7 +258,7 @@ export function ElevatorRide() {
                   <div className="ride-paper-title display">{SECTIONS.report.title}</div>
                   {desk ? (
                     <div className="ride-paper-line tnum">
-                      <span>{film ? DESK.notebooks.film(film.result, film.score, film.opp_score, film.hits, film.total) : DESK.notebooks.filmNone}</span>
+                      <span>{notebookLine(film)}</span>
                     </div>
                   ) : (
                     <Rules n={1} />

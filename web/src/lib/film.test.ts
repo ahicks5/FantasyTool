@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { dud, hasPlatformSource, historyLine, lineupBars, standout, storyCards, verdictTone } from "./film.ts";
+import { dud, hasPlatformSource, historyLine, lineupBars, notebookLine, standout, storyCards, verdictTone } from "./film.ts";
 import type { FilmAttribution, WeekFilm } from "./types.ts";
 
 function man(id: string, over: Partial<FilmAttribution> = {}): FilmAttribution {
@@ -79,4 +79,12 @@ test("a verdict's tone: gone off is good, every kind of down is bad, the rest is
   assert.equal(verdictTone("did_not_play"), "bad");
   assert.equal(verdictTone("as_expected"), null);
   assert.equal(verdictTone(null), null);
+});
+
+test("the desk's film line: calls when we recorded some, else the replay's cover line", () => {
+  const base = { week: 2, result: "W" as const, score: 130.08, opp_score: 116.08, line: "Your best score of the season", season: 2026 };
+  assert.equal(notebookLine({ ...base, hits: 2, total: 3 }), "W 130–116 · 2 of 3 calls hit");
+  assert.equal(notebookLine({ ...base, hits: null, total: null }), "W 130–116 · Your best score of the season");
+  assert.equal(notebookLine({ ...base, hits: null, total: null, line: null }), "W 130–116");
+  assert.equal(notebookLine(null), "No week graded yet");
 });

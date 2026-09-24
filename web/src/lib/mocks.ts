@@ -4,6 +4,7 @@ import { withArticle } from "./format";
 import type {
   AdminUsersResponse,
   FilmSeason,
+  LeagueFilm,
   Desk,
   NewsItem,
   Plan,
@@ -1584,7 +1585,7 @@ export function deskFor(teamId: string, entitlements: Feature[]): Desk {
          { matchup_id: 2, teams: [{ id: "4", name: "FxxxKroenke", proj: 121.4, points: null }, { id: "3", name: "HusH", proj: 109.7, points: null }] }]
       : [],
     film: feed.last_week
-      ? { week: feed.last_week.week, result: feed.last_week.result, score: feed.last_week.score, opp_score: feed.last_week.opp_score, hits: feed.last_week.hits, total: feed.last_week.total }
+      ? { week: feed.last_week.week, result: feed.last_week.result, score: feed.last_week.score, opp_score: feed.last_week.opp_score, hits: feed.last_week.hits, total: feed.last_week.total, line: null, season: null }
       : null,
     entitlements, synced_at: feed.synced_at,
   };
@@ -1639,6 +1640,7 @@ export function planFor(teamId: string, kind: string, mineId: string, aboutId: s
 export const FILM: FilmSeason = {
   team: "GoldenPP",
   league: "The Megalabowl",
+  season: 2026,
   cover: { week: 1, line: "You'd have beaten 9 of 11 teams this week", result: "L", my_points: 128.4,
            their_points: 131.2, opponent: "TrentDuckworth" },
   weeks: [
@@ -1680,4 +1682,20 @@ export const FILM: FilmSeason = {
     },
   ],
   algo_version: "film.v1",
+};
+
+/** The league half's shape (docs/API.md §The league). Never served, like `FILM`. */
+export const LEAGUE_FILM: LeagueFilm = {
+  league: "The Megalabowl",
+  week: 1,
+  superlatives: [{ kind: "top_score", team: { id: "3", name: "HusH" }, value: 159.1, line: "159.1, the most in the league" }],
+  groups: { positions: ["QB", "RB"], teams: [{ team: { id: "3", name: "HusH" }, overall: "A-", overall_rank: 1,
+    positions: { QB: { grade: "A", rank: 1 }, RB: { grade: "B", rank: 4 } } }] },
+  expectation: [{ team: { id: "3", name: "HusH" }, week: { points: 159.1, projected: 131.2, delta: 27.9 },
+    season: { points: 159.1, projected: 131.2, delta: 27.9, weeks: 1 } }],
+  gauntlet: [{ team: { id: "5", name: "GoldenPP" }, points_against: 146.6, per_game: 146.6, rank: 1 }],
+  ledger: { through_week: 1, trades: [], best_claims: [], worst_claims: [], teams: [{ team: { id: "5", name: "GoldenPP" }, moves: 2, net: 4.5 }] },
+  playoffs: { teams: 6, start_week: null, weeks_left: null, seeds: [{ seed: 1, team: { id: "3", name: "HusH" }, wins: 1, losses: 0,
+    ties: 0, points_for: 159.1, in: true, games: 1 }] },
+  algo_version: "league_film.v1",
 };
