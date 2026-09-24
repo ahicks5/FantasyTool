@@ -110,5 +110,10 @@ def test_the_stat_log_is_rekeyed_to_espn_ids_by_name(week1, espn_live_raw, monke
     assert len(rekeyed) / len(rostered) > 0.8, "most of a real roster matches by name"
 
 
+def test_the_freezes_pregame_tags_are_rekeyed_and_unmatched_men_stay_unknown():
+    ids = {"espn1": "s1", "espn2": "s2"}
+    assert service.pregame_for_platform_ids({"s1": "Questionable", "s9": None}, ids) == {"espn1": "Questionable"}
+
+
 def test_a_played_week_without_a_platform_projection_is_unchanged():
     assert PlayedWeek(week=3).projected == {}

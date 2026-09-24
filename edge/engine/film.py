@@ -91,8 +91,8 @@ class Context:
     log: dict[str, list[Any]] = field(default_factory=dict)   # player_id -> his `Line`s, any season
     # week -> {player_id: (projected points, "freeze" | "runs" | "platform")}
     projected: dict[int, dict[str, tuple[float, str]]] = field(default_factory=dict)
-    # week -> {player_id: pregame tag or None}, from the freeze only. A week absent here is a
-    # week we cannot prove the pregame tags for, and the lines say less.
+    # week -> {player_id: pregame tag or None}, from the freeze only. A player absent here is
+    # one we cannot prove the pregame tag for, and his lines say less.
     pregame: dict[int, dict[str, str | None]] = field(default_factory=dict)
     # week -> {nfl_team: {"opp", "for", "against"}}, finals only
     results: dict[int, dict[str, dict]] = field(default_factory=dict)
@@ -367,8 +367,11 @@ def attribute(ctx: Context, p: Player, slot: str, week: int, went: float, starte
     team = (line.team if line is not None else None) or p.nfl_team
     results = ctx.results.get(week, {})
     result = results.get(team) if team else None
-    known = week in ctx.pregame
-    tag = ctx.pregame.get(week, {}).get(p.id) if known else None
+    # Known only for a man the freeze actually holds. A week that was frozen still says
+    # nothing about a player missing from it (no projection that Thursday, or another
+    # platform's id), and "no injury tag before kickoff" would then be a claim we cannot back.
+    known = p.id in ctx.pregame.get(week, {})
+    tag = ctx.pregame[week][p.id] if known else None
 
     reasons: list[dict] = []
     v = verdict(had, went)

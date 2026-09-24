@@ -193,6 +193,14 @@ def test_without_a_freeze_the_exit_line_does_not_claim_there_was_no_tag():
     assert "tag" not in line
 
 
+def test_a_frozen_week_says_nothing_about_a_man_the_freeze_does_not_hold():
+    """Frozen that week, but not him (another platform's id, or no projection that Thursday):
+    'no injury tag before kickoff' would be a claim we cannot back."""
+    log = {"wr": _norm("wr", **_snaps("wr", 0.85)) + [_line("wr", WEEK, **_snaps("wr", 0.18))]}
+    line = _attr(_ctx(log, pregame={WEEK: {"someone_else": None}}), went=2.0)["reasons"][0]["line"]
+    assert line == "Left early: 18% of the snaps, read off the snap count"
+
+
 def test_the_film_never_names_a_body_part_the_line_did_not_send():
     log = {"wr": _norm("wr", **_snaps("wr", 0.85)) + [_line("wr", WEEK, **_snaps("wr", 0.18))]}
     text = json.dumps(_attr(_ctx(log, pregame={WEEK: {}}), went=2.0)).lower()

@@ -716,6 +716,8 @@ def _film_context(email: str | None, platform: str, league_id: str, b, t, weeks,
     recorded = recap_mod.projections_from_runs(rows)
     ctx.calls = recap_mod.calls_from_runs(rows)
     over = [w for w in weeks if w.week < league.week and w.played]
+    # The stat log and the freeze are keyed by Sleeper id; an ESPN week is not.
+    id_map = service.platform_id_map(over) if platform == "espn" else None
     from edge.data import frozen
     for w in over:
         team = w.teams.get(t.id)
@@ -727,12 +729,12 @@ def _film_context(email: str | None, platform: str, league_id: str, b, t, weeks,
                                                              platform_own=w.projected)
         pregame = service.pregame_status(league.season, w.week, rows_frozen)
         if pregame is not None:
-            ctx.pregame[w.week] = pregame
+            ctx.pregame[w.week] = service.pregame_for_platform_ids(pregame, id_map) if id_map is not None else pregame
         ctx.results[w.week] = service.week_results(league.season, w.week)
     try:
         ctx.log = service.stat_log(league.season, league.week - 1)
-        if platform == "espn":
-            ctx.log = service.log_for_platform_ids(ctx.log, over)
+        if id_map is not None:
+            ctx.log = service.log_for_platform_ids(ctx.log, over, id_map)
     except Exception:  # noqa: BLE001
         ctx.log = {}
     # Next week's reads, from the engines that own them (SPEC-FILM §5: never computed here).

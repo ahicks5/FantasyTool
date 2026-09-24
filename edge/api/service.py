@@ -469,28 +469,37 @@ def player_names(ids: set[str]) -> dict[str, str]:
     return out
 
 
-def log_for_platform_ids(log: dict[str, list], weeks: list) -> dict[str, list]:
-    """The stat log re-keyed to a platform's own player ids (ESPN's), by name matching.
+def platform_id_map(weeks: list) -> dict[str, str]:
+    """{platform player id: Sleeper id} for every man on a finished week's roster.
 
-    The log is keyed by Sleeper id; an ESPN week names its players by ESPN id. Every man on
-    a finished week's roster is matched once through `player_map.sleeper_id_for`, the same
-    matcher the connector uses. A man it cannot match simply has no log, and the film says
-    nothing unusual about him rather than something wrong.
+    The stat log and the freeze are keyed by Sleeper id; an ESPN week names its players by
+    ESPN id. Each man is matched once through `player_map.sleeper_id_for`, the matcher the
+    connector uses. A man it cannot match is left out, and the film says less about him
+    rather than something wrong.
     """
     from edge.data.player_map import sleeper_id_for
     try:
         players = api.players()
     except Exception:  # noqa: BLE001
         return {}
-    out: dict[str, list] = {}
-    seen: set[str] = set()
+    out: dict[str, str] = {}
     for w in weeks:
         for team in w.teams.values():
             for p in team.players:
-                if p.id in seen:
+                if p.id in out:
                     continue
-                seen.add(p.id)
                 sid = sleeper_id_for(p.name, p.position, p.nfl_team, players)
-                if sid and sid in log:
-                    out[p.id] = log[sid]
+                if sid:
+                    out[p.id] = sid
     return out
+
+
+def log_for_platform_ids(log: dict[str, list], weeks: list, ids: dict[str, str] | None = None) -> dict[str, list]:
+    """The stat log re-keyed to a platform's own player ids (see `platform_id_map`)."""
+    ids = platform_id_map(weeks) if ids is None else ids
+    return {pid: log[sid] for pid, sid in ids.items() if sid in log}
+
+
+def pregame_for_platform_ids(pregame: dict[str, str | None], ids: dict[str, str]) -> dict[str, str | None]:
+    """The freeze's pregame tags re-keyed the same way. Unmatched men stay unknown."""
+    return {pid: pregame[sid] for pid, sid in ids.items() if sid in pregame}
