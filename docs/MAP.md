@@ -112,7 +112,7 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (56 modules, 15,729 lines)
+### `edge/` — the Python engine and API (56 modules, 15,753 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
@@ -129,7 +129,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/api/service.py` | Loads a league with everything the engine needs (ROS values, byes, bid history, tendencies), | service, api +12 | 505 |
 | `edge/api/share.py` | Public share snapshots — the organic loop. | share, compliance | 85 |
 | `edge/api/store.py` | Tiny persistence: accounts, sessions, purchases and connected leagues. SQLite (stdlib) — zero cost, zero setup. | store_contract, accounts +13 | 440 |
-| `edge/api/store_pg.py` | The same store, on Postgres. Selected by DATABASE_URL; see store.open_store(). | store_contract | 390 |
+| `edge/api/store_pg.py` | The same store, on Postgres. Selected by DATABASE_URL; see store.open_store(). | store_contract | 414 |
 | `edge/business/economics.py` | Unit economics: what a sale is actually worth after everyone else takes their cut. | economics | 292 |
 | `edge/calibration.py` | How sure are we, really? Confidence from measured projection error, not from raw margin. | calibration, decisions +3 | 222 |
 | `edge/cli.py` | Demo commands. Live network. Usage: | espn_connector, send | 235 |
