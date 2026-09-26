@@ -23,6 +23,9 @@ def client(monkeypatch):
     monkeypatch.delenv("STRIPE_SECRET_KEY", raising=False)
     monkeypatch.delenv("EDGE_ADMINS", raising=False)
     monkeypatch.delenv("EDGE_DEMO_UNLOCK", raising=False)
+    # The per-account throttles live in the process; every test starts with a clean slate.
+    accounts.LOGIN_FAILURES.clear()
+    accounts.RESET_REQUESTS.clear()
     return TestClient(app_mod.app)
 
 
@@ -142,6 +145,97 @@ def test_forgot_never_says_whether_the_account_exists_and_reset_spends_the_token
     assert client.post("/api/auth/login", json={"email": EMAIL, "password": PW}).status_code == 401
     assert client.get("/api/me", headers=bearer(admin)).json()["signed_in"] is False
     assert client.post("/api/auth/login", json={"email": EMAIL, "password": "a brand new password"}).status_code == 200
+
+
+def test_a_reset_kills_every_other_link_still_in_the_inbox(client):
+    register(client)
+    first, second = (app_mod._reset_link("owner@example.com").split("token=")[1] for _ in range(2))
+    assert client.post("/api/auth/reset", json={"token": second, "password": "a brand new password"}).status_code == 200
+    assert client.post("/api/auth/reset", json={"token": first, "password": "someone elses pick"}).status_code == 400
+
+
+def test_reset_mail_is_capped_per_account_and_still_says_ok(client, monkeypatch):
+    register(client)
+    made = []
+    real = app_mod._reset_link
+    monkeypatch.setattr(app_mod, "_reset_link", lambda e: made.append(e) or real(e))
+    for _ in range(6):
+        r = client.post("/api/auth/forgot", json={"email": EMAIL})
+        assert r.status_code == 200 and r.json()["ok"]
+    assert len(made) == accounts.RESET_REQUESTS.limit, "past the cap nothing is issued, and the reply does not say so"
+
+
+def test_reset_links_open_on_our_site_even_when_the_env_var_is_missing(client, monkeypatch):
+    register(client)
+    monkeypatch.delenv("EDGE_WEB_URL", raising=False)
+    assert app_mod._reset_link("owner@example.com").startswith("https://fantasy-tool-alpha.vercel.app/reset?token=")
+    monkeypatch.setenv("EDGE_DEV", "1")
+    assert app_mod._reset_link("owner@example.com").startswith("http://localhost:3000/reset?token=")
+    monkeypatch.setenv("EDGE_WEB_URL", "https://example.test/")
+    assert app_mod._reset_link("owner@example.com").startswith("https://example.test/reset?token=")
+
+
+# ---- guessing, and the signed-in levers -------------------------------------------
+
+def test_ten_wrong_passwords_lock_that_account_for_a_while_not_the_ip(client):
+    register(client)
+    register(client, email="other@example.com")
+    for _ in range(accounts.LOGIN_FAILURES.limit):
+        assert client.post("/api/auth/login", json={"email": EMAIL, "password": "wrong password"}).status_code == 401
+    blocked = client.post("/api/auth/login", json={"email": EMAIL, "password": PW})
+    assert blocked.status_code == 429, "even the right password waits once the budget is spent"
+    assert client.post("/api/auth/login", json={"email": "other@example.com", "password": PW}).status_code == 200
+    # A reset is the way out, and it clears the count.
+    token = app_mod._reset_link("owner@example.com").split("token=")[1]
+    client.post("/api/auth/reset", json={"token": token, "password": "a brand new password"})
+    assert client.post("/api/auth/login", json={"email": EMAIL, "password": "a brand new password"}).status_code == 200
+
+
+def test_an_unknown_address_costs_the_same_scrypt_as_a_known_one(monkeypatch):
+    calls = []
+    real = accounts.check_password
+    monkeypatch.setattr(accounts, "check_password", lambda p, h: calls.append(h) or real(p, h))
+    assert accounts.check_password_or_waste_time("whatever", None) is False
+    assert len(calls) == 1 and calls[0].startswith("scrypt$"), "a real hash was checked, not a shortcut"
+
+
+def test_change_password_needs_the_old_one_and_signs_out_everything_else(client):
+    here = register(client)["token"]
+    phone = client.post("/api/auth/login", json={"email": EMAIL, "password": PW}).json()["token"]
+    link = app_mod._reset_link("owner@example.com").split("token=")[1]
+    wrong = client.post("/api/auth/password", headers=bearer(here),
+                        json={"current_password": "not it at all", "new_password": "a brand new password"})
+    assert wrong.status_code == 400
+    short = client.post("/api/auth/password", headers=bearer(here), json={"current_password": PW, "new_password": "short"})
+    assert short.status_code == 400
+    ok = client.post("/api/auth/password", headers=bearer(here), json={"current_password": PW, "new_password": "a brand new password"})
+    assert ok.status_code == 200
+    assert client.get("/api/me", headers=bearer(here)).json()["signed_in"] is True, "this device stays in"
+    assert client.get("/api/me", headers=bearer(phone)).json()["signed_in"] is False
+    assert client.post("/api/auth/reset", json={"token": link, "password": "sneaky new password"}).status_code == 400
+    assert client.post("/api/auth/login", json={"email": EMAIL, "password": "a brand new password"}).status_code == 200
+    assert client.post("/api/auth/password", json={"current_password": PW, "new_password": "x" * 12}).status_code == 401
+
+
+def test_sign_out_other_devices_keeps_this_one(client):
+    here = register(client)["token"]
+    there = client.post("/api/auth/login", json={"email": EMAIL, "password": PW}).json()["token"]
+    r = client.post("/api/auth/logout-others", headers=bearer(here))
+    assert r.status_code == 200 and r.json()["signed_out"] == 1
+    assert client.get("/api/me", headers=bearer(here)).json()["signed_in"] is True
+    assert client.get("/api/me", headers=bearer(there)).json()["signed_in"] is False
+    assert client.post("/api/auth/logout-others").status_code == 401
+
+
+def test_deleting_the_account_leaves_nothing_that_signs_in(client):
+    token = register(client)["token"]
+    app_mod._reset_link("owner@example.com")
+    assert client.delete("/api/me?confirm=delete", headers=bearer(token)).status_code == 200
+    assert client.get("/api/me", headers=bearer(token)).json()["signed_in"] is False
+    assert client.post("/api/auth/login", json={"email": EMAIL, "password": PW}).status_code == 401
+    data = app_mod.store.export_user("owner@example.com")["data"]
+    assert not data["users"] and not data["sessions"] and not data["resets"]
+    register(client)  # the address is free to sign up again
 
 
 # ---- plan flags and the upgrade ---------------------------------------------------

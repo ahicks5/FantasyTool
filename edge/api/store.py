@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS users (email TEXT PRIMARY KEY, password_hash TEXT NOT
   role TEXT NOT NULL DEFAULT 'user', created REAL, last_login REAL);
 CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, created REAL, expires REAL);
 CREATE TABLE IF NOT EXISTS resets (token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, created REAL, expires REAL, used REAL);
+CREATE INDEX IF NOT EXISTS sessions_email ON sessions (email);
+CREATE INDEX IF NOT EXISTS resets_email ON resets (email);
 CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, payload TEXT, created REAL, views INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS runs (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, week INTEGER,
   kind TEXT, algo_version TEXT, payload TEXT, created REAL);
@@ -192,9 +194,10 @@ class Store:
         self.db.execute("DELETE FROM sessions WHERE token_hash=?", (token_hash,))
         self.db.commit()
 
-    def delete_sessions(self, email: str) -> int:
-        """Sign an account out everywhere: after a password reset, or by the admin."""
-        cur = self.db.execute("DELETE FROM sessions WHERE email=?", (email.lower(),))
+    def delete_sessions(self, email: str, keep: str | None = None) -> int:
+        """Sign an account out everywhere: after a password reset or change, or by the admin.
+        `keep` is one token hash to spare: the device that asked."""
+        cur = self.db.execute("DELETE FROM sessions WHERE email=? AND token_hash<>?", (email.lower(), keep or ""))
         self.db.commit()
         return cur.rowcount
 
@@ -206,12 +209,30 @@ class Store:
     def consume_reset(self, token_hash: str, now: float | None = None) -> str | None:
         """Spend a reset token: the email it belongs to, once, before it expires; else None."""
         now = now or time.time()
-        row = self.db.execute("SELECT email, expires, used FROM resets WHERE token_hash=?", (token_hash,)).fetchone()
-        if not row or row[2] is not None or (row[1] is not None and row[1] < now):
-            return None
-        self.db.execute("UPDATE resets SET used=? WHERE token_hash=?", (now, token_hash))
+        # One statement, so two clicks racing on the same link cannot both spend it.
+        cur = self.db.execute("UPDATE resets SET used=? WHERE token_hash=? AND used IS NULL AND (expires IS NULL OR expires>=?)",
+                              (now, token_hash, now))
         self.db.commit()
-        return row[0]
+        if cur.rowcount != 1:
+            return None
+        row = self.db.execute("SELECT email FROM resets WHERE token_hash=?", (token_hash,)).fetchone()
+        return row[0] if row else None
+
+    def revoke_resets(self, email: str, now: float | None = None) -> int:
+        """Kill every unspent reset link for this account: once the password has changed,
+        a link still sitting in an inbox must not be able to change it again."""
+        cur = self.db.execute("UPDATE resets SET used=? WHERE email=? AND used IS NULL", (now or time.time(), email.lower()))
+        self.db.commit()
+        return cur.rowcount
+
+    def prune_auth(self, now: float | None = None) -> int:
+        """Drop sessions and reset links that can never work again. Safe any time."""
+        now = now or time.time()
+        n = self.db.execute("DELETE FROM sessions WHERE expires IS NOT NULL AND expires<?", (now,)).rowcount
+        n += self.db.execute("DELETE FROM resets WHERE (expires IS NOT NULL AND expires<?) OR used IS NOT NULL",
+                             (now,)).rowcount
+        self.db.commit()
+        return n
 
     # ---- the weekly email ----------------------------------------------------------
     # One row per account, written only when someone ticks or unticks the box. An address

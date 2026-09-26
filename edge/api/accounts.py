@@ -12,6 +12,7 @@ import os
 import re
 import secrets
 import time
+from collections import deque
 
 SESSION_DAYS = 30
 RESET_HOURS = 2
@@ -57,6 +58,65 @@ def check_password(password: str, stored: str) -> bool:
         return hmac.compare_digest(got.hex(), dk)
     except (ValueError, TypeError):
         return False
+
+
+_DUMMY_HASH: str | None = None
+
+
+def check_password_or_waste_time(password: str, stored: str | None) -> bool:
+    """`check_password`, but an unknown address costs the same scrypt as a known one, so
+    the time a sign-in takes cannot say whether an account exists."""
+    global _DUMMY_HASH
+    if stored:
+        return check_password(password, stored)
+    if _DUMMY_HASH is None:
+        _DUMMY_HASH = hash_password(secrets.token_hex(16))
+    check_password(password, _DUMMY_HASH)
+    return False
+
+
+class Throttle:
+    """At most `limit` events per key inside `window` seconds. In-process, like the IP limit
+    in `limits.py`, and for the same reason: one container, nothing else to run.
+
+    The IP limit alone does not protect one account: a guesser with many addresses gets a
+    fresh budget on each. This one is keyed by the account's email, so the budget belongs
+    to the account whoever spends it.
+    """
+
+    def __init__(self, limit: int, window: float):
+        self.limit, self.window = limit, window
+        self._hits: dict[str, deque[float]] = {}
+
+    def _live(self, key: str, now: float) -> deque[float]:
+        hits = self._hits.setdefault(key, deque())
+        while hits and hits[0] <= now - self.window:
+            hits.popleft()
+        return hits
+
+    def blocked(self, key: str, now: float | None = None) -> bool:
+        now = now if now is not None else time.monotonic()
+        return len(self._live(key, now)) >= self.limit
+
+    def hit(self, key: str, now: float | None = None) -> None:
+        now = now if now is not None else time.monotonic()
+        self._live(key, now).append(now)
+        if len(self._hits) > 10_000:  # an idle process must not grow forever
+            for k in [k for k, v in self._hits.items() if not self._live(k, now)]:
+                self._hits.pop(k, None)
+
+    def clear(self, key: str | None = None) -> None:
+        if key is None:
+            self._hits.clear()
+        else:
+            self._hits.pop(key, None)
+
+
+#: Wrong passwords per account per 15 minutes before sign-in answers 429. A success clears it.
+LOGIN_FAILURES = Throttle(10, 15 * 60)
+#: Reset emails per account per hour. Past it the form still says "sent": it must not tell
+#: a stranger anything, and it must not become a way to flood someone's inbox.
+RESET_REQUESTS = Throttle(3, 60 * 60)
 
 
 def new_token() -> str:

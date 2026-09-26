@@ -42,6 +42,7 @@ CREATE INDEX IF NOT EXISTS sessions_email ON sessions (email);
 CREATE TABLE IF NOT EXISTS resets (
   token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, created DOUBLE PRECISION, expires DOUBLE PRECISION,
   used DOUBLE PRECISION);
+CREATE INDEX IF NOT EXISTS resets_email ON resets (email);
 
 CREATE TABLE IF NOT EXISTS shares (
   id TEXT PRIMARY KEY, payload TEXT, created DOUBLE PRECISION, views INTEGER DEFAULT 0);
@@ -196,8 +197,8 @@ class PostgresStore:
     def delete_session(self, token_hash: str) -> None:
         self._exec("DELETE FROM sessions WHERE token_hash=%s", (token_hash,))
 
-    def delete_sessions(self, email: str) -> int:
-        cur = self._exec("DELETE FROM sessions WHERE email=%s", (email.lower(),))
+    def delete_sessions(self, email: str, keep: str | None = None) -> int:
+        cur = self._exec("DELETE FROM sessions WHERE email=%s AND token_hash<>%s", (email.lower(), keep or ""))
         return cur.rowcount
 
     def create_reset(self, email: str, token_hash: str, expires: float) -> None:
@@ -209,12 +210,21 @@ class PostgresStore:
 
     def consume_reset(self, token_hash: str, now: float | None = None) -> str | None:
         now = now or time.time()
-        cur = self._exec("SELECT email, expires, used FROM resets WHERE token_hash=%s", (token_hash,))
+        cur = self._exec(
+            "UPDATE resets SET used=%s WHERE token_hash=%s AND used IS NULL AND (expires IS NULL OR expires>=%s) "
+            "RETURNING email", (now, token_hash, now))
         row = cur.fetchone()
-        if not row or row[2] is not None or (row[1] is not None and row[1] < now):
-            return None
-        self._exec("UPDATE resets SET used=%s WHERE token_hash=%s", (now, token_hash))
-        return row[0]
+        return row[0] if row else None
+
+    def revoke_resets(self, email: str, now: float | None = None) -> int:
+        cur = self._exec("UPDATE resets SET used=%s WHERE email=%s AND used IS NULL", (now or time.time(), email.lower()))
+        return cur.rowcount
+
+    def prune_auth(self, now: float | None = None) -> int:
+        now = now or time.time()
+        n = self._exec("DELETE FROM sessions WHERE expires IS NOT NULL AND expires<%s", (now,)).rowcount
+        n += self._exec("DELETE FROM resets WHERE (expires IS NOT NULL AND expires<%s) OR used IS NOT NULL", (now,)).rowcount
+        return n
 
     def disconnect_league(self, email: str, platform: str, league_id: str) -> None:
         self._exec("DELETE FROM leagues WHERE email=%s AND platform=%s AND league_id=%s",

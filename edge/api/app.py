@@ -12,7 +12,7 @@ from edge import products
 from edge.api import desk, directory as directory_mod, lenses as lenses_mod, scout as scout_mod, service, share as share_mod
 from edge.api import accounts, auth
 from edge.api.auth import current_user, optional_user
-from edge.api.limits import RateLimitMiddleware, cors_origins, validate_id, validate_platform
+from edge.api.limits import PRODUCTION_WEB_ORIGIN, RateLimitMiddleware, cors_origins, validate_id, validate_platform
 from edge.api.store import open_store
 from edge.connectors import sleeper
 from edge.data import nfl_stats, schedule
@@ -91,6 +91,7 @@ def _me(email: str | None) -> dict:
 
 def _open_session(email: str) -> dict:
     """Sign an account in: a fresh token, its hash in the store, the account in the reply."""
+    store.prune_auth()  # dead sessions and spent links go on every sign-in; nothing else sweeps them
     token = accounts.new_token()
     store.create_session(email, accounts.token_hash(token), accounts.session_expiry())
     store.touch_login(email)
@@ -195,6 +196,11 @@ class ResetIn(BaseModel):
     password: str
 
 
+class PasswordIn(BaseModel):
+    current_password: str
+    new_password: str
+
+
 @app.post("/api/auth/register")
 def register(body: RegisterIn):
     """Create an account and sign it in. 409 when the address already has one."""
@@ -214,9 +220,13 @@ def login(body: LoginIn):
     """Sign in. One message for a wrong password and an unknown address, so the form
     cannot be used to find out who has an account."""
     email = accounts.normalize_email(body.email)
+    if accounts.LOGIN_FAILURES.blocked(email):
+        raise HTTPException(429, "too many wrong passwords; wait 15 minutes or reset it")
     user = store.get_user(email)
-    if not user or not accounts.check_password(body.password, user["password_hash"]):
+    if not accounts.check_password_or_waste_time(body.password, user["password_hash"] if user else None):
+        accounts.LOGIN_FAILURES.hit(email)
         raise HTTPException(401, "wrong email or password")
+    accounts.LOGIN_FAILURES.clear(email)
     return _open_session(email)
 
 
@@ -226,6 +236,38 @@ def logout(authorization: str | None = Header(default=None), email: str = Depend
     token = auth.bearer_token(authorization)
     if token:
         store.delete_session(accounts.token_hash(token))
+    return {"ok": True}
+
+
+@app.post("/api/auth/logout-others")
+def logout_others(authorization: str | None = Header(default=None), email: str = Depends(current_user)):
+    """Sign out every other device. This one stays in. For a lost phone or a shared laptop."""
+    token = auth.bearer_token(authorization)
+    n = store.delete_sessions(email, keep=accounts.token_hash(token) if token else None)
+    return {"ok": True, "signed_out": n}
+
+
+@app.post("/api/auth/password")
+def change_password(body: PasswordIn, authorization: str | None = Header(default=None),
+                    email: str = Depends(current_user)):
+    """Change the password while signed in. Needs the current one, so a borrowed unlocked
+    phone cannot take the account; then every other device is signed out, and so is every
+    reset link still sitting in an inbox."""
+    user = store.get_user(email)
+    if not user:
+        raise HTTPException(404, "no password on this account; use a reset link")
+    if accounts.LOGIN_FAILURES.blocked(email):
+        raise HTTPException(429, "too many wrong passwords; wait 15 minutes or reset it")
+    if not accounts.check_password(body.current_password, user["password_hash"]):
+        accounts.LOGIN_FAILURES.hit(email)
+        raise HTTPException(400, "your current password is wrong")
+    problem = accounts.password_problem(body.new_password)
+    if problem:
+        raise HTTPException(400, problem)
+    store.set_password(email, accounts.hash_password(body.new_password))
+    store.revoke_resets(email)
+    token = auth.bearer_token(authorization)
+    store.delete_sessions(email, keep=accounts.token_hash(token) if token else None)
     return {"ok": True}
 
 
@@ -239,14 +281,20 @@ def forgot_password(body: ForgotIn):
     """
     email = accounts.normalize_email(body.email)
     sent = False
-    if store.get_user(email):
+    if store.get_user(email) and not accounts.RESET_REQUESTS.blocked(email):
+        accounts.RESET_REQUESTS.hit(email)
         link = _reset_link(email)
         try:
             from edge.delivery import send
             result = send.sender_from_env().send(
                 to=email, subject="Reset your Penthouse password",
-                html=f'<p>Set a new password here: <a href="{link}">{link}</a></p><p>The link lasts two hours.</p>',
-                text=f"Set a new password here: {link}\nThe link lasts two hours.")
+                html=(f'<p>Someone asked to reset the password on your Penthouse account. If it was you, '
+                      f'set a new one here:</p><p><a href="{link}">{link}</a></p>'
+                      f'<p>The link works once and lasts {accounts.RESET_HOURS} hours. If it was not you, '
+                      f'ignore this email: your password has not changed.</p>'),
+                text=(f"Someone asked to reset the password on your Penthouse account. If it was you, "
+                      f"set a new one here:\n{link}\n\nThe link works once and lasts {accounts.RESET_HOURS} hours. "
+                      f"If it was not you, ignore this email: your password has not changed."))
             sent = not result.dry_run
         except Exception:  # noqa: BLE001 — a mail failure must not say whether the account exists
             sent = False
@@ -256,8 +304,17 @@ def forgot_password(body: ForgotIn):
 def _reset_link(email: str) -> str:
     token = accounts.new_token()
     store.create_reset(email, accounts.token_hash(token), accounts.reset_expiry())
-    base = os.environ.get("EDGE_WEB_URL", "http://localhost:3000").rstrip("/")
-    return f"{base}/reset?token={token}"
+    return f"{_web_base()}/reset?token={token}"
+
+
+def _web_base() -> str:
+    """Where a link we send should open. An unset `EDGE_WEB_URL` on the live API once sent
+    every share link to localhost (docs/DEPLOY.md); a reset link there locks the account
+    owner out, so outside dev the fallback is our own site."""
+    configured = os.environ.get("EDGE_WEB_URL", "").strip()
+    if configured:
+        return configured.rstrip("/")
+    return "http://localhost:3000" if os.environ.get("EDGE_DEV") == "1" else PRODUCTION_WEB_ORIGIN
 
 
 @app.post("/api/auth/reset")
@@ -270,7 +327,9 @@ def reset_password(body: ResetIn):
     if not email:
         raise HTTPException(400, "that reset link has expired or was already used")
     store.set_password(email, accounts.hash_password(body.password))
+    store.revoke_resets(email)
     store.delete_sessions(email)
+    accounts.LOGIN_FAILURES.clear(email)
     return _open_session(email)
 
 

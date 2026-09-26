@@ -298,6 +298,37 @@ def test_a_reset_token_is_spent_once_and_dies_on_time(store):
     assert store.get_user("a@b.c")["last_login"]
 
 
+def test_signing_out_other_devices_spares_the_one_that_asked(store):
+    for t in ("here", "phone", "laptop"):
+        store.create_session("a@b.c", t, expires=time.time() + 60)
+    store.create_session("x@y.z", "someone-else", expires=time.time() + 60)
+    assert store.delete_sessions("a@b.c", keep="here") == 2
+    assert store.session_email("here") == "a@b.c"
+    assert store.session_email("phone") is None and store.session_email("laptop") is None
+    assert store.session_email("someone-else") == "x@y.z", "other accounts untouched"
+
+
+def test_a_changed_password_kills_every_link_still_in_the_inbox(store):
+    store.create_reset("a@b.c", "r1", expires=time.time() + 60)
+    store.create_reset("a@b.c", "r2", expires=time.time() + 60)
+    store.create_reset("x@y.z", "theirs", expires=time.time() + 60)
+    assert store.revoke_resets("a@b.c") == 2
+    assert store.consume_reset("r1") is None and store.consume_reset("r2") is None
+    assert store.consume_reset("theirs") == "x@y.z"
+
+
+def test_pruning_drops_only_what_can_never_work_again(store):
+    store.create_session("a@b.c", "live", expires=time.time() + 60)
+    store.create_session("a@b.c", "dead", expires=time.time() - 1)
+    store.create_reset("a@b.c", "fresh", expires=time.time() + 60)
+    store.create_reset("a@b.c", "stale", expires=time.time() - 1)
+    store.create_reset("a@b.c", "spent", expires=time.time() + 60)
+    store.consume_reset("spent")
+    assert store.prune_auth() == 3
+    assert store.session_email("live") == "a@b.c"
+    assert store.consume_reset("fresh") == "a@b.c"
+
+
 def test_the_add_on_counts_by_row_and_the_admin_can_take_a_sku_back(store):
     store.grant("a@b.c", "league_slot", 2026, source="admin", ref="s1")
     store.grant("a@b.c", "league_slot", 2026, source="admin", ref="s2")
