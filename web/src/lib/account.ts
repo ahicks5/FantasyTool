@@ -2,7 +2,7 @@
  * The account, minus React: which league to open on a fresh sign-in, how the plan reads,
  * and how much room is left for leagues. Pure, so every rule is a node:test.
  */
-import type { Account, MeLeague, AccountPlan, Product, Sku } from "./types";
+import type { Account, AdminUser, MeLeague, AccountPlan, Product, Sku } from "./types";
 
 /**
  * The league a returning account should land on: the one opened most recently on any
@@ -63,4 +63,16 @@ export function shortDate(ts: number | null | undefined, now = new Date()): stri
   const d = new Date(ts * 1000);
   const sameYear = d.getFullYear() === now.getFullYear();
   return d.toLocaleDateString("en-US", sameYear ? { month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
+}
+
+/**
+ * The front office's search. Email and name, and also the league and team names on file:
+ * someone who has forgotten which address they signed up with still knows their league,
+ * and that is how the owner finds the account to send a reset link to (docs/ACCOUNTS.md).
+ */
+export function matchesAccount(u: AdminUser, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  const hay = [u.email, u.name, ...u.leagues.flatMap((l) => [l.name, l.team_name ?? "", l.league_id])];
+  return hay.some((h) => (h ?? "").toLowerCase().includes(needle));
 }

@@ -24,6 +24,17 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## Accounts: the recovery and security pass (2026-09-26)
+
+Andrew asked for an owner of registration and login: checks on every page, the schema, and a
+plan for forgotten passwords and usernames. **`docs/ACCOUNTS.md` is that plan** — every flow,
+what each checks, what we store, the recovery runbook, the known gaps. Shipped: change password,
+sign out other devices, per-account throttles, timing-safe sign-in, one-shot atomic reset links
+that die when the password changes, pruning, and the fix for a wrong password reading as "Your
+session has expired". Blocked on Andrew: an email provider (reset mail is still by hand from
+`/admin`), `NEXT_PUBLIC_SUPPORT_EMAIL` on Vercel, and confirming `DATABASE_URL` is set on Render
+(without it the free plan's disk loses every account on each deploy).
+
 ## Accounts: register, sign in, the flag, the admin (2026-09-24)
 
 Andrew's brief, in his words: "a register / login system ... sleek popups, login page, register,

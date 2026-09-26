@@ -52,7 +52,15 @@ unknown address alike.
 `POST /api/auth/forgot {"email"}` → `{"ok":true,"sent":false}` whether or not the address exists. `sent` is
 true only when an email provider is configured and delivered the link; otherwise the admin hands one over.
 `POST /api/auth/reset {"token","password"}` → `{"token","me"}`. The reset token is spent once, lasts two
-hours, and every other session on the account is signed out.
+hours, and every other session on the account is signed out, and every other unspent reset link dies.
+`POST /api/auth/password {"current_password","new_password"}` (signed in) → `{"ok":true}`. 400 on a wrong current
+password or a short new one. Every other session and every unspent reset link is ended; this session stays.
+`POST /api/auth/logout-others` (signed in) → `{"ok":true,"signed_out":n}`. Every session but this one.
+
+Per-account throttles, on top of the IP cap: 10 wrong passwords per address per 15 minutes and sign-in (and
+change password) answers 429 until the window passes or a reset lands; 3 reset emails per address per hour,
+past which `/forgot` still answers `ok` and sends nothing. An unknown address costs the same scrypt as a
+known one, so sign-in timing does not reveal who has an account. Rules and runbook: `docs/ACCOUNTS.md`.
 
 `POST /api/account/upgrade {"sku","success_url"?,"cancel_url"?}` (signed in) →
 - Stripe configured: `{"url":"https://checkout.stripe.com/...","granted":false,"me":null}`; the webhook grants.

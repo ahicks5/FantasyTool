@@ -43,8 +43,19 @@ the store contract on both backends, `web/e2e/account.spec.ts`).
       any league on file and tells the API (`/use`).
 - [ ] **AC-9** Password reset email needs an email provider (`EDGE_EMAIL_PROVIDER=resend`);
       until then the admin hands the link over from `/admin` and the screen says so.
-- [ ] **AC-10** Rate limits on `/api/auth/*` share the league cap (60/min per IP). A per-account
-      lockout after N failures would be the next step if guessing shows up in the logs.
+- [x] **AC-10** Per-account throttles on top of the IP cap: 10 wrong passwords per address per
+      15 min → 429 (a reset clears it); 3 reset mails per address per hour. Unknown addresses cost
+      the same scrypt as known ones, so timing does not reveal who has an account.
+- [x] **AC-12** Recovery and security audit (2026-09-26, `docs/ACCOUNTS.md` is the runbook).
+      Change password (needs the current one) and "Sign out other devices" on `/account`; a
+      reset or change kills every other link in the inbox; reset tokens spent atomically on both
+      stores; expired sessions/links pruned on sign-in; email indexes; reset links fall back to
+      the live site, not localhost, when `EDGE_WEB_URL` is unset; `/reset` strips the token from
+      the address bar. **Fixed:** a wrong password said "Your session has expired" (the league
+      reads' 401 copy) — the forms now use `lib/authError.ts`. Forgot screen says the sign-in is
+      the email; admin search finds an account by league or team name.
+- [ ] **AC-13** Email verification (confirm-your-address link), once reset mail sends (AC-9).
+- [ ] **AC-14** Self-serve change of sign-in email. Today: export, delete, re-register, re-grant.
 
 ## Round 5: the grid, the shortlist, the office rows (2026-09-23, night)
 

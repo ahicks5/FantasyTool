@@ -761,6 +761,32 @@ export const ACCOUNT = {
     save: "Save and sign in",
     missing: "This link is missing its token. Ask for a new one.",
     back: "Back to sign in",
+    /** Your sign-in name is your email; there is no separate username to forget. */
+    whichEmail: "Your sign-in is the email you signed up with. Not sure which one? Try each: this form never says which address has an account.",
+    support: (email: string) => `Still locked out? Email ${email} from the address you think it is, and we\u2019ll send a link by hand.`,
+    expired: "That link has expired or was already used. Ask for a new one below.",
+  },
+  /** What a sign-in form says when it fails. The generic error box talks about sessions and league platforms; these talk about the door. */
+  errors: {
+    wrong: "Wrong email or password",
+    wrongDetail: "Check both and try again, or reset your password.",
+    taken: "That email already has an account",
+    takenDetail: "Sign in instead, or reset the password if you have lost it.",
+    slow: "Too many tries",
+    slowDetail: "Wait 15 minutes, or reset your password now.",
+    bad: "That did not work",
+  },
+  /** The security block on the account page. */
+  security: {
+    eyebrow: "Sign-in and security",
+    line: "Change your password, or sign out every other phone and laptop. This one stays in.",
+    current: "Current password",
+    change: "Change password",
+    save: "Save new password",
+    changed: "Password changed. Every other device is signed out.",
+    others: "Sign out other devices",
+    othersDone: (n: number) => (n === 0 ? "No other device was signed in." : `Signed out ${n} other device${n === 1 ? "" : "s"}.`),
+    cancel: "Cancel",
   },
   /** The owner's desk. */
   admin: {

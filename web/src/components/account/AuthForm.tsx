@@ -10,6 +10,8 @@ import type { Me } from "@/lib/types";
 import { Button, ErrorBox } from "@/components/ui";
 import { IconCheck } from "@/components/icons";
 import { ACCOUNT } from "@/lib/vocab";
+import { describeAuthError } from "@/lib/authError";
+import { LEGAL } from "@/lib/legal";
 
 export type AuthMode = "signin" | "register" | "forgot";
 
@@ -66,6 +68,7 @@ export function AuthForm({
           <IconCheck size={22} strokeWidth={2.6} />
         </span>
         <p className="text-[15px] leading-relaxed text-ink">{sent.sent ? ACCOUNT.reset.sent : ACCOUNT.reset.notSent}</p>
+        {LEGAL.supportEmail && <p className="text-[13px] leading-relaxed text-muted">{ACCOUNT.reset.support(LEGAL.supportEmail)}</p>}
         <button type="button" onClick={() => switchTo("signin")} className="min-h-11 text-left text-[14px] font-bold text-lean underline underline-offset-4">
           {ACCOUNT.reset.back}
         </button>
@@ -104,6 +107,7 @@ export function AuthForm({
           autoFocus={autoFocus && mode !== "register"}
         />
       </label>
+      {mode === "forgot" && <p className="text-[12px] leading-relaxed text-muted" data-testid="which-email">{ACCOUNT.reset.whichEmail}</p>}
       {mode !== "forgot" && (
         <label className="grid gap-1.5">
           <span className="eyebrow">{ACCOUNT.password}</span>
@@ -130,7 +134,7 @@ export function AuthForm({
               ? ACCOUNT.reset.cta
               : ACCOUNT.signIn}
       </Button>
-      {error ? <ErrorBox error={error} /> : null}
+      {error ? <ErrorBox error={error} describe={describeAuthError} /> : null}
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[13px] text-muted">
         {mode === "signin" && (
           <>

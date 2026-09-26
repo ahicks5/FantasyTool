@@ -7,7 +7,7 @@ import { DoorFrame } from "@/components/account/Door";
 import { Loading } from "@/components/Loading";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton } from "@/components/ui";
 import { adminGrant, adminResetLink, adminRevoke, adminSetRole, adminUsers } from "@/lib/api";
-import { shortDate } from "@/lib/account";
+import { matchesAccount, shortDate } from "@/lib/account";
 import { useSession } from "@/lib/session";
 import type { AdminUser, AdminUsersResponse, Sku } from "@/lib/types";
 import { ACCOUNT } from "@/lib/vocab";
@@ -149,9 +149,7 @@ function AdminBody({ me }: { me: string }) {
   }, []);
   useEffect(load, [load]);
   const users = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    const all = data?.users ?? [];
-    return needle ? all.filter((u) => u.email.includes(needle) || u.name.toLowerCase().includes(needle)) : all;
+    return (data?.users ?? []).filter((u) => matchesAccount(u, q));
   }, [data, q]);
 
   if (error) return <ErrorBox error={error} onRetry={load} />;

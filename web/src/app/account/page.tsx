@@ -9,7 +9,8 @@ import { DoorFrame } from "@/components/account/Door";
 import { IconCheck, IconChevron } from "@/components/icons";
 import { Loading } from "@/components/Loading";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton, OnAir } from "@/components/ui";
-import { deleteMyAccount, exportMyData, forgetLeague, getLeague, getProducts, logout, markLeagueUsed } from "@/lib/api";
+import { changePassword, deleteMyAccount, exportMyData, forgetLeague, getLeague, getProducts, logout, logoutOthers, markLeagueUsed } from "@/lib/api";
+import { describeAuthError } from "@/lib/authError";
 import { leagueRoom, upgradesFor } from "@/lib/account";
 import { formatCents } from "@/lib/format";
 import { useSession } from "@/lib/session";
@@ -31,6 +32,92 @@ function PlanFlag({ premium, admin }: { premium: boolean; admin: boolean }) {
       </span>
       {admin && <span className="inline-flex rounded-full bg-ink px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-paper">{ACCOUNT.plan.admin}</span>}
     </span>
+  );
+}
+
+const FIELD =
+  "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
+
+/** Change the password (needs the current one) and sign out every other device. */
+function Security() {
+  const [open, setOpen] = useState(false);
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [busy, setBusy] = useState<"save" | "others" | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  const [note, setNote] = useState<string | null>(null);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy("save");
+    setError(null);
+    setNote(null);
+    try {
+      await changePassword(current, next);
+      setOpen(false);
+      setCurrent("");
+      setNext("");
+      setNote(ACCOUNT.security.changed);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function others() {
+    setBusy("others");
+    setError(null);
+    setNote(null);
+    try {
+      setNote(ACCOUNT.security.othersDone(await logoutOthers()));
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <section className="mt-8" data-testid="security">
+      <Eyebrow>{ACCOUNT.security.eyebrow}</Eyebrow>
+      <p className="mt-1 text-[13px] leading-snug text-muted">{ACCOUNT.security.line}</p>
+      <div className="mt-3 grid gap-2">
+        {open ? (
+          <form onSubmit={save} className="card grid gap-3 p-4">
+            <label className="grid gap-1.5">
+              <span className="eyebrow">{ACCOUNT.security.current}</span>
+              <input className={FIELD} type="password" required autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} autoFocus />
+            </label>
+            <label className="grid gap-1.5">
+              <span className="eyebrow">{ACCOUNT.newPassword}</span>
+              <input className={FIELD} type="password" required minLength={8} autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} />
+              <span className="text-[12px] text-muted">{ACCOUNT.passwordHint}</span>
+            </label>
+            <Button type="submit" variant="start" className="w-full" busy={busy === "save"} disabled={!current || !next}>
+              {ACCOUNT.security.save}
+            </Button>
+            <Button type="button" variant="ghost" className="w-full" onClick={() => setOpen(false)}>
+              {ACCOUNT.security.cancel}
+            </Button>
+          </form>
+        ) : (
+          <Button variant="secondary" className="w-full" onClick={() => (setOpen(true), setNote(null), setError(null))}>
+            {ACCOUNT.security.change}
+          </Button>
+        )}
+        <Button variant="ghost" className="w-full" busy={busy === "others"} onClick={others}>
+          {ACCOUNT.security.others}
+        </Button>
+        {note && (
+          <p role="status" className="flex items-center gap-1.5 text-[13px] font-bold text-start">
+            <IconCheck size={14} strokeWidth={3} />
+            {note}
+          </p>
+        )}
+        {error ? <ErrorBox error={error} describe={describeAuthError} /> : null}
+      </div>
+    </section>
   );
 }
 
@@ -257,6 +344,8 @@ function AccountBody() {
       <div className="mt-8 rise rise-3">
         <EmailOptIn />
       </div>
+
+      <Security />
 
       {/* The privacy page's promises, with buttons behind them. */}
       <section className="mt-8">

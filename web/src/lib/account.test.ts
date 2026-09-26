@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { initialOf, leagueRoom, offersFor, pickLeague, planWord, shortDate, upgradesFor } from "./account.ts";
-import type { Account, MeLeague, Product } from "./types";
+import { initialOf, leagueRoom, matchesAccount, offersFor, pickLeague, planWord, shortDate, upgradesFor } from "./account.ts";
+import type { Account, AdminUser, MeLeague, Product } from "./types";
 
 const L = (id: string, last_used: number | null): MeLeague => ({ platform: "sleeper", league_id: id, name: id, team_id: "1", last_used });
 
@@ -62,4 +62,18 @@ test("a stamp reads as a short date and nothing reads as a date when there is no
   const now = new Date(2026, 8, 24);
   assert.match(shortDate(Date.UTC(2026, 8, 20, 12) / 1000, now), /Sep 20/);
   assert.match(shortDate(Date.UTC(2025, 0, 5, 12) / 1000, now), /2025/);
+});
+
+test("the front office finds an account by its league when the owner forgot the address", () => {
+  const u = {
+    email: "someone@mail.test", name: "", role: "user", is_admin: false, plan: { tier: "free", name: "Free", skus: [] },
+    skus: [], leagues_allowed: 3,
+    leagues: [{ platform: "sleeper", league_id: "1403186749361901568", name: "The Megalabowl", team_id: "5", team_name: "GoldenPP", last_used: null }],
+  } as unknown as AdminUser;
+  assert.ok(matchesAccount(u, "megalabowl"));
+  assert.ok(matchesAccount(u, "goldenpp"));
+  assert.ok(matchesAccount(u, "1403186749"));
+  assert.ok(matchesAccount(u, "SOMEONE@"));
+  assert.ok(matchesAccount(u, "  "));
+  assert.ok(!matchesAccount(u, "nobody"));
 });

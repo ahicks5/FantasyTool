@@ -150,7 +150,7 @@ test("a stranger's door is the account: register, land on it, then link a league
 
   // Sign out: the token is gone and the door shows the form.
   await page.goto("/account");
-  await page.getByRole("button", { name: ACCOUNT.signOut }).click();
+  await page.getByRole("button", { name: ACCOUNT.signOut, exact: true }).click();
   await page.waitForURL("**/");
   expect(await page.evaluate(() => localStorage.getItem("booth.session"))).toBeNull();
   await page.goto("/login");
@@ -190,7 +190,40 @@ test("a wrong password says one thing and signs nobody in", async ({ context, pa
   await page.getByLabel(ACCOUNT.password).fill("not the password");
   await page.getByRole("button", { name: ACCOUNT.signIn, exact: true }).click();
   await expect(page.getByRole("alert")).toBeVisible();
+  // It once said "Your session has expired", which is the generic 401 copy for league reads.
+  const alert = page.locator('[data-auth="signin"]').getByRole("alert");
+  await expect(alert).toContainText(ACCOUNT.errors.wrong);
+  await expect(alert).not.toContainText(/session|expired/i);
   expect(await page.evaluate(() => localStorage.getItem("booth.session"))).toBeNull();
+});
+
+test("the account changes its password and signs out the other devices, and this one stays in", async ({ context, page }) => {
+  await beAStranger(context);
+  const email = freshEmail("security");
+  const token = await registerViaApi(page, email);
+  const other = await page.request.post(`${API_URL}/api/auth/login`, { data: { email, password: PASSWORD } });
+  const otherToken = (await other.json()).token as string;
+  await context.addInitScript((t) => window.localStorage.setItem("booth.session", t), token);
+  await page.goto("/account");
+  const security = page.getByTestId("security");
+  await security.getByRole("button", { name: ACCOUNT.security.change }).click();
+  await security.getByLabel(ACCOUNT.security.current).fill(PASSWORD);
+  await security.getByLabel(ACCOUNT.newPassword).fill("a whole new floor plan");
+  await security.getByRole("button", { name: ACCOUNT.security.save }).click();
+  await expect(security.getByRole("status")).toHaveText(ACCOUNT.security.changed);
+  const me = async (t: string) =>
+    (await (await page.request.get(`${API_URL}/api/me`, { headers: { Authorization: `Bearer ${t}` } })).json()).signed_in;
+  expect(await me(token)).toBe(true);
+  expect(await me(otherToken)).toBe(false);
+  await security.getByRole("button", { name: ACCOUNT.security.others }).click();
+  await expect(security.getByRole("status")).toHaveText(ACCOUNT.security.othersDone(0));
+});
+
+test("forgot password says your sign-in is your email", async ({ context, page }) => {
+  await beAStranger(context);
+  await page.goto("/login");
+  await page.getByRole("button", { name: ACCOUNT.forgot }).click();
+  await expect(page.getByTestId("which-email")).toHaveText(ACCOUNT.reset.whichEmail);
 });
 
 test("a locked room's button opens the sign-in sheet, then the upgrade, and the room opens", async ({ context, page }) => {

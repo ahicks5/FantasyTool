@@ -1,10 +1,11 @@
 "use client";
 /** Set a new password from a reset link (`?token=`), then land upstairs signed in. */
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { resetPassword } from "@/lib/api";
 import { Button, ErrorBox, Eyebrow, LinkButton } from "@/components/ui";
 import { ACCOUNT, LINES } from "@/lib/vocab";
+import { describeAuthError } from "@/lib/authError";
 import { DoorFrame } from "@/components/account/Door";
 
 const FIELD =
@@ -12,7 +13,13 @@ const FIELD =
 
 function ResetInner() {
   const router = useRouter();
-  const token = useSearchParams().get("token") ?? "";
+  // Held in state, then taken off the address bar: a reset token in the URL would sit in
+  // the history and ride out in a Referer to anything this page loads.
+  const params = useSearchParams();
+  const [token] = useState(() => params.get("token") ?? "");
+  useEffect(() => {
+    if (token && typeof window !== "undefined") window.history.replaceState(null, "", "/reset");
+  }, [token]);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -48,7 +55,12 @@ function ResetInner() {
             <Button type="submit" variant="start" className="w-full" busy={busy} disabled={!password}>
               {ACCOUNT.reset.save}
             </Button>
-            {error ? <ErrorBox error={error} /> : null}
+            {error ? <ErrorBox error={error} describe={describeAuthError} /> : null}
+            {error ? (
+              <LinkButton href="/login" variant="ghost" className="w-full">
+                {ACCOUNT.reset.back}
+              </LinkButton>
+            ) : null}
           </form>
         ) : (
           <div className="card grid gap-4 p-5">

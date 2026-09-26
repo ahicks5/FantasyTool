@@ -283,6 +283,22 @@ export async function resetPassword(token: string, password: string): Promise<Au
   return out;
 }
 
+/** Change the password while signed in. The API signs out every other device; this one stays in. */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  if (USE_MOCKS) return;
+  await request<unknown>("/auth/password", {
+    method: "POST",
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+}
+
+/** Sign out every other device. Returns how many sessions ended. */
+export async function logoutOthers(): Promise<number> {
+  if (USE_MOCKS) return 0;
+  const out = await request<{ signed_out: number }>("/auth/logout-others", { method: "POST" });
+  return out.signed_out;
+}
+
 /**
  * Upgrade: a checkout when Stripe is wired (the reply carries its `url`), a direct grant
  * when it is not (`granted`). `returnTo` is where a checkout should bring the buyer back.

@@ -708,10 +708,21 @@ export function LoadingBar({ className = "" }: { className?: string }) {
   );
 }
 
-export function ErrorBox({ error, message, onRetry }: { error?: unknown; message?: string; onRetry?: () => void }) {
+export function ErrorBox({
+  error,
+  message,
+  onRetry,
+  describe = describeError,
+}: {
+  error?: unknown;
+  message?: string;
+  onRetry?: () => void;
+  /** The account forms pass `describeAuthError`: on the door a 401 is a wrong password, not an expired session. */
+  describe?: typeof describeError;
+}) {
   // navigator.onLine is read at render: a dropped connection explains every other
   // symptom, and "you are offline" beats "Penthouse is having a problem" when it is a tunnel.
-  const copy = describeError(error ?? message, { online: isOnline() });
+  const copy = describe(error ?? message, { online: isOnline() });
   return (
     <div role="alert" className="rounded-[var(--radius-card)] border border-sit bg-sit-soft p-4 text-sit">
       <div className="font-bold">{copy.title}</div>

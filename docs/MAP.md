@@ -54,7 +54,7 @@ the value is visible and the names are not.
 | Scoring for some league format | `edge/data/scoring.py` | `tests/test_scoring.py`, `test_league_formats.py` |
 | An API route | `edge/api/app.py` (+ `service.py` for the data it needs), contract in `docs/API.md` | mirror the shape in `web/src/lib/types.ts` **and** `web/src/lib/mocks.ts`; `tests/test_api.py` |
 | What is free and what is paid, or the league cap | `edge/products.py` (the only source of truth), the 402 in `edge/api/app.py`, `web/src/components/Locked.tsx` | `tests/test_tendencies_products.py`, `test_share.py`, `test_accounts.py` |
-| Register, sign in, the plan flag, the admin | rules in `edge/api/accounts.py`, routes in `edge/api/app.py`, the bearer check in `edge/api/auth.py`; web: `web/src/lib/auth.ts`, `session.ts`, `account.ts`, the popups in `web/src/components/account/AccountGate.tsx`, pages `web/src/app/account/page.tsx`, `web/src/app/admin/page.tsx` | `tests/test_accounts.py`, `test_store_contract.py`; `web/e2e/account.spec.ts`; words in `ACCOUNT` in `vocab.ts` |
+| Register, sign in, the plan flag, the admin | rules in `edge/api/accounts.py`, routes in `edge/api/app.py`, the bearer check in `edge/api/auth.py`; web: `web/src/lib/auth.ts`, `session.ts`, `account.ts`, the popups in `web/src/components/account/AccountGate.tsx`, pages `web/src/app/account/page.tsx`, `web/src/app/admin/page.tsx` | `tests/test_accounts.py`, `test_store_contract.py`; `web/e2e/account.spec.ts`; words in `ACCOUNT` in `vocab.ts`; flows, checks and the recovery plan in `docs/ACCOUNTS.md` |
 | Where projections come from | `edge/data/providers.py` — **nothing else may talk to a vendor** | `tests/test_providers.py`, `test_compliance.py` |
 | Support a new platform | a connector in `edge/connectors/`, its HTTP layer in `edge/data/`, mapped into `edge/models.py` | a `tests/test_*_connector.py` against a recorded fixture |
 | What we store about a user | `edge/api/store.py` **and** `edge/api/store_pg.py` (one contract, two backends) | `tests/test_store_contract.py`; update `docs/DATA_INVENTORY.md`, then `/privacy` |
@@ -76,6 +76,7 @@ the value is visible and the names are not.
 | What does the brand allow? | `docs/BRAND.md` |
 | How good are the numbers, really? | `docs/CALIBRATION.md`, `docs/BACKTEST.md`, `docs/ACCURACY_PROGRAM.md` |
 | What do we store, and who sees it? | `docs/DATA_INVENTORY.md` |
+| How does sign-in work, and how does a locked-out user get back in? | `docs/ACCOUNTS.md` |
 | What can stop us launching? | `docs/RISK_REGISTER.md`, `docs/LEGAL_CHECKLIST.md` |
 | Does this make money? | `docs/UNIT_ECONOMICS.md` |
 | What is left to build? | `TASKS.md` |
@@ -175,8 +176,8 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 
 | File | What it is | Lines |
 |---|---|---|
-| `web/src/app/account/page.tsx` | Your account: the plan flag, the leagues on file, the upgrades, the Thursday email, and your data. Signed in only. | 354 |
-| `web/src/app/admin/page.tsx` | The front office: every account, its plan and its leagues, and the owner's levers. Admin only. | 220 |
+| `web/src/app/account/page.tsx` | Your account: the plan flag, the leagues on file, the upgrades, the Thursday email, and your data. Signed in only. | 443 |
+| `web/src/app/admin/page.tsx` | The front office: every account, its plan and its leagues, and the owner's levers. Admin only. | 218 |
 | `web/src/app/connect/page.tsx` | Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, two cookies. | 446 |
 | `web/src/app/error.tsx` | The boundary for anything a page throws while rendering. Without it Next shows its own | 35 |
 | `web/src/app/global-error.tsx` | Last resort: an error in the root layout itself, where the app's own chrome and | 45 |
@@ -190,7 +191,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/privacy/page.tsx` | The privacy policy. docs/DATA_INVENTORY.md is the source of truth; if they disagree this page is stale. | 146 |
 | `web/src/app/register/page.tsx` | Create an account: the same door as /login, opened on the register side. | 7 |
 | `web/src/app/report/page.tsx` | The film: the replay of your week first, then the standings for everyone, then the season week by week. | 184 |
-| `web/src/app/reset/page.tsx` | Set a new password from a reset link (`?token=`), then land upstairs signed in. | 72 |
+| `web/src/app/reset/page.tsx` | Set a new password from a reset link (`?token=`), then land upstairs signed in. | 84 |
 | `web/src/app/robots.ts` | robots.txt, built from the indexable paths in lib/site.ts. | 19 |
 | `web/src/app/s/[id]/page.tsx` | The public share snapshot: opens with no account, unfurls with a rendered card. | 394 |
 | `web/src/app/sitemap.ts` | The sitemap, built from the indexable paths in lib/site.ts. | 18 |
@@ -244,7 +245,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/WaiverPlanView.tsx` | The waiver plan: the claim we are asking for, its bid, and the backup claims under it. | 210 |
 | `web/src/components/WaiversView.tsx` | The board: every free agent worth a claim, ranked. This is a long scannable | 93 |
 | `web/src/components/account/AccountGate.tsx` | The two popups every room can raise: sign in, and upgrade. One provider in the root | 238 |
-| `web/src/components/account/AuthForm.tsx` | The one sign-in form: sign in, create an account, or ask for a reset. The popup and the | 164 |
+| `web/src/components/account/AuthForm.tsx` | The one sign-in form: sign in, create an account, or ask for a reset. The popup and the | 168 |
 | `web/src/components/account/Door.tsx` | The door: the frame, the signed-in card, and the sign-in page body that /login, /register and /reset share. | 99 |
 | `web/src/components/film/League.tsx` | The film's league half (SPEC-FILM F-5 to F-7): everyone, compared. | 305 |
 | `web/src/components/film/Projector.tsx` | The projector: the film's opening (SPEC-FILM F-9). | 109 |
@@ -255,15 +256,16 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/player/PlayerSheetProvider.tsx` | Who the player sheet is open on, and the URL that says so. | 132 |
 | `web/src/components/player/Report.tsx` | The scout report body: who he is, what the counts say, and every week he has on record. | 225 |
 | `web/src/components/player/VibesView.tsx` | Vibes: the player in words, and **not one digit**. | 99 |
-| `web/src/components/ui.tsx` | The kit: the shared devices every screen is built from — cards, stamps, meters, waits, the wordmark. | 846 |
+| `web/src/components/ui.tsx` | The kit: the shared devices every screen is built from — cards, stamps, meters, waits, the wordmark. | 857 |
 
-### `web/src/lib/` — client logic (38 files)
+### `web/src/lib/` — client logic (39 files)
 
 | File | What it is | Lines |
 |---|---|---|
-| `web/src/lib/account.ts` | The account, minus React: which league to open on a fresh sign-in, how the plan reads, | 66 |
-| `web/src/lib/api.ts` | API client for docs/API.md. With NEXT_PUBLIC_API_URL unset, every call is | 666 |
+| `web/src/lib/account.ts` | The account, minus React: which league to open on a fresh sign-in, how the plan reads, | 78 |
+| `web/src/lib/api.ts` | API client for docs/API.md. With NEXT_PUBLIC_API_URL unset, every call is | 682 |
 | `web/src/lib/auth.ts` | The session token: where the browser keeps it, and who is told when it changes. | 55 |
+| `web/src/lib/authError.ts` | What a sign-in, register, reset or change-password form says when the API refuses it. | 25 |
 | `web/src/lib/board.ts` | The scouting board, minus React. | 370 |
 | `web/src/lib/cache.ts` | A tiny in-memory cache for the session's fetched data. | 156 |
 | `web/src/lib/call.ts` | The call: the first time you open the GM's Office, your phone rings. | 64 |
@@ -296,7 +298,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/ticker.ts` | The ticker: the desk's news as one line running along the bottom of every screen. Pure. | 124 |
 | `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 1563 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 1449 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 1475 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 168 |
 | `web/src/lib/wire.ts` | The top of Scouting, minus React: how hard to go after each pickup, and which ones lead. | 55 |
 
