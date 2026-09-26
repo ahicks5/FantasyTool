@@ -33,8 +33,24 @@ CODE_ATTEMPTS = 5
 
 
 class SmsError(Exception):
-    """The text could not be sent. Said to the user as "try again", never as a detail."""
+    """The text could not be sent or checked. `code` is Twilio's error code when it gave one."""
 
+    def __init__(self, message: str, code: int | None = None, status: int | None = None):
+        super().__init__(message)
+        self.code, self.status = code, status
+
+
+#: Twilio's error codes that are about the number the person typed, and what to tell them.
+#: Anything else is our configuration (a wrong key, a missing service) and reads as ours.
+NUMBER_PROBLEMS = {
+    60200: "that is not a number we can text",
+    21211: "that is not a number we can text",
+    21614: "that number cannot receive texts",
+    60205: "that looks like a landline; use a mobile number",
+    60410: "we cannot text that number",
+    60605: "we cannot text that number",
+    60203: "too many codes sent to that number; wait a few minutes",
+}
 
 def countries(env: dict | None = None) -> tuple[str, ...]:
     env = env if env is not None else os.environ
@@ -138,11 +154,11 @@ class TwilioVerify:
 
     def start(self, phone: str) -> None:
         try:
-            status, _ = self._post("Verifications", {"To": phone, "Channel": "sms"})
+            status, body = self._post("Verifications", {"To": phone, "Channel": "sms"})
         except OSError as e:
-            raise SmsError(str(e)) from e
+            raise SmsError(f"network: {e}") from e
         if status >= 300:
-            raise SmsError(f"twilio {status}")
+            raise SmsError(f"twilio {status} {body.get('code')}: {body.get('message')}", body.get("code"), status)
         return None
 
     def check(self, phone: str, code: str) -> bool:
@@ -150,8 +166,10 @@ class TwilioVerify:
             # 404 means no live verification: expired, used, or out of attempts.
             status, body = self._post("VerificationCheck", {"To": phone, "Code": (code or "").strip()})
         except OSError as e:
-            raise SmsError(str(e)) from e
-        return status < 300 and body.get("status") == "approved"
+            raise SmsError(f"network: {e}") from e
+        if status == 404 or 200 <= status < 300:
+            return status < 300 and body.get("status") == "approved"
+        raise SmsError(f"twilio {status} {body.get('code')}: {body.get('message')}", body.get("code"), status)
 
 
 def verifier_from_env(env: dict | None = None):

@@ -775,6 +775,7 @@ export const ACCOUNT = {
     slow: "Too many tries",
     slowDetail: "Wait 15 minutes, or reset your password now.",
     bad: "That did not work",
+    sms: "The text did not go out",
   },
   /** Phone sign-in: the number, the texted code, then the name and an optional email. */
   phone: {

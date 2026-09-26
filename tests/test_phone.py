@@ -235,3 +235,36 @@ def test_health_says_what_is_switched_on_and_no_secret(client, monkeypatch):
     h = client.get("/api/health").json()
     assert h["phone_sign_in"] == "dev" and h["database"] == "sqlite" and h["stripe"] is False
     assert "secret-token-value" not in json.dumps(h)
+
+
+def test_twilio_refusals_are_explained_and_logged(client, monkeypatch, capsys):
+    class Refusing:
+        name, returns_code = "twilio", False
+
+        def __init__(self, code):
+            self.code = code
+
+        def start(self, phone_):
+            raise phone.SmsError(f"twilio 400 {self.code}: nope", self.code, 400)
+
+        def check(self, phone_, code):
+            raise phone.SmsError("twilio 401 20003: auth", 20003, 401)
+
+    monkeypatch.setattr(app_mod, "_sms", lambda: Refusing(20003))
+    r = client.post("/api/auth/phone/start", json={"phone": NUM})
+    assert r.status_code == 502 and "(Twilio 20003)" in r.json()["detail"]
+    assert "20003" in capsys.readouterr().out, "the owner can find it in Render's log"
+    monkeypatch.setattr(app_mod, "_sms", lambda: Refusing(60205))
+    r = client.post("/api/auth/phone/start", json={"phone": "555 234 9999"})
+    assert r.status_code == 400 and "landline" in r.json()["detail"]
+    r = client.post("/api/auth/phone/verify", json={"phone": NUM, "code": "123456"})
+    assert r.status_code == 502
+
+
+def test_twilio_error_bodies_become_codes():
+    v = phone.TwilioVerify("a", "b", "c", transport=lambda r: (401, {"code": 20003, "message": "Authenticate"}))
+    with pytest.raises(phone.SmsError) as e:
+        v.start(NICE)
+    assert e.value.code == 20003 and e.value.status == 401
+    with pytest.raises(phone.SmsError):
+        v.check(NICE, "123456")

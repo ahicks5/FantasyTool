@@ -28,3 +28,9 @@ test("offline and server trouble fall through to the generic copy", () => {
   assert.match(describeAuthError(new HttpError(401, "x"), { online: false }).title, /offline/i);
   assert.match(describeAuthError(new HttpError(503, "x")).title, /problem/i);
 });
+
+test("a text provider failure says so and carries the code the owner can look up", () => {
+  const c = describeAuthError(new HttpError(502, "could not send the code; text sign-in is having trouble, use your email for now (Twilio 20003)"));
+  assert.match(c.title, /text did not go out/i);
+  assert.match(c.detail, /Twilio 20003/);
+});

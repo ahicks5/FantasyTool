@@ -112,19 +112,19 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (56 modules, 15,753 lines)
+### `edge/` — the Python engine and API (56 modules, 15,781 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
 | `edge/api/accounts.py` | Accounts: password hashing, session and reset tokens, roles. Stdlib only; the store holds the rows. | accounts, phone | 196 |
-| `edge/api/app.py` | Penthouse API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload | accounts, api +12 | 1447 |
+| `edge/api/app.py` | Penthouse API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload | accounts, api +12 | 1457 |
 | `edge/api/auth.py` | Who is calling? A Penthouse session token first, a Supabase JWT (HS256) second, X-Edge-User in dev. Stdlib only. | api | 76 |
 | `edge/api/desk.py` | The owner's desk: the front page, assembled. What landed, who is next, and the binders. | desk_api, plan | 154 |
 | `edge/api/directory.py` | Every player in the league, in one browsable board: filter, sort, page. | directory, cross_language_contracts +1 | 334 |
 | `edge/api/lenses.py` | Scouting lenses: the questions a manager asks the wire that a column sort cannot answer. | lenses | 323 |
 | `edge/api/limits.py` | Per-IP rate limiting and request validation. Stdlib only. | limits | 187 |
 | `edge/api/payments.py` | Stripe Checkout + webhook. Prices are created inline from products.py, so there's nothing to set | accounts, api +1 | 117 |
-| `edge/api/phone.py` | Phone sign-in: tidying a number, and sending and checking the text-message code. Stdlib only. | phone | 170 |
+| `edge/api/phone.py` | Phone sign-in: tidying a number, and sending and checking the text-message code. Stdlib only. | phone | 188 |
 | `edge/api/scout.py` | Assemble a player's scouting report: search the league, then read one player. | scout_api | 185 |
 | `edge/api/service.py` | Loads a league with everything the engine needs (ROS values, byes, bid history, tendencies), | service, api +12 | 505 |
 | `edge/api/share.py` | Public share snapshots — the organic loop. | share, compliance | 85 |
@@ -266,7 +266,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/account.ts` | The account, minus React: which league to open on a fresh sign-in, how the plan reads, | 102 |
 | `web/src/lib/api.ts` | API client for docs/API.md. With NEXT_PUBLIC_API_URL unset, every call is | 718 |
 | `web/src/lib/auth.ts` | The session token: where the browser keeps it, and who is told when it changes. | 55 |
-| `web/src/lib/authError.ts` | What a sign-in, register, reset or change-password form says when the API refuses it. | 25 |
+| `web/src/lib/authError.ts` | What a sign-in, register, reset or change-password form says when the API refuses it. | 30 |
 | `web/src/lib/board.ts` | The scouting board, minus React. | 370 |
 | `web/src/lib/cache.ts` | A tiny in-memory cache for the session's fetched data. | 156 |
 | `web/src/lib/call.ts` | The call: the first time you open the GM's Office, your phone rings. | 64 |
@@ -299,7 +299,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/ticker.ts` | The ticker: the desk's news as one line running along the bottom of every screen. Pure. | 124 |
 | `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 1583 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 1514 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 1515 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 168 |
 | `web/src/lib/wire.ts` | The top of Scouting, minus React: how hard to go after each pickup, and which ones lead. | 55 |
 

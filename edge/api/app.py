@@ -381,12 +381,22 @@ def _check_code(phone: str, code: str) -> None:
         raise HTTPException(429, "too many wrong codes; wait 10 minutes and ask for a new one")
     try:
         ok = verifier.check(phone, code)
-    except phone_mod.SmsError:
-        raise HTTPException(502, "could not check that code; try again")
+    except phone_mod.SmsError as e:
+        raise _sms_failure(e, "could not check that code")
     if not ok:
         accounts.PHONE_FAILURES.hit(phone)
         raise HTTPException(400, "that code is wrong or has expired")
     accounts.PHONE_FAILURES.clear(phone)
+
+
+def _sms_failure(e: "phone_mod.SmsError", what: str) -> HTTPException:
+    """Twilio said no. A problem with the typed number is the person's to fix (400); anything
+    else is ours, and the Twilio code rides along so the owner can look it up. Logged either way."""
+    print(f"sms: {what}: {e}")  # noqa: T201 — Render's log is where the owner looks
+    if e.code in phone_mod.NUMBER_PROBLEMS:
+        return HTTPException(429 if e.code == 60203 else 400, phone_mod.NUMBER_PROBLEMS[e.code])
+    ref = f" (Twilio {e.code})" if e.code else ""
+    return HTTPException(502, f"{what}; text sign-in is having trouble, use your email for now{ref}")
 
 
 class PhoneIn(BaseModel):
@@ -416,8 +426,8 @@ def phone_start(body: PhoneIn, request: Request):
     accounts.PHONE_STARTS_BY_IP.hit(ip)
     try:
         code = verifier.start(phone)
-    except phone_mod.SmsError:
-        raise HTTPException(502, "could not text that number; check it and try again")
+    except phone_mod.SmsError as e:
+        raise _sms_failure(e, "could not send the code")
     out = {"ok": True, "phone": phone, "display": phone_mod.display_phone(phone)}
     if verifier.returns_code:
         out["dev_code"] = code  # the dev verifier only: nothing is texted, so the code comes back

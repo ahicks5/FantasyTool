@@ -14,6 +14,11 @@ export function describeAuthError(error: unknown, options: { online?: boolean } 
     if (error.status === 401) return { title: ACCOUNT.errors.wrong, detail: ACCOUNT.errors.wrongDetail, canRetry: false };
     if (error.status === 409) return { title: ACCOUNT.errors.taken, detail: ACCOUNT.errors.takenDetail, canRetry: false };
     if (error.status === 429) return { title: ACCOUNT.errors.slow, detail: ACCOUNT.errors.slowDetail, canRetry: false };
+    if (error.status === 502 && error.message.trim()) {
+      // The API names the text provider's trouble (and its code): worth reading, not "on us" boilerplate.
+      const detail = error.message.trim();
+      return { title: ACCOUNT.errors.sms, detail: detail[0].toUpperCase() + detail.slice(1), canRetry: true };
+    }
     if (error.status === 400) {
       const detail = error.message.trim();
       if (/expired|already used/i.test(detail)) return { title: ACCOUNT.errors.bad, detail: ACCOUNT.reset.expired, canRetry: false };
