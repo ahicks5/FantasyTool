@@ -410,3 +410,17 @@ def test_a_signup_ticket_is_spent_once_and_dies_on_time(store):
     assert store.consume_phone_ticket("t1") == "+15551234567"
     assert store.consume_phone_ticket("t1") is None
     assert store.prune_auth() >= 2
+
+
+def test_postgres_reopens_a_dropped_connection(store):
+    """A hosted database drops idle connections. The next call must reconnect, not 500
+    until the container restarts."""
+    if not hasattr(store, "_connect"):
+        pytest.skip("postgres only")
+    store.create_user("a@b.c", "h")
+    store.db.close()
+    assert store.get_user("a@b.c")["email"] == "a@b.c"
+    # And a connection killed from the server side.
+    with store._connect() as other:
+        other.execute("SELECT pg_terminate_backend(%s)", (store.db.info.backend_pid,))
+    assert store.get_user("a@b.c")["email"] == "a@b.c"

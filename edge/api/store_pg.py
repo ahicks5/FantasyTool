@@ -83,17 +83,41 @@ class PostgresStore:
         self.dsn = dsn or os.environ["DATABASE_URL"]
         # autocommit: every method here is a single statement, and the SQLite store it
         # stands in for commits as it goes. A pooled long transaction would be worse.
-        self.db = psycopg.connect(self.dsn, autocommit=True)
+        self.db = self._connect()
         with self.db.cursor() as cur:
             cur.execute(_SCHEMA)
+
+    def _connect(self):
+        import psycopg
+        # TCP keepalives, so a connection a host has quietly dropped is noticed rather than
+        # hanging; `_live` reopens it.
+        return psycopg.connect(self.dsn, autocommit=True, keepalives=1, keepalives_idle=30,
+                               keepalives_interval=10, keepalives_count=3, connect_timeout=10)
+
+    def _live(self):
+        """The connection, reopened if it has closed. Hosted Postgres (Neon, Supabase) drops
+        idle connections and restarts for maintenance; one dead socket must not take the
+        API down until the container is restarted."""
+        if self.db.closed or self.db.broken:
+            self.db = self._connect()
+        return self.db
 
     def close(self) -> None:
         self.db.close()
 
     def _exec(self, sql: str, params: tuple = ()) -> Any:
-        cur = self.db.cursor()
-        cur.execute(sql, params)
-        return cur
+        import psycopg
+        try:
+            cur = self._live().cursor()
+            cur.execute(sql, params)
+            return cur
+        except psycopg.OperationalError:
+            # The socket died under us. Once more on a fresh connection; a second failure
+            # is a real outage and is raised.
+            self.db = self._connect()
+            cur = self.db.cursor()
+            cur.execute(sql, params)
+            return cur
 
     # ---- purchases ----------------------------------------------------------------
 
@@ -198,7 +222,7 @@ class PostgresStore:
             if self._exec(f"SELECT 1 FROM {table} WHERE email=%s LIMIT 1", (new,)).fetchone():  # noqa: S608
                 return False
         try:
-            with self.db.transaction():
+            with self._live().transaction():
                 for table in self.USER_TABLES:
                     self._exec(f"UPDATE {table} SET email=%s WHERE email=%s", (new, old))  # noqa: S608 — fixed tuple
         except psycopg.Error:
