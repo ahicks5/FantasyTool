@@ -19,7 +19,7 @@ export default function PrivacyPage() {
     <LegalPage title="Privacy">
       <Section heading="The short version">
         <p>
-          {LEGAL.operator} stores the least it can get away with: an email address so your purchase follows you, which
+          {LEGAL.operator} stores the least it can get away with: an email address or a mobile number so your purchase follows you, which
           leagues you connected, and what it recommended so it can check later whether it was right. It never stores
           your ESPN password or cookies, and never sees your card details. There is no advertising and nothing is sold
           to anyone.
@@ -33,6 +33,11 @@ export default function PrivacyPage() {
               <strong>Your email address, your name if you gave one, and a hash of your password</strong>, if you
               create an account. The password itself is never stored, only a salted scrypt hash of it, which cannot be
               turned back into the password. The email is the key that purchases and connected leagues hang off.
+            </>,
+            <>
+              <strong>Your mobile number</strong>, if you sign up or sign in with your phone. It is how you sign in:
+              we text it a one-time code and nothing else. No marketing texts. An account made with a phone has no
+              password; an email is optional.
             </>,
             <>
               <strong>The leagues you connect</strong>: the platform, the league and team identifiers, and the league
@@ -89,7 +94,8 @@ export default function PrivacyPage() {
               purchase succeeded and a reference for it.
             </>,
             <>
-              <strong>Supabase</strong> sends the sign-in link and stores the account record.
+              <strong>Twilio</strong> texts the sign-in code when you use your phone. It receives the number and
+              nothing else about you, and it checks the code; we never see it.
             </>,
             <>
               <strong>Sleeper and ESPN</strong> are read to fetch your league, rosters and projections. We read from

@@ -53,6 +53,10 @@ export interface Account {
   league_slots: number;
   created?: number | null;
   last_login?: number | null;
+  /** E.164, when a number is on the account. Phone-only accounts have `email: ""`. */
+  phone?: string | null;
+  /** False for an account made with a phone, which signs in by text code. */
+  has_password?: boolean;
 }
 
 export interface Me {
@@ -67,7 +71,22 @@ export interface Me {
   account?: Account | null;
   /** True when Stripe is configured on the API, so an upgrade is a checkout rather than a grant. */
   checkout?: boolean;
+  /** True when the API can text a sign-in code, so the door offers "continue with your phone". */
+  phone_sign_in?: boolean;
 }
+
+/** `POST /api/auth/phone/start`. `dev_code` only from a dev API, which texts nothing. */
+export interface PhoneStartResponse {
+  ok: boolean;
+  phone: string;
+  display: string;
+  dev_code?: string;
+}
+
+/** `POST /api/auth/phone/verify`: a number on file signs in; a new one gets a ticket to finish signing up. */
+export type PhoneVerifyResponse =
+  | { new: false; token: string; me: Me }
+  | { new: true; ticket: string; phone: string; display: string };
 
 /** `POST /api/auth/register|login|reset`: a bearer token and who it belongs to. */
 export interface AuthResponse {
@@ -94,6 +113,7 @@ export interface AdminUser {
   skus: Sku[];
   leagues: MeLeague[];
   leagues_allowed: number;
+  phone?: string | null;
 }
 
 export interface AdminUsersResponse {

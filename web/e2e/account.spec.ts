@@ -54,6 +54,33 @@ function freshEmail(tag: string): string {
 
 const PASSWORD = "owner of the building";
 
+/** A number the fixture API will text (it texts nothing: the dev verifier hands the code back). */
+function freshPhone(): string {
+  return `(555) 2${String(Math.floor(Math.random() * 1e6)).padStart(6, "0").slice(0, 2)}-${String(Math.floor(Math.random() * 1e4)).padStart(4, "0")}`;
+}
+
+/** The phone door, end to end: the number, the code off the dev API, and (for a new number) the profile. */
+async function phoneIn(scope: Page | ReturnType<Page["getByRole"]>, phone: string, profile?: { name: string; email: string }) {
+  await scope.getByLabel(ACCOUNT.phone.label).fill(phone);
+  await scope.getByRole("button", { name: ACCOUNT.phone.send }).click();
+  const dev = scope.getByTestId("dev-code");
+  await expect(dev).toBeVisible();
+  const code = ((await dev.textContent()) ?? "").match(/(\d{6})/)?.[1] ?? "";
+  await scope.getByLabel(ACCOUNT.phone.codeLabel).fill(code);
+  await scope.getByRole("button", { name: ACCOUNT.phone.verify }).click();
+  if (profile) {
+    await expect(scope.getByText(ACCOUNT.phone.profileTitle)).toBeVisible();
+    await scope.getByLabel(ACCOUNT.name).fill(profile.name);
+    await scope.getByLabel(ACCOUNT.phone.emailOptional).fill(profile.email);
+    await scope.getByRole("button", { name: ACCOUNT.phone.finish }).click();
+  }
+}
+
+/** The door opens on the phone; the email-and-password accounts are one tap away. */
+async function useEmail(scope: Page | ReturnType<Page["getByRole"]>) {
+  await scope.getByRole("button", { name: ACCOUNT.phone.useEmail }).click();
+}
+
 /** Register straight against the API, for the tests that start already signed in. */
 async function registerViaApi(page: Page, email: string): Promise<string> {
   const res = await page.request.post(`${API_URL}/api/auth/register`, { data: { email, password: PASSWORD, name: "E2E" } });
@@ -81,6 +108,7 @@ test.beforeEach(async ({ context, page }) => {
 test("a stranger's door is the account: register, land on it, then link a league, and the account shows it", async ({ context, page }) => {
   await beAStranger(context);
   const email = freshEmail("owner");
+  const phone = freshPhone();
 
   // /connect with no account is the door to one, not a league form.
   await page.goto("/connect");
@@ -93,10 +121,8 @@ test("a stranger's door is the account: register, land on it, then link a league
   await page.goto("/");
   await page.locator('a[href="/register"]:visible').first().click();
   await page.waitForURL("**/register");
-  await page.getByLabel(ACCOUNT.name).fill("Andrew");
-  await page.getByLabel(ACCOUNT.email).fill(email);
-  await page.getByLabel(new RegExp(`^${ACCOUNT.password}`)).fill(PASSWORD);
-  await page.getByRole("button", { name: ACCOUNT.register, exact: true }).click();
+  // Just a phone number, then the texted code, then the name and the email.
+  await phoneIn(page, phone, { name: "Andrew", email });
 
   // A new account lands on its own page: you're in, one thing left.
   await page.waitForURL("**/account");
@@ -124,7 +150,7 @@ test("a stranger's door is the account: register, land on it, then link a league
   await expect(page.getByRole("region", { name: DESK.aria })).toBeVisible();
 
   // The top bar wears the initial; the account page shows the league on file and the flag.
-  await expect(page.getByRole("link", { name: ACCOUNT.topbar.account(email) })).toHaveText("A");
+  await expect(page.getByRole("link", { name: ACCOUNT.topbar.account("Andrew") })).toHaveText("A");
   await page.goto("/account");
   await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.title })).toBeVisible();
   await expect(page.getByTestId("league-room")).toHaveText("1 of 3 leagues");
@@ -154,11 +180,9 @@ test("a stranger's door is the account: register, land on it, then link a league
   await page.waitForURL("**/");
   expect(await page.evaluate(() => localStorage.getItem("booth.session"))).toBeNull();
   await page.goto("/login");
-  await expect(page.getByLabel(ACCOUNT.email)).toBeVisible();
-  // And back in with the password.
-  await page.getByLabel(ACCOUNT.email).fill(email);
-  await page.getByLabel(ACCOUNT.password).fill(PASSWORD);
-  await page.getByRole("button", { name: ACCOUNT.signIn, exact: true }).click();
+  await expect(page.getByLabel(ACCOUNT.phone.label)).toBeVisible();
+  // And back in with the phone: a number on file signs straight in, no profile step.
+  await phoneIn(page, phone);
   await page.waitForURL("**/home");
 });
 
@@ -186,6 +210,7 @@ test("a wrong password says one thing and signs nobody in", async ({ context, pa
   const email = freshEmail("wrong");
   await registerViaApi(page, email);
   await page.goto("/login");
+  await useEmail(page);
   await page.getByLabel(ACCOUNT.email).fill(email);
   await page.getByLabel(ACCOUNT.password).fill("not the password");
   await page.getByRole("button", { name: ACCOUNT.signIn, exact: true }).click();
@@ -222,6 +247,7 @@ test("the account changes its password and signs out the other devices, and this
 test("forgot password says your sign-in is your email", async ({ context, page }) => {
   await beAStranger(context);
   await page.goto("/login");
+  await useEmail(page);
   await page.getByRole("button", { name: ACCOUNT.forgot }).click();
   await expect(page.getByTestId("which-email")).toHaveText(ACCOUNT.reset.whichEmail);
 });
@@ -236,11 +262,7 @@ test("a locked room's button opens the sign-in sheet, then the upgrade, and the 
   const sheet = page.getByRole("dialog", { name: ACCOUNT.signIn });
   await expect(sheet).toBeVisible();
   await expect(sheet.getByText(ACCOUNT.reason.upgrade)).toBeVisible();
-  await sheet.getByRole("button", { name: ACCOUNT.register }).click();
-  const reg = page.getByRole("dialog", { name: ACCOUNT.register });
-  await reg.getByLabel(ACCOUNT.email).fill(email);
-  await reg.getByLabel(new RegExp(`^${ACCOUNT.password}`)).fill(PASSWORD);
-  await reg.getByRole("button", { name: ACCOUNT.register, exact: true }).click();
+  await phoneIn(sheet, freshPhone(), { name: "", email });
   const up = page.getByTestId("upgrade-sheet");
   await expect(up).toBeVisible();
   await expect(up.getByText(ACCOUNT.upgrade.for("Wire Pass"))).toBeVisible();
@@ -278,4 +300,36 @@ test("the owner's front office lists every account and the levers work", async (
   await row.getByRole("button", { name: `${ACCOUNT.admin.revoke} Wire Pass` }).click();
   await expect(row.getByRole("button", { name: `${ACCOUNT.admin.grant} Wire Pass` })).toBeVisible();
   await expect(row.getByText(ACCOUNT.plan.free, { exact: true })).toBeVisible();
+});
+
+test("a phone-only account adds an email later, and an email account adds a phone", async ({ context, page }) => {
+  await beAStranger(context);
+  await page.goto("/register");
+  const phone = freshPhone();
+  await phoneIn(page, phone, { name: "Pat", email: "" });
+  await page.waitForURL("**/account");
+  const contact = page.getByTestId("contact");
+  await expect(contact.getByText(ACCOUNT.emailOnFile.none)).toBeVisible();
+  await expect(page.getByText(ACCOUNT.emailOnFile.optInNeedsEmail)).toBeVisible();
+  await contact.getByRole("button", { name: ACCOUNT.emailOnFile.add }).click();
+  const email = freshEmail("later");
+  await contact.getByLabel(ACCOUNT.email).fill(email);
+  await contact.getByRole("button", { name: ACCOUNT.emailOnFile.save }).click();
+  await expect(contact.getByRole("status")).toHaveText(ACCOUNT.emailOnFile.saved);
+  await expect(contact.getByText(email)).toBeVisible();
+
+  // An email-and-password account puts a phone on file, and can then sign in with it.
+  const other = freshEmail("addphone");
+  const token = await registerViaApi(page, other);
+  await context.addInitScript((t) => window.localStorage.setItem("booth.session", t), token);
+  await page.goto("/account");
+  await contact.getByRole("button", { name: ACCOUNT.phone.add }).click();
+  const second = freshPhone();
+  await contact.getByLabel(ACCOUNT.phone.label).fill(second);
+  await contact.getByRole("button", { name: ACCOUNT.phone.send }).click();
+  const code = ((await contact.getByTestId("dev-code").textContent()) ?? "").match(/(\d{6})/)?.[1] ?? "";
+  await contact.getByLabel(ACCOUNT.phone.codeLabel).fill(code);
+  await contact.getByRole("button", { name: ACCOUNT.phone.verify }).click();
+  await expect(contact.getByRole("status")).toHaveText(ACCOUNT.phone.added);
+  await expect(contact.getByText(second)).toBeVisible();
 });

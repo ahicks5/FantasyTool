@@ -24,6 +24,16 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## Phone sign-in (2026-09-26)
+
+Sign-up is now a phone number, a texted code, then name and an optional email. Built and
+tested end to end against a dev stand-in; **it switches on in production the moment Twilio's
+four variables are on Render** (`docs/DEPLOY.md`), and until then the door is email and
+password exactly as before. `GET /api/health` now says what is switched on (database, phone
+sign-in, email provider, Stripe, the dev header) without any key, so each setup step can be
+checked with one curl. Found on the way: a Stripe grant went to the address typed on Stripe's
+page rather than the account that paid; it now follows the account.
+
 ## Accounts: the recovery and security pass (2026-09-26)
 
 Andrew asked for an owner of registration and login: checks on every page, the schema, and a

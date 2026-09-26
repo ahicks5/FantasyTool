@@ -32,9 +32,14 @@ def create_checkout(email: str, sku: str, season: int, success_url: str | None, 
     base = os.environ.get("EDGE_WEB_URL", "http://localhost:3000")
     success_url = same_origin(success_url, base)
     cancel_url = same_origin(cancel_url, base)
+    from edge.api.accounts import is_placeholder
+
+    # A phone-only account has no address; Stripe asks for one on its own page, and the
+    # grant still finds the account through the metadata key.
+    contact = {} if is_placeholder(email) else {"customer_email": email}
     session = stripe.checkout.Session.create(
         mode="payment",
-        customer_email=email,
+        **contact,
         line_items=[{"quantity": 1, "price_data": {
             "currency": "usd", "unit_amount": p["price_cents"],
             "product_data": {"name": f"Penthouse — {p['name']} ({season} season)", "description": p["blurb"]},
@@ -70,7 +75,9 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
         if obj.get("payment_status") not in ("paid", None):
             return None
         md = obj.get("metadata") or {}
-        email = (obj.get("customer_details") or {}).get("email") or md.get("email") or obj.get("customer_email")
+        # The account key we wrote first: the address typed on Stripe's page can differ from
+        # the account's (and a phone-only account has none), and the pass belongs to the account.
+        email = md.get("email") or (obj.get("customer_details") or {}).get("email") or obj.get("customer_email")
         if not (email and md.get("sku")):
             return None
         return {"action": "grant", "email": email.lower(), "sku": md["sku"],

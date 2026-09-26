@@ -57,6 +57,21 @@ hours, and every other session on the account is signed out, and every other uns
 password or a short new one. Every other session and every unspent reset link is ended; this session stays.
 `POST /api/auth/logout-others` (signed in) → `{"ok":true,"signed_out":n}`. Every session but this one.
 
+**Phone sign-in** (on when the API has a text provider; `/api/me` says `phone_sign_in: true`):
+`POST /api/auth/phone/start {"phone"}` → `{"ok","phone":"+15552345678","display":"(555) 234-5678"}`; texts a six-digit
+code. 400 on a number we cannot text (US and Canada by default), 429 past 3 codes per number per 10 minutes or 10
+per caller per hour, 503 when phone sign-in is off. A dev API adds `dev_code`.
+`POST /api/auth/phone/verify {"phone","code"}` → a number on file signs in: `{"new":false,"token","me"}`; a new one
+gets `{"new":true,"ticket","phone","display"}`. 400 on a wrong or expired code; 5 wrong per 10 minutes → 429.
+`POST /api/auth/phone/complete {"ticket","name"?,"email"?}` → `{"token","me"}`. The ticket lasts 30 minutes and is
+spent once (not when the email is refused). 409 when the email already has an account. With no email the
+account is filed under an internal key and `account.email` is `""`.
+`POST /api/account/phone {"phone","code"}` (signed in) → `{"ok","me"}`; puts a verified number on the account
+(code from `/api/auth/phone/start`). 409 when another account has it.
+`POST /api/account/email {"email","password"?}` (signed in) → `{"ok","me"}`; adds or changes the email, moving
+everything the account owns. `password` required when the account has one. 409 when the address is taken.
+`account` on `/api/me` carries `phone` (E.164 or null) and `has_password`.
+
 Per-account throttles, on top of the IP cap: 10 wrong passwords per address per 15 minutes and sign-in (and
 change password) answers 429 until the window passes or a reset lands; 3 reset emails per address per hour,
 past which `/forgot` still answers `ok` and sends nothing. An unknown address costs the same scrypt as a

@@ -7,7 +7,7 @@ import { DoorFrame } from "@/components/account/Door";
 import { Loading } from "@/components/Loading";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton } from "@/components/ui";
 import { adminGrant, adminResetLink, adminRevoke, adminSetRole, adminUsers } from "@/lib/api";
-import { matchesAccount, shortDate } from "@/lib/account";
+import { accountContact, accountLabel, matchesAccount, shortDate } from "@/lib/account";
 import { useSession } from "@/lib/session";
 import type { AdminUser, AdminUsersResponse, Sku } from "@/lib/types";
 import { ACCOUNT } from "@/lib/vocab";
@@ -63,10 +63,10 @@ function Row({ u, me, onChange }: { u: AdminUser; me: string; onChange: () => vo
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="display truncate text-[17px] leading-tight">
-            {u.name || u.email}
+            {accountLabel(u)}
             {isMe && <span className="ml-2 text-[12px] font-bold text-muted">({ACCOUNT.admin.you})</span>}
           </p>
-          {u.name && <p className="truncate text-[12px] text-muted">{u.email}</p>}
+          {accountContact(u) && <p className="truncate text-[12px] text-muted">{accountContact(u)}</p>}
         </div>
         <span className="flex shrink-0 items-center gap-1.5">
           <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${premium ? "bg-start-fill text-white" : "bg-soft text-muted"}`}>
@@ -211,7 +211,7 @@ export default function AdminPage() {
           </LinkButton>
         </Card>
       ) : (
-        <AdminBody me={session.account?.email ?? ""} />
+        <AdminBody me={session.me?.email ?? ""} />
       )}
     </DoorFrame>
   );

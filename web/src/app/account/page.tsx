@@ -9,9 +9,9 @@ import { DoorFrame } from "@/components/account/Door";
 import { IconCheck, IconChevron } from "@/components/icons";
 import { Loading } from "@/components/Loading";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton, OnAir } from "@/components/ui";
-import { changePassword, deleteMyAccount, exportMyData, forgetLeague, getLeague, getProducts, logout, logoutOthers, markLeagueUsed } from "@/lib/api";
+import { addPhone, changePassword, deleteMyAccount, phoneStart, setAccountEmail, exportMyData, forgetLeague, getLeague, getProducts, logout, logoutOthers, markLeagueUsed } from "@/lib/api";
 import { describeAuthError } from "@/lib/authError";
-import { leagueRoom, upgradesFor } from "@/lib/account";
+import { accountContact, accountLabel, displayPhone, leagueRoom, upgradesFor } from "@/lib/account";
 import { formatCents } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { clearConnection, saveConnection } from "@/lib/storage";
@@ -38,8 +38,156 @@ function PlanFlag({ premium, admin }: { premium: boolean; admin: boolean }) {
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
 
+/** The ways in on file: the phone and the email, each addable or changeable. */
+function Contact() {
+  const session = useSession();
+  const account = session.account;
+  const [open, setOpen] = useState<"phone" | "email" | null>(null);
+  const [number, setNumber] = useState("");
+  const [sent, setSent] = useState<{ phone: string; display: string; devCode?: string } | null>(null);
+  const [code, setCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const [note, setNote] = useState<string | null>(null);
+  if (!account) return null;
+  const hasPassword = account.has_password !== false;
+
+  async function run(fn: () => Promise<void>) {
+    setBusy(true);
+    setError(null);
+    setNote(null);
+    try {
+      await fn();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+  const reset = (which: "phone" | "email" | null) => {
+    setOpen(which);
+    setSent(null);
+    setCode("");
+    setNumber("");
+    setEmail("");
+    setPassword("");
+    setError(null);
+    setNote(null);
+  };
+
+  return (
+    <section className="mt-8" data-testid="contact">
+      <div className="grid gap-2">
+        <div className="card flex items-center gap-3 p-4">
+          <span className="min-w-0 flex-1">
+            <span className="eyebrow block">{ACCOUNT.emailOnFile.label}</span>
+            <span className="mt-0.5 block truncate text-[15px] font-bold">{account.email || ACCOUNT.emailOnFile.add}</span>
+          </span>
+          {open !== "email" && (
+            <Button size="sm" variant="secondary" onClick={() => reset("email")}>
+              {account.email ? ACCOUNT.emailOnFile.change : ACCOUNT.emailOnFile.add}
+            </Button>
+          )}
+        </div>
+        {!account.email && open !== "email" && <p className="text-[12px] leading-snug text-muted">{ACCOUNT.emailOnFile.none}</p>}
+        {open === "email" && (
+          <form
+            className="card grid gap-3 p-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run(async () => {
+                await setAccountEmail(email.trim(), password);
+                session.refresh();
+                reset(null);
+                setNote(ACCOUNT.emailOnFile.saved);
+              });
+            }}
+          >
+            <label className="grid gap-1.5">
+              <span className="eyebrow">{ACCOUNT.email}</span>
+              <input className={FIELD} type="email" required autoComplete="email" inputMode="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus />
+            </label>
+            {hasPassword && (
+              <label className="grid gap-1.5">
+                <span className="eyebrow">{ACCOUNT.emailOnFile.needPassword}</span>
+                <input className={FIELD} type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              </label>
+            )}
+            <Button type="submit" variant="start" className="w-full" busy={busy} disabled={!email.trim() || (hasPassword && !password)}>
+              {ACCOUNT.emailOnFile.save}
+            </Button>
+            <Button type="button" variant="ghost" className="w-full" onClick={() => reset(null)}>
+              {ACCOUNT.security.cancel}
+            </Button>
+          </form>
+        )}
+
+        <div className="card flex items-center gap-3 p-4">
+          <span className="min-w-0 flex-1">
+            <span className="eyebrow block">{ACCOUNT.phone.onFile}</span>
+            <span className="mt-0.5 block truncate text-[15px] font-bold tnum">{displayPhone(account.phone) || ACCOUNT.phone.none}</span>
+          </span>
+          {session.me?.phone_sign_in && open !== "phone" && (
+            <Button size="sm" variant="secondary" onClick={() => reset("phone")}>
+              {account.phone ? ACCOUNT.phone.replace : ACCOUNT.phone.add}
+            </Button>
+          )}
+        </div>
+        {open === "phone" && (
+          <form
+            className="card grid gap-3 p-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run(async () => {
+                if (!sent) {
+                  const out = await phoneStart(number.trim());
+                  setSent({ phone: out.phone, display: out.display, devCode: out.dev_code });
+                  return;
+                }
+                await addPhone(sent.phone, code.trim());
+                session.refresh();
+                reset(null);
+                setNote(ACCOUNT.phone.added);
+              });
+            }}
+          >
+            {!sent ? (
+              <label className="grid gap-1.5">
+                <span className="eyebrow">{ACCOUNT.phone.label}</span>
+                <input className={FIELD} type="tel" required autoComplete="tel" inputMode="tel" value={number} onChange={(e) => setNumber(e.target.value)} placeholder="(555) 234-5678" autoFocus />
+              </label>
+            ) : (
+              <label className="grid gap-1.5">
+                <span className="text-[13px] leading-snug text-ink">{ACCOUNT.phone.codeLead(sent.display)}</span>
+                <span className="eyebrow">{ACCOUNT.phone.codeLabel}</span>
+                <input className={`${FIELD} tnum tracking-[0.3em]`} inputMode="numeric" autoComplete="one-time-code" maxLength={6} required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} autoFocus />
+                {sent.devCode && <span className="text-[12px] text-muted" data-testid="dev-code">{ACCOUNT.phone.devCode(sent.devCode)}</span>}
+              </label>
+            )}
+            <Button type="submit" variant="start" className="w-full" busy={busy} disabled={sent ? code.length < 4 : !number.trim()}>
+              {sent ? ACCOUNT.phone.verify : ACCOUNT.phone.send}
+            </Button>
+            <Button type="button" variant="ghost" className="w-full" onClick={() => reset(null)}>
+              {ACCOUNT.security.cancel}
+            </Button>
+          </form>
+        )}
+        {note && (
+          <p role="status" className="flex items-center gap-1.5 text-[13px] font-bold text-start">
+            <IconCheck size={14} strokeWidth={3} />
+            {note}
+          </p>
+        )}
+        {error ? <ErrorBox error={error} describe={describeAuthError} /> : null}
+      </div>
+    </section>
+  );
+}
+
 /** Change the password (needs the current one) and sign out every other device. */
-function Security() {
+function Security({ hasPassword }: { hasPassword: boolean }) {
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -83,7 +231,7 @@ function Security() {
       <Eyebrow>{ACCOUNT.security.eyebrow}</Eyebrow>
       <p className="mt-1 text-[13px] leading-snug text-muted">{ACCOUNT.security.line}</p>
       <div className="mt-3 grid gap-2">
-        {open ? (
+        {!hasPassword ? null : open ? (
           <form onSubmit={save} className="card grid gap-3 p-4">
             <label className="grid gap-1.5">
               <span className="eyebrow">{ACCOUNT.security.current}</span>
@@ -248,8 +396,8 @@ function AccountBody() {
           </div>
           <PlanFlag premium={premium} admin={account.is_admin} />
         </div>
-        <p className="mt-3 text-[15px] font-bold break-words">{account.name || account.email}</p>
-        {account.name && <p className="text-[13px] text-muted break-words">{account.email}</p>}
+        <p className="mt-3 text-[15px] font-bold break-words">{accountLabel(account)}</p>
+        {accountContact(account) && <p className="text-[13px] text-muted break-words">{accountContact(account)}</p>}
         {!account.plan.skus.includes("full_report") && (
           <Button variant="start" className="mt-4 w-full" onClick={() => buy("full_report", LINES.paywallBundle)} data-testid="upgrade-bundle">
             {ACCOUNT.plan.upgrade}
@@ -341,11 +489,13 @@ function AccountBody() {
         </section>
       )}
 
+      <Contact />
+
       <div className="mt-8 rise rise-3">
-        <EmailOptIn />
+        {account.email ? <EmailOptIn /> : <p className="text-[13px] leading-snug text-muted">{ACCOUNT.emailOnFile.optInNeedsEmail}</p>}
       </div>
 
-      <Security />
+      <Security hasPassword={account.has_password !== false} />
 
       {/* The privacy page's promises, with buttons behind them. */}
       <section className="mt-8">
@@ -422,7 +572,9 @@ function Guard({ children }: { children: React.ReactNode }) {
       if (!ok) router.push("/login?next=%2Faccount");
     });
   }, [session.loading, session.signedIn, gate, router]);
-  if (session.loading || !session.signedIn) {
+  // Only while nobody is known: a refresh after a change keeps the page mounted, so the
+  // "saved" line under the form survives the reload of the account behind it.
+  if (!session.signedIn) {
     return (
       <div className="pt-10">
         <Loading />

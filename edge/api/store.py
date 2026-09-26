@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, email TEXT NOT
 CREATE TABLE IF NOT EXISTS resets (token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, created REAL, expires REAL, used REAL);
 CREATE INDEX IF NOT EXISTS sessions_email ON sessions (email);
 CREATE INDEX IF NOT EXISTS resets_email ON resets (email);
+CREATE TABLE IF NOT EXISTS phone_tickets (token_hash TEXT PRIMARY KEY, phone TEXT NOT NULL, created REAL, expires REAL,
+  used REAL);
 CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, payload TEXT, created REAL, views INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS runs (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, week INTEGER,
   kind TEXT, algo_version TEXT, payload TEXT, created REAL);
@@ -29,6 +31,13 @@ CREATE TABLE IF NOT EXISTS feedback (email TEXT, platform TEXT, league_id TEXT, 
 CREATE TABLE IF NOT EXISTS email_prefs (email TEXT PRIMARY KEY, opt_in INTEGER NOT NULL DEFAULT 0,
   created REAL, updated REAL);
 """
+
+
+def _user(row) -> dict | None:
+    if not row:
+        return None
+    return {"email": row[0], "password_hash": row[1], "name": row[2] or "", "role": row[3],
+            "created": row[4], "last_login": row[5], "phone": row[6]}
 
 
 class Store:
@@ -59,6 +68,11 @@ class Store:
             self.db.execute("ALTER TABLE leagues ADD COLUMN team_name TEXT DEFAULT ''")
         if "last_used" not in league_cols:
             self.db.execute("ALTER TABLE leagues ADD COLUMN last_used REAL")
+        # Phone sign-in: one account per number, and many accounts with none.
+        user_cols = {row[1] for row in self.db.execute("PRAGMA table_info(users)")}
+        if "phone" not in user_cols:
+            self.db.execute("ALTER TABLE users ADD COLUMN phone TEXT")
+        self.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_phone ON users (phone)")
         self.db.commit()
 
     def grant(self, email: str, sku: str, season: int, source: str = "stripe", ref: str = "",
@@ -141,28 +155,70 @@ class Store:
     # One row per account. The password is a scrypt hash from `api/accounts.py`; the
     # session and reset tables hold hashed tokens, so a copy of this file signs nobody in.
 
-    def create_user(self, email: str, password_hash: str, name: str = "") -> bool:
-        """Register. False when the address is already taken, so the caller can say so."""
+    def create_user(self, email: str, password_hash: str, name: str = "", phone: str | None = None) -> bool:
+        """Register. False when the address or the phone is already taken, so the caller can say so."""
         cur = self.db.execute(
-            "INSERT OR IGNORE INTO users (email, password_hash, name, role, created, last_login) VALUES (?,?,?,?,?,NULL)",
-            (email.lower(), password_hash, name or "", "user", time.time()))
+            "INSERT OR IGNORE INTO users (email, password_hash, name, role, created, last_login, phone) "
+            "VALUES (?,?,?,?,?,NULL,?)",
+            (email.lower(), password_hash, name or "", "user", time.time(), phone or None))
         self.db.commit()
         return cur.rowcount == 1
 
     def get_user(self, email: str) -> dict | None:
         row = self.db.execute(
-            "SELECT email, password_hash, name, role, created, last_login FROM users WHERE email=?",
+            "SELECT email, password_hash, name, role, created, last_login, phone FROM users WHERE email=?",
             (email.lower(),)).fetchone()
-        if not row:
-            return None
-        return {"email": row[0], "password_hash": row[1], "name": row[2] or "", "role": row[3],
-                "created": row[4], "last_login": row[5]}
+        return _user(row)
+
+    def user_by_phone(self, phone: str) -> dict | None:
+        row = self.db.execute(
+            "SELECT email, password_hash, name, role, created, last_login, phone FROM users WHERE phone=?",
+            (phone,)).fetchone()
+        return _user(row)
+
+    def set_phone(self, email: str, phone: str | None) -> bool:
+        """Put a verified number on an account. False when another account already has it."""
+        try:
+            cur = self.db.execute("UPDATE users SET phone=? WHERE email=?", (phone or None, email.lower()))
+        except sqlite3.IntegrityError:
+            self.db.rollback()
+            return False
+        self.db.commit()
+        return cur.rowcount == 1
+
+    def set_name(self, email: str, name: str) -> bool:
+        cur = self.db.execute("UPDATE users SET name=? WHERE email=?", (name or "", email.lower()))
+        self.db.commit()
+        return cur.rowcount == 1
+
+    def rekey(self, old: str, new: str) -> bool:
+        """Move an account to a new email: every row it owns, in one transaction.
+
+        The email is the account's key everywhere, so adding an address to a phone-only
+        account, or changing the address, is this. False, and nothing moved, when the new
+        address already owns anything at all.
+        """
+        old, new = old.lower(), new.lower()
+        if old == new:
+            return True
+        for table in self.USER_TABLES:
+            if self.db.execute(f"SELECT 1 FROM {table} WHERE email=? LIMIT 1", (new,)).fetchone():  # noqa: S608
+                return False
+        try:
+            for table in self.USER_TABLES:
+                self.db.execute(f"UPDATE {table} SET email=? WHERE email=?", (new, old))  # noqa: S608 — fixed tuple
+        except sqlite3.Error:
+            self.db.rollback()
+            return False
+        self.db.commit()
+        return True
 
     def users(self, limit: int = 500) -> list[dict]:
         """Every account, oldest first, without the hashes: the admin's list."""
         rows = self.db.execute(
-            "SELECT email, name, role, created, last_login FROM users ORDER BY created, email LIMIT ?", (limit,))
-        return [{"email": r[0], "name": r[1] or "", "role": r[2], "created": r[3], "last_login": r[4]} for r in rows]
+            "SELECT email, name, role, created, last_login, phone FROM users ORDER BY created, email LIMIT ?", (limit,))
+        return [{"email": r[0], "name": r[1] or "", "role": r[2], "created": r[3], "last_login": r[4], "phone": r[5]}
+                for r in rows]
 
     def set_password(self, email: str, password_hash: str) -> bool:
         cur = self.db.execute("UPDATE users SET password_hash=? WHERE email=?", (password_hash, email.lower()))
@@ -225,12 +281,30 @@ class Store:
         self.db.commit()
         return cur.rowcount
 
+    def create_phone_ticket(self, phone: str, token_hash: str, expires: float) -> None:
+        """A verified number with no account yet: the ticket lets it finish signing up."""
+        self.db.execute("INSERT OR REPLACE INTO phone_tickets (token_hash, phone, created, expires, used) "
+                        "VALUES (?,?,?,?,NULL)", (token_hash, phone, time.time(), expires))
+        self.db.commit()
+
+    def consume_phone_ticket(self, token_hash: str, now: float | None = None) -> str | None:
+        """Spend a sign-up ticket: its phone, once, before it expires; else None."""
+        now = now or time.time()
+        cur = self.db.execute("UPDATE phone_tickets SET used=? WHERE token_hash=? AND used IS NULL AND expires>=?",
+                              (now, token_hash, now))
+        self.db.commit()
+        if cur.rowcount != 1:
+            return None
+        row = self.db.execute("SELECT phone FROM phone_tickets WHERE token_hash=?", (token_hash,)).fetchone()
+        return row[0] if row else None
+
     def prune_auth(self, now: float | None = None) -> int:
         """Drop sessions and reset links that can never work again. Safe any time."""
         now = now or time.time()
         n = self.db.execute("DELETE FROM sessions WHERE expires IS NOT NULL AND expires<?", (now,)).rowcount
         n += self.db.execute("DELETE FROM resets WHERE (expires IS NOT NULL AND expires<?) OR used IS NOT NULL",
                              (now,)).rowcount
+        n += self.db.execute("DELETE FROM phone_tickets WHERE expires<? OR used IS NOT NULL", (now,)).rowcount
         self.db.commit()
         return n
 

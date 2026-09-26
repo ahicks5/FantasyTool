@@ -122,6 +122,9 @@ def build_app(user: str, skus: tuple[str, ...]):
     # IP in a minute crossed the 60-read line and the suite failed on whichever test was
     # unlucky enough to be running. Production keeps the cap; this server is test-only.
     os.environ.setdefault("EDGE_RATE_LIMIT", "0")
+    # Phone sign-in on, the way production runs it once Twilio is set, but with the dev
+    # verifier: nothing is texted and the code comes back in the reply for the browser test.
+    os.environ.setdefault("EDGE_SMS_PROVIDER", "dev")
     os.environ.setdefault("EDGE_SEASON", str(SEASON))
     # The dev-header identity is the admin, so the browser suite can open the front office.
     os.environ.setdefault("EDGE_ADMINS", user)

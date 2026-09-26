@@ -11,8 +11,9 @@ from pydantic import BaseModel
 from edge import products
 from edge.api import desk, directory as directory_mod, lenses as lenses_mod, scout as scout_mod, service, share as share_mod
 from edge.api import accounts, auth
+from edge.api import phone as phone_mod
 from edge.api.auth import current_user, optional_user
-from edge.api.limits import PRODUCTION_WEB_ORIGIN, RateLimitMiddleware, cors_origins, validate_id, validate_platform
+from edge.api.limits import PRODUCTION_WEB_ORIGIN, RateLimitMiddleware, client_ip, cors_origins, validate_id, validate_platform
 from edge.api.store import open_store
 from edge.connectors import sleeper
 from edge.data import nfl_stats, schedule
@@ -84,6 +85,8 @@ def _me(email: str | None) -> dict:
             "leagues": store.leagues(email) if email else [],
             "email_opt_in": store.email_opt_in(email) if email else False,
             "account": _account(email) if email else None,
+            # Whether the door offers "continue with your phone" (a text provider is set).
+            "phone_sign_in": _sms() is not None,
             # The web shows "Upgrade" as a checkout when Stripe is wired and as a direct grant
             # when it is not (docs/DEPLOY.md, "Upgrades without Stripe").
             "checkout": _stripe_configured()}
@@ -333,6 +336,172 @@ def reset_password(body: ResetIn):
     return _open_session(email)
 
 
+# ---- phone sign-in: a number, a texted code, then the name and (optionally) an email ----
+# The code is Twilio Verify's in production (edge/api/phone.py). A number that already has
+# an account signs straight in; a new one gets a short ticket to finish signing up with.
+
+_SMS: tuple | None = None
+_SMS_KEYS = ("EDGE_SMS_PROVIDER", "EDGE_DEV", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_VERIFY_SID")
+
+
+def _sms():
+    """The configured verifier, or None when phone sign-in is off. Built once per
+    configuration, because the dev verifier keeps its codes in memory."""
+    global _SMS
+    sig = tuple(os.environ.get(k, "") for k in _SMS_KEYS)
+    if _SMS is None or _SMS[0] != sig:
+        try:
+            verifier = phone_mod.verifier_from_env()
+        except phone_mod.SmsError as e:
+            print(f"phone sign-in is off: {e}")  # noqa: T201 — a half-set provider shows in the logs
+            verifier = None
+        _SMS = (sig, verifier)
+    return _SMS[1]
+
+
+def _require_sms():
+    v = _sms()
+    if v is None:
+        raise HTTPException(503, "phone sign-in is not switched on; use your email")
+    return v
+
+
+def _phone(raw: str) -> str:
+    phone = phone_mod.normalize_phone(raw)
+    if not phone:
+        us_only = phone_mod.countries() == phone_mod.DEFAULT_COUNTRIES
+        raise HTTPException(400, "enter a US or Canadian mobile number" if us_only else "enter a mobile number we can text")
+    return phone
+
+
+def _check_code(phone: str, code: str) -> None:
+    """The texted code is right, or a 400/429. Wrong codes count against the number."""
+    verifier = _require_sms()
+    if accounts.PHONE_FAILURES.blocked(phone):
+        raise HTTPException(429, "too many wrong codes; wait 10 minutes and ask for a new one")
+    try:
+        ok = verifier.check(phone, code)
+    except phone_mod.SmsError:
+        raise HTTPException(502, "could not check that code; try again")
+    if not ok:
+        accounts.PHONE_FAILURES.hit(phone)
+        raise HTTPException(400, "that code is wrong or has expired")
+    accounts.PHONE_FAILURES.clear(phone)
+
+
+class PhoneIn(BaseModel):
+    phone: str
+
+
+class PhoneCodeIn(BaseModel):
+    phone: str
+    code: str
+
+
+class PhoneCompleteIn(BaseModel):
+    ticket: str
+    name: str = ""
+    email: str = ""
+
+
+@app.post("/api/auth/phone/start")
+def phone_start(body: PhoneIn, request: Request):
+    """Text a six-digit code. Same reply whether or not the number has an account."""
+    verifier = _require_sms()
+    phone = _phone(body.phone)
+    ip = client_ip(request)
+    if accounts.PHONE_STARTS.blocked(phone) or accounts.PHONE_STARTS_BY_IP.blocked(ip):
+        raise HTTPException(429, "too many codes; wait a few minutes")
+    accounts.PHONE_STARTS.hit(phone)
+    accounts.PHONE_STARTS_BY_IP.hit(ip)
+    try:
+        code = verifier.start(phone)
+    except phone_mod.SmsError:
+        raise HTTPException(502, "could not text that number; check it and try again")
+    out = {"ok": True, "phone": phone, "display": phone_mod.display_phone(phone)}
+    if verifier.returns_code:
+        out["dev_code"] = code  # the dev verifier only: nothing is texted, so the code comes back
+    return out
+
+
+@app.post("/api/auth/phone/verify")
+def phone_verify(body: PhoneCodeIn):
+    """Check the code. A number on file signs in (`new: false`, token and me); a new one
+    gets a ticket (`new: true`) to finish signing up with its name and email."""
+    phone = _phone(body.phone)
+    _check_code(phone, body.code)
+    user = store.user_by_phone(phone)
+    if user:
+        return {"new": False, **_open_session(user["email"])}
+    ticket = accounts.new_token()
+    store.create_phone_ticket(phone, accounts.token_hash(ticket), accounts.ticket_expiry())
+    return {"new": True, "ticket": ticket, "phone": phone, "display": phone_mod.display_phone(phone)}
+
+
+@app.post("/api/auth/phone/complete")
+def phone_complete(body: PhoneCompleteIn):
+    """Finish signing up a verified number: name, and an email if they want one."""
+    email = accounts.normalize_email(body.email) if body.email.strip() else ""
+    if email and (not accounts.valid_email(email) or accounts.is_placeholder(email)):
+        raise HTTPException(400, "enter a real email address, or leave it blank")
+    if email and store.get_user(email):
+        raise HTTPException(409, "that email already has an account; sign in with it, then add your phone on your account page")
+    phone = store.consume_phone_ticket(accounts.token_hash(body.ticket))
+    if not phone:
+        raise HTTPException(400, "that sign-up timed out; start again with your number")
+    existing = store.user_by_phone(phone)
+    if existing:  # finished in another tab: the ticket still proves the number
+        return _open_session(existing["email"])
+    key = email or accounts.phone_key(phone)
+    if not store.create_user(key, "", body.name.strip()[:80], phone=phone):
+        raise HTTPException(409, "that email already has an account; sign in with it")
+    return _open_session(key)
+
+
+@app.post("/api/account/phone")
+def add_phone(body: PhoneCodeIn, email: str = Depends(current_user)):
+    """Put a verified number on this account (the code comes from /api/auth/phone/start).
+    Replaces any number already on it. 409 when another account has the number."""
+    phone = _phone(body.phone)
+    if not store.get_user(email):
+        raise HTTPException(404, "no account on file for this sign-in")
+    _check_code(phone, body.code)
+    other = store.user_by_phone(phone)
+    if other and other["email"] != email:
+        raise HTTPException(409, "that number is on another account")
+    if not store.set_phone(email, phone):
+        raise HTTPException(409, "that number is on another account")
+    return {"ok": True, "me": _me(email)}
+
+
+class EmailIn(BaseModel):
+    email: str
+    password: str = ""
+
+
+@app.post("/api/account/email")
+def set_account_email(body: EmailIn, email: str = Depends(current_user)):
+    """Add an email to a phone-only account, or change the one on file. Everything the
+    account owns moves with it. An account with a password must give it."""
+    user = store.get_user(email)
+    if not user:
+        raise HTTPException(404, "no account on file for this sign-in")
+    new = accounts.normalize_email(body.email)
+    if not accounts.valid_email(new) or accounts.is_placeholder(new):
+        raise HTTPException(400, "enter a real email address")
+    if user["password_hash"]:
+        if accounts.LOGIN_FAILURES.blocked(email):
+            raise HTTPException(429, "too many wrong passwords; wait 15 minutes or reset it")
+        if not accounts.check_password(body.password, user["password_hash"]):
+            accounts.LOGIN_FAILURES.hit(email)
+            raise HTTPException(400, "your current password is wrong")
+    if not store.rekey(email, new):
+        raise HTTPException(409, "that email already has an account")
+    # A reset link sent to the old address must not reach the account at its new one.
+    store.revoke_resets(new)
+    return {"ok": True, "me": _me(new)}
+
+
 # ---- the account: upgrade, leagues on file ----
 
 class UpgradeIn(BaseModel):
@@ -460,6 +629,8 @@ def get_email_pref(email: str = Depends(current_user)):
 @app.put("/api/me/email")
 def set_email_pref(body: EmailPrefIn, email: str = Depends(current_user)):
     """Tick or untick the weekly email. Idempotent; the reply is the state we now hold."""
+    if accounts.is_placeholder(email):
+        raise HTTPException(400, "add an email to your account first")
     store.set_email_opt_in(email, body.email_opt_in)
     return {"email": email, "email_opt_in": store.email_opt_in(email)}
 
@@ -1265,5 +1436,12 @@ def health():
     server side — every request succeeds and the browser discards the answer. Knowing what
     the running process actually believes turns an afternoon of guessing into one curl.
     """
+    sms = _sms()
     return {"ok": True, "cors_origins": cors_origins(),
-            "web_url": os.environ.get("EDGE_WEB_URL", "") or None}
+            "web_url": os.environ.get("EDGE_WEB_URL", "") or None,
+            # What is switched on, never a key: enough to check a setup step with one curl.
+            "database": "postgres" if type(store).__name__ == "PostgresStore" else "sqlite",
+            "phone_sign_in": sms.name if sms else None,
+            "email_provider": (os.environ.get("EDGE_EMAIL_PROVIDER") or "dry-run").strip().lower(),
+            "stripe": _stripe_configured(),
+            "dev_header": os.environ.get("EDGE_DEV") == "1"}

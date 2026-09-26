@@ -9,7 +9,7 @@ import { Ticker } from "./Ticker";
 import { UnlockingBanner, useUnlockOnReturn } from "./Unlocking";
 import { LinkButton, OnAir, Opening, Spinner, ThemeToggle, Wordmark } from "./ui";
 import { ACCOUNT, NAMEPLATE, SECTIONS, TAB_ORDER, type SectionKey, type TabKey } from "@/lib/vocab";
-import { initialOf } from "@/lib/account";
+import { accountLabel, initialOf } from "@/lib/account";
 
 // Coach vocabulary, and every label still says what the screen is: scouting is the
 // free-agent pool, the GM's office is where deals get made, film is the weekly recap.
@@ -49,11 +49,11 @@ export function TopBar({ session }: { session: Session }) {
             className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-[13px] font-black uppercase hover:bg-soft ${
               premium ? "border-start bg-start-soft text-start ring-1 ring-start" : "border-line-2 text-ink-2"
             }`}
-            title={account.email}
-            aria-label={ACCOUNT.topbar.account(account.email)}
+            title={accountLabel(account)}
+            aria-label={ACCOUNT.topbar.account(accountLabel(account))}
             data-plan={premium ? "premium" : "free"}
           >
-            {initialOf(account)}
+            {initialOf(account) || <IconTeam size={18} />}
           </Link>
         ) : (
           <Link

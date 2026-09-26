@@ -32,7 +32,7 @@ def store(request, tmp_path):
     s = PostgresStore(TEST_DSN)
     # Each test starts from nothing, so ordering assertions mean something.
     with s.db.cursor() as cur:
-        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback, email_prefs, users, sessions, resets")
+        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback, email_prefs, users, sessions, resets, phone_tickets")
     yield s
     s.close()
 
@@ -366,3 +366,47 @@ def test_deleting_an_account_takes_its_sessions_and_resets_with_it(store):
     export = store.export_user("other@b.c")["data"]
     assert export["users"][0]["email"] == "other@b.c" and "password_hash" not in export["users"][0]
     assert "token_hash" not in export["sessions"][0]
+
+
+# ---- phone sign-in -------------------------------------------------------------------
+
+def test_one_account_per_phone_and_a_phone_finds_its_account(store):
+    assert store.create_user("p15551234567@phone.invalid", "", "Ann", phone="+15551234567")
+    assert not store.create_user("other@x.io", "h", phone="+15551234567"), "the number is taken"
+    assert store.create_user("other@x.io", "h")
+    assert store.user_by_phone("+15551234567")["email"] == "p15551234567@phone.invalid"
+    assert store.user_by_phone("+15550000000") is None
+    assert store.get_user("other@x.io")["phone"] is None
+    assert not store.set_phone("other@x.io", "+15551234567"), "cannot take another account's number"
+    assert store.set_phone("other@x.io", "+15557654321")
+    assert store.user_by_phone("+15557654321")["email"] == "other@x.io"
+    assert {u["email"]: u["phone"] for u in store.users()}["other@x.io"] == "+15557654321"
+    assert store.set_name("other@x.io", "Bo") and store.get_user("other@x.io")["name"] == "Bo"
+
+
+def test_rekey_moves_every_row_the_account_owns_or_nothing(store):
+    old = "p15551234567@phone.invalid"
+    store.create_user(old, "", "Ann", phone="+15551234567")
+    store.grant(old, "full_report", 2026, source="complimentary", ref="r1")
+    store.connect_league(old, "sleeper", "L1", "5", "League", "Team")
+    store.create_session(old, "tok", expires=time.time() + 60)
+    store.set_email_opt_in(old, True)
+    assert store.rekey(old, "Ann@Mail.com")
+    assert store.get_user(old) is None
+    assert store.get_user("ann@mail.com")["phone"] == "+15551234567"
+    assert store.skus("ann@mail.com", 2026) == ["full_report"]
+    assert [l["league_id"] for l in store.leagues("ann@mail.com")] == ["L1"]
+    assert store.session_email("tok") == "ann@mail.com", "the device that asked stays signed in"
+    assert store.email_opt_in("ann@mail.com")
+    store.create_user("taken@mail.com", "h")
+    assert not store.rekey("ann@mail.com", "taken@mail.com")
+    assert store.get_user("ann@mail.com") and store.skus("ann@mail.com", 2026) == ["full_report"], "nothing moved"
+
+
+def test_a_signup_ticket_is_spent_once_and_dies_on_time(store):
+    store.create_phone_ticket("+15551234567", "t1", expires=time.time() + 60)
+    store.create_phone_ticket("+15551234567", "late", expires=time.time() - 1)
+    assert store.consume_phone_ticket("late") is None
+    assert store.consume_phone_ticket("t1") == "+15551234567"
+    assert store.consume_phone_ticket("t1") is None
+    assert store.prune_auth() >= 2

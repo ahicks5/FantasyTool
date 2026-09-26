@@ -22,8 +22,13 @@ twin (`edge/api/store_pg.py`) holds the same nine when `DATABASE_URL` is set, an
 | `name` | `Andrew` | Optional, what they typed at registration |
 | `role` | `user` / `admin` | Who may open the front office. `EDGE_ADMINS` is the other way in |
 | `created`, `last_login` | unix ts | — |
+| `phone` | `+15552345678` | E.164, unique. Set when someone signs up or signs in with their phone, or adds one on `/account`. Only ever texted a sign-in code, through Twilio Verify |
 
-Personal data: **email, an optional name, and a password hash.** The hash is never exported
+A phone-only account has no address, so its key is `p15552345678@phone.invalid` (a reserved
+domain that can never receive mail); adding an email moves every row onto the real address
+(`rekey`). Its `password_hash` is empty: it signs in by texted code.
+
+Personal data: **email, an optional name, a password hash, and an optional mobile number.** The hash is never exported
 (`HIDDEN_COLUMNS`) and never leaves the store.
 
 ### `sessions` and `resets` — signed-in devices, and pending password resets
@@ -35,6 +40,10 @@ Personal data: **email, an optional name, and a password hash.** The hash is nev
 | `used` (resets only) | A reset link is spent once |
 
 Sign-out deletes the session row; a password reset deletes every session for the account.
+
+### `phone_tickets` — a verified number finishing sign-up
+Same shape as `resets`, keyed by `phone` instead of `email`: a SHA-256 token hash, 30 minutes,
+spent once. Pruned on every sign-in. The texted code itself is Twilio's and never stored here.
 
 ### `purchases` — what someone bought
 | Field | Example | Why |

@@ -5,6 +5,8 @@ import type {
   ActionFeed,
   AdminUsersResponse,
   AuthResponse,
+  PhoneStartResponse,
+  PhoneVerifyResponse,
   Desk,
   Plan,
   EmailPref,
@@ -281,6 +283,40 @@ export async function resetPassword(token: string, password: string): Promise<Au
   const out = await request<AuthResponse>("/auth/reset", { method: "POST", body: JSON.stringify({ token, password }) });
   saveToken(out.token);
   return out;
+}
+
+/** Text a sign-in code to a number. */
+export async function phoneStart(phone: string): Promise<PhoneStartResponse> {
+  if (USE_MOCKS) return { ok: true, phone, display: phone, dev_code: "000000" };
+  return request<PhoneStartResponse>("/auth/phone/start", { method: "POST", body: JSON.stringify({ phone }) });
+}
+
+/** Check the code: a number on file is signed in here; a new one comes back with a ticket. */
+export async function phoneVerify(phone: string, code: string): Promise<PhoneVerifyResponse> {
+  if (USE_MOCKS) return { new: false, ...(await mockSignIn("you@example.com")) };
+  const out = await request<PhoneVerifyResponse>("/auth/phone/verify", { method: "POST", body: JSON.stringify({ phone, code }) });
+  if (!out.new) saveToken(out.token);
+  return out;
+}
+
+/** Finish signing up a verified number. */
+export async function phoneComplete(ticket: string, name: string, email: string): Promise<AuthResponse> {
+  if (USE_MOCKS) return mockSignIn(email || "you@example.com");
+  const out = await request<AuthResponse>("/auth/phone/complete", { method: "POST", body: JSON.stringify({ ticket, name, email }) });
+  saveToken(out.token);
+  return out;
+}
+
+/** Put a verified number on the signed-in account (the code comes from `phoneStart`). */
+export async function addPhone(phone: string, code: string): Promise<Me> {
+  if (USE_MOCKS) return mockMe();
+  return (await request<{ me: Me }>("/account/phone", { method: "POST", body: JSON.stringify({ phone, code }) })).me;
+}
+
+/** Add an email to the account, or change it. A password account must give its password. */
+export async function setAccountEmail(email: string, password = ""): Promise<Me> {
+  if (USE_MOCKS) return mockMe();
+  return (await request<{ me: Me }>("/account/email", { method: "POST", body: JSON.stringify({ email, password }) })).me;
 }
 
 /** Change the password while signed in. The API signs out every other device; this one stays in. */

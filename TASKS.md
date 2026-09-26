@@ -55,7 +55,14 @@ the store contract on both backends, `web/e2e/account.spec.ts`).
       reads' 401 copy) — the forms now use `lib/authError.ts`. Forgot screen says the sign-in is
       the email; admin search finds an account by league or team name.
 - [ ] **AC-13** Email verification (confirm-your-address link), once reset mail sends (AC-9).
-- [ ] **AC-14** Self-serve change of sign-in email. Today: export, delete, re-register, re-grant.
+- [x] **AC-14** Self-serve change of sign-in email: `/account` → Email (`POST /api/account/email`).
+- [x] **AC-15** Phone sign-in (Andrew, 2026-09-26: "register with just your phone number, then an
+      auth code, then name and email"). `edge/api/phone.py` (Twilio Verify, a dev stand-in for
+      tests), `/api/auth/phone/start|verify|complete`, `/api/account/phone`; `users.phone` +
+      `phone_tickets` on both stores; the door opens on the phone when `phone_sign_in`, email and
+      password one tap away; `/account` adds a phone or an email. `tests/test_phone.py`,
+      `web/e2e/account.spec.ts`. **Off in production until Twilio is set** (`docs/DEPLOY.md`).
+      Stripe grants now follow the account key in the metadata, not the address typed at checkout.
 
 ## Round 5: the grid, the shortlist, the office rows (2026-09-23, night)
 

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { initialOf, leagueRoom, matchesAccount, offersFor, pickLeague, planWord, shortDate, upgradesFor } from "./account.ts";
+import { accountContact, accountLabel, displayPhone, initialOf, leagueRoom, matchesAccount, offersFor, pickLeague, planWord, shortDate, upgradesFor } from "./account.ts";
 import type { Account, AdminUser, MeLeague, Product } from "./types";
 
 const L = (id: string, last_used: number | null): MeLeague => ({ platform: "sleeper", league_id: id, name: id, team_id: "1", last_used });
@@ -76,4 +76,15 @@ test("the front office finds an account by its league when the owner forgot the 
   assert.ok(matchesAccount(u, "SOMEONE@"));
   assert.ok(matchesAccount(u, "  "));
   assert.ok(!matchesAccount(u, "nobody"));
+});
+
+test("a phone-only account is named by its name or its number, never its internal key", () => {
+  const phoneOnly = { email: "", name: "", phone: "+15552345678" };
+  assert.equal(accountLabel(phoneOnly), "(555) 234-5678");
+  assert.equal(accountContact(phoneOnly), "");
+  assert.equal(accountLabel({ ...phoneOnly, name: "Ann" }), "Ann");
+  assert.equal(accountContact({ ...phoneOnly, name: "Ann" }), "(555) 234-5678");
+  assert.equal(accountLabel({ email: "p15552345678@phone.invalid", name: "", phone: "+15552345678" }), "(555) 234-5678");
+  assert.equal(accountContact({ email: "a@b.co", name: "Ann", phone: "+15552345678" }), "a@b.co · (555) 234-5678");
+  assert.equal(displayPhone("+447911123456"), "+447911123456");
 });

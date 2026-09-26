@@ -27,6 +27,15 @@ services:
         sync: false
       - key: EDGE_WEB_URL
         value: https://fantasy-tool-alpha.vercel.app
+      # Phone sign-in (docs/ACCOUNTS.md). Twilio Verify; the three secrets are set by hand.
+      - key: EDGE_SMS_PROVIDER
+        value: twilio
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_VERIFY_SID
+        sync: false
       # Opens every paid feature for anyone, signed in or not. For clicking through a demo.
       # A real paywall bypass — unset it before anyone can be charged.
       - key: EDGE_DEMO_UNLOCK

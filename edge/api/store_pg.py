@@ -43,6 +43,11 @@ CREATE TABLE IF NOT EXISTS resets (
   token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, created DOUBLE PRECISION, expires DOUBLE PRECISION,
   used DOUBLE PRECISION);
 CREATE INDEX IF NOT EXISTS resets_email ON resets (email);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS users_phone ON users (phone);
+CREATE TABLE IF NOT EXISTS phone_tickets (
+  token_hash TEXT PRIMARY KEY, phone TEXT NOT NULL, created DOUBLE PRECISION, expires DOUBLE PRECISION,
+  used DOUBLE PRECISION);
 
 CREATE TABLE IF NOT EXISTS shares (
   id TEXT PRIMARY KEY, payload TEXT, created DOUBLE PRECISION, views INTEGER DEFAULT 0);
@@ -60,6 +65,13 @@ CREATE TABLE IF NOT EXISTS email_prefs (
   email TEXT PRIMARY KEY, opt_in INTEGER NOT NULL DEFAULT 0,
   created DOUBLE PRECISION, updated DOUBLE PRECISION);
 """
+
+
+def _user(row) -> dict | None:
+    if not row:
+        return None
+    return {"email": row[0], "password_hash": row[1], "name": row[2] or "", "role": row[3],
+            "created": row[4], "last_login": row[5], "phone": row[6]}
 
 
 class PostgresStore:
@@ -148,26 +160,55 @@ class PostgresStore:
     # ---- accounts -----------------------------------------------------------------
     # Mirrors the SQLite store method for method; see the notes there.
 
-    def create_user(self, email: str, password_hash: str, name: str = "") -> bool:
+    def create_user(self, email: str, password_hash: str, name: str = "", phone: str | None = None) -> bool:
         cur = self._exec(
-            "INSERT INTO users (email, password_hash, name, role, created, last_login) VALUES (%s,%s,%s,%s,%s,NULL) "
-            "ON CONFLICT (email) DO NOTHING",
-            (email.lower(), password_hash, name or "", "user", time.time()))
+            "INSERT INTO users (email, password_hash, name, role, created, last_login, phone) "
+            "VALUES (%s,%s,%s,%s,%s,NULL,%s) ON CONFLICT DO NOTHING",
+            (email.lower(), password_hash, name or "", "user", time.time(), phone or None))
         return cur.rowcount == 1
 
+    _USER_COLS = "email, password_hash, name, role, created, last_login, phone"
+
     def get_user(self, email: str) -> dict | None:
-        cur = self._exec("SELECT email, password_hash, name, role, created, last_login FROM users WHERE email=%s",
-                         (email.lower(),))
-        row = cur.fetchone()
-        if not row:
-            return None
-        return {"email": row[0], "password_hash": row[1], "name": row[2] or "", "role": row[3],
-                "created": row[4], "last_login": row[5]}
+        cur = self._exec(f"SELECT {self._USER_COLS} FROM users WHERE email=%s", (email.lower(),))
+        return _user(cur.fetchone())
+
+    def user_by_phone(self, phone: str) -> dict | None:
+        cur = self._exec(f"SELECT {self._USER_COLS} FROM users WHERE phone=%s", (phone,))
+        return _user(cur.fetchone())
+
+    def set_phone(self, email: str, phone: str | None) -> bool:
+        import psycopg
+        try:
+            cur = self._exec("UPDATE users SET phone=%s WHERE email=%s", (phone or None, email.lower()))
+        except psycopg.errors.UniqueViolation:
+            return False
+        return cur.rowcount == 1
+
+    def set_name(self, email: str, name: str) -> bool:
+        cur = self._exec("UPDATE users SET name=%s WHERE email=%s", (name or "", email.lower()))
+        return cur.rowcount == 1
+
+    def rekey(self, old: str, new: str) -> bool:
+        import psycopg
+        old, new = old.lower(), new.lower()
+        if old == new:
+            return True
+        for table in self.USER_TABLES:
+            if self._exec(f"SELECT 1 FROM {table} WHERE email=%s LIMIT 1", (new,)).fetchone():  # noqa: S608
+                return False
+        try:
+            with self.db.transaction():
+                for table in self.USER_TABLES:
+                    self._exec(f"UPDATE {table} SET email=%s WHERE email=%s", (new, old))  # noqa: S608 — fixed tuple
+        except psycopg.Error:
+            return False
+        return True
 
     def users(self, limit: int = 500) -> list[dict]:
-        cur = self._exec("SELECT email, name, role, created, last_login FROM users ORDER BY created, email LIMIT %s",
+        cur = self._exec("SELECT email, name, role, created, last_login, phone FROM users ORDER BY created, email LIMIT %s",
                          (limit,))
-        return [{"email": r[0], "name": r[1] or "", "role": r[2], "created": r[3], "last_login": r[4]}
+        return [{"email": r[0], "name": r[1] or "", "role": r[2], "created": r[3], "last_login": r[4], "phone": r[5]}
                 for r in cur.fetchall()]
 
     def set_password(self, email: str, password_hash: str) -> bool:
@@ -220,10 +261,22 @@ class PostgresStore:
         cur = self._exec("UPDATE resets SET used=%s WHERE email=%s AND used IS NULL", (now or time.time(), email.lower()))
         return cur.rowcount
 
+    def create_phone_ticket(self, phone: str, token_hash: str, expires: float) -> None:
+        self._exec("INSERT INTO phone_tickets (token_hash, phone, created, expires, used) VALUES (%s,%s,%s,%s,NULL) "
+                   "ON CONFLICT (token_hash) DO NOTHING", (token_hash, phone, time.time(), expires))
+
+    def consume_phone_ticket(self, token_hash: str, now: float | None = None) -> str | None:
+        now = now or time.time()
+        cur = self._exec("UPDATE phone_tickets SET used=%s WHERE token_hash=%s AND used IS NULL AND expires>=%s "
+                         "RETURNING phone", (now, token_hash, now))
+        row = cur.fetchone()
+        return row[0] if row else None
+
     def prune_auth(self, now: float | None = None) -> int:
         now = now or time.time()
         n = self._exec("DELETE FROM sessions WHERE expires IS NOT NULL AND expires<%s", (now,)).rowcount
         n += self._exec("DELETE FROM resets WHERE (expires IS NOT NULL AND expires<%s) OR used IS NOT NULL", (now,)).rowcount
+        n += self._exec("DELETE FROM phone_tickets WHERE expires<%s OR used IS NOT NULL", (now,)).rowcount
         return n
 
     def disconnect_league(self, email: str, platform: str, league_id: str) -> None:

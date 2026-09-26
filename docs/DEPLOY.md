@@ -148,6 +148,11 @@ API (Railway):
 | `EDGE_DB` | a path on the mounted volume | SQLite via `edge/api/store.py`. On an ephemeral filesystem every entitlement is lost on restart. |
 | `EDGE_CACHE_DIR` | a path on the mounted volume | The 14MB Sleeper player file is cached here for 24h. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Stripe | The $7 pass and the webhook that grants it. |
+| `EDGE_SMS_PROVIDER` | `twilio` | **Phone sign-in.** Unset, the door is email and password only. `twilio` needs the three below; a half-set one leaves phone sign-in off and says why in the logs. (`dev` works only with `EDGE_DEV=1` and returns the code in the reply: tests only.) |
+| `TWILIO_ACCOUNT_SID` | `AC…` | Twilio Console home page. |
+| `TWILIO_AUTH_TOKEN` | secret | Twilio Console home page. Secret: set on Render only. |
+| `TWILIO_VERIFY_SID` | `VA…` | Twilio Console → Verify → Services → create one named Penthouse. Verify, not plain SMS: it needs no US carrier (10DLC) registration. |
+| `EDGE_SMS_COUNTRIES` | `1` | Calling codes we text. Default `1` (US and Canada); each extra country is SMS-fraud exposure. |
 | `EDGE_ADMINS` | comma-separated emails | **The admin account.** Anyone who signs in with one of these addresses gets the front office (`/admin`): every account, grant or revoke a pass, add league slots, hand out reset links, promote another admin. `deploy/render.yaml` carries Andrew's address; the running service still has to be set by hand. An admin can also be made from the store (`role` column) once one exists. |
 | `SUPABASE_JWT_SECRET` | optional | A Supabase JWT is still accepted as a bearer token when set. Nothing in the web sends one any more. |
 | `EDGE_USE_CLAUDE`, `ANTHROPIC_API_KEY` | optional | LLM-written trade explanations. Without them the templates are used. |

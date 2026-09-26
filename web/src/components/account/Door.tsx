@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AuthForm, type AuthMode } from "./AuthForm";
 import { logout } from "@/lib/api";
 import { useSession } from "@/lib/session";
+import { accountContact, accountLabel } from "@/lib/account";
 import { Button, Card, Eyebrow, LinkButton, ThemeToggle, Wordmark } from "@/components/ui";
 import { ACCOUNT, LINES } from "@/lib/vocab";
 
@@ -36,8 +37,8 @@ export function SignedInCard({ next }: { next: string }) {
   return (
     <Card>
       <Eyebrow>{ACCOUNT.plan.current}</Eyebrow>
-      <p className="mt-1.5 text-[17px] font-bold break-words">{account.name || account.email}</p>
-      {account.name && <p className="text-[13px] text-muted break-words">{account.email}</p>}
+      <p className="mt-1.5 text-[17px] font-bold break-words">{accountLabel(account)}</p>
+      {accountContact(account) && <p className="text-[13px] text-muted break-words">{accountContact(account)}</p>}
       <p className="mt-2 text-[13px] font-bold text-ink-2">
         {account.plan.tier === "premium" ? `${ACCOUNT.plan.premium} · ${account.plan.name}` : ACCOUNT.plan.free}
         {account.is_admin && <span className="ml-2 rounded-full bg-ink px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-paper">{ACCOUNT.plan.admin}</span>}
@@ -61,7 +62,8 @@ function LoginInner({ start }: { start: AuthMode }) {
   const router = useRouter();
   // A sign-in goes back upstairs; a new account lands on its own page first, where the
   // one thing left is to link a league. `?next=` overrides both (the connect gate uses it).
-  const next = safeNext(useSearchParams().get("next"), start === "register" ? "/account" : "/home");
+  const asked = useSearchParams().get("next");
+  const next = safeNext(asked, start === "register" ? "/account" : "/home");
   const [mode, setMode] = useState<AuthMode>(start);
   const session = useSession();
   const title = mode === "register" ? ACCOUNT.register : mode === "forgot" ? ACCOUNT.reset.title : ACCOUNT.signIn;
@@ -79,7 +81,7 @@ function LoginInner({ start }: { start: AuthMode }) {
           <SignedInCard next={next} />
         ) : (
           <div className="card p-5">
-            <AuthForm mode={mode} onMode={setMode} onDone={() => router.push(next)} />
+            <AuthForm mode={mode} onMode={setMode} onDone={(_, created) => router.push(created && !asked ? "/account" : next)} />
           </div>
         )}
       </div>

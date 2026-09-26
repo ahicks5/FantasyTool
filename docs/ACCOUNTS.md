@@ -8,7 +8,10 @@ The contract is `docs/API.md` "Accounts"; the web wiring is `docs/WEB.md` "The a
 
 | Flow | Page | API | What is checked |
 |---|---|---|---|
-| Register | `/register`, or the sheet from any locked room | `POST /api/auth/register` | address shape (≤254), password 8–256 chars, name ≤80; 409 if the address is taken. Signs in on success and lands on `/account`. |
+| Sign up / sign in with a phone | `/register`, `/login`, the sheet (the default when `phone_sign_in`) | `POST /api/auth/phone/start`, `/verify`, `/complete` | a textable number (US/CA); code from Twilio Verify, 10 minutes, 5 tries; 3 texts per number per 10 min and 10 per caller per hour. A number on file signs straight in; a new one gets a 30-minute one-shot ticket, then name and optional email (409 if taken). |
+| Add or change the phone | `/account` → Phone | `POST /api/account/phone` | a fresh code for the new number; 409 if another account has it. |
+| Add or change the email | `/account` → Email | `POST /api/account/email` | a real address, not taken; the password if the account has one. Every row moves to the new key; reset links on file die. |
+| Register with email | `/register` → "Use email and password instead" | `POST /api/auth/register` | address shape (≤254), password 8–256 chars, name ≤80; 409 if the address is taken. Signs in on success and lands on `/account`. |
 | Sign in | `/login`, or the sheet | `POST /api/auth/login` | one 401 for wrong password and unknown address, same scrypt cost for both; 10 failures per address per 15 min → 429. |
 | Stay signed in | every page | `Authorization: Bearer` | token hash looked up in `sessions`; 30 days; an unknown or expired token is cleared from the browser (`session.ts`). |
 | Sign out | `/account`, `/login` | `POST /api/auth/logout` | this device only; the browser drops the token even if the call fails. |
@@ -36,6 +39,12 @@ which one has an account). If they still cannot find it, they write to support; 
 look them up on `/admin` by name or by a league on file, and replies **to the address on the
 account** — never tells the asker which address it is.
 
+**Lost or changed phone number.** An account with an email: "Use email and password instead",
+then "Forgot password" if it never had one — the reset link sets a password — then add the new
+number on `/account`. A phone-only account with no email: support. The owner finds it on
+`/admin` (by name, league, or the old number) and the fix is by hand, because a number we cannot
+text proves nothing. This is why the sign-up screen asks for an email.
+
 **Locked out by the throttle.** It lifts after 15 minutes, and a password reset clears it at once.
 
 **Lost a phone or a shared laptop.** Sign in anywhere, then "Sign out other devices", or change
@@ -50,7 +59,9 @@ from `/account`.
 
 | Table | Columns | Notes |
 |---|---|---|
-| `users` | `email` PK (lower-cased), `password_hash`, `name`, `role`, `created`, `last_login` | scrypt, self-describing (`scrypt$n$r$p$salt$dk`) so the cost can rise without a migration. Never leaves the API (`public_user`, export hides it). |
+| `users` | `email` PK (lower-cased), `password_hash`, `name`, `role`, `created`, `last_login`, `phone` (E.164, unique) | A phone-only account's key is `p<digits>@phone.invalid` and its `password_hash` is empty. Adding an email moves every row onto it (`rekey`). |
+| `phone_tickets` | `token_hash` PK, `phone`, `created`, `expires`, `used` | A verified new number finishing sign-up. 30 minutes, one shot. |
+| (users, cont.) | | | scrypt, self-describing (`scrypt$n$r$p$salt$dk`) so the cost can rise without a migration. Never leaves the API (`public_user`, export hides it). |
 | `sessions` | `token_hash` PK, `email` (indexed), `created`, `expires` | SHA-256 of a 32-byte random token. A copy of the database signs nobody in. |
 | `resets` | `token_hash` PK, `email` (indexed), `created`, `expires`, `used` | same hashing; `used` set in the same statement that checks it. |
 
@@ -66,7 +77,15 @@ Postgres before touching either store.
    a "confirm your address" link, required before the first purchase.
 3. **The throttles are per process.** Right for one Render container; with several, the
    budget multiplies by the count and wants a shared counter (same note as `limits.py`).
-4. **Changing the sign-in email** is not self-serve. Today: export, delete, register again, and
-   the owner re-grants any pass from `/admin`. Worth building if people ask.
+4. **Changing the sign-in email** is self-serve now (`/account` → Email), password required
+   when the account has one.
 5. **Accounts need a durable database.** On Render's free plan the local disk does not survive a
    redeploy, so without `DATABASE_URL` every account, session and purchase is lost on each deploy.
+6. **Texting costs money** (about $0.05 a code on Twilio Verify). The throttles cap a bot, not
+   a budget; set a spend alert in the Twilio console.
+7. **A Stripe checkout opened before an email is added** still carries the old internal key and
+   its grant lands there. Rare (seconds apart); fix from `/admin` if it happens.
+8. **Phone numbers get recycled.** Carriers hand a dropped number to someone new, who could then
+   sign in to the old account. It is the known weakness of text-code sign-in (SIM swaps too).
+   An account that holds a purchase should have an email on file; if abuse shows up, require a
+   second factor (email link) for a sign-in from a number unused for 90 days.

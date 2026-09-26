@@ -21,6 +21,30 @@ export function initialOf(account: { email: string; name?: string } | null | und
   return src ? src[0].toUpperCase() : "";
 }
 
+/** `+15552345678` → `(555) 234-5678`. Anything that is not a US/Canadian number, as given. */
+export function displayPhone(e164: string | null | undefined): string {
+  if (e164 && /^\+1\d{10}$/.test(e164)) return `(${e164.slice(2, 5)}) ${e164.slice(5, 8)}-${e164.slice(8)}`;
+  return e164 ?? "";
+}
+
+/** The address to show, never the internal key a phone-only account is filed under (`…@phone.invalid`). */
+export function shownEmail(email: string | null | undefined): string {
+  const e = (email ?? "").trim();
+  return e.endsWith("@phone.invalid") ? "" : e;
+}
+
+/** What to call the account where one line names it: the name, else the email, else the phone. */
+export function accountLabel(account: { email: string; name?: string; phone?: string | null } | null | undefined): string {
+  return account?.name?.trim() || shownEmail(account?.email) || displayPhone(account?.phone) || "";
+}
+
+/** The line under the name: every way the account signs in that the label did not already say. */
+export function accountContact(account: { email: string; name?: string; phone?: string | null } | null | undefined): string {
+  if (!account) return "";
+  const label = accountLabel(account);
+  return [shownEmail(account.email), displayPhone(account.phone)].filter((x) => x && x !== label).join(" · ");
+}
+
 /** "2 of 3 leagues" and whether another can be linked. */
 export function leagueRoom(used: number, allowed: number): { line: string; full: boolean; left: number } {
   const left = Math.max(0, allowed - used);
@@ -73,6 +97,6 @@ export function shortDate(ts: number | null | undefined, now = new Date()): stri
 export function matchesAccount(u: AdminUser, query: string): boolean {
   const needle = query.trim().toLowerCase();
   if (!needle) return true;
-  const hay = [u.email, u.name, ...u.leagues.flatMap((l) => [l.name, l.team_name ?? "", l.league_id])];
+  const hay = [u.email, u.name, u.phone ?? "", displayPhone(u.phone), ...u.leagues.flatMap((l) => [l.name, l.team_name ?? "", l.league_id])];
   return hay.some((h) => (h ?? "").toLowerCase().includes(needle));
 }

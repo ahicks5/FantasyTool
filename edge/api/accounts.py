@@ -114,6 +114,12 @@ class Throttle:
 
 #: Wrong passwords per account per 15 minutes before sign-in answers 429. A success clears it.
 LOGIN_FAILURES = Throttle(10, 15 * 60)
+#: Codes texted per number per 10 minutes, and per caller per hour. Every text costs money,
+#: so both are tight: the per-caller one is what stops a bot walking a list of numbers.
+PHONE_STARTS = Throttle(3, 10 * 60)
+PHONE_STARTS_BY_IP = Throttle(10, 60 * 60)
+#: Wrong codes per number per 10 minutes.
+PHONE_FAILURES = Throttle(5, 10 * 60)
 #: Reset emails per account per hour. Past it the form still says "sent": it must not tell
 #: a stranger anything, and it must not become a way to flood someone's inbox.
 RESET_REQUESTS = Throttle(3, 60 * 60)
@@ -134,6 +140,25 @@ def session_expiry(now: float | None = None) -> float:
 
 def reset_expiry(now: float | None = None) -> float:
     return (now or time.time()) + RESET_HOURS * 3600
+
+
+#: A phone-only account still needs a key, and every table is keyed by email. The key is
+#: shaped like an address on `.invalid`, a domain reserved so it can never receive mail;
+#: the API never shows it, and adding a real address moves the account onto it (`rekey`).
+PHONE_KEY_DOMAIN = "phone.invalid"
+TICKET_MINUTES = 30
+
+
+def phone_key(phone: str) -> str:
+    return f"p{''.join(c for c in phone if c.isdigit())}@{PHONE_KEY_DOMAIN}"
+
+
+def is_placeholder(email: str | None) -> bool:
+    return bool(email) and normalize_email(email).endswith("@" + PHONE_KEY_DOMAIN)
+
+
+def ticket_expiry(now: float | None = None) -> float:
+    return (now or time.time()) + TICKET_MINUTES * 60
 
 
 def admin_emails(env: dict | None = None) -> set[str]:
@@ -160,9 +185,12 @@ def public_user(row: dict | None, email: str, env: dict | None = None) -> dict:
     row = row or {}
     role = row.get("role") or "user"
     return {
-        "email": normalize_email(email),
+        # A phone-only account has no address to show: its key is internal.
+        "email": "" if is_placeholder(email) else normalize_email(email),
         "name": row.get("name") or "",
         "role": "admin" if is_admin(email, role, env) else role,
         "created": row.get("created"),
         "last_login": row.get("last_login"),
+        "phone": row.get("phone") or None,
+        "has_password": bool(row.get("password_hash")),
     }
