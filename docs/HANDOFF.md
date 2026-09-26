@@ -24,6 +24,16 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## Live setup, done with Andrew (2026-09-26)
+
+Verified on `GET /api/health` after each step: **`DATABASE_URL` → Neon** (free, project
+`dark-cherry-06999449`, AWS Oregon, direct connection, pooling off) — `"database":"postgres"`;
+**`EDGE_DEV` removed** — `"dev_header":false`; **`EDGE_ADMINS`** set, Andrew registered
+ahicks5.nd@gmail.com, linked his league and sees the Admin badge. Production is at `3d29b3b`
+(rollback target before today: `fc9cc5b`). Still to do, in order: Twilio (phone sign-in),
+`NEXT_PUBLIC_SUPPORT_EMAIL`, Resend (reset mail), Stripe. Items 2 and 3 in "Two things are
+blocked on Andrew" below are done.
+
 ## Phone sign-in (2026-09-26)
 
 Sign-up is now a phone number, a texted code, then name and an optional email. Built and
