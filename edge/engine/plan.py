@@ -9,7 +9,7 @@ already holds or a number it already computed -- nothing here predicts, nothing 
 anew, and no return date is guessed. The `posture` is a code, not a sentence: the web puts
 the words on it.
 
-The wire's ranked picks and the trade angles are what Wire Pass and Trade Lab sell, so a
+The wire's ranked picks and the trade angles are what a paid pass sells, so a
 reader without them gets the counts and no names, the same rule the desk's binders follow.
 Free for the depth chart and your own bench: the first is public NFL information and the
 second is your own roster.
@@ -105,7 +105,7 @@ def swap_candidate(league: League, team: Team, mine: Player) -> dict | None:
 
 def wire(league: League, team: Team, position: str, ros, byes, entitled: bool,
          bid_stats=None, trending=None) -> dict:
-    """The wire's own ranking, narrowed to one position. Names only for a Wire Pass."""
+    """The wire's own ranking, narrowed to one position. Names only with a paid pass."""
     picks = [p for p in waivers.rank(league, team, ros, byes, bid_stats=bid_stats, trending=trending,
                                      limit=12, pool=120) if p.player.position == position][:WIRE]
     out = {"locked": not entitled, "count": len(picks), "picks": []}

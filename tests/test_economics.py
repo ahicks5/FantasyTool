@@ -20,17 +20,17 @@ def test_stripe_fee_matches_the_published_rate():
 
 
 def test_the_fixed_fee_hurts_the_cheap_sku_most():
-    """The $3 pass gives up a much bigger share of its price than the $7 bundle.
+    """A $4.99 week gives up a much bigger share of its price than the $24.99 season.
 
     This is the argument against a cheap tier — and the model shows it is an argument about
     fee *share*, not about whether the tier is profitable (see the margin test below).
     """
     a = ec.Assumptions()
-    cheap = ec.contribution("waivers", a)
+    cheap = ec.contribution("week_pass", a)
     bundle = ec.contribution("full_report", a)
     assert cheap["fee_pct"] > 1.7 * bundle["fee_pct"]
-    assert cheap["fee_pct"] == pytest.approx(12.9, abs=0.1)
-    assert bundle["fee_pct"] == pytest.approx(7.2, abs=0.1)
+    assert cheap["fee_pct"] == pytest.approx(8.9, abs=0.1)
+    assert bundle["fee_pct"] == pytest.approx(4.1, abs=0.1)
 
 
 def test_llm_cost_is_priced_per_million_tokens():
@@ -55,9 +55,12 @@ def test_only_trade_lab_skus_carry_an_llm_cost():
     overstate the cost of the cheapest product.
     """
     a = ec.Assumptions()
-    assert ec.contribution("waivers", a)["llm"] == 0.0
-    assert ec.contribution("trade_lab", a)["llm"] > 0
+    assert ec.contribution("league_slot", a)["llm"] == 0.0
+    assert ec.contribution("week_pass", a)["llm"] > 0
     assert ec.contribution("full_report", a)["llm"] > 0
+    # A paid week carries one week's share of the season's explanations, not all of them.
+    assert ec.contribution("week_pass", a)["llm"] == pytest.approx(
+        ec.contribution("full_report", a)["llm"] / a.usage.weeks_remaining)
 
 
 def test_every_paid_sku_is_profitable_on_variable_cost():
@@ -76,27 +79,28 @@ def test_runway_is_the_call_budget_a_sale_buys():
     The trade endpoint has no per-user rate limit, so this doubles as the abuse threshold.
     """
     a = ec.Assumptions()
-    runway = ec.runway_calls("trade_lab", a)
+    runway = ec.runway_calls("full_report", a)
     per_call = a.call.cost_usd()
-    headroom = 5.00 - a.fees.on_cents(500) / 100 - a.refund_rate * 5.00
+    headroom = 24.99 - a.fees.on_cents(2499) / 100 - a.refund_rate * 24.99
     assert runway == pytest.approx(headroom / per_call)
-    assert 200 < runway < 500, "sanity: a $5 pass buys a few hundred opus-5 verdicts"
+    assert 1000 < runway < 3000, "sanity: a $24.99 season buys well over a thousand opus-5 verdicts"
+    assert 200 < ec.runway_calls("week_pass", a) < 500, "and a $4.99 week a few hundred"
 
     # A user who burns exactly the runway has consumed the whole sale.
     spent = replace(a, usage=replace(a.usage, explanations=int(runway)))
-    assert ec.contribution("trade_lab", spent)["net"] == pytest.approx(0, abs=0.02)
+    assert ec.contribution("full_report", spent)["net"] == pytest.approx(0, abs=0.02)
 
 
 def test_runway_is_unlimited_without_the_llm_or_without_trade_lab():
     a = ec.Assumptions()
-    assert ec.runway_calls("waivers", a) == float("inf")
-    assert ec.runway_calls("trade_lab", replace(a, llm_enabled=False)) == float("inf")
+    assert ec.runway_calls("league_slot", a) == float("inf")
+    assert ec.runway_calls("full_report", replace(a, llm_enabled=False)) == float("inf")
 
 
 def test_a_cheaper_model_buys_proportionally_more_runway():
     a = ec.Assumptions()
-    opus = ec.runway_calls("trade_lab", a)
-    haiku = ec.runway_calls("trade_lab", replace(a, call=replace(a.call, model="claude-haiku-4-5")))
+    opus = ec.runway_calls("full_report", a)
+    haiku = ec.runway_calls("full_report", replace(a, call=replace(a.call, model="claude-haiku-4-5")))
     assert haiku > opus * 4, "haiku is 5x cheaper per token than opus on both directions"
 
 
@@ -105,8 +109,8 @@ def test_season_projection_adds_up():
     mix = {"full_report": 10}
     s = ec.season(mix, months=4.0, a=a)
     assert s["buyers"] == 10
-    assert s["revenue"] == pytest.approx(70.0)
-    assert s["avg_order"] == pytest.approx(7.0)
+    assert s["revenue"] == pytest.approx(249.9)
+    assert s["avg_order"] == pytest.approx(24.99)
     assert s["contribution"] == pytest.approx(s["revenue"] - s["variable_cost"])
     assert s["profit"] == pytest.approx(s["contribution"] - s["fixed_cost"])
     assert s["fixed_cost"] == pytest.approx(a.infra_total_monthly * 4.0)
@@ -118,7 +122,7 @@ def test_break_even_is_small_enough_that_volume_is_the_only_problem():
     Break-even is a couple of dozen buyers at most. Anything that changes *volume* dominates
     anything that changes price, which is why the rollout plan is a distribution plan.
     """
-    mix = {"waivers": 1, "trade_lab": 1, "full_report": 4}
+    mix = {"week_pass": 4, "full_report": 4, "league_slot": 1}
     be = ec.breakeven_buyers(mix, months=4.0)
     assert be < 30, f"expected a trivial break-even, got {be}"
 
@@ -146,7 +150,7 @@ def test_tank01_fallback_only_moves_fixed_cost():
 
 def test_model_follows_the_product_catalog():
     """Add a SKU to products.py and it appears here without touching this module."""
-    paid = {p["sku"] for p in products.PRODUCTS if p["price_cents"] > 0}
+    paid = {p["sku"] for p in products.FOR_SALE}
     assert {r["sku"] for r in ec.table()} == paid
     with pytest.raises(ValueError, match="unknown sku"):
         ec.contribution("playoff_pass")
@@ -156,5 +160,5 @@ def test_format_table_is_printable_and_names_the_model():
     out = ec.format_table()
     assert "claude-opus-5" in out
     assert "Runway" in out
-    for sku in ("waivers", "trade_lab", "full_report"):
+    for sku in ("week_pass", "full_report", "league_slot"):
         assert sku in out

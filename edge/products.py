@@ -1,30 +1,79 @@
-"""Product catalog: free tier, à la carte passes, The Penthouse bundle, and the league-slot add-on. Prices in cents.
+"""Product catalog: free tier, the week pass, the season pass (The Penthouse) and the league-slot add-on. Prices in cents.
 Change prices here only; everything else reads this."""
 from __future__ import annotations
 
 FEATURES = ("my_team", "waivers", "trade_lab", "full_report")
+EVERYTHING = list(FEATURES)
 
 # Every account keeps up to this many leagues on file, paid or not (Andrew, 2026-09-24:
-# "max 3 per account, with more to be bought as an add-on"). The bundle carries five; a
+# "max 3 per account, with more to be bought as an add-on"). Both passes carry five; a
 # `league_slot` purchase adds one on top of whichever cap applies.
 BASE_LEAGUES = 3
 
+WEEK_SKU = "week_pass"
+SEASON_SKU = "full_report"  # the season pass keeps its old sku so every grant and comp stays valid
+ADD_ON_SKU = "league_slot"
+
+DAY_S = 24 * 60 * 60
+
+# Andrew, 2026-09-27: the week pass is $4.99 and renews weekly (a Stripe subscription, cancel
+# anytime); the season is $24.99 and the league slot $2.99, each one payment. Nothing is sold
+# à la carte any more.
 PRODUCTS = [
     {"sku": "free", "name": "Free", "price_cents": 0, "features": ["my_team"], "leagues": BASE_LEAGUES,
-     "kind": "free", "blurb": "Start/sit calls for up to three leagues, every week."},
-    {"sku": "waivers", "name": "Wire Pass", "price_cents": 300, "features": ["waivers"], "leagues": BASE_LEAGUES,
-     "kind": "a_la_carte", "blurb": "The wire, ranked for your roster, with the bid and the drop. Rest of season."},
-    {"sku": "trade_lab", "name": "Trade Lab", "price_cents": 500, "features": ["trade_lab"], "leagues": BASE_LEAGUES,
-     "kind": "a_la_carte", "blurb": "Trade verdicts and counters tuned to the other manager. Rest of season."},
-    {"sku": "full_report", "name": "The Penthouse", "price_cents": 700,
-     "features": ["my_team", "waivers", "trade_lab", "full_report"], "leagues": 5,
-     "kind": "bundle", "blurb": "The whole Penthouse, every week, up to 5 leagues."},
+     "kind": "free", "for_sale": False, "blurb": "Start/sit calls for up to three leagues, every week."},
+    # Each paid weekly invoice grants one window: the week plus a day's grace, so a renewal
+    # that settles a few hours late does not lock anyone out. Cancel, and it lapses at the end.
+    {"sku": WEEK_SKU, "name": "Week pass", "price_cents": 499, "features": EVERYTHING, "leagues": 5,
+     "kind": "pass", "for_sale": True, "recurring": "week", "duration_days": 7, "grace_days": 1,
+     "blurb": "Everything in the Penthouse, up to 5 leagues. Renews weekly; cancel anytime."},
+    {"sku": SEASON_SKU, "name": "The Penthouse", "price_cents": 2499, "features": EVERYTHING, "leagues": 5,
+     "kind": "bundle", "for_sale": True,
+     "blurb": "Everything in the Penthouse for the rest of the season, up to 5 leagues. One payment."},
     # An add-on, not a tier: it unlocks nothing and stacks. Bought twice, it is two more leagues.
-    {"sku": "league_slot", "name": "League slot", "price_cents": 200, "features": [], "leagues": 1,
-     "kind": "add_on", "blurb": "One more league on your account. Rest of season."},
+    {"sku": ADD_ON_SKU, "name": "League slot", "price_cents": 299, "features": [], "leagues": 1,
+     "kind": "add_on", "for_sale": True, "blurb": "One more league on your account. Rest of season."},
+    # Retired 2026-09-27. No longer sold anywhere, but whoever bought one keeps what it opened,
+    # so the sku still resolves. Prices are what was paid, for the ledger.
+    {"sku": "waivers", "name": "Wire Pass", "price_cents": 300, "features": ["waivers"], "leagues": BASE_LEAGUES,
+     "kind": "a_la_carte", "for_sale": False, "blurb": "The wire, ranked for your roster. Retired."},
+    {"sku": "trade_lab", "name": "Trade Lab", "price_cents": 500, "features": ["trade_lab"], "leagues": BASE_LEAGUES,
+     "kind": "a_la_carte", "for_sale": False, "blurb": "Trade verdicts and counters. Retired."},
 ]
 BY_SKU = {p["sku"]: p for p in PRODUCTS}
-ADD_ON_SKU = "league_slot"
+FOR_SALE = [p for p in PRODUCTS if p["for_sale"]]
+
+
+def for_sale(sku: str) -> bool:
+    """Can this sku be bought (or comped) today? Free and retired skus cannot."""
+    return bool(BY_SKU.get(sku, {}).get("for_sale"))
+
+
+def is_recurring(sku: str) -> bool:
+    """Is this sku a subscription (Stripe bills it again) rather than one payment?"""
+    return bool(BY_SKU.get(sku, {}).get("recurring"))
+
+
+def duration_s(sku: str) -> float | None:
+    """How long one paid purchase of `sku` keeps access open, grace included, in seconds;
+    None for the rest of the season."""
+    p = BY_SKU.get(sku, {})
+    days = p.get("duration_days")
+    return (days + p.get("grace_days", 0)) * DAY_S if days else None
+
+
+def live_until(sku: str, created: list[float]) -> float | None:
+    """When a timed pass runs out, given the times each live payment for it was made.
+
+    Each payment opens its own window and access holds while any is open, so the end is
+    the latest payment plus one window. Renewals land every seven days and each window is
+    eight, so they overlap by the grace day rather than piling it up. None for a sku with
+    no duration (it lasts the season) or no payments.
+    """
+    dur = duration_s(sku)
+    if dur is None or not created:
+        return None
+    return max(created) + dur
 
 
 def features_for(skus: list[str] | set[str]) -> set[str]:
@@ -58,12 +107,13 @@ def is_premium(skus: list[str] | set[str]) -> bool:
 def plan(skus: list[str] | set[str]) -> dict:
     """The account's tier, in one word and one name: what the flag on the account says.
 
-    `tier` is the flag the views check (`free` or `premium`); `name` is what the user reads
-    (the bundle's name when they hold it, else the passes they hold, else Free).
+    `tier` is the flag the views check (`free` or `premium`); `name` is what the user reads:
+    the season pass when held, else the week pass, else any retired passes, else Free.
     """
-    held = [s for s in skus if s in BY_SKU and BY_SKU[s]["kind"] in ("a_la_carte", "bundle")]
-    if "full_report" in held:
-        return {"tier": "premium", "name": BY_SKU["full_report"]["name"], "skus": ["full_report"]}
+    held = [s for s in skus if s in BY_SKU and BY_SKU[s]["kind"] in ("a_la_carte", "pass", "bundle")]
+    for top in (SEASON_SKU, WEEK_SKU):
+        if top in held:
+            return {"tier": "premium", "name": BY_SKU[top]["name"], "skus": [top]}
     if held:
         order = [p["sku"] for p in PRODUCTS]
         held = sorted(set(held), key=order.index)
@@ -72,17 +122,16 @@ def plan(skus: list[str] | set[str]) -> dict:
 
 
 def upsell(skus: list[str] | set[str], feature: str) -> list[dict]:
-    """Products that would unlock `feature`, cheapest first."""
+    """Products on sale that would unlock `feature`, cheapest first: the week, then the season."""
     have = features_for(skus)
     if feature in have:
         return []
-    return sorted((p for p in PRODUCTS if feature in p["features"] and p["price_cents"] > 0),
-                  key=lambda p: p["price_cents"])
+    return sorted((p for p in FOR_SALE if feature in p["features"]), key=lambda p: p["price_cents"])
 
 
 def league_upsell(skus: list[str] | set[str]) -> list[dict]:
-    """What buys another league: the slot first, then the bundle if it would raise the cap."""
+    """What buys another league: the slot first, then the season pass if it would raise the cap."""
     out = [BY_SKU[ADD_ON_SKU]]
-    if BY_SKU["full_report"]["leagues"] > leagues_allowed(skus):
-        out.append(BY_SKU["full_report"])
+    if BY_SKU[SEASON_SKU]["leagues"] > leagues_allowed(skus):
+        out.append(BY_SKU[SEASON_SKU])
     return out

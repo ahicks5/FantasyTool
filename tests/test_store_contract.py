@@ -46,6 +46,38 @@ def test_a_purchase_grants_its_sku(store):
     assert store.skus("other@b.c", 2026) == []
 
 
+def test_a_week_pass_runs_for_its_week_plus_grace_then_drops_out(store):
+    store.grant("a@b.c", "week_pass", 2026, ref="in_1", payment_ref="pi_w1")
+    t0 = time.time()
+    day = 24 * 60 * 60
+    assert store.skus("a@b.c", 2026) == ["week_pass"]
+    assert store.skus("a@b.c", 2026, now=t0 + 7.5 * day) == ["week_pass"], "a renewal settling late keeps the door open"
+    assert store.skus("a@b.c", 2026, now=t0 + 8.1 * day) == [], "unrenewed, it lapses"
+    until = store.pass_until("a@b.c", "week_pass", 2026)
+    assert until is not None and abs(until - (t0 + 8 * day)) < 60
+    assert store.pass_until("a@b.c", "week_pass", 2026, now=t0 + 9 * day) is None
+    assert store.pass_until("a@b.c", "full_report", 2026) is None, "the season pass has no clock"
+
+
+def test_each_paid_week_is_its_own_window_and_a_replay_is_not_a_second(store):
+    for _ in range(2):  # Stripe retries a webhook; the invoice id is the ref
+        store.grant("a@b.c", "week_pass", 2026, ref="in_1", payment_ref="pi_1")
+    assert store.count_sku("a@b.c", "week_pass", 2026) == 1
+    store.grant("a@b.c", "week_pass", 2026, ref="in_2", payment_ref="pi_2")
+    t0 = time.time()
+    assert abs(store.pass_until("a@b.c", "week_pass", 2026) - (t0 + 8 * 86400)) < 60, "windows overlap, never stack"
+
+
+def test_an_expired_week_pass_leaves_the_season_pass_alone(store):
+    store.grant("a@b.c", "week_pass", 2026, ref="in_1", payment_ref="pi_w1")
+    store.grant("a@b.c", "full_report", 2026, ref="cs_s1", payment_ref="pi_s1")
+    later = time.time() + 30 * 24 * 60 * 60
+    assert store.skus("a@b.c", 2026, now=later) == ["full_report"]
+    store.revoke("pi_w1")
+    assert store.skus("a@b.c", 2026) == ["full_report"], "a refunded week grants nothing"
+    assert store.pass_until("a@b.c", "week_pass", 2026) is None
+
+
 def test_email_case_does_not_create_a_second_customer(store):
     store.grant("Andrew@Example.com", "waivers", 2026, ref="cs_1")
     assert store.skus("andrew@example.com", 2026) == ["waivers"]

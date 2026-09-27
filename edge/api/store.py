@@ -106,12 +106,20 @@ class Store:
         self.db.commit()
         return cur.rowcount
 
-    def skus(self, email: str, season: int) -> list[str]:
-        """Live entitlements only: a refunded or disputed purchase no longer grants anything."""
+    def skus(self, email: str, season: int, now: float | None = None) -> list[str]:
+        """Live entitlements only: a refunded or disputed purchase no longer grants anything,
+        and a timed pass (the week pass) drops out once its window has run."""
         rows = self.db.execute(
-            "SELECT DISTINCT sku FROM purchases WHERE email=? AND season=? AND revoked IS NULL",
-            (email.lower(), season))
-        return [r[0] for r in rows]
+            "SELECT sku, created FROM purchases WHERE email=? AND season=? AND revoked IS NULL",
+            (email.lower(), season)).fetchall()
+        return _live_skus([(r[0], r[1]) for r in rows], now)
+
+    def pass_until(self, email: str, sku: str, season: int, now: float | None = None) -> float | None:
+        """When this account's timed pass runs out, or None if it holds no live one."""
+        rows = self.db.execute(
+            "SELECT created FROM purchases WHERE email=? AND sku=? AND season=? AND revoked IS NULL",
+            (email.lower(), sku, season)).fetchall()
+        return _pass_until(sku, [r[0] for r in rows], now)
 
     def count_sku(self, email: str, sku: str, season: int) -> int:
         """How many live purchases of one sku this account holds: the add-on that stacks."""
@@ -438,3 +446,22 @@ def open_store():
         from edge.api.store_pg import PostgresStore
         return PostgresStore(dsn)
     return Store()
+
+
+def _pass_until(sku: str, created: list, now: float | None = None) -> float | None:
+    """Shared by both stores: the end of a timed pass if it is still running, else None."""
+    from edge import products
+
+    end = products.live_until(sku, [float(c or 0) for c in created])
+    return end if end is not None and end > (time.time() if now is None else now) else None
+
+
+def _live_skus(rows: list[tuple[str, float]], now: float | None = None) -> list[str]:
+    """Shared by both stores: the distinct skus of live rows, minus timed passes that ran out."""
+    from edge import products
+
+    by: dict[str, list] = {}
+    for sku, created in rows:
+        by.setdefault(sku, []).append(created)
+    return [sku for sku, created in by.items()
+            if products.duration_s(sku) is None or _pass_until(sku, created, now) is not None]

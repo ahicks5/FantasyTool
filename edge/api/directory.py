@@ -14,8 +14,8 @@ more than the search box does, and it is also what keeps the projection vendor b
 
 **It ranks nothing.** Ordering a column the reader picked is not a recommendation: every
 number on a row is that player's own, in his own right, and the board never says which one
-to add. Who to claim, what to bid and who to cut are the wire's job, they are what Wire
-Pass sells, and `edge/products.py` is still the only thing that decides that -- see the
+to add. Who to claim, what to bid and who to cut are the wire's job, they are what a paid
+pass sells, and `edge/products.py` is still the only thing that decides that -- see the
 route in `app.py` and `test_directory.py::test_the_board_never_prices_a_claim`.
 
 **The universe is the league's, topped up by name.** Rostered players and the free-agent

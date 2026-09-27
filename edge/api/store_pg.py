@@ -15,6 +15,7 @@ import json
 import os
 import time
 from typing import Any
+from edge.api.store import _live_skus, _pass_until
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS purchases (
@@ -142,10 +143,15 @@ class PostgresStore:
                          (payment_ref,))
         return cur.rowcount
 
-    def skus(self, email: str, season: int) -> list[str]:
-        cur = self._exec("SELECT DISTINCT sku FROM purchases WHERE email=%s AND season=%s AND revoked IS NULL",
+    def skus(self, email: str, season: int, now: float | None = None) -> list[str]:
+        cur = self._exec("SELECT sku, created FROM purchases WHERE email=%s AND season=%s AND revoked IS NULL",
                          (email.lower(), season))
-        return [r[0] for r in cur.fetchall()]
+        return _live_skus([(r[0], r[1]) for r in cur.fetchall()], now)
+
+    def pass_until(self, email: str, sku: str, season: int, now: float | None = None) -> float | None:
+        cur = self._exec("SELECT created FROM purchases WHERE email=%s AND sku=%s AND season=%s AND revoked IS NULL",
+                         (email.lower(), sku, season))
+        return _pass_until(sku, [r[0] for r in cur.fetchall()], now)
 
     def count_sku(self, email: str, sku: str, season: int) -> int:
         cur = self._exec("SELECT COUNT(*) FROM purchases WHERE email=%s AND sku=%s AND season=%s AND revoked IS NULL",

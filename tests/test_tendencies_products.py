@@ -51,9 +51,28 @@ def test_product_catalog_and_entitlements():
     assert [u["sku"] for u in products.league_upsell([])] == ["league_slot", "full_report"]
     assert [u["sku"] for u in products.league_upsell(["full_report"])] == ["league_slot"]
     ups = products.upsell([], "trade_lab")
-    assert [u["sku"] for u in ups] == ["trade_lab", "full_report"]
-    a_la_carte = sum(p["price_cents"] for p in products.PRODUCTS if p["kind"] == "a_la_carte")
-    assert products.BY_SKU["full_report"]["price_cents"] <= a_la_carte, "bundle should be the obvious deal vs buying both passes"
+    assert [u["sku"] for u in ups] == ["week_pass", "full_report"], "no à la carte: the week, then the season"
+
+
+def test_the_2026_09_27_catalog():
+    """Andrew, 2026-09-27: week $4.99, season $24.99, slot $2.99, nothing sold à la carte."""
+    price = {p["sku"]: p["price_cents"] for p in products.FOR_SALE}
+    assert price == {"week_pass": 499, "full_report": 2499, "league_slot": 299}
+    assert not products.for_sale("waivers") and not products.for_sale("trade_lab") and not products.for_sale("free")
+    assert products.features_for(["week_pass"]) == set(products.FEATURES)
+    assert products.leagues_allowed(["week_pass"]) == 5
+    assert products.plan(["week_pass"])["name"] == "Week pass"
+    assert products.plan(["week_pass", "full_report"])["name"] == "The Penthouse", "the season outranks the week"
+    assert products.duration_s("full_report") is None
+    # The season costs five weeks, give or take a nickel, and there are more than five left.
+    assert abs(5 * price["week_pass"] - price["full_report"]) <= 5
+    assert products.BY_SKU["week_pass"]["recurring"] == "week", "the week renews; the season is one payment"
+    assert "recurring" not in products.BY_SKU["full_report"] and "recurring" not in products.BY_SKU["league_slot"]
+    # Each paid week is its own window, plus a day's grace for a renewal that settles late.
+    day = 86400
+    assert products.duration_s("week_pass") == 8 * day
+    assert products.live_until("week_pass", [0.0, 7 * day]) == 15 * day, "renewals do not pile up grace"
+    assert products.live_until("full_report", [0.0]) is None
 
 
 def test_opening_the_free_trade_board_does_not_open_trade_lab():
@@ -69,7 +88,7 @@ def test_opening_the_free_trade_board_does_not_open_trade_lab():
     assert not products.can([], "trade_lab")
     assert not products.can(["waivers"], "trade_lab")
     assert products.can(["trade_lab"], "trade_lab") and products.can(["full_report"], "trade_lab")
-    assert [u["sku"] for u in products.upsell([], "trade_lab")] == ["trade_lab", "full_report"]
+    assert [u["sku"] for u in products.upsell([], "trade_lab")] == ["week_pass", "full_report"]
 
     paid = {"week": 2, "my_positions": {"surplus": {"RB": 40.0}, "need": {"TE": 12.0}},
             "summary": "Team Nine is your best trade partner. They need RB.",

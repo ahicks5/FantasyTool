@@ -1,11 +1,14 @@
 """Unit economics: what a sale is actually worth after everyone else takes their cut.
 
-Why this exists: `edge/products.py` says a Trade Lab pass is $5. It does not say that Stripe
-takes 45 cents of it, that every trade verdict we explain with the Claude API costs us real
-money, or how many verdicts a single buyer can run before that $5 is gone. Those numbers
-decide the pricing questions that are currently open (à la carte vs bundle, a Playoff Pass
-after the trade deadline, whether the $3 tier should exist at all), so they belong in code
-that can be re-run when a price or a model changes — not in a spreadsheet nobody opens.
+Why this exists: `edge/products.py` says a week pass is $4.99. It does not say that Stripe
+takes 44 cents of it, that every trade verdict we explain with the Claude API costs us real
+money, or how many verdicts a single buyer can run before that sale is gone. Those numbers
+decide the pricing questions (week vs season, a Playoff Pass after the trade deadline), so
+they belong in code that can be re-run when a price or a model changes — not in a
+spreadsheet nobody opens.
+
+A "sale" of the week pass is one paid week of the subscription; it carries one week's share
+of the season's explanations (`Usage.explanations / Usage.weeks_remaining`).
 
 Everything here is a pure function over explicit assumptions. Nothing calls the network.
 The assumptions are the interesting part and they are all in one place: `Fees`,
@@ -28,7 +31,7 @@ from edge import products
 @dataclass(frozen=True)
 class Fees:
     """Stripe's standard US card rate. Cross-border and currency conversion cost more;
-    a $7 product sold to a stranger on the internet occasionally is one of those."""
+    a $24.99 product sold to a stranger on the internet occasionally is one of those."""
 
     pct: float = 0.029
     fixed_cents: int = 30
@@ -139,6 +142,14 @@ def _explains(sku: str) -> bool:
     return products.can([sku], "trade_lab")
 
 
+def _explanations(sku: str, a: Assumptions) -> float:
+    """Explanations one sale carries: the season's worth, or one week's share of it for the
+    week pass (each paid week is its own sale)."""
+    if products.is_recurring(sku):
+        return a.usage.explanations / max(1, a.usage.weeks_remaining)
+    return float(a.usage.explanations)
+
+
 def contribution(sku: str, a: Assumptions | None = None) -> dict:
     """Per-sale contribution margin for one SKU, in dollars.
 
@@ -152,7 +163,7 @@ def contribution(sku: str, a: Assumptions | None = None) -> dict:
     price = p["price_cents"] / 100
     fee = a.fees.on_cents(p["price_cents"]) / 100
     per_call = a.call.cost_usd() if (a.llm_enabled and _explains(sku)) else 0.0
-    llm = per_call * a.usage.explanations
+    llm = per_call * _explanations(sku, a)
     # A refund returns the price but not the fee, and we have already paid the LLM cost.
     refund = a.refund_rate * price
     net = price - fee - llm - refund
@@ -166,7 +177,7 @@ def contribution(sku: str, a: Assumptions | None = None) -> dict:
         "net": round(net, 4),
         "margin_pct": round(100 * net / price, 1) if price else 0.0,
         "fee_pct": round(100 * fee / price, 1) if price else 0.0,
-        "explanations_included": a.usage.explanations if _explains(sku) else 0,
+        "explanations_included": round(_explanations(sku, a), 2) if _explains(sku) else 0,
     }
 
 
@@ -190,12 +201,10 @@ def runway_calls(sku: str, a: Assumptions | None = None) -> float:
 
 
 def table(a: Assumptions | None = None) -> list[dict]:
-    """Every paid SKU, cheapest first, with its runway."""
+    """Every SKU on sale, cheapest first, with its runway. Retired skus are not priced."""
     a = a or Assumptions()
     rows = []
-    for p in sorted(products.PRODUCTS, key=lambda p: p["price_cents"]):
-        if p["price_cents"] == 0:
-            continue
+    for p in sorted(products.FOR_SALE, key=lambda p: p["price_cents"]):
         row = contribution(p["sku"], a)
         row["runway_calls"] = runway_calls(p["sku"], a)
         rows.append(row)
@@ -236,7 +245,7 @@ def breakeven_buyers(mix: dict[str, int], months: float = 4.0, a: Assumptions | 
     """How many buyers *at this mix* cover the season's fixed cost.
 
     Scales the mix, so the answer respects the blend of SKUs rather than assuming everyone
-    buys the bundle.
+    buys the season.
     """
     a = a or Assumptions()
     one = season(mix, months=months, a=a)
@@ -276,7 +285,7 @@ def format_table(a: Assumptions | None = None) -> str:
     out = [
         f"Model {a.call.model} · {a.call.input_tokens} in / {a.call.output_tokens} out "
         f"= ${per_call:.4f} per explanation" if a.llm_enabled else "LLM off (templates)",
-        f"Assuming {a.usage.explanations} explanations per Trade Lab buyer, "
+        f"Assuming {a.usage.explanations} explanations per season buyer, "
         f"{a.refund_rate:.0%} refunds, Stripe {a.fees.pct:.1%} + {a.fees.fixed_cents}c",
         "",
         f"{'SKU':<14}{'Price':>7}{'Fee':>7}{'LLM':>7}{'Net':>8}{'Margin':>8}{'Runway':>9}",
