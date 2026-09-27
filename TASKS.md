@@ -2,6 +2,31 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Pricing: a week or the season, first week free (2026-09-27)
+
+Andrew: scrap the old plans. $2.99 weekly premium, $19.99 season premium, a 1-week free trial,
+and any premium gets every feature. No more à la carte. `edge/products.py` is the source.
+
+- [x] **PR-1** Catalog: `free`, `trial` (7 days, $0, never sold), `weekly` ($2.99, 7 days),
+      `season` ($19.99). Every premium sku opens all four features and 5 leagues. Wire Pass,
+      Trade Lab, the $7 bundle and the $2 league slot are retired: not sold, not listed, but a
+      grant bought before today still counts (and now opens everything). Tests:
+      `test_tendencies_products.py`.
+- [x] **PR-2** Timed grants expire in the store (`products.live_skus`, `store.grants`), chained so
+      a second week extends the first. Both stores, pinned in `test_store_contract.py`
+      (run against Postgres too).
+- [x] **PR-3** `POST /api/account/trial`: once per account per season, never while premium.
+      `/api/me` carries `trial_eligible`, and `plan.via` / `plan.until` for the week's end date.
+- [x] **PR-4** Web: pricing section (Free · Week Pass · Season Pass, first-week-free line, "less
+      than 7 weeks" anchor), one paywall offer everywhere, the upgrade sheet leads with the free
+      week, the account page shows "through <date>", admin grants the two passes. Terms updated.
+- [ ] **PR-5** Real Stripe test-mode run of both passes before the key goes live.
+
+**Decisions for Andrew:** (1) the Terms page now describes the two passes and the free week;
+read it. (2) The free week needs no card, so it cannot convert on its own; a card-up-front trial
+needs Stripe subscriptions, which "nothing renews" rules out. (3) The free week spends Claude API
+money on Trade Lab with no revenue (~$0.16 per trial user at 12 explanations).
+
 ## The landing page, rebuilt as a funnel (2026-09-27)
 
 Andrew's brief: the best front page we can build, on Hormozi's playbook, for leads, conversions

@@ -8,7 +8,9 @@ and launch is days out: **speed > polish**.
 3. **Trade Lab (paid)** — verdict on a proposed trade + a counteroffer tuned to the other
    manager's tendencies. Numbers from the engine; the Claude API writes the explanation.
 
-Free for up to 3 leagues per account (more as a $2 add-on), $7 unlocks the season (Stripe). Marketing via
+Free for up to 3 leagues per account. Premium opens everything and 5 leagues: **$2.99 for a week or $19.99
+for the season** (Stripe, one payment, nothing renews), and every account gets **one free week** per
+season. No à la carte (Andrew, 2026-09-27). Marketing via
 stamped verdict graphics.
 
 ## Where things are
@@ -100,7 +102,7 @@ first, plural. Never hedge on a call the engine is confident about; say plainly 
 coin flip. Look: black and polished chrome, two type families, the metal is the only
 decoration. Sections are **call sheet** (home) · **depth chart** (team) · **scouting**
 (waivers) · **GM's Office** (trade) · **the film** (report) — but what you *buy* keeps its
-product name: Wire Pass, Trade Lab, The Penthouse. Full guide: **`docs/BRAND.md`**; how it is
+product name: Week Pass, Season Pass, and premium itself is The Penthouse. Full guide: **`docs/BRAND.md`**; how it is
 actually built: **`docs/WEB.md`**.
 
 ## Confidence tags — Lock is not honest yet

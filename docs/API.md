@@ -18,24 +18,36 @@ requires (Sleeper's docs ask for it on trending data). The UI must render it.
 ```json
 {"attribution":"Projections and trending data from Sleeper",
  "products":[
-  {"sku":"free","name":"Free","price_cents":0,"features":["my_team"],"leagues":3,"kind":"free","blurb":"Start/sit calls for up to three leagues, every week."},
-  {"sku":"waivers","name":"Wire Pass","price_cents":300,"features":["waivers"],"leagues":3,"kind":"a_la_carte","blurb":"The wire, ranked for your roster, with the bid and the drop. Rest of season."},
-  {"sku":"trade_lab","name":"Trade Lab","price_cents":500,"features":["trade_lab"],"leagues":3,"kind":"a_la_carte","blurb":"Trade verdicts and counters tuned to the other manager. Rest of season."},
-  {"sku":"full_report","name":"The Penthouse","price_cents":700,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","blurb":"The whole Penthouse, every week, up to 5 leagues."},
-  {"sku":"league_slot","name":"League slot","price_cents":200,"features":[],"leagues":1,"kind":"add_on","blurb":"One more league on your account. Rest of season."}
-]}
+  {"sku":"free","name":"Free","price_cents":0,"features":["my_team"],"leagues":3,"kind":"free","days":null,"blurb":"..."},
+  {"sku":"trial","name":"Free week","price_cents":0,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"trial","days":7,"blurb":"..."},
+  {"sku":"weekly","name":"Week Pass","price_cents":299,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"pass","days":7,"blurb":"..."},
+  {"sku":"season","name":"Season Pass","price_cents":1999,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"pass","days":null,"blurb":"..."}
+],
+ "trial_days":7}
 ```
-`league_slot` is an add-on: it unlocks nothing and stacks, one more league per purchase. `leagues_allowed` is
-the highest tier cap held (3 free, 5 bundle) plus one per slot.
+Only `kind:"pass"` is for sale. Any premium opens every feature and 5 leagues. A timed grant (`days`)
+runs from when it was written, and timed grants chain: a second week bought on day three runs to day
+fourteen. `trial` is never sold; `POST /api/account/trial` writes it.
+
+Retired skus (`waivers`, `trade_lab`, `full_report`, `league_slot`) are no longer sold or listed, but a
+grant bought before 2026-09-27 still counts for its season: the first three now open everything, and
+each `league_slot` still adds one league on top of the cap.
 
 `GET /api/me` →
 ```json
-{"email":"...","signed_in":true,"skus":["waivers"],"entitlements":["my_team","waivers"],"leagues_allowed":3,
+{"email":"...","signed_in":true,"skus":["weekly"],"entitlements":["my_team","waivers","trade_lab","full_report"],"leagues_allowed":5,
  "leagues":[{"platform":"sleeper","league_id":"...","name":"...","team_id":"3","team_name":"HusH","last_used":1790000000.0}],
  "email_opt_in":false,"checkout":false,
  "account":{"email":"...","name":"Andrew","role":"user","is_admin":false,"created":1789000000.0,"last_login":1790000000.0,
-            "plan":{"tier":"premium","name":"Wire Pass","skus":["waivers"]},"league_slots":0}}
+            "plan":{"tier":"premium","name":"The Penthouse","skus":["weekly"],"via":"weekly","until":1790600000.0},"league_slots":0},
+ "trial_eligible":false}
 ```
+`plan.via` is `season` (the season pass or any retired sku), `weekly` or `trial`; `plan.until` is when a
+timed pass runs out (null for the season). `trial_eligible` is true while the account can still start its
+free week: once per account per season, never while premium.
+
+`POST /api/account/upgrade {"sku":"weekly"|"season"}` → a Checkout `url`, or a complimentary grant without Stripe.
+`POST /api/account/trial` (signed in) → `{"ok":true,"me":{...}}`; 409 once the free week has been used.
 Signed out: `signed_in:false`, `account:null`, the free tier, no leagues. `account.plan.tier` is the flag the
 views check (`free` | `premium`); `plan.name` is what the user reads. `checkout` is whether Stripe is configured,
 which decides what an upgrade does (below).
@@ -89,7 +101,7 @@ known one, so sign-in timing does not reveal who has an account. Rules and runbo
 Signed in as an admin: `role = admin` in the store or an address in `EDGE_ADMINS`. Anyone else is 403.
 
 `GET /api/admin/users` → `{"season":2026,"checkout":false,"users":[{...account fields, "plan","skus","leagues","leagues_allowed"}]}`
-`POST /api/admin/users/{email}/grant {"sku"}` → grants a pass, the bundle or one `league_slot`; `source:"admin"`.
+`POST /api/admin/users/{email}/grant {"sku":"weekly"|"season"}` → grants a pass; `source:"admin"`.
 `POST /api/admin/users/{email}/revoke {"sku"}` → `{"ok":true,"revoked":n,"me":{...}}`; every live grant of that sku this season.
 `POST /api/admin/users/{email}/role {"role":"user"|"admin"}` → 400 for an unknown role or your own demotion; 404 for no such account.
 `POST /api/admin/users/{email}/reset` → `{"ok":true,"url":"https://.../reset?token=...","hours":2}`.
@@ -103,7 +115,7 @@ requires a connected league. Deleting an account removes the preference — see 
 Nothing is sent yet: there is no `RESEND_API_KEY` and no verified sending domain, so the send is a
 dry run and the opt-in screen says so in as many words.
 
-`POST /api/checkout {"sku":"full_report"}` → `{"url":"https://checkout.stripe.com/..."}`
+`POST /api/checkout {"sku":"season"}` → `{"url":"https://checkout.stripe.com/..."}`
 `POST /api/stripe/webhook` (Stripe only)
 
 ## Data subject requests
@@ -126,7 +138,7 @@ no email (`edge/api/share.py`).
 ```
 `POST /api/connect {"platform":"sleeper","league_id":"...","team_id":"1"}` (signed in; 401 to a stranger) → saves to the
 account's leagues with the team's name and returns `{"ok","saved":true,"league":{...},"leagues":[...],"leagues_allowed":3}`.
-Over the cap: 402 with `feature:"leagues"` and `upsell:[league_slot, full_report]`. Linking a league already on file
+Over the cap: 402 with `feature:"leagues"` and `upsell:[weekly, season]` (empty when already premium). Linking a league already on file
 is idempotent and may change the team.
 
 ## Lineup (feature: my_team)
