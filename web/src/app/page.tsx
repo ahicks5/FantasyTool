@@ -164,16 +164,10 @@ export default function Landing() {
               </LinkButton>
             </div>
             <p className="text-center text-[12px] font-bold text-muted">{LANDING.under}</p>
-            <a
-              href="#pricing"
-              className="btn inline-flex items-center justify-center rounded-xl border border-line-2 px-5 py-3 text-[15px] font-bold text-ink hover:bg-soft"
-            >
-              {LANDING.secondary}
-            </a>
           </div>
 
           {/* Three reasons to believe it, before the product proves it. */}
-          <ul className="mt-7 grid gap-2.5" aria-label="Why believe it">
+          <ul className="mt-6 grid gap-2" aria-label="Why believe it">
             {LANDING.proof.map((p, i) => (
               <li key={p.head} className={`flex items-start gap-3 rise rise-${i + 1}`}>
                 <IconCheck size={16} strokeWidth={3} className="mt-[3px] shrink-0 text-start" />
@@ -183,6 +177,11 @@ export default function Landing() {
               </li>
             ))}
           </ul>
+          {/* The price is a quiet link here, not a second button: the page has one door,
+              and a loud "what it costs" beside it read as a toll booth (Andrew, 2026-09-27). */}
+          <a href="#pricing" className="mt-4 inline-flex min-h-11 items-center text-[13px] font-bold text-muted underline-offset-4 hover:text-ink hover:underline">
+            {LANDING.secondary}
+          </a>
         </section>
 
         {/* ------------------------------------------------------------ the product ---
@@ -346,7 +345,6 @@ export default function Landing() {
             <Eyebrow>{LANDING.score.head}</Eyebrow>
           </div>
           <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{LANDING.score.body}</p>
-          <p className="mt-2 text-[13px] leading-relaxed text-muted">{LANDING.score.detail}</p>
         </section>
 
         {/* ----------------------------------------------------------------- offer --- */}
@@ -387,7 +385,6 @@ export default function Landing() {
             </LinkButton>
           </div>
           <p className="mt-2.5 text-[12px] font-bold text-white/55">{LANDING.close.under}</p>
-          <p className="mx-auto mt-4 max-w-[22rem] text-[13px] leading-relaxed text-white/60">{LANDING.close.next}</p>
         </section>
       </main>
 

@@ -63,7 +63,6 @@ const ALL_COPY: string[] = [
   LANDING.exampleHead,
   LANDING.score.head,
   LANDING.score.body,
-  LANDING.score.detail,
   // The rest of the landing page: every string, every templated line rendered once.
   LANDING.eyebrow, LANDING.avatar, LANDING.heroBody, LANDING.cta, LANDING.under, LANDING.secondary,
   ...LANDING.proof.flatMap((p) => [p.head, p.body]),
@@ -227,7 +226,6 @@ test("the landing page names the reader before it makes a promise", () => {
   assert.match(LANDING.heroBody, /about a minute/);
   assert.match(LANDING.under, /No card/);
   assert.equal(LANDING.cta, LANDING.close.cta, "the first ask and the last ask are the same door");
-  assert.match(LANDING.close.next, /^What happens next/);
 });
 
 test("the offer is stacked, guaranteed and never typed", () => {
