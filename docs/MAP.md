@@ -198,7 +198,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/sitemap.ts` | The sitemap, built from the indexable paths in lib/site.ts. | 18 |
 | `web/src/app/team/decide/page.tsx` | One lineup role, the whole question: `/team/decide?role=RB2`. Reads the lineup the tab already fetched. Free tier. | 38 |
 | `web/src/app/team/page.tsx` | Lineup: is my starting lineup right for this week? The required changes, the decisions, then the board. Free tier. | 25 |
-| `web/src/app/terms/page.tsx` | The terms of service. The facts it cannot work out for itself live in lib/legal.ts. | 125 |
+| `web/src/app/terms/page.tsx` | The terms of service. The facts it cannot work out for itself live in lib/legal.ts. | 132 |
 | `web/src/app/trade/deal/page.tsx` | One GM, read in full: the arrow on each of the office's panels and rows lands here. | 140 |
 | `web/src/app/trade/page.tsx` | GM's Office: the three deals worth a call, every GM in one line each, and the table for | 601 |
 | `web/src/app/waivers/[player]/page.tsx` | One player's scout report, inside Scouting. | 46 |
