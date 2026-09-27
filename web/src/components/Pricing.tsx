@@ -1,66 +1,55 @@
 "use client";
-/** The offer: every tier, the bundle itemised as a stack, the guarantee under the price, and the way in. */
+/** The offer: free, a week or the season, the season anchored against paying week to week, the guarantee under the price, and the way in. */
 
 import { useEffect, useState } from "react";
 import { getHealth, getProducts } from "@/lib/api";
 import { formatCents } from "@/lib/format";
 import { LEGAL } from "@/lib/legal";
-import { offerStack } from "@/lib/offer";
+import { offerStack, productName } from "@/lib/offer";
 import type { Product } from "@/lib/types";
 import { IconCheck } from "./icons";
 import { Eyebrow, LinkButton, Skeleton } from "./ui";
 import { LINES, PRICING } from "@/lib/vocab";
 
 function Badge({ sku }: { sku: Product["sku"] }) {
-  if (sku === "free") return null;
   if (sku === "full_report")
     return (
       <span className="inline-flex rounded-full bg-start-fill px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white">
         {PRICING.badge.best}
       </span>
     );
-  return (
-    <span className="inline-flex rounded-full bg-soft px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-muted">
-      {PRICING.badge.alaCarte}
-    </span>
-  );
+  if (sku === "week_pass")
+    return (
+      <span className="inline-flex rounded-full bg-soft px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-muted">
+        {PRICING.badge.flex}
+      </span>
+    );
+  return null;
 }
 
 /**
- * The bundle, itemised. Each line named and priced, the parts added up, then the price:
- * the reader sees what the seven dollars would cost bought one floor at a time. Every
- * figure is the catalog's (`lib/offer.ts`), so this cannot drift from `edge/products.py`.
+ * The season against the week. The rest of the way bought week to week, struck through,
+ * then the season's one price, then how many weeks that is. Every figure is the catalog's
+ * (`lib/offer.ts`), so this cannot drift from `edge/products.py`.
  */
 function Stack({ products }: { products: Product[] }) {
   const s = offerStack(products);
-  if (!s || s.apartCents <= s.togetherCents) return null;
-  const rows: { name: string; price: string; muted?: boolean }[] = [
-    ...s.lines.map((l) => ({ name: l.name, price: formatCents(l.cents) })),
-    ...s.onlyHere.map((f) => ({ name: PRICING.unlocks[f], price: PRICING.stack.filmPrice, muted: true })),
-  ];
-  const slot = products.find((p) => p.kind === "add_on");
-  if (s.extraLeagues > 0 && slot) {
-    rows.push({ name: PRICING.stack.slots(s.extraLeagues), price: formatCents(s.extraLeagues * slot.price_cents) });
-  }
+  if (!s) return null;
+  const anchored = s.weeksLeft !== null && s.weeklyCents !== null && s.weeksLeft > 0 && s.weeklyCents > s.seasonCents;
   return (
     <div className="mt-4 rounded-xl bg-soft p-3.5" data-testid="offer-stack">
       <div className="eyebrow">{PRICING.stack.head}</div>
-      <ul className="mt-2 grid gap-1.5">
-        {rows.map((r) => (
-          <li key={r.name} className="flex items-baseline justify-between gap-3 text-[13px] leading-snug">
-            <span className="min-w-0 text-ink-2">{r.name}</span>
-            <span className={`tnum shrink-0 font-bold ${r.muted ? "text-muted" : "text-ink"}`}>{r.price}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-2.5 flex items-baseline justify-between gap-3 border-t border-line pt-2.5 text-[13px]">
-        <span className="font-bold text-muted">{PRICING.stack.apart}</span>
-        <span className="tnum font-black text-muted line-through decoration-2">{formatCents(s.apartCents)}</span>
+      {anchored && (
+        <div className="mt-2 flex items-baseline justify-between gap-3 text-[13px]">
+          <span className="min-w-0 font-bold text-muted">{PRICING.stack.weekly(s.weeksLeft!)}</span>
+          <span className="tnum shrink-0 font-black text-muted line-through decoration-2">{formatCents(s.weeklyCents!)}</span>
+        </div>
+      )}
+      <div className={`flex items-baseline justify-between gap-3 text-[15px] ${anchored ? "" : "mt-2"}`}>
+        <span className="font-black text-ink">{PRICING.stack.season}</span>
+        <span className="tnum font-black text-start">{formatCents(s.seasonCents)}</span>
       </div>
-      <div className="flex items-baseline justify-between gap-3 text-[15px]">
-        <span className="font-black text-ink">{PRICING.stack.together}</span>
-        <span className="tnum font-black text-start">{formatCents(s.togetherCents)}</span>
-      </div>
+      <p className="mt-2.5 border-t border-line pt-2.5 text-[13px] leading-snug text-ink-2">{PRICING.stack.even(s.evenWeeks)}</p>
     </div>
   );
 }
@@ -79,7 +68,8 @@ export function Pricing() {
       .catch(() => setRegisterOpen(true));
   }, []);
 
-  const bundle = (products ?? []).find((p) => p.kind === "bundle" || p.sku === "full_report");
+  // The season pass: its price is the headline.
+  const bundle = (products ?? []).find((p) => p.sku === "full_report");
 
   return (
     <section id="pricing" className="mt-12 scroll-mt-4">
@@ -102,9 +92,11 @@ export function Pricing() {
       )}
 
       <ul className="mt-5 grid gap-3">
-        {/* The league slot is an add-on sold from the account page, not a tier to compare here. */}
+        {/* Three choices: free, a week, the season. The league slot is an add-on sold where
+            the cap is hit, not a tier to compare here. */}
         {(products ?? []).filter((p) => p.kind !== "add_on").map((p) => {
           const everything = p.sku === "full_report";
+          const term = (PRICING.term as Record<string, string>)[p.sku];
           return (
             <li
               key={p.sku}
@@ -113,11 +105,13 @@ export function Pricing() {
               <Badge sku={p.sku} />
               {everything && <p className="mt-3 text-[13px] font-bold text-start">{LINES.paywallBundle}</p>}
               <div className={`flex items-baseline justify-between gap-3 ${p.sku === "free" ? "" : "mt-3"}`}>
-                <h3 className="display min-w-0 text-[21px] leading-tight">{p.name}</h3>
-                <div className={`display tnum shrink-0 text-[34px] leading-none ${everything ? "text-start" : ""}`}>
+                <h3 className="display min-w-0 text-[21px] leading-tight">{productName(p)}</h3>
+                <div className={`display tnum shrink-0 text-[34px] leading-none ${everything ? "text-start" : ""}`} data-testid={`price-${p.sku}`}>
                   {formatCents(p.price_cents)}
+                  {p.recurring && <span className="text-[15px] text-muted">{PRICING.per[p.recurring]}</span>}
                 </div>
               </div>
+              {term && <p className="mt-1 text-[13px] font-bold leading-snug text-ink-2">{term}</p>}
               <p className="mt-1.5 text-[13px] leading-snug text-muted">{p.blurb}</p>
 
               <ul className="mt-4 grid gap-2 border-t border-line pt-4">
@@ -139,7 +133,7 @@ export function Pricing() {
         })}
 
         {products === null &&
-          [0, 1, 2, 3].map((i) => (
+          [0, 1, 2].map((i) => (
             <li key={i} className="card p-5">
               <Skeleton className="h-5 w-32" />
               <Skeleton className="mt-2 h-3 w-48" />

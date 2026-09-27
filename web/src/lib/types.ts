@@ -4,7 +4,9 @@ export type Platform = "sleeper" | "espn";
 
 export type Feature = "my_team" | "waivers" | "trade_lab" | "full_report";
 
-export type Sku = "free" | "waivers" | "trade_lab" | "full_report" | "league_slot";
+/** `week_pass` and `full_report` (the season) are on sale; `waivers` and `trade_lab` were
+ *  retired 2026-09-27 and only ever appear on an account that already holds one. */
+export type Sku = "free" | "week_pass" | "full_report" | "league_slot" | "waivers" | "trade_lab";
 
 export interface Product {
   sku: Sku;
@@ -13,9 +15,16 @@ export interface Product {
   features: Feature[];
   leagues: number;
   blurb: string;
-  /** `edge/products.py` has always sent this; the Pricing badge infers it from `sku` instead.
-   *  `add_on` is the league slot: it unlocks nothing and stacks. */
-  kind?: "free" | "a_la_carte" | "bundle" | "add_on";
+  /** `pass` is the week, `bundle` the season, `add_on` the league slot (it unlocks nothing
+   *  and stacks). `a_la_carte` is retired and never on sale. */
+  kind?: "free" | "pass" | "bundle" | "add_on" | "a_la_carte";
+  /** Set on a subscription: the week pass renews every `week`. Absent = one payment. */
+  recurring?: "week";
+  /** Days one paid purchase keeps access open (the week pass); absent = rest of season. */
+  duration_days?: number;
+  for_sale?: boolean;
+  /** The season pass only: roughly when the season ends (YYYY-MM-DD), for "weeks left". Display only. */
+  through?: string;
 }
 
 /** `GET /api/health`: what the API has switched on, never a key. */
@@ -61,6 +70,8 @@ export interface Account {
   plan: AccountPlan;
   /** How many league-slot add-ons this account holds this season. */
   league_slots: number;
+  /** Unix seconds when the paid week runs out (grace included); null without a live week pass. */
+  pass_until?: number | null;
   created?: number | null;
   last_login?: number | null;
   /** E.164, when a number is on the account. Phone-only accounts have `email: ""`. */
@@ -83,6 +94,8 @@ export interface Me {
   checkout?: boolean;
   /** True when the API can text a sign-in code, so the door offers "continue with your phone". */
   phone_sign_in?: boolean;
+  /** Stripe's customer-portal login link, where a week-pass subscriber manages or cancels. */
+  billing_portal_url?: string | null;
 }
 
 /** `POST /api/auth/phone/start`. `dev_code` only from a dev API, which texts nothing. */

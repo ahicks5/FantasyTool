@@ -57,26 +57,33 @@ export function planWord(plan: AccountPlan | null | undefined): "Free" | "Premiu
 }
 
 /**
- * What the upgrade sheet offers for a feature: the cheapest pass that opens it and the
- * bundle if it is not already the pass, in that order, from the live catalogue.
+ * What the upgrade sheet offers, from the live catalogue. A league slot is itself. Anything
+ * else (a room, the week, the season) is the choice between the two passes: the one asked
+ * for first, then the other. Nothing is sold à la carte any more (Andrew, 2026-09-27), so a
+ * retired sku asked for by an old link still gets the season and the week.
  */
 export function offersFor(products: readonly Product[], sku: Sku): Product[] {
-  const wanted = products.find((p) => p.sku === sku);
-  const bundle = products.find((p) => p.sku === "full_report");
-  if (!wanted || wanted.price_cents === 0) return [];
-  const out: Product[] = [wanted];
-  if (bundle && sku !== "full_report" && sku !== "league_slot") out.push(bundle);
-  return out;
+  if (sku === "free") return [];
+  if (sku === "league_slot") {
+    const slot = products.find((p) => p.sku === "league_slot");
+    return slot ? [slot] : [];
+  }
+  const season = products.find((p) => p.sku === "full_report");
+  const week = products.find((p) => p.sku === "week_pass");
+  const pair = sku === "week_pass" ? [week, season] : [season, week];
+  return pair.filter((p): p is Product => !!p && p.price_cents > 0);
 }
 
-/** The passes to offer on the account page: everything paid the account does not already hold. */
+/** The passes to offer on the account page: everything on sale the account does not already hold. */
 export function upgradesFor(products: readonly Product[], account: Account | null): Product[] {
   const held = new Set(account?.plan.skus ?? []);
-  const premium = account?.plan.tier === "premium" && held.has("full_report");
+  const season = held.has("full_report");
   return products.filter((p) => {
-    if (p.price_cents === 0 || held.has(p.sku)) return false;
-    // The bundle covers every pass, so nothing but a slot is left to sell once it is held.
-    if (premium && p.kind !== "add_on") return false;
+    if (p.price_cents === 0 || held.has(p.sku) || p.for_sale === false) return false;
+    // The season covers everything, so nothing but a slot is left to sell once it is held.
+    if (season && p.kind !== "add_on") return false;
+    // A running week pass is offered the season, not a second week.
+    if (held.has("week_pass") && p.sku === "week_pass") return false;
     return true;
   });
 }

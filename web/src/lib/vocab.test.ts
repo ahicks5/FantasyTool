@@ -74,9 +74,10 @@ const ALL_COPY: string[] = [
   LANDING.faq.head, ...LANDING.faq.items.flatMap((i) => [i.q, typeof i.a === "function" ? i.a(14) : i.a]),
   ...Object.values(LANDING.close), ...Object.values(LANDING.bar),
   // The offer.
-  PRICING.eyebrow, PRICING.title("$7"), PRICING.lead, ...Object.values(PRICING.unlocks), ...Object.values(PRICING.badge),
-  PRICING.leagues(1), PRICING.leagues(5), PRICING.stack.head, PRICING.stack.film, PRICING.stack.filmPrice, PRICING.stack.slots(1),
-  PRICING.stack.slots(2), PRICING.stack.apart, PRICING.stack.together, PRICING.guarantee.head, PRICING.guarantee.body(14),
+  PRICING.eyebrow, PRICING.title("$24.99"), PRICING.lead, ...Object.values(PRICING.unlocks), ...Object.values(PRICING.badge),
+  ...Object.values(PRICING.names), ...Object.values(PRICING.per), ...Object.values(PRICING.term),
+  PRICING.leagues(1), PRICING.leagues(5), PRICING.stack.head, PRICING.stack.weekly(1), PRICING.stack.weekly(14), PRICING.stack.season,
+  PRICING.stack.even(5), PRICING.guarantee.head, PRICING.guarantee.body(14),
   ...Object.values(PRICING.launch), PRICING.cta, PRICING.under,
   // Moved here in Part 4 from seven components. Sweeping them is the point of moving
   // them: three of these sentences used to be three copies, and the copy that drifted
@@ -230,13 +231,17 @@ test("the landing page names the reader before it makes a promise", () => {
 
 test("the offer is stacked, guaranteed and never typed", () => {
   // The price in the headline is a parameter, so a change in edge/products.py reaches it.
-  assert.equal(PRICING.title("$7"), "$7. The season.");
+  assert.equal(PRICING.title("$24.99"), "$24.99. The season.");
   assert.doesNotMatch(PRICING.lead, /\$\d/, "the lead quotes no price of its own");
   // The guarantee says the number of days the terms say, and nothing about a percentage.
   assert.match(PRICING.guarantee.body(14), /14 days/);
   assert.match(PRICING.guarantee.body(14), /refunded in full/i);
-  // The film is the bonus: it is in the bundle and sold nowhere else.
-  assert.equal(PRICING.stack.filmPrice, "Not sold apart");
+  // Three choices, and each one says how the money moves (Andrew, 2026-09-27).
+  assert.match(PRICING.term.week_pass, /Cancel anytime/);
+  assert.match(PRICING.term.full_report, /One payment/);
+  assert.equal(PRICING.names.full_report, "Season pass", "the season is called the season where a user reads it");
+  assert.equal(PRICING.stack.weekly(14), "Week pass, 14 more weeks");
+  assert.doesNotMatch(PRICING.stack.even(5), /\$\d/, "the anchor line quotes no price of its own");
   // Every entitlement the API can send has a line in the user's words.
   assert.deepEqual(Object.keys(PRICING.unlocks).sort(), ["full_report", "my_team", "trade_lab", "waivers"]);
 });

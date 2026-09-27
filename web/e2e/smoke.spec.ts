@@ -446,7 +446,7 @@ test("the board is free, and clicking a row opens that player", async ({ page })
 
   const { status } = await visit(page, "/waivers");
   expect(status).toBe(200);
-  await expect(page.getByText("Wire Pass").first()).toBeVisible();
+  await expect(page.getByText(WIRE.lockEyebrow, { exact: true }).first()).toBeVisible();
 
   // A locked reader still gets a working board, and every row still opens a player.
   const row = page.locator("main ul[id$='-list']").getByRole("listitem").first();
@@ -479,7 +479,7 @@ test("the search box survives the Wire Pass paywall", async ({ page }) => {
   // "Wire Pass", the product name on the lock card's eyebrow. Note the other page checks
   // in this file look for "requires a purchase" — that is the API's 402 *message* and is
   // never rendered, so those assertions cannot fail; this one keys off what a reader sees.
-  await expect(page.getByText("Wire Pass").first()).toBeVisible();
+  await expect(page.getByText(WIRE.lockEyebrow, { exact: true }).first()).toBeVisible();
   const box = page.getByPlaceholder(SCOUT.placeholder);
   await expect(box).toBeVisible();
 
@@ -494,7 +494,7 @@ test("the search box survives the Wire Pass paywall", async ({ page }) => {
   await expect(listed.first().locator(".lens-top").first()).toBeVisible();
   await expect(page.locator("main ul[id$='-list'] .board-flag-taken")).toHaveCount(0);
   const search = (await box.boundingBox())!;
-  const lock = (await page.getByText("Wire Pass").first().boundingBox())!;
+  const lock = (await page.getByText(WIRE.lockEyebrow, { exact: true }).first().boundingBox())!;
   expect(lock.y, "the lock should sit below the board, not above it").toBeGreaterThan(search.y);
   await assertNoHorizontalOverflow(page);
 });

@@ -7,10 +7,9 @@ const L = (id: string, last_used: number | null): MeLeague => ({ platform: "slee
 
 const PRODUCTS: Product[] = [
   { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 3, kind: "free", blurb: "" },
-  { sku: "waivers", name: "Wire Pass", price_cents: 300, features: ["waivers"], leagues: 3, kind: "a_la_carte", blurb: "" },
-  { sku: "trade_lab", name: "Trade Lab", price_cents: 500, features: ["trade_lab"], leagues: 3, kind: "a_la_carte", blurb: "" },
-  { sku: "full_report", name: "The Penthouse", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "bundle", blurb: "" },
-  { sku: "league_slot", name: "League slot", price_cents: 200, features: [], leagues: 1, kind: "add_on", blurb: "" },
+  { sku: "week_pass", name: "Week pass", price_cents: 499, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "pass", recurring: "week", blurb: "" },
+  { sku: "full_report", name: "The Penthouse", price_cents: 2499, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "bundle", blurb: "" },
+  { sku: "league_slot", name: "League slot", price_cents: 299, features: [], leagues: 1, kind: "add_on", blurb: "" },
 ];
 
 const account = (tier: "free" | "premium", skus: Account["plan"]["skus"]): Account => ({
@@ -43,18 +42,22 @@ test("the plan is one of two words", () => {
   assert.equal(planWord(null), "Free");
 });
 
-test("the upgrade sheet offers the pass, then the bundle; a slot stands alone", () => {
-  assert.deepEqual(offersFor(PRODUCTS, "waivers").map((p) => p.sku), ["waivers", "full_report"]);
-  assert.deepEqual(offersFor(PRODUCTS, "full_report").map((p) => p.sku), ["full_report"]);
+test("the upgrade sheet offers the season, then the week; a slot stands alone", () => {
+  // Nothing is sold à la carte (Andrew, 2026-09-27): a room, or an old link to a retired pass, gets the two passes.
+  assert.deepEqual(offersFor(PRODUCTS, "waivers").map((p) => p.sku), ["full_report", "week_pass"]);
+  assert.deepEqual(offersFor(PRODUCTS, "trade_lab").map((p) => p.sku), ["full_report", "week_pass"]);
+  assert.deepEqual(offersFor(PRODUCTS, "full_report").map((p) => p.sku), ["full_report", "week_pass"]);
+  assert.deepEqual(offersFor(PRODUCTS, "week_pass").map((p) => p.sku), ["week_pass", "full_report"], "the one asked for leads");
   assert.deepEqual(offersFor(PRODUCTS, "league_slot").map((p) => p.sku), ["league_slot"]);
   assert.deepEqual(offersFor(PRODUCTS, "free"), []);
 });
 
 test("the account page sells what is not yet held", () => {
-  assert.deepEqual(upgradesFor(PRODUCTS, account("free", [])).map((p) => p.sku), ["waivers", "trade_lab", "full_report", "league_slot"]);
-  assert.deepEqual(upgradesFor(PRODUCTS, account("premium", ["waivers"])).map((p) => p.sku), ["trade_lab", "full_report", "league_slot"]);
-  assert.deepEqual(upgradesFor(PRODUCTS, account("premium", ["full_report"])).map((p) => p.sku), ["league_slot"], "the bundle leaves only slots to buy");
-  assert.deepEqual(upgradesFor(PRODUCTS, null).map((p) => p.sku), ["waivers", "trade_lab", "full_report", "league_slot"]);
+  assert.deepEqual(upgradesFor(PRODUCTS, account("free", [])).map((p) => p.sku), ["week_pass", "full_report", "league_slot"]);
+  assert.deepEqual(upgradesFor(PRODUCTS, account("premium", ["week_pass"])).map((p) => p.sku), ["full_report", "league_slot"], "a running week is offered the season");
+  assert.deepEqual(upgradesFor(PRODUCTS, account("premium", ["waivers"])).map((p) => p.sku), ["week_pass", "full_report", "league_slot"], "a retired pass holder is offered the new ones");
+  assert.deepEqual(upgradesFor(PRODUCTS, account("premium", ["full_report"])).map((p) => p.sku), ["league_slot"], "the season leaves only slots to buy");
+  assert.deepEqual(upgradesFor(PRODUCTS, null).map((p) => p.sku), ["week_pass", "full_report", "league_slot"]);
 });
 
 test("a stamp reads as a short date and nothing reads as a date when there is none", () => {

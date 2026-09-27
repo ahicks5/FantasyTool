@@ -9,7 +9,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from "next/navigation";
 import { getProducts, upgrade as upgradeCall } from "@/lib/api";
 import { offersFor } from "@/lib/account";
-import { formatCents } from "@/lib/format";
+import { priceLabel, productName } from "@/lib/offer";
 import { currentMe, useSession } from "@/lib/session";
 import type { Me, Product, Sku } from "@/lib/types";
 import { PRODUCTS as FALLBACK } from "@/lib/mocks";
@@ -21,7 +21,7 @@ import { AuthForm, type AuthMode } from "./AuthForm";
 type Reason = keyof typeof ACCOUNT.reason;
 
 export interface UpgradeOptions {
-  /** The room this is for, e.g. "Wire Pass": becomes the sheet's eyebrow. */
+  /** The room this is for, e.g. "Trade Lab": becomes the sheet's eyebrow. */
   what?: string;
   /** Where a Stripe checkout should return to. Defaults to the current page. */
   returnTo?: string;
@@ -182,7 +182,7 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
         return;
       }
       session.refresh();
-      setDone(offer.name);
+      setDone(productName(offer));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -212,12 +212,12 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
             {offers.map((o, i) => (
               <li key={o.sku} className={`card p-4 ${i === 0 ? "border-start ring-1 ring-start" : ""}`}>
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="display text-[19px] leading-tight">{o.name}</span>
-                  <span className="display tnum text-[24px] leading-none">{formatCents(o.price_cents)}</span>
+                  <span className="display text-[19px] leading-tight">{productName(o)}</span>
+                  <span className="display tnum text-[24px] leading-none">{priceLabel(o)}</span>
                 </div>
                 <p className="mt-1 text-[13px] leading-snug text-muted">{o.blurb}</p>
                 <Button variant={i === 0 ? "start" : "secondary"} className="mt-3 w-full" busy={busy === o.sku} disabled={!!busy && busy !== o.sku} onClick={() => buy(o)}>
-                  {busy === o.sku ? ACCOUNT.upgrade.busy : ACCOUNT.upgrade.get(o.name)}
+                  {busy === o.sku ? ACCOUNT.upgrade.busy : ACCOUNT.upgrade.get(productName(o))}
                 </Button>
               </li>
             ))}
@@ -229,7 +229,7 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
           )}
           <p className="flex items-center justify-center gap-1.5 text-center text-[12px] text-muted">
             <IconLock size={12} strokeWidth={2.4} />
-            {checkout ? "Paid through Stripe. One payment, no subscription." : "Nothing is charged today."}
+            {checkout ? ACCOUNT.upgrade.stripe : ACCOUNT.upgrade.noCharge}
           </p>
         </div>
       )}

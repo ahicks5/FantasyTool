@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page, type Route } from "@playwright/test";
 import { API_URL } from "../playwright.config";
-import { ACCOUNT, DESK, RIDE, WIRE } from "../src/lib/vocab";
+import { ACCOUNT, DESK, PRICING, RIDE, WIRE } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 
 /**
@@ -163,7 +163,7 @@ test("a stranger's door is the account: register, land on it, then link a league
   const up = page.getByTestId("upgrade-sheet");
   await expect(up).toBeVisible();
   await expect(up.getByText(ACCOUNT.upgrade.comp)).toBeVisible();
-  await up.getByRole("button", { name: ACCOUNT.upgrade.get("The Penthouse") }).click();
+  await up.getByRole("button", { name: ACCOUNT.upgrade.get(PRICING.names.full_report) }).click();
   await expect(up.getByText(ACCOUNT.upgrade.done)).toBeVisible();
   await up.getByRole("button", { name: ACCOUNT.upgrade.close }).last().click();
   await expect(page.locator("[data-plan=premium]").first()).toBeVisible();
@@ -257,16 +257,18 @@ test("a locked room's button opens the sign-in sheet, then the upgrade, and the 
   await context.addInitScript((c) => window.localStorage.setItem("booth.connection", c), JSON.stringify(CONNECTION));
   const email = freshEmail("wire");
   await page.goto("/waivers");
-  await expect(page.getByText("Wire Pass").first()).toBeVisible();
-  await page.getByRole("button", { name: /Unlock Wire Pass/ }).click();
+  await expect(page.getByText(WIRE.lockEyebrow, { exact: true }).first()).toBeVisible();
+  // No room is sold on its own any more: the lock offers the season and a week.
+  await expect(page.getByTestId("locked-week")).toBeVisible();
+  await page.getByTestId("locked-season").click();
   const sheet = page.getByRole("dialog", { name: ACCOUNT.signIn });
   await expect(sheet).toBeVisible();
   await expect(sheet.getByText(ACCOUNT.reason.upgrade)).toBeVisible();
   await phoneIn(sheet, freshPhone(), { name: "", email });
   const up = page.getByTestId("upgrade-sheet");
   await expect(up).toBeVisible();
-  await expect(up.getByText(ACCOUNT.upgrade.for("Wire Pass"))).toBeVisible();
-  await up.getByRole("button", { name: ACCOUNT.upgrade.get("Wire Pass") }).click();
+  await expect(up.getByText(ACCOUNT.upgrade.for(WIRE.lockEyebrow))).toBeVisible();
+  await up.getByRole("button", { name: ACCOUNT.upgrade.get(PRICING.names.full_report) }).click();
   await expect(up.getByText(ACCOUNT.upgrade.done)).toBeVisible();
   await up.getByRole("button", { name: ACCOUNT.upgrade.close }).last().click();
   await expect(page.getByRole("heading", { name: WIRE.title })).toBeVisible();
@@ -286,19 +288,20 @@ test("the owner's front office lists every account and the levers work", async (
   await expect(row).toBeVisible();
   await expect(row.getByText(ACCOUNT.plan.free, { exact: true })).toBeVisible();
   await expect(row.getByText(ACCOUNT.admin.leagues(0, 3))).toBeVisible();
-  // Grant a pass: the flag flips and the button turns into its undo.
-  await row.getByRole("button", { name: `${ACCOUNT.admin.grant} Wire Pass` }).click();
-  await expect(row.getByRole("button", { name: `${ACCOUNT.admin.revoke} Wire Pass` })).toBeVisible();
+  // Grant a week: the flag flips and the button turns into its undo.
+  await row.getByRole("button", { name: `${ACCOUNT.admin.grant} ${PRICING.names.week_pass}` }).click();
+  await expect(row.getByRole("button", { name: `${ACCOUNT.admin.revoke} ${PRICING.names.week_pass}` })).toBeVisible();
+  await expect(row.getByRole("button", { name: `${ACCOUNT.admin.grant} ${PRICING.names.waivers}` })).toHaveCount(0);
   await expect(row.getByText(ACCOUNT.plan.premium, { exact: true })).toBeVisible();
   // One more league.
   await row.getByRole("button", { name: ACCOUNT.admin.slot }).click();
-  await expect(row.getByText(ACCOUNT.admin.leagues(0, 4))).toBeVisible();
+  await expect(row.getByText(ACCOUNT.admin.leagues(0, 6))).toBeVisible();
   // A reset link, handed over by hand.
   await row.getByRole("button", { name: ACCOUNT.admin.resetLink }).click();
   await expect(row.getByText(/\/reset\?token=/)).toBeVisible();
   // Take the pass back.
-  await row.getByRole("button", { name: `${ACCOUNT.admin.revoke} Wire Pass` }).click();
-  await expect(row.getByRole("button", { name: `${ACCOUNT.admin.grant} Wire Pass` })).toBeVisible();
+  await row.getByRole("button", { name: `${ACCOUNT.admin.revoke} ${PRICING.names.week_pass}` }).click();
+  await expect(row.getByRole("button", { name: `${ACCOUNT.admin.grant} ${PRICING.names.week_pass}` })).toBeVisible();
   await expect(row.getByText(ACCOUNT.plan.free, { exact: true })).toBeVisible();
 });
 

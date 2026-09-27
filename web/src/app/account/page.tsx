@@ -11,13 +11,14 @@ import { Loading } from "@/components/Loading";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton, OnAir } from "@/components/ui";
 import { addPhone, changePassword, deleteMyAccount, phoneStart, setAccountEmail, exportMyData, forgetLeague, getLeague, getProducts, logout, logoutOthers, markLeagueUsed } from "@/lib/api";
 import { describeAuthError } from "@/lib/authError";
-import { accountContact, accountLabel, displayPhone, leagueRoom, upgradesFor } from "@/lib/account";
+import { accountContact, accountLabel, displayPhone, leagueRoom, shortDate, upgradesFor } from "@/lib/account";
+import { priceLabel, productName } from "@/lib/offer";
 import { formatCents } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { clearConnection, saveConnection } from "@/lib/storage";
 import type { MeLeague, Product, Sku } from "@/lib/types";
 import { PRODUCTS as FALLBACK } from "@/lib/mocks";
-import { ACCOUNT, LINES } from "@/lib/vocab";
+import { ACCOUNT, LINES, PRICING } from "@/lib/vocab";
 
 function PlanFlag({ premium, admin }: { premium: boolean; admin: boolean }) {
   return (
@@ -364,6 +365,11 @@ function AccountBody() {
   const premium = account.plan.tier === "premium";
   const room = leagueRoom(me.leagues.length, me.leagues_allowed);
   const offers = upgradesFor(products, account);
+  const season = products.find((p) => p.sku === "full_report");
+  const slot = products.find((p) => p.sku === "league_slot");
+  // A week-pass holder (and not the season): the plan says when the week runs out, and where to cancel.
+  const weekOnly = account.plan.skus.includes("week_pass") && !account.plan.skus.includes("full_report");
+  const planName = account.plan.skus.length === 1 ? (PRICING.names as Record<string, string>)[account.plan.skus[0]] ?? account.plan.name : account.plan.name;
   const current = session.connection;
   const fresh = me.leagues.length === 0;
 
@@ -391,19 +397,33 @@ function AccountBody() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <Eyebrow>{ACCOUNT.plan.eyebrow}</Eyebrow>
-            <p className="display mt-1 text-[24px] leading-tight">{account.plan.name}</p>
-            <p className="mt-1 text-[13px] leading-snug text-muted">{premium ? ACCOUNT.plan.premiumLine : ACCOUNT.plan.freeLine}</p>
+            <p className="display mt-1 text-[24px] leading-tight">{planName}</p>
+            <p className="mt-1 text-[13px] leading-snug text-muted" data-testid="plan-line">
+              {weekOnly && account.pass_until ? ACCOUNT.plan.weekLine(shortDate(account.pass_until)) : premium ? ACCOUNT.plan.premiumLine : ACCOUNT.plan.freeLine}
+            </p>
           </div>
           <PlanFlag premium={premium} admin={account.is_admin} />
         </div>
         <p className="mt-3 text-[15px] font-bold break-words">{accountLabel(account)}</p>
         {accountContact(account) && <p className="text-[13px] text-muted break-words">{accountContact(account)}</p>}
-        {!account.plan.skus.includes("full_report") && (
+        {!account.plan.skus.includes("full_report") && season && (
           <Button variant="start" className="mt-4 w-full" onClick={() => buy("full_report", LINES.paywallBundle)} data-testid="upgrade-bundle">
-            {ACCOUNT.plan.upgrade}
+            {LINES.paywallBundleCta}
             <span aria-hidden className="opacity-60">·</span>
-            <span className="tnum">{formatCents(products.find((p) => p.sku === "full_report")?.price_cents ?? 700)}</span>
+            <span className="tnum">{formatCents(season.price_cents)}</span>
           </Button>
+        )}
+        {weekOnly && me.billing_portal_url && (
+          <a
+            href={me.billing_portal_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 flex min-h-11 items-center justify-between rounded-xl bg-soft px-4 text-[14px] font-bold text-ink"
+            data-testid="billing-portal"
+          >
+            {ACCOUNT.plan.manage}
+            <IconChevron size={16} strokeWidth={2.4} />
+          </a>
         )}
         {account.is_admin && (
           <Link href="/admin" className="mt-3 flex min-h-11 items-center justify-between rounded-xl bg-soft px-4 text-[14px] font-bold text-ink">
@@ -458,7 +478,7 @@ function AccountBody() {
               <Button variant="secondary" className="w-full" onClick={() => buy("league_slot", ACCOUNT.upgrade.limit)} data-testid="add-slot">
                 {ACCOUNT.leagues.addSlot}
                 <span aria-hidden className="opacity-60">·</span>
-                <span className="tnum">{formatCents(products.find((p) => p.sku === "league_slot")?.price_cents ?? 200)}</span>
+                <span className="tnum">{slot ? formatCents(slot.price_cents) : ""}</span>
               </Button>
             </>
           ) : fresh ? null : (
@@ -477,11 +497,11 @@ function AccountBody() {
             {offers.map((o) => (
               <li key={o.sku} className="card flex items-center gap-3 p-4">
                 <span className="min-w-0 flex-1">
-                  <span className="display block text-[16px] leading-tight">{o.name}</span>
+                  <span className="display block text-[16px] leading-tight">{productName(o)}</span>
                   <span className="mt-0.5 block text-[12px] leading-snug text-muted">{o.blurb}</span>
                 </span>
                 <Button size="sm" variant={o.sku === "full_report" ? "start" : "secondary"} onClick={() => buy(o.sku, o.name)}>
-                  <span className="tnum">{formatCents(o.price_cents)}</span>
+                  <span className="tnum">{priceLabel(o)}</span>
                 </Button>
               </li>
             ))}

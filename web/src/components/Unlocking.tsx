@@ -6,8 +6,11 @@ import { PRODUCTS as FALLBACK } from "@/lib/mocks";
 import { featuresForSku, paidSkuFromSearch, urlWithoutPurchaseParams, waitForFeatures } from "@/lib/unlock";
 import type { Product, Sku } from "@/lib/types";
 import { IconCheck, IconLock } from "./icons";
+import { productName } from "@/lib/offer";
+import { ACCOUNT } from "@/lib/vocab";
 
-const SKUS: readonly string[] = ["waivers", "trade_lab", "full_report"];
+/** What a return from Stripe can say was bought. The retired passes stay so an old link still resolves. */
+const SKUS: readonly string[] = ["week_pass", "full_report", "waivers", "trade_lab"];
 
 /** Where to send someone whose payment cleared but whose unlock did not arrive. */
 const SUPPORT = process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "";
@@ -54,7 +57,8 @@ export function useUnlockOnReturn(onUnlocked: () => void): Phase {
       const outcome = await waitForFeatures(getMe, featuresForSku(products, sku));
       if (!alive) return;
       if (outcome.ok) {
-        setState({ phase: "done", sku, name: products.find((p) => p.sku === sku)?.name ?? "Your pass" });
+        const bought = products.find((p) => p.sku === sku);
+        setState({ phase: "done", sku, name: bought ? productName(bought) : "Your pass" });
         refresh.current();
       } else {
         setState({ phase: "failed", sku, reason: outcome.reason });
@@ -104,7 +108,7 @@ export function UnlockingBanner({ state }: { state: Phase }) {
         <span aria-hidden className="text-start">
           <IconCheck size={18} strokeWidth={2.4} />
         </span>
-        <span className="text-[14px] font-bold">{state.name} unlocked. It is yours for the rest of the season.</span>
+        <span className="text-[14px] font-bold">{ACCOUNT.upgrade.unlocked(state.name)}</span>
       </div>
     );
   }

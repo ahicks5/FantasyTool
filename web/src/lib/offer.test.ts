@@ -1,49 +1,56 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { offerStack } from "./offer.ts";
+import { offerStack, priceLabel, productName } from "./offer.ts";
 import type { Product } from "./types.ts";
 
-/** The catalog as `edge/products.py` sends it today (mocks.ts holds the same rows, but it imports the app). */
+const ALL: Product["features"] = ["my_team", "waivers", "trade_lab", "full_report"];
+
+/** The catalog as `edge/products.py` sends it on `/api/products` (Andrew, 2026-09-27). */
 const PRODUCTS: Product[] = [
   { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 3, kind: "free", blurb: "" },
-  { sku: "waivers", name: "Wire Pass", price_cents: 300, features: ["waivers"], leagues: 3, kind: "a_la_carte", blurb: "" },
-  { sku: "trade_lab", name: "Trade Lab", price_cents: 500, features: ["trade_lab"], leagues: 3, kind: "a_la_carte", blurb: "" },
-  { sku: "full_report", name: "The Penthouse", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "bundle", blurb: "" },
-  { sku: "league_slot", name: "League slot", price_cents: 200, features: [], leagues: 1, kind: "add_on", blurb: "" },
+  { sku: "week_pass", name: "Week pass", price_cents: 499, features: ALL, leagues: 5, kind: "pass", recurring: "week", duration_days: 7, blurb: "" },
+  { sku: "full_report", name: "The Penthouse", price_cents: 2499, features: ALL, leagues: 5, kind: "bundle", through: "2027-01-04", blurb: "" },
+  { sku: "league_slot", name: "League slot", price_cents: 299, features: [], leagues: 1, kind: "add_on", blurb: "" },
 ];
 
-test("the stack adds the catalog up rather than typing the numbers", () => {
-  const s = offerStack(PRODUCTS);
+test("the season is anchored against the rest of the way, week to week, from the catalog", () => {
+  const s = offerStack(PRODUCTS, new Date("2026-09-27T12:00:00Z"));
   assert.ok(s);
-  assert.equal(s.bundle.sku, "full_report");
-  // Wire Pass and Trade Lab are the passes inside the bundle; the free tier's start/sit is not a line.
-  assert.deepEqual(
-    s.lines.map((l) => l.name),
-    ["Wire Pass", "Trade Lab"],
-  );
-  // The film is only in the bundle.
-  assert.deepEqual(s.onlyHere, ["full_report"]);
-  // Five leagues against three free: two slots at the slot's price.
-  assert.equal(s.extraLeagues, 2);
-  assert.equal(s.apartCents, 300 + 500 + 2 * 200);
-  assert.equal(s.togetherCents, 700);
-  // The anchor only works if the parts cost more than the whole. Pin it so a price change is noticed.
-  assert.ok(s.apartCents > s.togetherCents, "the stack no longer anchors: bought apart is not dearer than the bundle");
+  assert.equal(s.week.sku, "week_pass");
+  assert.equal(s.season.sku, "full_report");
+  // Sunday of week 3 to the Monday after week 17: fourteen weeks left.
+  assert.equal(s.weeksLeft, 14);
+  assert.equal(s.weeklyCents, 14 * 499);
+  assert.equal(s.seasonCents, 2499);
+  // The anchor only works if the rest of the way costs more than the season. Pin it.
+  assert.ok(s.weeklyCents! > s.seasonCents, "the season is no longer the better deal");
+  // Five weeks of the week pass, give or take a nickel.
+  assert.equal(s.evenWeeks, 5);
 });
 
-test("no bundle, no stack", () => {
+test("late in the year the weeks left run down, and never below zero", () => {
+  assert.equal(offerStack(PRODUCTS, new Date("2026-12-28T12:00:00Z"))?.weeksLeft, 1);
+  assert.equal(offerStack(PRODUCTS, new Date("2027-02-01T12:00:00Z"))?.weeksLeft, 0);
+});
+
+test("no season date, no weekly total; no pass, no stack", () => {
+  const s = offerStack(PRODUCTS.map((p) => (p.sku === "full_report" ? { ...p, through: undefined } : p)));
+  assert.ok(s);
+  assert.equal(s.weeksLeft, null);
+  assert.equal(s.weeklyCents, null);
+  assert.equal(offerStack(PRODUCTS.filter((p) => p.sku !== "week_pass")), null);
   assert.equal(offerStack(PRODUCTS.filter((p) => p.sku !== "full_report")), null);
 });
 
-test("a pass the bundle does not contain is not a line in its stack", () => {
-  const s = offerStack([
-    ...PRODUCTS.filter((p) => p.sku !== "trade_lab"),
-    // A pass for something the bundle does not hold cannot be one of its parts.
-    { sku: "trade_lab", name: "Odd Pass", price_cents: 100, features: ["my_team"], leagues: 3, kind: "a_la_carte", blurb: "" },
-  ]);
-  assert.ok(s);
-  // my_team is in the bundle, so the odd pass counts as a part; the free tier holds it too,
-  // so it is not "only here". Trade Lab now is: no pass sells it any more.
-  assert.ok(s.lines.some((l) => l.name === "Odd Pass"));
-  assert.deepEqual(s.onlyHere, ["trade_lab", "full_report"]);
+test("the week reads per week, the season and the slot as one price", () => {
+  assert.equal(priceLabel(PRODUCTS[1]), "$4.99/week");
+  assert.equal(priceLabel(PRODUCTS[2]), "$24.99");
+  assert.equal(priceLabel(PRODUCTS[3]), "$2.99");
+  assert.equal(priceLabel(PRODUCTS[0]), "Free");
+});
+
+test("the season is called the season where a user reads it", () => {
+  assert.equal(productName(PRODUCTS[2]), "Season pass");
+  assert.equal(productName(PRODUCTS[1]), "Week pass");
+  assert.equal(productName({ sku: "waivers", name: "Wire Pass" }), "Wire Pass");
 });

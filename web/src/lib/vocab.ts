@@ -3,9 +3,9 @@
  *
  * Coach vocabulary, and it survives the rebrand on purpose: the penthouse is where the
  * sheet is *read*, not a reason to rename the sheet. The nav names a room (call sheet,
- * depth chart, scouting, the GM's Office, the film) while what you *buy* keeps its
- * product name (Wire Pass, Trade Lab, The Penthouse) — those live in `edge/products.py`,
- * not here.
+ * depth chart, scouting, the GM's Office, the film) while what you *buy* is named by what it
+ * is (the week pass, the season pass, a league slot). Prices live in `edge/products.py`;
+ * the names a user reads for them are `PRICING.names`, here.
  *
  * It is one module rather than strings scattered across five pages and a tab bar
  * because renaming a section otherwise means a sweep through the app and its tests,
@@ -134,13 +134,13 @@ export const LINES = {
    */
   connect: "Connect your league.",
 
-  /** The bundle, as a sentence — it sits above the price on the pricing card. */
+  /** The season pass, as a sentence — it sits above the price on the pricing card. */
   paywallBundle: "The rest of the building.",
-  /** The same idea as a control. Buttons are verb first, and a full stop reads badly
-   *  next to the price that follows it ("The rest of the building. · $7"). */
-  paywallBundleCta: "Take the rest of the building",
-  /** Any single pass, as a sentence. */
-  paywallPass: "Unlock the floor.",
+  /** The season as a control. Buttons are verb first, and a full stop reads badly
+   *  next to the price that follows it ("Take the season · $24.99"). */
+  paywallBundleCta: "Take the season",
+  /** The week pass as a control: the low step in, next to the season. */
+  paywallWeekCta: "Try a week",
 } as const;
 
 /**
@@ -577,6 +577,8 @@ export const SCOUT = {
  */
 export const WIRE = {
   title: "Top pickups",
+  /** The eyebrow on the wire's lock card: the room, now that no pass is named for it. */
+  lockEyebrow: "The wire",
   urgency: {
     must: "Must add!",
     claim: "Put in a claim",
@@ -719,6 +721,10 @@ export const ACCOUNT = {
     current: "Your plan",
     freeLine: "Start/sit calls, the desk, the standings and the board. Every week.",
     premiumLine: "Every room open for the rest of the season.",
+    /** A week-pass holder: when the paid week runs out, and that it renews. */
+    weekLine: (date: string) => `Every room open. Paid through ${date}, and it renews weekly until you cancel.`,
+    /** Stripe's customer portal, for the week pass. */
+    manage: "Manage or cancel",
   },
   /** Leagues on file. */
   leagues: {
@@ -737,7 +743,7 @@ export const ACCOUNT = {
   /** The upgrade sheet. */
   upgrade: {
     title: "Upgrade",
-    lead: "One payment, rest of the season. No subscription.",
+    lead: "Try a week, cancel anytime. Or take the season in one payment.",
     /** Shown while the API has no Stripe key: the grant is written on the spot. */
     comp: "Launch week: no card, no charge. Tap it and the floor is yours.",
     get: (name: string) => `Get ${name}`,
@@ -748,6 +754,15 @@ export const ACCOUNT = {
     /** Why this sheet is up, when a locked room asked for it. */
     for: (what: string) => `Unlock ${what}`,
     limit: "Your leagues are full",
+    /** Under the offers: how the money moves. */
+    stripe: "Paid through Stripe. The week renews until you cancel. The season is one payment.",
+    noCharge: "Nothing is charged today.",
+    /** On the locked card, under the two buttons. */
+    terms: "The week renews until you cancel. The season is one payment, and nothing renews.",
+    signInNote: "You will sign in at checkout so your purchase follows you.",
+    unlock: (name: string) => `Unlock ${name}`,
+    /** The receipt when a return from Stripe lands. */
+    unlocked: (name: string) => `${name} is on your account. Every room is open.`,
   },
   /** Forgot and reset. */
   reset: {
@@ -1025,7 +1040,7 @@ export const LANDING = {
       },
       {
         q: "Is it a subscription?",
-        a: "No. One payment, rest of the season. Nothing renews.",
+        a: "Only if you want one. The week pass renews weekly and cancels anytime. The season pass is one payment and nothing renews.",
       },
       {
         q: "What if a call is wrong?",
@@ -1064,16 +1079,33 @@ export const LANDING = {
 } as const;
 
 /**
- * The offer, as a stack. Every line is named and priced, the total is printed, and then the
- * price, because a bundle that is only a bundle is worth less than the same bundle itemised.
- * The figures are never typed here: `lib/offer.ts` adds them up from the API's own catalog,
- * so a price change in `edge/products.py` cannot leave this page quoting the old one.
+ * The offer: free, a week, or the season (Andrew, 2026-09-27). The season is anchored against
+ * paying week to week for the rest of the way. The figures are never typed here:
+ * `lib/offer.ts` works them out from the API's own catalog, so a price change in
+ * `edge/products.py` cannot leave this page quoting the old one.
  */
 export const PRICING = {
   eyebrow: "Pricing",
   /** The price is the headline, and it comes from the catalog. */
   title: (price: string) => `${price}. The season.`,
-  lead: "One payment, rest of the season. Nothing renews.",
+  lead: "Start free. Try a week when you want every room, or take the season in one payment.",
+  /** What a user reads for each sku. The catalog's names are the API's; these are the page's. */
+  names: {
+    free: "Free",
+    week_pass: "Week pass",
+    full_report: "Season pass",
+    league_slot: "League slot",
+    waivers: "Wire Pass",
+    trade_lab: "Trade Lab",
+  },
+  /** After a recurring price: "$4.99/week". */
+  per: { week: "/week" },
+  /** The one line under each tier's price. */
+  term: {
+    free: "Every week, no card.",
+    week_pass: "Renews weekly. Cancel anytime.",
+    full_report: "One payment. Rest of the season.",
+  },
   /** What each entitlement actually buys, in the user's words rather than the API's. */
   unlocks: {
     my_team: "Start/sit calls, stamped with confidence",
@@ -1081,16 +1113,14 @@ export const PRICING = {
     trade_lab: "Trade verdicts and counters",
     full_report: "The full weekly film",
   },
-  badge: { best: "Best value", alaCarte: "À la carte" },
+  badge: { best: "Best value", flex: "No commitment" },
   leagues: (n: number) => `${n} league${n === 1 ? "" : "s"}`,
-  /** The stack on the bundle card. */
+  /** The anchor on the season card: the rest of the way week to week, against the season. */
   stack: {
-    head: "What the Penthouse holds",
-    film: "The full weekly film",
-    filmPrice: "Not sold apart",
-    slots: (n: number) => `${n} more league${n === 1 ? "" : "s"}`,
-    apart: "Bought apart",
-    together: "Together",
+    head: "Week to week, or the season",
+    weekly: (n: number) => `Week pass, ${n} more week${n === 1 ? "" : "s"}`,
+    season: "Season pass, once",
+    even: (n: number) => `The season is about ${n} weeks of the week pass. The rest of the way is on the house.`,
   },
   /** The guarantee sits under the price. It is the one in the terms, said plainly. */
   guarantee: {

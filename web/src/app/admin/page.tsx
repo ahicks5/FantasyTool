@@ -10,12 +10,16 @@ import { adminGrant, adminResetLink, adminRevoke, adminSetRole, adminUsers } fro
 import { accountContact, accountLabel, matchesAccount, shortDate } from "@/lib/account";
 import { useSession } from "@/lib/session";
 import type { AdminUser, AdminUsersResponse, Sku } from "@/lib/types";
-import { ACCOUNT } from "@/lib/vocab";
+import { ACCOUNT, PRICING } from "@/lib/vocab";
 
+/** What the owner can hand out: what is on sale. The retired passes can only be taken back. */
 const GRANTABLE: { sku: Sku; label: string }[] = [
-  { sku: "full_report", label: "The Penthouse" },
-  { sku: "waivers", label: "Wire Pass" },
-  { sku: "trade_lab", label: "Trade Lab" },
+  { sku: "full_report", label: PRICING.names.full_report },
+  { sku: "week_pass", label: PRICING.names.week_pass },
+];
+const RETIRED: { sku: Sku; label: string }[] = [
+  { sku: "waivers", label: PRICING.names.waivers },
+  { sku: "trade_lab", label: PRICING.names.trade_lab },
 ];
 
 function Row({ u, me, onChange }: { u: AdminUser; me: string; onChange: () => void }) {
@@ -92,7 +96,7 @@ function Row({ u, me, onChange }: { u: AdminUser; me: string; onChange: () => vo
         </ul>
       )}
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {GRANTABLE.map((g) =>
+        {[...GRANTABLE, ...RETIRED.filter((r) => u.skus.includes(r.sku))].map((g) =>
           u.skus.includes(g.sku) ? (
             <Button key={g.sku} size="sm" variant="secondary" busy={busy === `revoke:${g.sku}`} onClick={() => run(`revoke:${g.sku}`, () => adminRevoke(u.email, g.sku))}>
               {ACCOUNT.admin.revoke} {g.label}
