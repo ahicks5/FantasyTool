@@ -721,9 +721,9 @@ where the call sheet gets read, not a reason to rename the sheet.
       `max-[359px]:hidden` utility — `.wordmark-type` is unlayered and beats Tailwind's layer.
 - [x] Domain: **penthousefantasy.com** (Squarespace DNS → Vercel). Code defaults, CORS fallback and
       `deploy/render.yaml` point at it; the `vercel.app` address stays allowed.
-- [ ] Andrew: set `EDGE_CORS` + `EDGE_WEB_URL` on Render and `NEXT_PUBLIC_SITE_URL` on Vercel
-      (values in `docs/DEPLOY.md` → Custom domain), then redeploy both. Until then the new domain
-      loads but every API call is refused.
+- [x] `EDGE_CORS` + `EDGE_WEB_URL` on Render and `NEXT_PUBLIC_SITE_URL` on Vercel set; `www` redirects
+      to the apex. Verified live 2026-09-27 (CORS 200, og:url is the apex).
+- [ ] Andrew: remove `EDGE_DEMO_UNLOCK` on Render before charging — it opens the paywall to everyone.
 - [ ] The two supplied app icons (crown and football) are 1024px PNGs. Only the crown is traced
       into SVG; if the football lockup is ever wanted for social, it needs the same treatment.
 - [ ] Re-run the data-viz palette checker against the new surfaces. The dark status steps were

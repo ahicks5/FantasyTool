@@ -198,11 +198,13 @@ curl -sI https://<api-host>/api/share/<some-id>/card.png   # want 200 image/png,
 
 ## Custom domain
 
-`penthousefantasy.com`, registered at Squarespace, DNS at Squarespace, served by Vercel.
+`penthousefantasy.com`, registered at Squarespace, DNS at Squarespace, served by Vercel. The apex is
+the primary domain; in Vercel, `www` is set to 308-redirect to it (not the other way round —
+every URL the API and the web generate is the apex).
 
 | Record | Name | Value |
 |---|---|---|
-| A | `@` | `76.76.21.21` (Vercel's legacy IP; `216.198.79.1` is the one it now recommends — both work) |
+| A | `@` | `216.198.79.1` (Vercel's current IP; the legacy `76.76.21.21` also works) |
 | CNAME | `www` | `cname.vercel-dns.com` |
 
 The "Squarespace Defaults" preset must stay deleted — its **HTTPS** record carries Squarespace
