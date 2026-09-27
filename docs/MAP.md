@@ -228,7 +228,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/OfficeDeals.tsx` | The top of the GM's Office: your roster, one tile per position (spare, short, set), then | 215 |
 | `web/src/components/PlayerBoard.tsx` | All players: every player in the league, as a table the reader cuts and orders. | 609 |
 | `web/src/components/Players.tsx` | Name over position/team, with a headshot. The name column always gets the slack. | 131 |
-| `web/src/components/Pricing.tsx` | The offer: every tier, the bundle itemised as a stack, the guarantee under the price, and the way in. | 167 |
+| `web/src/components/Pricing.tsx` | The offer: every tier, the bundle itemised as a stack, the guarantee under the price, and the way in. | 165 |
 | `web/src/components/Profile.tsx` | The scout report on one player: who has him, what the counts say, and every week he has | 83 |
 | `web/src/components/ProfileGames.tsx` | The game log: every week he has on record this season, and the same weeks as bars. | 176 |
 | `web/src/components/ProfileReads.tsx` | The read: what the counts say, in words, and the centrepiece of the scout report. | 102 |
