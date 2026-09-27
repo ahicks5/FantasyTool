@@ -2,6 +2,36 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## The landing page, rebuilt as a funnel (2026-09-27)
+
+Andrew's brief: the best front page we can build, on Hormozi's playbook, for leads, conversions
+and retention, in the brand's voice. Built on `web/src/app/page.tsx`, words in `LANDING` and
+`PRICING` (`vocab.ts`), the stack maths in `lib/offer.ts`, the follow-along bar in
+`components/LandingBar.tsx`. Tests: `vocab.test.ts` sweeps every line, `landing.test.ts` pins
+the doors and the no-figure rule, `offer.test.ts` pins the stack.
+
+- [x] **LP-1** The hero names the reader ("For the manager with three leagues and a job"), puts
+      a clock on the promise ("about a minute"), and says what it does not cost under the button.
+- [x] **LP-2** Three reasons to believe it, then the product itself (the demo sheet), then who it
+      is for and who it is not.
+- [x] **LP-3** The rooms rewritten outcome-first; the steps carry the time each takes; the week
+      as a ritual (Tuesday film, Thursday sheet, Sunday kickoff) sits before the price.
+- [x] **LP-4** The offer stacked: every pass in the bundle with its price, the film as the bonus
+      "not sold apart", the two extra leagues at the slot price, "bought apart" struck through,
+      the bundle price under it. All of it added up from `GET /api/products`, never typed.
+- [x] **LP-5** The guarantee under the price, reading `LEGAL.refundDays` so it says what the terms say.
+- [x] **LP-6** Launch-week line ("every floor is open, no card") only while `GET /api/health`
+      reports `stripe: false`; a failed read shows nothing.
+- [x] **LP-7** Seven objections as native disclosures (scoring, ESPN private, subscription, wrong
+      calls, account first, how long, what we keep).
+- [x] **LP-8** The close: the clock, "Your sheet isn't written yet", what happens next. A bar with
+      the countdown and the door follows the reader between the first button and the last.
+- [ ] **LP-9** Testimonials and a real user count once there are real ones. Nothing invented.
+- [ ] **LP-10** The Thursday email as a lead magnet on the page, once the first send goes out
+      (`EMAIL.pending` still says it is not sending).
+- [ ] **LP-11** A share-card strip ("a verdict someone pasted to win an argument") once a real
+      one exists to show.
+
 ## Accounts: register, sign in, the plan flag, the admin (2026-09-24)
 
 Andrew's brief: a register/login system with sleek popups, a login page, register, checks by
@@ -419,6 +449,14 @@ themes. All eight are done and on production.
 
 ## Decisions needed from Andrew
 
+- **The landing page (2026-09-27).** Three calls, none blocking. (a) **The guarantee is on the
+  page now**: "Not useful? Ask within 14 days and it is refunded in full. No reasoning required."
+  It is the terms' own policy (`LEGAL.refundDays`, default 14) said plainly under the price. The
+  older line below still says "7 days"; the page and the terms both follow the env var, so set
+  `NEXT_PUBLIC_REFUND_DAYS` if you want 7. (b) **The launch-week line** shows while Stripe is
+  off: it promises what the upgrade sheet already grants. Say if you would rather keep that
+  quiet. (c) **"Who it isn't for"** sends the spreadsheet reader away on purpose. Cut it if it
+  reads as rude rather than confident.
 - **Accounts (2026-09-24).** Four calls, none blocking a deploy. (a) **Sign-in is first-party**
   (email + password in our own store), not Supabase: it works with zero configuration, offline
   in every test, and gives you an admin account today; the price is that a password reset

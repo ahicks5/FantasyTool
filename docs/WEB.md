@@ -306,6 +306,36 @@ has leagues on file, picks the one with the newest `last_used` (`lib/account.pic
 reads the league for the week and the team's name, and saves the connection. The account page
 switches leagues the same way and tells the API (`/use`). Every word is `ACCOUNT` in `vocab.ts`.
 
+## The landing page is a funnel (2026-09-27)
+
+`/` is a server component with two client islands, `Pricing` and `LandingBar`. Its order is
+the one Hormozi's page order and the brand agree on, and every section's words live in
+`LANDING` (`vocab.ts`), so a rewrite is a vocab change and the voice tests sweep it.
+
+- **Every door is `/register`** (`WAY_IN`), asked four times: hero, rooms, price, close.
+  `landing.test.ts` reads the source and fails on any other destination but `#pricing` and
+  the legal pages.
+- **The bar** (`components/LandingBar.tsx`) watches the hero's and the close's buttons by id
+  with an IntersectionObserver and shows only while neither is on screen, so the reader
+  never sees two doors at once. Off, it is translated below the viewport with
+  `pointer-events: none`, never merely transparent. The page carries `pb-24` for it.
+- **The stack** (`lib/offer.ts`) itemises the bundle from `GET /api/products`: each pass the
+  bundle contains at its price, the features only the bundle holds as "not sold apart", the
+  league slots it would take to reach the bundle's cap at the slot's price, the total
+  struck through, the bundle's price under it. It renders only while the parts cost more
+  than the whole, so a price change cannot leave it anchoring backwards. `Pricing.tsx` types
+  no dollar figure, and a test pins that.
+- **The guarantee** reads `LEGAL.refundDays`, the same number `/terms` prints.
+- **The launch-week line** shows only when `GET /api/health` answers `stripe: false`. A
+  failed read is treated as open: a promise that showed because a request timed out is one
+  the upgrade sheet could not keep. The mock (`mocks.HEALTH`) says open, so the demo build
+  shows the price and not the grant.
+- **The objections** are native `<details>` with the marker removed (`.faq`), so the answers
+  are in the HTML for a crawler and open with no script.
+- **No accuracy figure, no invented proof.** `landing.test.ts` strips the comments and fails on
+  a percentage or the words accuracy / accurate / hit rate. There are no testimonials and no
+  user count because there are none yet.
+
 ## Theme
 
 **Dark is the default, and it is not read off the OS.** `prefers-color-scheme: light` also
