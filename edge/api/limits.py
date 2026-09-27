@@ -167,7 +167,10 @@ class RateLimitMiddleware:
 #: whole site down silently: the API stayed healthy, answered every curl, and the browser
 #: threw away every response, so it read as "cannot reach Penthouse" rather than as config.
 #: This is our domain, not a wildcard — it grants nobody else anything.
-PRODUCTION_WEB_ORIGIN = "https://fantasy-tool-alpha.vercel.app"
+PRODUCTION_WEB_ORIGIN = "https://penthousefantasy.com"
+#: Other names the same deployment answers on: `www` redirects to the apex, and the Vercel
+#: address still serves every build. Allowed so a visitor on either is never locked out.
+PRODUCTION_WEB_ALIASES = ("https://www.penthousefantasy.com", "https://fantasy-tool-alpha.vercel.app")
 
 
 def cors_origins() -> list[str]:
@@ -184,4 +187,4 @@ def cors_origins() -> list[str]:
     web = os.environ.get("EDGE_WEB_URL", "").strip()
     if web:
         return [web]
-    return [PRODUCTION_WEB_ORIGIN, "http://localhost:3000", "http://127.0.0.1:3000"]
+    return [PRODUCTION_WEB_ORIGIN, *PRODUCTION_WEB_ALIASES, "http://localhost:3000", "http://127.0.0.1:3000"]

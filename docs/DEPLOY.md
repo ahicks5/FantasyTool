@@ -25,7 +25,7 @@ from the API.
 
 | Piece | Where | Notes |
 |---|---|---|
-| Web (Next.js) | **https://fantasy-tool-alpha.vercel.app** | Vercel. Root Directory must be `web/`, not the repo root. |
+| Web (Next.js) | **https://penthousefantasy.com** | Vercel. Root Directory must be `web/`, not the repo root. `www.` redirects to the apex; `fantasy-tool-alpha.vercel.app` still serves the same build. |
 | API (FastAPI) | **https://edge-api-gi8d.onrender.com** (Render, not Railway) | Container from the repo `Dockerfile`. Blueprint in `deploy/render.yaml`. |
 | Production branch | `claude/edge-fantasy-app-launch-alo0rr` | **There is no `main` in this repo.** Every branch is a `claude/*` branch. |
 
@@ -196,12 +196,30 @@ Verify after any deploy:
 curl -sI https://<api-host>/api/share/<some-id>/card.png   # want 200 image/png, not 503
 ```
 
+## Custom domain
+
+`penthousefantasy.com`, registered at Squarespace, DNS at Squarespace, served by Vercel.
+
+| Record | Name | Value |
+|---|---|---|
+| A | `@` | `76.76.21.21` (Vercel's legacy IP; `216.198.79.1` is the one it now recommends — both work) |
+| CNAME | `www` | `cname.vercel-dns.com` |
+
+The "Squarespace Defaults" preset must stay deleted — its **HTTPS** record carries Squarespace
+IPs as hints, and Safari follows those even after the A record is right.
+
+Three settings have to name the domain, and the first one is the outage from above again:
+
+| Where | Variable | Value |
+|---|---|---|
+| Render | `EDGE_CORS` | `https://penthousefantasy.com,https://www.penthousefantasy.com,https://fantasy-tool-alpha.vercel.app` |
+| Render | `EDGE_WEB_URL` | `https://penthousefantasy.com` (share links, reset links, Stripe return URL) |
+| Vercel | `NEXT_PUBLIC_SITE_URL` | `https://penthousefantasy.com` — build-time, so **redeploy** after setting it |
+
+Check: `curl -s https://edge-api-gi8d.onrender.com/api/health` lists `cors_origins` and `web_url`.
+
 ## Not wired up yet
 
 - **Email sending.** `edge/delivery/weekly_email.py` renders; nothing sends. Pick a provider
   (Resend's free tier) and add the key.
 - **Stripe** has only been exercised against a fake webhook event, never a real test-mode run.
-- **Domain.** Not picked yet, and nothing has been checked for availability under the new name.
-  Code uses `penthouse.example` as a placeholder — one-line change in `edge/cli.py` and
-  `edge/delivery/weekly_email.py` once Andrew chooses. `NEXT_PUBLIC_SITE_URL` sets the web's
-  `metadataBase`, which is what makes the unfurl card resolve to an absolute URL.

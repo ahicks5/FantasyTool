@@ -70,7 +70,7 @@ Then only what you need:
   Vercel builds from it, so shipping the web app is
   `git push origin HEAD:claude/edge-fantasy-app-launch-alo0rr`. Vercel's Root Directory is
   `web/`. Everything else about hosting: `docs/DEPLOY.md`.
-- Web **https://fantasy-tool-alpha.vercel.app** · API **https://edge-api-gi8d.onrender.com**.
+- Web **https://penthousefantasy.com** (also `fantasy-tool-alpha.vercel.app`) · API **https://edge-api-gi8d.onrender.com**.
   The live web app talks to that API — it is **not** on mock data, so editing
   `web/src/lib/mocks.ts` changes nothing in production. To open the paywall for testing, set
   `EDGE_DEMO_UNLOCK=1` on Render.

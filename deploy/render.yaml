@@ -13,7 +13,7 @@ services:
       - key: EDGE_TRUST_PROXY
         value: "1"
       - key: EDGE_CORS
-        value: https://fantasy-tool-alpha.vercel.app
+        value: https://penthousefantasy.com,https://www.penthousefantasy.com,https://fantasy-tool-alpha.vercel.app
       - key: DATABASE_URL
         sync: false
       - key: SUPABASE_JWT_SECRET
@@ -26,7 +26,7 @@ services:
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
       - key: EDGE_WEB_URL
-        value: https://fantasy-tool-alpha.vercel.app
+        value: https://penthousefantasy.com
       # Phone sign-in (docs/ACCOUNTS.md). Twilio Verify; the three secrets are set by hand.
       - key: EDGE_SMS_PROVIDER
         value: twilio

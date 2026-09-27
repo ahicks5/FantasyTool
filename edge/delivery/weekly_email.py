@@ -252,7 +252,7 @@ def _action_row(a: dict, n: int, base_url: str) -> str:
       </td></tr>"""
 
 
-def render_html(feed: dict, base_url: str = "https://penthouse.example", unsubscribe_url: str = "",
+def render_html(feed: dict, base_url: str = "https://penthousefantasy.com", unsubscribe_url: str = "",
                 film: dict | None = None) -> str:
     m = feed.get("matchup") or {}
     actions = (feed.get("actions") or [])[:MAX_ACTIONS]
@@ -329,7 +329,7 @@ def render_html(feed: dict, base_url: str = "https://penthouse.example", unsubsc
 </body></html>"""
 
 
-def render_text(feed: dict, base_url: str = "https://penthouse.example", film: dict | None = None) -> str:
+def render_text(feed: dict, base_url: str = "https://penthousefantasy.com", film: dict | None = None) -> str:
     """Plain-text alternative. Some clients show only this, and spam filters want it to exist.
 
     It carries the same margin numbers as the HTML, so a reply quoting "02" means the same
@@ -367,7 +367,7 @@ def render_text(feed: dict, base_url: str = "https://penthouse.example", film: d
     return "\n".join(lines)
 
 
-def build(feed: dict, base_url: str = "https://penthouse.example", unsubscribe_url: str = "",
+def build(feed: dict, base_url: str = "https://penthousefantasy.com", unsubscribe_url: str = "",
           film: dict | None = None) -> dict:
     """`film` is last week's replay cover (`engine/film.py`, free), optionally with the
     `superlative` this reader won ({"title", "line"}), which the caller includes only for a

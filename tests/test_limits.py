@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from edge.api import limits
-from edge.api.limits import (PRODUCTION_WEB_ORIGIN, RateLimitMiddleware, SlidingWindow, client_ip,
+from edge.api.limits import (PRODUCTION_WEB_ALIASES, PRODUCTION_WEB_ORIGIN, RateLimitMiddleware, SlidingWindow, client_ip,
                              cors_origins, validate_id, validate_platform)
 
 
@@ -84,6 +84,9 @@ def test_the_live_site_is_allowed_even_with_no_env_set(monkeypatch):
     monkeypatch.delenv("EDGE_WEB_URL", raising=False)
     assert PRODUCTION_WEB_ORIGIN in cors_origins()
     assert PRODUCTION_WEB_ORIGIN.startswith("https://")
+    # The custom domain replaced the Vercel address; anyone still on the old one keeps working.
+    assert set(PRODUCTION_WEB_ALIASES) <= set(cors_origins())
+    assert "https://fantasy-tool-alpha.vercel.app" in PRODUCTION_WEB_ALIASES
 
     monkeypatch.setenv("EDGE_WEB_URL", "https://edge.example.com")
     assert cors_origins() == ["https://edge.example.com"]

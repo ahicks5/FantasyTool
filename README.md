@@ -37,7 +37,7 @@ Tests: `uv run pytest -q` (offline, fixtures) and `cd web && npm test && npm run
 | full_report | $7 / season | The Penthouse: everything + the weekly film, 5 leagues |
 
 ## Deploy notes
-Live: **https://fantasy-tool-alpha.vercel.app** (Vercel, root dir `web/`) + **https://edge-api-gi8d.onrender.com** (Render) for the API.
+Live: **https://penthousefantasy.com** (Vercel, root dir `web/`) + **https://edge-api-gi8d.onrender.com** (Render) for the API.
 The web app talks to that API in production; it is not on mock data.
 Production branch is `claude/edge-fantasy-app-launch-alo0rr`; there is no `main`. See **docs/DEPLOY.md**.
 

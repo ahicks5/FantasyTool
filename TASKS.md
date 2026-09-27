@@ -681,9 +681,11 @@ where the call sheet gets read, not a reason to rename the sheet.
       label 8px, so "The Megalabowl" rendered as "T". Below 360px the word steps aside and the
       crown carries the mark; the league reads in full again. The rule is in `globals.css`, not a
       `max-[359px]:hidden` utility — `.wordmark-type` is unlayered and beats Tailwind's layer.
-- [ ] Domain: nothing checked for availability under the new name. Code uses `penthouse.example`
-      as the placeholder — one line in `edge/cli.py` and `edge/delivery/weekly_email.py` once
-      Andrew picks, plus `NEXT_PUBLIC_SITE_URL` on Vercel so the unfurl card resolves.
+- [x] Domain: **penthousefantasy.com** (Squarespace DNS → Vercel). Code defaults, CORS fallback and
+      `deploy/render.yaml` point at it; the `vercel.app` address stays allowed.
+- [ ] Andrew: set `EDGE_CORS` + `EDGE_WEB_URL` on Render and `NEXT_PUBLIC_SITE_URL` on Vercel
+      (values in `docs/DEPLOY.md` → Custom domain), then redeploy both. Until then the new domain
+      loads but every API call is refused.
 - [ ] The two supplied app icons (crown and football) are 1024px PNGs. Only the crown is traced
       into SVG; if the football lockup is ever wanted for social, it needs the same treatment.
 - [ ] Re-run the data-viz palette checker against the new surfaces. The dark status steps were

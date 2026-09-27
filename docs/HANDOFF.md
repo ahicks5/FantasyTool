@@ -15,7 +15,7 @@ dark by default — with every screen rebuilt around that, deployed and live.
 
 | | |
 |---|---|
-| Web | https://fantasy-tool-alpha.vercel.app (Vercel, Root Directory `web/`) |
+| Web | https://penthousefantasy.com (Vercel, Root Directory `web/`; the old `fantasy-tool-alpha.vercel.app` still works) |
 | API | https://edge-api-gi8d.onrender.com (Render) |
 | Production branch | `claude/edge-fantasy-app-launch-alo0rr` — **there is no `main`** |
 | Tests | 1375 pytest (+58 skipped: 32 want a Postgres in `TEST_DATABASE_URL`; run against a scratch Postgres 16 on 2026-09-24, all green), 391 node, Playwright |
