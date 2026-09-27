@@ -901,35 +901,87 @@ export const ACCOUNT = {
  */
 export const LANDING = {
   /**
-   * The page, top to bottom, in the order Hormozi's page order and ours agree on: name
-   * who it is for, promise the outcome with a clock on it, prove it with the product
-   * itself, stack the offer, put the guarantee under the price, answer the objections
-   * in the reader's own words, and ask again. Every line here obeys the voice rules
-   * (`vocab.test.ts` sweeps them) and none of them states a rate: the practice is the
-   * proof, and the per-tag figures live on the lineup page where they are honest.
+   * The front page, rewritten with Andrew (2026-09-27). It sells the room, not the price:
+   * you walk into your own front office, the staff has the week's answers on your desk,
+   * and you make the calls. No price, no refund line and no "free" hedge above the fold;
+   * the price is met at the upgrade, after the product has made its case. Every line here
+   * obeys the voice rules (`vocab.test.ts` sweeps them) and none of them states a rate:
+   * decision accuracy stays off the page until `scripts/score_runs.py` exists.
    */
 
-  /** Line one names the reader before the headline makes a promise. */
-  eyebrow: "Sleeper · ESPN · free to start",
-  avatar: "For the manager with three leagues and a job.",
-  /** The promise, with the clock on it and the effort taken out. */
-  heroBody: "Link a league and this week’s is written in about a minute.",
-  cta: "Open the Penthouse · free",
-  /** Under the button: what it does not cost. */
-  under: "No card. Three leagues free.",
-  secondary: "See what it costs",
+  /** Line one: everyone is welcome, and the platforms we read. */
+  eyebrow: "All owners welcome · Sleeper · ESPN · Yahoo soon",
+  /** The headline: you are walking into your office to make the calls. */
+  headline: "Step into your front office.",
+  /** Status: this is where the owners who win sit. */
+  avatar: "For owners who expect to win their league, not just play in it.",
+  /** The staff, in one sentence. */
+  staff: "Your GM works the trades, your head of scouting finds the pickups, and your head coach sets the lineup.",
+  cta: "Open your Penthouse",
+  login: "Log in",
+  loginLead: "Already have an office?",
 
-  /** Three reasons to believe it, one line each. The practice, never a rate. */
+  /** Three reasons to trust the room. */
   proof: [
-    { head: "Your scoring", body: "Re-scored to your league’s settings. Never assumed PPR." },
-    { head: "Graded in public", body: "Every stamp checked against the box score." },
-    { head: "Coin flips, called", body: "Too close to matter? We say so." },
+    { head: "Trusted by owners", body: "across the country, in every kind of league." },
+    { head: "Built by engineers", body: "with defined algorithms that have won leagues." },
+    { head: "Backed by deep statistics", body: "and explained by artificial intelligence." },
   ],
 
-  /** The worked example: the product itself, before a word about it. */
-  demo: {
-    eyebrow: "The product, on one screen",
+  /**
+   * The desk: the four questions every owner asks in a week, each answered the way the
+   * app answers it. The example figures are illustrative and carry no rate.
+   */
+  desk: {
+    eyebrow: "On your desk",
+    title: "Answers to your biggest questions, right on your desk.",
     week: "Week 2 · The Megalabowl",
+    coach: {
+      from: "Head coach",
+      tag: "Start",
+      q: "Who do I start?",
+      call: "Start Jahmyr Gibbs",
+      over: "over D'Andre Swift",
+      vs: "vs",
+      gain: "+4.2",
+      unit: "projected points",
+      stamp: "Lock",
+    },
+    scout: {
+      from: "Head of scouting",
+      tag: "Claim",
+      q: "Who is worth a claim?",
+      call: "Add Chris Brooks",
+      bid: "Bid $13 to $25",
+      gain: "+7.8",
+      unit: "this week",
+      ros: "+48 rest of season",
+      stamp: "Lean",
+    },
+    gm: {
+      from: "General manager",
+      tag: "Trade",
+      q: "Who takes my trade?",
+      offer: (give: string, get: string) => `Offer ${give} for ${get}`,
+      give: "You give",
+      get: "You get",
+      giveName: "Jakobi Meyers",
+      getName: "Jordan Mason",
+      gain: "+51",
+      unit: "rest-of-season lineup points",
+      why: "Their WR room is thin. They say yes.",
+    },
+    film: {
+      from: "The film",
+      q: "Where am I losing?",
+      grades: [
+        { pos: "QB", grade: "A" },
+        { pos: "RB", grade: "B+" },
+        { pos: "WR", grade: "C-" },
+        { pos: "TE", grade: "B" },
+      ],
+      line: "WR is costing you. Here is the fix.",
+    },
     foot: "Everything else on your roster is fine. Go enjoy your Sunday.",
   },
 
@@ -943,90 +995,68 @@ export const LANDING = {
   /** Who it is for, and who it is not. Sending the wrong reader away is what makes the right one believe the rest. */
   fit: {
     head: "Who it’s for",
-    yes: ["Three leagues and a job.", "You want the call, not the research."],
+    yes: [
+      "Owners dedicated to winning.",
+      "Owners who put in the extra time midweek to win more matchups.",
+      "Owners who want to know why others win and they lose.",
+      "Owners who want the quick call, with the detail there when they ask.",
+    ],
     noHead: "Who it isn’t for",
-    no: ["You enjoy the spreadsheet."],
+    no: [
+      "Those who draft once and never open the app again.",
+      "Those who think fantasy football is luck.",
+      "Those happy finishing in the middle.",
+    ],
   },
 
   /**
-   * The four rooms, in the order a week actually goes: set the lineup, work the wire,
-   * make a call, then read how it went. `key` pairs each card with its icon and its
-   * tone in the page; the words stay here. The eyebrow is read off `SECTIONS` rather
-   * than typed again, so an advert for a room cannot survive that room being renamed.
+   * The rooms, coolest first, each one a member of the front office you work with. `key`
+   * pairs each card with its icon and tone in the page; the eyebrow is read off `SECTIONS`
+   * rather than typed again, so an advert for a room cannot survive that room being renamed.
    */
-  roomsHead: "The rooms",
+  roomsHead: "Your front office",
+  roomsLead: "A full staff, working your league around the clock.",
   features: [
     {
-      key: "team",
-      room: SECTIONS.team.title,
-      title: "Start/sit, graded",
-      tag: "Free",
-      body: "Every starter checked against your bench, with a stamp and one line of why.",
+      key: "trade",
+      room: SECTIONS.trade.title,
+      title: "Work with your general manager",
+      body: "See the best trade opportunities in your league, and a counter tuned to the manager across the table.",
     },
     {
       key: "waivers",
       room: SECTIONS.waivers.title,
-      title: "Waivers, priced",
-      tag: "$3",
-      body: "Five pickups ranked by what they do for your lineup. Bid and drop included.",
+      title: "Work with your head of scouting",
+      body: "Find the hidden gems on the wire before anyone else does, with the bid and the drop already worked out.",
     },
     {
-      key: "trade",
-      room: SECTIONS.trade.title,
-      title: "Trades, with a counter",
-      tag: "$5",
-      body: "A verdict on any trade, and a counter tuned to the other manager.",
-    },
-    {
-      key: "report",
-      room: SECTIONS.report.title,
-      title: "Your standing",
-      tag: "Free",
-      body: "Record, points rank, a grade per position, and how last week’s calls landed.",
+      key: "team",
+      room: SECTIONS.team.title,
+      title: "Work with your head coach",
+      body: "Every starter checked against your bench, with a confidence stamp and one line of why.",
     },
   ],
 
-  /** Three steps, each with the time it takes, because the second thing a reader weighs is the wait. */
+  /** The film room: the depth behind the calls, sold on its own. */
+  film: {
+    room: SECTIONS.report.title,
+    title: "Study the film",
+    body: "Every week, the film breaks last week down in detail: a grade at every position, which calls landed, and where the points went. Learn from it, fix what keeps costing you, and adjust your strategy before your league catches on.",
+    points: ["A grade at every position", "Every call, checked against the box score", "The patterns that keep costing you"],
+  },
+
+  /** Three steps, each with the time it takes: quick is the point. */
   steps: {
     head: "How it works",
+    title: "Two minutes to your first call.",
     items: [
-      {
-        title: "Link your league",
-        when: "About a minute",
-        body: "A Sleeper username or a league ID. ESPN too.",
-      },
-      {
-        title: "We re-score everything",
-        when: "Before you finish this page",
-        body: "Your scoring, your slots, your bench. Never assumed PPR.",
-      },
-      {
-        title: "You make three moves",
-        when: "Every week",
-        body: "Tick them off as you make them. The sheet says when you’re done.",
-      },
+      { title: "Open your Penthouse", when: "30 seconds", body: "Your phone number and a code. No forms." },
+      { title: "Link your league", when: "About a minute", body: "A Sleeper username or an ESPN league ID." },
+      { title: "Make the calls", when: "Every week", body: "Your staff has the week’s moves waiting on your desk." },
     ],
   },
 
-  /** The week as a routine: the reason to come back is on the page before the price is. */
-  ritual: {
-    head: "The week, owned",
-    lead: "Three days a week, a few minutes each.",
-    days: [
-      { day: "Tuesday", title: "The film", body: "Last week, graded." },
-      { day: "Thursday", title: "The sheet", body: "This week’s moves, stamped." },
-      { day: "Sunday", title: "Kickoff", body: "The clock runs on every sheet." },
-    ],
-    tail: "Then we grade ourselves, and it starts again.",
-  },
-
-  /** What we promise about our own accuracy: the practice, never a number. */
-  score: {
-    head: "We keep score",
-    body: "Every stamp is graded against what actually happened, and we publish the result. Too close to call? We tell you to leave it alone.",
-  },
-
-  /** The objections, in the reader's words, answered in ours. The one that disqualifies is the one that sells. */
+  /** The objections, in the reader's words, answered in ours. */
   faq: {
     head: "Straight answers",
     items: [
@@ -1039,15 +1069,6 @@ export const LANDING = {
         a: "Yes. Paste two cookies once. They stay in your browser, never on our side. A public league needs the ID only.",
       },
       {
-        q: "Is it a subscription?",
-        a: "Only if you want one. The week pass renews weekly and cancels anytime. The season pass is one payment and nothing renews.",
-      },
-      {
-        q: "What if a call is wrong?",
-        a: (days: number) =>
-          `Some will be, and we say so. Every stamp is graded and the film shows the result. Not useful within ${days} days? Refunded in full.`,
-      },
-      {
         q: "Why an account before a league?",
         a: "So the league stays on file and follows you to every device.",
       },
@@ -1055,26 +1076,21 @@ export const LANDING = {
         q: "How long does it take?",
         a: "About a minute to link a league. The sheet is written by the time you land.",
       },
-      {
-        q: "What do you keep?",
-        a: "Your sign-in, your leagues, what you bought, and the calls we made so we can grade them. Share cards never carry an email, a league ID or a roster.",
-      },
     ],
   },
 
-  /** The last ask: what to do, what you get, and what happens next. */
+  /** The last ask. */
   close: {
     /** The clock beside it prints its own word (Kickoff, Soon, Last call), so this one does not. */
     eyebrow: "The clock is running",
-    title: "Your sheet isn’t written yet.",
-    body: "Link a league and it is, in about a minute.",
-    cta: "Open the Penthouse · free",
-    under: "Free for three leagues. No card.",
+    title: "Your office is ready.",
+    body: "Link a league and your staff has the week’s calls on your desk in about a minute.",
+    cta: "Open your Penthouse",
   },
 
   /** The bar that follows the reader down the page once the first button has scrolled away. */
   bar: {
-    cta: "Open the Penthouse",
+    cta: "Open your Penthouse",
   },
 } as const;
 

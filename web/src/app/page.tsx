@@ -1,51 +1,32 @@
-/** The landing page: who it is for, the promise, the product itself, the offer stacked, the guarantee, the objections, and the door. Indexable. */
+/** The landing page: the front office you walk into, the answers on your desk, the staff, the film, how quick it is, and the door. Indexable. */
 import Link from "next/link";
 import { LandingBar } from "@/components/LandingBar";
-import { Pricing } from "@/components/Pricing";
-import { IconCheck, IconChevron, IconFilm, IconHeadset, IconTeam, IconTrade, IconWire, IconX } from "@/components/icons";
-import { Countdown, Eyebrow, LinkButton, OnAir, ThemeToggle, Wordmark } from "@/components/ui";
-import { LEGAL } from "@/lib/legal";
+import { IconCheck, IconChevron, IconFilm, IconTeam, IconTrade, IconWire, IconX } from "@/components/icons";
+import { Countdown, Eyebrow, LinkButton, OnAir, Wordmark } from "@/components/ui";
 import { LANDING, LINES } from "@/lib/vocab";
 
-/** One example call. The headshots are real Sleeper CDN images. */
-const DEMO = [
-  {
-    tag: "Start",
-    title: "Start Jahmyr Gibbs over D'Andre Swift",
-    benefit: "+4.2",
-    unit: "projected points",
-    pill: "Lock",
-    bars: 3,
-    photo: "https://sleepercdn.com/content/nfl/players/thumb/9221.jpg",
-    team: "det",
-  },
-  {
-    tag: "Claim",
-    title: "Add Chris Brooks · bid $13–25",
-    benefit: "+7.8",
-    unit: "this week · +48 rest of season",
-    pill: "Lean",
-    bars: 2,
-    photo: "https://sleepercdn.com/content/nfl/players/thumb/11370.jpg",
-    team: "gb",
-  },
-  {
-    tag: "Trade",
-    title: "Offer Jakobi Meyers for Jordan Mason",
-    benefit: "+51",
-    unit: "rest-of-season lineup points",
-    pill: "Lean",
-    bars: 2,
-    photo: "https://sleepercdn.com/content/nfl/players/thumb/8408.jpg",
-    team: "min",
-  },
+const DESK = LANDING.desk;
+
+/** The players in the worked example. The headshots are real Sleeper CDN images. */
+const FACES = {
+  gibbs: { name: "Jahmyr Gibbs", photo: "https://sleepercdn.com/content/nfl/players/thumb/9221.jpg", team: "det" },
+  swift: { name: "D'Andre Swift", photo: "https://sleepercdn.com/content/nfl/players/thumb/6790.jpg", team: "chi" },
+  brooks: { name: "Chris Brooks", photo: "https://sleepercdn.com/content/nfl/players/thumb/11370.jpg", team: "gb" },
+  meyers: { name: "Jakobi Meyers", photo: "https://sleepercdn.com/content/nfl/players/thumb/5947.jpg", team: "jax" },
+  mason: { name: "Jordan Mason", photo: "https://sleepercdn.com/content/nfl/players/thumb/8408.jpg", team: "min" },
+};
+
+/** The call sheet in the hero: the week's three moves, as the app writes them. */
+const SHEET = [
+  { tag: DESK.coach.tag, title: `${DESK.coach.call} ${DESK.coach.over}`, gain: DESK.coach.gain, unit: DESK.coach.unit, stamp: DESK.coach.stamp, bars: 3, face: FACES.gibbs },
+  { tag: DESK.scout.tag, title: `${DESK.scout.call} · ${DESK.scout.bid}`, gain: DESK.scout.gain, unit: DESK.scout.unit, stamp: DESK.scout.stamp, bars: 2, face: FACES.brooks },
+  { tag: DESK.gm.tag, title: DESK.gm.offer(DESK.gm.giveName, DESK.gm.getName), gain: DESK.gm.gain, unit: DESK.gm.unit, stamp: "Lean", bars: 2, face: FACES.meyers },
 ];
 
 /**
- * The art for each feature card. The words live in `LANDING.features` (vocab.ts); this
- * only pairs them with the icon and the swatch behind it, keyed the same way the tabs
- * are. The tone is decoration and never the only thing carrying a meaning — the tag
- * pill says Free or the price in words.
+ * The art for each staff card. The words live in `LANDING.features` (vocab.ts); this
+ * only pairs them with the icon and the swatch behind it. The tone is decoration and
+ * never the only thing carrying a meaning.
  */
 type FeatureKey = (typeof LANDING.features)[number]["key"];
 
@@ -53,24 +34,22 @@ const FEATURE_ART: Record<
   FeatureKey,
   { Icon: (p: { size?: number; strokeWidth?: number }) => React.ReactElement; tone: string }
 > = {
-  team: { Icon: IconTeam, tone: "bg-start-soft text-start" },
+  trade: { Icon: IconTrade, tone: "bg-start-soft text-start" },
   waivers: { Icon: IconWire, tone: "bg-lean-soft text-lean" },
-  trade: { Icon: IconTrade, tone: "bg-soft text-ink" },
-  report: { Icon: IconFilm, tone: "bg-soft text-ink-2" },
+  team: { Icon: IconTeam, tone: "bg-soft text-ink" },
 };
 
 /**
- * Every door on the page opens the register page.
+ * Every door on the page opens the register page, and the one exception is the way
+ * back in for an owner who already has an account.
  *
- * They used to point at `/team`, `/waivers` and `/trade`, which is where the feature
- * lives once you have a league, and then at `/connect`. A cold visitor has no account
- * and no league, and the account comes first (Andrew, 2026-09-24): register, land on
- * your account, then link the league. One door, and it is the first step. The page asks
- * for it four times (the hero, the rooms, the price, the close) and a bar follows the
- * reader between the first and the last, because the ask has to be under the thumb
- * wherever the reader stopped scrolling.
+ * A cold visitor has no account and no league, and the account comes first (Andrew,
+ * 2026-09-24): register, land on your account, then link the league. Log in is on the
+ * page too, plainly, because a returning owner who lands here should not have to read
+ * the pitch to find the door (Andrew, 2026-09-27).
  */
 const WAY_IN = "/register";
+const LOGIN = "/login";
 /** The two buttons the follow-along bar watches. */
 const HERO_CTA_ID = "hero-cta";
 const CLOSE_CTA_ID = "close-cta";
@@ -116,137 +95,221 @@ function HeroStamp({ filled, label }: { filled: number; label: string }) {
   );
 }
 
+/** A letter grade's ink: green at the top, amber in the middle, red where it costs you. */
+function gradeTone(grade: string): string {
+  if (grade.startsWith("A")) return "text-start";
+  if (grade.startsWith("B")) return "text-lean";
+  return "text-sit";
+}
+
+/** One question on the desk: who on the staff answers it, the question, and the answer. */
+function DeskCard({ from, q, children, className = "" }: { from: string; q: string; children: React.ReactNode; className?: string }) {
+  return (
+    <article className={`hero flex flex-col p-5 ${className}`}>
+      <div className="eyebrow">{from}</div>
+      <h3 className="display mt-1 text-[21px] leading-tight">{q}</h3>
+      <div className="mt-4 flex flex-1 flex-col border-t border-white/10 pt-4">{children}</div>
+    </article>
+  );
+}
+
 export default function Landing() {
   return (
-    <div className="mx-auto w-full max-w-lg px-4 pb-20">
-      {/* The nameplate, the toggle and this pill want 448px between them, so on a phone
-          the page scrolled sideways. The pill is the thing that goes: the hero's button
-          is one screenful below it and far louder, so nothing is lost, while the
-          wordmark — which IS the pitch on this page — stays at every width. 512px is
-          the page's own max width, so the pill returns exactly when there is room for it
-          rather than at a guessed breakpoint. */}
+    <div className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-6">
+      {/* The nameplate and the two doors. No theme switch here: dark is the room, and the
+          switch lives in the app for an owner who wants the lights on (Andrew, 2026-09-27).
+          Log in is always visible; the loud door hides below 480px, where the hero's
+          button is one thumb away and the wordmark needs the width. */}
       <header className="flex h-16 items-center justify-between gap-2">
         <Wordmark className="text-[24px]" />
-        <div className="flex shrink-0 items-center gap-1">
-          <ThemeToggle />
+        <nav className="flex shrink-0 items-center gap-2" aria-label="Account">
+          <Link
+            href={LOGIN}
+            className="btn inline-flex min-h-11 items-center whitespace-nowrap rounded-full border border-line-2 px-4 text-[13px] font-bold hover:bg-soft"
+          >
+            {LANDING.login}
+          </Link>
           <Link
             href={WAY_IN}
-            className="btn hidden min-h-11 items-center gap-1 whitespace-nowrap rounded-full border border-line-2 px-4 text-[13px] font-bold hover:bg-soft min-[512px]:inline-flex"
+            className="btn hidden min-h-11 items-center gap-1 whitespace-nowrap rounded-full bg-start-fill px-4 text-[13px] font-bold text-white hover:opacity-90 min-[480px]:inline-flex"
           >
             {LANDING.bar.cta}
             <IconChevron size={13} strokeWidth={2.8} />
           </Link>
-        </div>
+        </nav>
       </header>
 
       <main id="content">
         {/* ---------------------------------------------------------------- hero ---
-            Line one names the reader. The h1 does competitive work, not welcoming work:
-            everyone else in this category is an encyclopedia you browse, so the headline
-            is the number of moves and the clock, not the name of the room. The body puts
-            the promise on a timer and takes the effort out; the line under the button
-            says what it does not cost. */}
-        <section className="pt-7 rise">
-          <Eyebrow>{LANDING.eyebrow}</Eyebrow>
-          <h1 className="display mt-3 text-[43px] leading-[0.98]">
-            Three moves
-            <br />
-            before kickoff.
-          </h1>
-          <p className="display mt-4 text-[17px] leading-snug text-ink">{LANDING.avatar}</p>
-          <p className="mt-3 max-w-[26rem] text-[16px] leading-relaxed text-ink-2">
-            {LINES.heroSub} {LANDING.heroBody}
-          </p>
-          <div className="mt-6 grid gap-2.5">
-            <div id={HERO_CTA_ID}>
-              <LinkButton href={WAY_IN} variant="start" className="w-full">
-                {LANDING.cta}
-              </LinkButton>
+            You are walking into your own front office. The headline says so, the line
+            under it says who sits here, the staff sentence says who works for you. The
+            call sheet beside it is the desk you sit down at; it shows on a wide screen
+            only, because on a phone the desk section is one scroll below. */}
+        <section className="grid items-center gap-10 pt-8 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pt-16 rise">
+          <div>
+            <Eyebrow>{LANDING.eyebrow}</Eyebrow>
+            <h1 className="display mt-3 text-[43px] leading-[0.98] sm:text-[56px] lg:text-[64px]">{LANDING.headline}</h1>
+            <p className="display mt-5 max-w-[34rem] text-[19px] leading-snug text-ink sm:text-[21px]">{LANDING.avatar}</p>
+            <p className="mt-3 max-w-[32rem] text-[16px] leading-relaxed text-ink-2">{LANDING.staff}</p>
+            <div className="mt-7 grid max-w-[26rem] gap-3">
+              <div id={HERO_CTA_ID}>
+                <LinkButton href={WAY_IN} variant="start" className="w-full">
+                  {LANDING.cta}
+                </LinkButton>
+              </div>
+              <p className="text-center text-[13px] text-muted">
+                {LANDING.loginLead}{" "}
+                <Link href={LOGIN} className="font-bold text-ink underline underline-offset-4 hover:text-start">
+                  {LANDING.login}
+                </Link>
+              </p>
             </div>
-            <p className="text-center text-[12px] font-bold text-muted">{LANDING.under}</p>
+
+            <ul className="mt-8 grid gap-2.5" aria-label="Why owners trust it">
+              {LANDING.proof.map((p, i) => (
+                <li key={p.head} className={`flex items-start gap-3 rise rise-${i + 1}`}>
+                  <IconCheck size={16} strokeWidth={3} className="mt-[3px] shrink-0 text-start" />
+                  <p className="text-[14px] leading-snug text-ink-2">
+                    <span className="font-black text-ink">{p.head}</span> {p.body}
+                  </p>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {/* Three reasons to believe it, before the product proves it. */}
-          <ul className="mt-6 grid gap-2" aria-label="Why believe it">
-            {LANDING.proof.map((p, i) => (
-              <li key={p.head} className={`flex items-start gap-3 rise rise-${i + 1}`}>
-                <IconCheck size={16} strokeWidth={3} className="mt-[3px] shrink-0 text-start" />
-                <p className="text-[14px] leading-snug text-ink-2">
-                  <span className="font-black text-ink">{p.head}.</span> {p.body}
-                </p>
-              </li>
-            ))}
-          </ul>
-          {/* The price is a quiet link here, not a second button: the page has one door,
-              and a loud "what it costs" beside it read as a toll booth (Andrew, 2026-09-27). */}
-          <a href="#pricing" className="mt-4 inline-flex min-h-11 items-center text-[13px] font-bold text-muted underline-offset-4 hover:text-ink hover:underline">
-            {LANDING.secondary}
-          </a>
-        </section>
-
-        {/* ------------------------------------------------------------ the product ---
-            The one dark surface: the product itself, so the page shows before it tells. A
-            live demonstration is the strongest proof a page can carry, and this is the
-            app's own call sheet, word for word. */}
-        <section className="mt-9 rise rise-2" aria-label="Example call sheet">
-          <Eyebrow className="mb-3">{LANDING.demo.eyebrow}</Eyebrow>
-          <div className="hero callsheet">
+          <div className="hero callsheet hidden lg:block" aria-label="Example call sheet">
             <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
               <OnAir className="text-white/70" />
               <Countdown onHero />
             </div>
-
             <div className="px-5 pt-5">
-              <div className="eyebrow">{LANDING.demo.week}</div>
+              <div className="eyebrow">{DESK.week}</div>
               <div className="display tnum mt-1 text-[27px] leading-tight">{LANDING.exampleHead}</div>
             </div>
-
             <ul className="mt-5">
-              {DEMO.map((d, i) => (
+              {SHEET.map((d, i) => (
                 <li key={d.title} className="flex items-start gap-3 border-t border-white/10 px-5 py-4">
                   <span className="slug w-[18px] shrink-0 pt-[3px] text-[13px] text-white/35">{String(i + 1).padStart(2, "0")}</span>
-                  <Face name={d.title.split(" ").slice(1, 3).join(" ")} photo={d.photo} team={d.team} />
+                  <Face name={d.face.name} photo={d.face.photo} team={d.face.team} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-md bg-white/12 px-2 py-[3px] text-[10px] font-black uppercase tracking-[0.1em] text-white/85">
                         {d.tag}
                       </span>
-                      <HeroStamp filled={d.bars} label={d.pill} />
+                      <HeroStamp filled={d.bars} label={d.stamp} />
                     </div>
                     <p className="display mt-1.5 text-[15px] leading-[1.25]">{d.title}</p>
                     <p className="mt-1 text-[13px] leading-snug text-white/60">
-                      <span className="tnum font-black text-white">{d.benefit}</span> {d.unit}
+                      <span className="tnum font-black text-white">{d.gain}</span> {d.unit}
                     </p>
                   </div>
                 </li>
               ))}
             </ul>
+            <p className="border-t border-white/10 px-5 py-3.5 text-center text-[13px] text-white/55">{DESK.foot}</p>
+          </div>
+        </section>
 
-            <p className="border-t border-white/10 px-5 py-3.5 text-center text-[13px] text-white/55">{LANDING.demo.foot}</p>
+        {/* ------------------------------------------------------------------ desk ---
+            The four questions every owner asks in a week, each answered by the member of
+            staff who owns it, the way the app answers it. */}
+        <section className="mt-16 lg:mt-24" aria-labelledby="desk-title">
+          <Eyebrow>{DESK.eyebrow}</Eyebrow>
+          <h2 id="desk-title" className="display mt-2 max-w-[40rem] text-[30px] leading-[1.05] sm:text-[38px]">
+            {DESK.title}
+          </h2>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:gap-4">
+            <DeskCard from={DESK.gm.from} q={DESK.gm.q} className="rise rise-1">
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: DESK.gm.give, who: DESK.gm.giveName, face: FACES.meyers },
+                  { label: DESK.gm.get, who: DESK.gm.getName, face: FACES.mason },
+                ].map((side) => (
+                  <div key={side.label} className="flex items-center gap-2.5">
+                    <Face name={side.face.name} photo={side.face.photo} team={side.face.team} />
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/50">{side.label}</div>
+                      <div className="display text-[14px] leading-tight">{side.who}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-auto pt-4 text-[13px] leading-snug text-white/60">
+                <span className="tnum display text-[22px] text-white">{DESK.gm.gain}</span> {DESK.gm.unit}
+              </p>
+              <p className="mt-1 text-[13px] text-white/75">{DESK.gm.why}</p>
+            </DeskCard>
+
+            <DeskCard from={DESK.scout.from} q={DESK.scout.q} className="rise rise-2">
+              <div className="flex items-center gap-3">
+                <Face name={FACES.brooks.name} photo={FACES.brooks.photo} team={FACES.brooks.team} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="display text-[16px]">{DESK.scout.call}</span>
+                    <HeroStamp filled={2} label={DESK.scout.stamp} />
+                  </div>
+                  <div className="mt-0.5 text-[13px] font-bold text-white/75">{DESK.scout.bid}</div>
+                </div>
+              </div>
+              <p className="mt-auto pt-4 text-[13px] leading-snug text-white/60">
+                <span className="tnum display text-[22px] text-white">{DESK.scout.gain}</span> {DESK.scout.unit} · {DESK.scout.ros}
+              </p>
+            </DeskCard>
+
+            <DeskCard from={DESK.coach.from} q={DESK.coach.q} className="rise rise-3">
+              <div className="flex items-center gap-3">
+                <Face name={FACES.gibbs.name} photo={FACES.gibbs.photo} team={FACES.gibbs.team} />
+                <span className="text-[11px] font-black uppercase tracking-[0.12em] text-white/40">{DESK.coach.vs}</span>
+                <span className="opacity-50">
+                  <Face name={FACES.swift.name} photo={FACES.swift.photo} team={FACES.swift.team} />
+                </span>
+                <span className="ml-auto">
+                  <HeroStamp filled={3} label={DESK.coach.stamp} />
+                </span>
+              </div>
+              <p className="display mt-3 text-[16px]">
+                {DESK.coach.call} <span className="text-white/55">{DESK.coach.over}</span>
+              </p>
+              <p className="mt-auto pt-3 text-[13px] leading-snug text-white/60">
+                <span className="tnum display text-[22px] text-white">{DESK.coach.gain}</span> {DESK.coach.unit}
+              </p>
+            </DeskCard>
+
+            <DeskCard from={DESK.film.from} q={DESK.film.q} className="rise rise-4">
+              <ul className="grid grid-cols-4 gap-2" aria-label="Grades by position">
+                {DESK.film.grades.map((g) => (
+                  <li key={g.pos} className="rounded-lg bg-white/[0.06] px-2 py-2.5 text-center">
+                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/50">{g.pos}</div>
+                    <div className={`display tnum mt-0.5 text-[22px] ${gradeTone(g.grade)}`}>{g.grade}</div>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-auto pt-4 text-[13px] font-bold text-white/75">{DESK.film.line}</p>
+            </DeskCard>
           </div>
         </section>
 
         {/* ------------------------------------------------------------------- fit ---
             Who it is for, and who it is not. Sending the wrong reader away is what makes
             the right one believe the rest of the page. */}
-        <section className="mt-9 grid gap-3 min-[420px]:grid-cols-2" aria-label="Who it is for">
-          <div className="card p-5">
+        <section className="mt-16 grid gap-3 md:grid-cols-2 lg:mt-24 lg:gap-4" aria-label="Who it is for">
+          <div className="card p-6">
             <Eyebrow>{LANDING.fit.head}</Eyebrow>
-            <ul className="mt-3 grid gap-2.5">
+            <ul className="mt-4 grid gap-3">
               {LANDING.fit.yes.map((l) => (
-                <li key={l} className="flex items-start gap-2.5 text-[14px] leading-snug text-ink-2">
-                  <IconCheck size={15} strokeWidth={3} className="mt-[3px] shrink-0 text-start" />
+                <li key={l} className="flex items-start gap-2.5 text-[15px] leading-snug text-ink">
+                  <IconCheck size={16} strokeWidth={3} className="mt-[3px] shrink-0 text-start" />
                   {l}
                 </li>
               ))}
             </ul>
           </div>
-          <div className="card p-5">
+          <div className="card p-6">
             <Eyebrow>{LANDING.fit.noHead}</Eyebrow>
-            <ul className="mt-3 grid gap-2.5">
+            <ul className="mt-4 grid gap-3">
               {LANDING.fit.no.map((l) => (
-                <li key={l} className="flex items-start gap-2.5 text-[14px] leading-snug text-muted">
-                  <IconX size={15} strokeWidth={3} className="mt-[3px] shrink-0 text-muted" />
+                <li key={l} className="flex items-start gap-2.5 text-[15px] leading-snug text-muted">
+                  <IconX size={16} strokeWidth={3} className="mt-[3px] shrink-0 text-sit" />
                   {l}
                 </li>
               ))}
@@ -254,106 +317,83 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ----------------------------------------------------------------- rooms --- */}
-        <section className="mt-10">
+        {/* ----------------------------------------------------------------- staff ---
+            The rooms, coolest first, each one a member of the front office. */}
+        <section className="mt-16 lg:mt-24">
           <Eyebrow>{LANDING.roomsHead}</Eyebrow>
-          <div className="mt-3 grid gap-3">
+          <h2 className="display mt-2 text-[30px] leading-[1.05] sm:text-[38px]">{LANDING.roomsLead}</h2>
+          <div className="mt-6 grid gap-3 md:grid-cols-3 lg:gap-4">
             {LANDING.features.map((f, i) => {
               const art = FEATURE_ART[f.key];
               return (
-                <Link key={f.key} href={WAY_IN} className={`card block p-5 hover:bg-soft rise rise-${i + 1}`}>
-                  <div className="flex items-start gap-3.5">
-                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${art.tone}`}>
-                      <art.Icon size={21} strokeWidth={2} />
-                    </span>
-                    {/* The room sits on the eyebrow row with the price, which leaves the
-                        benefit line the full column. "Trades, with a counter" is 22
-                        characters of 19px display type and shared that row with the pill
-                        in the old layout, where it truncated at 320px. */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="eyebrow truncate">{f.room}</span>
-                        <span className="tnum shrink-0 rounded-full bg-soft px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-ink-2">
-                          {f.tag}
-                        </span>
-                      </div>
-                      <div className="display mt-1 text-[19px] leading-tight">{f.title}</div>
-                      <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{f.body}</p>
-                    </div>
-                  </div>
+                <Link key={f.key} href={WAY_IN} className={`card flex flex-col p-6 hover:bg-soft rise rise-${i + 1}`}>
+                  <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${art.tone}`}>
+                    <art.Icon size={23} strokeWidth={2} />
+                  </span>
+                  <span className="eyebrow mt-5">{f.room}</span>
+                  <span className="display mt-1 text-[21px] leading-tight">{f.title}</span>
+                  <p className="mt-2 text-[14px] leading-relaxed text-muted">{f.body}</p>
                 </Link>
               );
             })}
           </div>
+
+          {/* The film room, on its own: the depth behind every call. */}
+          <Link href={WAY_IN} className="hero mt-3 grid gap-6 p-6 hover:opacity-95 md:grid-cols-[1.3fr_1fr] md:items-center lg:mt-4 lg:p-8">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <IconFilm size={20} strokeWidth={2} className="text-white/70" />
+                <span className="eyebrow">{LANDING.film.room}</span>
+              </div>
+              <h3 className="display mt-2 text-[28px] leading-tight sm:text-[32px]">{LANDING.film.title}</h3>
+              <p className="mt-3 text-[15px] leading-relaxed text-white/70">{LANDING.film.body}</p>
+            </div>
+            <ul className="grid gap-2.5">
+              {LANDING.film.points.map((p) => (
+                <li key={p} className="flex items-start gap-2.5 rounded-xl bg-white/[0.06] px-4 py-3 text-[14px] font-bold text-white/85">
+                  <IconCheck size={15} strokeWidth={3} className="mt-[3px] shrink-0 text-start" />
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </Link>
         </section>
 
         {/* ----------------------------------------------------------------- steps ---
-            Each step carries the time it takes, because the second thing a reader weighs
-            after "will it work" is "how long until it does". */}
-        <section className="mt-10">
+            Quick is the point: three boxes on a rail, each with the time it takes. */}
+        <section className="mt-16 lg:mt-24">
           <Eyebrow>{LANDING.steps.head}</Eyebrow>
-          <ol className="mt-3 grid gap-3">
+          <h2 className="display mt-2 text-[30px] leading-[1.05] sm:text-[38px]">{LANDING.steps.title}</h2>
+          <ol className="relative mt-6 grid gap-3 md:grid-cols-3 lg:gap-4">
             {LANDING.steps.items.map((s, i) => (
-              <li key={s.title} className="flex gap-3.5">
-                <span className="slug flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-soft text-[14px] text-ink-2">
-                  {i + 1}
-                </span>
-                <div className="min-w-0 pt-1">
-                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                    <span className="display text-[16px]">{s.title}</span>
-                    <span className="text-[11px] font-black uppercase tracking-[0.12em] text-start">{s.when}</span>
-                  </div>
-                  <p className="mt-0.5 text-[14px] leading-relaxed text-muted">{s.body}</p>
+              <li key={s.title} className="card relative flex flex-col p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="display flex h-11 w-11 items-center justify-center rounded-full bg-start-fill text-[18px] text-white">
+                    {i + 1}
+                  </span>
+                  <span className="rounded-full bg-start-soft px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-start">
+                    {s.when}
+                  </span>
                 </div>
+                <div className="display mt-5 text-[20px] leading-tight">{s.title}</div>
+                <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{s.body}</p>
+                {i < LANDING.steps.items.length - 1 && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-[14px] top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-line-2 bg-plane text-muted md:flex lg:-right-[18px]"
+                  >
+                    <IconChevron size={14} strokeWidth={2.8} />
+                  </span>
+                )}
               </li>
             ))}
           </ol>
         </section>
-
-        {/* ---------------------------------------------------------------- ritual ---
-            The reason to come back, on the page before the price is. A product that is
-            used three days a week is a product that is kept. */}
-        <section className="mt-10">
-          <Eyebrow>{LANDING.ritual.head}</Eyebrow>
-          <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{LANDING.ritual.lead}</p>
-          <ol className="card mt-4 divide-y divide-line">
-            {LANDING.ritual.days.map((d) => (
-              <li key={d.day} className="flex items-start gap-4 p-4">
-                <span className="w-[74px] shrink-0 pt-[2px] text-[11px] font-black uppercase tracking-[0.12em] text-muted">{d.day}</span>
-                <div className="min-w-0">
-                  <div className="display text-[16px]">{d.title}</div>
-                  <p className="mt-0.5 text-[14px] leading-relaxed text-muted">{d.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-3 text-[14px] font-bold text-ink-2">{LANDING.ritual.tail}</p>
-        </section>
-
-        {/* ----------------------------------------------------------------- proof ---
-            The differentiator: we grade our own calls in public.
-
-            This block used to lead with "80%" set at 40px. The measured Lock figure is
-            75.1% over 2025 weeks 1-17, its 95% interval never touches 80, and CLAUDE.md
-            forbids a public decision-accuracy claim until score_runs has graded a live
-            week. The number is gone rather than corrected: the practice is the
-            differentiator, and the per-tag figures live on the lineup page where they
-            are honest. */}
-        <section className="card mt-10 p-5">
-          <div className="flex items-center gap-3">
-            <IconHeadset size={22} strokeWidth={1.9} className="shrink-0 text-muted" />
-            <Eyebrow>{LANDING.score.head}</Eyebrow>
-          </div>
-          <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{LANDING.score.body}</p>
-        </section>
-
-        {/* ----------------------------------------------------------------- offer --- */}
-        <Pricing />
 
         {/* ------------------------------------------------------------------- faq ---
-            The objections in the reader's words. Native disclosure elements, so it works
-            with no script and every answer is on the page for a crawler. */}
-        <section className="mt-12" aria-label={LANDING.faq.head}>
+            Native disclosure elements, so it works with no script and every answer is on
+            the page for a crawler. */}
+        <section className="mx-auto mt-16 max-w-3xl lg:mt-24" aria-label={LANDING.faq.head}>
           <Eyebrow>{LANDING.faq.head}</Eyebrow>
           <div className="mt-3 grid gap-2">
             {LANDING.faq.items.map((item) => (
@@ -362,36 +402,38 @@ export default function Landing() {
                   <span className="min-w-0 flex-1">{item.q}</span>
                   <IconChevron size={16} strokeWidth={2.6} className="faq-chevron shrink-0 text-muted" />
                 </summary>
-                <p className="px-5 pb-5 text-[14px] leading-relaxed text-ink-2">
-                  {typeof item.a === "function" ? item.a(LEGAL.refundDays) : item.a}
-                </p>
+                <p className="px-5 pb-5 text-[14px] leading-relaxed text-ink-2">{item.a}</p>
               </details>
             ))}
           </div>
         </section>
 
-        {/* ----------------------------------------------------------------- close ---
-            The last ask: what to do, what you get, what happens next, and the clock. */}
-        <section className="hero mt-12 p-6 text-center rise" aria-label={LANDING.close.eyebrow}>
+        {/* ----------------------------------------------------------------- close --- */}
+        <section className="hero mx-auto mt-16 max-w-3xl p-6 text-center sm:p-10 lg:mt-24 rise" aria-label={LANDING.close.eyebrow}>
           <div className="flex items-center justify-center gap-3">
             <Eyebrow>{LANDING.close.eyebrow}</Eyebrow>
             <Countdown onHero />
           </div>
-          <h2 className="display mx-auto mt-3 max-w-[18rem] text-[30px] leading-[1.02]">{LANDING.close.title}</h2>
-          <p className="mx-auto mt-3 max-w-[22rem] text-[15px] leading-relaxed text-white/70">{LANDING.close.body}</p>
-          <div id={CLOSE_CTA_ID} className="mt-6">
+          <h2 className="display mx-auto mt-3 max-w-[22rem] text-[32px] leading-[1.02] sm:text-[40px]">{LANDING.close.title}</h2>
+          <p className="mx-auto mt-3 max-w-[26rem] text-[15px] leading-relaxed text-white/70">{LANDING.close.body}</p>
+          <div id={CLOSE_CTA_ID} className="mx-auto mt-6 max-w-[26rem]">
             <LinkButton href={WAY_IN} variant="start" className="w-full">
               {LANDING.close.cta}
             </LinkButton>
           </div>
-          <p className="mt-2.5 text-[12px] font-bold text-white/55">{LANDING.close.under}</p>
+          <p className="mt-3 text-[13px] text-white/60">
+            {LANDING.loginLead}{" "}
+            <Link href={LOGIN} className="font-bold text-white underline underline-offset-4">
+              {LANDING.login}
+            </Link>
+          </p>
         </section>
       </main>
 
       {/* The credit line is not decoration: Sleeper's API docs ask for attribution on the
           trending data the action feed uses. edge/data/providers.py carries the canonical
           string; if the projection vendor ever changes, change it there and here together. */}
-      <footer className="mt-12 border-t border-line pt-5">
+      <footer className="mt-16 border-t border-line pt-5">
         <div className="flex items-center gap-2.5">
           <Wordmark className="text-[16px]" lamp={false} />
           <span className="text-[12px] font-bold text-muted">{LINES.tagline}</span>

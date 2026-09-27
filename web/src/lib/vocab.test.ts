@@ -59,19 +59,20 @@ const ALL_COPY: string[] = [
   TICKER.aria, TICKER.plate, TICKER.quiet, TICKER.loading, TICKER.proj, TICKER.score("A", 1, "B", 2), NAMEPLATE.connect, NAMEPLATE.week(2),
   ...Object.values(CONNECT),
   ...Object.values(GROUPS).flatMap((g) => [g.clear, g.stamp]),
-  ...LANDING.features.flatMap((f) => [f.room, f.title, f.tag, f.body]),
+  ...LANDING.features.flatMap((f) => [f.room, f.title, f.body]),
   LANDING.exampleHead,
-  LANDING.score.head,
-  LANDING.score.body,
   // The rest of the landing page: every string, every templated line rendered once.
-  LANDING.eyebrow, LANDING.avatar, LANDING.heroBody, LANDING.cta, LANDING.under, LANDING.secondary,
+  LANDING.eyebrow, LANDING.headline, LANDING.avatar, LANDING.staff, LANDING.cta, LANDING.login, LANDING.loginLead,
   ...LANDING.proof.flatMap((p) => [p.head, p.body]),
-  ...Object.values(LANDING.demo),
+  LANDING.desk.eyebrow, LANDING.desk.title, LANDING.desk.week, LANDING.desk.foot,
+  ...Object.values(LANDING.desk.coach), ...Object.values(LANDING.desk.scout),
+  ...Object.values(LANDING.desk.gm).filter((v) => typeof v === "string"), LANDING.desk.gm.offer("Jakobi Meyers", "Jordan Mason"),
+  LANDING.desk.film.from, LANDING.desk.film.q, LANDING.desk.film.line, ...LANDING.desk.film.grades.flatMap((g) => [g.pos, g.grade]),
   LANDING.fit.head, ...LANDING.fit.yes, LANDING.fit.noHead, ...LANDING.fit.no,
-  LANDING.roomsHead,
-  LANDING.steps.head, ...LANDING.steps.items.flatMap((s) => [s.title, s.when, s.body]),
-  LANDING.ritual.head, LANDING.ritual.lead, ...LANDING.ritual.days.flatMap((d) => [d.day, d.title, d.body]), LANDING.ritual.tail,
-  LANDING.faq.head, ...LANDING.faq.items.flatMap((i) => [i.q, typeof i.a === "function" ? i.a(14) : i.a]),
+  LANDING.roomsHead, LANDING.roomsLead,
+  LANDING.film.room, LANDING.film.title, LANDING.film.body, ...LANDING.film.points,
+  LANDING.steps.head, LANDING.steps.title, ...LANDING.steps.items.flatMap((s) => [s.title, s.when, s.body]),
+  LANDING.faq.head, ...LANDING.faq.items.flatMap((i) => [i.q, i.a]),
   ...Object.values(LANDING.close), ...Object.values(LANDING.bar),
   // The offer.
   PRICING.eyebrow, PRICING.title("$24.99"), PRICING.lead, ...Object.values(PRICING.unlocks), ...Object.values(PRICING.badge),
@@ -206,12 +207,6 @@ test("a chance on a role's page always names both men and is the engine's number
   }
 });
 
-test("we keep score without putting a number on it", () => {
-  assert.match(LANDING.score.body, /graded/);
-  assert.match(LANDING.score.body, /publish/);
-  assert.ok(!/80/.test(LANDING.score.body));
-});
-
 test("the voice rules hold: no exclamation marks, no em dashes", () => {
   for (const line of ALL_COPY) {
     assert.ok(!line.includes("!"), `exclamation mark in: ${line}`);
@@ -219,14 +214,15 @@ test("the voice rules hold: no exclamation marks, no em dashes", () => {
   }
 });
 
-test("the landing page names the reader before it makes a promise", () => {
-  // Hormozi's first rule and ours agree: the first line calls out who it is for. The
-  // promise carries a clock ("before kickoff" is the h1; "about a minute" is the body)
-  // and the line under the button says what it does not cost.
-  assert.match(LANDING.avatar, /^For the manager/);
-  assert.match(LANDING.heroBody, /about a minute/);
-  assert.match(LANDING.under, /No card/);
+test("the landing page sells the room, not the price", () => {
+  // Andrew, 2026-09-27: you walk into your own front office; the price, the refund and the
+  // "free, no card" hedge are met at the upgrade, never on the front page.
+  assert.match(LANDING.headline, /office/i);
+  assert.match(LANDING.staff, /GM/);
+  assert.match(LANDING.staff, /scouting/);
   assert.equal(LANDING.cta, LANDING.close.cta, "the first ask and the last ask are the same door");
+  const page = JSON.stringify(LANDING);
+  assert.doesNotMatch(page, /refund|no card|\bfree\b|\/week|\$\d+\.\d\d/i, "the front page quotes no price, no refund and no free hedge");
 });
 
 test("the offer is stacked, guaranteed and never typed", () => {
@@ -246,17 +242,10 @@ test("the offer is stacked, guaranteed and never typed", () => {
   assert.deepEqual(Object.keys(PRICING.unlocks).sort(), ["full_report", "my_team", "trade_lab", "waivers"]);
 });
 
-test("the objections are answered in the reader's words, and one of them says no", () => {
-  const qs = LANDING.faq.items.map((i) => i.q);
-  assert.ok(qs.length >= 5);
-  assert.ok(qs.some((q) => /subscription/i.test(q)), "the subscription objection is answered");
-  assert.ok(qs.some((q) => /wrong/i.test(q)), "the accuracy objection is answered");
+test("the objections are answered in the reader's words, and the page says no to someone", () => {
+  assert.ok(LANDING.faq.items.length >= 3);
+  assert.ok(LANDING.faq.items.some((i) => /PPR/.test(i.a)), "the scoring objection is answered");
   assert.ok(LANDING.fit.no.length >= 1, "the page sends somebody away");
-  // The refund answer takes the terms' number rather than typing one.
-  const refund = LANDING.faq.items.find((i) => typeof i.a === "function");
-  assert.ok(refund && typeof refund.a === "function");
-  assert.match(refund.a(14), /14 days/);
-  assert.match(refund.a(30), /30 days/);
 });
 
 test("the landing page advertises the same headline the engine writes", () => {
@@ -265,19 +254,15 @@ test("the landing page advertises the same headline the engine writes", () => {
   assert.equal(LANDING.exampleHead, "3 moves to make");
 });
 
-test("every feature card names a room the app actually has", () => {
+test("every staff card names a room the app actually has, the GM first", () => {
   const rooms = new Set(SECTION_VALUES.map((s) => s.title));
-  assert.equal(LANDING.features.length, 4);
+  assert.deepEqual(LANDING.features.map((f) => f.key), ["trade", "waivers", "team"]);
   for (const f of LANDING.features) {
     assert.ok(f.key in SECTIONS, `feature card "${f.title}" points at no section`);
     assert.ok(rooms.has(f.room), `feature eyebrow "${f.room}" is not a section title`);
     assert.ok(f.title.length > 0 && f.body.length > 0);
   }
-});
-
-test("the free cards are the ones a visitor can open without paying", () => {
-  const free = LANDING.features.filter((f) => f.tag === "Free").map((f) => f.key);
-  assert.deepEqual(free.sort(), ["report", "team"]);
+  assert.ok(rooms.has(LANDING.film.room), "the film card names the film");
 });
 
 test("the account's words are the staff at the door: sign in, create, no magic link", () => {
