@@ -44,6 +44,7 @@ import type {
   LensCounts,
   Role,
   UpgradeResponse,
+  Health,
 } from "./types";
 import * as mocks from "./mocks";
 import { espnAuthHeaders } from "./espnAuth";
@@ -162,6 +163,12 @@ function mockExtraEntitlements(): Feature[] {
 export async function getProducts(): Promise<ProductsResponse> {
   if (USE_MOCKS) return { products: mocks.PRODUCTS };
   return request<ProductsResponse>("/products");
+}
+
+/** What the API has switched on. The landing page reads `stripe` to know whether the register is open. */
+export async function getHealth(): Promise<Health> {
+  if (USE_MOCKS) return mocks.HEALTH;
+  return request<Health>("/health");
 }
 
 export async function getMe(): Promise<Me> {

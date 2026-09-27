@@ -2975,3 +2975,55 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
   .proj-screen { animation: none; }
   .proj[data-phase="flicker"] { animation: none; }
 }
+
+/* ------------------------------------------------------------ the landing page ---
+   Two devices the rest of the app does not have. The follow-along bar: the clock and
+   the one door, fixed to the bottom of the screen between the hero's button leaving
+   and the closing button arriving (`components/LandingBar.tsx`). It sits on paper with
+   the bevel, like a card that has slid up from under the page, and it is out of the
+   way (translated fully below the viewport, not merely invisible) whenever it is off,
+   so it can never catch a tap meant for the page. The objections: native disclosure
+   elements with the marker removed and a chevron that turns, so the answers are on the
+   page for a crawler and open with no script. */
+.landing-bar {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: var(--color-paper);
+  border-top: 1px solid var(--color-line);
+  box-shadow: var(--bevel), 0 -14px 32px -18px rgb(0 0 0 / 0.6);
+  transform: translateY(110%);
+  transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.3, 1);
+  pointer-events: none;
+}
+.landing-bar-on { transform: none; pointer-events: auto; }
+.landing-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 32rem;
+  margin: 0 auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-bar { transition: none; }
+}
+
+.faq { overflow: hidden; }
+.faq-q {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  list-style: none;
+  min-height: 44px;
+}
+.faq-q::-webkit-details-marker { display: none; }
+.faq-q:hover { background: var(--color-soft); }
+.faq-chevron { transform: rotate(90deg); transition: transform 0.18s ease; }
+.faq[open] .faq-chevron { transform: rotate(-90deg); }
+@media (prefers-reduced-motion: reduce) {
+  .faq-chevron { transition: none; }
+}
