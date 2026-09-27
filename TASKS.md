@@ -723,7 +723,7 @@ where the call sheet gets read, not a reason to rename the sheet.
       `deploy/render.yaml` point at it; the `vercel.app` address stays allowed.
 - [x] `EDGE_CORS` + `EDGE_WEB_URL` on Render and `NEXT_PUBLIC_SITE_URL` on Vercel set; `www` redirects
       to the apex. Verified live 2026-09-27 (CORS 200, og:url is the apex).
-- [ ] Andrew: remove `EDGE_DEMO_UNLOCK` on Render before charging — it opens the paywall to everyone.
+- [x] Andrew: remove `EDGE_DEMO_UNLOCK` on Render before charging — done; signed-out `/api/me` shows only `my_team`, 3 leagues (verified 2026-09-27).
 - [ ] The two supplied app icons (crown and football) are 1024px PNGs. Only the crown is traced
       into SVG; if the football lockup is ever wanted for social, it needs the same treatment.
 - [ ] Re-run the data-viz palette checker against the new surfaces. The dark status steps were
