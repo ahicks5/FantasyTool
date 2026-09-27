@@ -106,12 +106,18 @@ class Store:
         self.db.commit()
         return cur.rowcount
 
-    def skus(self, email: str, season: int) -> list[str]:
-        """Live entitlements only: a refunded or disputed purchase no longer grants anything."""
+    def grants(self, email: str, season: int) -> list[tuple[str, float]]:
+        """Every unrevoked grant, `(sku, created)`, expired or not: what a timed pass is timed from."""
         rows = self.db.execute(
-            "SELECT DISTINCT sku FROM purchases WHERE email=? AND season=? AND revoked IS NULL",
+            "SELECT sku, created FROM purchases WHERE email=? AND season=? AND revoked IS NULL",
             (email.lower(), season))
-        return [r[0] for r in rows]
+        return [(r[0], float(r[1] or 0)) for r in rows]
+
+    def skus(self, email: str, season: int, now: float | None = None) -> list[str]:
+        """Live entitlements only: a refunded or disputed purchase, or a week pass whose week
+        is up, no longer grants anything."""
+        from edge import products
+        return products.live_skus(self.grants(email, season), time.time() if now is None else now)
 
     def count_sku(self, email: str, sku: str, season: int) -> int:
         """How many live purchases of one sku this account holds: the add-on that stacks."""

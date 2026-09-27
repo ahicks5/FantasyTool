@@ -181,14 +181,14 @@ def cmd_economics(args):
     print(ec.format_table(base))
 
     if args.scenarios:
-        print("\nScenarios — net per Trade Lab sale, and its runway:")
+        print("\nScenarios — net per week-pass sale, and its runway:")
         for name, a in ec.scenarios(base).items():
-            c = ec.contribution("trade_lab", a)
-            r = ec.runway_calls("trade_lab", a)
+            c = ec.contribution("weekly", a)
+            r = ec.runway_calls("weekly", a)
             runway = "unlimited" if r == float("inf") else f"{r:.0f} verdicts"
             print(f"  {name:<18} net ${c['net']:>5.2f}  ({c['margin_pct']:>5.1f}%)  {runway}")
 
-    mix = {"waivers": args.waivers, "trade_lab": args.trade_lab, "full_report": args.full_report}
+    mix = {"weekly": args.weekly, "season": args.season}
     s = ec.season(mix, months=args.months, a=base)
     print(f"\nCohort: {s['buyers']} buyers ({', '.join(f'{n} {k}' for k, n in mix.items() if n)}), "
           f"{args.months:g} months of fixed cost")
@@ -220,11 +220,10 @@ def main(argv: list[str] | None = None):
     s.set_defaults(fn=cmd_email)
     s = sub.add_parser("economics", help="unit economics: margin per SKU, runway, cohort P&L")
     s.add_argument("--model", help="override the LLM priced in (default: the one explain.py uses)")
-    s.add_argument("--explanations", type=int, help="trade explanations per Trade Lab buyer")
+    s.add_argument("--explanations", type=int, help="trade explanations per buyer")
     s.add_argument("--months", type=float, default=4.0, help="months of fixed cost to carry")
-    s.add_argument("--waivers", type=int, default=100)
-    s.add_argument("--trade-lab", type=int, default=100)
-    s.add_argument("--full-report", type=int, default=400)
+    s.add_argument("--weekly", type=int, default=200, help="week-pass sales")
+    s.add_argument("--season", type=int, default=400, help="season-pass sales")
     s.add_argument("--scenarios", action="store_true", help="compare pricing/model scenarios")
     s.set_defaults(fn=cmd_economics)
     args = ap.parse_args(argv)

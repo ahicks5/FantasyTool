@@ -80,7 +80,8 @@ def test_register_signs_you_in_and_the_token_is_a_session(client):
     assert out["me"]["email"] == "owner@example.com", "addresses are lower-cased"
     acct = out["me"]["account"]
     assert acct["name"] == "Andrew" and acct["role"] == "user" and acct["is_admin"] is False
-    assert acct["plan"] == {"tier": "free", "name": "Free", "skus": []}
+    assert acct["plan"] == {"tier": "free", "name": "Free", "skus": [], "via": None, "until": None}
+    assert out["me"]["trial_eligible"] is True
     me = client.get("/api/me", headers=bearer(out["token"])).json()
     assert me["signed_in"] is True and me["email"] == "owner@example.com"
 
@@ -244,11 +245,13 @@ def test_upgrade_without_stripe_grants_the_pass_and_flips_the_flag(client):
     token = register(client)["token"]
     me = client.get("/api/me", headers=bearer(token)).json()
     assert me["checkout"] is False and me["account"]["plan"]["tier"] == "free"
-    r = client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "full_report"})
+    r = client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "season"})
     assert r.status_code == 200
     body = r.json()
     assert body["granted"] is True and body["url"] is None
-    assert body["me"]["account"]["plan"] == {"tier": "premium", "name": "The Penthouse", "skus": ["full_report"]}
+    assert body["me"]["account"]["plan"] == {"tier": "premium", "name": "The Penthouse", "skus": ["season"],
+                                             "via": "season", "until": None}
+    assert body["me"]["trial_eligible"] is False, "a paid account is not offered the free week"
     assert set(body["me"]["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"}
     assert body["me"]["leagues_allowed"] == 5
     rows = app_mod.store.export_user("owner@example.com")["data"]["purchases"]
@@ -261,22 +264,52 @@ def test_upgrade_with_stripe_is_a_checkout_not_a_grant(client, monkeypatch):
     from edge.api import payments
     monkeypatch.setattr(payments, "create_checkout", lambda *a, **k: "https://checkout.stripe.com/x")
     assert client.get("/api/me", headers=bearer(token)).json()["checkout"] is True
-    r = client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "waivers"})
+    r = client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "weekly"})
     assert r.status_code == 200 and r.json() == {"url": "https://checkout.stripe.com/x", "granted": False, "me": None}
     assert client.get("/api/me", headers=bearer(token)).json()["account"]["plan"]["tier"] == "free"
 
 
 def test_upgrade_needs_an_account_and_a_paid_sku(client):
-    assert client.post("/api/account/upgrade", json={"sku": "full_report"}).status_code == 401
+    assert client.post("/api/account/upgrade", json={"sku": "season"}).status_code == 401
     token = register(client)["token"]
     assert client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "free"}).status_code == 400
+    # The trial is not sold, and nothing from before the switch is sold any more.
+    for sku in ("trial", "waivers", "trade_lab", "full_report", "league_slot"):
+        assert client.post("/api/account/upgrade", headers=bearer(token), json={"sku": sku}).status_code == 400, sku
     assert client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "nope"}).status_code == 400
 
 
-def test_league_slots_stack(client):
+def test_the_week_pass_opens_everything_for_seven_days(client):
     token = register(client)["token"]
-    for _ in range(2):
-        assert client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "league_slot"}).status_code == 200
+    body = client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "weekly"}).json()
+    plan = body["me"]["account"]["plan"]
+    assert plan["tier"] == "premium" and plan["via"] == "weekly"
+    assert plan["until"] == pytest.approx(time.time() + 7 * 86400, abs=60)
+    assert set(body["me"]["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"}
+    assert body["me"]["leagues_allowed"] == 5
+    # A week later it is gone.
+    assert app_mod.store.skus("owner@example.com", app_mod._season(), now=time.time() + 8 * 86400) == []
+
+
+def test_the_free_week_is_once_per_account(client):
+    token = register(client)["token"]
+    assert client.post("/api/account/trial").status_code == 401
+    r = client.post("/api/account/trial", headers=bearer(token))
+    assert r.status_code == 200
+    me = r.json()["me"]
+    assert me["account"]["plan"]["tier"] == "premium" and me["account"]["plan"]["via"] == "trial"
+    assert me["trial_eligible"] is False
+    assert "trade_lab" in me["entitlements"]
+    assert client.post("/api/account/trial", headers=bearer(token)).status_code == 409
+    rows = app_mod.store.export_user("owner@example.com")["data"]["purchases"]
+    assert [r["source"] for r in rows] == ["trial"], "a trial is never recorded as a sale"
+
+
+def test_legacy_slots_still_count(client):
+    """Slots are no longer sold, but one bought before the switch still holds a league."""
+    token = register(client)["token"]
+    for i in range(2):
+        app_mod.store.grant("owner@example.com", "league_slot", app_mod._season(), source="stripe", ref=f"s{i}")
     me = client.get("/api/me", headers=bearer(token)).json()
     assert me["leagues_allowed"] == 5 and me["account"]["league_slots"] == 2
     assert me["account"]["plan"]["tier"] == "free", "slots are not premium"
@@ -300,19 +333,17 @@ def test_the_admin_account_comes_from_edge_admins(client, monkeypatch):
     assert all("password_hash" not in u for u in users)
 
 
-def test_the_admin_can_grant_revoke_add_slots_and_promote(client, monkeypatch):
+def test_the_admin_can_grant_revoke_and_promote(client, monkeypatch):
     monkeypatch.setenv("EDGE_ADMINS", "owner@example.com")
     admin = register(client)["token"]
     fan = register(client, "fan@example.com", "another password")["token"]
     A = bearer(admin)
-    r = client.post("/api/admin/users/fan@example.com/grant", headers=A, json={"sku": "trade_lab"})
-    assert r.status_code == 200 and r.json()["me"]["account"]["plan"]["name"] == "Trade Lab"
+    r = client.post("/api/admin/users/fan@example.com/grant", headers=A, json={"sku": "season"})
+    assert r.status_code == 200 and r.json()["me"]["account"]["plan"]["name"] == "The Penthouse"
     assert "trade_lab" in client.get("/api/me", headers=bearer(fan)).json()["entitlements"]
-    r = client.post("/api/admin/users/fan@example.com/revoke", headers=A, json={"sku": "trade_lab"})
+    r = client.post("/api/admin/users/fan@example.com/revoke", headers=A, json={"sku": "season"})
     assert r.json()["revoked"] == 1 and r.json()["me"]["account"]["plan"]["tier"] == "free"
-    for _ in range(2):
-        client.post("/api/admin/users/fan@example.com/grant", headers=A, json={"sku": "league_slot"})
-    assert client.get("/api/me", headers=bearer(fan)).json()["leagues_allowed"] == 5
+    assert client.post("/api/admin/users/fan@example.com/grant", headers=A, json={"sku": "league_slot"}).status_code == 400
     assert client.post("/api/admin/users/fan@example.com/grant", headers=A, json={"sku": "free"}).status_code == 400
     # Promote, and the promoted account can use the admin routes by role alone.
     assert client.post("/api/admin/users/fan@example.com/role", headers=A, json={"role": "admin"}).status_code == 200

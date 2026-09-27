@@ -46,6 +46,17 @@ def test_a_purchase_grants_its_sku(store):
     assert store.skus("other@b.c", 2026) == []
 
 
+def test_a_week_pass_lapses_after_seven_days_and_the_season_does_not(store):
+    import time
+    store.grant("a@b.c", "weekly", 2026, ref="cs_w")
+    store.grant("s@b.c", "season", 2026, ref="cs_s")
+    now = time.time()
+    assert store.skus("a@b.c", 2026) == ["weekly"]
+    assert [s for s, _ in store.grants("a@b.c", 2026)] == ["weekly"]
+    assert store.skus("a@b.c", 2026, now=now + 8 * 86400) == [], "the week is up"
+    assert store.skus("s@b.c", 2026, now=now + 200 * 86400) == ["season"]
+
+
 def test_email_case_does_not_create_a_second_customer(store):
     store.grant("Andrew@Example.com", "waivers", 2026, ref="cs_1")
     assert store.skus("andrew@example.com", 2026) == ["waivers"]

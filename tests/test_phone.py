@@ -172,7 +172,7 @@ def test_a_phone_account_adds_an_email_and_keeps_everything(client):
     out = sign_up(client)
     token, key = out["token"], out["me"]["email"]
     assert client.put("/api/me/email", headers=bearer(token), json={"email_opt_in": True}).status_code == 400
-    client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "full_report"})
+    client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "season"})
     r = client.post("/api/account/email", headers=bearer(token), json={"email": "Andrew@Example.com"})
     assert r.status_code == 200, r.text
     me = r.json()["me"]
@@ -224,9 +224,9 @@ def test_a_phone_account_can_pay_and_the_webhook_finds_it(monkeypatch):
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test")
     from edge.api import payments
     key = accounts.phone_key(NICE)
-    payments.create_checkout(key, "full_report", 2026, None, None)
+    payments.create_checkout(key, "season", 2026, None, None)
     assert "customer_email" not in captured and captured["metadata"]["email"] == key
-    payments.create_checkout("a@example.com", "full_report", 2026, None, None)
+    payments.create_checkout("a@example.com", "season", 2026, None, None)
     assert captured["customer_email"] == "a@example.com"
 
 

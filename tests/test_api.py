@@ -37,7 +37,7 @@ LG = "/api/league/sleeper/1403186749361901568"
 
 def test_products_and_me(client):
     r = client.get("/api/products")
-    assert r.status_code == 200 and [p["sku"] for p in r.json()["products"]] == ["free", "waivers", "trade_lab", "full_report", "league_slot"]
+    assert r.status_code == 200 and [p["sku"] for p in r.json()["products"]] == ["free", "trial", "weekly", "season"]
     anon = client.get("/api/me")
     assert anon.status_code == 200, "a signed-out visitor still gets the free tier"
     assert anon.json()["signed_in"] is False and anon.json()["entitlements"] == ["my_team"]
@@ -60,24 +60,25 @@ def test_league_summary_and_lineup_are_free(client, league):
 def test_paid_features_are_gated_then_unlocked(client, league):
     tid = league.teams[0].id
     r = client.get(f"{LG}/team/{tid}/waivers", headers=H)
-    assert r.status_code == 402 and r.json()["detail"]["upsell"][0]["sku"] == "waivers"
+    assert r.status_code == 402 and [u["sku"] for u in r.json()["detail"]["upsell"]] == ["weekly", "season"]
     teaser = r.json()["detail"]["teaser"]
     assert teaser is None or ("improve your roster" in teaser and not any(p.name in teaser for p in league.free_agents[:20]))
-    app_mod.store.grant("andrew@example.com", "waivers", 2026, source="test")
+    assert client.post(f"{LG}/trade", headers=H, json={"my_team_id": tid, "their_team_id": league.teams[1].id, "give": [], "get": []}).status_code == 402
+    # One pass, any pass, opens every room: there is no à la carte.
+    app_mod.store.grant("andrew@example.com", "weekly", 2026, source="test")
     r = client.get(f"{LG}/team/{tid}/waivers", headers=H)
     assert r.status_code == 200 and 1 <= len(r.json()["picks"]) <= 5
-    # trade lab still locked; full report unlocks everything
-    assert client.post(f"{LG}/trade", headers=H, json={"my_team_id": tid, "their_team_id": league.teams[1].id, "give": [], "get": []}).status_code == 402
-    app_mod.store.grant("andrew@example.com", "full_report", 2026, source="test")
+    assert client.post(f"{LG}/trade", headers=H, json={"my_team_id": tid, "their_team_id": league.teams[1].id, "give": [], "get": []}).status_code != 402
     r = client.get(f"{LG}/team/{tid}/report", headers=H)
     assert r.status_code == 200 and "<h2>Waivers" in r.json()["html"]
     me = client.get("/api/me", headers=H).json()
     assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"} and me["leagues_allowed"] == 5
-    assert me["account"]["plan"] == {"tier": "premium", "name": "The Penthouse", "skus": ["full_report"]}
+    plan = me["account"]["plan"]
+    assert plan["tier"] == "premium" and plan["name"] == "The Penthouse" and plan["via"] == "weekly" and plan["until"]
 
 
 def test_trade_endpoint_returns_verdict_and_graphic(client, league):
-    app_mod.store.grant("andrew@example.com", "trade_lab", 2026, source="test")
+    app_mod.store.grant("andrew@example.com", "season", 2026, source="test")
     me_t, them_t = league.teams[0], league.teams[1]
     give = max(me_t.players, key=lambda p: p.projected or 0)
     get = min((p for p in them_t.players if p.position == give.position), key=lambda p: p.projected or 0)
@@ -120,9 +121,9 @@ def test_connect_respects_league_limit(client, league):
     assert client.post("/api/connect", headers=H, json=body).status_code == 200   # same league: idempotent
     r = client.post("/api/connect", headers=H, json=body | {"league_id": "4"})
     assert r.status_code == 402, "three is the cap for every account"
-    assert [u["sku"] for u in r.json()["detail"]["upsell"]] == ["league_slot", "full_report"]
-    assert r.json()["detail"]["teaser"]
-    # A slot is one more league; the bundle is five. Both count.
+    assert [u["sku"] for u in r.json()["detail"]["upsell"]] == ["weekly", "season"]
+    assert "Premium keeps 5" in r.json()["detail"]["teaser"]
+    # A slot bought before the switch is still one more league.
     app_mod.store.grant("andrew@example.com", "league_slot", 2026, source="test", ref="s1")
     assert client.get("/api/me", headers=H).json()["leagues_allowed"] == 4
     assert client.post("/api/connect", headers=H, json=body | {"league_id": "4"}).status_code == 200
@@ -130,6 +131,13 @@ def test_connect_respects_league_limit(client, league):
     # Forgetting one frees the slot.
     assert client.delete("/api/leagues/sleeper/1", headers=H).status_code == 200
     assert client.post("/api/connect", headers=H, json=body | {"league_id": "5"}).status_code == 200
+    # Premium is five, plus the slot already held; past that there is nothing to buy.
+    app_mod.store.grant("andrew@example.com", "season", 2026, source="test")
+    assert client.get("/api/me", headers=H).json()["leagues_allowed"] == 6
+    for lid in ("1", "6"):
+        assert client.post("/api/connect", headers=H, json=body | {"league_id": lid}).status_code == 200
+    r = client.post("/api/connect", headers=H, json=body | {"league_id": "7"})
+    assert r.status_code == 402 and r.json()["detail"]["upsell"] == []
 
 
 def test_stripe_webhook_grants_entitlement(client, monkeypatch):
@@ -142,13 +150,13 @@ def test_stripe_webhook_grants_entitlement(client, monkeypatch):
             return {"type": "checkout.session.completed",
                     "data": {"object": {"id": "cs_123", "payment_status": "paid",
                                         "customer_details": {"email": "Andrew@Example.com"},
-                                        "metadata": {"sku": "trade_lab", "season": "2026"}}}}
+                                        "metadata": {"sku": "weekly", "season": "2026"}}}}
     import stripe
     monkeypatch.setattr(stripe, "Webhook", FakeWebhook)
     monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
     r = client.post("/api/stripe/webhook", content=b"{}", headers={"stripe-signature": "t=1,v1=fake"})
     assert r.status_code == 200 and r.json()["granted"] is True
-    assert "trade_lab" in client.get("/api/me", headers=H).json()["skus"]
+    assert "weekly" in client.get("/api/me", headers=H).json()["skus"]
 
 
 def test_supabase_jwt_verification(monkeypatch):
@@ -183,7 +191,7 @@ def test_waiver_plan_and_trade_finder_endpoints(client, league):
     tid = league.teams[1].id
     assert client.get(f"{LG}/team/{tid}/waivers/plan", headers=H).status_code == 402
     assert client.get(f"{LG}/team/{tid}/trades/find", headers=H).status_code == 200, "free gets the preview board (D3)"
-    app_mod.store.grant("andrew@example.com", "full_report", 2026, source="test")
+    app_mod.store.grant("andrew@example.com", "season", 2026, source="test")
 
     plan = client.get(f"{LG}/team/{tid}/waivers/plan", headers=H)
     assert plan.status_code == 200
@@ -204,7 +212,7 @@ def test_waiver_plan_and_trade_finder_endpoints(client, league):
 
 
 def test_every_recommendation_is_logged_with_its_algorithm_version(client, league):
-    app_mod.store.grant("andrew@example.com", "full_report", 2026, source="test")
+    app_mod.store.grant("andrew@example.com", "season", 2026, source="test")
     tid = league.teams[1].id
     client.get(f"{LG}/team/{tid}/actions", headers=H)
     client.get(f"{LG}/team/{tid}/waivers/plan", headers=H)
@@ -320,7 +328,7 @@ def test_checkout_falls_back_to_the_default_when_a_return_url_is_rejected(monkey
     monkeypatch.setenv("EDGE_WEB_URL", "https://edge.example.com")
 
     url = payments.create_checkout(
-        "a@b.c", "trade_lab", 2026,
+        "a@b.c", "weekly", 2026,
         success_url="https://evil.example/thanks",
         cancel_url="https://evil.example/no",
     )
@@ -330,11 +338,11 @@ def test_checkout_falls_back_to_the_default_when_a_return_url_is_rejected(monkey
     assert "evil.example" not in captured["success_url"] + captured["cancel_url"]
 
     payments.create_checkout(
-        "a@b.c", "trade_lab", 2026,
-        success_url="https://edge.example.com/trade?paid=trade_lab",
+        "a@b.c", "weekly", 2026,
+        success_url="https://edge.example.com/trade?paid=weekly",
         cancel_url=None,
     )
-    assert captured["success_url"] == "https://edge.example.com/trade?paid=trade_lab"
+    assert captured["success_url"] == "https://edge.example.com/trade?paid=weekly"
 
 
 def _stripe_event(monkeypatch, event: dict):
@@ -352,7 +360,7 @@ def _post_webhook(client):
     return client.post("/api/stripe/webhook", content=b"{}", headers={"stripe-signature": "t=1,v1=fake"})
 
 
-def _session_completed(email="Andrew@Example.com", sku="trade_lab", pi="pi_1"):
+def _session_completed(email="Andrew@Example.com", sku="weekly", pi="pi_1"):
     return {"type": "checkout.session.completed",
             "data": {"object": {"id": f"cs_{pi}", "payment_status": "paid", "payment_intent": pi,
                                 "customer_details": {"email": email},
@@ -360,63 +368,63 @@ def _session_completed(email="Andrew@Example.com", sku="trade_lab", pi="pi_1"):
 
 
 def test_a_refunded_pass_stops_working(client, monkeypatch):
-    """Otherwise a $7 pass is refundable into a free season."""
+    """Otherwise a pass is refundable into a free season."""
     _stripe_event(monkeypatch, _session_completed())
     assert _post_webhook(client).json()["granted"] is True
-    assert "trade_lab" in client.get("/api/me", headers=H).json()["skus"]
+    assert "weekly" in client.get("/api/me", headers=H).json()["skus"]
 
     _stripe_event(monkeypatch, {"type": "charge.refunded",
                                 "data": {"object": {"payment_intent": "pi_1", "amount": 500,
                                                     "amount_refunded": 500}}})
     r = _post_webhook(client)
     assert r.json()["revoked"] == 1 and r.json()["reason"] == "refunded"
-    assert "trade_lab" not in client.get("/api/me", headers=H).json()["skus"]
+    assert "weekly" not in client.get("/api/me", headers=H).json()["skus"]
 
 
 def test_a_partial_refund_does_not_take_the_pass_away(client, monkeypatch):
     """A goodwill partial refund should not cost someone what they still mostly paid for."""
-    _stripe_event(monkeypatch, _session_completed(sku="waivers", pi="pi_partial"))
+    _stripe_event(monkeypatch, _session_completed(sku="season", pi="pi_partial"))
     assert _post_webhook(client).json()["granted"] is True
 
     _stripe_event(monkeypatch, {"type": "charge.refunded",
                                 "data": {"object": {"payment_intent": "pi_partial", "amount": 300,
                                                     "amount_refunded": 100}}})
     assert _post_webhook(client).json()["revoked"] == 0
-    assert "waivers" in client.get("/api/me", headers=H).json()["skus"]
+    assert "season" in client.get("/api/me", headers=H).json()["skus"]
 
 
 def test_a_chargeback_revokes_and_winning_the_dispute_restores(client, monkeypatch):
-    _stripe_event(monkeypatch, _session_completed(sku="full_report", pi="pi_disputed"))
+    _stripe_event(monkeypatch, _session_completed(sku="season", pi="pi_disputed"))
     assert _post_webhook(client).json()["granted"] is True
 
     _stripe_event(monkeypatch, {"type": "charge.dispute.created",
                                 "data": {"object": {"payment_intent": "pi_disputed", "status": "needs_response"}}})
     assert _post_webhook(client).json()["revoked"] == 1
-    assert "full_report" not in client.get("/api/me", headers=H).json()["skus"]
+    assert "season" not in client.get("/api/me", headers=H).json()["skus"]
 
     _stripe_event(monkeypatch, {"type": "charge.dispute.closed",
                                 "data": {"object": {"payment_intent": "pi_disputed", "status": "won"}}})
     assert _post_webhook(client).json()["restored"] == 1
-    assert "full_report" in client.get("/api/me", headers=H).json()["skus"]
+    assert "season" in client.get("/api/me", headers=H).json()["skus"]
 
     _stripe_event(monkeypatch, {"type": "charge.dispute.closed",
                                 "data": {"object": {"payment_intent": "pi_disputed", "status": "lost"}}})
     assert _post_webhook(client).json()["revoked"] == 1
-    assert "full_report" not in client.get("/api/me", headers=H).json()["skus"]
+    assert "season" not in client.get("/api/me", headers=H).json()["skus"]
 
 
 def test_a_delayed_payment_still_grants(client, monkeypatch):
     """Some payment methods settle after the redirect; that event grants too."""
-    e = _session_completed(sku="waivers", pi="pi_async")
+    e = _session_completed(sku="season", pi="pi_async")
     e["type"] = "checkout.session.async_payment_succeeded"
     _stripe_event(monkeypatch, e)
     assert _post_webhook(client).json()["granted"] is True
-    assert "waivers" in client.get("/api/me", headers=H).json()["skus"]
+    assert "season" in client.get("/api/me", headers=H).json()["skus"]
 
 
 def test_webhooks_are_idempotent(client, monkeypatch):
     """Stripe retries. A redelivery must not double-grant or double-revoke."""
-    _stripe_event(monkeypatch, _session_completed(sku="waivers", pi="pi_retry"))
+    _stripe_event(monkeypatch, _session_completed(sku="season", pi="pi_retry"))
     _post_webhook(client)
     assert _post_webhook(client).json()["granted"] is True
     rows = app_mod.store.db.execute(
@@ -462,7 +470,7 @@ def test_an_old_database_gains_the_new_columns(tmp_path):
 
     store = Store(str(path))
     assert store.skus("a@b.c", 2026) == ["full_report"], "an existing purchase survives the migration"
-    store.grant("d@e.f", "waivers", 2026, ref="cs_new", payment_ref="pi_new")
+    store.grant("d@e.f", "season", 2026, ref="cs_new", payment_ref="pi_new")
     assert store.revoke("pi_new") == 1
     assert store.skus("d@e.f", 2026) == []
 
@@ -491,7 +499,7 @@ def test_the_free_trade_board_is_a_preview_not_a_paywall(client, league):
     assert client.get(f"{LG}/team/{tid}/report", headers=H).status_code == 402
     assert client.get("/api/me", headers=H).json()["entitlements"] == ["my_team"]
 
-    app_mod.store.grant("andrew@example.com", "trade_lab", 2026, source="test")
+    app_mod.store.grant("andrew@example.com", "season", 2026, source="test")
     paid = client.get(f"{LG}/team/{tid}/trades/find", headers=H).json()
     assert "preview" not in paid
     for p in paid["partners"]:

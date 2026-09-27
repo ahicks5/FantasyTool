@@ -60,9 +60,9 @@ def test_a_locked_binder_never_names_a_player(desk_client, league):
 def test_buying_unlocks_the_binder(desk_client, league):
     from edge.api import app as app_mod
     tid = league.teams[0].id
-    app_mod.store.grant("andrew@example.com", "waivers", 2026, source="test")
+    app_mod.store.grant("andrew@example.com", "weekly", 2026, source="test")
     d = desk_client.get(f"{LG}/team/{tid}/desk", headers=H).json()
-    assert {b["key"]: b["locked"] for b in d["binders"]} == {"team": False, "waivers": False, "trade": True}
+    assert {b["key"]: b["locked"] for b in d["binders"]} == {"team": False, "waivers": False, "trade": False}
 
 
 def test_a_feed_we_cannot_reach_is_a_quiet_desk_not_a_broken_one(client, league, monkeypatch):

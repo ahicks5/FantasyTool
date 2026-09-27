@@ -60,7 +60,7 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
       {"action": "restore", payment_ref, reason}
       None — an event we do not act on.
 
-    A purchase that is refunded or charged back has to lose access, or a $7 pass is
+    A purchase that is refunded or charged back has to lose access, or a paid pass is
     refundable into a free season. Refunds arrive as a *charge*, which carries no
     checkout session, so the payment intent recorded at grant time is what links them.
     """

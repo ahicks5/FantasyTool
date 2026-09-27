@@ -37,23 +37,53 @@ def test_hoarding_detection():
 
 def test_product_catalog_and_entitlements():
     assert products.features_for([]) == {"my_team"}
-    assert products.can(["waivers"], "waivers") and not products.can(["waivers"], "trade_lab")
-    assert products.features_for(["full_report"]) == set(products.FEATURES)
-    assert products.leagues_allowed([]) == 3 and products.leagues_allowed(["waivers"]) == 3
-    assert products.leagues_allowed(["full_report"]) == 5
-    assert products.leagues_allowed([], 2) == 5 and products.leagues_allowed(["full_report"], 1) == 6
+    # Two passes on sale, and a free week. Nothing à la carte: any premium opens everything.
+    assert [p["sku"] for p in products.PRODUCTS if products.for_sale(p["sku"])] == ["weekly", "season"]
+    assert products.BY_SKU["weekly"]["price_cents"] == 299 and products.BY_SKU["season"]["price_cents"] == 1999
+    assert products.BY_SKU["trial"]["price_cents"] == 0 and products.BY_SKU["trial"]["days"] == 7
+    assert not any(products.for_sale(s) for s in ("free", "trial", "waivers", "trade_lab", "full_report", "league_slot"))
+    for sku in ("trial", "weekly", "season"):
+        assert products.features_for([sku]) == set(products.FEATURES), sku
+        assert products.leagues_allowed([sku]) == 5, sku
+    # Bought before the switch: still honoured, and now opens everything.
+    for sku in ("waivers", "trade_lab", "full_report"):
+        assert products.features_for([sku]) == set(products.FEATURES), sku
+        assert products.plan([sku]) == {"tier": "premium", "name": "The Penthouse", "skus": [sku],
+                                        "via": "season", "until": None}
+    assert products.leagues_allowed([]) == 3
+    assert products.leagues_allowed([], 2) == 5 and products.leagues_allowed(["season"], 1) == 6
     assert products.leagues_allowed(["league_slot"]) == 3, "a slot in the sku list is not a tier; it counts by rows"
-    assert products.plan([]) == {"tier": "free", "name": "Free", "skus": []}
+    assert products.plan([]) == {"tier": "free", "name": "Free", "skus": [], "via": None, "until": None}
     assert products.plan(["league_slot"])["tier"] == "free", "a slot alone opens no room"
-    assert products.plan(["trade_lab", "waivers"])["name"] == "Wire Pass + Trade Lab"
-    assert products.plan(["waivers", "full_report"])["name"] == "The Penthouse"
-    assert products.is_premium(["waivers"]) and not products.is_premium(["league_slot"])
-    assert [u["sku"] for u in products.league_upsell([])] == ["league_slot", "full_report"]
-    assert [u["sku"] for u in products.league_upsell(["full_report"])] == ["league_slot"]
-    ups = products.upsell([], "trade_lab")
-    assert [u["sku"] for u in ups] == ["trade_lab", "full_report"]
-    a_la_carte = sum(p["price_cents"] for p in products.PRODUCTS if p["kind"] == "a_la_carte")
-    assert products.BY_SKU["full_report"]["price_cents"] <= a_la_carte, "bundle should be the obvious deal vs buying both passes"
+    assert products.plan(["weekly"], 123.0)["via"] == "weekly" and products.plan(["weekly"], 123.0)["until"] == 123.0
+    assert products.plan(["weekly", "season"], 123.0)["via"] == "season", "the season outranks a week"
+    assert products.plan(["trial"], 9.0)["via"] == "trial"
+    assert products.is_premium(["trial"]) and not products.is_premium(["league_slot"])
+    assert [u["sku"] for u in products.league_upsell([])] == ["weekly", "season"]
+    assert products.league_upsell(["season"]) == []
+    assert [u["sku"] for u in products.upsell([], "trade_lab")] == ["weekly", "season"]
+    assert products.upsell(["weekly"], "trade_lab") == []
+    assert products.trial_eligible([], 0) and not products.trial_eligible([], 1)
+    assert not products.trial_eligible(["season"], 0), "no free week for an account that already has premium"
+
+
+def test_week_passes_expire_and_chain():
+    D = products.DAY
+    assert products.live_skus([("weekly", 0.0)], 6 * D) == ["weekly"]
+    assert products.live_skus([("weekly", 0.0)], 7 * D + 1) == []
+    assert products.live_skus([("trial", 0.0)], 7 * D + 1) == []
+    # A second week bought on day three runs to day fourteen, not day ten.
+    two = [("weekly", 0.0), ("weekly", 3 * D)]
+    assert products.pass_until(two) == 14 * D
+    assert products.live_skus(two, 13 * D) == ["weekly"]
+    # A week bought after the last one lapsed starts from the purchase, not the old end.
+    assert products.pass_until([("weekly", 0.0), ("weekly", 30 * D)]) == 37 * D
+    # A trial then a week: the paid week starts where the free one ends.
+    assert products.pass_until([("trial", 0.0), ("weekly", D)]) == 14 * D
+    # The season never lapses, and legacy grants never lapse.
+    assert products.live_skus([("season", 0.0), ("weekly", 0.0)], 100 * D) == ["season"]
+    assert products.live_skus([("full_report", 0.0)], 100 * D) == ["full_report"]
+    assert products.pass_until([("season", 0.0)]) == 0.0
 
 
 def test_opening_the_free_trade_board_does_not_open_trade_lab():
@@ -67,9 +97,8 @@ def test_opening_the_free_trade_board_does_not_open_trade_lab():
 
     assert products.features_for([]) == {"my_team"}
     assert not products.can([], "trade_lab")
-    assert not products.can(["waivers"], "trade_lab")
-    assert products.can(["trade_lab"], "trade_lab") and products.can(["full_report"], "trade_lab")
-    assert [u["sku"] for u in products.upsell([], "trade_lab")] == ["trade_lab", "full_report"]
+    assert products.can(["weekly"], "trade_lab") and products.can(["season"], "trade_lab")
+    assert [u["sku"] for u in products.upsell([], "trade_lab")] == ["weekly", "season"]
 
     paid = {"week": 2, "my_positions": {"surplus": {"RB": 40.0}, "need": {"TE": 12.0}},
             "summary": "Team Nine is your best trade partner. They need RB.",

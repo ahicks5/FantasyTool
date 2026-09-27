@@ -142,10 +142,14 @@ class PostgresStore:
                          (payment_ref,))
         return cur.rowcount
 
-    def skus(self, email: str, season: int) -> list[str]:
-        cur = self._exec("SELECT DISTINCT sku FROM purchases WHERE email=%s AND season=%s AND revoked IS NULL",
+    def grants(self, email: str, season: int) -> list[tuple[str, float]]:
+        cur = self._exec("SELECT sku, created FROM purchases WHERE email=%s AND season=%s AND revoked IS NULL",
                          (email.lower(), season))
-        return [r[0] for r in cur.fetchall()]
+        return [(r[0], float(r[1] or 0)) for r in cur.fetchall()]
+
+    def skus(self, email: str, season: int, now: float | None = None) -> list[str]:
+        from edge import products
+        return products.live_skus(self.grants(email, season), time.time() if now is None else now)
 
     def count_sku(self, email: str, sku: str, season: int) -> int:
         cur = self._exec("SELECT COUNT(*) FROM purchases WHERE email=%s AND sku=%s AND season=%s AND revoked IS NULL",

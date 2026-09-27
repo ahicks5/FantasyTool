@@ -1,11 +1,11 @@
 """Unit economics: what a sale is actually worth after everyone else takes their cut.
 
-Why this exists: `edge/products.py` says a Trade Lab pass is $5. It does not say that Stripe
-takes 45 cents of it, that every trade verdict we explain with the Claude API costs us real
-money, or how many verdicts a single buyer can run before that $5 is gone. Those numbers
-decide the pricing questions that are currently open (à la carte vs bundle, a Playoff Pass
-after the trade deadline, whether the $3 tier should exist at all), so they belong in code
-that can be re-run when a price or a model changes — not in a spreadsheet nobody opens.
+Why this exists: `edge/products.py` says a week pass is $2.99. It does not say that Stripe
+takes 39 cents of it, that every trade verdict we explain with the Claude API costs us real
+money, or how many verdicts a single buyer can run before that $2.99 is gone. Those numbers
+decide the pricing questions that stay open (week vs season, a Playoff Pass after the trade
+deadline), so they belong in code that can be re-run when a price or a model changes — not
+in a spreadsheet nobody opens.
 
 Everything here is a pure function over explicit assumptions. Nothing calls the network.
 The assumptions are the interesting part and they are all in one place: `Fees`,
@@ -28,7 +28,7 @@ from edge import products
 @dataclass(frozen=True)
 class Fees:
     """Stripe's standard US card rate. Cross-border and currency conversion cost more;
-    a $7 product sold to a stranger on the internet occasionally is one of those."""
+    a $2.99 product sold to a stranger on the internet occasionally is one of those."""
 
     pct: float = 0.029
     fixed_cents: int = 30
@@ -276,7 +276,7 @@ def format_table(a: Assumptions | None = None) -> str:
     out = [
         f"Model {a.call.model} · {a.call.input_tokens} in / {a.call.output_tokens} out "
         f"= ${per_call:.4f} per explanation" if a.llm_enabled else "LLM off (templates)",
-        f"Assuming {a.usage.explanations} explanations per Trade Lab buyer, "
+        f"Assuming {a.usage.explanations} explanations per buyer, "
         f"{a.refund_rate:.0%} refunds, Stripe {a.fees.pct:.1%} + {a.fees.fixed_cents}c",
         "",
         f"{'SKU':<14}{'Price':>7}{'Fee':>7}{'LLM':>7}{'Net':>8}{'Margin':>8}{'Runway':>9}",

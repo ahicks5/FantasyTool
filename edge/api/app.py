@@ -51,8 +51,19 @@ def _demo_unlock() -> bool:
 
 def _skus(email: str | None) -> list[str]:
     if _demo_unlock():
-        return [p["sku"] for p in products.PRODUCTS if p["price_cents"] > 0]
+        return [p["sku"] for p in products.PRODUCTS if products.for_sale(p["sku"])]
     return store.skus(email, _season()) if email else []
+
+
+def _plan(email: str) -> dict:
+    """The plan flag, with when a timed pass runs out."""
+    return products.plan(_skus(email), products.pass_until(store.grants(email, _season())) or None)
+
+
+def _trial_eligible(email: str | None) -> bool:
+    if not email or _demo_unlock():
+        return False
+    return products.trial_eligible(_skus(email), store.count_sku(email, products.TRIAL_SKU, _season()))
 
 
 def _slots(email: str | None) -> int:
@@ -69,9 +80,8 @@ def _stripe_configured() -> bool:
 
 def _account(email: str) -> dict:
     """The account block on `/api/me`: who, the role, and the plan flag the views check."""
-    skus = _skus(email)
     out = accounts.public_user(store.get_user(email), email)
-    out["plan"] = products.plan(skus)
+    out["plan"] = _plan(email)
     out["is_admin"] = out["role"] == "admin"
     out["league_slots"] = _slots(email)
     return out
@@ -85,6 +95,8 @@ def _me(email: str | None) -> dict:
             "leagues": store.leagues(email) if email else [],
             "email_opt_in": store.email_opt_in(email) if email else False,
             "account": _account(email) if email else None,
+            # The free week is offered once per account per season, to anyone not premium.
+            "trial_eligible": _trial_eligible(email),
             # Whether the door offers "continue with your phone" (a text provider is set).
             "phone_sign_in": _sms() is not None,
             # The web shows "Upgrade" as a checkout when Stripe is wired and as a direct grant
@@ -166,7 +178,8 @@ def get_products():
     """
     from edge.data import providers
 
-    return {"products": products.PRODUCTS, "attribution": providers.attribution_line()}
+    return {"products": products.PRODUCTS, "trial_days": products.BY_SKU[products.TRIAL_SKU]["days"],
+            "attribution": providers.attribution_line()}
 
 
 @app.get("/api/me")
@@ -522,7 +535,7 @@ class UpgradeIn(BaseModel):
 
 @app.post("/api/account/upgrade")
 def upgrade(body: UpgradeIn, email: str = Depends(current_user)):
-    """Buy a pass, the bundle or a league slot.
+    """Buy the week pass or the season pass.
 
     With Stripe configured this is Checkout and the reply carries its `url`; the webhook
     writes the grant. Without Stripe there is no way to take money, so the grant is written
@@ -530,7 +543,7 @@ def upgrade(body: UpgradeIn, email: str = Depends(current_user)):
     paywall opening and it is deliberate for launch week -- docs/DEPLOY.md, "Upgrades
     without Stripe". Set `STRIPE_SECRET_KEY` and the same button becomes a payment.
     """
-    if body.sku not in products.BY_SKU or products.BY_SKU[body.sku]["price_cents"] == 0:
+    if not products.for_sale(body.sku):
         raise HTTPException(400, "unknown or free sku")
     if _stripe_configured():
         from edge.api import payments
@@ -539,6 +552,16 @@ def upgrade(body: UpgradeIn, email: str = Depends(current_user)):
     import uuid
     store.grant(email, body.sku, _season(), source="complimentary", ref=f"comp_{uuid.uuid4().hex}")
     return {"url": None, "granted": True, "me": _me(email)}
+
+
+@app.post("/api/account/trial")
+def start_trial(email: str = Depends(current_user)):
+    """Start the free week: everything, seven days, no card. Once per account per season."""
+    if not _trial_eligible(email):
+        raise HTTPException(409, "the free week has already been used on this account")
+    import uuid
+    store.grant(email, products.TRIAL_SKU, _season(), source="trial", ref=f"trial_{uuid.uuid4().hex}")
+    return {"ok": True, "me": _me(email)}
 
 
 @app.post("/api/leagues/{platform}/{league_id}/use")
@@ -577,7 +600,8 @@ def admin_users(_: str = Depends(require_admin)):
     out = []
     for u in store.users():
         skus = store.skus(u["email"], season)
-        out.append(u | {"plan": products.plan(skus), "skus": skus,
+        until = products.pass_until(store.grants(u["email"], season)) or None
+        out.append(u | {"plan": products.plan(skus, until), "skus": skus,
                         "leagues": store.leagues(u["email"]),
                         "leagues_allowed": products.leagues_allowed(skus, store.count_sku(u["email"], products.ADD_ON_SKU, season)),
                         "is_admin": accounts.is_admin(u["email"], u["role"])})
@@ -586,8 +610,8 @@ def admin_users(_: str = Depends(require_admin)):
 
 @app.post("/api/admin/users/{email}/grant")
 def admin_grant(email: str, body: GrantIn, admin: str = Depends(require_admin)):
-    """Hand an account a pass, the bundle or one more league slot. Source `admin`."""
-    if body.sku not in products.BY_SKU or products.BY_SKU[body.sku]["price_cents"] == 0:
+    """Hand an account a week pass or a season pass. Source `admin`."""
+    if not products.for_sale(body.sku):
         raise HTTPException(400, "unknown or free sku")
     import uuid
     store.grant(accounts.normalize_email(email), body.sku, _season(), source="admin", ref=f"admin_{uuid.uuid4().hex}")
@@ -676,7 +700,7 @@ def connect(body: ConnectIn, email: str = Depends(current_user), auth=Depends(es
 
     Looking is still free: every league route answers a stranger. What needs the account is
     keeping the league, which is what the cap is about. Over the cap is a 402 whose upsell
-    is the slot add-on, then the bundle.
+    is the passes, when a pass would raise the cap.
     """
     b = _bundle(body.platform, body.league_id, auth)
     t = _team(b, body.team_id)
@@ -686,8 +710,11 @@ def connect(body: ConnectIn, email: str = Depends(current_user), auth=Depends(es
     if not already and len(have) >= allowed:
         raise HTTPException(402, detail={"error": "league limit reached", "feature": "leagues",
                                          "teaser": f"Your account keeps {allowed} league{'s' if allowed != 1 else ''} "
-                                                   f"and all {allowed} are taken. Add a slot for one more.",
-                                         "upsell": products.league_upsell(_skus(email))})
+                                                   f"and all {allowed} are taken."
+                                                   + (f" Premium keeps {products.PREMIUM_LEAGUES}."
+                                                      if allowed < products.PREMIUM_LEAGUES else
+                                                      " Remove one to add another."),
+                                         "upsell": products.league_upsell(_skus(email), _slots(email))})
     store.connect_league(email, body.platform, body.league_id, t.id, b.league.name, t.name)
     return {"ok": True, "saved": True,
             "league": {"platform": body.platform, "league_id": body.league_id, "team_id": t.id,
@@ -704,7 +731,7 @@ class CheckoutIn(BaseModel):
 @app.post("/api/checkout")
 def checkout(body: CheckoutIn, email: str = Depends(current_user)):
     from edge.api import payments
-    if body.sku not in products.BY_SKU or products.BY_SKU[body.sku]["price_cents"] == 0:
+    if not products.for_sale(body.sku):
         raise HTTPException(400, "unknown or free sku")
     url = payments.create_checkout(email, body.sku, _season(), body.success_url, body.cancel_url)
     return {"url": url}
