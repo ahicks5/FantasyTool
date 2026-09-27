@@ -111,7 +111,7 @@ function DealBody({ c, refresh, signedIn }: { c: Connection; refresh: () => void
       )}
 
       {preview ? (
-        <Locked signedIn={signedIn} sku="trade_lab" what="Trade Lab" teaser={TRADE.lockTeaser} onUnlocked={refresh} />
+        <Locked signedIn={signedIn} feature="trade_lab" what="Trade Lab" teaser={TRADE.lockTeaser} onUnlocked={refresh} />
       ) : (
         <Link
           href={`/trade?their=${encodeURIComponent(p.team_id)}&build=1#build`}

@@ -131,7 +131,7 @@ function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
         {data.cover && <ShareFilm film={shareOf(data.cover, c.team_name)} leagueName={c.league_name} week={data.cover.week ?? 0} />}
         <Locked
           signedIn={signedIn}
-          sku="full_report"
+          feature="full_report"
           what={FILM.product}
           teaser={data.cover?.line ?? fallbackTeaser}
           onUnlocked={refresh}

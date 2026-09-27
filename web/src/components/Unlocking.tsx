@@ -7,7 +7,7 @@ import { featuresForSku, paidSkuFromSearch, urlWithoutPurchaseParams, waitForFea
 import type { Product, Sku } from "@/lib/types";
 import { IconCheck, IconLock } from "./icons";
 
-const SKUS: readonly string[] = ["waivers", "trade_lab", "full_report"];
+const SKUS: readonly string[] = ["weekly", "season"];
 
 /** Where to send someone whose payment cleared but whose unlock did not arrive. */
 const SUPPORT = process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "";
@@ -104,7 +104,7 @@ export function UnlockingBanner({ state }: { state: Phase }) {
         <span aria-hidden className="text-start">
           <IconCheck size={18} strokeWidth={2.4} />
         </span>
-        <span className="text-[14px] font-bold">{state.name} unlocked. It is yours for the rest of the season.</span>
+        <span className="text-[14px] font-bold">{state.name} unlocked. Every room is open.</span>
       </div>
     );
   }

@@ -5,16 +5,16 @@ import type { Account, AdminUser, MeLeague, Product } from "./types";
 
 const L = (id: string, last_used: number | null): MeLeague => ({ platform: "sleeper", league_id: id, name: id, team_id: "1", last_used });
 
+const ALL = ["my_team", "waivers", "trade_lab", "full_report"] as const;
 const PRODUCTS: Product[] = [
-  { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 3, kind: "free", blurb: "" },
-  { sku: "waivers", name: "Wire Pass", price_cents: 300, features: ["waivers"], leagues: 3, kind: "a_la_carte", blurb: "" },
-  { sku: "trade_lab", name: "Trade Lab", price_cents: 500, features: ["trade_lab"], leagues: 3, kind: "a_la_carte", blurb: "" },
-  { sku: "full_report", name: "The Penthouse", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "bundle", blurb: "" },
-  { sku: "league_slot", name: "League slot", price_cents: 200, features: [], leagues: 1, kind: "add_on", blurb: "" },
+  { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 3, kind: "free", days: null, blurb: "" },
+  { sku: "trial", name: "Free week", price_cents: 0, features: [...ALL], leagues: 5, kind: "trial", days: 7, blurb: "" },
+  { sku: "weekly", name: "Week Pass", price_cents: 299, features: [...ALL], leagues: 5, kind: "pass", days: 7, blurb: "" },
+  { sku: "season", name: "Season Pass", price_cents: 1999, features: [...ALL], leagues: 5, kind: "pass", days: null, blurb: "" },
 ];
 
-const account = (tier: "free" | "premium", skus: Account["plan"]["skus"]): Account => ({
-  email: "a@b.c", name: "", role: "user", is_admin: false, league_slots: 0, plan: { tier, name: "", skus },
+const account = (tier: "free" | "premium", skus: Account["plan"]["skus"], via: Account["plan"]["via"] = null): Account => ({
+  email: "a@b.c", name: "", role: "user", is_admin: false, league_slots: 0, plan: { tier, name: "", skus, via },
 });
 
 test("a returning account lands on the league it opened last, else the first linked", () => {
@@ -39,22 +39,21 @@ test("league room counts down to full", () => {
 
 test("the plan is one of two words", () => {
   assert.equal(planWord({ tier: "free", name: "Free", skus: [] }), "Free");
-  assert.equal(planWord({ tier: "premium", name: "Wire Pass", skus: ["waivers"] }), "Premium");
+  assert.equal(planWord({ tier: "premium", name: "The Penthouse", skus: ["weekly"] }), "Premium");
   assert.equal(planWord(null), "Free");
 });
 
-test("the upgrade sheet offers the pass, then the bundle; a slot stands alone", () => {
-  assert.deepEqual(offersFor(PRODUCTS, "waivers").map((p) => p.sku), ["waivers", "full_report"]);
-  assert.deepEqual(offersFor(PRODUCTS, "full_report").map((p) => p.sku), ["full_report"]);
-  assert.deepEqual(offersFor(PRODUCTS, "league_slot").map((p) => p.sku), ["league_slot"]);
-  assert.deepEqual(offersFor(PRODUCTS, "free"), []);
+test("the upgrade sheet offers the two passes, season first, whatever room asked", () => {
+  assert.deepEqual(offersFor(PRODUCTS).map((p) => p.sku), ["season", "weekly"]);
 });
 
-test("the account page sells what is not yet held", () => {
-  assert.deepEqual(upgradesFor(PRODUCTS, account("free", [])).map((p) => p.sku), ["waivers", "trade_lab", "full_report", "league_slot"]);
-  assert.deepEqual(upgradesFor(PRODUCTS, account("premium", ["waivers"])).map((p) => p.sku), ["trade_lab", "full_report", "league_slot"]);
-  assert.deepEqual(upgradesFor(PRODUCTS, account("premium", ["full_report"])).map((p) => p.sku), ["league_slot"], "the bundle leaves only slots to buy");
-  assert.deepEqual(upgradesFor(PRODUCTS, null).map((p) => p.sku), ["waivers", "trade_lab", "full_report", "league_slot"]);
+test("the account page sells a pass until the season is held", () => {
+  assert.deepEqual(upgradesFor(PRODUCTS, account("free", [])).map((p) => p.sku), ["season", "weekly"]);
+  assert.deepEqual(upgradesFor(PRODUCTS, account("premium", ["weekly"], "weekly")).map((p) => p.sku), ["season", "weekly"], "a week can become the season");
+  assert.deepEqual(upgradesFor(PRODUCTS, account("premium", ["trial"], "trial")).map((p) => p.sku), ["season", "weekly"]);
+  assert.deepEqual(upgradesFor(PRODUCTS, account("premium", ["season"], "season")), [], "the season leaves nothing to buy");
+  assert.deepEqual(upgradesFor(PRODUCTS, account("premium", ["full_report"], "season")), [], "nor does anything bought before the switch");
+  assert.deepEqual(upgradesFor(PRODUCTS, null).map((p) => p.sku), ["season", "weekly"]);
 });
 
 test("a stamp reads as a short date and nothing reads as a date when there is none", () => {

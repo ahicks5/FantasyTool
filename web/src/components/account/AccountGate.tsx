@@ -1,27 +1,28 @@
 "use client";
 /**
  * The two popups every room can raise: sign in, and upgrade. One provider in the root
- * layout; any page calls `useAccountGate().signIn()` or `.upgrade(sku)` and gets a promise
+ * layout; any page calls `useAccountGate().signIn()` or `.upgrade()` and gets a promise
  * that says whether the visitor went through with it. The sign-in check asks the API, not
  * the browser, so a dead token reads as signed out.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getProducts, upgrade as upgradeCall } from "@/lib/api";
+import { getProducts, startTrial, upgrade as upgradeCall } from "@/lib/api";
 import { offersFor } from "@/lib/account";
+import { offer as readOffer } from "@/lib/offer";
 import { formatCents } from "@/lib/format";
 import { currentMe, useSession } from "@/lib/session";
 import type { Me, Product, Sku } from "@/lib/types";
 import { PRODUCTS as FALLBACK } from "@/lib/mocks";
 import { IconCheck, IconLock, IconX } from "@/components/icons";
 import { Button } from "@/components/ui";
-import { ACCOUNT } from "@/lib/vocab";
+import { ACCOUNT, LINES } from "@/lib/vocab";
 import { AuthForm, type AuthMode } from "./AuthForm";
 
 type Reason = keyof typeof ACCOUNT.reason;
 
 export interface UpgradeOptions {
-  /** The room this is for, e.g. "Wire Pass": becomes the sheet's eyebrow. */
+  /** The room this is for, e.g. "Trade Lab": becomes the sheet's eyebrow. */
   what?: string;
   /** Where a Stripe checkout should return to. Defaults to the current page. */
   returnTo?: string;
@@ -30,11 +31,11 @@ export interface UpgradeOptions {
 export interface GateApi {
   /** Resolves true once signed in (already, or just now); false if the sheet was dismissed. */
   signIn: (reason?: Reason) => Promise<boolean>;
-  /** Signs in first if needed, then offers the pass. Resolves true once the grant has landed. */
-  upgrade: (sku: Sku, options?: UpgradeOptions) => Promise<boolean>;
+  /** Signs in first if needed, then offers the free week and the passes. Resolves true once a grant has landed. */
+  upgrade: (options?: UpgradeOptions) => Promise<boolean>;
 }
 
-type State = { kind: "signin"; reason: Reason } | { kind: "upgrade"; sku: Sku; what?: string; returnTo?: string } | null;
+type State = { kind: "signin"; reason: Reason } | { kind: "upgrade"; what?: string; returnTo?: string } | null;
 
 const Ctx = createContext<GateApi | null>(null);
 
@@ -92,10 +93,10 @@ export function AccountGateProvider({ children }: { children: React.ReactNode })
   );
 
   const upgrade = useCallback(
-    async (sku: Sku, options: UpgradeOptions = {}) => {
+    async (options: UpgradeOptions = {}) => {
       const ok = await signIn("upgrade");
       if (!ok) return false;
-      return open({ kind: "upgrade", sku, what: options.what, returnTo: options.returnTo });
+      return open({ kind: "upgrade", what: options.what, returnTo: options.returnTo });
     },
     [signIn, open],
   );
@@ -107,7 +108,7 @@ export function AccountGateProvider({ children }: { children: React.ReactNode })
       {children}
       {state?.kind === "signin" && <SignInSheet reason={state.reason} onClose={() => close(false)} onDone={() => close(true)} />}
       {state?.kind === "upgrade" && (
-        <UpgradeSheet sku={state.sku} what={state.what} returnTo={state.returnTo} onClose={() => close(false)} onDone={() => close(true)} />
+        <UpgradeSheet what={state.what} returnTo={state.returnTo} onClose={() => close(false)} onDone={() => close(true)} />
       )}
     </Ctx.Provider>
   );
@@ -159,7 +160,7 @@ function SignInSheet({ reason, onClose, onDone }: { reason: Reason; onClose: () 
   );
 }
 
-function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what?: string; returnTo?: string; onClose: () => void; onDone: () => void }) {
+function UpgradeSheet({ what, returnTo, onClose, onDone }: { what?: string; returnTo?: string; onClose: () => void; onDone: () => void }) {
   const session = useSession();
   const [products, setProducts] = useState<Product[]>(FALLBACK);
   const [busy, setBusy] = useState<Sku | null>(null);
@@ -168,8 +169,24 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
   useEffect(() => {
     getProducts().then((r) => r.products.length && setProducts(r.products)).catch(() => undefined);
   }, []);
-  const offers = offersFor(products, sku);
+  const offers = offersFor(products);
+  const trial = readOffer(products).trial;
+  const canTrial = !!(trial?.days && session.me?.trial_eligible);
   const checkout = !!session.me?.checkout;
+
+  async function takeTrial() {
+    setBusy("trial");
+    setError(null);
+    try {
+      await startTrial();
+      session.refresh();
+      setDone(trial?.name ?? ACCOUNT.upgrade.trialDone);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function buy(offer: Product) {
     setBusy(offer.sku);
@@ -206,17 +223,25 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
         </div>
       ) : (
         <div className="grid gap-3">
-          <p className="text-[14px] leading-relaxed text-muted">{sku === "league_slot" ? ACCOUNT.upgrade.slotLead : ACCOUNT.upgrade.lead}</p>
+          <p className="text-[14px] leading-relaxed text-muted">{ACCOUNT.upgrade.lead}</p>
           {!checkout && <p className="rounded-xl bg-start-soft px-3.5 py-2.5 text-[13px] font-bold leading-snug text-start">{ACCOUNT.upgrade.comp}</p>}
+          {canTrial && trial?.days && (
+            <div className="card border-start p-4 ring-1 ring-start" data-testid="start-trial">
+              <p className="text-[14px] font-bold leading-snug text-ink">{ACCOUNT.upgrade.trial(trial.days)}</p>
+              <Button variant="start" className="mt-3 w-full" busy={busy === "trial"} disabled={!!busy && busy !== "trial"} onClick={takeTrial}>
+                {busy === "trial" ? ACCOUNT.upgrade.busy : LINES.paywallTrial}
+              </Button>
+            </div>
+          )}
           <ul className="grid gap-2.5">
             {offers.map((o, i) => (
-              <li key={o.sku} className={`card p-4 ${i === 0 ? "border-start ring-1 ring-start" : ""}`}>
+              <li key={o.sku} className={`card p-4 ${i === 0 && !canTrial ? "border-start ring-1 ring-start" : ""}`}>
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="display text-[19px] leading-tight">{o.name}</span>
                   <span className="display tnum text-[24px] leading-none">{formatCents(o.price_cents)}</span>
                 </div>
                 <p className="mt-1 text-[13px] leading-snug text-muted">{o.blurb}</p>
-                <Button variant={i === 0 ? "start" : "secondary"} className="mt-3 w-full" busy={busy === o.sku} disabled={!!busy && busy !== o.sku} onClick={() => buy(o)}>
+                <Button variant={i === 0 && !canTrial ? "start" : "secondary"} className="mt-3 w-full" busy={busy === o.sku} disabled={!!busy && busy !== o.sku} onClick={() => buy(o)}>
                   {busy === o.sku ? ACCOUNT.upgrade.busy : ACCOUNT.upgrade.get(o.name)}
                 </Button>
               </li>
@@ -229,7 +254,7 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
           )}
           <p className="flex items-center justify-center gap-1.5 text-center text-[12px] text-muted">
             <IconLock size={12} strokeWidth={2.4} />
-            {checkout ? "Paid through Stripe. One payment, no subscription." : "Nothing is charged today."}
+            {checkout ? "Paid through Stripe. One payment, nothing renews." : "Nothing is charged today."}
           </p>
         </div>
       )}

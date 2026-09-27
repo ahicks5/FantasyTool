@@ -233,8 +233,11 @@ function mockMe(): Me {
       ...mocks.ME.account!,
       email,
       name: email.split("@")[0],
-      plan: premium ? { tier: "premium", name: "The Penthouse", skus: ["full_report"] } : { tier: "free", name: "Free", skus: [] },
+      plan: premium
+        ? { tier: "premium", name: "The Penthouse", skus: ["season"], via: "season", until: null }
+        : { tier: "free", name: "Free", skus: [], via: null, until: null },
     },
+    trial_eligible: !premium,
   };
 }
 
@@ -365,6 +368,20 @@ export async function upgrade(sku: Sku, returnTo?: string): Promise<UpgradeRespo
     body.cancel_url = `${origin}${returnTo}${sep}canceled=1`;
   }
   return request<UpgradeResponse>("/account/upgrade", { method: "POST", body: JSON.stringify(body) });
+}
+
+/** Start the free week: everything, seven days, no card. Once per account per season. */
+export async function startTrial(): Promise<Me> {
+  if (USE_MOCKS) {
+    try {
+      window.localStorage.setItem(MOCK_ENTITLEMENTS_KEY, JSON.stringify(ALL_FEATURES));
+    } catch {
+      /* ignore */
+    }
+    return mockMe();
+  }
+  const out = await request<{ ok: boolean; me: Me }>("/account/trial", { method: "POST" });
+  return out.me;
 }
 
 /** Mark the league being read, so the next sign-in on any device opens on it. */

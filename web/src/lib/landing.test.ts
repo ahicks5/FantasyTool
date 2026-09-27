@@ -33,9 +33,10 @@ test("the page asks more than once, and the bar follows the reader between the f
 });
 
 test("no number on the page is typed where the catalog could say it", () => {
-  // The price headline, the stack and the anchor all come through lib/offer.ts.
-  assert.match(PRICING, /offerStack\(products\)/);
-  assert.match(PRICING, /PRICING\.title\(formatCents\(bundle\.price_cents\)\)/);
+  // The price headline and the anchor both come through lib/offer.ts.
+  assert.match(PRICING, /offer\(products \?\? \[\]\)/);
+  assert.match(PRICING, /PRICING\.title\(formatCents\(o\.season\.price_cents\)\)/);
+  assert.match(PRICING, /PRICING\.anchor\(o\.weeksToSeason\)/);
   assert.doesNotMatch(PRICING, /\$\d/, "Pricing.tsx types a dollar figure");
   // The guarantee reads the terms' number.
   assert.match(PRICING, /PRICING\.guarantee\.body\(LEGAL\.refundDays\)/);

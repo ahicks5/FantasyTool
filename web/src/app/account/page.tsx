@@ -11,11 +11,11 @@ import { Loading } from "@/components/Loading";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton, OnAir } from "@/components/ui";
 import { addPhone, changePassword, deleteMyAccount, phoneStart, setAccountEmail, exportMyData, forgetLeague, getLeague, getProducts, logout, logoutOthers, markLeagueUsed } from "@/lib/api";
 import { describeAuthError } from "@/lib/authError";
-import { accountContact, accountLabel, displayPhone, leagueRoom, upgradesFor } from "@/lib/account";
+import { accountContact, accountLabel, displayPhone, leagueRoom, shortDate, upgradesFor } from "@/lib/account";
 import { formatCents } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { clearConnection, saveConnection } from "@/lib/storage";
-import type { MeLeague, Product, Sku } from "@/lib/types";
+import type { MeLeague, Product } from "@/lib/types";
 import { PRODUCTS as FALLBACK } from "@/lib/mocks";
 import { ACCOUNT, LINES } from "@/lib/vocab";
 
@@ -325,8 +325,8 @@ function AccountBody() {
     }
   }
 
-  async function buy(sku: Sku, what: string) {
-    if (await gate.upgrade(sku, { what, returnTo: "/account" })) session.refresh();
+  async function buy(what?: string) {
+    if (await gate.upgrade({ what, returnTo: "/account" })) session.refresh();
   }
 
   async function download() {
@@ -364,6 +364,8 @@ function AccountBody() {
   const premium = account.plan.tier === "premium";
   const room = leagueRoom(me.leagues.length, me.leagues_allowed);
   const offers = upgradesFor(products, account);
+  // A week pass or the free week says the day it closes; the season says the season.
+  const until = premium && account.plan.until ? shortDate(account.plan.until) : "";
   const current = session.connection;
   const fresh = me.leagues.length === 0;
 
@@ -392,17 +394,17 @@ function AccountBody() {
           <div className="min-w-0">
             <Eyebrow>{ACCOUNT.plan.eyebrow}</Eyebrow>
             <p className="display mt-1 text-[24px] leading-tight">{account.plan.name}</p>
-            <p className="mt-1 text-[13px] leading-snug text-muted">{premium ? ACCOUNT.plan.premiumLine : ACCOUNT.plan.freeLine}</p>
+            <p className="mt-1 text-[13px] leading-snug text-muted" data-testid="plan-line">
+              {until ? ACCOUNT.plan.weekLine(until) : premium ? ACCOUNT.plan.premiumLine : ACCOUNT.plan.freeLine}
+            </p>
           </div>
           <PlanFlag premium={premium} admin={account.is_admin} />
         </div>
         <p className="mt-3 text-[15px] font-bold break-words">{accountLabel(account)}</p>
         {accountContact(account) && <p className="text-[13px] text-muted break-words">{accountContact(account)}</p>}
-        {!account.plan.skus.includes("full_report") && (
-          <Button variant="start" className="mt-4 w-full" onClick={() => buy("full_report", LINES.paywallBundle)} data-testid="upgrade-bundle">
-            {ACCOUNT.plan.upgrade}
-            <span aria-hidden className="opacity-60">·</span>
-            <span className="tnum">{formatCents(products.find((p) => p.sku === "full_report")?.price_cents ?? 700)}</span>
+        {offers.length > 0 && (
+          <Button variant="start" className="mt-4 w-full" onClick={() => buy(LINES.paywallBundle)} data-testid="upgrade-bundle">
+            {me.trial_eligible ? LINES.paywallTrial : ACCOUNT.plan.upgrade}
           </Button>
         )}
         {account.is_admin && (
@@ -454,12 +456,16 @@ function AccountBody() {
         <div className="mt-3 grid gap-2">
           {room.full ? (
             <>
-              <p className="text-[13px] leading-snug text-muted">{ACCOUNT.leagues.full}</p>
-              <Button variant="secondary" className="w-full" onClick={() => buy("league_slot", ACCOUNT.upgrade.limit)} data-testid="add-slot">
-                {ACCOUNT.leagues.addSlot}
-                <span aria-hidden className="opacity-60">·</span>
-                <span className="tnum">{formatCents(products.find((p) => p.sku === "league_slot")?.price_cents ?? 200)}</span>
-              </Button>
+              {premium ? (
+                <p className="text-[13px] leading-snug text-muted">{ACCOUNT.leagues.full}</p>
+              ) : (
+                <>
+                  <p className="text-[13px] leading-snug text-muted">{ACCOUNT.leagues.fullFree(Math.max(...products.map((p) => p.leagues), me.leagues_allowed))}</p>
+                  <Button variant="secondary" className="w-full" onClick={() => buy(ACCOUNT.upgrade.limit)} data-testid="add-slot">
+                    {ACCOUNT.plan.upgrade}
+                  </Button>
+                </>
+              )}
             </>
           ) : fresh ? null : (
             <LinkButton href="/connect" className="w-full">
@@ -469,7 +475,7 @@ function AccountBody() {
         </div>
       </section>
 
-      {/* What is left to buy. Empty for a bundle holder with every slot they want. */}
+      {/* What is left to buy. Empty for a season holder. */}
       {offers.length > 0 && (
         <section className="mt-8 rise rise-3">
           <Eyebrow>{ACCOUNT.upgrade.title}</Eyebrow>
@@ -480,7 +486,7 @@ function AccountBody() {
                   <span className="display block text-[16px] leading-tight">{o.name}</span>
                   <span className="mt-0.5 block text-[12px] leading-snug text-muted">{o.blurb}</span>
                 </span>
-                <Button size="sm" variant={o.sku === "full_report" ? "start" : "secondary"} onClick={() => buy(o.sku, o.name)}>
+                <Button size="sm" variant={o.sku === "season" ? "start" : "secondary"} onClick={() => buy(o.name)}>
                   <span className="tnum">{formatCents(o.price_cents)}</span>
                 </Button>
               </li>

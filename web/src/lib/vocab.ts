@@ -134,13 +134,12 @@ export const LINES = {
    */
   connect: "Connect your league.",
 
-  /** The bundle, as a sentence — it sits above the price on the pricing card. */
-  paywallBundle: "The rest of the building.",
-  /** The same idea as a control. Buttons are verb first, and a full stop reads badly
-   *  next to the price that follows it ("The rest of the building. · $7"). */
-  paywallBundleCta: "Take the rest of the building",
-  /** Any single pass, as a sentence. */
-  paywallPass: "Unlock the floor.",
+  /** Premium, as a sentence. Any pass opens every room, so there is one thing to say. */
+  paywallBundle: "The whole building.",
+  /** The free week, as a control. Verb first, no full stop. */
+  paywallTrial: "Start your free week",
+  /** Under the paywall's buttons: what a pass is, and that it never renews. */
+  paywallTerms: "Every room, every league. One payment, nothing renews.",
 } as const;
 
 /**
@@ -719,13 +718,16 @@ export const ACCOUNT = {
     current: "Your plan",
     freeLine: "Start/sit calls, the desk, the standings and the board. Every week.",
     premiumLine: "Every room open for the rest of the season.",
+    /** A week pass or the free week: every room, and the day it closes. */
+    weekLine: (date: string) => `Every room open through ${date}.`,
   },
   /** Leagues on file. */
   leagues: {
     eyebrow: "Leagues on file",
     add: "Link a league",
-    addSlot: "Add a slot",
-    full: "Every slot is taken. Add one, or forget a league.",
+    full: "Every slot is taken. Forget a league to add another.",
+    /** Free and full: premium holds more. */
+    fullFree: (n: number) => `Every slot is taken. Premium keeps ${n}.`,
     forget: "Forget",
     forgetAria: (name: string) => `Forget ${name}`,
     open: "Open",
@@ -737,12 +739,14 @@ export const ACCOUNT = {
   /** The upgrade sheet. */
   upgrade: {
     title: "Upgrade",
-    lead: "One payment, rest of the season. No subscription.",
+    lead: "Every room, every league. Pick a week or the season. Nothing renews.",
     /** Shown while the API has no Stripe key: the grant is written on the spot. */
     comp: "Launch week: no card, no charge. Tap it and the floor is yours.",
     get: (name: string) => `Get ${name}`,
     done: "Done. The floor is open.",
-    slotLead: "One more league on your account.",
+    /** The free week, offered above the passes when the account can still take it. */
+    trial: (days: number) => `Try it free for ${days} days. No card.`,
+    trialDone: "Your free week is on.",
     busy: "Opening\u2026",
     close: "Close",
     /** Why this sheet is up, when a locked room asked for it. */
@@ -839,7 +843,20 @@ export const ACCOUNT = {
     notYou: "This desk is the owner\u2019s.",
     grant: "Grant",
     revoke: "Revoke",
-    slot: "+1 league",
+    /** What the owner can hand out, and what an older account may still hold. */
+    skuLabel: (sku: string): string =>
+      (
+        {
+          season: "Season Pass",
+          weekly: "Week Pass",
+          trial: "Free week",
+          full_report: "The Penthouse (old)",
+          waivers: "Wire Pass (old)",
+          trade_lab: "Trade Lab (old)",
+          league_slot: "League slot (old)",
+        } as Record<string, string>
+      )[sku] ?? sku,
+    until: (date: string) => `through ${date}`,
     promote: "Make admin",
     demote: "Remove admin",
     resetLink: "Reset link",
@@ -1025,7 +1042,7 @@ export const LANDING = {
       },
       {
         q: "Is it a subscription?",
-        a: "No. One payment, rest of the season. Nothing renews.",
+        a: "No. A week or the season, one payment each. Nothing renews. The first week is free.",
       },
       {
         q: "What if a call is wrong?",
@@ -1064,16 +1081,15 @@ export const LANDING = {
 } as const;
 
 /**
- * The offer, as a stack. Every line is named and priced, the total is printed, and then the
- * price, because a bundle that is only a bundle is worth less than the same bundle itemised.
- * The figures are never typed here: `lib/offer.ts` adds them up from the API's own catalog,
- * so a price change in `edge/products.py` cannot leave this page quoting the old one.
+ * The offer: a week or the season, both opening every room, and the first week free. The
+ * figures are never typed here: `lib/offer.ts` reads them off the API's own catalog, so a
+ * price change in `edge/products.py` cannot leave this page quoting the old one.
  */
 export const PRICING = {
   eyebrow: "Pricing",
   /** The price is the headline, and it comes from the catalog. */
   title: (price: string) => `${price}. The season.`,
-  lead: "One payment, rest of the season. Nothing renews.",
+  lead: "Every room opens with either pass. A week or the season, one payment, nothing renews.",
   /** What each entitlement actually buys, in the user's words rather than the API's. */
   unlocks: {
     my_team: "Start/sit calls, stamped with confidence",
@@ -1081,16 +1097,16 @@ export const PRICING = {
     trade_lab: "Trade verdicts and counters",
     full_report: "The full weekly film",
   },
-  badge: { best: "Best value", alaCarte: "À la carte" },
+  badge: { best: "Best value", week: "One week" },
   leagues: (n: number) => `${n} league${n === 1 ? "" : "s"}`,
-  /** The stack on the bundle card. */
-  stack: {
-    head: "What the Penthouse holds",
-    film: "The full weekly film",
-    filmPrice: "Not sold apart",
-    slots: (n: number) => `${n} more league${n === 1 ? "" : "s"}`,
-    apart: "Bought apart",
-    together: "Together",
+  /** How long each pass runs, under its price. */
+  per: { week: "per week", season: "the season" },
+  /** The season card's anchor, from the catalog: what the week pass would cost to match it. */
+  anchor: (weeks: number) => `Less than ${weeks} weeks of the Week Pass.`,
+  /** The free week, above the cards. */
+  trial: {
+    head: "First week free",
+    body: (days: number) => `Every room for ${days} days. No card, nothing to cancel.`,
   },
   /** The guarantee sits under the price. It is the one in the terms, said plainly. */
   guarantee: {
@@ -1103,7 +1119,7 @@ export const PRICING = {
     body: "Every floor is open and there is no card to enter. Take it while the register is closed.",
   },
   cta: "Take me upstairs",
-  under: "Start free. Pay only when you want the rest.",
+  under: "Start free. Take the free week. Pay only when you want more.",
 } as const;
 
 /**

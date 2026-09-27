@@ -140,9 +140,11 @@ export default function ConnectPage() {
       try {
         await connect({ platform, league_id: league.id, team_id: teamId });
       } catch (e) {
-        // Over the cap: the slot sheet, then the same save again once it has landed.
+        // Over the cap: the upgrade sheet when a pass would raise it, then the same save
+        // again once it has landed. Already premium, there is nothing to sell: say so.
         if (e instanceof PaywallError && e.feature === "leagues") {
-          if (!(await gate.upgrade("league_slot", { what: ACCOUNT.upgrade.limit, returnTo: "/connect" }))) return false;
+          if (!e.upsell?.length) throw new Error(e.teaser ?? e.message);
+          if (!(await gate.upgrade({ what: ACCOUNT.upgrade.limit, returnTo: "/connect" }))) return false;
           await connect({ platform, league_id: league.id, team_id: teamId });
           return true;
         }

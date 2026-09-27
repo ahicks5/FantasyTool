@@ -158,7 +158,7 @@ function PickupBody({ c, refresh, signedIn }: { c: Connection; refresh: () => vo
     return (
       <div className="grid gap-4">
         <Back />
-        <Locked signedIn={signedIn} sku="waivers" what="Wire Pass" teaser={paywallTeaser(cause, WIRE.lockedLine)} onUnlocked={refresh} />
+        <Locked signedIn={signedIn} feature="waivers" what="Wire Pass" teaser={paywallTeaser(cause, WIRE.lockedLine)} onUnlocked={refresh} />
       </div>
     );
   }

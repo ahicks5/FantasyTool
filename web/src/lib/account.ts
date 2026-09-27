@@ -2,7 +2,8 @@
  * The account, minus React: which league to open on a fresh sign-in, how the plan reads,
  * and how much room is left for leagues. Pure, so every rule is a node:test.
  */
-import type { Account, AdminUser, MeLeague, AccountPlan, Product, Sku } from "./types";
+import type { Account, AdminUser, MeLeague, AccountPlan, Product } from "./types";
+import { passes } from "./offer.ts";
 
 /**
  * The league a returning account should land on: the one opened most recently on any
@@ -57,28 +58,20 @@ export function planWord(plan: AccountPlan | null | undefined): "Free" | "Premiu
 }
 
 /**
- * What the upgrade sheet offers for a feature: the cheapest pass that opens it and the
- * bundle if it is not already the pass, in that order, from the live catalogue.
+ * What the upgrade sheet offers: the passes on sale, season first. Any pass opens every
+ * room, so the offer is the same whatever locked room asked for it.
  */
-export function offersFor(products: readonly Product[], sku: Sku): Product[] {
-  const wanted = products.find((p) => p.sku === sku);
-  const bundle = products.find((p) => p.sku === "full_report");
-  if (!wanted || wanted.price_cents === 0) return [];
-  const out: Product[] = [wanted];
-  if (bundle && sku !== "full_report" && sku !== "league_slot") out.push(bundle);
-  return out;
+export function offersFor(products: readonly Product[]): Product[] {
+  return passes(products);
 }
 
-/** The passes to offer on the account page: everything paid the account does not already hold. */
+/**
+ * The passes to offer on the account page. A season holder has nothing left to buy; a
+ * week or free-week holder can still take the season, or another week.
+ */
 export function upgradesFor(products: readonly Product[], account: Account | null): Product[] {
-  const held = new Set(account?.plan.skus ?? []);
-  const premium = account?.plan.tier === "premium" && held.has("full_report");
-  return products.filter((p) => {
-    if (p.price_cents === 0 || held.has(p.sku)) return false;
-    // The bundle covers every pass, so nothing but a slot is left to sell once it is held.
-    if (premium && p.kind !== "add_on") return false;
-    return true;
-  });
+  if (account?.plan.tier === "premium" && (account.plan.via ?? "season") === "season") return [];
+  return passes(products);
 }
 
 /** A unix-seconds stamp as a short date, or "" when there is none. */

@@ -4,7 +4,12 @@ export type Platform = "sleeper" | "espn";
 
 export type Feature = "my_team" | "waivers" | "trade_lab" | "full_report";
 
-export type Sku = "free" | "waivers" | "trade_lab" | "full_report" | "league_slot";
+/** What is sold: the week pass and the season pass. `trial` is the free week, never sold. */
+export type PassSku = "weekly" | "season";
+
+/** Every sku an account can hold. The last four were sold before the switch to the two
+ *  passes (2026-09-27); they are still honoured and still show up on old accounts. */
+export type Sku = "free" | "trial" | PassSku | "waivers" | "trade_lab" | "full_report" | "league_slot";
 
 export interface Product {
   sku: Sku;
@@ -13,9 +18,10 @@ export interface Product {
   features: Feature[];
   leagues: number;
   blurb: string;
-  /** `edge/products.py` has always sent this; the Pricing badge infers it from `sku` instead.
-   *  `add_on` is the league slot: it unlocks nothing and stacks. */
-  kind?: "free" | "a_la_carte" | "bundle" | "add_on";
+  /** `pass` is for sale; `trial` is the free week; `legacy` and `add_on` are retired skus. */
+  kind?: "free" | "trial" | "pass" | "legacy" | "add_on";
+  /** How long it runs, in days; null for the whole season. */
+  days?: number | null;
 }
 
 /** `GET /api/health`: what the API has switched on, never a key. */
@@ -30,6 +36,8 @@ export interface Health {
 
 export interface ProductsResponse {
   products: Product[];
+  /** How long the free week runs. */
+  trial_days?: number;
 }
 
 export interface MeLeague {
@@ -48,6 +56,10 @@ export interface AccountPlan {
   tier: "free" | "premium";
   name: string;
   skus: Sku[];
+  /** How premium is held: the season (or anything bought before the switch), a week, or the free week. */
+  via?: "season" | "weekly" | "trial" | null;
+  /** Unix seconds when a week pass or the free week runs out; null for the season. */
+  until?: number | null;
 }
 
 export type Role = "user" | "admin";
@@ -59,7 +71,7 @@ export interface Account {
   role: Role;
   is_admin: boolean;
   plan: AccountPlan;
-  /** How many league-slot add-ons this account holds this season. */
+  /** League slots bought before the switch. No longer sold; each still holds a league. */
   league_slots: number;
   created?: number | null;
   last_login?: number | null;
@@ -83,6 +95,8 @@ export interface Me {
   checkout?: boolean;
   /** True when the API can text a sign-in code, so the door offers "continue with your phone". */
   phone_sign_in?: boolean;
+  /** True while this account can still start its free week (once a season, never while premium). */
+  trial_eligible?: boolean;
 }
 
 /** `POST /api/auth/phone/start`. `dev_code` only from a dev API, which texts nothing. */

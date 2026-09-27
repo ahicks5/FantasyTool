@@ -62,10 +62,9 @@ export const WEEK = 2;
 
 export const PRODUCTS: Product[] = [
   { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 3, kind: "free", blurb: "Start/sit for up to three leagues." },
-  { sku: "waivers", name: "Wire Pass", price_cents: 300, features: ["waivers"], leagues: 3, kind: "a_la_carte", blurb: "The wire, ranked. Bid and drop included." },
-  { sku: "trade_lab", name: "Trade Lab", price_cents: 500, features: ["trade_lab"], leagues: 3, kind: "a_la_carte", blurb: "Verdicts and counters, rest of season." },
-  { sku: "full_report", name: "The Penthouse", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "bundle", blurb: "The whole Penthouse. Five leagues." },
-  { sku: "league_slot", name: "League slot", price_cents: 200, features: [], leagues: 1, kind: "add_on", blurb: "One more league on your account. Rest of season." },
+  { sku: "trial", name: "Free week", price_cents: 0, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "trial", days: 7, blurb: "Everything in The Penthouse for seven days. No card." },
+  { sku: "weekly", name: "Week Pass", price_cents: 299, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "pass", days: 7, blurb: "Everything in The Penthouse for seven days, up to 5 leagues." },
+  { sku: "season", name: "Season Pass", price_cents: 1999, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "pass", days: null, blurb: "Everything in The Penthouse through the end of the season, up to 5 leagues." },
 ];
 
 /** The demo pretends the register is open, so the pricing card shows the price and not the launch-week grant. */

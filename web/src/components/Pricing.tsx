@@ -1,67 +1,27 @@
 "use client";
-/** The offer: every tier, the bundle itemised as a stack, the guarantee under the price, and the way in. */
+/** The offer: free, a week, the season, the first week free, the guarantee under the price, and the way in. */
 
 import { useEffect, useState } from "react";
 import { getHealth, getProducts } from "@/lib/api";
 import { formatCents } from "@/lib/format";
 import { LEGAL } from "@/lib/legal";
-import { offerStack } from "@/lib/offer";
+import { offer } from "@/lib/offer";
 import type { Product } from "@/lib/types";
 import { IconCheck } from "./icons";
 import { Eyebrow, LinkButton, Skeleton } from "./ui";
 import { LINES, PRICING } from "@/lib/vocab";
 
-function Badge({ sku }: { sku: Product["sku"] }) {
-  if (sku === "free") return null;
-  if (sku === "full_report")
-    return (
-      <span className="inline-flex rounded-full bg-start-fill px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white">
-        {PRICING.badge.best}
-      </span>
-    );
+function Badge({ p }: { p: Product }) {
+  if (p.kind !== "pass") return null;
+  const season = p.days == null;
   return (
-    <span className="inline-flex rounded-full bg-soft px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-muted">
-      {PRICING.badge.alaCarte}
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
+        season ? "bg-start-fill text-white" : "bg-soft text-muted"
+      }`}
+    >
+      {season ? PRICING.badge.best : PRICING.badge.week}
     </span>
-  );
-}
-
-/**
- * The bundle, itemised. Each line named and priced, the parts added up, then the price:
- * the reader sees what the seven dollars would cost bought one floor at a time. Every
- * figure is the catalog's (`lib/offer.ts`), so this cannot drift from `edge/products.py`.
- */
-function Stack({ products }: { products: Product[] }) {
-  const s = offerStack(products);
-  if (!s || s.apartCents <= s.togetherCents) return null;
-  const rows: { name: string; price: string; muted?: boolean }[] = [
-    ...s.lines.map((l) => ({ name: l.name, price: formatCents(l.cents) })),
-    ...s.onlyHere.map((f) => ({ name: PRICING.unlocks[f], price: PRICING.stack.filmPrice, muted: true })),
-  ];
-  const slot = products.find((p) => p.kind === "add_on");
-  if (s.extraLeagues > 0 && slot) {
-    rows.push({ name: PRICING.stack.slots(s.extraLeagues), price: formatCents(s.extraLeagues * slot.price_cents) });
-  }
-  return (
-    <div className="mt-4 rounded-xl bg-soft p-3.5" data-testid="offer-stack">
-      <div className="eyebrow">{PRICING.stack.head}</div>
-      <ul className="mt-2 grid gap-1.5">
-        {rows.map((r) => (
-          <li key={r.name} className="flex items-baseline justify-between gap-3 text-[13px] leading-snug">
-            <span className="min-w-0 text-ink-2">{r.name}</span>
-            <span className={`tnum shrink-0 font-bold ${r.muted ? "text-muted" : "text-ink"}`}>{r.price}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-2.5 flex items-baseline justify-between gap-3 border-t border-line pt-2.5 text-[13px]">
-        <span className="font-bold text-muted">{PRICING.stack.apart}</span>
-        <span className="tnum font-black text-muted line-through decoration-2">{formatCents(s.apartCents)}</span>
-      </div>
-      <div className="flex items-baseline justify-between gap-3 text-[15px]">
-        <span className="font-black text-ink">{PRICING.stack.together}</span>
-        <span className="tnum font-black text-start">{formatCents(s.togetherCents)}</span>
-      </div>
-    </div>
   );
 }
 
@@ -79,13 +39,15 @@ export function Pricing() {
       .catch(() => setRegisterOpen(true));
   }, []);
 
-  const bundle = (products ?? []).find((p) => p.kind === "bundle" || p.sku === "full_report");
+  const o = offer(products ?? []);
+  // Free and the two passes. The free week is a line above them, not a tier to compare.
+  const tiers = (products ?? []).filter((p) => p.kind === "free" || (p.kind === "pass" && p.price_cents > 0));
 
   return (
     <section id="pricing" className="mt-12 scroll-mt-4">
       <Eyebrow>{PRICING.eyebrow}</Eyebrow>
       <h2 className="display mt-2 text-[34px] leading-[1.02]">
-        {bundle ? PRICING.title(formatCents(bundle.price_cents)) : <Skeleton className="inline-block h-8 w-56 align-middle" />}
+        {o.season ? PRICING.title(formatCents(o.season.price_cents)) : <Skeleton className="inline-block h-8 w-56 align-middle" />}
       </h2>
       <p className="mt-2 text-[15px] leading-relaxed text-muted">{PRICING.lead}</p>
 
@@ -101,21 +63,33 @@ export function Pricing() {
         </div>
       )}
 
+      {o.trial?.days && (
+        <div className="card mt-5 flex items-start gap-3 p-4" data-testid="free-week">
+          <IconCheck size={16} strokeWidth={3} className="mt-1 shrink-0 text-start" />
+          <div className="min-w-0">
+            <div className="text-[11px] font-black uppercase tracking-[0.14em] text-start">{PRICING.trial.head}</div>
+            <p className="mt-1 text-[14px] leading-snug text-ink-2">{PRICING.trial.body(o.trial.days)}</p>
+          </div>
+        </div>
+      )}
+
       <ul className="mt-5 grid gap-3">
-        {/* The league slot is an add-on sold from the account page, not a tier to compare here. */}
-        {(products ?? []).filter((p) => p.kind !== "add_on").map((p) => {
-          const everything = p.sku === "full_report";
+        {tiers.map((p) => {
+          const everything = p.kind === "pass" && p.days == null;
           return (
             <li
               key={p.sku}
               className={`card p-5 ${everything ? "border-start shadow-[var(--shadow-lift)] ring-1 ring-start" : ""}`}
             >
-              <Badge sku={p.sku} />
+              <Badge p={p} />
               {everything && <p className="mt-3 text-[13px] font-bold text-start">{LINES.paywallBundle}</p>}
-              <div className={`flex items-baseline justify-between gap-3 ${p.sku === "free" ? "" : "mt-3"}`}>
+              <div className={`flex items-baseline justify-between gap-3 ${p.kind === "free" ? "" : "mt-3"}`}>
                 <h3 className="display min-w-0 text-[21px] leading-tight">{p.name}</h3>
-                <div className={`display tnum shrink-0 text-[34px] leading-none ${everything ? "text-start" : ""}`}>
-                  {formatCents(p.price_cents)}
+                <div className="shrink-0 text-right">
+                  <div className={`display tnum text-[34px] leading-none ${everything ? "text-start" : ""}`}>{formatCents(p.price_cents)}</div>
+                  {p.kind === "pass" && (
+                    <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-muted">{everything ? PRICING.per.season : PRICING.per.week}</div>
+                  )}
                 </div>
               </div>
               <p className="mt-1.5 text-[13px] leading-snug text-muted">{p.blurb}</p>
@@ -133,13 +107,17 @@ export function Pricing() {
                 </li>
               </ul>
 
-              {everything && products && <Stack products={products} />}
+              {everything && o.weeksToSeason > 1 && (
+                <p className="mt-4 rounded-xl bg-soft p-3.5 text-[13px] font-bold leading-snug text-ink-2" data-testid="offer-anchor">
+                  {PRICING.anchor(o.weeksToSeason)}
+                </p>
+              )}
             </li>
           );
         })}
 
         {products === null &&
-          [0, 1, 2, 3].map((i) => (
+          [0, 1, 2].map((i) => (
             <li key={i} className="card p-5">
               <Skeleton className="h-5 w-32" />
               <Skeleton className="mt-2 h-3 w-48" />

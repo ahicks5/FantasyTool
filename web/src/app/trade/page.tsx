@@ -276,7 +276,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   const preview = found?.preview === true;
   // Only when there is no board to put it under. With one, the lock is a section of the
   // page rather than a replacement for it.
-  if (paywall && !preview) return <Locked signedIn={signedIn} sku="trade_lab" what="Trade Lab" teaser={paywall.teaser} onUnlocked={refresh} />;
+  if (paywall && !preview) return <Locked signedIn={signedIn} feature="trade_lab" what="Trade Lab" teaser={paywall.teaser} onUnlocked={refresh} />;
   if (error && !league) return <ErrorBox error={error} />;
   if (!league) return <SkeletonList rows={3} />;
 
@@ -310,7 +310,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       {preview && (
         <Locked
           signedIn={signedIn}
-          sku="trade_lab"
+          feature="trade_lab"
           what="Trade Lab"
           teaser={paywall?.teaser ?? TRADE.lockTeaser}
           onUnlocked={refresh}

@@ -74,9 +74,9 @@ const ALL_COPY: string[] = [
   LANDING.faq.head, ...LANDING.faq.items.flatMap((i) => [i.q, typeof i.a === "function" ? i.a(14) : i.a]),
   ...Object.values(LANDING.close), ...Object.values(LANDING.bar),
   // The offer.
-  PRICING.eyebrow, PRICING.title("$7"), PRICING.lead, ...Object.values(PRICING.unlocks), ...Object.values(PRICING.badge),
-  PRICING.leagues(1), PRICING.leagues(5), PRICING.stack.head, PRICING.stack.film, PRICING.stack.filmPrice, PRICING.stack.slots(1),
-  PRICING.stack.slots(2), PRICING.stack.apart, PRICING.stack.together, PRICING.guarantee.head, PRICING.guarantee.body(14),
+  PRICING.eyebrow, PRICING.title("$19.99"), PRICING.lead, ...Object.values(PRICING.unlocks), ...Object.values(PRICING.badge),
+  PRICING.leagues(1), PRICING.leagues(5), ...Object.values(PRICING.per), PRICING.anchor(7), PRICING.trial.head, PRICING.trial.body(7),
+  PRICING.guarantee.head, PRICING.guarantee.body(14),
   ...Object.values(PRICING.launch), PRICING.cta, PRICING.under,
   // Moved here in Part 4 from seven components. Sweeping them is the point of moving
   // them: three of these sentences used to be three copies, and the copy that drifted
@@ -228,15 +228,16 @@ test("the landing page names the reader before it makes a promise", () => {
   assert.equal(LANDING.cta, LANDING.close.cta, "the first ask and the last ask are the same door");
 });
 
-test("the offer is stacked, guaranteed and never typed", () => {
+test("the offer is two passes, guaranteed and never typed", () => {
   // The price in the headline is a parameter, so a change in edge/products.py reaches it.
-  assert.equal(PRICING.title("$7"), "$7. The season.");
+  assert.equal(PRICING.title("$19.99"), "$19.99. The season.");
   assert.doesNotMatch(PRICING.lead, /\$\d/, "the lead quotes no price of its own");
+  // The anchor is a count from the catalog, not a price typed here.
+  assert.equal(PRICING.anchor(7), "Less than 7 weeks of the Week Pass.");
+  assert.doesNotMatch(PRICING.trial.body(7), /\$\d/);
   // The guarantee says the number of days the terms say, and nothing about a percentage.
   assert.match(PRICING.guarantee.body(14), /14 days/);
   assert.match(PRICING.guarantee.body(14), /refunded in full/i);
-  // The film is the bonus: it is in the bundle and sold nowhere else.
-  assert.equal(PRICING.stack.filmPrice, "Not sold apart");
   // Every entitlement the API can send has a line in the user's words.
   assert.deepEqual(Object.keys(PRICING.unlocks).sort(), ["full_report", "my_team", "trade_lab", "waivers"]);
 });

@@ -34,15 +34,20 @@ export default function TermsPage() {
         <Bullets
           items={[
             <>
-              A pass is a <strong>one-time payment for the rest of the current NFL season</strong>. There is no
-              subscription and nothing renews on its own. When the season ends, the pass ends with it.
+              There are two passes, each a <strong>one-time payment</strong>. The <strong>Week Pass</strong> runs for
+              seven days from purchase. The <strong>Season Pass</strong> runs for the rest of the current NFL season.
+              There is no subscription and nothing renews on its own. Either pass opens every paid feature.
+            </>,
+            <>
+              Every account may take <strong>one free week</strong> per season. It opens the same features for seven
+              days, needs no card, and ends on its own.
             </>,
             <>
               Prices are shown before you pay and charged in US dollars. The price you see at checkout is the price you
               pay.
             </>,
             <>
-              Each pass covers the number of leagues stated on the pricing page. The free tier covers up to three leagues; more can be added as an add-on.
+              Each pass covers the number of leagues stated on the pricing page. The free tier covers up to three leagues.
             </>,
           ]}
         />

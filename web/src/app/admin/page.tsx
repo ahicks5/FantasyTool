@@ -12,11 +12,8 @@ import { useSession } from "@/lib/session";
 import type { AdminUser, AdminUsersResponse, Sku } from "@/lib/types";
 import { ACCOUNT } from "@/lib/vocab";
 
-const GRANTABLE: { sku: Sku; label: string }[] = [
-  { sku: "full_report", label: "The Penthouse" },
-  { sku: "waivers", label: "Wire Pass" },
-  { sku: "trade_lab", label: "Trade Lab" },
-];
+/** What the owner can hand out: the two passes. Anything else an account holds can only be revoked. */
+const GRANTABLE: Sku[] = ["season", "weekly"];
 
 function Row({ u, me, onChange }: { u: AdminUser; me: string; onChange: () => void }) {
   const [busy, setBusy] = useState<string | null>(null);
@@ -76,7 +73,8 @@ function Row({ u, me, onChange }: { u: AdminUser; me: string; onChange: () => vo
         </span>
       </div>
       <p className="mt-2 text-[13px] leading-snug text-ink-2">
-        {u.plan.name} <span aria-hidden>·</span> <span className="tnum">{ACCOUNT.admin.leagues(u.leagues.length, u.leagues_allowed)}</span>
+        {u.plan.name}
+        {u.plan.until ? ` ${ACCOUNT.admin.until(shortDate(u.plan.until))}` : ""} <span aria-hidden>·</span> <span className="tnum">{ACCOUNT.admin.leagues(u.leagues.length, u.leagues_allowed)}</span>
       </p>
       <p className="mt-0.5 text-[12px] text-muted">
         {ACCOUNT.admin.joined} <span className="tnum">{shortDate(u.created) || ACCOUNT.admin.never}</span> <span aria-hidden>·</span> {ACCOUNT.admin.lastSeen}{" "}
@@ -92,20 +90,17 @@ function Row({ u, me, onChange }: { u: AdminUser; me: string; onChange: () => vo
         </ul>
       )}
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {GRANTABLE.map((g) =>
-          u.skus.includes(g.sku) ? (
-            <Button key={g.sku} size="sm" variant="secondary" busy={busy === `revoke:${g.sku}`} onClick={() => run(`revoke:${g.sku}`, () => adminRevoke(u.email, g.sku))}>
-              {ACCOUNT.admin.revoke} {g.label}
+        {Array.from(new Set<Sku>([...GRANTABLE, ...u.skus])).map((sku) =>
+          u.skus.includes(sku) ? (
+            <Button key={sku} size="sm" variant="secondary" busy={busy === `revoke:${sku}`} onClick={() => run(`revoke:${sku}`, () => adminRevoke(u.email, sku))}>
+              {ACCOUNT.admin.revoke} {ACCOUNT.admin.skuLabel(sku)}
             </Button>
           ) : (
-            <Button key={g.sku} size="sm" variant="secondary" busy={busy === `grant:${g.sku}`} onClick={() => run(`grant:${g.sku}`, () => adminGrant(u.email, g.sku))}>
-              {ACCOUNT.admin.grant} {g.label}
+            <Button key={sku} size="sm" variant="secondary" busy={busy === `grant:${sku}`} onClick={() => run(`grant:${sku}`, () => adminGrant(u.email, sku))}>
+              {ACCOUNT.admin.grant} {ACCOUNT.admin.skuLabel(sku)}
             </Button>
           ),
         )}
-        <Button size="sm" variant="secondary" busy={busy === "slot"} onClick={() => run("slot", () => adminGrant(u.email, "league_slot"))}>
-          {ACCOUNT.admin.slot}
-        </Button>
         {!isMe && (
           <Button
             size="sm"
