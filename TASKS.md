@@ -2,6 +2,30 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## New pricing: week pass, season pass, no à la carte (2026-09-27)
+
+Andrew's decision: Free (unchanged), **week pass $4.99/week** (a Stripe subscription, cancel
+anytime), **season pass $24.99** once (sku `full_report`, "The Penthouse", so comps stay valid),
+**league slot $2.99**. Wire Pass and Trade Lab are no longer sold; holders keep them.
+
+- [x] **PR-1** Catalog in `edge/products.py` (`for_sale`, `recurring`, `duration_days` + `grace_days`,
+      `live_until`). `tests/test_tendencies_products.py::test_the_2026_09_27_catalog`.
+- [x] **PR-2** Expiry without a schema change: both stores drop a week-pass row from `skus()` once
+      `created + 8 days` has passed, and report `pass_until`. Contract tests run on SQLite and on
+      Postgres 16.
+- [x] **PR-3** Stripe: week pass is `mode=subscription` (weekly); `invoice.paid` grants each week
+      (dahlia and legacy shapes, invoice id as ref, payment intent looked up when missing);
+      subscription sessions do not grant; `allow_promotion_codes`; bad signature is a 400; the
+      stripe-python 15 StripeObject bug in the webhook fixed.
+- [x] **PR-4** Upgrade, checkout and admin grant refuse retired skus; `/api/products` lists Free +
+      what is on sale; `/api/me` carries `account.pass_until` and `billing_portal_url`.
+- [x] **PR-5** Web: Pricing (three choices, the season anchored against the rest of the way week
+      to week), lock card and upgrade sheet offer the season and a week, account page shows
+      "paid through" and "Manage or cancel". Both themes checked at 375px.
+- [ ] **PR-6** Andrew: in Stripe, add `invoice.paid` to the webhook's events, enable the customer
+      portal and set `EDGE_BILLING_PORTAL_URL` on Render (`docs/DEPLOY.md`, "Stripe").
+- [ ] **PR-7** A real test-mode run: subscribe, renew (test clock), cancel, refund a renewal.
+
 ## The landing page, rebuilt as a funnel (2026-09-27)
 
 Andrew's brief: the best front page we can build, on Hormozi's playbook, for leads, conversions

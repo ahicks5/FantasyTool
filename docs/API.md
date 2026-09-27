@@ -19,26 +19,29 @@ requires (Sleeper's docs ask for it on trending data). The UI must render it.
 {"attribution":"Projections and trending data from Sleeper",
  "products":[
   {"sku":"free","name":"Free","price_cents":0,"features":["my_team"],"leagues":3,"kind":"free","blurb":"Start/sit calls for up to three leagues, every week."},
-  {"sku":"waivers","name":"Wire Pass","price_cents":300,"features":["waivers"],"leagues":3,"kind":"a_la_carte","blurb":"The wire, ranked for your roster, with the bid and the drop. Rest of season."},
-  {"sku":"trade_lab","name":"Trade Lab","price_cents":500,"features":["trade_lab"],"leagues":3,"kind":"a_la_carte","blurb":"Trade verdicts and counters tuned to the other manager. Rest of season."},
-  {"sku":"full_report","name":"The Penthouse","price_cents":700,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","blurb":"The whole Penthouse, every week, up to 5 leagues."},
-  {"sku":"league_slot","name":"League slot","price_cents":200,"features":[],"leagues":1,"kind":"add_on","blurb":"One more league on your account. Rest of season."}
+  {"sku":"week_pass","name":"Week pass","price_cents":499,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"pass","for_sale":true,"recurring":"week","duration_days":7,"grace_days":1,"blurb":"..."},
+  {"sku":"full_report","name":"The Penthouse","price_cents":2499,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","for_sale":true,"through":"2027-01-04","blurb":"..."},
+  {"sku":"league_slot","name":"League slot","price_cents":299,"features":[],"leagues":1,"kind":"add_on","for_sale":true,"blurb":"One more league on your account. Rest of season."}
 ]}
 ```
-`league_slot` is an add-on: it unlocks nothing and stacks, one more league per purchase. `leagues_allowed` is
-the highest tier cap held (3 free, 5 bundle) plus one per slot.
+The free tier, then only what is on sale. `week_pass` is a weekly Stripe subscription; each paid week is live for
+`duration_days + grace_days`. `full_report` is the season pass (one payment; `through` is display-only). The
+retired `waivers` (Wire Pass) and `trade_lab` (Trade Lab) never appear here but still resolve for accounts that
+hold them. `league_slot` is an add-on: it unlocks nothing and stacks, one more league per purchase.
+`leagues_allowed` is the highest tier cap held (3 free, 5 with either pass) plus one per slot.
 
 `GET /api/me` →
 ```json
-{"email":"...","signed_in":true,"skus":["waivers"],"entitlements":["my_team","waivers"],"leagues_allowed":3,
+{"email":"...","signed_in":true,"skus":["week_pass"],"entitlements":["my_team","waivers","trade_lab","full_report"],"leagues_allowed":5,
  "leagues":[{"platform":"sleeper","league_id":"...","name":"...","team_id":"3","team_name":"HusH","last_used":1790000000.0}],
- "email_opt_in":false,"checkout":false,
+ "email_opt_in":false,"checkout":false,"billing_portal_url":null,
  "account":{"email":"...","name":"Andrew","role":"user","is_admin":false,"created":1789000000.0,"last_login":1790000000.0,
-            "plan":{"tier":"premium","name":"Wire Pass","skus":["waivers"]},"league_slots":0}}
+            "plan":{"tier":"premium","name":"Week pass","skus":["week_pass"]},"league_slots":0,"pass_until":1790600000.0}}
 ```
 Signed out: `signed_in:false`, `account:null`, the free tier, no leagues. `account.plan.tier` is the flag the
 views check (`free` | `premium`); `plan.name` is what the user reads. `checkout` is whether Stripe is configured,
-which decides what an upgrade does (below).
+which decides what an upgrade does (below). `account.pass_until` is when a live week pass runs out (epoch seconds,
+grace included), else null. `billing_portal_url` is `EDGE_BILLING_PORTAL_URL` (Stripe's customer portal), or null.
 
 ## Accounts
 First-party. Email and password; the reply's `token` goes in `Authorization: Bearer` on every later call. The
@@ -80,7 +83,7 @@ known one, so sign-in timing does not reveal who has an account. Rules and runbo
 `POST /api/account/upgrade {"sku","success_url"?,"cancel_url"?}` (signed in) →
 - Stripe configured: `{"url":"https://checkout.stripe.com/...","granted":false,"me":null}`; the webhook grants.
 - Stripe not configured: `{"url":null,"granted":true,"me":{...}}`; the grant is written now, `source:"complimentary"`.
-400 on a free or unknown sku.
+400 on a free, unknown or retired (`waivers`, `trade_lab`) sku. Checkout carries `allow_promotion_codes`.
 
 `POST /api/leagues/{platform}/{league_id}/use` (signed in) → marks the league last opened, so the next sign-in on any device lands on it.
 `DELETE /api/leagues/{platform}/{league_id}` (signed in) → `{"ok":true,"leagues":[...]}`; frees a slot.
@@ -89,7 +92,7 @@ known one, so sign-in timing does not reveal who has an account. Rules and runbo
 Signed in as an admin: `role = admin` in the store or an address in `EDGE_ADMINS`. Anyone else is 403.
 
 `GET /api/admin/users` → `{"season":2026,"checkout":false,"users":[{...account fields, "plan","skus","leagues","leagues_allowed"}]}`
-`POST /api/admin/users/{email}/grant {"sku"}` → grants a pass, the bundle or one `league_slot`; `source:"admin"`.
+`POST /api/admin/users/{email}/grant {"sku"}` → grants `week_pass`, `full_report` or one `league_slot`; `source:"admin"`. 400 for a retired sku.
 `POST /api/admin/users/{email}/revoke {"sku"}` → `{"ok":true,"revoked":n,"me":{...}}`; every live grant of that sku this season.
 `POST /api/admin/users/{email}/role {"role":"user"|"admin"}` → 400 for an unknown role or your own demotion; 404 for no such account.
 `POST /api/admin/users/{email}/reset` → `{"ok":true,"url":"https://.../reset?token=...","hours":2}`.
@@ -104,7 +107,7 @@ Nothing is sent yet: there is no `RESEND_API_KEY` and no verified sending domain
 dry run and the opt-in screen says so in as many words.
 
 `POST /api/checkout {"sku":"full_report"}` → `{"url":"https://checkout.stripe.com/..."}`
-`POST /api/stripe/webhook` (Stripe only)
+`POST /api/stripe/webhook` (Stripe only). Events and what each does: `docs/DEPLOY.md`, "Stripe". 400 on a bad signature.
 
 ## Data subject requests
 Signed in only — an account acting on its own data. See `docs/DATA_INVENTORY.md`.

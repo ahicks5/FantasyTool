@@ -15,7 +15,23 @@ the module — change one, re-run, and the conclusions change with it.
 
 ---
 
-## 1. The headline: margin is not the problem
+## 0. The catalog changed (Andrew, 2026-09-27)
+
+Week pass **$4.99/week** (a Stripe subscription), season pass **$24.99** once, league slot
+**$2.99**. Wire Pass ($3) and Trade Lab ($5) are retired. Re-run on the new catalog (one week-pass
+"sale" is one paid week, carrying one week's share of the season's explanations):
+
+| SKU | Price | Stripe | LLM | Net | Margin | Runway |
+|---|---|---|---|---|---|---|
+| League slot | $2.99 | $0.39 | — | $2.51 | 84.1% | unlimited |
+| Week pass (per paid week) | $4.99 | $0.44 | $0.01 | $4.38 | 87.9% | 326 verdicts |
+| Season pass | $24.99 | $1.02 | $0.16 | $23.05 | 92.3% | 1,720 verdicts |
+
+Break-even is still a handful of buyers. The sections below were written against the old
+catalog and are kept for the reasoning; their conclusion (volume, not price, is the variable)
+holds, and the answers in section 7 about the $3 tier are moot.
+
+## 1. The headline: margin is not the problem (old catalog)
 
 | SKU | Price | Stripe | LLM | Net | Margin | Runway |
 |---|---|---|---|---|---|---|

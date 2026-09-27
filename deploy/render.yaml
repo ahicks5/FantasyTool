@@ -27,6 +27,11 @@ services:
         sync: false
       - key: EDGE_WEB_URL
         value: https://penthousefantasy.com
+      # Stripe's no-code customer portal login link (not a secret), where a week-pass
+      # subscriber manages or cancels. Enable the portal in the Stripe dashboard, then set
+      # this on Render by hand; unset, the account page shows no "Manage or cancel" link.
+      # - key: EDGE_BILLING_PORTAL_URL
+      #   value: https://billing.stripe.com/p/login/...
       # Phone sign-in (docs/ACCOUNTS.md). Twilio Verify; the three secrets are set by hand.
       - key: EDGE_SMS_PROVIDER
         value: twilio

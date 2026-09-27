@@ -147,7 +147,8 @@ API (Railway):
 |---|---|---|
 | `EDGE_DB` | a path on the mounted volume | SQLite via `edge/api/store.py`. On an ephemeral filesystem every entitlement is lost on restart. |
 | `EDGE_CACHE_DIR` | a path on the mounted volume | The 14MB Sleeper player file is cached here for 24h. |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Stripe | The $7 pass and the webhook that grants it. |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Stripe | Checkout for the week pass (a weekly subscription), the season pass and league slots, and the webhook that grants them. Events below. |
+| `EDGE_BILLING_PORTAL_URL` | Stripe customer-portal login link | Not a secret. Where a week-pass subscriber manages or cancels (Stripe dashboard → Settings → Billing → Customer portal → enable, copy the login link). Unset, the account page shows no "Manage or cancel" link. `/api/me` carries it as `billing_portal_url`. |
 | `EDGE_SMS_PROVIDER` | `twilio` | **Phone sign-in.** Unset, the door is email and password only. `twilio` needs the three below; a half-set one leaves phone sign-in off and says why in the logs. (`dev` works only with `EDGE_DEV=1` and returns the code in the reply: tests only.) |
 | `TWILIO_ACCOUNT_SID` | `AC…` | Twilio Console home page. |
 | `TWILIO_AUTH_TOKEN` | secret | Twilio Console home page. Secret: set on Render only. |
@@ -171,13 +172,36 @@ key) to arrive on its own; until then `POST /api/auth/forgot` records the token 
 **While `STRIPE_SECRET_KEY` is unset, `POST /api/account/upgrade` grants the pass on the
 spot** and records the purchase with `source = complimentary`. This is deliberate for launch
 week (Andrew, 2026-09-24: "ability to upgrade, no Stripe yet") and it is a real paywall
-opening: every visitor who creates an account can give themselves The Penthouse. The upgrade
+opening: every visitor who creates an account can give themselves the season pass (or a week, which then
+lapses after 8 days like a paid one). The retired Wire Pass and Trade Lab cannot be comped. The upgrade
 sheet says "no card, no charge" while this is so. The day the key is set, the same button
 opens Checkout and the webhook writes the grant; nothing else changes. Comps stay valid for
 the season; `/admin` can revoke them per account.
 
+### Stripe: the catalog and the webhook
+
+Prices are created inline from `edge/products.py`, so there is nothing to make in the Stripe
+dashboard except the webhook endpoint, the customer portal and any promo codes (Checkout shows the
+promo-code field on every session). The week pass ($4.99) is `mode=subscription`, renewing weekly;
+the season pass ($24.99) and a league slot ($2.99) are one payment each.
+
+The webhook endpoint is `https://edge-api-gi8d.onrender.com/api/stripe/webhook` and it needs
+exactly these events:
+
+- `checkout.session.completed` and `checkout.session.async_payment_succeeded`: grant a one-time
+  purchase. A subscription's session is ignored; its first invoice grants.
+- `invoice.paid`: each paid week of the week pass writes one grant, keyed by the invoice id (a
+  retried delivery is a no-op). A grant is live for 8 days (the week plus a day's grace for a
+  renewal that settles late). A cancelled subscription stops paying, so access lapses by itself.
+- `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`: revoke (or restore) by
+  payment intent. Snapshot events on API 2026-08-26.dahlia may omit the invoice's payment intent;
+  the API then looks it up (`InvoicePayment.list`) so a refunded renewal can still be matched.
+
+A bad signature answers 400 and grants nothing.
+
 Every account keeps up to **3 leagues** on file (`products.BASE_LEAGUES`), the bundle 5, and a
-`league_slot` purchase adds one on top. `POST /api/connect` answers 401 to a stranger now:
+`league_slot` purchase adds one on top. Both passes carry 5. When a week pass lapses the cap drops
+back, and leagues already on file stay (the cap only blocks linking a new one). `POST /api/connect` answers 401 to a stranger now:
 looking at a league is still free, keeping it is the account's job.
 
 ## The one that bites: the share card needs a browser

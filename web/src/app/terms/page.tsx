@@ -34,8 +34,15 @@ export default function TermsPage() {
         <Bullets
           items={[
             <>
-              A pass is a <strong>one-time payment for the rest of the current NFL season</strong>. There is no
-              subscription and nothing renews on its own. When the season ends, the pass ends with it.
+              The <strong>season pass</strong> and a <strong>league slot</strong> are each a{" "}
+              <strong>one-time payment for the rest of the current NFL season</strong>. Nothing about them renews. When
+              the season ends, they end with it.
+            </>,
+            <>
+              The <strong>week pass</strong> is a <strong>subscription that renews automatically every week</strong> at
+              the price shown at checkout, charged to the card you paid with, until you cancel. You can cancel at any
+              time from your account page (Manage or cancel) or by contacting us. Cancelling stops the next renewal; the
+              week you have already paid for stays open until it runs out.
             </>,
             <>
               Prices are shown before you pay and charged in US dollars. The price you see at checkout is the price you

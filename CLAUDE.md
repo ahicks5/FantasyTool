@@ -8,8 +8,10 @@ and launch is days out: **speed > polish**.
 3. **Trade Lab (paid)** — verdict on a proposed trade + a counteroffer tuned to the other
    manager's tendencies. Numbers from the engine; the Claude API writes the explanation.
 
-Free for up to 3 leagues per account (more as a $2 add-on), $7 unlocks the season (Stripe). Marketing via
-stamped verdict graphics.
+Free for up to 3 leagues per account (more as a $2.99 add-on each). Paid is everything or nothing
+(Andrew, 2026-09-27): a **week pass $4.99/week** (a Stripe subscription, cancel anytime) or a
+**season pass $24.99** (one payment). Nothing is sold à la carte; old Wire Pass / Trade Lab
+holders keep what they bought. Marketing via stamped verdict graphics.
 
 ## Where things are
 
@@ -100,7 +102,8 @@ first, plural. Never hedge on a call the engine is confident about; say plainly 
 coin flip. Look: black and polished chrome, two type families, the metal is the only
 decoration. Sections are **call sheet** (home) · **depth chart** (team) · **scouting**
 (waivers) · **GM's Office** (trade) · **the film** (report) — but what you *buy* keeps its
-product name: Wire Pass, Trade Lab, The Penthouse. Full guide: **`docs/BRAND.md`**; how it is
+product name: the week pass and the season pass (sku `full_report`, still "The Penthouse" in
+`edge/products.py`). Trade Lab is a room, no longer a separate purchase. Full guide: **`docs/BRAND.md`**; how it is
 actually built: **`docs/WEB.md`**.
 
 ## Confidence tags — Lock is not honest yet

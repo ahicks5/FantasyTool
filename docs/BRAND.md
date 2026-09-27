@@ -54,9 +54,11 @@ under the wordmark, which is fine *inside artwork*; it never appears as a bare s
 > wordmark. The magazine's owner has defended the mark before. This is a half-day check
 > and it gates the whole visual rebuild.
 
-**What you buy keeps its product name:** Wire Pass ($3), Trade Lab ($5), The Penthouse
-($7). Prices and names live in `edge/products.py`. The nav names a room; the pricing
-table names a pass.
+**What you buy is named for what it is** (Andrew, 2026-09-27): the week pass ($4.99/week,
+cancel anytime) and the season pass ($24.99, one payment; still "The Penthouse" in the catalog),
+plus a league slot ($2.99). Prices live in `edge/products.py`; the names a user reads are
+`PRICING.names` in `vocab.ts`. The nav names a room; the pricing table names a pass. Wire Pass and
+Trade Lab are no longer sold.
 
 ---
 

@@ -31,10 +31,13 @@ Tests: `uv run pytest -q` (offline, fixtures) and `cd web && npm test && npm run
 ## Pricing (edit `edge/products.py`)
 | SKU | Price | Unlocks |
 |---|---|---|
-| free | $0 | Depth chart start/sit, 1 league |
-| waivers | $3 / season | Wire Pass |
-| trade_lab | $5 / season | Trade Lab |
-| full_report | $7 / season | The Penthouse: everything + the weekly film, 5 leagues |
+| free | $0 | Start/sit, up to 3 leagues |
+| week_pass | $4.99 / week, Stripe subscription, cancel anytime | Everything, 5 leagues, while paid |
+| full_report | $24.99 once, rest of season | Season pass ("The Penthouse"): everything, 5 leagues |
+| league_slot | $2.99 once, rest of season, stacks | One more league |
+
+`waivers` (Wire Pass, $3) and `trade_lab` (Trade Lab, $5) were retired 2026-09-27: no longer sold, but
+anyone who bought one keeps it.
 
 ## Deploy notes
 Live: **https://penthousefantasy.com** (Vercel, root dir `web/`) + **https://edge-api-gi8d.onrender.com** (Render) for the API.
