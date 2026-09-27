@@ -261,7 +261,7 @@ def test_upgrade_with_stripe_is_a_checkout_not_a_grant(client, monkeypatch):
     from edge.api import payments
     monkeypatch.setattr(payments, "create_checkout", lambda *a, **k: "https://checkout.stripe.com/x")
     assert client.get("/api/me", headers=bearer(token)).json()["checkout"] is True
-    r = client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "waivers"})
+    r = client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "week_pass"})
     assert r.status_code == 200 and r.json() == {"url": "https://checkout.stripe.com/x", "granted": False, "me": None}
     assert client.get("/api/me", headers=bearer(token)).json()["account"]["plan"]["tier"] == "free"
 
@@ -271,6 +271,23 @@ def test_upgrade_needs_an_account_and_a_paid_sku(client):
     token = register(client)["token"]
     assert client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "free"}).status_code == 400
     assert client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "nope"}).status_code == 400
+    # Retired 2026-09-27: nothing sells a single room any more, comped or paid.
+    for retired in ("waivers", "trade_lab"):
+        assert client.post("/api/account/upgrade", headers=bearer(token), json={"sku": retired}).status_code == 400
+
+
+def test_a_week_pass_opens_everything_and_says_when_it_ends(client):
+    token = register(client)["token"]
+    r = client.post("/api/account/upgrade", headers=bearer(token), json={"sku": "week_pass"})
+    assert r.status_code == 200 and r.json()["granted"] is True
+    me = r.json()["me"]
+    assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"}
+    assert me["leagues_allowed"] == 5
+    assert me["account"]["plan"] == {"tier": "premium", "name": "Week pass", "skus": ["week_pass"]}
+    import time
+    assert 7.9 * 86400 < me["account"]["pass_until"] - time.time() <= 8 * 86400
+    fresh = register(client, "fan@example.com", "another password")["me"]
+    assert fresh["account"]["pass_until"] is None
 
 
 def test_league_slots_stack(client):
@@ -305,15 +322,16 @@ def test_the_admin_can_grant_revoke_add_slots_and_promote(client, monkeypatch):
     admin = register(client)["token"]
     fan = register(client, "fan@example.com", "another password")["token"]
     A = bearer(admin)
-    r = client.post("/api/admin/users/fan@example.com/grant", headers=A, json={"sku": "trade_lab"})
-    assert r.status_code == 200 and r.json()["me"]["account"]["plan"]["name"] == "Trade Lab"
+    r = client.post("/api/admin/users/fan@example.com/grant", headers=A, json={"sku": "week_pass"})
+    assert r.status_code == 200 and r.json()["me"]["account"]["plan"]["name"] == "Week pass"
     assert "trade_lab" in client.get("/api/me", headers=bearer(fan)).json()["entitlements"]
-    r = client.post("/api/admin/users/fan@example.com/revoke", headers=A, json={"sku": "trade_lab"})
+    r = client.post("/api/admin/users/fan@example.com/revoke", headers=A, json={"sku": "week_pass"})
     assert r.json()["revoked"] == 1 and r.json()["me"]["account"]["plan"]["tier"] == "free"
     for _ in range(2):
         client.post("/api/admin/users/fan@example.com/grant", headers=A, json={"sku": "league_slot"})
     assert client.get("/api/me", headers=bearer(fan)).json()["leagues_allowed"] == 5
     assert client.post("/api/admin/users/fan@example.com/grant", headers=A, json={"sku": "free"}).status_code == 400
+    assert client.post("/api/admin/users/fan@example.com/grant", headers=A, json={"sku": "waivers"}).status_code == 400
     # Promote, and the promoted account can use the admin routes by role alone.
     assert client.post("/api/admin/users/fan@example.com/role", headers=A, json={"role": "admin"}).status_code == 200
     assert client.get("/api/admin/users", headers=bearer(fan)).status_code == 200

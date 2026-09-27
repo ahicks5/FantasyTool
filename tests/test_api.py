@@ -37,7 +37,8 @@ LG = "/api/league/sleeper/1403186749361901568"
 
 def test_products_and_me(client):
     r = client.get("/api/products")
-    assert r.status_code == 200 and [p["sku"] for p in r.json()["products"]] == ["free", "waivers", "trade_lab", "full_report", "league_slot"]
+    assert r.status_code == 200 and [p["sku"] for p in r.json()["products"]] == ["week_pass", "full_report", "league_slot"], \
+        "only what is on sale: no free row, no retired à la carte passes"
     anon = client.get("/api/me")
     assert anon.status_code == 200, "a signed-out visitor still gets the free tier"
     assert anon.json()["signed_in"] is False and anon.json()["entitlements"] == ["my_team"]
@@ -60,9 +61,10 @@ def test_league_summary_and_lineup_are_free(client, league):
 def test_paid_features_are_gated_then_unlocked(client, league):
     tid = league.teams[0].id
     r = client.get(f"{LG}/team/{tid}/waivers", headers=H)
-    assert r.status_code == 402 and r.json()["detail"]["upsell"][0]["sku"] == "waivers"
+    assert r.status_code == 402 and [u["sku"] for u in r.json()["detail"]["upsell"]] == ["week_pass", "full_report"]
     teaser = r.json()["detail"]["teaser"]
     assert teaser is None or ("improve your roster" in teaser and not any(p.name in teaser for p in league.free_agents[:20]))
+    # A retired Wire Pass still opens what it always opened.
     app_mod.store.grant("andrew@example.com", "waivers", 2026, source="test")
     r = client.get(f"{LG}/team/{tid}/waivers", headers=H)
     assert r.status_code == 200 and 1 <= len(r.json()["picks"]) <= 5
@@ -320,7 +322,7 @@ def test_checkout_falls_back_to_the_default_when_a_return_url_is_rejected(monkey
     monkeypatch.setenv("EDGE_WEB_URL", "https://edge.example.com")
 
     url = payments.create_checkout(
-        "a@b.c", "trade_lab", 2026,
+        "a@b.c", "week_pass", 2026,
         success_url="https://evil.example/thanks",
         cancel_url="https://evil.example/no",
     )
@@ -328,13 +330,19 @@ def test_checkout_falls_back_to_the_default_when_a_return_url_is_rejected(monkey
     assert captured["success_url"].startswith("https://edge.example.com/")
     assert captured["cancel_url"].startswith("https://edge.example.com/")
     assert "evil.example" not in captured["success_url"] + captured["cancel_url"]
+    assert captured["allow_promotion_codes"] is True, "Andrew's promo codes need the field on Checkout"
+    assert captured["line_items"][0]["price_data"]["unit_amount"] == 499
+    assert captured["line_items"][0]["price_data"]["product_data"]["name"] == "Penthouse — Week pass (7 days)"
 
     payments.create_checkout(
-        "a@b.c", "trade_lab", 2026,
+        "a@b.c", "full_report", 2026,
         success_url="https://edge.example.com/trade?paid=trade_lab",
         cancel_url=None,
     )
     assert captured["success_url"] == "https://edge.example.com/trade?paid=trade_lab"
+    assert captured["line_items"][0]["price_data"]["product_data"]["name"] == "Penthouse — Season pass (2026 season)"
+    with pytest.raises(ValueError):
+        payments.create_checkout("a@b.c", "trade_lab", 2026, None, None)
 
 
 def _stripe_event(monkeypatch, event: dict):
@@ -352,7 +360,7 @@ def _post_webhook(client):
     return client.post("/api/stripe/webhook", content=b"{}", headers={"stripe-signature": "t=1,v1=fake"})
 
 
-def _session_completed(email="Andrew@Example.com", sku="trade_lab", pi="pi_1"):
+def _session_completed(email="Andrew@Example.com", sku="full_report", pi="pi_1"):
     return {"type": "checkout.session.completed",
             "data": {"object": {"id": f"cs_{pi}", "payment_status": "paid", "payment_intent": pi,
                                 "customer_details": {"email": email},
@@ -360,17 +368,17 @@ def _session_completed(email="Andrew@Example.com", sku="trade_lab", pi="pi_1"):
 
 
 def test_a_refunded_pass_stops_working(client, monkeypatch):
-    """Otherwise a $7 pass is refundable into a free season."""
+    """Otherwise a season pass is refundable into a free season."""
     _stripe_event(monkeypatch, _session_completed())
     assert _post_webhook(client).json()["granted"] is True
-    assert "trade_lab" in client.get("/api/me", headers=H).json()["skus"]
+    assert "full_report" in client.get("/api/me", headers=H).json()["skus"]
 
     _stripe_event(monkeypatch, {"type": "charge.refunded",
                                 "data": {"object": {"payment_intent": "pi_1", "amount": 500,
                                                     "amount_refunded": 500}}})
     r = _post_webhook(client)
     assert r.json()["revoked"] == 1 and r.json()["reason"] == "refunded"
-    assert "trade_lab" not in client.get("/api/me", headers=H).json()["skus"]
+    assert "full_report" not in client.get("/api/me", headers=H).json()["skus"]
 
 
 def test_a_partial_refund_does_not_take_the_pass_away(client, monkeypatch):
@@ -412,6 +420,137 @@ def test_a_delayed_payment_still_grants(client, monkeypatch):
     _stripe_event(monkeypatch, e)
     assert _post_webhook(client).json()["granted"] is True
     assert "waivers" in client.get("/api/me", headers=H).json()["skus"]
+
+
+def test_a_legacy_checkout_for_a_retired_pass_still_grants(client, monkeypatch):
+    """A Wire Pass checkout opened before 2026-09-27 and paid after still has to deliver."""
+    _stripe_event(monkeypatch, _session_completed(sku="waivers", pi="pi_legacy"))
+    assert _post_webhook(client).json()["granted"] is True
+    assert "waivers" in client.get("/api/me", headers=H).json()["entitlements"]
+
+
+def test_the_week_pass_is_a_weekly_subscription_checkout(monkeypatch):
+    from edge.api import payments
+
+    captured = {}
+
+    class FakeSession:
+        @staticmethod
+        def create(**kwargs):
+            captured.update(kwargs)
+            return type("S", (), {"url": "https://checkout.stripe.test/c/w"})()
+
+    import stripe
+    monkeypatch.setattr(stripe.checkout, "Session", FakeSession)
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
+    payments.create_checkout("a@b.c", "week_pass", 2026, None, None)
+    md = {"email": "a@b.c", "sku": "week_pass", "season": "2026"}
+    assert captured["mode"] == "subscription" and captured["allow_promotion_codes"] is True
+    assert captured["metadata"] == md and captured["subscription_data"] == {"metadata": md}
+    price = captured["line_items"][0]["price_data"]
+    assert price["recurring"] == {"interval": "week"} and price["unit_amount"] == 499
+    assert captured["customer_email"] == "a@b.c"
+
+    captured.clear()
+    payments.create_checkout("a@b.c", "full_report", 2026, None, None)
+    assert captured["mode"] == "payment" and "subscription_data" not in captured
+    assert "recurring" not in captured["line_items"][0]["price_data"] and \
+        captured["line_items"][0]["price_data"]["unit_amount"] == 2499
+
+
+def _invoice_paid(inv_id="in_1", pi="pi_w1", shape="dahlia", email="Andrew@Example.com"):
+    """An `invoice.paid` snapshot. "dahlia" is what the live webhook sends (API 2026-08-26):
+    metadata under parent.subscription_details, no top-level payment_intent, and payments
+    present only when expanded. "legacy" is the older top-level shape."""
+    md = {"email": email, "sku": "week_pass", "season": "2026"}
+    obj = {"id": inv_id, "object": "invoice", "customer_email": email, "amount_paid": 499}
+    if shape == "legacy":
+        obj["subscription_details"] = {"metadata": md}
+        obj["payment_intent"] = pi
+    else:
+        obj["parent"] = {"type": "subscription_details", "quote_details": None,
+                         "subscription_details": {"metadata": md, "subscription": "sub_1"}}
+        if pi:
+            obj["payments"] = {"object": "list", "data": [
+                {"object": "invoice_payment", "payment": {"type": "payment_intent", "payment_intent": pi}}]}
+    return {"type": "invoice.paid", "data": {"object": obj}}
+
+
+def test_each_paid_weekly_invoice_grants_a_week(client, monkeypatch):
+    # The subscription's checkout session does not grant: the first invoice does.
+    sub = _session_completed(sku="week_pass", pi="")
+    sub["data"]["object"]["mode"] = "subscription"
+    _stripe_event(monkeypatch, sub)
+    assert _post_webhook(client).json()["granted"] is False
+    assert "week_pass" not in client.get("/api/me", headers=H).json()["skus"]
+
+    for shape in ("dahlia", "legacy"):
+        _stripe_event(monkeypatch, _invoice_paid(inv_id=f"in_{shape}", pi=f"pi_{shape}", shape=shape))
+        assert _post_webhook(client).json()["granted"] is True
+        assert _post_webhook(client).json()["granted"] is True, "a retried delivery is harmless"
+    rows = app_mod.store.db.execute(
+        "SELECT ref, payment_ref FROM purchases WHERE sku='week_pass' ORDER BY ref").fetchall()
+    assert [tuple(r) for r in rows] == [("in_dahlia", "pi_dahlia"), ("in_legacy", "pi_legacy")], "one row per invoice"
+    me = client.get("/api/me", headers=H).json()
+    assert "trade_lab" in me["entitlements"]
+
+    # Refunding one renewal takes that week back; the other week still stands.
+    _stripe_event(monkeypatch, {"type": "charge.refunded",
+                                "data": {"object": {"payment_intent": "pi_legacy", "amount": 499,
+                                                    "amount_refunded": 499}}})
+    assert _post_webhook(client).json()["revoked"] == 1
+    assert "week_pass" in client.get("/api/me", headers=H).json()["skus"]
+
+
+def test_a_snapshot_invoice_without_payments_still_grants_and_looks_up_the_intent(client, monkeypatch):
+    """Dahlia snapshots may not expand `payments`. The week is granted on the invoice id, and
+    the intent is fetched so a refund can still find it; if the fetch fails, the ref is empty."""
+    import stripe
+    _stripe_event(monkeypatch, _invoice_paid(inv_id="in_bare", pi=""))
+    monkeypatch.delenv("STRIPE_SECRET_KEY", raising=False)
+    assert _post_webhook(client).json()["granted"] is True
+    row = app_mod.store.db.execute("SELECT payment_ref FROM purchases WHERE ref='in_bare'").fetchone()
+    assert row[0] == ""
+
+    calls = []
+
+    class FakeInvoicePayment:
+        @staticmethod
+        def list(**kw):
+            calls.append(kw)
+            return stripe.StripeObject.construct_from(
+                {"object": "list", "data": [{"payment": {"type": "payment_intent", "payment_intent": "pi_fetched"}}]},
+                "sk_test_x")
+
+    monkeypatch.setattr(stripe, "InvoicePayment", FakeInvoicePayment)
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
+    _stripe_event(monkeypatch, _invoice_paid(inv_id="in_bare2", pi=""))
+    assert _post_webhook(client).json()["granted"] is True
+    assert calls and calls[0]["invoice"] == "in_bare2"
+    row = app_mod.store.db.execute("SELECT payment_ref FROM purchases WHERE ref='in_bare2'").fetchone()
+    assert row[0] == "pi_fetched"
+
+
+def test_a_real_stripe_event_object_is_read_as_a_dict(client, monkeypatch):
+    """stripe-python 15 returns a StripeObject with no `.get`; the parser must convert it."""
+    import stripe
+    ev = stripe.Event.construct_from(_invoice_paid(inv_id="in_obj", pi="pi_obj"), "sk_test_x")
+    _stripe_event(monkeypatch, ev)
+    assert _post_webhook(client).json()["granted"] is True
+    ev = stripe.Event.construct_from(_session_completed(sku="full_report", pi="pi_obj2"), "sk_test_x")
+    _stripe_event(monkeypatch, ev)
+    assert _post_webhook(client).json()["granted"] is True
+
+
+def test_an_invoice_that_is_not_ours_is_ignored(client, monkeypatch):
+    _stripe_event(monkeypatch, {"type": "invoice.paid", "data": {"object": {"id": "in_x", "customer_email": "a@b.c"}}})
+    assert _post_webhook(client).json()["granted"] is False
+
+
+def test_the_billing_portal_link_rides_on_me(client, monkeypatch):
+    assert client.get("/api/me").json()["billing_portal_url"] is None
+    monkeypatch.setenv("EDGE_BILLING_PORTAL_URL", "https://billing.stripe.com/p/login/test_x")
+    assert client.get("/api/me").json()["billing_portal_url"] == "https://billing.stripe.com/p/login/test_x"
 
 
 def test_webhooks_are_idempotent(client, monkeypatch):

@@ -51,7 +51,7 @@ def _demo_unlock() -> bool:
 
 def _skus(email: str | None) -> list[str]:
     if _demo_unlock():
-        return [p["sku"] for p in products.PRODUCTS if p["price_cents"] > 0]
+        return [p["sku"] for p in products.FOR_SALE]
     return store.skus(email, _season()) if email else []
 
 
@@ -74,6 +74,8 @@ def _account(email: str) -> dict:
     out["plan"] = products.plan(skus)
     out["is_admin"] = out["role"] == "admin"
     out["league_slots"] = _slots(email)
+    # When a week pass runs out (epoch seconds), so the account page can say so; None without one.
+    out["pass_until"] = store.pass_until(email, products.WEEK_SKU, _season()) if email else None
     return out
 
 
@@ -89,7 +91,10 @@ def _me(email: str | None) -> dict:
             "phone_sign_in": _sms() is not None,
             # The web shows "Upgrade" as a checkout when Stripe is wired and as a direct grant
             # when it is not (docs/DEPLOY.md, "Upgrades without Stripe").
-            "checkout": _stripe_configured()}
+            "checkout": _stripe_configured(),
+            # Stripe's customer-portal login link, where a week-pass subscriber manages or
+            # cancels. Set in the Stripe dashboard, then as EDGE_BILLING_PORTAL_URL.
+            "billing_portal_url": os.environ.get("EDGE_BILLING_PORTAL_URL", "").strip() or None}
 
 
 def _open_session(email: str) -> dict:
@@ -166,7 +171,7 @@ def get_products():
     """
     from edge.data import providers
 
-    return {"products": products.PRODUCTS, "attribution": providers.attribution_line()}
+    return {"products": products.FOR_SALE, "attribution": providers.attribution_line()}
 
 
 @app.get("/api/me")
@@ -522,7 +527,7 @@ class UpgradeIn(BaseModel):
 
 @app.post("/api/account/upgrade")
 def upgrade(body: UpgradeIn, email: str = Depends(current_user)):
-    """Buy a pass, the bundle or a league slot.
+    """Buy the week pass, the season pass or a league slot.
 
     With Stripe configured this is Checkout and the reply carries its `url`; the webhook
     writes the grant. Without Stripe there is no way to take money, so the grant is written
@@ -530,8 +535,8 @@ def upgrade(body: UpgradeIn, email: str = Depends(current_user)):
     paywall opening and it is deliberate for launch week -- docs/DEPLOY.md, "Upgrades
     without Stripe". Set `STRIPE_SECRET_KEY` and the same button becomes a payment.
     """
-    if body.sku not in products.BY_SKU or products.BY_SKU[body.sku]["price_cents"] == 0:
-        raise HTTPException(400, "unknown or free sku")
+    if not products.for_sale(body.sku):
+        raise HTTPException(400, "unknown, free or retired sku")
     if _stripe_configured():
         from edge.api import payments
         url = payments.create_checkout(email, body.sku, _season(), body.success_url, body.cancel_url)
@@ -586,9 +591,9 @@ def admin_users(_: str = Depends(require_admin)):
 
 @app.post("/api/admin/users/{email}/grant")
 def admin_grant(email: str, body: GrantIn, admin: str = Depends(require_admin)):
-    """Hand an account a pass, the bundle or one more league slot. Source `admin`."""
-    if body.sku not in products.BY_SKU or products.BY_SKU[body.sku]["price_cents"] == 0:
-        raise HTTPException(400, "unknown or free sku")
+    """Hand an account a pass, the season or one more league slot. Source `admin`."""
+    if not products.for_sale(body.sku):
+        raise HTTPException(400, "unknown, free or retired sku")
     import uuid
     store.grant(accounts.normalize_email(email), body.sku, _season(), source="admin", ref=f"admin_{uuid.uuid4().hex}")
     return {"ok": True, "me": _me(accounts.normalize_email(email))}
@@ -676,7 +681,7 @@ def connect(body: ConnectIn, email: str = Depends(current_user), auth=Depends(es
 
     Looking is still free: every league route answers a stranger. What needs the account is
     keeping the league, which is what the cap is about. Over the cap is a 402 whose upsell
-    is the slot add-on, then the bundle.
+    is the slot add-on, then the season pass.
     """
     b = _bundle(body.platform, body.league_id, auth)
     t = _team(b, body.team_id)
@@ -704,8 +709,8 @@ class CheckoutIn(BaseModel):
 @app.post("/api/checkout")
 def checkout(body: CheckoutIn, email: str = Depends(current_user)):
     from edge.api import payments
-    if body.sku not in products.BY_SKU or products.BY_SKU[body.sku]["price_cents"] == 0:
-        raise HTTPException(400, "unknown or free sku")
+    if not products.for_sale(body.sku):
+        raise HTTPException(400, "unknown, free or retired sku")
     url = payments.create_checkout(email, body.sku, _season(), body.success_url, body.cancel_url)
     return {"url": url}
 
@@ -848,7 +853,7 @@ def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
     **Free, on the same line the search box and the profile are free on, and it opens
     nothing.** What it hands back is each player's own numbers -- the projection the
     connector scored against this league's settings, the rest-of-season value, the bye, the
-    add count. That is description. Wire Pass sells the decision: which of them fits *this*
+    add count. That is description. The paid wire sells the decision: which of them fits *this*
     roster, what to bid for him and who to cut to make room, and none of those three words
     appears anywhere in this payload. The 402 on `/waivers` and `/waivers/plan` is
     untouched, `edge/products.py` is still the only thing that decides, and
@@ -899,7 +904,7 @@ def player_profile(platform: str, league_id: str, player_id: str, team_id: str |
 
     **Free, on purpose, and it does not open the wire.** What it returns is what already
     happened -- snaps, targets, carries, red-zone work, and the points those were worth
-    under *these* scoring settings. That is descriptive. Wire Pass sells the ranked board,
+    under *these* scoring settings. That is descriptive. The paid wire sells the ranked board,
     the bid and the drop, which are decisions, and `test_the_paid_card_is_still_paid` plus
     the 402 on `/waivers` pin that half regardless of what happens here. It is also the
     front door: CLAUDE.md's own framing is that competitors are encyclopedias you browse
@@ -1025,7 +1030,7 @@ def desk_plan(platform: str, league_id: str, team_id: str, kind: str, mine_id: s
               email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     """One story off the desk and every door out of it: the depth chart behind the man, your
     bench at the spot, the wire and the trade angles. Free; the wire's names and the trade
-    partners' names need Wire Pass and Trade Lab (`engine/plan.py`)."""
+    partners' names need the paid wire and Trade Lab (`engine/plan.py`)."""
     b = _bundle(platform, league_id, auth)
     t = _team(b, team_id)
     ents = products.features_for(_skus(email))
