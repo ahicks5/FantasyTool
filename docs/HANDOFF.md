@@ -24,6 +24,20 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## The landing page is a funnel now (2026-09-27)
+
+Andrew asked for the best front page we can build, on Hormozi's playbook: leads, conversions,
+retention, in the brand's voice. The page (`web/src/app/page.tsx`) now runs: name the reader,
+promise with a clock on it, take the effort out under the button, three reasons to believe,
+the product itself, who it is for and who it is not, the rooms outcome-first, the steps with
+their timings, the week as a ritual, we keep score, the offer stacked with the guarantee under
+the price, seven objections, the close with the countdown, and a follow-along bar between the
+first ask and the last. Every word is in `LANDING` / `PRICING` (`vocab.ts`) and swept by the
+voice tests; every figure on the pricing card is added up from the API's catalog (`lib/offer.ts`)
+and the terms' refund window (`LEGAL.refundDays`), never typed. The no-accuracy-figure rule
+holds (`landing.test.ts`). What is deliberately absent: testimonials, a user count, a rate. None
+exist yet and nothing was invented. `TASKS.md` "The landing page" has what is left.
+
 ## Live setup, done with Andrew (2026-09-26)
 
 Verified on `GET /api/health` after each step: **`DATABASE_URL` → Neon** (free, project

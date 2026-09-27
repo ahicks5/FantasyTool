@@ -53,6 +53,7 @@ import type {
   ScoutGame,
   ScoutSplit,
   Waivers,
+  Health,
 } from "./types";
 
 export const LEAGUE_ID = "1403186749361901568";
@@ -66,6 +67,9 @@ export const PRODUCTS: Product[] = [
   { sku: "full_report", name: "The Penthouse", price_cents: 700, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "bundle", blurb: "The whole Penthouse. Five leagues." },
   { sku: "league_slot", name: "League slot", price_cents: 200, features: [], leagues: 1, kind: "add_on", blurb: "One more league on your account. Rest of season." },
 ];
+
+/** The demo pretends the register is open, so the pricing card shows the price and not the launch-week grant. */
+export const HEALTH: Health = { ok: true, stripe: true };
 
 export const SLEEPER_LEAGUES: SleeperLeagueRef[] = [
   { league_id: LEAGUE_ID, name: "The Megalabowl", status: "in_season", total_rosters: 12 },

@@ -24,7 +24,7 @@ import {
   SCOUT_OPEN,
   WIRE,
   OFFICE,
-  CALL, FILM, ACCOUNT } from "./vocab.ts";
+  CALL, FILM, ACCOUNT, PRICING } from "./vocab.ts";
 
 /**
  * The vocabulary is the one file that is allowed to say a section's name, so it is also
@@ -63,6 +63,22 @@ const ALL_COPY: string[] = [
   LANDING.exampleHead,
   LANDING.score.head,
   LANDING.score.body,
+  LANDING.score.detail,
+  // The rest of the landing page: every string, every templated line rendered once.
+  LANDING.eyebrow, LANDING.avatar, LANDING.heroBody, LANDING.cta, LANDING.under, LANDING.secondary,
+  ...LANDING.proof.flatMap((p) => [p.head, p.body]),
+  ...Object.values(LANDING.demo),
+  LANDING.fit.head, ...LANDING.fit.yes, LANDING.fit.noHead, ...LANDING.fit.no,
+  LANDING.roomsHead,
+  LANDING.steps.head, ...LANDING.steps.items.flatMap((s) => [s.title, s.when, s.body]),
+  LANDING.ritual.head, LANDING.ritual.lead, ...LANDING.ritual.days.flatMap((d) => [d.day, d.title, d.body]), LANDING.ritual.tail,
+  LANDING.faq.head, ...LANDING.faq.items.flatMap((i) => [i.q, typeof i.a === "function" ? i.a(14) : i.a]),
+  ...Object.values(LANDING.close), ...Object.values(LANDING.bar),
+  // The offer.
+  PRICING.eyebrow, PRICING.title("$7"), PRICING.lead, ...Object.values(PRICING.unlocks), ...Object.values(PRICING.badge),
+  PRICING.leagues(1), PRICING.leagues(5), PRICING.stack.head, PRICING.stack.film, PRICING.stack.filmPrice, PRICING.stack.slots(1),
+  PRICING.stack.slots(2), PRICING.stack.apart, PRICING.stack.together, PRICING.guarantee.head, PRICING.guarantee.body(14),
+  ...Object.values(PRICING.launch), PRICING.cta, PRICING.under,
   // Moved here in Part 4 from seven components. Sweeping them is the point of moving
   // them: three of these sentences used to be three copies, and the copy that drifted
   // was the one a grep could not find because it built its number at runtime.
@@ -201,6 +217,43 @@ test("the voice rules hold: no exclamation marks, no em dashes", () => {
     assert.ok(!line.includes("!"), `exclamation mark in: ${line}`);
     assert.ok(!line.includes("—"), `em dash in: ${line}`);
   }
+});
+
+test("the landing page names the reader before it makes a promise", () => {
+  // Hormozi's first rule and ours agree: the first line calls out who it is for. The
+  // promise carries a clock ("before kickoff" is the h1; "about a minute" is the body)
+  // and the line under the button says what it does not cost.
+  assert.match(LANDING.avatar, /^For the manager/);
+  assert.match(LANDING.heroBody, /about a minute/);
+  assert.match(LANDING.under, /No card/);
+  assert.equal(LANDING.cta, LANDING.close.cta, "the first ask and the last ask are the same door");
+  assert.match(LANDING.close.next, /^What happens next/);
+});
+
+test("the offer is stacked, guaranteed and never typed", () => {
+  // The price in the headline is a parameter, so a change in edge/products.py reaches it.
+  assert.equal(PRICING.title("$7"), "$7. The season.");
+  assert.doesNotMatch(PRICING.lead, /\$\d/, "the lead quotes no price of its own");
+  // The guarantee says the number of days the terms say, and nothing about a percentage.
+  assert.match(PRICING.guarantee.body(14), /14 days/);
+  assert.match(PRICING.guarantee.body(14), /refunded in full/i);
+  // The film is the bonus: it is in the bundle and sold nowhere else.
+  assert.equal(PRICING.stack.filmPrice, "Not sold apart");
+  // Every entitlement the API can send has a line in the user's words.
+  assert.deepEqual(Object.keys(PRICING.unlocks).sort(), ["full_report", "my_team", "trade_lab", "waivers"]);
+});
+
+test("the objections are answered in the reader's words, and one of them says no", () => {
+  const qs = LANDING.faq.items.map((i) => i.q);
+  assert.ok(qs.length >= 5);
+  assert.ok(qs.some((q) => /subscription/i.test(q)), "the subscription objection is answered");
+  assert.ok(qs.some((q) => /wrong/i.test(q)), "the accuracy objection is answered");
+  assert.ok(LANDING.fit.no.length >= 1, "the page sends somebody away");
+  // The refund answer takes the terms' number rather than typing one.
+  const refund = LANDING.faq.items.find((i) => typeof i.a === "function");
+  assert.ok(refund && typeof refund.a === "function");
+  assert.match(refund.a(14), /14 days/);
+  assert.match(refund.a(30), /30 days/);
 });
 
 test("the landing page advertises the same headline the engine writes", () => {

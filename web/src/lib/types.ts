@@ -18,6 +18,16 @@ export interface Product {
   kind?: "free" | "a_la_carte" | "bundle" | "add_on";
 }
 
+/** `GET /api/health`: what the API has switched on, never a key. */
+export interface Health {
+  ok: boolean;
+  /** True once a card reader is wired; until then an upgrade is a complimentary grant. */
+  stripe: boolean;
+  database?: string;
+  phone_sign_in?: string | null;
+  email_provider?: string;
+}
+
 export interface ProductsResponse {
   products: Product[];
 }
