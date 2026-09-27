@@ -898,23 +898,22 @@ export const LANDING = {
   eyebrow: "Sleeper · ESPN · free to start",
   avatar: "For the manager with three leagues and a job.",
   /** The promise, with the clock on it and the effort taken out. */
-  heroBody:
-    "Link a league and this week’s sheet is written in about a minute: who starts, who to claim, what to offer, each with a stamp and one line of why.",
+  heroBody: "Link a league and this week’s is written in about a minute.",
   cta: "Open the Penthouse · free",
   /** Under the button: what it does not cost. */
-  under: "No card. No password for Sleeper. Three leagues free.",
+  under: "No card. Three leagues free.",
   secondary: "See what it costs",
 
   /** Three reasons to believe it, one line each. The practice, never a rate. */
   proof: [
-    { head: "Your scoring", body: "Every projection re-scored to your league’s own settings. Never assumed PPR." },
-    { head: "Graded in public", body: "Every stamp is checked against the box score, and the film shows you the result." },
-    { head: "Coin flips, called", body: "When a call is too close to matter we say so and tell you to leave it alone." },
+    { head: "Your scoring", body: "Re-scored to your league’s settings. Never assumed PPR." },
+    { head: "Graded in public", body: "Every stamp checked against the box score." },
+    { head: "Coin flips, called", body: "Too close to matter? We say so." },
   ],
 
   /** The worked example: the product itself, before a word about it. */
   demo: {
-    eyebrow: "The whole product, on one screen",
+    eyebrow: "The product, on one screen",
     week: "Week 2 · The Megalabowl",
     foot: "Everything else on your roster is fine. Go enjoy your Sunday.",
   },
@@ -929,16 +928,9 @@ export const LANDING = {
   /** Who it is for, and who it is not. Sending the wrong reader away is what makes the right one believe the rest. */
   fit: {
     head: "Who it’s for",
-    yes: [
-      "You have a job, a family, and three leagues.",
-      "You want the call, not the research.",
-      "You would rather be right than busy.",
-    ],
+    yes: ["Three leagues and a job.", "You want the call, not the research."],
     noHead: "Who it isn’t for",
-    no: [
-      "You enjoy the spreadsheet.",
-      "You want every stat on every player. That is an encyclopedia, and there are good ones.",
-    ],
+    no: ["You enjoy the spreadsheet."],
   },
 
   /**
@@ -954,28 +946,28 @@ export const LANDING = {
       room: SECTIONS.team.title,
       title: "Start/sit, graded",
       tag: "Free",
-      body: "Every starter checked against your bench. A stamp on each call, one line of why, and the number under it. Free, for up to three leagues.",
+      body: "Every starter checked against your bench, with a stamp and one line of why.",
     },
     {
       key: "waivers",
       room: SECTIONS.waivers.title,
       title: "Waivers, priced",
       tag: "$3",
-      body: "Five pickups ranked by how much each one moves your lineup, not by who is trending. The bid, the drop, and the name.",
+      body: "Five pickups ranked by what they do for your lineup. Bid and drop included.",
     },
     {
       key: "trade",
       room: SECTIONS.trade.title,
       title: "Trades, with a counter",
       tag: "$5",
-      body: "A verdict on any trade, and a counter built from how that manager has actually traded. The numbers are the engine’s. The words are plain English.",
+      body: "A verdict on any trade, and a counter tuned to the other manager.",
     },
     {
       key: "report",
       room: SECTIONS.report.title,
       title: "Your standing",
       tag: "Free",
-      body: "Record, points rank, a letter grade for every position, and how last week’s calls landed.",
+      body: "Record, points rank, a grade per position, and how last week’s calls landed.",
     },
   ],
 
@@ -986,17 +978,17 @@ export const LANDING = {
       {
         title: "Link your league",
         when: "About a minute",
-        body: "A Sleeper username or a league ID. ESPN too, public or private. Nothing to install.",
+        body: "A Sleeper username or a league ID. ESPN too.",
       },
       {
         title: "We re-score everything",
         when: "Before you finish this page",
-        body: "Your points per catch, your bonuses, your slots, your bench. Then every call is stamped Lock, Lean, or Owner’s call.",
+        body: "Your scoring, your slots, your bench. Never assumed PPR.",
       },
       {
         title: "You make three moves",
         when: "Every week",
-        body: "Ranked moves with one line of why each. Tick them off as you make them. The sheet tells you when you are done.",
+        body: "Tick them off as you make them. The sheet says when you’re done.",
       },
     ],
   },
@@ -1004,11 +996,11 @@ export const LANDING = {
   /** The week as a routine: the reason to come back is on the page before the price is. */
   ritual: {
     head: "The week, owned",
-    lead: "A routine, not a rabbit hole. Three days a week, a few minutes each.",
+    lead: "Three days a week, a few minutes each.",
     days: [
-      { day: "Tuesday", title: "The film", body: "Last week, graded. What we said, what happened, what to do about it." },
-      { day: "Thursday", title: "The sheet", body: "This week’s moves, written and stamped before the first game." },
-      { day: "Sunday", title: "Kickoff", body: "The clock runs on every sheet. Inside two hours the lamp beats faster." },
+      { day: "Tuesday", title: "The film", body: "Last week, graded." },
+      { day: "Thursday", title: "The sheet", body: "This week’s moves, stamped." },
+      { day: "Sunday", title: "Kickoff", body: "The clock runs on every sheet." },
     ],
     tail: "Then we grade ourselves, and it starts again.",
   },
@@ -1016,9 +1008,7 @@ export const LANDING = {
   /** What we promise about our own accuracy: the practice, never a number. */
   score: {
     head: "We keep score",
-    body: "Every stamp is graded against what actually happened, and we publish the result. We only move the thresholds when the data says to. When a call is too close to matter, we tell you to leave it alone.",
-    detail:
-      "The stamps were fitted on every startable pair of the 2025 season and are re-graded every week. The thresholds move only when a season of data says so.",
+    body: "Every stamp is graded against what actually happened, and we publish the result. Too close to call? We tell you to leave it alone.",
   },
 
   /** The objections, in the reader's words, answered in ours. The one that disqualifies is the one that sells. */
@@ -1027,32 +1017,32 @@ export const LANDING = {
     items: [
       {
         q: "My league’s scoring is weird.",
-        a: "Good. We re-score every projection to your settings: your points per catch, your bonuses, your slots. We never assume PPR.",
+        a: "Good. Every projection is re-scored to your settings. We never assume PPR.",
       },
       {
         q: "ESPN private league?",
-        a: "Yes. Paste two cookies once. They stay in your browser and are never stored on our side. A public league needs the ID only. Yahoo is not here yet.",
+        a: "Yes. Paste two cookies once. They stay in your browser, never on our side. A public league needs the ID only.",
       },
       {
         q: "Is it a subscription?",
-        a: "No. One payment covers the rest of the season. Nothing renews, so there is nothing to cancel.",
+        a: "No. One payment, rest of the season. Nothing renews.",
       },
       {
         q: "What if a call is wrong?",
         a: (days: number) =>
-          `Some will be, and we say so. Every stamp is graded against the box score and the film shows the result. Not useful within ${days} days? Refunded in full, no reasoning required.`,
+          `Some will be, and we say so. Every stamp is graded and the film shows the result. Not useful within ${days} days? Refunded in full.`,
       },
       {
         q: "Why an account before a league?",
-        a: "So the league stays on file and follows you to every device. You enter it once.",
+        a: "So the league stays on file and follows you to every device.",
       },
       {
         q: "How long does it take?",
-        a: "About a minute to link a league. This week’s sheet is written before you finish reading this page.",
+        a: "About a minute to link a league. The sheet is written by the time you land.",
       },
       {
         q: "What do you keep?",
-        a: "Your sign-in, the leagues on file, what you bought, and the calls we made so we can grade them. Share cards are display only: never an email, a league ID or a roster. The privacy page lists every row.",
+        a: "Your sign-in, your leagues, what you bought, and the calls we made so we can grade them. Share cards never carry an email, a league ID or a roster.",
       },
     ],
   },
@@ -1062,10 +1052,9 @@ export const LANDING = {
     /** The clock beside it prints its own word (Kickoff, Soon, Last call), so this one does not. */
     eyebrow: "The clock is running",
     title: "Your sheet isn’t written yet.",
-    body: "Link a league and it is, in about a minute. Then it is written every week until the season ends.",
+    body: "Link a league and it is, in about a minute.",
     cta: "Open the Penthouse · free",
-    next: "What happens next: make an account, link a league, and the staff hands you this week’s sheet.",
-    under: "Free for three leagues. No card. Nothing renews.",
+    under: "Free for three leagues. No card.",
   },
 
   /** The bar that follows the reader down the page once the first button has scrolled away. */
@@ -1084,7 +1073,7 @@ export const PRICING = {
   eyebrow: "Pricing",
   /** The price is the headline, and it comes from the catalog. */
   title: (price: string) => `${price}. The season.`,
-  lead: "One payment covers the rest of the season. No subscription, no auto-renew, nothing to cancel.",
+  lead: "One payment, rest of the season. Nothing renews.",
   /** What each entitlement actually buys, in the user's words rather than the API's. */
   unlocks: {
     my_team: "Start/sit calls, stamped with confidence",
@@ -1114,7 +1103,7 @@ export const PRICING = {
     body: "Every floor is open and there is no card to enter. Take it while the register is closed.",
   },
   cta: "Take me upstairs",
-  under: "Start free with up to three leagues. Pay only when you want the rest.",
+  under: "Start free. Pay only when you want the rest.",
 } as const;
 
 /**
