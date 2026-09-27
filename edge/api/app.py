@@ -171,7 +171,8 @@ def get_products():
     """
     from edge.data import providers
 
-    return {"products": products.FOR_SALE, "attribution": providers.attribution_line()}
+    # The free tier leads (the pricing page compares against it); retired skus never appear.
+    return {"products": [products.BY_SKU["free"], *products.FOR_SALE], "attribution": providers.attribution_line()}
 
 
 @app.get("/api/me")
@@ -720,7 +721,11 @@ async def stripe_webhook(request: Request):
     from edge.api import payments
     payload = await request.body()
     sig = request.headers.get("stripe-signature", "")
-    event = payments.parse_webhook(payload, sig)
+    try:
+        event = payments.parse_webhook(payload, sig)
+    except payments.BadWebhook:
+        # A forged or mangled delivery is the caller's fault, not ours: 400, nothing granted.
+        raise HTTPException(400, "invalid webhook signature or payload")
     if not event:
         return {"received": True, "granted": False, "revoked": 0, "restored": 0}
 

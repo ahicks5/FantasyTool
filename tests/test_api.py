@@ -37,8 +37,8 @@ LG = "/api/league/sleeper/1403186749361901568"
 
 def test_products_and_me(client):
     r = client.get("/api/products")
-    assert r.status_code == 200 and [p["sku"] for p in r.json()["products"]] == ["week_pass", "full_report", "league_slot"], \
-        "only what is on sale: no free row, no retired à la carte passes"
+    assert r.status_code == 200 and [p["sku"] for p in r.json()["products"]] == ["free", "week_pass", "full_report", "league_slot"], \
+        "the free tier and what is on sale; no retired à la carte passes"
     anon = client.get("/api/me")
     assert anon.status_code == 200, "a signed-out visitor still gets the free tier"
     assert anon.json()["signed_in"] is False and anon.json()["entitlements"] == ["my_team"]
@@ -551,6 +551,36 @@ def test_the_billing_portal_link_rides_on_me(client, monkeypatch):
     assert client.get("/api/me").json()["billing_portal_url"] is None
     monkeypatch.setenv("EDGE_BILLING_PORTAL_URL", "https://billing.stripe.com/p/login/test_x")
     assert client.get("/api/me").json()["billing_portal_url"] == "https://billing.stripe.com/p/login/test_x"
+
+
+def test_a_bad_signature_is_a_400_and_grants_nothing(client, monkeypatch):
+    """The real verifier, a wrong signature: rejected as the caller's error, not a 500."""
+    import json
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    body = json.dumps(_session_completed(sku="full_report", pi="pi_forged")).encode()
+    r = client.post("/api/stripe/webhook", content=body, headers={"stripe-signature": "t=1,v1=forged"})
+    assert r.status_code == 400
+    r = client.post("/api/stripe/webhook", content=b"not json", headers={})
+    assert r.status_code == 400
+    assert app_mod.store.db.execute("SELECT COUNT(*) FROM purchases WHERE payment_ref='pi_forged'").fetchone()[0] == 0
+
+
+def test_a_correctly_signed_event_is_verified_and_granted(client, monkeypatch):
+    """End to end through stripe-python's own verifier, which returns a StripeObject."""
+    import hashlib
+    import hmac
+    import json
+    import time as _t
+    secret = "whsec_test"
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", secret)
+    ev = _invoice_paid(inv_id="in_signed", pi="pi_signed")
+    ev |= {"id": "evt_1", "object": "event", "api_version": "2026-08-26.dahlia"}
+    body = json.dumps(ev)
+    ts = str(int(_t.time()))
+    sig = hmac.new(secret.encode(), f"{ts}.{body}".encode(), hashlib.sha256).hexdigest()
+    r = client.post("/api/stripe/webhook", content=body.encode(), headers={"stripe-signature": f"t={ts},v1={sig}"})
+    assert r.status_code == 200 and r.json()["granted"] is True
+    assert "week_pass" in client.get("/api/me", headers=H).json()["skus"]
 
 
 def test_webhooks_are_idempotent(client, monkeypatch):

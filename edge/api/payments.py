@@ -75,6 +75,10 @@ def create_checkout(email: str, sku: str, season: int, success_url: str | None, 
     return session.url
 
 
+class BadWebhook(Exception):
+    """The delivery failed signature verification or was not a Stripe event."""
+
+
 def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
     """Verify the signature and translate a Stripe event into something to do.
 
@@ -90,7 +94,10 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
     """
     import stripe
 
-    event = stripe.Webhook.construct_event(payload, sig_header, os.environ["STRIPE_WEBHOOK_SECRET"])
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, os.environ["STRIPE_WEBHOOK_SECRET"])
+    except (ValueError, stripe.SignatureVerificationError) as e:
+        raise BadWebhook(str(e)) from e
     # stripe-python 15 hands back a StripeObject, which is not a dict and has no `.get`.
     # Everything below reads plain dicts, so convert once, recursively.
     if hasattr(event, "to_dict"):
