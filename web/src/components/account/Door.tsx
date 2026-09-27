@@ -7,18 +7,34 @@ import { AuthForm, type AuthMode } from "./AuthForm";
 import { logout } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { accountContact, accountLabel } from "@/lib/account";
-import { Button, Card, Eyebrow, LinkButton, ThemeToggle, Wordmark } from "@/components/ui";
+import { IconChevron } from "@/components/icons";
+import { Button, Card, Eyebrow, LinkButton, Wordmark } from "@/components/ui";
 import { ACCOUNT, LINES } from "@/lib/vocab";
 
-/** The chrome the account pages share: wordmark, theme switch, one column. */
+/**
+ * The chrome the account pages share: wordmark and one column. Signed in, the wordmark
+ * is the short "PHF" and the header carries the way back to the league, because the
+ * account page is a side room and nobody should get stuck in it (Andrew, 2026-09-27).
+ */
 export function DoorFrame({ children }: { children: React.ReactNode }) {
+  const session = useSession();
+  const inside = session.signedIn;
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
-      <header className="flex h-16 items-center justify-between">
-        <Link href="/" aria-label="Penthouse home" className="flex min-h-11 items-center">
-          <Wordmark className="text-[26px]" />
+      <header className="flex h-16 items-center justify-between gap-3">
+        <Link href={inside ? "/home" : "/"} aria-label="Penthouse home" className="flex min-h-11 items-center">
+          <Wordmark className="text-[26px]" short={inside} />
         </Link>
-        <ThemeToggle />
+        {inside && (
+          <Link
+            href="/home"
+            className="inline-flex min-h-11 items-center gap-1 rounded-full border border-line-2 px-4 text-[13px] font-bold hover:bg-soft"
+            data-testid="back-to-office"
+          >
+            {ACCOUNT.back}
+            <IconChevron size={13} strokeWidth={2.8} />
+          </Link>
+        )}
       </header>
       {children}
     </main>
@@ -45,7 +61,7 @@ export function SignedInCard({ next }: { next: string }) {
       </p>
       <div className="mt-5 grid gap-2.5">
         <LinkButton href={next} className="w-full">
-          Back upstairs
+          {ACCOUNT.back}
         </LinkButton>
         <LinkButton href="/account" variant="secondary" className="w-full">
           {ACCOUNT.title}
@@ -67,14 +83,15 @@ function LoginInner({ start }: { start: AuthMode }) {
   const [mode, setMode] = useState<AuthMode>(start);
   const session = useSession();
   const title = mode === "register" ? ACCOUNT.register : mode === "forgot" ? ACCOUNT.reset.title : ACCOUNT.signIn;
-  const lead = mode === "register" ? ACCOUNT.registerLead : mode === "forgot" ? ACCOUNT.reset.lead : ACCOUNT.signInLead;
+  // Fewest words at the door (Andrew, 2026-09-27): only the reset form keeps a line.
+  const lead = mode === "forgot" ? ACCOUNT.reset.lead : null;
 
   return (
     <DoorFrame>
       <div className="pt-8 rise">
         <Eyebrow>{LINES.threshold}</Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">{session.signedIn ? "Signed in" : title}</h1>
-        {!session.signedIn && <p className="mt-2 max-w-[24rem] text-[15px] leading-relaxed text-muted">{lead}</p>}
+        {!session.signedIn && lead && <p className="mt-2 max-w-[24rem] text-[15px] leading-relaxed text-muted">{lead}</p>}
       </div>
       <div className="mt-6 rise rise-1">
         {session.signedIn ? (
@@ -85,9 +102,6 @@ function LoginInner({ start }: { start: AuthMode }) {
           </div>
         )}
       </div>
-      <p className="mt-6 text-center text-[12px] leading-relaxed text-muted">
-        Looking is always free. An account keeps your leagues on file and carries every pass you buy.
-      </p>
     </DoorFrame>
   );
 }

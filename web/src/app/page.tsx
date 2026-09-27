@@ -1,6 +1,7 @@
 /** The landing page: the front office you walk into, the answers on your desk, the staff, the film, how quick it is, and the door. Indexable. */
 import Link from "next/link";
 import { LandingBar } from "@/components/LandingBar";
+import { Reveal } from "@/components/Reveal";
 import { IconCheck, IconChevron, IconFilm, IconTeam, IconTrade, IconWire, IconX } from "@/components/icons";
 import { Countdown, Eyebrow, LinkButton, OnAir, Wordmark } from "@/components/ui";
 import { LANDING, LINES } from "@/lib/vocab";
@@ -214,12 +215,15 @@ export default function Landing() {
             The four questions every owner asks in a week, each answered by the member of
             staff who owns it, the way the app answers it. */}
         <section className="mt-16 lg:mt-24" aria-labelledby="desk-title">
-          <Eyebrow>{DESK.eyebrow}</Eyebrow>
-          <h2 id="desk-title" className="display mt-2 max-w-[40rem] text-[30px] leading-[1.05] sm:text-[38px]">
-            {DESK.title}
-          </h2>
+          <Reveal>
+            <Eyebrow>{DESK.eyebrow}</Eyebrow>
+            <h2 id="desk-title" className="display mt-2 max-w-[40rem] text-[30px] leading-[1.05] sm:text-[38px]">
+              {DESK.title}
+            </h2>
+          </Reveal>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:gap-4">
-            <DeskCard from={DESK.gm.from} q={DESK.gm.q} className="rise rise-1">
+            <Reveal className="flex" delay={0}>
+            <DeskCard from={DESK.gm.from} q={DESK.gm.q} className="w-full">
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: DESK.gm.give, who: DESK.gm.giveName, face: FACES.meyers },
@@ -239,8 +243,10 @@ export default function Landing() {
               </p>
               <p className="mt-1 text-[13px] text-white/75">{DESK.gm.why}</p>
             </DeskCard>
+            </Reveal>
 
-            <DeskCard from={DESK.scout.from} q={DESK.scout.q} className="rise rise-2">
+            <Reveal className="flex" delay={120}>
+            <DeskCard from={DESK.scout.from} q={DESK.scout.q} className="w-full">
               <div className="flex items-center gap-3">
                 <Face name={FACES.brooks.name} photo={FACES.brooks.photo} team={FACES.brooks.team} />
                 <div className="min-w-0 flex-1">
@@ -255,8 +261,10 @@ export default function Landing() {
                 <span className="tnum display text-[22px] text-white">{DESK.scout.gain}</span> {DESK.scout.unit} · {DESK.scout.ros}
               </p>
             </DeskCard>
+            </Reveal>
 
-            <DeskCard from={DESK.coach.from} q={DESK.coach.q} className="rise rise-3">
+            <Reveal className="flex" delay={0}>
+            <DeskCard from={DESK.coach.from} q={DESK.coach.q} className="w-full">
               <div className="flex items-center gap-3">
                 <Face name={FACES.gibbs.name} photo={FACES.gibbs.photo} team={FACES.gibbs.team} />
                 <span className="text-[11px] font-black uppercase tracking-[0.12em] text-white/40">{DESK.coach.vs}</span>
@@ -274,18 +282,22 @@ export default function Landing() {
                 <span className="tnum display text-[22px] text-white">{DESK.coach.gain}</span> {DESK.coach.unit}
               </p>
             </DeskCard>
+            </Reveal>
 
-            <DeskCard from={DESK.film.from} q={DESK.film.q} className="rise rise-4">
+            <Reveal className="flex" delay={120}>
+            <DeskCard from={DESK.film.from} q={DESK.film.q} className="w-full">
               <ul className="grid grid-cols-4 gap-2" aria-label="Grades by position">
                 {DESK.film.grades.map((g) => (
-                  <li key={g.pos} className="rounded-lg bg-white/[0.06] px-2 py-2.5 text-center">
+                  <li key={g.pos} className="flex flex-col items-center rounded-lg bg-white/[0.06] px-2 py-2.5">
                     <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/50">{g.pos}</div>
+                    {/* Centred by flex, not text-align: `text-start` is our green AND Tailwind's text-align:start. */}
                     <div className={`display tnum mt-0.5 text-[22px] ${gradeTone(g.grade)}`}>{g.grade}</div>
                   </li>
                 ))}
               </ul>
               <p className="mt-auto pt-4 text-[13px] font-bold text-white/75">{DESK.film.line}</p>
             </DeskCard>
+            </Reveal>
           </div>
         </section>
 
@@ -293,7 +305,7 @@ export default function Landing() {
             Who it is for, and who it is not. Sending the wrong reader away is what makes
             the right one believe the rest of the page. */}
         <section className="mt-16 grid gap-3 md:grid-cols-2 lg:mt-24 lg:gap-4" aria-label="Who it is for">
-          <div className="card p-6">
+          <Reveal className="flex"><div className="card w-full p-6">
             <Eyebrow>{LANDING.fit.head}</Eyebrow>
             <ul className="mt-4 grid gap-3">
               {LANDING.fit.yes.map((l) => (
@@ -303,8 +315,8 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-          </div>
-          <div className="card p-6">
+          </div></Reveal>
+          <Reveal className="flex" delay={120}><div className="card w-full p-6">
             <Eyebrow>{LANDING.fit.noHead}</Eyebrow>
             <ul className="mt-4 grid gap-3">
               {LANDING.fit.no.map((l) => (
@@ -314,19 +326,22 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-          </div>
+          </div></Reveal>
         </section>
 
         {/* ----------------------------------------------------------------- staff ---
             The rooms, coolest first, each one a member of the front office. */}
         <section className="mt-16 lg:mt-24">
-          <Eyebrow>{LANDING.roomsHead}</Eyebrow>
-          <h2 className="display mt-2 text-[30px] leading-[1.05] sm:text-[38px]">{LANDING.roomsLead}</h2>
+          <Reveal>
+            <Eyebrow>{LANDING.roomsHead}</Eyebrow>
+            <h2 className="display mt-2 text-[30px] leading-[1.05] sm:text-[38px]">{LANDING.roomsLead}</h2>
+          </Reveal>
           <div className="mt-6 grid gap-3 md:grid-cols-3 lg:gap-4">
             {LANDING.features.map((f, i) => {
               const art = FEATURE_ART[f.key];
               return (
-                <Link key={f.key} href={WAY_IN} className={`card flex flex-col p-6 hover:bg-soft rise rise-${i + 1}`}>
+                <Reveal key={f.key} className="flex" delay={i * 120}>
+                <Link href={WAY_IN} className="card flex w-full flex-col p-6 hover:bg-soft">
                   <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${art.tone}`}>
                     <art.Icon size={23} strokeWidth={2} />
                   </span>
@@ -334,11 +349,13 @@ export default function Landing() {
                   <span className="display mt-1 text-[21px] leading-tight">{f.title}</span>
                   <p className="mt-2 text-[14px] leading-relaxed text-muted">{f.body}</p>
                 </Link>
+                </Reveal>
               );
             })}
           </div>
 
           {/* The film room, on its own: the depth behind every call. */}
+          <Reveal>
           <Link href={WAY_IN} className="hero mt-3 grid gap-6 p-6 hover:opacity-95 md:grid-cols-[1.3fr_1fr] md:items-center lg:mt-4 lg:p-8">
             <div>
               <div className="flex items-center gap-2.5">
@@ -357,16 +374,21 @@ export default function Landing() {
               ))}
             </ul>
           </Link>
+          </Reveal>
         </section>
 
         {/* ----------------------------------------------------------------- steps ---
             Quick is the point: three boxes on a rail, each with the time it takes. */}
         <section className="mt-16 lg:mt-24">
-          <Eyebrow>{LANDING.steps.head}</Eyebrow>
-          <h2 className="display mt-2 text-[30px] leading-[1.05] sm:text-[38px]">{LANDING.steps.title}</h2>
+          <Reveal>
+            <Eyebrow>{LANDING.steps.head}</Eyebrow>
+            <h2 className="display mt-2 text-[30px] leading-[1.05] sm:text-[38px]">{LANDING.steps.title}</h2>
+          </Reveal>
           <ol className="relative mt-6 grid gap-3 md:grid-cols-3 lg:gap-4">
             {LANDING.steps.items.map((s, i) => (
-              <li key={s.title} className="card relative flex flex-col p-6">
+              <li key={s.title} className="relative flex">
+                <Reveal className="flex w-full" delay={i * 140}>
+                <div className="card flex w-full flex-col p-6">
                 <div className="flex items-center justify-between gap-3">
                   <span className="display flex h-11 w-11 items-center justify-center rounded-full bg-start-fill text-[18px] text-white">
                     {i + 1}
@@ -377,6 +399,8 @@ export default function Landing() {
                 </div>
                 <div className="display mt-5 text-[20px] leading-tight">{s.title}</div>
                 <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{s.body}</p>
+                </div>
+                </Reveal>
                 {i < LANDING.steps.items.length - 1 && (
                   <span
                     aria-hidden
@@ -394,6 +418,7 @@ export default function Landing() {
             Native disclosure elements, so it works with no script and every answer is on
             the page for a crawler. */}
         <section className="mx-auto mt-16 max-w-3xl lg:mt-24" aria-label={LANDING.faq.head}>
+          <Reveal>
           <Eyebrow>{LANDING.faq.head}</Eyebrow>
           <div className="mt-3 grid gap-2">
             {LANDING.faq.items.map((item) => (
@@ -406,6 +431,7 @@ export default function Landing() {
               </details>
             ))}
           </div>
+          </Reveal>
         </section>
 
         {/* ----------------------------------------------------------------- close --- */}

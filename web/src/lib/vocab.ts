@@ -673,9 +673,6 @@ export const ACCOUNT = {
   name: "Name",
   nameHint: "Optional. What the staff should call you.",
   passwordHint: "At least 8 characters.",
-  /** The lines under the two headings. */
-  signInLead: "Your leagues and your passes are on your account. Sign in and they come with you.",
-  registerLead: "One account keeps your leagues on file and every pass you buy. Up to three leagues, more as an add-on.",
   /** Swapping between the two. */
   haveAccount: "Already have an account?",
   noAccount: "New here?",
@@ -717,7 +714,7 @@ export const ACCOUNT = {
     free: "Free",
     premium: "Premium",
     admin: "Admin",
-    upgrade: "Upgrade",
+    upgrade: "Upgrade to full premium",
     current: "Your plan",
     freeLine: "Start/sit calls, the desk, the standings and the board. Every week.",
     premiumLine: "Every room open for the rest of the season.",
@@ -730,8 +727,10 @@ export const ACCOUNT = {
   leagues: {
     eyebrow: "Leagues on file",
     add: "Link a league",
-    addSlot: "Add a slot",
-    full: "Every slot is taken. Add one, or forget a league.",
+    addSlot: "Add a league slot",
+    full: "Every slot is taken this season.",
+    /** Under the list: forgetting is not a refund on the slot (Andrew, 2026-09-27). */
+    keeps: "Forgetting a league does not give its slot back this season.",
     forget: "Forget",
     forgetAria: (name: string) => `Forget ${name}`,
     open: "Open",
@@ -740,10 +739,30 @@ export const ACCOUNT = {
     none: "No league on file yet.",
     slot: "slot",
   },
+  /** The check before a new league takes a slot (Andrew, 2026-09-27). */
+  confirmLink: {
+    title: "Just confirming",
+    body: (allowed: number, used: number) =>
+      `Each account gets ${allowed} league${allowed === 1 ? "" : "s"} this season, and you have used ${used}. Once linked, forgetting it does not give the slot back.`,
+    more: (price: string) => `Any more are ${price} each.`,
+    yes: "Link it",
+    no: "Not yet",
+  },
   /** The upgrade sheet. */
   upgrade: {
     title: "Upgrade",
     lead: "Try a week, cancel anytime. Or take the season in one payment.",
+    /** The pass sheet: the season is the headline, the week is the way out. */
+    passTitle: "Go full premium",
+    seasonHead: "The season pass",
+    seasonSub: "Every room, every week, the rest of the season. One payment.",
+    save: (amount: string) => `Save ${amount}`,
+    vsWeekly: (n: number, price: string) => `${n} more weeks of the week pass is ${price}`,
+    takeSeason: "Take the season",
+    or: "or",
+    weekHead: "Just a week",
+    weekSub: "Renews weekly. Cancel anytime.",
+    takeWeek: "Try a week",
     /** Shown while the API has no Stripe key: the grant is written on the spot. */
     comp: "Launch week: no card, no charge. Tap it and the floor is yours.",
     get: (name: string) => `Get ${name}`,
@@ -795,11 +814,11 @@ export const ACCOUNT = {
   /** Phone sign-in: the number, the texted code, then the name and an optional email. */
   phone: {
     label: "Mobile number",
-    hint: "We text you a code. No password to remember.",
+    hint: "We’ll send a text to verify.",
     send: "Text me a code",
     busySend: "Texting\u2026",
     codeLabel: "Code",
-    codeLead: (to: string) => `We texted a code to ${to}. It lasts 10 minutes.`,
+    codeLead: (to: string) => `Code sent to ${to}.`,
     verify: "Continue",
     busyVerify: "Checking\u2026",
     resend: "Text a new code",
@@ -809,9 +828,7 @@ export const ACCOUNT = {
     useEmail: "Use email and password instead",
     usePhone: "Use your phone instead",
     profileTitle: "Last thing.",
-    profileLead: "What the staff should call you, and an email if you want one.",
     emailOptional: "Email (optional)",
-    emailHint: "For receipts and the Thursday call sheet, and a second way in.",
     finish: "Finish",
     busyFinish: "Setting up\u2026",
     onFile: "Phone",
@@ -823,13 +840,12 @@ export const ACCOUNT = {
   /** Adding or changing the email on file. */
   emailOnFile: {
     label: "Email",
-    none: "No email on file. Add one for receipts, the Thursday call sheet, and a second way in.",
+    none: "No email on file. Add one for receipts and a second way in.",
     add: "Add an email",
     change: "Change email",
     save: "Save email",
     saved: "Email saved.",
     needPassword: "Current password",
-    optInNeedsEmail: "Add an email above to get Thursday\u2019s call sheet by mail.",
   },
   /** The security block on the account page. */
   security: {
@@ -865,6 +881,15 @@ export const ACCOUNT = {
     leagues: (n: number, allowed: number) => `${n} of ${allowed} leagues`,
     you: "you",
   },
+  /** The way out of the account, back to the league. */
+  back: "Back to my office",
+  adminLink: "See admin dashboard",
+  /** The light switch lives here and nowhere else (Andrew, 2026-09-27). */
+  appearance: {
+    eyebrow: "Appearance",
+    dark: "Dark",
+    light: "Light",
+  },
   /** The top bar. */
   topbar: {
     signIn: "Sign in",
@@ -872,9 +897,6 @@ export const ACCOUNT = {
   },
   /** The account page's data controls. */
   data: {
-    eyebrow: "Your data",
-    line: "Everything we hold is yours to take or erase.",
-    export: "Download my data",
     erase: "Delete my account",
     eraseConfirm: "This erases your leagues and any pass you bought. Type delete to confirm.",
     erased: "Deleted. The door is behind you.",

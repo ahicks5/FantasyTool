@@ -129,9 +129,15 @@ def test_connect_respects_league_limit(client, league):
     assert client.get("/api/me", headers=H).json()["leagues_allowed"] == 4
     assert client.post("/api/connect", headers=H, json=body | {"league_id": "4"}).status_code == 200
     assert client.post("/api/connect", headers=H, json=body | {"league_id": "5"}).status_code == 402
-    # Forgetting one frees the slot.
+    # Forgetting one does not free the slot (Andrew, 2026-09-27): it still counts this season.
     assert client.delete("/api/leagues/sleeper/1", headers=H).status_code == 200
-    assert client.post("/api/connect", headers=H, json=body | {"league_id": "5"}).status_code == 200
+    me = client.get("/api/me", headers=H).json()
+    assert [l["league_id"] for l in me["leagues"]] == ["2", "3", "4"]
+    assert me["leagues_used"] == 4
+    assert client.post("/api/connect", headers=H, json=body | {"league_id": "5"}).status_code == 402
+    # Linking the forgotten league again brings it back without a second slot.
+    assert client.post("/api/connect", headers=H, json=body | {"league_id": "1"}).status_code == 200
+    assert client.get("/api/me", headers=H).json()["leagues_used"] == 4
 
 
 def test_stripe_webhook_grants_entitlement(client, monkeypatch):

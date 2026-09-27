@@ -28,7 +28,7 @@ The free tier, then only what is on sale. `week_pass` is a weekly Stripe subscri
 `duration_days + grace_days`. `full_report` is the season pass (one payment; `through` is display-only). The
 retired `waivers` (Wire Pass) and `trade_lab` (Trade Lab) never appear here but still resolve for accounts that
 hold them. `league_slot` is an add-on: it unlocks nothing and stacks, one more league per purchase.
-`leagues_allowed` is the highest tier cap held (3 free, 5 with either pass) plus one per slot.
+`leagues_allowed` is the highest tier cap held (3 free, 5 with either pass) plus one per slot. `leagues_used` is the slots taken this season: the leagues on file plus any forgotten this season.
 
 `GET /api/me` →
 ```json
@@ -86,7 +86,7 @@ known one, so sign-in timing does not reveal who has an account. Rules and runbo
 400 on a free, unknown or retired (`waivers`, `trade_lab`) sku. Checkout carries `allow_promotion_codes`.
 
 `POST /api/leagues/{platform}/{league_id}/use` (signed in) → marks the league last opened, so the next sign-in on any device lands on it.
-`DELETE /api/leagues/{platform}/{league_id}` (signed in) → `{"ok":true,"leagues":[...]}`; frees a slot.
+`DELETE /api/leagues/{platform}/{league_id}` (signed in) → `{"ok":true,"leagues":[...]}`. Does not free the slot: a forgotten league counts against this season's cap, and linking it again takes no second slot.
 
 ## Admin
 Signed in as an admin: `role = admin` in the store or an address in `EDGE_ADMINS`. Anyone else is 403.

@@ -1,23 +1,18 @@
 "use client";
 /** Your account: the plan flag, the leagues on file, the upgrades, the Thursday email, and your data. Signed in only. */
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import EmailOptIn from "@/components/EmailOptIn";
 import { useAccountGate } from "@/components/account/AccountGate";
 import { DoorFrame } from "@/components/account/Door";
 import { IconCheck, IconChevron } from "@/components/icons";
 import { Loading } from "@/components/Loading";
-import { Button, Card, ErrorBox, Eyebrow, LinkButton, OnAir } from "@/components/ui";
-import { addPhone, changePassword, deleteMyAccount, phoneStart, setAccountEmail, exportMyData, forgetLeague, getLeague, getProducts, logout, logoutOthers, markLeagueUsed } from "@/lib/api";
+import { Button, Card, ErrorBox, Eyebrow, LinkButton, OnAir, ThemeSetting } from "@/components/ui";
+import { addPhone, changePassword, deleteMyAccount, phoneStart, setAccountEmail, forgetLeague, getLeague, logout, logoutOthers, markLeagueUsed } from "@/lib/api";
 import { describeAuthError } from "@/lib/authError";
-import { accountContact, accountLabel, displayPhone, leagueRoom, shortDate, upgradesFor } from "@/lib/account";
-import { priceLabel, productName } from "@/lib/offer";
-import { formatCents } from "@/lib/format";
+import { displayPhone, leagueRoom, shortDate } from "@/lib/account";
 import { useSession } from "@/lib/session";
 import { clearConnection, saveConnection } from "@/lib/storage";
-import type { MeLeague, Product, Sku } from "@/lib/types";
-import { PRODUCTS as FALLBACK } from "@/lib/mocks";
+import type { MeLeague, Sku } from "@/lib/types";
 import { ACCOUNT, LINES, PRICING } from "@/lib/vocab";
 
 function PlanFlag({ premium, admin }: { premium: boolean; admin: boolean }) {
@@ -79,7 +74,7 @@ function Contact() {
   };
 
   return (
-    <section className="mt-8" data-testid="contact">
+    <section className="mt-3" data-testid="contact">
       <div className="grid gap-2">
         <div className="card flex items-center gap-3 p-4">
           <span className="min-w-0 flex-1">
@@ -274,17 +269,12 @@ function AccountBody() {
   const router = useRouter();
   const session = useSession();
   const gate = useAccountGate();
-  const [products, setProducts] = useState<Product[]>(FALLBACK);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [erasing, setErasing] = useState(false);
   const [confirm, setConfirm] = useState("");
   const account = session.account;
   const me = session.me;
-
-  useEffect(() => {
-    getProducts().then((r) => r.products.length && setProducts(r.products)).catch(() => undefined);
-  }, []);
 
   const open = useCallback(
     async (l: MeLeague) => {
@@ -326,26 +316,8 @@ function AccountBody() {
     }
   }
 
-  async function buy(sku: Sku, what: string) {
+  async function buy(sku: Sku, what?: string) {
     if (await gate.upgrade(sku, { what, returnTo: "/account" })) session.refresh();
-  }
-
-  async function download() {
-    setBusy("export");
-    try {
-      const data = await exportMyData();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "penthouse-account.json";
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      setError(e);
-    } finally {
-      setBusy(null);
-    }
   }
 
   async function erase() {
@@ -363,16 +335,18 @@ function AccountBody() {
 
   if (!account || !me) return <Loading />;
   const premium = account.plan.tier === "premium";
-  const room = leagueRoom(me.leagues.length, me.leagues_allowed);
-  const offers = upgradesFor(products, account);
-  const season = products.find((p) => p.sku === "full_report");
-  const slot = products.find((p) => p.sku === "league_slot");
+  // Slots used this season, not leagues on file: a forgotten league keeps its slot (Andrew, 2026-09-27).
+  const room = leagueRoom(me.leagues_used ?? me.leagues.length, me.leagues_allowed);
+  const hasSeason = account.plan.skus.includes("full_report");
   // A week-pass holder (and not the season): the plan says when the week runs out, and where to cancel.
-  const weekOnly = account.plan.skus.includes("week_pass") && !account.plan.skus.includes("full_report");
+  const weekOnly = account.plan.skus.includes("week_pass") && !hasSeason;
   const planName = account.plan.skus.length === 1 ? (PRICING.names as Record<string, string>)[account.plan.skus[0]] ?? account.plan.name : account.plan.name;
   const current = session.connection;
-  const fresh = me.leagues.length === 0;
+  const fresh = me.leagues.length === 0 && !me.leagues_used;
+  const row = "flex min-h-12 w-full items-center justify-between gap-3 rounded-xl px-4 text-[14px] font-bold";
 
+  // The order, top to bottom (Andrew, 2026-09-27): who you are, your leagues, your plan,
+  // then the settings. No price is printed on this page; the upgrade sheet carries it.
   return (
     <>
       <div className="pt-6 rise">
@@ -380,8 +354,14 @@ function AccountBody() {
         <h1 className="display mt-2 text-[34px] leading-[1.04]">{fresh ? ACCOUNT.welcome.title(account.name) : ACCOUNT.title}</h1>
       </div>
 
-      {/* A new account: it is set, and the one thing left is the league. The hero is the
-          door to it; everything about the account waits underneath. */}
+      {account.is_admin && (
+        <LinkButton href="/admin" variant="secondary" className="mt-5 w-full">
+          {ACCOUNT.adminLink}
+          <IconChevron size={16} strokeWidth={2.4} />
+        </LinkButton>
+      )}
+
+      {/* A new account: it is set, and the one thing left is the league. */}
       {fresh && (
         <div className="hero mt-6 p-6 rise rise-1" data-testid="welcome">
           <OnAir className="text-white/45" label="Off air" />
@@ -392,49 +372,18 @@ function AccountBody() {
         </div>
       )}
 
-      {/* The plan flag: the one thing every view checks, said plainly at the top. */}
-      <Card className={`mt-6 rise ${fresh ? "rise-2" : "rise-1"}`}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <Eyebrow>{ACCOUNT.plan.eyebrow}</Eyebrow>
-            <p className="display mt-1 text-[24px] leading-tight">{planName}</p>
-            <p className="mt-1 text-[13px] leading-snug text-muted" data-testid="plan-line">
-              {weekOnly && account.pass_until ? ACCOUNT.plan.weekLine(shortDate(account.pass_until)) : premium ? ACCOUNT.plan.premiumLine : ACCOUNT.plan.freeLine}
-            </p>
-          </div>
+      {/* Who you are. */}
+      <section className="mt-6 rise rise-1">
+        <div className="flex items-center justify-between gap-3">
+          {/* The name, when there is one; the email and phone are right below it. */}
+          <p className="display min-w-0 truncate text-[22px] leading-tight">{account.name || ""}</p>
           <PlanFlag premium={premium} admin={account.is_admin} />
         </div>
-        <p className="mt-3 text-[15px] font-bold break-words">{accountLabel(account)}</p>
-        {accountContact(account) && <p className="text-[13px] text-muted break-words">{accountContact(account)}</p>}
-        {!account.plan.skus.includes("full_report") && season && (
-          <Button variant="start" className="mt-4 w-full" onClick={() => buy("full_report", LINES.paywallBundle)} data-testid="upgrade-bundle">
-            {LINES.paywallBundleCta}
-            <span aria-hidden className="opacity-60">·</span>
-            <span className="tnum">{formatCents(season.price_cents)}</span>
-          </Button>
-        )}
-        {weekOnly && me.billing_portal_url && (
-          <a
-            href={me.billing_portal_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 flex min-h-11 items-center justify-between rounded-xl bg-soft px-4 text-[14px] font-bold text-ink"
-            data-testid="billing-portal"
-          >
-            {ACCOUNT.plan.manage}
-            <IconChevron size={16} strokeWidth={2.4} />
-          </a>
-        )}
-        {account.is_admin && (
-          <Link href="/admin" className="mt-3 flex min-h-11 items-center justify-between rounded-xl bg-soft px-4 text-[14px] font-bold text-ink">
-            {ACCOUNT.admin.title}
-            <IconChevron size={16} strokeWidth={2.4} />
-          </Link>
-        )}
-      </Card>
+        <Contact />
+      </section>
 
       {/* Leagues on file: the reason the account exists. */}
-      <section className="mt-6 rise rise-2">
+      <section className="mt-8 rise rise-2">
         <div className="flex items-baseline justify-between gap-3">
           <Eyebrow>{ACCOUNT.leagues.eyebrow}</Eyebrow>
           <span className="tnum text-[12px] font-bold text-muted" data-testid="league-room">
@@ -471,80 +420,46 @@ function AccountBody() {
           })}
           {me.leagues.length === 0 && <li className="card p-4 text-[14px] text-muted">{ACCOUNT.leagues.none}</li>}
         </ul>
+        <p className="mt-2 text-[12px] leading-snug text-muted">{room.full ? `${ACCOUNT.leagues.full} ${ACCOUNT.leagues.keeps}` : ACCOUNT.leagues.keeps}</p>
         <div className="mt-3 grid gap-2">
-          {room.full ? (
-            <>
-              <p className="text-[13px] leading-snug text-muted">{ACCOUNT.leagues.full}</p>
-              <Button variant="secondary" className="w-full" onClick={() => buy("league_slot", ACCOUNT.upgrade.limit)} data-testid="add-slot">
-                {ACCOUNT.leagues.addSlot}
-                <span aria-hidden className="opacity-60">·</span>
-                <span className="tnum">{slot ? formatCents(slot.price_cents) : ""}</span>
-              </Button>
-            </>
-          ) : fresh ? null : (
+          {!room.full && !fresh && (
             <LinkButton href="/connect" className="w-full">
               {ACCOUNT.leagues.add}
             </LinkButton>
           )}
+          <button type="button" className={`${row} bg-soft text-ink hover:bg-line`} onClick={() => buy("league_slot")} data-testid="add-slot">
+            {ACCOUNT.leagues.addSlot}
+            <IconChevron size={16} strokeWidth={2.4} />
+          </button>
         </div>
       </section>
 
-      {/* What is left to buy. Empty for a bundle holder with every slot they want. */}
-      {offers.length > 0 && (
-        <section className="mt-8 rise rise-3">
-          <Eyebrow>{ACCOUNT.upgrade.title}</Eyebrow>
-          <ul className="mt-2 grid gap-2">
-            {offers.map((o) => (
-              <li key={o.sku} className="card flex items-center gap-3 p-4">
-                <span className="min-w-0 flex-1">
-                  <span className="display block text-[16px] leading-tight">{productName(o)}</span>
-                  <span className="mt-0.5 block text-[12px] leading-snug text-muted">{o.blurb}</span>
-                </span>
-                <Button size="sm" variant={o.sku === "full_report" ? "start" : "secondary"} onClick={() => buy(o.sku, o.name)}>
-                  <span className="tnum">{priceLabel(o)}</span>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <Contact />
-
-      <div className="mt-8 rise rise-3">
-        {account.email ? <EmailOptIn /> : <p className="text-[13px] leading-snug text-muted">{ACCOUNT.emailOnFile.optInNeedsEmail}</p>}
-      </div>
+      {/* The plan. The price lives in the sheet the button opens, never on this page. */}
+      <Card className="mt-8 rise rise-3">
+        <Eyebrow>{ACCOUNT.plan.eyebrow}</Eyebrow>
+        <p className="display mt-1 text-[24px] leading-tight">{planName}</p>
+        <p className="mt-1 text-[13px] leading-snug text-muted" data-testid="plan-line">
+          {weekOnly && account.pass_until ? ACCOUNT.plan.weekLine(shortDate(account.pass_until)) : premium ? ACCOUNT.plan.premiumLine : ACCOUNT.plan.freeLine}
+        </p>
+        {!hasSeason && (
+          <Button variant="start" className="mt-4 w-full" onClick={() => buy("full_report", LINES.paywallBundle)} data-testid="upgrade-bundle">
+            {ACCOUNT.plan.upgrade}
+            <IconChevron size={16} strokeWidth={2.6} />
+          </Button>
+        )}
+        {weekOnly && me.billing_portal_url && (
+          <a href={me.billing_portal_url} target="_blank" rel="noopener noreferrer" className={`${row} mt-3 bg-soft text-ink`} data-testid="billing-portal">
+            {ACCOUNT.plan.manage}
+            <IconChevron size={16} strokeWidth={2.4} />
+          </a>
+        )}
+      </Card>
 
       <Security hasPassword={account.has_password !== false} />
 
-      {/* The privacy page's promises, with buttons behind them. */}
-      <section className="mt-8">
-        <Eyebrow>{ACCOUNT.data.eyebrow}</Eyebrow>
-        <p className="mt-1 text-[13px] leading-snug text-muted">{ACCOUNT.data.line}</p>
-        <div className="mt-3 grid gap-2">
-          <Button variant="secondary" className="w-full" busy={busy === "export"} onClick={download}>
-            {ACCOUNT.data.export}
-          </Button>
-          {!erasing ? (
-            <Button variant="ghost" className="w-full text-sit" onClick={() => setErasing(true)}>
-              {ACCOUNT.data.erase}
-            </Button>
-          ) : (
-            <div className="card grid gap-2 border-sit p-4">
-              <p className="text-[13px] leading-snug text-ink">{ACCOUNT.data.eraseConfirm}</p>
-              <input
-                className="w-full rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink focus:border-ink focus:outline-none"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                autoCapitalize="none"
-                aria-label="Type delete to confirm"
-              />
-              <Button variant="secondary" className="w-full text-sit" disabled={confirm.trim().toLowerCase() !== "delete"} busy={busy === "erase"} onClick={erase}>
-                {ACCOUNT.data.erase}
-              </Button>
-            </div>
-          )}
-        </div>
+      <section className="mt-8 flex items-center justify-between gap-3">
+        <Eyebrow>{ACCOUNT.appearance.eyebrow}</Eyebrow>
+        <ThemeSetting label={ACCOUNT.appearance.eyebrow} dark={ACCOUNT.appearance.dark} light={ACCOUNT.appearance.light} />
       </section>
 
       {error ? (
@@ -555,7 +470,7 @@ function AccountBody() {
 
       <div className="mt-8 grid gap-2">
         <LinkButton href="/home" className="w-full">
-          Back upstairs
+          {ACCOUNT.back}
         </LinkButton>
         <Button
           variant="ghost"
@@ -570,10 +485,29 @@ function AccountBody() {
           {ACCOUNT.signOut}
         </Button>
       </div>
-      <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-[12px] text-muted">
-        <IconCheck size={12} strokeWidth={3} />
-        {LINES.tagline}
-      </p>
+
+      {/* The last thing on the page, and the quietest. */}
+      <div className="mt-10 border-t border-line pt-4">
+        {!erasing ? (
+          <Button variant="ghost" className="w-full text-sit" onClick={() => setErasing(true)}>
+            {ACCOUNT.data.erase}
+          </Button>
+        ) : (
+          <div className="card grid gap-2 border-sit p-4">
+            <p className="text-[13px] leading-snug text-ink">{ACCOUNT.data.eraseConfirm}</p>
+            <input
+              className="w-full rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink focus:border-ink focus:outline-none"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              autoCapitalize="none"
+              aria-label="Type delete to confirm"
+            />
+            <Button variant="secondary" className="w-full text-sit" disabled={confirm.trim().toLowerCase() !== "delete"} busy={busy === "erase"} onClick={erase}>
+              {ACCOUNT.data.erase}
+            </Button>
+          </div>
+        )}
+      </div>
     </>
   );
 }

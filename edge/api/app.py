@@ -85,6 +85,8 @@ def _me(email: str | None) -> dict:
             "entitlements": sorted(products.features_for(skus)),
             "leagues_allowed": _leagues_allowed(email),
             "leagues": store.leagues(email) if email else [],
+            # Slots taken this season: the leagues on file plus any forgotten this season.
+            "leagues_used": len(store.leagues_used(email, _season())) if email else 0,
             "email_opt_in": store.email_opt_in(email) if email else False,
             "account": _account(email) if email else None,
             # Whether the door offers "continue with your phone" (a text provider is set).
@@ -558,10 +560,12 @@ def use_league(platform: str, league_id: str, email: str = Depends(current_user)
 
 @app.delete("/api/leagues/{platform}/{league_id}")
 def forget_league(platform: str, league_id: str, email: str = Depends(current_user)):
-    """Take a league off the account. Frees a slot; nothing on the platform changes."""
+    """Take a league off the account. Nothing on the platform changes, and the slot stays
+    used for the rest of the season (Andrew, 2026-09-27), so forgetting is not a way round
+    the cap. Linking the same league again brings it back without taking a second slot."""
     validate_platform(platform)
     validate_id(league_id, "league id")
-    store.disconnect_league(email, platform, league_id)
+    store.disconnect_league(email, platform, league_id, _season())
     return {"ok": True, "leagues": store.leagues(email)}
 
 
@@ -686,10 +690,10 @@ def connect(body: ConnectIn, email: str = Depends(current_user), auth=Depends(es
     """
     b = _bundle(body.platform, body.league_id, auth)
     t = _team(b, body.team_id)
-    have = store.leagues(email)
-    already = any(l["platform"] == body.platform and l["league_id"] == body.league_id for l in have)
+    used = store.leagues_used(email, _season())
+    already = (body.platform, body.league_id) in used
     allowed = _leagues_allowed(email)
-    if not already and len(have) >= allowed:
+    if not already and len(used) >= allowed:
         raise HTTPException(402, detail={"error": "league limit reached", "feature": "leagues",
                                          "teaser": f"Your account keeps {allowed} league{'s' if allowed != 1 else ''} "
                                                    f"and all {allowed} are taken. Add a slot for one more.",

@@ -259,10 +259,7 @@ function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: 
   if (state.step === "profile") {
     return (
       <form onSubmit={(e) => (e.preventDefault(), finish())} className="grid gap-3" data-auth="profile" aria-busy={busy || undefined}>
-        <div>
-          <p className="display text-[20px] leading-tight">{ACCOUNT.phone.profileTitle}</p>
-          <p className="mt-1 text-[13px] leading-snug text-muted">{ACCOUNT.phone.profileLead}</p>
-        </div>
+        <p className="display text-[20px] leading-tight">{ACCOUNT.phone.profileTitle}</p>
         <label className="grid gap-1.5">
           <span className="eyebrow">{ACCOUNT.name}</span>
           <input className={FIELD} autoComplete="name" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} autoFocus={autoFocus} />
@@ -279,7 +276,6 @@ function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: 
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
           />
-          <span className="text-[12px] text-muted">{ACCOUNT.phone.emailHint}</span>
         </label>
         <Button type="submit" variant="start" className="mt-1 w-full" busy={busy}>
           {busy ? ACCOUNT.phone.busyFinish : ACCOUNT.phone.finish}

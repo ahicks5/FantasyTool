@@ -7,7 +7,7 @@ import { IconFilm, IconSheet, IconTeam, IconTrade, IconWire } from "./icons";
 import { PlayerSheetProvider } from "./player/PlayerSheetProvider";
 import { Ticker } from "./Ticker";
 import { UnlockingBanner, useUnlockOnReturn } from "./Unlocking";
-import { LinkButton, OnAir, Opening, Spinner, ThemeToggle, Wordmark } from "./ui";
+import { LinkButton, OnAir, Opening, Spinner, Wordmark } from "./ui";
 import { ACCOUNT, NAMEPLATE, SECTIONS, TAB_ORDER, type SectionKey, type TabKey } from "@/lib/vocab";
 import { accountLabel, initialOf } from "@/lib/account";
 
@@ -38,9 +38,8 @@ export function TopBar({ session }: { session: Session }) {
     <header className="sticky top-0 z-20 border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4">
         <Link href="/" aria-label="Penthouse home" className="min-w-0 flex-1">
-          <Wordmark className="text-[20px]" />
+          <Wordmark className="text-[20px]" short={!!account} />
         </Link>
-        <ThemeToggle />
         {/* The account: an initial once signed in (ringed in the start colour on a premium
             account, so the flag is visible from every room), else the two words. */}
         {account ? (

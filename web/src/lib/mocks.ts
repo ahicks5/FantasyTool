@@ -401,6 +401,7 @@ export const ME: Me = {
   // see in its locked state. Everything above this comes from `mockExtraEntitlements`.
   entitlements: ["my_team"],
   leagues_allowed: 3,
+  leagues_used: 1,
   leagues: [{ platform: "sleeper", league_id: LEAGUE_ID, name: "The Megalabowl", team_id: MY_TEAM_ID, team_name: "HusH", last_used: 1_790_000_000 }],
   email_opt_in: false,
   signed_in: true,

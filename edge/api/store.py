@@ -68,6 +68,11 @@ class Store:
             self.db.execute("ALTER TABLE leagues ADD COLUMN team_name TEXT DEFAULT ''")
         if "last_used" not in league_cols:
             self.db.execute("ALTER TABLE leagues ADD COLUMN last_used REAL")
+        # A forgotten league stays as a row with the season it was forgotten in, because it
+        # still counts against that season's cap (Andrew, 2026-09-27): link, forget and
+        # link another is not a way round three leagues.
+        if "forgotten" not in league_cols:
+            self.db.execute("ALTER TABLE leagues ADD COLUMN forgotten INTEGER")
         # Phone sign-in: one account per number, and many accounts with none.
         user_cols = {row[1] for row in self.db.execute("PRAGMA table_info(users)")}
         if "phone" not in user_cols:
@@ -142,16 +147,24 @@ class Store:
             "INSERT INTO leagues (email, platform, league_id, team_id, name, created, team_name, last_used) "
             "VALUES (?,?,?,?,?,?,?,?) "
             "ON CONFLICT(email, platform, league_id) DO UPDATE SET team_id=excluded.team_id, name=excluded.name, "
-            "team_name=excluded.team_name, last_used=excluded.last_used",
+            "team_name=excluded.team_name, last_used=excluded.last_used, forgotten=NULL",
             (email.lower(), platform, league_id, team_id, name, now, team_name or "", now))
         self.db.commit()
 
     def leagues(self, email: str) -> list[dict]:
         rows = self.db.execute(
-            "SELECT platform, league_id, team_id, name, team_name, last_used FROM leagues WHERE email=? ORDER BY created",
+            "SELECT platform, league_id, team_id, name, team_name, last_used FROM leagues "
+            "WHERE email=? AND forgotten IS NULL ORDER BY created",
             (email.lower(),))
         return [{"platform": r[0], "league_id": r[1], "team_id": r[2], "name": r[3], "team_name": r[4] or "",
                  "last_used": r[5]} for r in rows]
+
+    def leagues_used(self, email: str, season: int) -> set[tuple[str, str]]:
+        """Every league that holds a slot this season: the ones on file and the ones forgotten this season."""
+        rows = self.db.execute(
+            "SELECT platform, league_id FROM leagues WHERE email=? AND (forgotten IS NULL OR forgotten=?)",
+            (email.lower(), season))
+        return {(r[0], r[1]) for r in rows}
 
     def touch_league(self, email: str, platform: str, league_id: str) -> None:
         """Mark a league as the one being read, so the next sign-in opens on it."""
@@ -393,8 +406,10 @@ class Store:
         rows = self.db.execute("SELECT verdict, COUNT(*) FROM feedback GROUP BY verdict")
         return {r[0]: r[1] for r in rows}
 
-    def disconnect_league(self, email: str, platform: str, league_id: str) -> None:
-        self.db.execute("DELETE FROM leagues WHERE email=? AND platform=? AND league_id=?", (email.lower(), platform, league_id))
+    def disconnect_league(self, email: str, platform: str, league_id: str, season: int = 0) -> None:
+        """Take a league off the account. It keeps its slot for `season` (see `leagues_used`)."""
+        self.db.execute("UPDATE leagues SET forgotten=? WHERE email=? AND platform=? AND league_id=?",
+                        (season, email.lower(), platform, league_id))
         self.db.commit()
 
     # ---- data subject requests ----

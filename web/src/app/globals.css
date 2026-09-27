@@ -3027,3 +3027,16 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
 @media (prefers-reduced-motion: reduce) {
   .faq-chevron { transition: none; }
 }
+
+/* The landing page's scroll entrance (components/Reveal.tsx). The class is added by
+   script after mount, so the page is fully visible with no script. */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+}
+.reveal.reveal-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}

@@ -268,10 +268,12 @@ test("every staff card names a room the app actually has, the GM first", () => {
 test("the account's words are the staff at the door: sign in, create, no magic link", () => {
   assert.equal(ACCOUNT.signIn, "Sign in");
   assert.equal(ACCOUNT.register, "Create account");
-  for (const line of [ACCOUNT.signInLead, ACCOUNT.registerLead, ACCOUNT.gate.body, ACCOUNT.reason.connect]) {
+  for (const line of [ACCOUNT.gate.body, ACCOUNT.reason.connect]) {
     assert.doesNotMatch(line, /magic link|Supabase/i, `${line}: sign-in is an email and a password now`);
   }
-  assert.match(ACCOUNT.registerLead, /three leagues/, "the cap is said where the account is made");
+  // The cap is said where a league takes a slot, not at the door (Andrew, 2026-09-27).
+  assert.match(ACCOUNT.confirmLink.body(3, 1), /3 leagues this season, and you have used 1/);
+  assert.match(ACCOUNT.confirmLink.body(3, 1), /does not give the slot back/);
   // The order of the door: the account is step 1, the league is step 2 (Andrew, 2026-09-24).
   assert.match(ACCOUNT.gate.eyebrow, /^Step 1/);
   assert.match(ACCOUNT.welcome.eyebrow, /^Step 2/);

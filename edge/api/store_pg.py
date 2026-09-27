@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS leagues (
   UNIQUE (email, platform, league_id));
 ALTER TABLE leagues ADD COLUMN IF NOT EXISTS team_name TEXT NOT NULL DEFAULT '';
 ALTER TABLE leagues ADD COLUMN IF NOT EXISTS last_used DOUBLE PRECISION;
+ALTER TABLE leagues ADD COLUMN IF NOT EXISTS forgotten INTEGER;
 
 CREATE TABLE IF NOT EXISTS users (
   email TEXT PRIMARY KEY, password_hash TEXT NOT NULL, name TEXT NOT NULL DEFAULT '',
@@ -173,15 +174,22 @@ class PostgresStore:
             "INSERT INTO leagues (email, platform, league_id, team_id, name, created, team_name, last_used) "
             "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) "
             "ON CONFLICT (email, platform, league_id) DO UPDATE SET team_id=EXCLUDED.team_id, "
-            "name=EXCLUDED.name, team_name=EXCLUDED.team_name, last_used=EXCLUDED.last_used",
+            "name=EXCLUDED.name, team_name=EXCLUDED.team_name, last_used=EXCLUDED.last_used, forgotten=NULL",
             (email.lower(), platform, league_id, team_id, name, now, team_name or "", now))
 
     def leagues(self, email: str) -> list[dict]:
         cur = self._exec(
-            "SELECT platform, league_id, team_id, name, team_name, last_used FROM leagues WHERE email=%s ORDER BY created",
+            "SELECT platform, league_id, team_id, name, team_name, last_used FROM leagues "
+            "WHERE email=%s AND forgotten IS NULL ORDER BY created",
             (email.lower(),))
         return [{"platform": r[0], "league_id": r[1], "team_id": r[2], "name": r[3], "team_name": r[4] or "",
                  "last_used": r[5]} for r in cur.fetchall()]
+
+    def leagues_used(self, email: str, season: int) -> set[tuple[str, str]]:
+        cur = self._exec(
+            "SELECT platform, league_id FROM leagues WHERE email=%s AND (forgotten IS NULL OR forgotten=%s)",
+            (email.lower(), season))
+        return {(r[0], r[1]) for r in cur.fetchall()}
 
     def touch_league(self, email: str, platform: str, league_id: str) -> None:
         self._exec("UPDATE leagues SET last_used=%s WHERE email=%s AND platform=%s AND league_id=%s",
@@ -309,9 +317,9 @@ class PostgresStore:
         n += self._exec("DELETE FROM phone_tickets WHERE expires<%s OR used IS NOT NULL", (now,)).rowcount
         return n
 
-    def disconnect_league(self, email: str, platform: str, league_id: str) -> None:
-        self._exec("DELETE FROM leagues WHERE email=%s AND platform=%s AND league_id=%s",
-                   (email.lower(), platform, league_id))
+    def disconnect_league(self, email: str, platform: str, league_id: str, season: int = 0) -> None:
+        self._exec("UPDATE leagues SET forgotten=%s WHERE email=%s AND platform=%s AND league_id=%s",
+                   (season, email.lower(), platform, league_id))
 
     # ---- the weekly email ---------------------------------------------------------
     # Mirrors Store.set_email_opt_in / email_opt_in / opted_in_emails. `opt_in` is an

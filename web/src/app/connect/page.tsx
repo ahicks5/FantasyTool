@@ -1,19 +1,20 @@
 "use client";
 /** Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, two cookies. */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { EspnAuthError, PaywallError, connect, getLeague, getSleeperLeagues } from "@/lib/api";
-import { useAccountGate } from "@/components/account/AccountGate";
+import { EspnAuthError, PaywallError, connect, getLeague, getProducts, getSleeperLeagues } from "@/lib/api";
+import { Popup, useAccountGate } from "@/components/account/AccountGate";
+import { formatCents } from "@/lib/format";
 import { HttpError } from "@/lib/errors";
-import { useSession } from "@/lib/session";
+import { currentMe, useSession } from "@/lib/session";
 import { resolveSleeperInput } from "@/lib/leagueInput";
 import { saveConnection } from "@/lib/storage";
 import { EspnAuthForm } from "@/components/EspnAuthForm";
 import { clearEspnAuth, useEspnAuth } from "@/lib/espnAuth";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck } from "@/components/icons";
-import { Button, Countdown, ErrorBox, Eyebrow, LinkButton, ThemeToggle, Wordmark } from "@/components/ui";
+import { Button, Countdown, ErrorBox, Eyebrow, LinkButton, Wordmark } from "@/components/ui";
 import { ACCOUNT, CONNECT, LINES } from "@/lib/vocab";
 
 const FIELD =
@@ -59,6 +60,16 @@ export default function ConnectPage() {
   // first time or telling them the ones they gave have expired.
   const [espnAuthNeeded, setEspnAuthNeeded] = useState<{ expired: boolean } | null>(null);
   const [lastLeagueId, setLastLeagueId] = useState("");
+  const [confirming, setConfirming] = useState<{ allowed: number; used: number } | null>(null);
+  const [slotPrice, setSlotPrice] = useState<string | null>(null);
+  useEffect(() => {
+    getProducts()
+      .then((r) => {
+        const slot = r.products.find((p) => p.sku === "league_slot");
+        if (slot) setSlotPrice(formatCents(slot.price_cents));
+      })
+      .catch(() => undefined);
+  }, []);
   // Only to offer the wipe below. The cookies themselves ride on requests from
   // `espnAuthHeaders`, which reads storage directly and never comes through here.
   const storedEspn = useEspnAuth();
@@ -132,10 +143,30 @@ export default function ConnectPage() {
     }
   }
 
+  /**
+   * Before a new league takes a slot, say so once (Andrew, 2026-09-27): the account's
+   * leagues are a season's allowance, and forgetting one later does not give it back.
+   * A league already on file (or forgotten this season) takes no new slot, so it skips this.
+   */
   async function submit() {
     if (!platform || !league || !teamId) return;
-    const team = league.teams.find((t) => t.id === teamId);
     if (!(await gate.signIn("connect"))) return;
+    const me = await currentMe();
+    const onFile = me?.leagues.some((l) => l.platform === platform && l.league_id === league.id);
+    if (me && !onFile) {
+      const used = me.leagues_used ?? me.leagues.length;
+      if (used < me.leagues_allowed) {
+        setConfirming({ allowed: me.leagues_allowed, used });
+        return;
+      }
+    }
+    await link();
+  }
+
+  async function link() {
+    setConfirming(null);
+    if (!platform || !league || !teamId) return;
+    const team = league.teams.find((t) => t.id === teamId);
     const ok = await run(async () => {
       try {
         await connect({ platform, league_id: league.id, team_id: teamId });
@@ -175,9 +206,8 @@ export default function ConnectPage() {
     <div className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between">
         <Link href="/" aria-label="Penthouse home" className="flex min-h-11 items-center">
-          <Wordmark className="text-[26px]" />
+          <Wordmark className="text-[26px]" short={session.signedIn} />
         </Link>
-        <ThemeToggle />
       </header>
 
       <main id="content">
@@ -441,6 +471,21 @@ export default function ConnectPage() {
       </>
       )}
       </main>
+
+      {confirming && (
+        <Popup title={ACCOUNT.confirmLink.title} onClose={() => setConfirming(null)} testId="confirm-link">
+          <p className="text-[15px] leading-relaxed text-ink">{ACCOUNT.confirmLink.body(confirming.allowed, confirming.used)}</p>
+          {slotPrice && <p className="mt-2 text-[15px] font-bold text-ink">{ACCOUNT.confirmLink.more(slotPrice)}</p>}
+          <div className="mt-5 grid gap-2">
+            <Button variant="start" className="w-full" onClick={link}>
+              {ACCOUNT.confirmLink.yes}
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => setConfirming(null)}>
+              {ACCOUNT.confirmLink.no}
+            </Button>
+          </div>
+        </Popup>
+      )}
     </div>
   );
 }

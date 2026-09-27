@@ -9,7 +9,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from "next/navigation";
 import { getProducts, upgrade as upgradeCall } from "@/lib/api";
 import { offersFor } from "@/lib/account";
-import { priceLabel, productName } from "@/lib/offer";
+import { offerStack, priceLabel, productName } from "@/lib/offer";
+import { formatCents } from "@/lib/format";
 import { currentMe, useSession } from "@/lib/session";
 import type { Me, Product, Sku } from "@/lib/types";
 import { PRODUCTS as FALLBACK } from "@/lib/mocks";
@@ -170,6 +171,11 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
   }, []);
   const offers = offersFor(products, sku);
   const checkout = !!session.me?.checkout;
+  // The pass choice is a pitch, not a list: the season is the headline and carries the
+  // deal, the week is the smaller way in underneath (Andrew, 2026-09-27).
+  const season = offers.find((o) => o.sku === "full_report");
+  const week = offers.find((o) => o.sku === "week_pass");
+  const stack = season && week ? offerStack(products) : null;
 
   async function buy(offer: Product) {
     setBusy(offer.sku);
@@ -191,7 +197,7 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
   }
 
   return (
-    <Popup title={done ? ACCOUNT.upgrade.done : ACCOUNT.upgrade.title} eyebrow={what ? ACCOUNT.upgrade.for(what) : ACCOUNT.eyebrow} onClose={done ? onDone : onClose} testId="upgrade-sheet">
+    <Popup title={done ? ACCOUNT.upgrade.done : season ? ACCOUNT.upgrade.passTitle : sku === "league_slot" ? ACCOUNT.leagues.addSlot : ACCOUNT.upgrade.title} eyebrow={what ? ACCOUNT.upgrade.for(what) : ACCOUNT.eyebrow} onClose={done ? onDone : onClose} testId="upgrade-sheet">
       {done ? (
         <div className="grid gap-4" data-upgrade="done">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-start-soft text-start">
@@ -203,6 +209,61 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
           <Button variant="start" className="w-full" onClick={onDone}>
             {ACCOUNT.upgrade.close}
           </Button>
+        </div>
+      ) : season ? (
+        <div className="grid gap-3" data-upgrade="passes">
+          {!checkout && <p className="rounded-xl bg-start-soft px-3.5 py-2.5 text-[13px] font-bold leading-snug text-start">{ACCOUNT.upgrade.comp}</p>}
+          <div className="hero p-5" data-testid="season-offer">
+            <div className="flex items-center justify-between gap-3">
+              <span className="eyebrow">{ACCOUNT.upgrade.seasonHead}</span>
+              {stack?.weeklyCents != null && stack.weeklyCents > stack.seasonCents && (
+                <span className="rounded-full bg-start-fill px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-white">
+                  {ACCOUNT.upgrade.save(formatCents(stack.weeklyCents - stack.seasonCents))}
+                </span>
+              )}
+            </div>
+            <div className="mt-2 flex items-end gap-3">
+              <span className="display tnum text-[52px] leading-none">{formatCents(season.price_cents)}</span>
+              {stack?.weeklyCents != null && stack.weeklyCents > stack.seasonCents && (
+                <span className="tnum mb-1.5 text-[20px] font-bold text-white/45 line-through">{formatCents(stack.weeklyCents)}</span>
+              )}
+            </div>
+            {stack?.weeksLeft != null && stack.weeklyCents != null && stack.weeklyCents > stack.seasonCents && (
+              <p className="mt-1.5 text-[13px] text-white/60">{ACCOUNT.upgrade.vsWeekly(stack.weeksLeft, formatCents(stack.weeklyCents))}</p>
+            )}
+            <p className="mt-3 text-[15px] leading-snug text-white/85">{ACCOUNT.upgrade.seasonSub}</p>
+            <Button variant="start" className="mt-4 w-full" busy={busy === season.sku} disabled={!!busy && busy !== season.sku} onClick={() => buy(season)}>
+              {busy === season.sku ? ACCOUNT.upgrade.busy : ACCOUNT.upgrade.takeSeason}
+            </Button>
+          </div>
+          {week && (
+            <>
+              <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.14em] text-muted" aria-hidden>
+                <span className="h-px flex-1 bg-line" />
+                {ACCOUNT.upgrade.or}
+                <span className="h-px flex-1 bg-line" />
+              </div>
+              <div className="card flex items-center gap-3 p-4" data-testid="week-offer">
+                <span className="min-w-0 flex-1">
+                  <span className="display block text-[16px] leading-tight">{ACCOUNT.upgrade.weekHead}</span>
+                  <span className="tnum mt-0.5 block text-[14px] font-bold text-ink-2">{priceLabel(week)}</span>
+                  <span className="mt-0.5 block text-[12px] text-muted">{ACCOUNT.upgrade.weekSub}</span>
+                </span>
+                <Button size="sm" variant="secondary" busy={busy === week.sku} disabled={!!busy && busy !== week.sku} onClick={() => buy(week)}>
+                  {busy === week.sku ? ACCOUNT.upgrade.busy : ACCOUNT.upgrade.takeWeek}
+                </Button>
+              </div>
+            </>
+          )}
+          {error && (
+            <p role="alert" className="rounded-xl bg-sit-soft px-3.5 py-2.5 text-[13px] text-sit">
+              {error}
+            </p>
+          )}
+          <p className="flex items-center justify-center gap-1.5 text-center text-[12px] text-muted">
+            <IconLock size={12} strokeWidth={2.4} />
+            {checkout ? ACCOUNT.upgrade.stripe : ACCOUNT.upgrade.noCharge}
+          </p>
         </div>
       ) : (
         <div className="grid gap-3">

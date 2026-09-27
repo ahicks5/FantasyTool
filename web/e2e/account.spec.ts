@@ -142,6 +142,10 @@ test("a stranger's door is the account: register, land on it, then link a league
   await expect(page.getByRole("heading", { name: "Select your team" })).toBeVisible();
   await page.getByRole("button", { name: new RegExp(CONNECTION.team_name) }).click();
   await page.getByRole("button", { name: /Show my moves/ }).click();
+  // A new league takes a slot, so the page says so once before it links.
+  const confirmLink = page.getByTestId("confirm-link");
+  await expect(confirmLink.getByText(ACCOUNT.confirmLink.body(3, 0))).toBeVisible();
+  await confirmLink.getByRole("button", { name: ACCOUNT.confirmLink.yes }).click();
   await page.waitForURL("**/home");
   // Connecting clears the day's ride stamp, so the elevator plays here; a tap lands it.
   const ride = page.getByRole("status", { name: RIDE.aria });
@@ -163,7 +167,7 @@ test("a stranger's door is the account: register, land on it, then link a league
   const up = page.getByTestId("upgrade-sheet");
   await expect(up).toBeVisible();
   await expect(up.getByText(ACCOUNT.upgrade.comp)).toBeVisible();
-  await up.getByRole("button", { name: ACCOUNT.upgrade.get(PRICING.names.full_report) }).click();
+  await up.getByRole("button", { name: ACCOUNT.upgrade.takeSeason }).click();
   await expect(up.getByText(ACCOUNT.upgrade.done)).toBeVisible();
   await up.getByRole("button", { name: ACCOUNT.upgrade.close }).last().click();
   await expect(page.locator("[data-plan=premium]").first()).toBeVisible();
@@ -268,7 +272,7 @@ test("a locked room's button opens the sign-in sheet, then the upgrade, and the 
   const up = page.getByTestId("upgrade-sheet");
   await expect(up).toBeVisible();
   await expect(up.getByText(ACCOUNT.upgrade.for(WIRE.lockEyebrow))).toBeVisible();
-  await up.getByRole("button", { name: ACCOUNT.upgrade.get(PRICING.names.full_report) }).click();
+  await up.getByRole("button", { name: ACCOUNT.upgrade.takeSeason }).click();
   await expect(up.getByText(ACCOUNT.upgrade.done)).toBeVisible();
   await up.getByRole("button", { name: ACCOUNT.upgrade.close }).last().click();
   await expect(page.getByRole("heading", { name: WIRE.title })).toBeVisible();
@@ -313,7 +317,6 @@ test("a phone-only account adds an email later, and an email account adds a phon
   await page.waitForURL("**/account");
   const contact = page.getByTestId("contact");
   await expect(contact.getByText(ACCOUNT.emailOnFile.none)).toBeVisible();
-  await expect(page.getByText(ACCOUNT.emailOnFile.optInNeedsEmail)).toBeVisible();
   await contact.getByRole("button", { name: ACCOUNT.emailOnFile.add }).click();
   const email = freshEmail("later");
   await contact.getByLabel(ACCOUNT.email).fill(email);

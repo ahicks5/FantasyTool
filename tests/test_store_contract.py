@@ -134,8 +134,18 @@ def test_leagues_come_back_in_the_order_they_were_connected(store):
 def test_disconnecting_removes_only_that_league(store):
     store.connect_league("a@b.c", "sleeper", "L1", "1", "one")
     store.connect_league("a@b.c", "espn", "L2", "2", "two")
-    store.disconnect_league("a@b.c", "sleeper", "L1")
+    store.disconnect_league("a@b.c", "sleeper", "L1", 2026)
     assert [x["league_id"] for x in store.leagues("a@b.c")] == ["L2"]
+
+
+def test_a_forgotten_league_keeps_its_slot_for_the_season(store):
+    store.connect_league("a@b.c", "sleeper", "L1", "1", "one")
+    store.connect_league("a@b.c", "espn", "L2", "2", "two")
+    store.disconnect_league("a@b.c", "sleeper", "L1", 2026)
+    assert store.leagues_used("a@b.c", 2026) == {("sleeper", "L1"), ("espn", "L2")}
+    assert store.leagues_used("a@b.c", 2027) == {("espn", "L2")}, "a new season starts clean"
+    store.connect_league("a@b.c", "sleeper", "L1", "1", "one")
+    assert [x["league_id"] for x in store.leagues("a@b.c")] == ["L1", "L2"], "linking it again brings it back"
 
 
 # ---- the weekly email opt-in -------------------------------------------------------

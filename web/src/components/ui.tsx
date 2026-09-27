@@ -57,6 +57,7 @@ export function Wordmark({
   className = "",
   lamp = true,
   markOnlyOnTiny = false,
+  short = false,
 }: {
   className?: string;
   lamp?: boolean;
@@ -71,6 +72,8 @@ export function Wordmark({
    * on that page the wordmark is the pitch and has to survive every width.
    */
   markOnlyOnTiny?: boolean;
+  /** "PHF" in place of the full word: the signed-in bar, where the owner already knows the building (Andrew, 2026-09-27). */
+  short?: boolean;
 }) {
   return (
     <span className={`display inline-flex items-center gap-[0.26em] ${markOnlyOnTiny ? "wordmark-mark-only" : ""} ${className}`} style={{ fontWeight: 800 }}>
@@ -82,7 +85,7 @@ export function Wordmark({
           wrapper it paints nothing — the clip has no glyphs of its own to clip to —
           while the transparent text fill still inherits down, which renders the
           wordmark invisible. */}
-      <span className="wordmark-type chrome-type">PENTHOUSE</span>
+      <span className="wordmark-type chrome-type">{short ? "PHF" : "PENTHOUSE"}</span>
       {lamp && <span className="lamp ml-[0.1em]" aria-hidden />}
     </span>
   );
@@ -632,27 +635,50 @@ function currentTheme(): "light" | "dark" {
   return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
 
+function applyTheme(next: "light" | "dark") {
+  document.documentElement.dataset.theme = next;
+  // The status bar on a phone is painted from <meta name="theme-color">, which is
+  // static HTML and cannot know about a toggle. Without this the bar stays black
+  // over a warm page.
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute("content", next === "dark" ? "#08090b" : "#f6f5f2");
+  try {
+    localStorage.setItem("booth.theme", next);
+  } catch {
+    /* private mode */
+  }
+  themeListeners.forEach((l) => l());
+}
+
+/**
+ * The light switch, as a setting: Dark or Light. It lives on the account page only; every
+ * other surface is the room, and the room is dark (Andrew, 2026-09-27).
+ */
+export function ThemeSetting({ label, dark, light }: { label: string; dark: string; light: string }) {
+  const theme = useSyncExternalStore(subscribeTheme, currentTheme, () => "dark" as const);
+  return (
+    <div role="radiogroup" aria-label={label} className="inline-flex rounded-full border border-line-2 p-1" data-testid="theme-setting">
+      {(["dark", "light"] as const).map((t) => (
+        <button
+          key={t}
+          role="radio"
+          aria-checked={theme === t}
+          onClick={() => applyTheme(t)}
+          className={`min-h-9 rounded-full px-4 text-[13px] font-bold ${theme === t ? "bg-ink text-paper" : "text-muted hover:text-ink"}`}
+        >
+          {t === "dark" ? dark : light}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribeTheme, currentTheme, () => "dark" as const);
-  function flip() {
-    const next = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    // The status bar on a phone is painted from <meta name="theme-color">, which is
-    // static HTML and cannot know about a toggle. Without this the bar stays black
-    // over a warm page.
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", next === "dark" ? "#08090b" : "#f6f5f2");
-    try {
-      localStorage.setItem("booth.theme", next);
-    } catch {
-      /* private mode */
-    }
-    themeListeners.forEach((l) => l());
-  }
   return (
     <button
-      onClick={flip}
+      onClick={() => applyTheme(theme === "dark" ? "light" : "dark")}
       aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       className="flex h-11 w-11 min-h-0 items-center justify-center rounded-full text-muted hover:bg-soft hover:text-ink"
     >

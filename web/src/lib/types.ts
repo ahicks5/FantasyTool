@@ -86,6 +86,8 @@ export interface Me {
   entitlements: Feature[];
   leagues_allowed: number;
   leagues: MeLeague[];
+  /** Slots taken this season: on file plus forgotten this season. Absent on old payloads. */
+  leagues_used?: number;
   /** Whether this account asked for the Thursday email. Absent on old payloads = off. */
   email_opt_in?: boolean;
   /** Null when signed out. */
