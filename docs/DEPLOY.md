@@ -152,6 +152,7 @@ API (Railway):
 | `TWILIO_ACCOUNT_SID` | `AC…` | Twilio Console home page. |
 | `TWILIO_AUTH_TOKEN` | secret | Twilio Console home page. Secret: set on Render only. |
 | `TWILIO_VERIFY_SID` | `VA…` | Twilio Console → Verify → Services → create one named Penthouse. Verify, not plain SMS: it needs no US carrier (10DLC) registration. |
+| (Twilio, not an env var) | Primary Compliance Profile | **A new Twilio account texts only its Verified Caller IDs until Trust Hub approves a Primary Compliance Profile** (error 21608, even on a paid "Full" account), and the texts say "(SAMPLE TEST)" instead of the service's name until then. Console → Trust Hub → Compliance profiles → Primary. Approval takes days. |
 | `EDGE_SMS_COUNTRIES` | `1` | Calling codes we text. Default `1` (US and Canada); each extra country is SMS-fraud exposure. |
 | `EDGE_ADMINS` | comma-separated emails | **The admin account.** Anyone who signs in with one of these addresses gets the front office (`/admin`): every account, grant or revoke a pass, add league slots, hand out reset links, promote another admin. `deploy/render.yaml` carries Andrew's address; the running service still has to be set by hand. An admin can also be made from the store (`role` column) once one exists. |
 | `SUPABASE_JWT_SECRET` | optional | A Supabase JWT is still accepted as a bearer token when set. Nothing in the web sends one any more. |

@@ -34,6 +34,16 @@ ahicks5.nd@gmail.com, linked his league and sees the Admin badge. Production is 
 `NEXT_PUBLIC_SUPPORT_EMAIL`, Resend (reset mail), Stripe. Items 2 and 3 in "Two things are
 blocked on Andrew" below are done.
 
+## Twilio, set up with Andrew (2026-09-27)
+
+Account `AC…c45b` upgraded (type Full, $20), Verify service `VAdec369…` "Penthouse", SMS only,
+the four variables on Render (`/api/health` → `"phone_sign_in":"twilio"`). Andrew's own number is
+a Verified Caller ID and is on his account; the live round trip works. **Everyone else gets
+Twilio 21608 until the Primary Compliance Profile is approved** (Trust Hub), and until then the
+text reads "(SAMPLE TEST)" rather than "Penthouse". The auth token was shown in a screenshot;
+rotate it once the profile is approved. `EDGE_DEMO_UNLOCK` is still set on Render: it opens every
+paid feature, and must go before Stripe is live.
+
 ## Phone sign-in (2026-09-26)
 
 Sign-up is now a phone number, a texted code, then name and an optional email. Built and
