@@ -17,7 +17,8 @@ until the three `YAHOO_*` env vars are set on Render, then offers it. Setup: `do
 - [x] **Y-4** Web: sign in with Yahoo, pick from your leagues, pick your team; refresh on
       expiry; forged callbacks refused; credit line. Both themes at 375px.
 - [x] **Y-5** Privacy page and `docs/DATA_INVENTORY.md` name Yahoo and the token handling.
-- [ ] **Y-6** Andrew: apply at https://sports.yahoo.com/developer/ ("Apply"). Reviewed, not self-serve.
+- [x] **Y-6** Andrew applied at https://sports.yahoo.com/developer/ on 2026-09-28 ("submitted,
+      we'll be in touch"). Read-only access is all Yahoo offers, which is all we use.
 - [ ] **Y-7** Andrew: once approved, create the app (Fantasy Sports: Read, redirect
       `https://penthousefantasy.com/connect/yahoo`) and set the three env vars on Render.
 - [ ] **Y-8** Record a real league (`edge.cli yahoo <key> --record`) and replace the
