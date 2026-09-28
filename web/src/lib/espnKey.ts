@@ -28,6 +28,9 @@ import { ESPN_KEY } from "./vocab.ts";
 export interface EspnKey {
   s2: string;
   swid: string;
+  /** The league and team ESPN's page URL named (`leagueId=`, `teamId=`), or "" when it did not. */
+  league: string;
+  team: string;
 }
 
 /** The bookmark's name. Chrome on Android runs a bookmarklet by typing its name in the address bar, so it has to be short and easy to spell. */
@@ -49,18 +52,23 @@ const HOST_TEST = "/(^|\\.)espn\\.com$/";
  * What it says to the person, in order: wrong site; no key on this browser; otherwise it
  * leaves. It never shows the values, so nothing sits on a screenshot.
  */
-export function buildEspnKeyBookmarklet(returnUrl: string): string {
+export function buildEspnKeyBookmarklet(returnUrl: string, carriedLeagueId = ""): string {
   const back = JSON.stringify(returnUrl);
   const wrongSite = JSON.stringify(ESPN_KEY.bookmark.wrongSite);
   const noKey = JSON.stringify(ESPN_KEY.bookmark.noKey);
+  const noLeague = JSON.stringify(ESPN_KEY.bookmark.noLeague);
+  // With no league carried from the walk, the ESPN page has to name one, or there is nothing to load.
+  const needLeague = carriedLeagueId.trim() ? "false" : "true";
   const src =
     "(function(){" +
-    "var c=document.cookie;" +
+    "var c=document.cookie,u=location.search;" +
     "function g(n){var m=c.match(new RegExp('(?:^|; *)'+n+'=([^;]*)'));return m?m[1]:''}" +
+    "function q(n){var m=u.match(new RegExp('[?&]'+n+'=([0-9]+)'));return m?m[1]:''}" +
     `if(!${HOST_TEST}.test(location.hostname)){alert(${wrongSite});return}` +
-    "var s=g('espn_s2'),w=g('SWID');" +
+    "var s=g('espn_s2'),w=g('SWID'),l=q('leagueId'),t=q('teamId');" +
     `if(!s||!w){alert(${noKey});return}` +
-    `location.href=${back}+'#s2='+encodeURIComponent(s)+'&swid='+encodeURIComponent(w);` +
+    `if(!l&&${needLeague}){alert(${noLeague});return}` +
+    `location.href=${back}+'#s2='+encodeURIComponent(s)+'&swid='+encodeURIComponent(w)+'&league='+l+'&team='+t;` +
     "})();";
   return "javascript:" + src;
 }
@@ -77,7 +85,8 @@ export function parseEspnKeyReturn(hash: string): EspnKey | null {
   }
   const s2 = (params.get("s2") ?? "").trim();
   const swid = (params.get("swid") ?? "").trim();
-  return s2 && swid ? { s2, swid } : null;
+  const digits = (v: string | null) => (/^\d+$/.test(v ?? "") ? (v as string) : "");
+  return s2 && swid ? { s2, swid, league: digits(params.get("league")), team: digits(params.get("team")) } : null;
 }
 
 /** Which set of steps to show. Detected from the user agent, and always switchable on the page. */

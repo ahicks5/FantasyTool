@@ -18,12 +18,14 @@ import {
 interface Page {
   cookie: string;
   hostname: string;
+  /** ESPN's page URL: `?leagueId=…&teamId=…` on a team page. */
+  search?: string;
 }
 
 function run(bookmarklet: string, page: Page): { alerts: string[]; went: string | null } {
   assert.ok(bookmarklet.startsWith("javascript:"));
   const alerts: string[] = [];
-  const location = { hostname: page.hostname, href: "https://x" };
+  const location = { hostname: page.hostname, href: "https://x", search: page.search ?? "" };
   const src = bookmarklet.slice("javascript:".length);
   new Function("document", "location", "alert", src)({ cookie: page.cookie }, location, (m: string) => alerts.push(m));
   return { alerts, went: location.href === "https://x" ? null : location.href };
@@ -35,13 +37,13 @@ const S2 = "AEBx%2Bq7Y%2FabcDEF0123456789%3D%3D";
 const SWID = "{DEAD0000-BEEF-1111-2222-333333333333}";
 
 test("the bookmark is one line and carries the return address", () => {
-  const b = buildEspnKeyBookmarklet(BACK);
+  const b = buildEspnKeyBookmarklet(BACK, "123");
   assert.ok(!/[\n\r]/.test(b), "a bookmark's address is one line");
   assert.ok(b.includes(BACK));
 });
 
 test("on ESPN with both cookies it leaves for Penthouse with the key in the fragment, untouched", () => {
-  const { alerts, went } = run(buildEspnKeyBookmarklet(BACK), {
+  const { alerts, went } = run(buildEspnKeyBookmarklet(BACK, "123"), {
     hostname: "fantasy.espn.com",
     cookie: `region=ccpa; SWID=${SWID}; espn_s2=${S2}; edition=espn-en-us`,
   });
@@ -49,11 +51,34 @@ test("on ESPN with both cookies it leaves for Penthouse with the key in the frag
   assert.ok(went?.startsWith(BACK + "#"), went ?? "did not leave");
   const key = parseEspnKeyReturn(new URL(went!).hash);
   // The percent-encoded s2 is the value ESPN wants back; it must survive the round trip byte for byte.
-  assert.deepEqual(key, { s2: S2, swid: SWID });
+  assert.deepEqual(key, { s2: S2, swid: SWID, league: "", team: "" });
+});
+
+test("on a team page it brings the league and the team back too, so nobody digs out an ID", () => {
+  const { alerts, went } = run(buildEspnKeyBookmarklet("https://penthousefantasy.com/connect/espn"), {
+    hostname: "fantasy.espn.com",
+    search: "?leagueId=98765&teamId=4&seasonId=2026",
+    cookie: `SWID=${SWID}; espn_s2=${S2}`,
+  });
+  assert.deepEqual(alerts, []);
+  assert.deepEqual(parseEspnKeyReturn(new URL(went!).hash), { s2: S2, swid: SWID, league: "98765", team: "4" });
+});
+
+test("with no league carried and none on the page, it says to open the league first", () => {
+  const { alerts, went } = run(buildEspnKeyBookmarklet("https://penthousefantasy.com/connect/espn"), {
+    hostname: "www.espn.com",
+    search: "",
+    cookie: `SWID=${SWID}; espn_s2=${S2}`,
+  });
+  assert.equal(went, null);
+  assert.match(alerts[0], /Open your league/);
+  // But a league carried from the walk is enough on its own.
+  const carried = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "www.espn.com", search: "", cookie: `SWID=${SWID}; espn_s2=${S2}` });
+  assert.ok(carried.went);
 });
 
 test("the key rides in the fragment, never the query, so no server ever receives it", () => {
-  const { went } = run(buildEspnKeyBookmarklet(BACK), { hostname: "fantasy.espn.com", cookie: `SWID=${SWID}; espn_s2=${S2}` });
+  const { went } = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "fantasy.espn.com", cookie: `SWID=${SWID}; espn_s2=${S2}` });
   const url = new URL(went!);
   assert.equal(url.search, "?id=123");
   assert.ok(!url.search.includes("s2"));
@@ -62,7 +87,7 @@ test("the key rides in the fragment, never the query, so no server ever receives
 
 test("on any other site it says to open ESPN and stays put", () => {
   for (const hostname of ["penthousefantasy.com", "espn.com.evil.example", "www.google.com"]) {
-    const { alerts, went } = run(buildEspnKeyBookmarklet(BACK), { hostname, cookie: `SWID=${SWID}; espn_s2=${S2}` });
+    const { alerts, went } = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname, cookie: `SWID=${SWID}; espn_s2=${S2}` });
     assert.equal(went, null, hostname);
     assert.equal(alerts.length, 1);
     assert.match(alerts[0], /fantasy\.espn\.com/);
@@ -71,14 +96,14 @@ test("on any other site it says to open ESPN and stays put", () => {
 
 test("www.espn.com and fantasy.espn.com both count as ESPN", () => {
   for (const hostname of ["fantasy.espn.com", "www.espn.com", "espn.com"]) {
-    const { went } = run(buildEspnKeyBookmarklet(BACK), { hostname, cookie: `SWID=${SWID}; espn_s2=${S2}` });
+    const { went } = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname, cookie: `SWID=${SWID}; espn_s2=${S2}` });
     assert.ok(went, hostname);
   }
 });
 
 test("half a key is no key: it says so and never leaves with one value", () => {
   for (const cookie of [`SWID=${SWID}`, `espn_s2=${S2}`, "", "SWID=; espn_s2="]) {
-    const { alerts, went } = run(buildEspnKeyBookmarklet(BACK), { hostname: "fantasy.espn.com", cookie });
+    const { alerts, went } = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "fantasy.espn.com", cookie });
     assert.equal(went, null, cookie);
     assert.equal(alerts.length, 1);
     assert.match(alerts[0], /sign back in/i);
@@ -87,11 +112,11 @@ test("half a key is no key: it says so and never leaves with one value", () => {
 });
 
 test("a cookie whose name merely ends in the right letters is not the cookie", () => {
-  const { went } = run(buildEspnKeyBookmarklet(BACK), {
+  const { went } = run(buildEspnKeyBookmarklet(BACK, "123"), {
     hostname: "fantasy.espn.com",
     cookie: `xSWID=wrong; SWID=${SWID}; not_espn_s2=wrong; espn_s2=${S2}`,
   });
-  assert.deepEqual(parseEspnKeyReturn(new URL(went!).hash), { s2: S2, swid: SWID });
+  assert.deepEqual(parseEspnKeyReturn(new URL(went!).hash), { s2: S2, swid: SWID, league: "", team: "" });
 });
 
 test("the return fragment is read strictly", () => {
@@ -100,8 +125,9 @@ test("the return fragment is read strictly", () => {
   assert.equal(parseEspnKeyReturn("#player=123"), null);
   assert.equal(parseEspnKeyReturn("#s2=abc"), null, "half a key is no key");
   assert.equal(parseEspnKeyReturn("#s2=&swid=x"), null);
-  assert.deepEqual(parseEspnKeyReturn("#s2=abc&swid=%7BX%7D"), { s2: "abc", swid: "{X}" });
-  assert.deepEqual(parseEspnKeyReturn("s2=abc&swid=x"), { s2: "abc", swid: "x" }, "with or without the hash");
+  assert.deepEqual(parseEspnKeyReturn("#s2=abc&swid=%7BX%7D"), { s2: "abc", swid: "{X}", league: "", team: "" });
+  assert.deepEqual(parseEspnKeyReturn("s2=abc&swid=x&league=12&team=3"), { s2: "abc", swid: "x", league: "12", team: "3" }, "with or without the hash");
+  assert.deepEqual(parseEspnKeyReturn("#s2=abc&swid=x&league=evil&team=<b>"), { s2: "abc", swid: "x", league: "", team: "" }, "ids are digits or nothing");
 });
 
 test("the return address carries the league the key was asked for", () => {

@@ -90,7 +90,13 @@ export default function ConnectPage() {
   const deep = useMemo(() => {
     const p = here?.searchParams.get("platform");
     if (p !== "espn" && p !== "sleeper") return null;
-    return { platform: p as Platform, id: here?.searchParams.get("id")?.trim() ?? "", paste: here?.searchParams.get("paste") === "1" };
+    return {
+      platform: p as Platform,
+      id: here?.searchParams.get("id")?.trim() ?? "",
+      // The team the bookmark read off ESPN's page, picked once the league has loaded.
+      team: here?.searchParams.get("team")?.trim() ?? "",
+      paste: here?.searchParams.get("paste") === "1",
+    };
   }, [here]);
   const [pickedPlatform, setPlatform] = useState<Platform | null>(null);
   const platform = pickedPlatform ?? deep?.platform ?? null;
@@ -163,7 +169,7 @@ export default function ConnectPage() {
     const id = deep?.id;
     if (!id || session.loading || !session.signedIn || loaded.current === id) return;
     loaded.current = id;
-    queueMicrotask(() => pickLeague(id));
+    queueMicrotask(() => pickLeague(id, deep?.team));
   });
 
   async function run<T>(fn: () => Promise<T>): Promise<T | undefined> {
@@ -226,13 +232,14 @@ export default function ConnectPage() {
     }
   }
 
-  async function pickLeague(id: string) {
+  async function pickLeague(id: string, team?: string) {
     if (!platform || !id.trim()) return;
     setLastLeagueId(id.trim());
     const l = await run(() => getLeague(platform, id.trim()));
     if (l) {
       setLeague(l);
-      setTeamId("");
+      // A team named on the way in (the ESPN bookmark read it off the page) is picked for them.
+      setTeamId(team && l.teams.some((t) => t.id === team) ? team : "");
     }
   }
 
@@ -490,8 +497,25 @@ export default function ConnectPage() {
 
       {platform === "espn" && (
         <section className="mt-7">
-          <label className="eyebrow block" htmlFor="league-id">
-            Paste a league ID
+          {/* The phone way first, for any ESPN league: the bookmark reads the league, the
+              team and, if it is private, the key off ESPN's own page (Andrew, 2026-09-28:
+              "do you still need to put in your league id? that's still hard"). */}
+          <div className="rounded-[var(--radius-card)] border border-line-2 bg-paper p-4" data-testid="espn-entry">
+            <h2 className="display text-[18px] leading-tight">{ESPN_KEY.entry.title}</h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{ESPN_KEY.entry.body}</p>
+            <div className="mt-3">
+              <LinkButton
+                href={input.trim() ? `/connect/espn?id=${encodeURIComponent(input.trim())}` : "/connect/espn"}
+                variant="start"
+                className="w-full"
+              >
+                {ESPN_KEY.entry.button}
+                <IconChevron size={14} strokeWidth={2.8} />
+              </LinkButton>
+            </div>
+          </div>
+          <label className="eyebrow mt-6 block" htmlFor="league-id">
+            {ESPN_KEY.entry.or}
           </label>
           <div className="mt-2 flex gap-2">
             <input

@@ -670,7 +670,7 @@ export const CONNECT = {
 export const ESPN_KEY = {
   eyebrow: "ESPN \u00b7 private league",
   title: "Get your ESPN key.",
-  lead: "ESPN has no sign-in door for other apps. Your key is two values ESPN keeps in your browser. One bookmark reads them and brings you straight back here.",
+  lead: "ESPN has no sign-in door for other apps, and nobody should have to dig out a league ID on a phone. One bookmark, tapped on your league\u2019s page, reads your league, your team and your key, and brings you straight back here.",
   time: "Two minutes, once. You keep the bookmark, so next time it is one tap.",
   /** The device switch: the steps differ by browser, so the page picks and the reader can correct it. */
   handAria: "Which device are you on",
@@ -707,19 +707,20 @@ export const ESPN_KEY = {
   },
   open: {
     title: "Open ESPN",
-    body: "Sign in if it asks. Any page of your league will do.",
+    body: "Sign in if it asks, then open your team\u2019s page. The bookmark reads your league and your team off it.",
     button: "Open fantasy.espn.com",
   },
   tap: {
     title: "Tap the bookmark",
-    iphone: "On the ESPN page, open Bookmarks and tap Penthouse key. It brings you back here with the key saved.",
-    android: "On the ESPN page, tap the address bar, type Penthouse key, and tap it in the list under the bar. Chrome only runs it from there. It brings you back here with the key saved.",
-    computer: "On the ESPN page, click Penthouse key in the bar. It brings you back here with the key saved.",
+    iphone: "On your team\u2019s page, open Bookmarks and tap Penthouse key. It brings you back here with your league loaded and your team picked.",
+    android: "On your team\u2019s page, tap the address bar, type Penthouse key, and tap it in the list under the bar. Chrome only runs it from there. It brings you back here with your league loaded and your team picked.",
+    computer: "On your team\u2019s page, click Penthouse key in the bar. It brings you back here with your league loaded and your team picked.",
   },
   /** The bookmark's two messages, shown by ESPN's page. It never shows the values. */
   bookmark: {
     wrongSite: "Open fantasy.espn.com and sign in, then tap this bookmark.",
     noKey: "No key on this browser yet. Sign out of ESPN, sign back in here, then tap this bookmark again.",
+    noLeague: "Open your league on ESPN first, any page of it, then tap this bookmark.",
   },
   /** The other doors, under the walk. */
   other: "Two other ways in",
@@ -745,6 +746,13 @@ export const ESPN_KEY = {
     title: "Key saved.",
     loading: "Loading your league.",
     noLeague: "Head back and load your league.",
+  },
+  /** The door on /connect, above the ID box: the phone way is the first way, for any ESPN league. */
+  entry: {
+    title: "Link it from ESPN",
+    body: "No ID to find. A bookmark, tapped on your league\u2019s page, brings your league, your team and your key back here.",
+    button: "Link from ESPN",
+    or: "Or paste a league ID",
   },
   /** The form on /connect, which now leads with the phone. */
   form: {
