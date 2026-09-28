@@ -169,8 +169,9 @@ const PAGES: PageCase[] = [
       const sleeper = page.getByRole("radio", { name: "Sleeper" });
       await expect(sleeper).toBeVisible();
       await expect(page.getByRole("radio", { name: "ESPN" })).toBeVisible();
-      // Yahoo is a roadmap marker with no connector behind it in edge/. It must be visible
-      // and unpickable: never offered as a third radio, and disabled if it is reached.
+      // Yahoo is a roadmap marker until the API reports its sign-in is configured
+      // (/api/yahoo/status); the fixture API has no YAHOO_* keys. Until then it must be
+      // visible and unpickable: never offered as a third radio, and disabled if reached.
       await expect(page.getByRole("radio", { name: /yahoo/i })).toHaveCount(0);
       const yahoo = page.getByRole("button", { name: /yahoo/i });
       await expect(yahoo).toBeVisible();

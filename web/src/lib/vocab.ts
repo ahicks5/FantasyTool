@@ -652,6 +652,28 @@ export const CONNECT = {
 } as const;
 
 /**
+ * Yahoo on the connect page and its sign-in return. Yahoo opens a league only to its
+ * members, so unlike Sleeper and ESPN there is no ID to paste: the owner signs in with Yahoo
+ * and picks from their own list. `attribution` is Yahoo's required credit line, word for
+ * word, and must not be reworded.
+ */
+export const YAHOO = {
+  label: "Yahoo",
+  soon: "Soon",
+  signIn: "Sign in with Yahoo",
+  why: "Yahoo opens a league only to its members. Sign in, pick yours. We read, never write.",
+  expired: "Your Yahoo sign-in ran out. Sign in again.",
+  pick: "Pick your Yahoo league",
+  none: "No Yahoo football leagues on this account this season.",
+  saved: "Yahoo sign-in saved on this device.",
+  forget: "Forget it",
+  returning: "Signing you in with Yahoo\u2026",
+  badState: "That Yahoo sign-in did not start here. Start it again.",
+  back: "Back to connect",
+  attribution: "Fantasy data provided by Yahoo Fantasy",
+} as const;
+
+/**
  * The account: register, sign in, the plan flag, the leagues on file, the upgrade sheet,
  * the reset, and the owner's admin desk. Every word on those screens and in the two
  * popups is here, so the sheet and the page can never disagree.

@@ -1,9 +1,20 @@
 "use client";
-/** Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, two cookies. */
+/** Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, two cookies; Yahoo takes a sign-in, then a pick from your own leagues. */
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { EspnAuthError, PaywallError, connect, getLeague, getProducts, getSleeperLeagues } from "@/lib/api";
+import {
+  EspnAuthError,
+  PaywallError,
+  YahooAuthError,
+  connect,
+  getLeague,
+  getProducts,
+  getSleeperLeagues,
+  getYahooAuthorizeUrl,
+  getYahooLeagues,
+  getYahooStatus,
+} from "@/lib/api";
 import { Popup, useAccountGate } from "@/components/account/AccountGate";
 import { formatCents } from "@/lib/format";
 import { HttpError } from "@/lib/errors";
@@ -12,10 +23,11 @@ import { resolveSleeperInput } from "@/lib/leagueInput";
 import { saveConnection } from "@/lib/storage";
 import { EspnAuthForm } from "@/components/EspnAuthForm";
 import { clearEspnAuth, useEspnAuth } from "@/lib/espnAuth";
+import { clearYahooAuth, loadYahooAuth, newYahooState, useYahooAuth } from "@/lib/yahooAuth";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck } from "@/components/icons";
 import { Button, Countdown, ErrorBox, Eyebrow, LinkButton, Wordmark } from "@/components/ui";
-import { ACCOUNT, CONNECT, LINES } from "@/lib/vocab";
+import { ACCOUNT, CONNECT, LINES, YAHOO } from "@/lib/vocab";
 
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
@@ -39,6 +51,24 @@ function initials(name: string): string {
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "")).toUpperCase();
 }
 
+const PLATFORM_NAME: Record<Platform, string> = { sleeper: "Sleeper", espn: "ESPN", yahoo: YAHOO.label };
+
+/** One platform in the picker. Two words, no sublabels: what a platform needs is asked after. */
+function PlatformChoice({ p, on, onPick }: { p: Platform; on: boolean; onPick: (p: Platform) => void }) {
+  return (
+    <button
+      role="radio"
+      aria-checked={on}
+      onClick={() => onPick(p)}
+      className={`min-h-11 w-full rounded-[var(--radius-card)] border px-4 py-4 text-left transition-colors ${
+        on ? "border-ink bg-ink text-paper" : "border-line-2 bg-paper text-ink hover:bg-soft"
+      }`}
+    >
+      <span className="display block text-[19px] leading-tight">{PLATFORM_NAME[p]}</span>
+    </button>
+  );
+}
+
 export default function ConnectPage() {
   const router = useRouter();
   const session = useSession();
@@ -60,6 +90,12 @@ export default function ConnectPage() {
   // first time or telling them the ones they gave have expired.
   const [espnAuthNeeded, setEspnAuthNeeded] = useState<{ expired: boolean } | null>(null);
   const [lastLeagueId, setLastLeagueId] = useState("");
+  // Yahoo is offered only once the API says its sign-in is switched on; until then it stays
+  // the dashed "Soon" marker. `yahooAuthNeeded` is a sign-in that failed or ran out.
+  const [yahooEnabled, setYahooEnabled] = useState(false);
+  const [yahooAuthNeeded, setYahooAuthNeeded] = useState(false);
+  const storedYahoo = useYahooAuth();
+  const hasYahoo = !!storedYahoo;
   const [confirming, setConfirming] = useState<{ allowed: number; used: number } | null>(null);
   const [slotPrice, setSlotPrice] = useState<string | null>(null);
   useEffect(() => {
@@ -70,6 +106,36 @@ export default function ConnectPage() {
       })
       .catch(() => undefined);
   }, []);
+  useEffect(() => {
+    getYahooStatus()
+      .then((r) => {
+        setYahooEnabled(r.enabled);
+        // Back from Yahoo's sign-in (`/connect/yahoo` sends ?platform=yahoo): pick up there.
+        if (r.enabled && new URLSearchParams(window.location.search).get("platform") === "yahoo") {
+          setPlatform("yahoo");
+          window.history.replaceState(null, "", "/connect");
+          if (loadYahooAuth()) return getYahooLeagues().then(setLeagues);
+        }
+      })
+      .catch((e) => {
+        if (e instanceof YahooAuthError) setYahooAuthNeeded(true);
+      });
+  }, []);
+  /** Signed in with Yahoo: their own leagues are the whole form. */
+  async function loadYahooLeagues() {
+    const ls = await run(() => getYahooLeagues());
+    if (ls) {
+      setLeagues(ls);
+      setYahooAuthNeeded(false);
+    }
+  }
+
+  async function signInWithYahoo() {
+    await run(async () => {
+      window.location.assign(await getYahooAuthorizeUrl(newYahooState()));
+    });
+  }
+
   // Only to offer the wipe below. The cookies themselves ride on requests from
   // `espnAuthHeaders`, which reads storage directly and never comes through here.
   const storedEspn = useEspnAuth();
@@ -84,6 +150,7 @@ export default function ConnectPage() {
     } catch (e) {
       // A private league is not an error to apologise for — it is a form to fill in.
       if (e instanceof EspnAuthError) setEspnAuthNeeded({ expired: !e.needsAuth });
+      else if (e instanceof YahooAuthError) setYahooAuthNeeded(true);
       else setError(e);
     } finally {
       setBusy(false);
@@ -200,6 +267,20 @@ export default function ConnectPage() {
     }
   }
 
+  function pickPlatform(p: Platform) {
+    if (p === platform) return;
+    setPlatform(p);
+    setInput("");
+    setLeagues(null);
+    setLeague(null);
+    setTeamId("");
+    setError(null);
+    setEspnAuthNeeded(null);
+    setYahooAuthNeeded(false);
+    setLastLeagueId("");
+    if (p === "yahoo" && hasYahoo) void loadYahooLeagues();
+  }
+
   const step = league ? 2 : 1;
 
   return (
@@ -266,48 +347,34 @@ export default function ConnectPage() {
         <div className="eyebrow" id="platform-label">
           Select your league
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-2.5" role="radiogroup" aria-labelledby="platform-label">
-          {(["sleeper", "espn"] as Platform[]).map((p) => {
-            const on = platform === p;
-            return (
-              <button
-                key={p}
-                role="radio"
-                aria-checked={on}
-                onClick={() => {
-                  if (on) return;
-                  setPlatform(p);
-                  setInput("");
-                  setLeagues(null);
-                  setLeague(null);
-                  setTeamId("");
-                  setError(null);
-                  setEspnAuthNeeded(null);
-                  setLastLeagueId("");
-                }}
-                className={`min-h-11 rounded-[var(--radius-card)] border px-4 py-4 text-left transition-colors ${
-                  on ? "border-ink bg-ink text-paper" : "border-line-2 bg-paper text-ink hover:bg-soft"
-                }`}
-              >
-                <span className="display block text-[19px] leading-tight">{p === "sleeper" ? "Sleeper" : "ESPN"}</span>
-              </button>
-            );
-          })}
+        <div role="radiogroup" aria-labelledby="platform-label">
+          <div className="mt-2 grid grid-cols-2 gap-2.5">
+            {(["sleeper", "espn"] as Platform[]).map((p) => (
+              <PlatformChoice key={p} p={p} on={platform === p} onPick={pickPlatform} />
+            ))}
+          </div>
+          {yahooEnabled && (
+            <div className="mt-2.5">
+              <PlatformChoice p="yahoo" on={platform === "yahoo"} onPick={pickPlatform} />
+            </div>
+          )}
         </div>
 
-        {/* There is no Yahoo connector in edge/, so this is a roadmap marker and has to be
-            impossible to pick: disabled, outside the radio group so a screen reader never
-            offers it as a third choice, and drawn dashed and unfilled so it does not read
-            as a live button that ignores the tap. */}
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          className="mt-2.5 flex min-h-11 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-[var(--radius-card)] border border-dashed border-line-2 bg-transparent px-4 py-3 text-muted"
-        >
-          <span className="display text-[17px] leading-tight">Yahoo</span>
-          <span className="eyebrow rounded-full border border-line-2 px-2 py-0.5">Soon</span>
-        </button>
+        {/* Until the API says Yahoo sign-in is switched on (YAHOO_* set on Render), Yahoo is a
+            roadmap marker and has to be impossible to pick: disabled, outside the radio group
+            so a screen reader never offers it as a third choice, and drawn dashed and unfilled
+            so it does not read as a live button that ignores the tap. */}
+        {!yahooEnabled && (
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            className="mt-2.5 flex min-h-11 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-[var(--radius-card)] border border-dashed border-line-2 bg-transparent px-4 py-3 text-muted"
+          >
+            <span className="display text-[17px] leading-tight">{YAHOO.label}</span>
+            <span className="eyebrow rounded-full border border-line-2 px-2 py-0.5">{YAHOO.soon}</span>
+          </button>
+        )}
       </div>
 
       {platform === "sleeper" && (
@@ -332,6 +399,29 @@ export default function ConnectPage() {
             </Button>
           </div>
 
+        </section>
+      )}
+
+      {platform === "yahoo" && (!hasYahoo || yahooAuthNeeded) && (
+        <section className="mt-7">
+          <p className="text-[14px] leading-relaxed text-muted">{yahooAuthNeeded ? YAHOO.expired : YAHOO.why}</p>
+          <Button variant="start" onClick={signInWithYahoo} busy={busy} className="mt-3 w-full">
+            {YAHOO.signIn}
+          </Button>
+        </section>
+      )}
+
+      {platform === "yahoo" && hasYahoo && !yahooAuthNeeded && leagues && (
+        <section className="mt-7">
+          <div className="eyebrow">{YAHOO.pick}</div>
+          {leagues.length === 0 && <p className="mt-2 text-[14px] text-muted">{YAHOO.none}</p>}
+        </section>
+      )}
+
+      {/* One list for both: a Sleeper username's leagues, or the signed-in Yahoo owner's.
+          A Yahoo list is only shown while that sign-in still works. */}
+      {(platform === "sleeper" || (platform === "yahoo" && hasYahoo && !yahooAuthNeeded)) && (
+        <>
           {leagues && leagues.length > 0 && (
             <ul className="mt-3 grid gap-2">
               {leagues.map((l) => {
@@ -358,7 +448,7 @@ export default function ConnectPage() {
               })}
             </ul>
           )}
-        </section>
+        </>
       )}
 
       {platform === "espn" && (
@@ -422,6 +512,33 @@ export default function ConnectPage() {
           >
             Forget it
           </button>
+        </p>
+      )}
+
+      {platform === "yahoo" && hasYahoo && !yahooAuthNeeded && (
+        <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted">
+          {YAHOO.saved}
+          <button
+            type="button"
+            onClick={() => {
+              clearYahooAuth();
+              setLeagues(null);
+              setLeague(null);
+              setTeamId("");
+            }}
+            className="min-h-11 font-semibold text-ink underline underline-offset-4"
+          >
+            {YAHOO.forget}
+          </button>
+        </p>
+      )}
+
+      {/* Yahoo's terms require this credit, linked back to Yahoo Fantasy, wherever its data shows. */}
+      {platform === "yahoo" && (
+        <p className="mt-3 text-[12px] text-muted">
+          <a href="https://football.fantasysports.yahoo.com/" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
+            {YAHOO.attribution}
+          </a>
         </p>
       )}
 

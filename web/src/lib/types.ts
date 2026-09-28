@@ -1,6 +1,6 @@
 // Mirrors docs/API.md (Penthouse API contract v1).
 
-export type Platform = "sleeper" | "espn";
+export type Platform = "sleeper" | "espn" | "yahoo";
 
 export type Feature = "my_team" | "waivers" | "trade_lab" | "full_report";
 

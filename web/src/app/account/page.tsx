@@ -13,7 +13,7 @@ import { displayPhone, leagueRoom, shortDate } from "@/lib/account";
 import { useSession } from "@/lib/session";
 import { clearConnection, saveConnection } from "@/lib/storage";
 import type { MeLeague, Sku } from "@/lib/types";
-import { ACCOUNT, LINES, PRICING } from "@/lib/vocab";
+import { ACCOUNT, LINES, PRICING, YAHOO } from "@/lib/vocab";
 
 function PlanFlag({ premium, admin }: { premium: boolean; admin: boolean }) {
   return (
@@ -398,7 +398,7 @@ function AccountBody() {
                 <span className="min-w-0 flex-1">
                   <span className="display block truncate text-[16px] leading-tight">{l.name}</span>
                   <span className="mt-0.5 block truncate text-[12px] text-muted">
-                    {l.team_name || `Team ${l.team_id}`} · {l.platform === "espn" ? "ESPN" : "Sleeper"}
+                    {l.team_name || `Team ${l.team_id}`} · {l.platform === "espn" ? "ESPN" : l.platform === "yahoo" ? YAHOO.label : "Sleeper"}
                     {reading && (
                       <>
                         {" "}
