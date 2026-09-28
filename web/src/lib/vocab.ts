@@ -699,14 +699,14 @@ export const ESPN_KEY = {
   go: {
     title: "Log in to ESPN and tap the bookmark",
     button: "Open ESPN",
-    iphone: "Log in, open your team, then Bookmarks and tap it. It says your info is saved.",
-    android: "Log in, open your team, then type Penthouse key in the address bar and tap it. It says your info is saved.",
-    computer: "Log in, open your team, then click the bookmark. It says your info is saved.",
+    iphone: "Log in, open your team, then Bookmarks and tap it. It says copied.",
+    android: "Log in, open your team, then type Penthouse key in the address bar and tap it. It says copied.",
+    computer: "Log in, open your team, then click the bookmark. It says copied.",
   },
   /** Step 4: back here. */
   paste: {
     title: "Come back and paste",
-    body: "It usually brings you straight back on its own.",
+    body: "Switch back to this tab and paste what it copied.",
     placeholder: "Paste here",
     button: "Done",
     bad: "That is not the code. Copy it again from the bookmark\u2019s message.",
@@ -716,7 +716,7 @@ export const ESPN_KEY = {
     wrongSite: "Open fantasy.espn.com and log in, then tap this bookmark.",
     noKey: "Not logged in on this browser yet. Log in to ESPN here, then tap this bookmark again.",
     noLeague: "Open your league on ESPN first, then tap this bookmark.",
-    saved: "Your info is saved and copied. Head back to Penthouse.",
+    saved: "Copied. Go back to the Penthouse tab and paste.",
   },
   privacy: "Your info stays on this device. Our server never sees it.",
   back: "Back to connect",

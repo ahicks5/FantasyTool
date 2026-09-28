@@ -369,7 +369,9 @@ test("the ESPN key: the walk renders on a phone, and the bookmark's return saves
   // It never contains a value: there is nothing to leak on the screen that shows it.
   const key = await page.getByLabel(ESPN_KEY.prime.keyAria).inputValue();
   expect(key.startsWith("javascript:")).toBe(true);
-  expect(key).toContain("/connect/espn?id=424242");
+  // It copies and says so; it no longer jumps back (Andrew, 2026-09-28), so no address inside.
+  expect(key).not.toContain("location.href=");
+  expect(key).toContain("PHF:");
   expect(key).not.toMatch(/AEB|\{[0-9A-F]{8}-/);
   // Switching the device switches the steps; the bookmark's name is said on every one.
   await page.getByRole("radio", { name: ESPN_KEY.hand.android }).click();

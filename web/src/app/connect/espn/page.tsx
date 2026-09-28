@@ -1,6 +1,6 @@
 "use client";
 /**
- * The ESPN link, walked in four steps: make a placeholder bookmark, prime it with our code, log in to ESPN and tap it, come back and paste. The bookmark usually brings you back on its own.
+ * The ESPN link, walked in four steps: make a placeholder bookmark, prime it with our code, log in to ESPN and tap it, come back and paste what it copied.
  *
  * Andrew's shape (2026-09-28): the plan in one breath, then one direction per step in the
  * fewest words, an arrow to the next. Nothing else on the page.
@@ -280,6 +280,9 @@ export default function EspnKeyPage() {
                     onKeyDown={(e) => e.key === "Enter" && submitPaste()}
                     placeholder={ESPN_KEY.paste.placeholder}
                     autoComplete="off"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    inputMode="text"
                     spellCheck={false}
                     aria-label={ESPN_KEY.paste.placeholder}
                     data-testid="paste-code"

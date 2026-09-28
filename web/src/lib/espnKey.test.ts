@@ -24,13 +24,21 @@ interface Page {
   search?: string;
 }
 
-function run(bookmarklet: string, page: Page): { alerts: string[]; went: string | null } {
+/** `clip` is what landed on the clipboard; `went` is where it navigated, which is nowhere now. */
+function run(bookmarklet: string, page: Page): { alerts: string[]; clip: string[]; went: string | null } {
   assert.ok(bookmarklet.startsWith("javascript:"));
   const alerts: string[] = [];
+  const clip: string[] = [];
   const location = { hostname: page.hostname, href: "https://x", search: page.search ?? "" };
+  const navigator = { clipboard: { writeText: (t: string) => void clip.push(t) } };
   const src = bookmarklet.slice("javascript:".length);
-  new Function("document", "location", "alert", src)({ cookie: page.cookie }, location, (m: string) => alerts.push(m));
-  return { alerts, went: location.href === "https://x" ? null : location.href };
+  new Function("document", "location", "alert", "navigator", src)({ cookie: page.cookie }, location, (m: string) => alerts.push(m), navigator);
+  return { alerts, clip, went: location.href === "https://x" ? null : location.href };
+}
+
+/** The key the bookmark put on the clipboard, or null when it put nothing there. */
+function copied(r: { clip: string[] }) {
+  return r.clip.length ? parseEspnCode(r.clip[0]) : null;
 }
 
 const BACK = "https://penthousefantasy.com/connect/espn?id=123";
@@ -38,88 +46,87 @@ const BACK = "https://penthousefantasy.com/connect/espn?id=123";
 const S2 = "AEBx%2Bq7Y%2FabcDEF0123456789%3D%3D";
 const SWID = "{DEAD0000-BEEF-1111-2222-333333333333}";
 
-test("the bookmark is one line and carries the return address", () => {
+test("the bookmark is one line, and carries no address to jump to", () => {
   const b = buildEspnKeyBookmarklet(BACK, "123");
   assert.ok(!/[\n\r]/.test(b), "a bookmark's address is one line");
-  assert.ok(b.includes(BACK));
+  assert.ok(!b.includes("location.href="), "it copies and says so; it does not navigate (Andrew, 2026-09-28)");
 });
 
 test("on ESPN with both cookies it leaves for Penthouse with the key in the fragment, untouched", () => {
-  const { alerts, went } = run(buildEspnKeyBookmarklet(BACK, "123"), {
+  const r = run(buildEspnKeyBookmarklet(BACK, "123"), {
     hostname: "fantasy.espn.com",
     cookie: `region=ccpa; SWID=${SWID}; espn_s2=${S2}; edition=espn-en-us`,
   });
-  assert.equal(alerts.length, 1, "it says the info is saved, then leaves");
-  assert.match(alerts[0], /saved/);
-  assert.ok(went?.startsWith(BACK + "#"), went ?? "did not leave");
-  const key = parseEspnKeyReturn(new URL(went!).hash);
+  assert.equal(r.alerts.length, 1, "it says copied, and stays on ESPN");
+  assert.match(r.alerts[0], /Copied/);
+  assert.equal(r.went, null, "no jump back (Andrew, 2026-09-28)");
+  const key = copied(r);
   // The percent-encoded s2 is the value ESPN wants back; it must survive the round trip byte for byte.
   assert.deepEqual(key, { s2: S2, swid: SWID, league: "", team: "" });
 });
 
 test("on a team page it brings the league and the team back too, so nobody digs out an ID", () => {
-  const { alerts, went } = run(buildEspnKeyBookmarklet("https://penthousefantasy.com/connect/espn"), {
+  const r = run(buildEspnKeyBookmarklet("https://penthousefantasy.com/connect/espn"), {
     hostname: "fantasy.espn.com",
     search: "?leagueId=98765&teamId=4&seasonId=2026",
     cookie: `SWID=${SWID}; espn_s2=${S2}`,
   });
-  assert.match(alerts[0], /saved/);
-  assert.deepEqual(parseEspnKeyReturn(new URL(went!).hash), { s2: S2, swid: SWID, league: "98765", team: "4" });
+  assert.match(r.alerts[0], /Copied/);
+  assert.deepEqual(copied(r), { s2: S2, swid: SWID, league: "98765", team: "4" });
 });
 
 test("with no league carried and none on the page, it says to open the league first", () => {
-  const { alerts, went } = run(buildEspnKeyBookmarklet("https://penthousefantasy.com/connect/espn"), {
+  const r = run(buildEspnKeyBookmarklet("https://penthousefantasy.com/connect/espn"), {
     hostname: "www.espn.com",
     search: "",
     cookie: `SWID=${SWID}; espn_s2=${S2}`,
   });
-  assert.equal(went, null);
-  assert.match(alerts[0], /Open your league/);
+  assert.equal(copied(r), null);
+  assert.match(r.alerts[0], /Open your league/);
   // But a league carried from the walk is enough on its own.
   const carried = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "www.espn.com", search: "", cookie: `SWID=${SWID}; espn_s2=${S2}` });
-  assert.ok(carried.went);
+  assert.ok(copied(carried));
 });
 
-test("the key rides in the fragment, never the query, so no server ever receives it", () => {
-  const { went } = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "fantasy.espn.com", cookie: `SWID=${SWID}; espn_s2=${S2}` });
-  const url = new URL(went!);
-  assert.equal(url.search, "?id=123");
-  assert.ok(!url.search.includes("s2"));
-  assert.ok(url.hash.includes("s2="));
+test("the key goes to the clipboard and nowhere else: no navigation, no URL carries it", () => {
+  const r = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "fantasy.espn.com", cookie: `SWID=${SWID}; espn_s2=${S2}` });
+  assert.equal(r.went, null);
+  assert.equal(r.clip.length, 1);
+  assert.ok(r.clip[0].startsWith(CODE_PREFIX));
+  assert.ok(r.clip[0].includes("s2="));
 });
 
 test("on any other site it says to open ESPN and stays put", () => {
   for (const hostname of ["penthousefantasy.com", "espn.com.evil.example", "www.google.com"]) {
-    const { alerts, went } = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname, cookie: `SWID=${SWID}; espn_s2=${S2}` });
-    assert.equal(went, null, hostname);
-    assert.equal(alerts.length, 1);
-    assert.match(alerts[0], /fantasy\.espn\.com/);
+    const r = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname, cookie: `SWID=${SWID}; espn_s2=${S2}` });
+    assert.equal(copied(r), null, hostname);
+    assert.equal(r.alerts.length, 1);
+    assert.match(r.alerts[0], /fantasy\.espn\.com/);
   }
 });
 
 test("www.espn.com and fantasy.espn.com both count as ESPN", () => {
   for (const hostname of ["fantasy.espn.com", "www.espn.com", "espn.com"]) {
-    const { went } = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname, cookie: `SWID=${SWID}; espn_s2=${S2}` });
-    assert.ok(went, hostname);
+    assert.ok(copied(run(buildEspnKeyBookmarklet(BACK, "123"), { hostname, cookie: `SWID=${SWID}; espn_s2=${S2}` })), hostname);
   }
 });
 
 test("half a key is no key: it says so and never leaves with one value", () => {
   for (const cookie of [`SWID=${SWID}`, `espn_s2=${S2}`, "", "SWID=; espn_s2="]) {
-    const { alerts, went } = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "fantasy.espn.com", cookie });
-    assert.equal(went, null, cookie);
-    assert.equal(alerts.length, 1);
-    assert.match(alerts[0], /log in/i);
-    assert.ok(!alerts[0].includes(S2) && !alerts[0].includes(SWID), "the message never shows a value");
+    const r = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "fantasy.espn.com", cookie });
+    assert.equal(copied(r), null, cookie);
+    assert.equal(r.alerts.length, 1);
+    assert.match(r.alerts[0], /log in/i);
+    assert.ok(!r.alerts[0].includes(S2) && !r.alerts[0].includes(SWID), "the message never shows a value");
   }
 });
 
 test("a cookie whose name merely ends in the right letters is not the cookie", () => {
-  const { went } = run(buildEspnKeyBookmarklet(BACK, "123"), {
+  const r = run(buildEspnKeyBookmarklet(BACK, "123"), {
     hostname: "fantasy.espn.com",
     cookie: `xSWID=wrong; SWID=${SWID}; not_espn_s2=wrong; espn_s2=${S2}`,
   });
-  assert.deepEqual(parseEspnKeyReturn(new URL(went!).hash), { s2: S2, swid: SWID, league: "", team: "" });
+  assert.deepEqual(copied(r), { s2: S2, swid: SWID, league: "", team: "" });
 });
 
 test("the return fragment is read strictly", () => {
@@ -156,10 +163,12 @@ test("the bookmark's name and ESPN's door are fixed", () => {
 });
 
 test("the pasted code is the fragment behind a prefix, and anything else is refused", () => {
-  const { went } = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "fantasy.espn.com", search: "?leagueId=5&teamId=2", cookie: `SWID=${SWID}; espn_s2=${S2}` });
-  const code = CODE_PREFIX + new URL(went!).hash.slice(1);
+  const r = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "fantasy.espn.com", search: "?leagueId=5&teamId=2", cookie: `SWID=${SWID}; espn_s2=${S2}` });
+  const code = r.clip[0];
   assert.deepEqual(parseEspnCode(`  ${code}\n`), { s2: S2, swid: SWID, league: "5", team: "2" });
-  assert.equal(parseEspnCode(new URL(went!).hash.slice(1)), null, "no prefix, no code");
+  // A phone keyboard lowercased the prefix on paste (Andrew's iPhone, 2026-09-28): still the code.
+  assert.deepEqual(parseEspnCode("phf:" + code.slice(CODE_PREFIX.length)), { s2: S2, swid: SWID, league: "5", team: "2" });
+  assert.equal(parseEspnCode(code.slice(CODE_PREFIX.length)), null, "no prefix, no code");
   assert.equal(parseEspnCode("hello"), null);
   assert.equal(parseEspnCode(""), null);
 });

@@ -316,7 +316,7 @@ test("the ESPN walk is one direction a step, in the least words, and never sends
   assert.match(ESPN_KEY.go.android, /Penthouse key/);
   // The bookmark's own messages are safe to embed in a single-line script.
   for (const line of Object.values(ESPN_KEY.bookmark)) assert.ok(!/[\n\r]/.test(line));
-  assert.match(ESPN_KEY.bookmark.saved, /saved/);
+  assert.match(ESPN_KEY.bookmark.saved, /Copied/);
 });
 
 test("connect's control says what it hands you", () => {

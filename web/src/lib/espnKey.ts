@@ -56,7 +56,7 @@ const HOST_TEST = "/(^|\\.)espn\\.com$/";
  * leaves. It never shows the values, so nothing sits on a screenshot.
  */
 export function buildEspnKeyBookmarklet(returnUrl: string, carriedLeagueId = ""): string {
-  const back = JSON.stringify(returnUrl);
+  void returnUrl; // kept in the signature: the landing at /connect/espn still reads a fragment if a bookmark ever jumps back
   const wrongSite = JSON.stringify(ESPN_KEY.bookmark.wrongSite);
   const noKey = JSON.stringify(ESPN_KEY.bookmark.noKey);
   const noLeague = JSON.stringify(ESPN_KEY.bookmark.noLeague);
@@ -75,8 +75,8 @@ export function buildEspnKeyBookmarklet(returnUrl: string, carriedLeagueId = "")
     "var k='s2='+encodeURIComponent(s)+'&swid='+encodeURIComponent(w)+'&league='+l+'&team='+t;" +
     // The code on the clipboard is the fallback for a browser that will not follow the jump.
     `try{navigator.clipboard.writeText(${JSON.stringify(CODE_PREFIX)}+k)}catch(e){}` +
+    // No jump back (Andrew, 2026-09-28): say it is copied and let them switch tabs themselves.
     `alert(${saved});` +
-    `location.href=${back}+'#'+k;` +
     "})();";
   return "javascript:" + src;
 }
@@ -117,7 +117,8 @@ export function espnKeyReturnUrl(origin: string, leagueId: string): string {
 
 /** The code the bookmark copied, pasted back by hand: the same key as the fragment, behind a prefix. */
 export function parseEspnCode(text: string): EspnKey | null {
+  // A phone keyboard may lowercase the prefix on paste (seen on an iPhone, 2026-09-28).
   const trimmed = text.trim();
-  if (!trimmed.startsWith(CODE_PREFIX)) return null;
+  if (!trimmed.slice(0, CODE_PREFIX.length).toUpperCase().startsWith(CODE_PREFIX)) return null;
   return parseEspnKeyReturn(trimmed.slice(CODE_PREFIX.length));
 }
