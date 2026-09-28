@@ -962,13 +962,17 @@ def league_standings(platform: str, league_id: str, email: str | None = Depends(
 
 @app.get("/api/league/{platform}/{league_id}/players/search")
 def player_search(platform: str, league_id: str, q: str, team_id: str | None = None,
-                  auth=Depends(espn_auth)):
+                  email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     """Every player the platform carries, by name, for the scouting tab's search box.
 
-    Free, like the profile it leads to, and it opens nothing. See the profile below for why.
+    Free, like the profile it leads to, and it opens nothing. A free account gets the top
+    `products.FREE_BOARD_ROWS` matches, the same line the board draws.
     """
     b = _bundle(platform, league_id, auth)
-    return scout_mod.search(b, q, team_id)
+    hits = scout_mod.search(b, q, team_id)
+    if not products.can(_skus(email), products.BOARD_FEATURE) and isinstance(hits, list):
+        hits = hits[:products.FREE_BOARD_ROWS]
+    return hits
 
 
 @app.get("/api/league/{platform}/{league_id}/players")
@@ -977,8 +981,12 @@ def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
                      sort: str = directory_mod.DEFAULT_SORT, order: str = "desc",
                      limit: int = directory_mod.DEFAULT_LIMIT, offset: int = 0,
                      team_id: str | None = None, lens: str = "", season: bool = False,
-                     auth=Depends(espn_auth)):
+                     email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     """The scouting board: every player in the league, filtered and sorted.
+
+    **A free account sees the top `products.FREE_BOARD_ROWS` of whatever it asked for**
+    (Andrew, 2026-09-28); `locked` says how many more a pass opens, and those rows never
+    leave the server, so a blur on the page hides nothing that could be read out of it.
 
     **Free, on the same line the search box and the profile are free on, and it opens
     nothing.** What it hands back is each player's own numbers -- the projection the
@@ -1008,9 +1016,21 @@ def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
             ranks = directory_mod.season_ranks(nfl_stats.season_line(b.league.season), b.league.scoring)
         except Exception:  # noqa: BLE001
             ranks = None
-    return directory_mod.query(b, q=q, pos=pos, nfl_team=nfl_team, avail=avail, owner=owner,
-                               sort=sort, order=order, limit=limit, offset=offset,
-                               team_id=team_id, lens=lens, ctx=ctx, season=ranks)
+    out = directory_mod.query(b, q=q, pos=pos, nfl_team=nfl_team, avail=avail, owner=owner,
+                              sort=sort, order=order, limit=limit, offset=offset,
+                              team_id=team_id, lens=lens, ctx=ctx, season=ranks)
+    return _board_preview(out, email)
+
+
+def _board_preview(out: dict, email: str | None) -> dict:
+    """Trim the board to its free rows for an account without a pass. `total` stays true."""
+    if products.can(_skus(email), products.BOARD_FEATURE):
+        out["locked"] = 0
+        return out
+    keep = max(0, products.FREE_BOARD_ROWS - int(out.get("offset") or 0))
+    out["rows"] = out["rows"][:keep]
+    out["locked"] = max(0, out["total"] - products.FREE_BOARD_ROWS)
+    return out
 
 
 @app.get("/api/league/{platform}/{league_id}/players/lenses")

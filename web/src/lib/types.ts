@@ -1413,6 +1413,8 @@ export interface PlayerBoard {
   facets: BoardFacets;
   lens?: Lens | null;
   algo_version?: string;
+  /** Rows a free account cannot see: the board shows the top three and counts the rest. */
+  locked?: number;
 }
 
 /** What the board is being asked for. Everything optional; the server holds the defaults. */

@@ -59,6 +59,8 @@ import { SCOUT } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { usePlayerSheet } from "./player/PlayerSheetProvider";
 import { ErrorBox, H2, InjuryTag, SkeletonList, Spinner } from "./ui";
+import { useAccountGate } from "./account/AccountGate";
+import { IconLock } from "./icons";
 
 /** Two strokes; too small a thing to earn a place in the shared icon set. */
 function IconX({ size = 17 }: { size?: number }) {
@@ -296,6 +298,7 @@ function LensBar({ on, counts, pick }: { on: Lens | null | undefined; counts: Le
 }
 
 export function PlayerBoard({ c, picks = [] }: { c: Connection; picks?: readonly WaiverPick[] }) {
+  const gate = useAccountGate();
   const [raw, setRaw] = useState("");
   const [query, setQuery] = useState<BoardQuery>(DEFAULT_QUERY);
   /**
@@ -436,6 +439,9 @@ export function PlayerBoard({ c, picks = [] }: { c: Connection; picks?: readonly
 
   const filters = activeFilterCount(query);
   const tab = activeTab(query.pos);
+  // Rows a free account cannot see. The server never sends them, so the blur below is
+  // decoration over placeholder bars, not over real names.
+  const locked = current?.board.locked ?? 0;
   const tabs = facets ? positionTabs(facets.positions) : [];
   const onSort = query.lens ? null : (s: BoardSort) => setQuery((q) => pressColumn(q, s));
   // The bar under each projection is against the best on the board, so it reads as "how
@@ -597,7 +603,40 @@ export function PlayerBoard({ c, picks = [] }: { c: Connection; picks?: readonly
               />
             ))}
           </ul>
-          {current && hasMore(rows.length, current.board.total) && (
+          {locked > 0 && (
+            <div className="relative mt-1" data-testid="board-locked">
+              <ul aria-hidden className="pointer-events-none select-none blur-[5px]">
+                {[0, 1, 2, 3].map((i) => (
+                  <li key={i} className="flex items-center gap-3 border-t border-line px-3 py-3">
+                    <span className="h-9 w-9 shrink-0 rounded-full bg-soft" />
+                    <span className="flex-1">
+                      <span className="block h-3 w-2/5 rounded bg-line-2" />
+                      <span className="mt-2 block h-2.5 w-1/4 rounded bg-line" />
+                    </span>
+                    <span className="h-3 w-10 rounded bg-line-2" />
+                  </li>
+                ))}
+              </ul>
+              {/* One line and one button over the blur. The wire's card further down the page
+                  carries the full pitch, so this one stays small. */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center">
+                <p className="flex items-center gap-2 text-[15px] font-bold text-ink">
+                  <IconLock size={15} strokeWidth={2.4} />
+                  {SCOUT.boardLock.line(locked)}
+                </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (await gate.upgrade("full_report", { what: SCOUT.boardLock.eyebrow })) setRetry((n) => n + 1);
+                  }}
+                  className="btn inline-flex min-h-11 items-center rounded-xl bg-start-fill px-5 text-[14px] font-bold text-white hover:brightness-110"
+                >
+                  {SCOUT.boardLock.cta}
+                </button>
+              </div>
+            </div>
+          )}
+          {current && !locked && hasMore(rows.length, current.board.total) && (
             <button type="button" onClick={more} disabled={paging} className="board-more">
               {paging ? <Spinner size={15} label={SEARCH_LABELS.searching} /> : BOARD_LABELS.more}
             </button>

@@ -528,6 +528,12 @@ export const SCOUT = {
   back: "All players",
   /** The research half of the tab: who is out there, through a lens a filter cannot be. */
   research: "All players",
+  /** A free account's board: the top three, then the rest behind a pass (Andrew, 2026-09-28). */
+  boardLock: {
+    eyebrow: "The full board",
+    line: (n: number) => `${n.toLocaleString("en-US")} more player${n === 1 ? "" : "s"} on the board.`,
+    cta: "Unlock the full board",
+  },
   lenses: {
     eyebrow: "Lenses",
     /** The chip that turns the lens off. */
