@@ -250,7 +250,7 @@ def test_upgrade_without_stripe_grants_the_pass_and_flips_the_flag(client):
     assert body["granted"] is True and body["url"] is None
     assert body["me"]["account"]["plan"] == {"tier": "premium", "name": "The Penthouse", "skus": ["full_report"]}
     assert set(body["me"]["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"}
-    assert body["me"]["leagues_allowed"] == 5
+    assert body["me"]["leagues_allowed"] == 3, "a pass does not raise the cap (Andrew, 2026-09-28)"
     rows = app_mod.store.export_user("owner@example.com")["data"]["purchases"]
     assert rows and rows[0]["source"] == "complimentary", "recorded as a comp, never as a sale"
 
@@ -282,7 +282,7 @@ def test_a_week_pass_opens_everything_and_says_when_it_ends(client):
     assert r.status_code == 200 and r.json()["granted"] is True
     me = r.json()["me"]
     assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"}
-    assert me["leagues_allowed"] == 5
+    assert me["leagues_allowed"] == 3
     assert me["account"]["plan"] == {"tier": "premium", "name": "Week pass", "skus": ["week_pass"]}
     import time
     assert 7.9 * 86400 < me["account"]["pass_until"] - time.time() <= 8 * 86400

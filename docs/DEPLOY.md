@@ -238,9 +238,8 @@ exactly these events:
 
 A bad signature answers 400 and grants nothing.
 
-Every account keeps up to **3 leagues** on file (`products.BASE_LEAGUES`), the bundle 5, and a
-`league_slot` purchase adds one on top. Both passes carry 5. When a week pass lapses the cap drops
-back, and leagues already on file stay (the cap only blocks linking a new one). `POST /api/connect` answers 401 to a stranger now:
+Every account keeps up to **3 leagues** on file (`products.BASE_LEAGUES`), free or paid (Andrew,
+2026-09-28), and each `league_slot` purchase adds one. A forgotten league keeps its slot for the season. Leagues already on file stay (the cap only blocks linking a new one). `POST /api/connect` answers 401 to a stranger now:
 looking at a league is still free, keeping it is the account's job.
 
 ## The one that bites: the share card needs a browser

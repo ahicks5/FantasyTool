@@ -174,7 +174,7 @@ test("a stranger's door is the account: register, land on it, then link a league
   await up.getByRole("button", { name: ACCOUNT.upgrade.close }).last().click();
   await expect(page.locator("[data-plan=premium]").first()).toBeVisible();
   await expect(page.getByTestId("upgrade-bundle")).toHaveCount(0);
-  await expect(page.getByTestId("league-room")).toHaveText("1 of 5 leagues");
+  await expect(page.getByTestId("league-room")).toHaveText("1 of 3 leagues");
 
   // Not the owner: the front office is closed to this account.
   await page.goto("/admin");
@@ -301,7 +301,7 @@ test("the owner's front office lists every account and the levers work", async (
   await expect(row.getByText(ACCOUNT.plan.premium, { exact: true })).toBeVisible();
   // One more league.
   await row.getByRole("button", { name: ACCOUNT.admin.slot }).click();
-  await expect(row.getByText(ACCOUNT.admin.leagues(0, 6))).toBeVisible();
+  await expect(row.getByText(ACCOUNT.admin.leagues(0, 4))).toBeVisible();
   // A reset link, handed over by hand.
   await row.getByRole("button", { name: ACCOUNT.admin.resetLink }).click();
   await expect(row.getByText(/\/reset\?token=/)).toBeVisible();

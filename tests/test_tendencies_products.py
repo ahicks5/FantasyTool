@@ -40,15 +40,16 @@ def test_product_catalog_and_entitlements():
     assert products.can(["waivers"], "waivers") and not products.can(["waivers"], "trade_lab")
     assert products.features_for(["full_report"]) == set(products.FEATURES)
     assert products.leagues_allowed([]) == 3 and products.leagues_allowed(["waivers"]) == 3
-    assert products.leagues_allowed(["full_report"]) == 5
-    assert products.leagues_allowed([], 2) == 5 and products.leagues_allowed(["full_report"], 1) == 6
+    # Three for everyone, free or paid (Andrew, 2026-09-28); each slot adds one.
+    assert products.leagues_allowed(["full_report"]) == 3 and products.leagues_allowed(["week_pass"]) == 3
+    assert products.leagues_allowed([], 2) == 5 and products.leagues_allowed(["full_report"], 1) == 4
     assert products.leagues_allowed(["league_slot"]) == 3, "a slot in the sku list is not a tier; it counts by rows"
     assert products.plan([]) == {"tier": "free", "name": "Free", "skus": []}
     assert products.plan(["league_slot"])["tier"] == "free", "a slot alone opens no room"
     assert products.plan(["trade_lab", "waivers"])["name"] == "Wire Pass + Trade Lab"
     assert products.plan(["waivers", "full_report"])["name"] == "The Penthouse"
     assert products.is_premium(["waivers"]) and not products.is_premium(["league_slot"])
-    assert [u["sku"] for u in products.league_upsell([])] == ["league_slot", "full_report"]
+    assert [u["sku"] for u in products.league_upsell([])] == ["league_slot"], "a pass no longer raises the cap"
     assert [u["sku"] for u in products.league_upsell(["full_report"])] == ["league_slot"]
     ups = products.upsell([], "trade_lab")
     assert [u["sku"] for u in ups] == ["week_pass", "full_report"], "no à la carte: the week, then the season"
@@ -60,7 +61,7 @@ def test_the_2026_09_27_catalog():
     assert price == {"week_pass": 499, "full_report": 2499, "league_slot": 299}
     assert not products.for_sale("waivers") and not products.for_sale("trade_lab") and not products.for_sale("free")
     assert products.features_for(["week_pass"]) == set(products.FEATURES)
-    assert products.leagues_allowed(["week_pass"]) == 5
+    assert products.leagues_allowed(["week_pass"]) == 3
     assert products.plan(["week_pass"])["name"] == "Week pass"
     assert products.plan(["week_pass", "full_report"])["name"] == "The Penthouse", "the season outranks the week"
     assert products.duration_s("full_report") is None

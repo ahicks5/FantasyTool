@@ -32,8 +32,8 @@ Tests: `uv run pytest -q` (offline, fixtures) and `cd web && npm test && npm run
 | SKU | Price | Unlocks |
 |---|---|---|
 | free | $0 | Start/sit, up to 3 leagues |
-| week_pass | $4.99 / week, Stripe subscription, cancel anytime | Everything, 5 leagues, while paid |
-| full_report | $24.99 once, rest of season | Season pass ("The Penthouse"): everything, 5 leagues |
+| week_pass | $4.99 / week, Stripe subscription, cancel anytime | Everything, while paid (3 leagues, like everyone) |
+| full_report | $24.99 once, rest of season | Season pass ("The Penthouse"): everything (3 leagues, like everyone) |
 | league_slot | $2.99 once, rest of season, stacks | One more league |
 
 `waivers` (Wire Pass, $3) and `trade_lab` (Trade Lab, $5) were retired 2026-09-27: no longer sold, but
