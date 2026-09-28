@@ -4,6 +4,8 @@ import type {
   MeLeague as AccountLeague,
   ActionFeed,
   AdminUsersResponse,
+  AdminMetrics,
+  AdminEvent,
   AuthResponse,
   PhoneStartResponse,
   PhoneVerifyResponse,
@@ -51,6 +53,7 @@ import { espnAuthHeaders } from "./espnAuth";
 import { clearYahooAuth, loadYahooAuth, saveYahooAuth, yahooAuthHeaders } from "./yahooAuth";
 import { clearToken, loadToken, saveToken } from "./auth";
 import { HttpError } from "./errors";
+import { anonHeaders, firstTouch, pixel, type Attr } from "./track";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 export const USE_MOCKS = API_URL === "";
@@ -143,6 +146,8 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
       ...auth,
       ...espnAuthHeaders(),
       ...yahooAuthHeaders(),
+      // A random browser id, so the server can join an arrival to a sign-up (lib/track.ts).
+      ...anonHeaders(),
       ...(init?.headers ?? {}),
     },
   });
@@ -247,7 +252,9 @@ export async function checkout(sku: Sku, returnTo?: string): Promise<CheckoutRes
     body.success_url = `${origin}${returnTo}${sep}paid=${encodeURIComponent(sku)}`;
     body.cancel_url = `${origin}${returnTo}${sep}canceled=1`;
   }
-  return request<CheckoutResponse>("/checkout", { method: "POST", body: JSON.stringify(body) });
+  const out = await request<CheckoutResponse>("/checkout", { method: "POST", body: JSON.stringify(body) });
+  pixel("checkout", { sku });
+  return out;
 }
 
 /* ------------------------------------------------------------------ the account ---
@@ -296,8 +303,12 @@ function mockSignIn(email: string): AuthResponse {
 
 export async function register(email: string, password: string, name = ""): Promise<AuthResponse> {
   if (USE_MOCKS) return mockSignIn(email);
-  const out = await request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ email, password, name }) });
+  const out = await request<AuthResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password, name, attr: firstTouch() }),
+  });
   saveToken(out.token);
+  pixel("signup");
   return out;
 }
 
@@ -352,11 +363,15 @@ export async function phoneVerify(phone: string, code: string): Promise<PhoneVer
   return out;
 }
 
-/** Finish signing up a verified number. */
-export async function phoneComplete(ticket: string, name: string, email: string): Promise<AuthResponse> {
+/** Finish signing up a verified number. `smsOptIn` is the marketing-text box, unticked by default. */
+export async function phoneComplete(ticket: string, name: string, email: string, smsOptIn = false): Promise<AuthResponse> {
   if (USE_MOCKS) return mockSignIn(email || "you@example.com");
-  const out = await request<AuthResponse>("/auth/phone/complete", { method: "POST", body: JSON.stringify({ ticket, name, email }) });
+  const out = await request<AuthResponse>("/auth/phone/complete", {
+    method: "POST",
+    body: JSON.stringify({ ticket, name, email, sms_opt_in: smsOptIn, attr: firstTouch() }),
+  });
   saveToken(out.token);
+  pixel("signup");
   return out;
 }
 
@@ -410,7 +425,9 @@ export async function upgrade(sku: Sku, returnTo?: string): Promise<UpgradeRespo
     body.success_url = `${origin}${returnTo}${sep}paid=${encodeURIComponent(sku)}`;
     body.cancel_url = `${origin}${returnTo}${sep}canceled=1`;
   }
-  return request<UpgradeResponse>("/account/upgrade", { method: "POST", body: JSON.stringify(body) });
+  const out = await request<UpgradeResponse>("/account/upgrade", { method: "POST", body: JSON.stringify(body) });
+  if (out.url) pixel("checkout", { sku });
+  return out;
 }
 
 /** Mark the league being read, so the next sign-in on any device opens on it. */
@@ -467,6 +484,41 @@ export async function adminSetRole(email: string, role: Role): Promise<void> {
   await request<unknown>(`/admin/users/${encodeURIComponent(email)}/role`, { method: "POST", body: JSON.stringify({ role }) });
 }
 
+/** Every number on the admin page for one range (default: this NFL week). Dates are YYYY-MM-DD. */
+export async function adminMetrics(from?: string, to?: string): Promise<AdminMetrics> {
+  if (USE_MOCKS) return mocks.ADMIN_METRICS;
+  const q = from ? `?frm=${encodeURIComponent(from)}${to ? `&to=${encodeURIComponent(to)}` : ""}` : "";
+  return request<AdminMetrics>(`/admin/metrics${q}`);
+}
+
+export async function adminAddSpend(row: { day: string; channel: string; dollars: number; campaign?: string; clicks?: number | null }): Promise<void> {
+  if (USE_MOCKS) return;
+  await request<unknown>("/admin/spend", { method: "POST", body: JSON.stringify(row) });
+}
+
+export async function adminDeleteSpend(id: string): Promise<void> {
+  if (USE_MOCKS) return;
+  await request<unknown>(`/admin/spend/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+/** One account's event timeline, newest first. */
+export async function adminUserEvents(email: string): Promise<AdminEvent[]> {
+  if (USE_MOCKS) return [];
+  return (await request<{ events: AdminEvent[] }>(`/admin/users/${encodeURIComponent(email)}/events`)).events;
+}
+
+/** The arrival the server counts (the one event the browser writes). */
+export async function logArrival(attr: Attr): Promise<void> {
+  if (USE_MOCKS) return;
+  await request<unknown>("/events", { method: "POST", body: JSON.stringify({ name: "landing_view", props: attr }) });
+}
+
+/** Tick or untick marketing texts. */
+export async function setSmsOptIn(on: boolean): Promise<boolean> {
+  if (USE_MOCKS) return on;
+  return (await request<{ sms_opt_in: boolean }>("/me/sms", { method: "PUT", body: JSON.stringify({ sms_opt_in: on }) })).sms_opt_in;
+}
+
 export async function adminResetLink(email: string): Promise<string> {
   if (USE_MOCKS) return `${window.location.origin}/reset?token=mock`;
   const out = await request<{ url: string }>(`/admin/users/${encodeURIComponent(email)}/reset`, { method: "POST" });
@@ -515,6 +567,7 @@ export async function connect(req: ConnectRequest): Promise<void> {
   // Signed in only: the API answers 401 to a stranger, which the connect page turns into
   // the sign-in sheet rather than an error box.
   await request<unknown>("/connect", { method: "POST", body: JSON.stringify(req) });
+  pixel("league_linked");
 }
 
 export async function getActions(platform: Platform, leagueId: string, teamId: string): Promise<ActionFeed> {

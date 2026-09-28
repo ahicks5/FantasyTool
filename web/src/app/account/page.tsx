@@ -7,7 +7,7 @@ import { DoorFrame } from "@/components/account/Door";
 import { IconCheck, IconChevron } from "@/components/icons";
 import { Loading } from "@/components/Loading";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton, OnAir, ThemeSetting } from "@/components/ui";
-import { addPhone, changePassword, deleteMyAccount, phoneStart, setAccountEmail, forgetLeague, getLeague, logout, logoutOthers, markLeagueUsed } from "@/lib/api";
+import { addPhone, changePassword, setSmsOptIn, deleteMyAccount, phoneStart, setAccountEmail, forgetLeague, getLeague, logout, logoutOthers, markLeagueUsed } from "@/lib/api";
 import { describeAuthError } from "@/lib/authError";
 import { displayPhone, leagueRoom, shortDate } from "@/lib/account";
 import { useSession } from "@/lib/session";
@@ -33,6 +33,47 @@ function PlanFlag({ premium, admin }: { premium: boolean; admin: boolean }) {
 
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
+
+/** The marketing-text box, for an account with a phone. Unticking is one tap and immediate. */
+function SmsOptIn({ on, onSaved }: { on: boolean; onSaved: () => void }) {
+  const [value, setValue] = useState(on);
+  const [busy, setBusy] = useState(false);
+  return (
+    <label className="flex min-h-11 cursor-pointer items-start gap-3 px-1" data-testid="sms-opt-in">
+      <input
+        type="checkbox"
+        className="peer sr-only"
+        checked={value}
+        disabled={busy}
+        onChange={async (e) => {
+          const next = e.target.checked;
+          setValue(next);
+          setBusy(true);
+          try {
+            setValue(await setSmsOptIn(next));
+            onSaved();
+          } catch {
+            setValue(!next); // the box shows what we hold, not what was attempted
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
+      <span
+        aria-hidden
+        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ink ${
+          value ? "border-ink bg-ink text-paper" : "border-line-2 bg-soft text-transparent"
+        } ${busy ? "opacity-60" : ""}`}
+      >
+        <IconCheck size={16} strokeWidth={3} />
+      </span>
+      <span className="grid gap-1">
+        <span className="text-[15px] leading-snug text-ink">{ACCOUNT.phone.smsOptIn}</span>
+        <span className="text-[12px] leading-relaxed text-muted">{ACCOUNT.phone.smsTerms}</span>
+      </span>
+    </label>
+  );
+}
 
 /** The ways in on file: the phone and the email, each addable or changeable. */
 function Contact() {
@@ -131,6 +172,7 @@ function Contact() {
             </Button>
           )}
         </div>
+        {account.phone && <SmsOptIn on={account.sms_opt_in === true} onSaved={session.refresh} />}
         {open === "phone" && (
           <form
             className="card grid gap-3 p-4"

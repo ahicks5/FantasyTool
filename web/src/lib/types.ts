@@ -72,6 +72,8 @@ export interface Account {
   league_slots: number;
   /** Unix seconds when the paid week runs out (grace included); null without a live week pass. */
   pass_until?: number | null;
+  /** Whether they ticked the marketing-text box. */
+  sms_opt_in?: boolean;
   created?: number | null;
   last_login?: number | null;
   /** E.164, when a number is on the account. Phone-only accounts have `email: ""`. */
@@ -141,6 +143,14 @@ export interface AdminUser {
   leagues: MeLeague[];
   leagues_allowed: number;
   phone?: string | null;
+  /** Where the account first came from: a utm_source, `share`, `referral:<host>` or `direct`. */
+  source?: string;
+  /** Lifetime payments, in cents, from the telemetry log. */
+  revenue_cents?: number;
+  /** The later of a league opened and a sign-in (epoch seconds). */
+  last_active?: number | null;
+  /** When they ticked the marketing-text box (epoch seconds), or null. */
+  sms_opt_in?: number | null;
 }
 
 export interface AdminUsersResponse {
@@ -1609,4 +1619,108 @@ export interface StandingsTeam {
 export interface Standings {
   teams: StandingsTeam[];
   algo_version: string;
+}
+
+/* ---- the admin's numbers: GET /api/admin/metrics (edge/business/metrics.py) ---- */
+
+export interface MetricTiles {
+  revenue_cents: number;
+  new_buyers: number;
+  signups: number;
+  leagues_linked: number;
+  spend_cents: number;
+  cac_cents: number | null;
+}
+
+export type FunnelKey = "landing_signup" | "signup_linked" | "linked_paid_7d" | "week_retained";
+export type FunnelStatus = "healthy" | "watch" | "leak" | "none";
+
+export interface FunnelStep {
+  key: FunnelKey;
+  num: number;
+  den: number;
+  rate: number | null;
+  healthy: number;
+  leak: number;
+  status: FunnelStatus;
+  scope: "range" | "to_date";
+}
+
+export type ChannelVerdict = "scale" | "watch" | "kill" | "organic";
+
+export interface ChannelRow {
+  source: string;
+  visitors: number;
+  signups: number;
+  linked: number;
+  buyers: number;
+  revenue_cents: number;
+  spend_cents: number;
+  cac_cents: number | null;
+  verdict: ChannelVerdict;
+  campaigns: { campaign: string; signups: number; buyers: number; revenue_cents: number }[];
+}
+
+export interface SpendRow {
+  id: string;
+  day: string;
+  channel: string;
+  campaign: string;
+  cents: number;
+  clicks: number | null;
+  note: string;
+}
+
+export interface CohortRow {
+  week_of: string;
+  size: number;
+  cells: (number | null)[];
+}
+
+export interface AdminMetrics {
+  range: { start: number; end: number; now: number; start_day: string; end_day: string };
+  today: {
+    current: MetricTiles & { paying_now: number };
+    previous: MetricTiles;
+    last_hour: { signups: number; checkouts: number; purchases: number };
+  };
+  funnel: {
+    steps: FunnelStep[];
+    paywall: { feature: string; views: number }[];
+    checkout: { started: number; finished: number; abandoned: number; finish_rate: number | null };
+  };
+  channels: { rows: ChannelRow[]; spend: SpendRow[] };
+  revenue: {
+    by_day: { day: string; by_sku: Record<string, number>; total_cents: number }[];
+    gross_cents: number;
+    refunds_cents: number;
+    net_cents: number;
+    net_after_fees_cents: number;
+    payments: number;
+    subscriptions: { started: number; renewals: number; cancelled: number; upgraded: number };
+  };
+  retention: { all: CohortRow[]; paying: CohortRow[] };
+  loop: {
+    created: number;
+    opens: number;
+    opens_per_card: number | null;
+    signups: number;
+    buyers: number;
+    top: { id: string; views: number; created: number }[];
+  };
+  thresholds: {
+    target_cac_cents: number;
+    kill_spend_cents: number;
+    funnel: Record<FunnelKey, { healthy: number; leak: number }>;
+  };
+}
+
+export interface AdminEvent {
+  created: number;
+  name: string;
+  anon_id: string;
+  email: string;
+  sku: string;
+  amount_cents: number | null;
+  props: Record<string, string | number | boolean | null>;
 }

@@ -15,7 +15,7 @@ import json
 import os
 import time
 from typing import Any
-from edge.api.store import _live_skus, _pass_until
+from edge.api.store import _attr, _event, _listed_user, _live_skus, _pass_until, _spend
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS purchases (
@@ -66,6 +66,17 @@ CREATE TABLE IF NOT EXISTS feedback (
 CREATE TABLE IF NOT EXISTS email_prefs (
   email TEXT PRIMARY KEY, opt_in INTEGER NOT NULL DEFAULT 0,
   created DOUBLE PRECISION, updated DOUBLE PRECISION);
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS attr TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS sms_opt_in DOUBLE PRECISION;
+CREATE TABLE IF NOT EXISTS events (
+  id BIGSERIAL PRIMARY KEY, created DOUBLE PRECISION NOT NULL, name TEXT NOT NULL,
+  anon_id TEXT NOT NULL DEFAULT '', email TEXT NOT NULL DEFAULT '', sku TEXT NOT NULL DEFAULT '',
+  amount_cents INTEGER, props TEXT NOT NULL DEFAULT '{}', ref TEXT, UNIQUE (name, ref));
+CREATE INDEX IF NOT EXISTS events_created ON events (created);
+CREATE TABLE IF NOT EXISTS ad_spend (
+  id TEXT PRIMARY KEY, day TEXT NOT NULL, channel TEXT NOT NULL, campaign TEXT NOT NULL DEFAULT '',
+  cents INTEGER NOT NULL, clicks INTEGER, note TEXT NOT NULL DEFAULT '', created DOUBLE PRECISION);
 """
 
 
@@ -73,7 +84,8 @@ def _user(row) -> dict | None:
     if not row:
         return None
     return {"email": row[0], "password_hash": row[1], "name": row[2] or "", "role": row[3],
-            "created": row[4], "last_login": row[5], "phone": row[6]}
+            "created": row[4], "last_login": row[5], "phone": row[6],
+            "attr": _attr(row[7]), "sms_opt_in": row[8]}
 
 
 class PostgresStore:
@@ -205,7 +217,7 @@ class PostgresStore:
             (email.lower(), password_hash, name or "", "user", time.time(), phone or None))
         return cur.rowcount == 1
 
-    _USER_COLS = "email, password_hash, name, role, created, last_login, phone"
+    _USER_COLS = "email, password_hash, name, role, created, last_login, phone, attr, sms_opt_in"
 
     def get_user(self, email: str) -> dict | None:
         cur = self._exec(f"SELECT {self._USER_COLS} FROM users WHERE email=%s", (email.lower(),))
@@ -244,10 +256,9 @@ class PostgresStore:
         return True
 
     def users(self, limit: int = 500) -> list[dict]:
-        cur = self._exec("SELECT email, name, role, created, last_login, phone FROM users ORDER BY created, email LIMIT %s",
-                         (limit,))
-        return [{"email": r[0], "name": r[1] or "", "role": r[2], "created": r[3], "last_login": r[4], "phone": r[5]}
-                for r in cur.fetchall()]
+        cur = self._exec("SELECT email, name, role, created, last_login, phone, attr, sms_opt_in FROM users "
+                         "ORDER BY created, email LIMIT %s", (limit,))
+        return [_listed_user(r) for r in cur.fetchall()]
 
     def set_password(self, email: str, password_hash: str) -> bool:
         cur = self._exec("UPDATE users SET password_hash=%s WHERE email=%s", (password_hash, email.lower()))
@@ -392,12 +403,73 @@ class PostgresStore:
         cur = self._exec("SELECT verdict, COUNT(*) FROM feedback GROUP BY verdict")
         return {r[0]: r[1] for r in cur.fetchall()}
 
+    # ---- telemetry: mirrors Store (docs/SPEC-ADMIN-METRICS.md) ---------------------
+
+    def log_event(self, name: str, anon_id: str = "", email: str = "", sku: str = "",
+                  amount_cents: int | None = None, props: dict | None = None, ref: str | None = None,
+                  at: float | None = None) -> bool:
+        cur = self._exec(
+            "INSERT INTO events (created, name, anon_id, email, sku, amount_cents, props, ref) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+            (at or time.time(), name, anon_id or "", (email or "").lower(), sku or "", amount_cents,
+             json.dumps(props or {}), ref or None))
+        return cur.rowcount == 1
+
+    def events(self, since: float = 0, until: float | None = None, names: tuple[str, ...] | None = None,
+               email: str | None = None, limit: int = 200_000) -> list[dict]:
+        sql = "SELECT created, name, anon_id, email, sku, amount_cents, props FROM events WHERE created >= %s"
+        args: list = [since]
+        if until is not None:
+            sql += " AND created < %s"
+            args.append(until)
+        if names:
+            sql += " AND name = ANY(%s)"
+            args.append(list(names))
+        if email is not None:
+            sql += " AND email = %s"
+            args.append(email.lower())
+        sql += " ORDER BY created, id LIMIT %s"
+        args.append(limit)
+        return [_event(r) for r in self._exec(sql, tuple(args)).fetchall()]
+
+    def activity(self, since: float = 0) -> list[tuple[str, float]]:
+        cur = self._exec("SELECT email, created FROM runs WHERE email != '' AND created >= %s ORDER BY created",
+                         (since,))
+        return [(r[0], r[1]) for r in cur.fetchall()]
+
+    def set_attr(self, email: str, attr: dict) -> bool:
+        cur = self._exec("UPDATE users SET attr=%s WHERE email=%s AND (attr IS NULL OR attr='' OR attr='{}')",
+                         (json.dumps(attr), email.lower()))
+        return cur.rowcount == 1
+
+    def set_sms_opt_in(self, email: str, on: bool, at: float | None = None) -> bool:
+        cur = self._exec("UPDATE users SET sms_opt_in=%s WHERE email=%s",
+                         ((at or time.time()) if on else None, email.lower()))
+        return cur.rowcount == 1
+
+    def add_spend(self, day: str, channel: str, cents: int, campaign: str = "", clicks: int | None = None,
+                  note: str = "") -> str:
+        import uuid
+        sid = uuid.uuid4().hex[:12]
+        self._exec("INSERT INTO ad_spend (id, day, channel, campaign, cents, clicks, note, created) "
+                   "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", (sid, day, channel, campaign, int(cents), clicks, note, time.time()))
+        return sid
+
+    def spend(self, since_day: str = "", until_day: str = "9999-12-31") -> list[dict]:
+        cur = self._exec("SELECT id, day, channel, campaign, cents, clicks, note FROM ad_spend "
+                         "WHERE day >= %s AND day <= %s ORDER BY day, created", (since_day, until_day))
+        return [_spend(r) for r in cur.fetchall()]
+
+    def delete_spend(self, spend_id: str) -> bool:
+        return self._exec("DELETE FROM ad_spend WHERE id=%s", (spend_id,)).rowcount == 1
+
     # ---- data subject requests -----------------------------------------------------
     # Mirrors Store.export_user / Store.delete_user. The privacy policy promises export
     # and deletion, and the promise has to hold on the backend that actually holds a
     # paying customer's rows — which is this one.
 
-    USER_TABLES = ("users", "purchases", "leagues", "runs", "feedback", "email_prefs", "sessions", "resets")
+    USER_TABLES = ("users", "purchases", "leagues", "runs", "feedback", "email_prefs", "sessions", "resets",
+                   "events")
     HIDDEN_COLUMNS = ("password_hash", "token_hash")
 
     def export_user(self, email: str) -> dict:

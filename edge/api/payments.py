@@ -38,9 +38,11 @@ def checkout_name(sku: str, season: int) -> str:
 
 
 def create_checkout(email: str, sku: str, season: int, success_url: str | None, cancel_url: str | None,
-                    price_cents: int | None = None) -> str:
+                    price_cents: int | None = None, attribution: dict | None = None) -> str:
     """A Checkout session for one sku. `price_cents` overrides the catalog price; the API sets
-    it (never the client) for the week-pass holder's season upgrade."""
+    it (never the client) for the week-pass holder's season upgrade. `attribution` is the
+    account's first touch (edge/api/telemetry.py), copied into the metadata so Stripe's own
+    dashboard can split revenue by channel too."""
     import stripe
 
     stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
@@ -56,6 +58,9 @@ def create_checkout(email: str, sku: str, season: int, success_url: str | None, 
     # grant still finds the account through the metadata key.
     contact = {} if is_placeholder(email) else {"customer_email": email}
     metadata = {"email": email, "sku": sku, "season": str(season)}
+    for k in ("utm_source", "utm_campaign", "utm_content"):
+        if (attribution or {}).get(k):
+            metadata[k] = str(attribution[k])[:120]
     amount = p["price_cents"] if price_cents is None else price_cents
     if sku == products.SEASON_SKU and amount < p["price_cents"]:
         # The season bought from a live week: the webhook ends the weekly billing when it lands.
@@ -124,7 +129,13 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
       {"action": "grant",   email, sku, season, ref, payment_ref}
       {"action": "revoke",  payment_ref, reason}
       {"action": "restore", payment_ref, reason}
+      {"action": "abandon", email, sku, ref}          — a Checkout session expired unpaid
+      {"action": "cancel",  email, sku, ref}          — a week-pass subscription ended or will
       None — an event we do not act on.
+
+    A grant also carries `amount_cents` and `upgrade` (the season bought from a live week),
+    and a revoke `amount_cents`, for the telemetry log. Abandon and cancel change no access:
+    they are logged and nothing else.
 
     A purchase that is refunded or charged back has to lose access, or a paid pass is
     refundable into a free season. Refunds arrive as a *charge*, which carries no
@@ -159,7 +170,26 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
             return None
         return {"action": "grant", "email": email.lower(), "sku": md["sku"],
                 "season": int(md.get("season", 0)), "ref": obj.get("id", ""),
-                "payment_ref": _payment_ref(obj)}
+                "payment_ref": _payment_ref(obj), "amount_cents": obj.get("amount_total"),
+                "upgrade": md.get("upgrade_from") == products.WEEK_SKU}
+
+    if kind == "checkout.session.expired":
+        md = obj.get("metadata") or {}
+        if not (md.get("email") and md.get("sku")):
+            return None
+        return {"action": "abandon", "email": md["email"].lower(), "sku": md["sku"], "ref": obj.get("id", "")}
+
+    if kind in ("customer.subscription.deleted", "customer.subscription.updated"):
+        md = obj.get("metadata") or {}
+        if not (md.get("email") and md.get("sku")):
+            return None
+        if kind == "customer.subscription.updated":
+            # Only the moment someone asks to stop at the period's end counts. The deletion
+            # that follows carries the same subscription id, so the log keeps one cancel.
+            before = (event["data"].get("previous_attributes") or {})
+            if not (obj.get("cancel_at_period_end") and before.get("cancel_at_period_end") is False):
+                return None
+        return {"action": "cancel", "email": md["email"].lower(), "sku": md["sku"], "ref": obj.get("id", "")}
 
     if kind == "invoice.paid":
         # One paid week of a subscription. The invoice id is the ref, so a retried delivery
@@ -170,7 +200,8 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
             return None  # not one of ours: no metadata, nothing to grant
         return {"action": "grant", "email": email.lower(), "sku": md["sku"],
                 "season": int(md.get("season", 0)), "ref": obj["id"],
-                "payment_ref": _invoice_payment_ref(obj) or _fetch_invoice_payment_ref(obj["id"])}
+                "payment_ref": _invoice_payment_ref(obj) or _fetch_invoice_payment_ref(obj["id"]),
+                "amount_cents": obj.get("amount_paid"), "upgrade": False}
 
     if kind == "charge.refunded":
         # Partial refunds happen (a goodwill gesture, a price adjustment) and should not
@@ -178,7 +209,8 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
         amount, refunded = obj.get("amount") or 0, obj.get("amount_refunded") or 0
         if amount and refunded < amount:
             return None
-        return {"action": "revoke", "payment_ref": _payment_ref(obj), "reason": "refunded"}
+        return {"action": "revoke", "payment_ref": _payment_ref(obj), "reason": "refunded",
+                "amount_cents": refunded or amount, "ref": obj.get("id", "")}
 
     if kind == "charge.dispute.created":
         return {"action": "revoke", "payment_ref": _payment_ref(obj), "reason": "disputed"}

@@ -54,6 +54,8 @@ const LOGIN = "/login";
 /** The two buttons the follow-along bar watches. */
 const HERO_CTA_ID = "hero-cta";
 const CLOSE_CTA_ID = "close-cta";
+/** How many lines of a "who it is for" list a phone shows; the rest wait for a wide screen. */
+const PHONE_LINES = 2;
 
 function initials(name: string): string {
   const parts = name.replace(/[^A-Za-z' .-]/g, "").split(/\s+/).filter(Boolean);
@@ -83,9 +85,9 @@ function Face({ name, photo, team }: { name: string; photo: string; team: string
 }
 
 /** The confidence stamp, inked white for the one dark surface on the page. */
-function HeroStamp({ filled, label }: { filled: number; label: string }) {
+function HeroStamp({ filled, label, className = "" }: { filled: number; label: string; className?: string }) {
   return (
-    <span className="stamp text-[10px] text-white">
+    <span className={`stamp text-[10px] text-white ${className}`}>
       <span className="flex items-center gap-[2px]" aria-hidden>
         {[0, 1, 2].map((i) => (
           <span key={i} className={`h-[9px] w-[3px] bg-white ${i < filled ? "" : "opacity-30"}`} />
@@ -144,15 +146,24 @@ export default function Landing() {
         {/* ---------------------------------------------------------------- hero ---
             You are walking into your own front office. The headline says so, the line
             under it says who sits here, the staff sentence says who works for you. The
-            call sheet beside it is the desk you sit down at; it shows on a wide screen
-            only, because on a phone the desk section is one scroll below. */}
-        <section className="grid items-center gap-10 pt-8 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pt-16 rise">
+            call sheet is the desk you sit down at, and it prints while you read: the
+            rows come off one at a time, each stamp slams once its row has landed, and a
+            sheen crosses the sheet every few seconds (`.sheet-row`, `.callsheet-live`).
+
+            On a phone the page is the headline, one line, the door and the sheet, in
+            that order; the staff sentence and the three proof lines are for a wide
+            screen, where they sit beside the sheet instead of pushing it below the fold
+            (Andrew, 2026-09-28: way fewer words on mobile). */}
+        <section className="grid items-center gap-8 pt-6 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pt-16">
           <div>
-            <Eyebrow>{LANDING.eyebrow}</Eyebrow>
-            <h1 className="display mt-3 text-[43px] leading-[0.98] sm:text-[56px] lg:text-[64px]">{LANDING.headline}</h1>
-            <p className="display mt-5 max-w-[34rem] text-[19px] leading-snug text-ink sm:text-[21px]">{LANDING.avatar}</p>
-            <p className="mt-3 max-w-[32rem] text-[16px] leading-relaxed text-ink-2">{LANDING.staff}</p>
-            <div className="mt-7 grid max-w-[26rem] gap-3">
+            <Eyebrow className="rise rise-1">
+              <span className="sm:hidden">{LANDING.eyebrowShort}</span>
+              <span className="hidden sm:inline">{LANDING.eyebrow}</span>
+            </Eyebrow>
+            <h1 className="display mt-3 text-[43px] leading-[0.98] rise rise-2 sm:text-[56px] lg:text-[64px]">{LANDING.headline}</h1>
+            <p className="display mt-4 max-w-[34rem] text-[18px] leading-snug text-ink rise rise-3 sm:mt-5 sm:text-[21px]">{LANDING.avatar}</p>
+            <p className="mt-3 hidden max-w-[32rem] text-[16px] leading-relaxed text-ink-2 rise rise-3 sm:block">{LANDING.staff}</p>
+            <div className="mt-6 grid max-w-[26rem] gap-3 rise rise-4 sm:mt-7">
               <div id={HERO_CTA_ID}>
                 <LinkButton href={WAY_IN} variant="start" className="w-full">
                   {LANDING.cta}
@@ -166,9 +177,9 @@ export default function Landing() {
               </p>
             </div>
 
-            <ul className="mt-8 grid gap-2.5" aria-label="Why owners trust it">
+            <ul className="mt-8 hidden gap-2.5 sm:grid" aria-label="Why owners trust it">
               {LANDING.proof.map((p, i) => (
-                <li key={p.head} className={`flex items-start gap-3 rise rise-${i + 1}`}>
+                <li key={p.head} className={`flex items-start gap-3 rise rise-${i + 3}`}>
                   <IconCheck size={16} strokeWidth={3} className="mt-[3px] shrink-0 text-start" />
                   <p className="text-[14px] leading-snug text-ink-2">
                     <span className="font-black text-ink">{p.head}</span> {p.body}
@@ -178,46 +189,50 @@ export default function Landing() {
             </ul>
           </div>
 
-          <div className="hero callsheet hidden lg:block" aria-label="Example call sheet">
-            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
+          <div className="hero callsheet sweep callsheet-live rise rise-4" aria-label="Example call sheet">
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
               <OnAir className="text-white/70" />
               <Countdown onHero />
             </div>
-            <div className="px-5 pt-5">
+            <div className="px-4 pt-4 sm:px-5 sm:pt-5">
               <div className="eyebrow">{DESK.week}</div>
-              <div className="display tnum mt-1 text-[27px] leading-tight">{LANDING.exampleHead}</div>
+              <div className="display tnum mt-1 text-[24px] leading-tight sm:text-[27px]">{LANDING.exampleHead}</div>
             </div>
-            <ul className="mt-5">
+            <ul className="mt-4 sm:mt-5">
               {SHEET.map((d, i) => (
-                <li key={d.title} className="flex items-start gap-3 border-t border-white/10 px-5 py-4">
-                  <span className="slug w-[18px] shrink-0 pt-[3px] text-[13px] text-white/35">{String(i + 1).padStart(2, "0")}</span>
+                <li
+                  key={d.title}
+                  className="print sheet-row flex items-start gap-3 border-t border-white/10 px-4 py-3.5 sm:px-5 sm:py-4"
+                  style={{ "--i": i } as React.CSSProperties}
+                >
+                  <span className="slug hidden w-[18px] shrink-0 pt-[3px] text-[13px] text-white/35 sm:inline">{String(i + 1).padStart(2, "0")}</span>
                   <Face name={d.face.name} photo={d.face.photo} team={d.face.team} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-md bg-white/12 px-2 py-[3px] text-[10px] font-black uppercase tracking-[0.1em] text-white/85">
                         {d.tag}
                       </span>
-                      <HeroStamp filled={d.bars} label={d.stamp} />
+                      <HeroStamp filled={d.bars} label={d.stamp} className="slam sheet-stamp" />
                     </div>
                     <p className="display mt-1.5 text-[15px] leading-[1.25]">{d.title}</p>
-                    <p className="mt-1 text-[13px] leading-snug text-white/60">
+                    <p className="tick sheet-gain mt-1 text-[13px] leading-snug text-white/60">
                       <span className="tnum font-black text-white">{d.gain}</span> {d.unit}
                     </p>
                   </div>
                 </li>
               ))}
             </ul>
-            <p className="border-t border-white/10 px-5 py-3.5 text-center text-[13px] text-white/55">{DESK.foot}</p>
+            <p className="hidden border-t border-white/10 px-5 py-3.5 text-center text-[13px] text-white/55 sm:block">{DESK.foot}</p>
           </div>
         </section>
 
         {/* ------------------------------------------------------------------ desk ---
             The four questions every owner asks in a week, each answered by the member of
             staff who owns it, the way the app answers it. */}
-        <section className="mt-16 lg:mt-24" aria-labelledby="desk-title">
+        <section className="mt-12 sm:mt-16 lg:mt-24" aria-labelledby="desk-title">
           <Reveal>
             <Eyebrow>{DESK.eyebrow}</Eyebrow>
-            <h2 id="desk-title" className="display mt-2 max-w-[40rem] text-[30px] leading-[1.05] sm:text-[38px]">
+            <h2 id="desk-title" className="display mt-2 max-w-[40rem] text-[28px] leading-[1.05] sm:text-[38px]">
               {DESK.title}
             </h2>
           </Reveal>
@@ -303,24 +318,25 @@ export default function Landing() {
 
         {/* ------------------------------------------------------------------- fit ---
             Who it is for, and who it is not. Sending the wrong reader away is what makes
-            the right one believe the rest of the page. */}
-        <section className="mt-16 grid gap-3 md:grid-cols-2 lg:mt-24 lg:gap-4" aria-label="Who it is for">
-          <Reveal className="flex"><div className="card w-full p-6">
+            the right one believe the rest of the page. A phone gets the first two lines
+            of each list; the lists are written strongest first, so that is the cut. */}
+        <section className="mt-12 grid gap-3 sm:mt-16 md:grid-cols-2 lg:mt-24 lg:gap-4" aria-label="Who it is for">
+          <Reveal className="flex"><div className="card w-full p-5 sm:p-6">
             <Eyebrow>{LANDING.fit.head}</Eyebrow>
-            <ul className="mt-4 grid gap-3">
-              {LANDING.fit.yes.map((l) => (
-                <li key={l} className="flex items-start gap-2.5 text-[15px] leading-snug text-ink">
+            <ul className="mt-3 grid gap-2.5 sm:mt-4 sm:gap-3">
+              {LANDING.fit.yes.map((l, i) => (
+                <li key={l} className={`${i < PHONE_LINES ? "flex" : "hidden sm:flex"} items-start gap-2.5 text-[15px] leading-snug text-ink`}>
                   <IconCheck size={16} strokeWidth={3} className="mt-[3px] shrink-0 text-start" />
                   {l}
                 </li>
               ))}
             </ul>
           </div></Reveal>
-          <Reveal className="flex" delay={120}><div className="card w-full p-6">
+          <Reveal className="flex" delay={120}><div className="card w-full p-5 sm:p-6">
             <Eyebrow>{LANDING.fit.noHead}</Eyebrow>
-            <ul className="mt-4 grid gap-3">
-              {LANDING.fit.no.map((l) => (
-                <li key={l} className="flex items-start gap-2.5 text-[15px] leading-snug text-muted">
+            <ul className="mt-3 grid gap-2.5 sm:mt-4 sm:gap-3">
+              {LANDING.fit.no.map((l, i) => (
+                <li key={l} className={`${i < PHONE_LINES ? "flex" : "hidden sm:flex"} items-start gap-2.5 text-[15px] leading-snug text-muted`}>
                   <IconX size={16} strokeWidth={3} className="mt-[3px] shrink-0 text-sit" />
                   {l}
                 </li>
@@ -330,24 +346,28 @@ export default function Landing() {
         </section>
 
         {/* ----------------------------------------------------------------- staff ---
-            The rooms, coolest first, each one a member of the front office. */}
-        <section className="mt-16 lg:mt-24">
+            The rooms, coolest first, each one a member of the front office. On a phone
+            each is one row, the icon and the name; the sentence under it waits for md. */}
+        <section className="mt-12 sm:mt-16 lg:mt-24">
           <Reveal>
             <Eyebrow>{LANDING.roomsHead}</Eyebrow>
-            <h2 className="display mt-2 text-[30px] leading-[1.05] sm:text-[38px]">{LANDING.roomsLead}</h2>
+            <h2 className="display mt-2 text-[28px] leading-[1.05] sm:text-[38px]">{LANDING.roomsLead}</h2>
           </Reveal>
-          <div className="mt-6 grid gap-3 md:grid-cols-3 lg:gap-4">
+          <div className="mt-5 grid gap-3 sm:mt-6 md:grid-cols-3 lg:gap-4">
             {LANDING.features.map((f, i) => {
               const art = FEATURE_ART[f.key];
               return (
                 <Reveal key={f.key} className="flex" delay={i * 120}>
-                <Link href={WAY_IN} className="card flex w-full flex-col p-6 hover:bg-soft">
-                  <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${art.tone}`}>
+                <Link href={WAY_IN} className="card flex w-full items-center gap-4 p-4 hover:bg-soft md:flex-col md:items-start md:p-6">
+                  <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${art.tone}`}>
                     <art.Icon size={23} strokeWidth={2} />
                   </span>
-                  <span className="eyebrow mt-5">{f.room}</span>
-                  <span className="display mt-1 text-[21px] leading-tight">{f.title}</span>
-                  <p className="mt-2 text-[14px] leading-relaxed text-muted">{f.body}</p>
+                  <span className="min-w-0 flex-1">
+                    <span className="eyebrow block md:mt-5">{f.room}</span>
+                    <span className="display mt-0.5 block text-[18px] leading-tight md:mt-1 md:text-[21px]">{f.title}</span>
+                    <span className="mt-2 hidden text-[14px] leading-relaxed text-muted md:block">{f.body}</span>
+                  </span>
+                  <IconChevron size={16} strokeWidth={2.6} className="shrink-0 text-muted md:hidden" />
                 </Link>
                 </Reveal>
               );
@@ -356,14 +376,14 @@ export default function Landing() {
 
           {/* The film room, on its own: the depth behind every call. */}
           <Reveal>
-          <Link href={WAY_IN} className="hero mt-3 grid gap-6 p-6 hover:opacity-95 md:grid-cols-[1.3fr_1fr] md:items-center lg:mt-4 lg:p-8">
+          <Link href={WAY_IN} className="hero mt-3 grid gap-5 p-5 hover:opacity-95 sm:gap-6 sm:p-6 md:grid-cols-[1.3fr_1fr] md:items-center lg:mt-4 lg:p-8">
             <div>
               <div className="flex items-center gap-2.5">
                 <IconFilm size={20} strokeWidth={2} className="text-white/70" />
                 <span className="eyebrow">{LANDING.film.room}</span>
               </div>
               <h3 className="display mt-2 text-[28px] leading-tight sm:text-[32px]">{LANDING.film.title}</h3>
-              <p className="mt-3 text-[15px] leading-relaxed text-white/70">{LANDING.film.body}</p>
+              <p className="mt-3 hidden text-[15px] leading-relaxed text-white/70 sm:block">{LANDING.film.body}</p>
             </div>
             <ul className="grid gap-2.5">
               {LANDING.film.points.map((p) => (
@@ -379,26 +399,31 @@ export default function Landing() {
 
         {/* ----------------------------------------------------------------- steps ---
             Quick is the point: three boxes on a rail, each with the time it takes. */}
-        <section className="mt-16 lg:mt-24">
+        <section className="mt-12 sm:mt-16 lg:mt-24">
           <Reveal>
             <Eyebrow>{LANDING.steps.head}</Eyebrow>
-            <h2 className="display mt-2 text-[30px] leading-[1.05] sm:text-[38px]">{LANDING.steps.title}</h2>
+            <h2 className="display mt-2 text-[28px] leading-[1.05] sm:text-[38px]">{LANDING.steps.title}</h2>
           </Reveal>
-          <ol className="relative mt-6 grid gap-3 md:grid-cols-3 lg:gap-4">
+          {/* On a phone each step is one row: the number, the step, how long. The sentence
+              under it is for md and up, where the three sit side by side. */}
+          <ol className="relative mt-5 grid gap-3 sm:mt-6 md:grid-cols-3 lg:gap-4">
             {LANDING.steps.items.map((s, i) => (
               <li key={s.title} className="relative flex">
                 <Reveal className="flex w-full" delay={i * 140}>
-                <div className="card flex w-full flex-col p-6">
+                <div className="card flex w-full items-center gap-4 p-4 md:flex-col md:items-stretch md:p-6">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="display flex h-11 w-11 items-center justify-center rounded-full bg-start-fill text-[18px] text-white">
+                  <span className="display flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-start-fill text-[18px] text-white">
                     {i + 1}
                   </span>
-                  <span className="rounded-full bg-start-soft px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-start">
+                  <span className="hidden rounded-full bg-start-soft px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-start md:inline">
                     {s.when}
                   </span>
                 </div>
-                <div className="display mt-5 text-[20px] leading-tight">{s.title}</div>
-                <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{s.body}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="display text-[18px] leading-tight md:mt-5 md:text-[20px]">{s.title}</div>
+                  <p className="mt-0.5 text-[12px] font-black uppercase tracking-[0.12em] text-start md:hidden">{s.when}</p>
+                  <p className="mt-1.5 hidden text-[14px] leading-relaxed text-muted md:block">{s.body}</p>
+                </div>
                 </div>
                 </Reveal>
                 {i < LANDING.steps.items.length - 1 && (
@@ -417,7 +442,7 @@ export default function Landing() {
         {/* ------------------------------------------------------------------- faq ---
             Native disclosure elements, so it works with no script and every answer is on
             the page for a crawler. */}
-        <section className="mx-auto mt-16 max-w-3xl lg:mt-24" aria-label={LANDING.faq.head}>
+        <section className="mx-auto mt-12 max-w-3xl sm:mt-16 lg:mt-24" aria-label={LANDING.faq.head}>
           <Reveal>
           <Eyebrow>{LANDING.faq.head}</Eyebrow>
           <div className="mt-3 grid gap-2">
@@ -435,13 +460,13 @@ export default function Landing() {
         </section>
 
         {/* ----------------------------------------------------------------- close --- */}
-        <section className="hero mx-auto mt-16 max-w-3xl p-6 text-center sm:p-10 lg:mt-24 rise" aria-label={LANDING.close.eyebrow}>
+        <section className="hero mx-auto mt-12 max-w-3xl p-6 text-center sm:mt-16 sm:p-10 lg:mt-24 rise" aria-label={LANDING.close.eyebrow}>
           <div className="flex items-center justify-center gap-3">
             <Eyebrow>{LANDING.close.eyebrow}</Eyebrow>
             <Countdown onHero />
           </div>
           <h2 className="display mx-auto mt-3 max-w-[22rem] text-[32px] leading-[1.02] sm:text-[40px]">{LANDING.close.title}</h2>
-          <p className="mx-auto mt-3 max-w-[26rem] text-[15px] leading-relaxed text-white/70">{LANDING.close.body}</p>
+          <p className="mx-auto mt-3 hidden max-w-[26rem] text-[15px] leading-relaxed text-white/70 sm:block">{LANDING.close.body}</p>
           <div id={CLOSE_CTA_ID} className="mx-auto mt-6 max-w-[26rem]">
             <LinkButton href={WAY_IN} variant="start" className="w-full">
               {LANDING.close.cta}

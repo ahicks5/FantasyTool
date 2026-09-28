@@ -32,7 +32,7 @@ def store(request, tmp_path):
     s = PostgresStore(TEST_DSN)
     # Each test starts from nothing, so ordering assertions mean something.
     with s.db.cursor() as cur:
-        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback, email_prefs, users, sessions, resets, phone_tickets")
+        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback, email_prefs, users, sessions, resets, phone_tickets, events, ad_spend")
     yield s
     s.close()
 
@@ -466,3 +466,63 @@ def test_postgres_reopens_a_dropped_connection(store):
     with store._connect() as other:
         other.execute("SELECT pg_terminate_backend(%s)", (store.db.info.backend_pid,))
     assert store.get_user("a@b.c")["email"] == "a@b.c"
+
+
+# ---- telemetry (docs/SPEC-ADMIN-METRICS.md) ----------------------------------------------
+
+def test_an_event_round_trips_and_a_ref_makes_it_once_only(store):
+    assert store.log_event("signup", anon_id="a1", email="Ann@X.com", props={"utm_source": "reddit"}, at=100)
+    assert store.log_event("purchase", email="ann@x.com", sku="week_pass", amount_cents=499, ref="in_1", at=200)
+    assert not store.log_event("purchase", email="ann@x.com", sku="week_pass", amount_cents=499, ref="in_1", at=201), \
+        "a retried webhook is the same row"
+    assert store.log_event("renewal", email="ann@x.com", sku="week_pass", ref="in_1", at=202), "a ref is per name"
+    assert store.log_event("landing_view", anon_id="a2", at=300)
+    assert store.log_event("landing_view", anon_id="a2", at=301), "no ref never collides"
+    evs = store.events()
+    assert [e["name"] for e in evs] == ["signup", "purchase", "renewal", "landing_view", "landing_view"]
+    assert evs[0] == {"created": 100, "name": "signup", "anon_id": "a1", "email": "ann@x.com", "sku": "",
+                           "amount_cents": None, "props": {"utm_source": "reddit"}}
+    assert [e["created"] for e in store.events(since=200, until=300)] == [200, 202]
+    assert [e["name"] for e in store.events(names=("landing_view",))] == ["landing_view"] * 2
+    assert [e["name"] for e in store.events(email="ANN@x.com")] == ["signup", "purchase", "renewal"]
+
+
+def test_first_touch_is_kept_and_the_sms_box_is_a_timestamp(store):
+    store.create_user("ann@x.com", "h")
+    assert store.set_attr("ann@x.com", {"utm_source": "reddit"})
+    assert not store.set_attr("ann@x.com", {"utm_source": "google"}), "first touch wins"
+    assert store.set_sms_opt_in("ann@x.com", True, at=123)
+    (u,) = store.users()
+    assert u["attr"] == {"utm_source": "reddit"} and u["sms_opt_in"] == 123
+    assert store.get_user("ann@x.com")["attr"] == {"utm_source": "reddit"}
+    assert store.get_user("ann@x.com")["sms_opt_in"] == 123
+    store.set_sms_opt_in("ann@x.com", False)
+    assert store.users()[0]["sms_opt_in"] is None
+
+
+def test_spend_rows_filter_by_day_and_can_be_taken_back(store):
+    a = store.add_spend("2026-10-01", "reddit", 5000, campaign="hookA", clicks=90)
+    store.add_spend("2026-10-04", "google", 2500)
+    assert [r["channel"] for r in store.spend("2026-10-01", "2026-10-02")] == ["reddit"]
+    assert store.spend()[0] == {"id": a, "day": "2026-10-01", "channel": "reddit", "campaign": "hookA",
+                                "cents": 5000, "clicks": 90, "note": ""}
+    assert store.delete_spend(a) and not store.delete_spend(a)
+    assert [r["channel"] for r in store.spend()] == ["google"]
+
+
+def test_an_account_takes_its_events_when_it_moves_or_goes(store):
+    store.create_user("p1@phone.invalid", "h")
+    store.log_event("signup", email="p1@phone.invalid")
+    assert store.rekey("p1@phone.invalid", "ann@x.com")
+    assert [e["email"] for e in store.events()] == ["ann@x.com"]
+    assert store.export_user("ann@x.com")["data"]["events"][0]["name"] == "signup"
+    store.delete_user("ann@x.com")
+    assert store.events() == []
+
+
+def test_activity_is_signed_in_engine_calls_only(store):
+    store.log_run("Ann@x.com", "sleeper", "L1", "5", 4, "lineup", "v1", {})
+    store.log_run(None, "sleeper", "L1", "5", 4, "lineup", "v1", {})
+    (row,) = store.activity()
+    assert row[0] == "ann@x.com" and row[1] > 0
+    assert store.activity(since=row[1] + 1) == []

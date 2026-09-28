@@ -3040,3 +3040,25 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
 }
+
+/* The landing page's call sheet, printing (app/page.tsx). The rows are the app's own
+   `print`, on a slower clock than `.print-1`…: a visitor is reading the headline while it
+   prints, not waiting for a page, so the rows come off about every 0.4s starting once the
+   headline has risen. Each stamp `slam`s once its row has landed and the figure `tick`s
+   in after the stamp. `--i` is the row's index, set inline. */
+.sheet-row { --sheet-at: calc(0.6s + var(--i, 0) * 0.42s); animation-delay: var(--sheet-at); }
+.sheet-row .sheet-stamp { animation-delay: calc(var(--sheet-at) + 0.34s); }
+.sheet-row .sheet-gain { animation-delay: calc(var(--sheet-at) + 0.5s); }
+
+/* Once printed, the sheet does not sit dead: the `sweep` sheen crosses it, then rests.
+   The same move as the loading sweep with a pause written into the keyframes, because
+   an animation cannot idle between iterations any other way. Starts after the last row. */
+@keyframes sweep-idle {
+  0%   { transform: translateX(-120%); }
+  26%  { transform: translateX(320%); }
+  100% { transform: translateX(320%); }
+}
+.callsheet-live::after { animation: sweep-idle 7.5s ease-in-out 2.6s infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .callsheet-live::after { animation: none; }
+}

@@ -7,6 +7,7 @@ import { featuresForSku, paidSkuFromSearch, urlWithoutPurchaseParams, waitForFea
 import type { Product, Sku } from "@/lib/types";
 import { IconCheck, IconLock } from "./icons";
 import { productName } from "@/lib/offer";
+import { pixel } from "@/lib/track";
 import { ACCOUNT } from "@/lib/vocab";
 
 /** What a return from Stripe can say was bought. The retired passes stay so an old link still resolves. */
@@ -59,6 +60,8 @@ export function useUnlockOnReturn(onUnlocked: () => void): Phase {
       if (outcome.ok) {
         const bought = products.find((p) => p.sku === sku);
         setState({ phase: "done", sku, name: bought ? productName(bought) : "Your pass" });
+        // The ad platforms learn who buys from this; the server's own log is the record.
+        pixel("purchase", { sku, value: bought ? bought.price_cents / 100 : undefined });
         refresh.current();
       } else {
         setState({ phase: "failed", sku, reason: outcome.reason });

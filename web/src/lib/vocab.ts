@@ -956,6 +956,14 @@ export const ACCOUNT = {
     emailOptional: "Email (optional)",
     finish: "Finish",
     busyFinish: "Setting up\u2026",
+    /*
+     * The marketing-text box (Andrew signed off, 2026-09-28). Consent is to these words:
+     * change them and bump SMS_CONSENT_VERSION in edge/api/app.py. Never pre-ticked, and
+     * never a condition of signing up or buying.
+     */
+    smsOptIn: "Text me the call sheet on game days",
+    smsTerms:
+      "Up to 4 texts a week from Penthouse: your calls and offers. Msg & data rates may apply. Reply STOP to end, HELP for help. Not required to sign up or buy.",
     onFile: "Phone",
     none: "No phone on file.",
     add: "Add a phone",
@@ -1005,6 +1013,93 @@ export const ACCOUNT = {
     never: "never",
     leagues: (n: number, allowed: number) => `${n} of ${allowed} leagues`,
     you: "you",
+    source: "Came from",
+    lifetime: "Paid",
+    smsYes: "Texts: yes",
+    timeline: "Timeline",
+    timelineHide: "Hide timeline",
+    timelineEmpty: "Nothing logged yet.",
+    /** The numbers (docs/SPEC-ADMIN-METRICS.md). */
+    metrics: {
+      tabs: {
+        today: "Today",
+        funnel: "Funnel",
+        channels: "Channels",
+        revenue: "Revenue",
+        retention: "Retention",
+        loop: "The loop",
+        accounts: "Accounts",
+      },
+      ranges: { week: "This week", last: "Last week", season: "Season" },
+      rangeLabel: (from: string, to: string) => `${from} to ${to}, Eastern`,
+      reload: "Refresh",
+      tiles: {
+        revenue: "Revenue",
+        paying: "Paying now",
+        buyers: "New buyers",
+        signups: "Sign-ups",
+        linked: "Leagues linked",
+        cac: "Cost per buyer",
+      },
+      cacHint: (target: string) => `Target ${target} or less.`,
+      noSpend: "No spend entered.",
+      lastHour: "Last hour",
+      lastHourLine: (s: number, c: number, p: number) =>
+        `${s} sign-up${s === 1 ? "" : "s"} · ${c} checkout${c === 1 ? "" : "s"} · ${p} payment${p === 1 ? "" : "s"}`,
+      steps: {
+        landing_signup: "Arrived → signed up",
+        signup_linked: "Signed up → linked a league",
+        linked_paid_7d: "Linked → paid within 7 days",
+        week_retained: "Week pass → second week or season",
+      },
+      stepTarget: (healthy: string, leak: string) => `Healthy ${healthy} · leak under ${leak}`,
+      toDate: "to date",
+      status: { healthy: "Healthy", watch: "Watch", leak: "Leak", none: "No data" },
+      paywallTitle: "Where they hit the wall",
+      paywallNone: "Nobody signed in hit a paywall in this range.",
+      checkoutTitle: "Checkout",
+      checkoutLine: (started: number, finished: number, abandoned: number) =>
+        `${started} started · ${finished} paid · ${abandoned} expired unpaid`,
+      channelCols: { source: "Source", visitors: "Visits", signups: "Sign-ups", buyers: "Buyers", revenue: "Revenue", spend: "Spend", cac: "Per buyer" },
+      verdict: { scale: "Scale", watch: "Watch", kill: "Kill", organic: "Organic" },
+      rules: (target: string, kill: string) =>
+        `Scale at ${target} a buyer or less. Kill at ${kill} spent with no buyer. Decide on Tuesdays.`,
+      noChannels: "No visits or sign-ups in this range yet.",
+      campaigns: "By campaign · hook",
+      spendTitle: "Ad spend",
+      spendLead: "One row per channel per day. Use the same word as the ads' utm_source.",
+      spendDay: "Day",
+      spendChannel: "Channel",
+      spendDollars: "Dollars",
+      spendCampaign: "Campaign (optional)",
+      spendClicks: "Clicks (optional)",
+      spendAdd: "Add spend",
+      spendRemove: "Remove",
+      spendNone: "No spend entered yet.",
+      gross: "Gross",
+      refunds: "Refunds",
+      net: "Net",
+      netAfterFees: "After Stripe",
+      byDay: "By day",
+      subs: "Week-pass subscriptions",
+      subsLine: (s: { started: number; renewals: number; cancelled: number; upgraded: number }) =>
+        `${s.started} started · ${s.renewals} renewed · ${s.upgraded} upgraded · ${s.cancelled} cancelled`,
+      skuNames: { week_pass: "Week", full_report: "Season", league_slot: "Slot" } as Record<string, string>,
+      retentionLead: "Share of each week's sign-ups who used the app in each week after. Week 0 is the week they joined.",
+      retentionAll: "Everyone",
+      retentionPaying: "Paid at least once",
+      cohortCol: "Joined week of",
+      sizeCol: "Size",
+      weekCol: (k: number) => `W${k}`,
+      noCohorts: "No sign-ups yet.",
+      loopCreated: "Cards made",
+      loopOpens: "Opens",
+      loopPerCard: "Opens per card",
+      loopSignups: "Sign-ups from a card",
+      loopBuyers: "Buyers from a card",
+      topCards: "Most-opened cards (all time)",
+      noCards: "No cards shared yet.",
+    },
   },
   /** The way out of the account, back to the league. */
   back: "Back to my office",
@@ -1060,10 +1155,12 @@ export const LANDING = {
 
   /** Line one: everyone is welcome, and the platforms we read. */
   eyebrow: "All owners welcome · Sleeper · ESPN · Yahoo soon",
+  /** The same line on a phone, where the welcome does not fit beside the platforms. */
+  eyebrowShort: "Sleeper · ESPN · Yahoo soon",
   /** The headline: you are walking into your office to make the calls. */
   headline: "Step into your front office.",
   /** Status: this is where the owners who win sit. */
-  avatar: "For owners who expect to win their league, not just play in it.",
+  avatar: "For fantasy football owners who expect to win their league, not just play in it.",
   /** The staff, in one sentence. */
   staff: "Your GM works the trades, your head of scouting finds the pickups, and your head coach sets the lineup.",
   cta: "Open your Penthouse",

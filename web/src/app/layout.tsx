@@ -5,6 +5,7 @@ import "./globals.css";
 import { SITE_URL } from "@/lib/site";
 import { RIDE_BOOT } from "@/lib/elevator";
 import { AccountGateProvider } from "@/components/account/AccountGate";
+import Analytics from "@/components/Analytics";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 // Archivo carries the scoreboard weight the app is going for, and its numerals are
@@ -91,6 +92,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-full flex-col">
         {/* The sign-in and upgrade popups, reachable from every room: see components/account/AccountGate.tsx. */}
         <AccountGateProvider>{children}</AccountGateProvider>
+        {/* The arrival count, and the pixels when their env vars are set: docs/SPEC-ADMIN-METRICS.md. */}
+        <Analytics />
       </body>
     </html>
   );

@@ -2,6 +2,38 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## The front page on a phone (2026-09-28)
+
+Andrew: "way too wordy on mobile, fine on desktop", and "some movement in the hero".
+
+- [x] Under 640px the hero is the headline, one line, the door and the call sheet; the staff
+      sentence, the three proof lines, the sheet's foot, the film and close paragraphs, every
+      room's and step's sentence, and the third-plus lines of "who it's for" wait for a wide
+      screen. Desktop is unchanged. `e2e/smoke.spec.ts` renders it at 375px.
+- [x] The hero's call sheet now shows on every width and prints: rows `print` on a slower
+      clock, each stamp `slam`s once its row lands, the figure `tick`s, then a `sweep` sheen
+      crosses the sheet every few seconds (`.sheet-row`, `.callsheet-live` in `globals.css`).
+      Still under reduced motion.
+
+## Telemetry and the admin metrics view (2026-09-28)
+
+Spec: `docs/SPEC-ADMIN-METRICS.md`. Plan it serves: `launch/three-week-plan.pdf`. Andrew, 2026-09-28:
+first-party log **and** a hosted tool; pixels yes; SMS consent box yes; Resend paused.
+
+- [x] 1. `events` + `ad_spend` tables in both stores, contract-tested on SQLite and Postgres 16
+- [x] 2. Server events: signup, league_linked, paywall_view, checkout_start, purchase/renewal/upgrade (+ amount), share create/open
+- [x] 3. First-touch attribution: `booth.attr` → sign-up → `users.attr` → Stripe metadata
+- [x] 4. Webhooks: `checkout.session.expired`, `customer.subscription.deleted/updated`, refunds with amounts
+- [x] 5. `GET /api/admin/metrics` (all six views) + spend + per-account timeline
+- [x] 6. Admin tabs on `/admin`: Today, Funnel, Channels (+ spend form), Revenue, Retention, The loop, Accounts
+- [x] 7. Pixels (Meta, Reddit, Google Ads) + PostHog, each off until its env var is set; privacy page + DATA_INVENTORY updated
+- [x] 8. SMS consent box at phone sign-up and on /account (`SMS_CONSENT_VERSION`)
+- [ ] **Andrew:** add the three new Stripe webhook events (`docs/DEPLOY.md`, "Stripe"), or churn and abandonment read zero
+- [ ] **Andrew:** create the PostHog project and the three ad accounts; paste the ids into Vercel (`docs/DEPLOY.md`, "Environment variables")
+- [ ] Server-side conversions (Meta CAPI) once spend is real (spec §2.5)
+- [ ] Nothing sends marketing texts yet: the consent is collected, the sender is not built
+- Paused by Andrew: Resend (reset mail and the email list)
+
 ## ESPN private leagues from a phone: the key (2026-09-28)
 
 Andrew's brief, in his words: "i want an option that can be done on phone, easily, and with

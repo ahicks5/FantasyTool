@@ -96,6 +96,24 @@ Signed in as an admin: `role = admin` in the store or an address in `EDGE_ADMINS
 `POST /api/admin/users/{email}/revoke {"sku"}` → `{"ok":true,"revoked":n,"me":{...}}`; every live grant of that sku this season.
 `POST /api/admin/users/{email}/role {"role":"user"|"admin"}` → 400 for an unknown role or your own demotion; 404 for no such account.
 `POST /api/admin/users/{email}/reset` → `{"ok":true,"url":"https://.../reset?token=...","hours":2}`.
+`GET /api/admin/users/{email}/events` → `{"events":[{created,name,anon_id,email,sku,amount_cents,props}]}`, newest first, last 200.
+Each user in `GET /api/admin/users` also carries `attr` (first touch), `source`, `revenue_cents`, `last_active`, `sms_opt_in`.
+
+### The admin's numbers (docs/SPEC-ADMIN-METRICS.md)
+`GET /api/admin/metrics[?frm=YYYY-MM-DD&to=YYYY-MM-DD]` → `{range, today, funnel, channels, revenue, retention, loop, thresholds}`.
+Default range is the current NFL week, Tuesday to Monday, Eastern. Computed by `edge/business/metrics.py`
+from the `events` table; the shape is pinned by `tests/test_metrics.py`. 400 on a malformed date.
+`POST /api/admin/spend {"day","channel","dollars","campaign"?,"clicks"?,"note"?}` → `{"ok":true,"id"}`. The channel is
+lower-cased and must match the ads' `utm_source`.
+`DELETE /api/admin/spend/{id}` → `{"ok":true}`; 404 for no such row.
+
+### Telemetry
+`POST /api/events {"name":"landing_view","props":{utm_*,referrer,share}}` with `X-Anon-Id` → `{"ok":true}`. The only
+event a browser may write; any other name is 400, and so is a missing id. Every other event is logged by the API
+where it happens (`edge/api/telemetry.py` has the list). Every web request carries `X-Anon-Id` (`web/src/lib/track.ts`).
+`POST /api/auth/register` and `/api/auth/phone/complete` accept `"attr"` (first touch, kept once); `/phone/complete`
+also `"sms_opt_in"`.
+`PUT /api/me/sms {"sms_opt_in":true}` → `{"sms_opt_in":true}`. `/api/me` carries `account.sms_opt_in`.
 
 `GET /api/me/email` → `{"email":"...","email_opt_in":false}`
 `PUT /api/me/email {"email_opt_in":true}` → `{"email":"...","email_opt_in":true}`

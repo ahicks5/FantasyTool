@@ -68,7 +68,7 @@ const ALL_COPY: string[] = [
   ...LANDING.features.flatMap((f) => [f.room, f.title, f.body]),
   LANDING.exampleHead,
   // The rest of the landing page: every string, every templated line rendered once.
-  LANDING.eyebrow, LANDING.headline, LANDING.avatar, LANDING.staff, LANDING.cta, LANDING.login, LANDING.loginLead,
+  LANDING.eyebrow, LANDING.eyebrowShort, LANDING.headline, LANDING.avatar, LANDING.staff, LANDING.cta, LANDING.login, LANDING.loginLead,
   ...LANDING.proof.flatMap((p) => [p.head, p.body]),
   LANDING.desk.eyebrow, LANDING.desk.title, LANDING.desk.week, LANDING.desk.foot,
   ...Object.values(LANDING.desk.coach), ...Object.values(LANDING.desk.scout),
@@ -148,10 +148,17 @@ const ALL_COPY: string[] = [
   CALL.aria, CALL.incoming, CALL.connected, CALL.title, CALL.staff, CALL.answer, CALL.decline, CALL.slide, CALL.hello,
   CALL.deals(1, 1), CALL.deals(3, 3), CALL.deals(3, 11), CALL.preview, CALL.quiet, CALL.skip,
   // The account: every string, every templated line rendered once.
-  ...Object.values(ACCOUNT).flatMap((v) =>
-    typeof v === "string" ? [v] : Object.values(v).map((x) => (typeof x === "function" ? (x as (a: never, b: never) => string)("Wire Pass" as never, 3 as never) : x)),
-  ),
+  // Walked all the way down: the admin's numbers nest a level deeper than the rest.
+  ...allStrings(ACCOUNT),
 ];
+
+/** Every string in a nested copy object, each templated line rendered once with sample values. */
+function allStrings(v: unknown): string[] {
+  if (typeof v === "string") return [v];
+  if (typeof v === "function") return allStrings((v as (a: never, b: never, c: never) => unknown)("Wire Pass" as never, 3 as never, 2 as never));
+  if (v && typeof v === "object") return Object.values(v).flatMap(allStrings);
+  return [];
+}
 
 test("the must-add stamp is the one exclamation mark in the house", () => {
   // Andrew's call, 2026-09-23: a must-add is an event and the stamp shouts. Only there.

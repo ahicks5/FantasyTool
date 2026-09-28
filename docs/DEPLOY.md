@@ -135,6 +135,18 @@ Web (Vercel project settings → Environment Variables):
 |---|---|---|
 | `NEXT_PUBLIC_API_URL` | the API origin, **no `/api` suffix** | **Unset means the whole site runs on mock data from `web/src/lib/mocks.ts`.** It looks fine and is entirely fake. A trailing `/api` double-prefixes every call and 404s. |
 
+Measurement (docs/SPEC-ADMIN-METRICS.md), every one optional. Each loads nothing until it is
+set, and the privacy page already names all four:
+
+| Name | Value | Why |
+|---|---|---|
+| `NEXT_PUBLIC_POSTHOG_KEY` | `phc_…` (PostHog → Project settings) | Product analytics. No autocapture, no session recording, page views with league numbers masked. `NEXT_PUBLIC_POSTHOG_HOST` for the EU cloud (default `https://us.i.posthog.com`). |
+| `NEXT_PUBLIC_META_PIXEL_ID` | digits (Events Manager → Data sources) | Meta pixel: PageView, ViewContent, CompleteRegistration, Lead, InitiateCheckout, Purchase. |
+| `NEXT_PUBLIC_REDDIT_PIXEL_ID` | `t2_…` (Reddit Ads → Events Manager) | Reddit pixel: PageVisit, ViewContent, SignUp, Lead, AddToCart, Purchase. |
+| `NEXT_PUBLIC_GOOGLE_ADS_ID` | `AW-…` | Google Ads tag. `NEXT_PUBLIC_GOOGLE_ADS_SEND_TO` (`AW-…/label`, from the conversion action) makes Purchase a conversion. |
+
+The first-party event log and the admin's numbers need none of these: they run off the API.
+
 Sign-in needs nothing on the web side: accounts are first-party and the API holds them. The
 old `NEXT_PUBLIC_SUPABASE_*` variables are unused and can be removed from the project.
 
@@ -235,6 +247,10 @@ exactly these events:
 - `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`: revoke (or restore) by
   payment intent. Snapshot events on API 2026-08-26.dahlia may omit the invoice's payment intent;
   the API then looks it up (`InvoicePayment.list`) so a refunded renewal can still be matched.
+- **Add these three (2026-09-28, telemetry only, they change no access):**
+  `checkout.session.expired` (an abandoned checkout), `customer.subscription.deleted` and
+  `customer.subscription.updated` (a week pass cancelled, now or at the period's end). Without
+  them the admin's churn and abandonment numbers read zero.
 
 A bad signature answers 400 and grants nothing.
 

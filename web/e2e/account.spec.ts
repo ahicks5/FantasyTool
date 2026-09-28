@@ -288,12 +288,35 @@ test("the owner's front office lists every account and the levers work", async (
   await registerViaApi(page, email);
   await page.goto("/admin");
   await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.admin.title })).toBeVisible();
+  // The numbers come first: this week's tiles, off the telemetry the sign-up above just wrote.
+  const M = ACCOUNT.admin.metrics;
+  await expect(page.getByTestId("tile-revenue")).toBeVisible();
+  await expect(page.getByText(M.tiles.signups, { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: M.tabs.funnel }).click();
+  await expect(page.getByTestId("funnel-landing_signup")).toBeVisible();
+  // Spend goes in on Channels, and its row shows up with a verdict.
+  await page.getByRole("button", { name: M.tabs.channels }).click();
+  await page.getByLabel(M.spendChannel).fill("e2e");
+  await page.getByLabel(M.spendDollars).fill("20");
+  await page.getByRole("button", { name: M.spendAdd }).click();
+  await expect(page.locator("[data-testid=channel-row]", { hasText: "e2e" })).toContainText(M.verdict.kill);
+  await page.getByRole("button", { name: M.spendRemove }).first().click();
+  for (const t of ["revenue", "retention", "loop"] as const) {
+    await page.getByRole("button", { name: M.tabs[t] }).click();
+    await expect(page.getByTestId("admin-metrics")).toBeVisible();
+  }
+  // No sideways scroll at 375px, whatever the tables hold.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.getByRole("button", { name: M.tabs.accounts }).click();
   await expect(page.getByTestId("admin-count")).toHaveText(/\d+ accounts?/);
   await page.getByLabel(ACCOUNT.admin.search).fill(email);
   const row = page.locator(`[data-testid=admin-row][data-email="${email}"]`);
   await expect(row).toBeVisible();
   await expect(row.getByText(ACCOUNT.plan.free, { exact: true })).toBeVisible();
   await expect(row.getByText(ACCOUNT.admin.leagues(0, 3))).toBeVisible();
+  // The account's timeline starts at its sign-up.
+  await row.getByRole("button", { name: ACCOUNT.admin.timeline }).click();
+  await expect(row.getByTestId("admin-timeline")).toContainText("signup");
   // Grant a week: the flag flips and the button turns into its undo.
   await row.getByRole("button", { name: `${ACCOUNT.admin.grant} ${PRICING.names.week_pass}` }).click();
   await expect(row.getByRole("button", { name: `${ACCOUNT.admin.revoke} ${PRICING.names.week_pass}` })).toBeVisible();
