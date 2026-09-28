@@ -1188,7 +1188,7 @@ export const LANDING = {
   /** The headline: you are walking into your office to make the calls. */
   headline: "Step into your front office.",
   /** Status: this is where the owners who win sit. */
-  avatar: "For owners who expect to win their league, not just play in it.",
+  avatar: "For fantasy football owners who expect to win their league, not just play in it.",
   /** The staff, in one sentence. */
   staff: "Your GM works the trades, your head of scouting finds the pickups, and your head coach sets the lineup.",
   cta: "Open your Penthouse",
