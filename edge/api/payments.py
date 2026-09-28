@@ -37,7 +37,10 @@ def checkout_name(sku: str, season: int) -> str:
     return f"Penthouse — {products.BY_SKU[sku]['name']} ({season} season)"
 
 
-def create_checkout(email: str, sku: str, season: int, success_url: str | None, cancel_url: str | None) -> str:
+def create_checkout(email: str, sku: str, season: int, success_url: str | None, cancel_url: str | None,
+                    price_cents: int | None = None) -> str:
+    """A Checkout session for one sku. `price_cents` overrides the catalog price; the API sets
+    it (never the client) for the week-pass holder's season upgrade."""
     import stripe
 
     stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
@@ -53,7 +56,11 @@ def create_checkout(email: str, sku: str, season: int, success_url: str | None, 
     # grant still finds the account through the metadata key.
     contact = {} if is_placeholder(email) else {"customer_email": email}
     metadata = {"email": email, "sku": sku, "season": str(season)}
-    price_data = {"currency": "usd", "unit_amount": p["price_cents"],
+    amount = p["price_cents"] if price_cents is None else price_cents
+    if sku == products.SEASON_SKU and amount < p["price_cents"]:
+        # The season bought from a live week: the webhook ends the weekly billing when it lands.
+        metadata["upgrade_from"] = products.WEEK_SKU
+    price_data = {"currency": "usd", "unit_amount": amount,
                   "product_data": {"name": checkout_name(sku, season), "description": p["blurb"]}}
     if products.is_recurring(sku):
         # The subscription carries the metadata too: each renewal's invoice reads it from
@@ -73,6 +80,37 @@ def create_checkout(email: str, sku: str, season: int, success_url: str | None, 
         cancel_url=cancel_url or f"{base}/?canceled=1",
     )
     return session.url
+
+
+def cancel_week_subscriptions(email: str) -> int:
+    """End every live week-pass subscription on this account, once it holds the season.
+
+    Someone who takes the season should never be billed for another week. Called when a
+    season grant lands, whether or not it was the discounted upgrade: a full-price season
+    bought beside a running week would otherwise keep charging $4.99 every Monday. The week
+    already paid is not refunded; that is what the upgrade price credited. Any failure is
+    swallowed and returns what was done, because the season has been paid for either way
+    and the week can still be cancelled in the customer portal.
+    """
+    key = os.environ.get("STRIPE_SECRET_KEY")
+    if not (key and email):
+        return 0
+    try:
+        import stripe
+
+        stripe.api_key = key
+        safe = email.replace("\\", "\\\\").replace("'", "\\'")
+        found = stripe.Subscription.search(query=f"metadata['email']:'{safe}' AND status:'active'", limit=20)
+        data = found.to_dict() if hasattr(found, "to_dict") else dict(found)
+        n = 0
+        for sub in data.get("data") or []:
+            md = sub.get("metadata") or {}
+            if md.get("sku") == products.WEEK_SKU and (md.get("email") or "").lower() == email.lower():
+                stripe.Subscription.cancel(sub["id"])
+                n += 1
+        return n
+    except Exception:
+        return 0
 
 
 class BadWebhook(Exception):

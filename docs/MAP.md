@@ -112,18 +112,18 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (56 modules, 16,016 lines)
+### `edge/` — the Python engine and API (56 modules, 16,088 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
 | `edge/api/accounts.py` | Accounts: password hashing, session and reset tokens, roles. Stdlib only; the store holds the rows. | accounts, phone | 196 |
-| `edge/api/app.py` | Penthouse API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload | accounts, api +12 | 1471 |
+| `edge/api/app.py` | Penthouse API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload | accounts, api +12 | 1494 |
 | `edge/api/auth.py` | Who is calling? A Penthouse session token first, a Supabase JWT (HS256) second, X-Edge-User in dev. Stdlib only. | api | 76 |
 | `edge/api/desk.py` | The owner's desk: the front page, assembled. What landed, who is next, and the binders. | desk_api, plan | 154 |
 | `edge/api/directory.py` | Every player in the league, in one browsable board: filter, sort, page. | directory, cross_language_contracts +1 | 334 |
 | `edge/api/lenses.py` | Scouting lenses: the questions a manager asks the wire that a column sort cannot answer. | lenses | 323 |
 | `edge/api/limits.py` | Per-IP rate limiting and request validation. Stdlib only. | limits | 190 |
-| `edge/api/payments.py` | Stripe Checkout + webhook. Prices are created inline from products.py, so there's nothing to set | accounts, api +1 | 218 |
+| `edge/api/payments.py` | Stripe Checkout + webhook. Prices are created inline from products.py, so there's nothing to set | accounts, api +1 | 256 |
 | `edge/api/phone.py` | Phone sign-in: tidying a number, and sending and checking the text-message code. Stdlib only. | phone | 188 |
 | `edge/api/scout.py` | Assemble a player's scouting report: search the league, then read one player. | scout_api | 185 |
 | `edge/api/service.py` | Loads a league with everything the engine needs (ROS values, byes, bid history, tendencies), | service, api +12 | 505 |
@@ -171,7 +171,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/evaluate_moves.py` | Did the *waiver and trade* advice make anyone money? | evaluate_moves | 358 |
 | `edge/graphics.py` | Shareable trade-verdict card (1080x1080). HTML in, PNG out via headless Chromium (Playwright). | graphics, compliance +1 | 475 |
 | `edge/models.py` | Platform-agnostic models. Every connector (Sleeper, ESPN, ...) maps into these. | copy, decisions +17 | 204 |
-| `edge/products.py` | Product catalog: free tier, the week pass, the season pass (The Penthouse) and the league-slot add-on. Prices in cents. | tendencies_products, economics | 140 |
+| `edge/products.py` | Product catalog: free tier, the week pass, the season pass (The Penthouse) and the league-slot add-on. Prices in cents. | tendencies_products, api +1 | 151 |
 
 ### `web/src/app/` — routes (27 files)
 
@@ -179,7 +179,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 |---|---|---|
 | `web/src/app/account/page.tsx` | Your account: the plan flag, the leagues on file, the upgrades, the Thursday email, and your data. Signed in only. | 549 |
 | `web/src/app/admin/page.tsx` | The front office: every account, its plan and its leagues, and the owner's levers. Admin only. | 222 |
-| `web/src/app/connect/page.tsx` | Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, two cookies. | 491 |
+| `web/src/app/connect/page.tsx` | Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, two cookies. | 502 |
 | `web/src/app/error.tsx` | The boundary for anything a page throws while rendering. Without it Next shows its own | 35 |
 | `web/src/app/global-error.tsx` | Last resort: an error in the root layout itself, where the app's own chrome and | 45 |
 | `web/src/app/home/matchup/page.tsx` | The full read on this week's opponent: the scoreline, the win meter, and every | 248 |
@@ -247,7 +247,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Unlocking.tsx` | The gap between a cleared card and a written entitlement, made visible instead of confusing. | 135 |
 | `web/src/components/WaiverPlanView.tsx` | The waiver plan: the claim we are asking for, its bid, and the backup claims under it. | 210 |
 | `web/src/components/WaiversView.tsx` | The board: every free agent worth a claim, ranked. This is a long scannable | 93 |
-| `web/src/components/account/AccountGate.tsx` | The two popups every room can raise: sign in, and upgrade. One provider in the root | 299 |
+| `web/src/components/account/AccountGate.tsx` | The two popups every room can raise: sign in, and upgrade. One provider in the root | 312 |
 | `web/src/components/account/AuthForm.tsx` | The one sign-in form: sign in, create an account, or ask for a reset. The popup and the | 356 |
 | `web/src/components/account/Door.tsx` | The door: the frame, the signed-in card, and the sign-in page body that /login, /register and /reset share. | 115 |
 | `web/src/components/film/League.tsx` | The film's league half (SPEC-FILM F-5 to F-7): everyone, compared. | 305 |
@@ -300,9 +300,9 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/storage.ts` | What the browser remembers: the connected league, and the calls already ticked off. | 293 |
 | `web/src/lib/teaser.ts` | Which sentence goes in a paywall. | 21 |
 | `web/src/lib/ticker.ts` | The ticker: the desk's news as one line running along the bottom of every screen. Pure. | 124 |
-| `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 1608 |
+| `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 1610 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 1753 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 1760 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 168 |
 | `web/src/lib/wire.ts` | The top of Scouting, minus React: how hard to go after each pickup, and which ones lead. | 55 |
 

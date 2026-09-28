@@ -10,7 +10,8 @@ and launch is days out: **speed > polish**.
 
 Free for up to 3 leagues per account (more as a $2.99 add-on each). Paid is everything or nothing
 (Andrew, 2026-09-27): a **week pass $4.99/week** (a Stripe subscription, cancel anytime) or a
-**season pass $24.99** (one payment). Nothing is sold à la carte; old Wire Pass / Trade Lab
+**season pass $24.99** (one payment; **$19.99** while a paid week is live, and the season
+grant cancels the weekly subscription). Nothing is sold à la carte; old Wire Pass / Trade Lab
 holders keep what they bought. Marketing via stamped verdict graphics.
 
 ## Where things are

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import time
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
@@ -63,6 +64,21 @@ def _leagues_allowed(email: str | None) -> int:
     return products.leagues_allowed(_skus(email), _slots(email))
 
 
+def _week_live(email: str | None) -> bool:
+    until = store.pass_until(email, products.WEEK_SKU, _season()) if email else None
+    return bool(until and until > time.time())
+
+
+def _season_price(email: str | None) -> int:
+    """The season pass's price for this account: $19.99 while a paid week is live (Andrew, 2026-09-28)."""
+    return products.season_price_cents(_week_live(email), products.SEASON_SKU in _skus(email))
+
+
+def _price_for(email: str, sku: str) -> int | None:
+    """The price the server charges, when it differs from the catalog. Never read from the client."""
+    return _season_price(email) if sku == products.SEASON_SKU else None
+
+
 def _stripe_configured() -> bool:
     return bool(os.environ.get("STRIPE_SECRET_KEY"))
 
@@ -87,6 +103,9 @@ def _me(email: str | None) -> dict:
             "leagues": store.leagues(email) if email else [],
             # Slots taken this season: the leagues on file plus any forgotten this season.
             "leagues_used": len(store.leagues_used(email, _season())) if email else 0,
+            # What the season pass costs this account right now: the catalog price, or the
+            # upgrade price while a paid week is live.
+            "season_price_cents": _season_price(email),
             "email_opt_in": store.email_opt_in(email) if email else False,
             "account": _account(email) if email else None,
             # Whether the door offers "continue with your phone" (a text provider is set).
@@ -542,7 +561,8 @@ def upgrade(body: UpgradeIn, email: str = Depends(current_user)):
         raise HTTPException(400, "unknown, free or retired sku")
     if _stripe_configured():
         from edge.api import payments
-        url = payments.create_checkout(email, body.sku, _season(), body.success_url, body.cancel_url)
+        url = payments.create_checkout(email, body.sku, _season(), body.success_url, body.cancel_url,
+                                       price_cents=_price_for(email, body.sku))
         return {"url": url, "granted": False, "me": None}
     import uuid
     store.grant(email, body.sku, _season(), source="complimentary", ref=f"comp_{uuid.uuid4().hex}")
@@ -716,7 +736,8 @@ def checkout(body: CheckoutIn, email: str = Depends(current_user)):
     from edge.api import payments
     if not products.for_sale(body.sku):
         raise HTTPException(400, "unknown, free or retired sku")
-    url = payments.create_checkout(email, body.sku, _season(), body.success_url, body.cancel_url)
+    url = payments.create_checkout(email, body.sku, _season(), body.success_url, body.cancel_url,
+                                   price_cents=_price_for(email, body.sku))
     return {"url": url}
 
 
@@ -736,7 +757,9 @@ async def stripe_webhook(request: Request):
     if event["action"] == "grant":
         store.grant(event["email"], event["sku"], event["season"], source="stripe",
                     ref=event["ref"], payment_ref=event.get("payment_ref", ""))
-        return {"received": True, "granted": True, "revoked": 0, "restored": 0}
+        # The season replaces the week: stop billing the week (upgrade or not).
+        cancelled = payments.cancel_week_subscriptions(event["email"]) if event["sku"] == products.SEASON_SKU else 0
+        return {"received": True, "granted": True, "revoked": 0, "restored": 0, "cancelled": cancelled}
 
     # A refund or chargeback withdraws access; a dispute we win gives it back.
     if event["action"] == "revoke":

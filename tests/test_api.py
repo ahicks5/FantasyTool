@@ -779,3 +779,105 @@ def test_the_lineup_splits_required_changes_from_decisions_and_prices_every_swap
         gains = round(sum(ch["gain"] for ch in body["changes"]), 2)
         assert round(body["projected_total"] - body["current_total"], 2) == gains, t.name
     json.dumps(body)
+
+
+# ---- the season upgrade from a live week (Andrew, 2026-09-28) ----
+
+def test_the_season_costs_19_99_while_a_paid_week_is_live(client, monkeypatch):
+    from edge import products
+    from edge.api import payments
+
+    assert products.season_price_cents(False) == 2499
+    assert products.season_price_cents(True) == 1999
+    assert products.season_price_cents(True, has_season=True) == 2499
+
+    assert client.get("/api/me", headers=H).json()["season_price_cents"] == 2499
+    app_mod.store.grant("andrew@example.com", "week_pass", 2026, source="stripe", ref="in_w1")
+    assert client.get("/api/me", headers=H).json()["season_price_cents"] == 1999
+
+    # The server sets the price; the client never sends one.
+    seen = {}
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
+    monkeypatch.setattr(payments, "create_checkout", lambda *a, **k: seen.update(k) or "https://checkout.stripe.test/c/s")
+    assert client.post("/api/account/upgrade", headers=H, json={"sku": "full_report"}).status_code == 200
+    assert seen["price_cents"] == 1999
+    seen.clear()
+    assert client.post("/api/account/upgrade", headers=H, json={"sku": "week_pass"}).status_code == 200
+    assert seen["price_cents"] is None
+
+
+def test_a_lapsed_week_does_not_discount_the_season(client):
+    import time as t
+    app_mod.store.grant("andrew@example.com", "week_pass", 2026, source="stripe", ref="in_old")
+    # Nine days ago: past the week and its grace day.
+    app_mod.store.db.execute("UPDATE purchases SET created=? WHERE ref='in_old'", (t.time() - 9 * 86400,))
+    app_mod.store.db.commit()
+    assert client.get("/api/me", headers=H).json()["season_price_cents"] == 2499
+
+
+def test_the_upgrade_checkout_charges_the_upgrade_price_and_marks_it(monkeypatch):
+    from edge.api import payments
+
+    captured = {}
+
+    class FakeSession:
+        @staticmethod
+        def create(**kwargs):
+            captured.update(kwargs)
+            return type("S", (), {"url": "https://checkout.stripe.test/c/u"})()
+
+    import stripe
+    monkeypatch.setattr(stripe.checkout, "Session", FakeSession)
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
+    payments.create_checkout("a@b.c", "full_report", 2026, None, None, price_cents=1999)
+    assert captured["line_items"][0]["price_data"]["unit_amount"] == 1999
+    assert captured["metadata"]["upgrade_from"] == "week_pass"
+
+
+def test_a_season_grant_cancels_the_running_week(client, monkeypatch):
+    from edge.api import payments
+
+    calls = []
+    monkeypatch.setattr(payments, "cancel_week_subscriptions", lambda email: calls.append(email) or 1)
+
+    class FakeWebhook:
+        @staticmethod
+        def construct_event(payload, sig, secret):
+            return {"type": "checkout.session.completed",
+                    "data": {"object": {"id": "cs_season", "payment_status": "paid", "mode": "payment",
+                                        "metadata": {"email": "andrew@example.com", "sku": "full_report",
+                                                     "season": "2026", "upgrade_from": "week_pass"}}}}
+    import stripe
+    monkeypatch.setattr(stripe, "Webhook", FakeWebhook)
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    r = client.post("/api/stripe/webhook", content=b"{}", headers={"stripe-signature": "t=1,v1=fake"})
+    assert r.status_code == 200 and r.json()["granted"] is True and r.json()["cancelled"] == 1
+    assert calls == ["andrew@example.com"]
+
+
+def test_cancel_week_subscriptions_only_touches_this_accounts_weeks(monkeypatch):
+    from edge.api import payments
+    import stripe
+
+    cancelled, queries = [], []
+
+    class FakeSub:
+        @staticmethod
+        def search(query, limit):
+            queries.append(query)
+            return {"data": [
+                {"id": "sub_week", "metadata": {"email": "a@b.c", "sku": "week_pass"}},
+                {"id": "sub_other", "metadata": {"email": "x@y.z", "sku": "week_pass"}},
+                {"id": "sub_misc", "metadata": {"email": "a@b.c", "sku": "something_else"}},
+            ]}
+
+        @staticmethod
+        def cancel(sid):
+            cancelled.append(sid)
+
+    monkeypatch.setattr(stripe, "Subscription", FakeSub)
+    assert payments.cancel_week_subscriptions("a@b.c") == 0, "no Stripe key, nothing touched"
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
+    assert payments.cancel_week_subscriptions("a@b.c") == 1
+    assert cancelled == ["sub_week"]
+    assert "metadata['email']:'a@b.c'" in queries[0] and "status:'active'" in queries[0]

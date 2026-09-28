@@ -13,7 +13,7 @@ import { saveConnection } from "@/lib/storage";
 import { EspnAuthForm } from "@/components/EspnAuthForm";
 import { clearEspnAuth, useEspnAuth } from "@/lib/espnAuth";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
-import { IconCheck } from "@/components/icons";
+import { IconCheck, IconChevron } from "@/components/icons";
 import { Button, Countdown, ErrorBox, Eyebrow, LinkButton, Wordmark } from "@/components/ui";
 import { ACCOUNT, CONNECT, LINES } from "@/lib/vocab";
 
@@ -204,10 +204,21 @@ export default function ConnectPage() {
 
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-16">
-      <header className="flex h-16 items-center justify-between">
+      <header className="flex h-16 items-center justify-between gap-3">
         <Link href="/" aria-label="Penthouse home" className="flex min-h-11 items-center">
           <Wordmark className="text-[26px]" short={session.signedIn} />
         </Link>
+        {/* The way back out, for an owner who came here from their account (Andrew, 2026-09-28). */}
+        {session.signedIn && (
+          <Link
+            href="/account"
+            className="inline-flex min-h-11 items-center gap-1 rounded-full border border-line-2 px-4 text-[13px] font-bold hover:bg-soft"
+            data-testid="back-to-account"
+          >
+            {ACCOUNT.backAccount}
+            <IconChevron size={13} strokeWidth={2.8} />
+          </Link>
+        )}
       </header>
 
       <main id="content">

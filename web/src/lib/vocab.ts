@@ -715,6 +715,8 @@ export const ACCOUNT = {
     premium: "Premium",
     admin: "Admin",
     upgrade: "Upgrade to full premium",
+    /** A week-pass holder's button: the season, with the week they paid for counted. */
+    upgradeWeek: "Upgrade to the season pass",
     current: "Your plan",
     freeLine: "Start/sit calls, the desk, the standings and the board. Every week.",
     premiumLine: "Every room open for the rest of the season.",
@@ -763,6 +765,9 @@ export const ACCOUNT = {
     weekHead: "Just a week",
     weekSub: "Renews weekly. Cancel anytime.",
     takeWeek: "Try a week",
+    /** A week-pass holder taking the season: the week in hand counts toward it (Andrew, 2026-09-28). */
+    weekCounts: "Your week counts",
+    weekCountsLine: "The week you already paid for comes off the season. Your weekly billing stops when it lands.",
     /** Shown while the API has no Stripe key: the grant is written on the spot. */
     comp: "Launch week: no card, no charge. Tap it and the floor is yours.",
     get: (name: string) => `Get ${name}`,
@@ -883,6 +888,8 @@ export const ACCOUNT = {
   },
   /** The way out of the account, back to the league. */
   back: "Back to my office",
+  /** From /connect, where the owner came from their account. */
+  backAccount: "Back to my account",
   adminLink: "See admin dashboard",
   /** The light switch lives here and nowhere else (Andrew, 2026-09-27). */
   appearance: {
