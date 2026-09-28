@@ -39,8 +39,8 @@ export const KEY_NAME = "Penthouse key";
 /** Where the key comes back to. Kept in one place because the bookmark and the page must agree. */
 export const RETURN_PATH = "/connect/espn";
 
-/** Where to send someone who needs to be signed in to ESPN on this browser. */
-export const ESPN_URL = "https://fantasy.espn.com/football/";
+/** Where the walk sends you: your own team page once logged in (the bare /football/ path is a 404 on a phone, seen 2026-09-28). */
+export const ESPN_URL = "https://fantasy.espn.com/football/team";
 
 /** What the pasted code starts with, so a stray paste is refused and a real one is obvious. */
 export const CODE_PREFIX = "PHF:";
