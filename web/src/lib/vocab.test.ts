@@ -24,7 +24,7 @@ import {
   SCOUT_OPEN,
   WIRE,
   OFFICE,
-  CALL, FILM, ACCOUNT, PRICING, ESPN_KEY } from "./vocab.ts";
+  CALL, FILM, ACCOUNT, PRICING, ESPN_KEY, YAHOO } from "./vocab.ts";
 
 /**
  * The vocabulary is the one file that is allowed to say a section's name, so it is also
@@ -38,6 +38,7 @@ const ALL_COPY: string[] = [
   ...SECTION_VALUES.flatMap((s) => [s.label, s.title, s.gate]),
   ...Object.values(LINES),
   ...Object.values(RIDE),
+  ...Object.values(YAHOO),
   // The desk's words: the strings, plus every templated line rendered once.
   DESK.aria, DESK.owner, DESK.letterhead, DESK.news.eyebrow, DESK.news.quiet, DESK.news.window(72), DESK.news.also(2),
   DESK.news.more(3), DESK.news.less, ...DESK.news.severity, DESK.news.plan, DESK.news.planAria("Saquon Barkley"), DESK.news.tag.own("RB", true),

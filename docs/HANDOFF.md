@@ -49,6 +49,15 @@ Traps from this round: the React lint forbids `setState` inside an effect, so ev
 these pages take from the URL is derived through `lib/href.useLocation()` rather than copied;
 `useCallback` around a derived value trips "existing memoization could not be preserved", so
 plain functions; the bookmark's two alerts are user-read words and live in `ESPN_KEY.bookmark`.
+## Yahoo is built, and off until Yahoo says yes (2026-09-28)
+
+Yahoo leagues work end to end (sign in with Yahoo, pick a league, pick a team, the whole engine)
+and are dark in production: the connect page keeps "Yahoo · Soon" until the three `YAHOO_*`
+env vars are on Render. The blocker is not code: Yahoo's Fantasy API now needs an approved
+application (https://sports.yahoo.com/developer/); Andrew applied on 2026-09-28 and is waiting to hear back. Tokens live in the browser like the ESPN
+cookies, so the weekly email cannot read a Yahoo league (Y-12 in `TASKS.md`). The test fixtures
+are Yahoo's own documented sample league from 2019, so most of its players are unpriced against
+2026 projections, which is correct, not a bug. Setup: `docs/DEPLOY.md`, "Yahoo".
 
 ## The landing page is a funnel now (2026-09-27)
 

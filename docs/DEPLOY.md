@@ -157,9 +157,48 @@ API (Railway):
 | `EDGE_ADMINS` | comma-separated emails | **The admin account.** Anyone who signs in with one of these addresses gets the front office (`/admin`): every account, grant or revoke a pass, add league slots, hand out reset links, promote another admin. `deploy/render.yaml` carries Andrew's address; the running service still has to be set by hand. An admin can also be made from the store (`role` column) once one exists. |
 | `SUPABASE_JWT_SECRET` | optional | A Supabase JWT is still accepted as a bearer token when set. Nothing in the web sends one any more. |
 | `EDGE_USE_CLAUDE`, `ANTHROPIC_API_KEY` | optional | LLM-written trade explanations. Without them the templates are used. |
+| `YAHOO_CLIENT_ID` | Yahoo app Client ID | **Yahoo leagues.** All three `YAHOO_*` set turns Yahoo on: the connect page's "Yahoo · Soon" becomes a live choice (it asks `GET /api/yahoo/status`). See "Yahoo" below. |
+| `YAHOO_CLIENT_SECRET` | secret | Yahoo app Client Secret. Secret: set on Render only. |
+| `YAHOO_REDIRECT_URI` | `https://penthousefantasy.com/connect/yahoo` | Must match the redirect URI registered on the Yahoo app **exactly** (scheme, host, path, no trailing slash). |
 | `EDGE_CHROMIUM` | optional | Path to an existing Chromium. Only needed if the image does not install its own — see below. |
 
 Secrets live in the host's dashboard, never in the repo. `.env` is gitignored.
+
+## Yahoo
+
+Yahoo has no public read: every league, public or private, is read with the member's own OAuth
+token. So Yahoo needs an approved Yahoo developer app before anyone can connect a Yahoo league.
+
+1. **Apply for API access** at https://sports.yahoo.com/developer/ ("Apply"). Since 2026 this is
+   a reviewed application, not self-serve; approval is Yahoo's timeline, not ours.
+2. Once approved, create the app with **Fantasy Sports: Read** permission, type web
+   application, redirect URI `https://penthousefantasy.com/connect/yahoo`.
+3. Set `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET`, `YAHOO_REDIRECT_URI` on Render. No web
+   change or redeploy is needed: the connect page turns Yahoo on when the API says it is on.
+4. Yahoo's terms require the credit line "Fantasy data provided by Yahoo Fantasy", linked to
+   Yahoo Fantasy, plus their official logo. The line is on the connect page; the logo is not
+   yet, because it has to be Yahoo's file, used as supplied.
+
+**The flow.** `/connect` asks `GET /api/yahoo/authorize?state=` for Yahoo's sign-in URL (the
+state is a random nonce kept in the tab's sessionStorage). Yahoo returns to `/connect/yahoo`
+with `?code=&state=`; the page checks the state, `POST /api/yahoo/token` trades the code for
+tokens (only the API holds the secret), and the browser keeps them in `booth.yahoo.auth`. Every
+league call sends `X-Yahoo-Token`. Access tokens live an hour: a 403 with
+`needs_yahoo_auth:false` makes the browser `POST /api/yahoo/refresh` once and retry.
+
+**Trying a real league from a terminal.** Sign in with Yahoo on the site, copy
+`refresh_token` out of `booth.yahoo.auth` (DevTools → Application → Local Storage), then:
+
+```bash
+export YAHOO_CLIENT_ID=... YAHOO_CLIENT_SECRET=... YAHOO_REDIRECT_URI=https://penthousefantasy.com/connect/yahoo
+export YAHOO_REFRESH_TOKEN=...          # your own; never commit it
+uv run python -m edge.cli yahoo                         # your leagues and their keys
+uv run python -m edge.cli yahoo 461.l.12345             # the league, as the engine sees it
+uv run python -m edge.cli yahoo 461.l.12345 --record    # save raw responses as test fixtures
+```
+
+Recorded fixtures land in `tests/fixtures/yahoo/recorded/<key>/`. Check them for anything
+personal (manager nicknames, emails) before committing.
 
 ## Accounts, and upgrades without Stripe
 

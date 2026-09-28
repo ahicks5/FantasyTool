@@ -151,6 +151,7 @@ not touch this table: there is nothing in it belonging to anyone.
 |---|---|---|
 | **Sleeper** | A request for a public league, players, projections, transactions | It is the user's league |
 | **ESPN** | Same, for public leagues | Same |
+| **Yahoo** | The user's OAuth access token on each read (league settings, standings, rosters, free agents, the user's league list); the one-time sign-in code and the refresh token when trading them | Yahoo has no public read. The tokens live in the user's browser (`booth.yahoo.auth`) and are never stored by the API; the user can revoke our access in Yahoo account settings |
 | **Stripe** | Email, amount, SKU | Taking the payment |
 | **Supabase** (optional) | The whole store, when `DATABASE_URL` points at its Postgres | Hosting the database. It no longer handles sign-in |
 | **Anthropic (Claude API)** | Player names, the engine's numbers, the other manager's tendency summary | Writing the trade explanation |

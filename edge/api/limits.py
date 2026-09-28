@@ -26,8 +26,11 @@ from fastapi.responses import JSONResponse
 # roster slots. Anything else is not a league we can look up, and passing it through means
 # building an upstream URL out of a stranger's input.
 _ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+# Yahoo names a league by its key, "<game id>.l.<league id>" ("461.l.12345"). The dots are
+# allowed in exactly this shape and nowhere else, so ".." can never reach an upstream path.
+_YAHOO_LEAGUE_KEY = re.compile(r"^\d{1,4}\.l\.\d{1,12}$")
 
-PLATFORMS = ("sleeper", "espn")
+PLATFORMS = ("sleeper", "espn", "yahoo")
 
 
 def validate_platform(platform: str) -> str:
@@ -37,7 +40,7 @@ def validate_platform(platform: str) -> str:
 
 
 def validate_id(value: str, what: str) -> str:
-    if not _ID.match(value or ""):
+    if not (_ID.match(value or "") or _YAHOO_LEAGUE_KEY.match(value or "")):
         raise HTTPException(422, f"invalid {what}")
     return value
 
