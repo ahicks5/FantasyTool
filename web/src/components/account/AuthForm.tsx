@@ -213,6 +213,8 @@ function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: 
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  // The marketing-text box: never pre-ticked (a login number is not consent).
+  const [sms, setSms] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -249,7 +251,7 @@ function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: 
   const finish = () =>
     run(async () => {
       if (state.step !== "profile") return;
-      const out = await phoneComplete(state.ticket, name.trim(), email.trim());
+      const out = await phoneComplete(state.ticket, name.trim(), email.trim(), sms);
       onDone(out.me, true);
     });
 
@@ -276,6 +278,21 @@ function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: 
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
           />
+        </label>
+        <label className="flex min-h-11 cursor-pointer items-start gap-3" data-auth="sms-opt-in">
+          <input type="checkbox" className="peer sr-only" checked={sms} onChange={(e) => setSms(e.target.checked)} />
+          <span
+            aria-hidden
+            className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ink peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--color-paper)] ${
+              sms ? "border-ink bg-ink text-paper" : "border-line-2 bg-soft text-transparent"
+            }`}
+          >
+            <IconCheck size={16} strokeWidth={3} />
+          </span>
+          <span className="grid gap-1">
+            <span className="text-[15px] leading-snug text-ink">{ACCOUNT.phone.smsOptIn}</span>
+            <span className="text-[12px] leading-relaxed text-muted">{ACCOUNT.phone.smsTerms}</span>
+          </span>
         </label>
         <Button type="submit" variant="start" className="mt-1 w-full" busy={busy}>
           {busy ? ACCOUNT.phone.busyFinish : ACCOUNT.phone.finish}

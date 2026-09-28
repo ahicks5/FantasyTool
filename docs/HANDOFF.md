@@ -24,6 +24,17 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## Telemetry and the admin's numbers (2026-09-28)
+
+Andrew asked for a three-week paid launch plan (`launch/three-week-plan.pdf`) and the telemetry
+to run it. Built: a first-party `events` log (14 names, `edge/api/telemetry.py`) written by the
+server at every funnel step and by the Stripe webhook; first-touch attribution carried from the
+landing URL to the account and into Stripe metadata; `/admin` now opens on six tabs of numbers
+(`edge/business/metrics.py`, pinned by `tests/test_metrics.py`) with an ad-spend form and a
+per-account timeline; Meta, Reddit, Google Ads and PostHog load only once their env vars are set;
+an SMS consent box. Spec and status: `docs/SPEC-ADMIN-METRICS.md`. **Blocked on Andrew:** three new
+Stripe webhook events and the pixel ids (`docs/DEPLOY.md`), or churn and the ad numbers read zero.
+
 ## The landing page is a funnel now (2026-09-27)
 
 Andrew asked for the best front page we can build, on Hormozi's playbook: leads, conversions,

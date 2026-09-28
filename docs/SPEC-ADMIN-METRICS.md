@@ -4,7 +4,13 @@ Written 2026-09-28 to support the three-week paid plan (`launch/three-week-plan.
 from Andrew: *do we have the telemetry to monitor all this, what do we need to track, and what
 should the admin view show?*
 
-**Short answer: no.** We know who signed up, what they bought and what the engine served them.
+**Status (2026-09-28, later the same day): built.** Andrew chose both a first-party log and a
+hosted tool (PostHog), OK'd the pixels and the SMS consent box, and paused Resend. Everything
+in section 4 is done; `TASKS.md` has what is left, which is mostly settings for Andrew.
+The demo build's dashboard shows `tests/test_metrics.py`'s fixture (`web/src/lib/adminMetrics.mock.ts`);
+regenerate it with `scripts/gen_admin_mock.py` when the report's shape changes.
+
+**Short answer at the time: no.** We know who signed up, what they bought and what the engine served them.
 We do not know where anyone came from, how many strangers looked and left, who reached the
 paywall, who started checkout and bailed, or who cancelled. Every ad decision in the plan needs
 one of those.

@@ -21,8 +21,9 @@ export default function PrivacyPage() {
         <p>
           {LEGAL.operator} stores the least it can get away with: an email address or a mobile number so your purchase follows you, which
           leagues you connected, and what it recommended so it can check later whether it was right. It never stores
-          your ESPN password or cookies, and never sees your card details. There is no advertising and nothing is sold
-          to anyone.
+          your ESPN password or cookies, and never sees your card details. Nothing is sold to anyone. We do measure
+          which posts and ads bring people in, and when ad tracking is switched on, the ad networks named below learn
+          that a visit, a sign-up or a purchase happened, so our ads reach people like the ones who use us.
         </p>
       </Section>
 
@@ -36,7 +37,8 @@ export default function PrivacyPage() {
             </>,
             <>
               <strong>Your mobile number</strong>, if you sign up or sign in with your phone. It is how you sign in:
-              we text it a one-time code and nothing else. No marketing texts. An account made with a phone has no
+              we text it a one-time code. We send marketing texts only if you tick the box that asks for them, and you
+              can untick it on your account page or reply STOP at any time. An account made with a phone has no
               password; an email is optional.
             </>,
             <>
@@ -50,6 +52,13 @@ export default function PrivacyPage() {
             <>
               <strong>Whether you asked for the weekly email</strong>, if you tick that box when signed in. One row
               saying yes or no, and nothing else. Untick it, or delete your account, and it is gone.
+            </>,
+            <>
+              <strong>How you found us, and the steps you took</strong>: the campaign tags on the first link you
+              arrived by, the website that sent you (its name only, never the page), a random id your browser makes,
+              and a short log of milestones such as signing up, connecting a league, reaching a paid feature, starting
+              a checkout, paying, cancelling and sharing a card. It never holds your league identifier, your roster or
+              your ESPN cookies. This is how we know which ads are worth paying for.
             </>,
             <>
               <strong>What we recommended</strong>, with the version of the engine that produced it, plus any
@@ -106,6 +115,13 @@ export default function PrivacyPage() {
               numbers and player names already in the verdict. Never your email or your league. With the setting off,
               explanations come from templates and nothing leaves our server.
             </>,
+            <>
+              <strong>PostHog</strong>, <strong>Meta</strong>, <strong>Reddit</strong> and <strong>Google</strong>, only
+              where each is switched on: PostHog counts page views (with any league number in the address blanked
+              out), and the three ad networks receive that you visited, signed up, connected a league, started a
+              checkout or bought, so they can measure and aim our ads. None of them receives your email, your phone
+              number, your league or your roster from us. Blocking them in your browser changes nothing about the app.
+            </>,
             <>Our hosting providers, who necessarily process requests on our behalf.</>,
           ]}
         />
@@ -114,8 +130,9 @@ export default function PrivacyPage() {
       <Section heading="What is kept in your browser">
         <p>
           Your sign-in session, the league you last connected, your light or dark preference, and, in a demo build,
-          which features are unlocked. These sit in your browser&rsquo;s own storage, not on our servers. There are no
-          advertising or analytics trackers.
+          which features are unlocked, plus the random id and first-visit campaign tags described above. These sit in
+          your browser&rsquo;s own storage. The ad networks and PostHog, where switched on, set their own cookies;
+          an ad or tracker blocker stops them without breaking anything.
         </p>
       </Section>
 

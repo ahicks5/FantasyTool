@@ -1,5 +1,6 @@
 // Mock data matching docs/API.md exactly. Player names, rosters and week-2
 // half-PPR projections come from tests/fixtures/sleeper/* ("The Megalabowl").
+import { ADMIN_METRICS_FIXTURE } from "./adminMetrics.mock";
 import { withArticle } from "./format";
 import type {
   AdminUsersResponse,
@@ -418,6 +419,13 @@ export const ME: Me = {
 };
 
 /** The admin's list in the demo: two accounts, one of them the owner. */
+/**
+ * The admin dashboard in the demo build: the offline fixture from tests/test_metrics.py run
+ * through edge/business/metrics.py, so the demo shows exactly what the tests pin. Regenerate
+ * with `uv run python scripts/gen_admin_mock.py` when the report's shape changes.
+ */
+export const ADMIN_METRICS = ADMIN_METRICS_FIXTURE;
+
 export const ADMIN_USERS: AdminUsersResponse = {
   season: 2026,
   checkout: false,

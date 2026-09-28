@@ -4,17 +4,22 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
 ## Telemetry and the admin metrics view (2026-09-28)
 
-Spec: `docs/SPEC-ADMIN-METRICS.md`. Plan it serves: `launch/three-week-plan.pdf`. Nothing built yet.
+Spec: `docs/SPEC-ADMIN-METRICS.md`. Plan it serves: `launch/three-week-plan.pdf`. Andrew, 2026-09-28:
+first-party log **and** a hosted tool; pixels yes; SMS consent box yes; Resend paused.
 
-- [ ] 1. `events` table + `log_event` in both stores, contract test
-- [ ] 2. Server events: signup, league_linked, paywall_view, checkout_start, purchase (+ amount)
-- [ ] 3. First-touch attribution: cookie → signup → `users.attr` → Stripe metadata
-- [ ] 4. Webhooks: `checkout.session.expired`, `customer.subscription.deleted/updated`
-- [ ] 5. `GET /api/admin/metrics` (Today, Funnel, Channels) + `ad_spend`
-- [ ] 6. Admin tabs 1–3 on `/admin`
-- [ ] 7. Pixels + privacy page update
-- [ ] 8. Revenue, Retention, Loop tabs
-- Blocked on Andrew: Resend key on Render; SMS consent wording; pixels yes/no; the $1,500 budget.
+- [x] 1. `events` + `ad_spend` tables in both stores, contract-tested on SQLite and Postgres 16
+- [x] 2. Server events: signup, league_linked, paywall_view, checkout_start, purchase/renewal/upgrade (+ amount), share create/open
+- [x] 3. First-touch attribution: `booth.attr` → sign-up → `users.attr` → Stripe metadata
+- [x] 4. Webhooks: `checkout.session.expired`, `customer.subscription.deleted/updated`, refunds with amounts
+- [x] 5. `GET /api/admin/metrics` (all six views) + spend + per-account timeline
+- [x] 6. Admin tabs on `/admin`: Today, Funnel, Channels (+ spend form), Revenue, Retention, The loop, Accounts
+- [x] 7. Pixels (Meta, Reddit, Google Ads) + PostHog, each off until its env var is set; privacy page + DATA_INVENTORY updated
+- [x] 8. SMS consent box at phone sign-up and on /account (`SMS_CONSENT_VERSION`)
+- [ ] **Andrew:** add the three new Stripe webhook events (`docs/DEPLOY.md`, "Stripe"), or churn and abandonment read zero
+- [ ] **Andrew:** create the PostHog project and the three ad accounts; paste the ids into Vercel (`docs/DEPLOY.md`, "Environment variables")
+- [ ] Server-side conversions (Meta CAPI) once spend is real (spec §2.5)
+- [ ] Nothing sends marketing texts yet: the consent is collected, the sender is not built
+- Paused by Andrew: Resend (reset mail and the email list)
 
 ## New pricing: week pass, season pass, no à la carte (2026-09-27)
 
