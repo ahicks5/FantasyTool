@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-written in the shape of league/{key}/players;status=A (Yahoo documents the player
+     resource but publishes no sample page of it). Replace with a recorded page once the
+     Yahoo app is approved: the `yahoo` demo command in edge/cli.py. -->
+<fantasy_content xmlns="http://fantasysports.yahooapis.com/fantasy/v2/base.rng">
+  <league>
+    <league_key>390.l.1000</league_key>
+    <players count="3">
+      <player>
+        <player_key>390.p.30199</player_key>
+        <player_id>30199</player_id>
+        <name><full>Tarik Cohen</full><first>Tarik</first><last>Cohen</last></name>
+        <status>Q</status>
+        <status_full>Questionable</status_full>
+        <injury_note>Hamstring</injury_note>
+        <editorial_team_abbr>Chi</editorial_team_abbr>
+        <display_position>RB</display_position>
+        <primary_position>RB</primary_position>
+        <eligible_positions><position>RB</position><position>W/R/T</position></eligible_positions>
+      </player>
+      <player>
+        <player_key>390.p.29288</player_key>
+        <player_id>29288</player_id>
+        <name><full>Tyler Boyd</full><first>Tyler</first><last>Boyd</last></name>
+        <editorial_team_abbr>Cin</editorial_team_abbr>
+        <display_position>WR</display_position>
+        <primary_position>WR</primary_position>
+        <eligible_positions><position>WR</position><position>W/R/T</position></eligible_positions>
+      </player>
+      <player>
+        <player_key>390.p.100009</player_key>
+        <player_id>100009</player_id>
+        <name><full>Chicago</full></name>
+        <editorial_team_abbr>Chi</editorial_team_abbr>
+        <display_position>DEF</display_position>
+        <primary_position>DEF</primary_position>
+        <eligible_positions><position>DEF</position></eligible_positions>
+      </player>
+    </players>
+  </league>
+</fantasy_content>

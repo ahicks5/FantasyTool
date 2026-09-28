@@ -111,7 +111,8 @@ def load_sleeper(league_id: str, week: int | None = None) -> Bundle:
 
 
 def get_bundle(platform: str, league_id: str, auth=None) -> Bundle:
-    """`auth` is an `espn_api.EspnAuth` for a private ESPN league, or None.
+    """`auth` is an `espn_api.EspnAuth` for a private ESPN league, a `yahoo_api.YahooAuth`
+    for any Yahoo league (Yahoo has no public read), or None.
 
     It is part of the cache key, never as itself — only as its fingerprint. A private league's
     bundle must not be served to a request that did not prove it can read that league, or
@@ -128,6 +129,15 @@ def get_bundle(platform: str, league_id: str, auth=None) -> Bundle:
         from edge.connectors import espn  # optional connector
         league = espn.load_league(league_id, auth=auth)
         byes = bye_weeks(load_schedule(league.season))
+        b = Bundle(league=league, ros=ros_values(league, get_provider().season(league.season), byes), byes=byes,
+                   bid_stats={}, profiles={}, pos_counts={})
+    elif platform == "yahoo":
+        from edge.connectors import yahoo
+        league = yahoo.load_league(league_id, auth=auth)
+        byes = bye_weeks(load_schedule(league.season))
+        # Like ESPN: no bid history or manager tendencies yet (Yahoo's transactions feed
+        # could supply both), and no past weeks for the film — `played_weeks` finds no
+        # Sleeper payload on this bundle and returns an empty season rather than guessing.
         b = Bundle(league=league, ros=ros_values(league, get_provider().season(league.season), byes), byes=byes,
                    bid_stats={}, profiles={}, pos_counts={})
     else:
