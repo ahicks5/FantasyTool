@@ -42,6 +42,9 @@ export const RETURN_PATH = "/connect/espn";
 /** Where to send someone who needs to be signed in to ESPN on this browser. */
 export const ESPN_URL = "https://fantasy.espn.com/football/";
 
+/** What the pasted code starts with, so a stray paste is refused and a real one is obvious. */
+export const CODE_PREFIX = "PHF:";
+
 /** Signed-in ESPN pages carry the key. Anything else is the wrong tab. */
 const HOST_TEST = "/(^|\\.)espn\\.com$/";
 
@@ -57,6 +60,7 @@ export function buildEspnKeyBookmarklet(returnUrl: string, carriedLeagueId = "")
   const wrongSite = JSON.stringify(ESPN_KEY.bookmark.wrongSite);
   const noKey = JSON.stringify(ESPN_KEY.bookmark.noKey);
   const noLeague = JSON.stringify(ESPN_KEY.bookmark.noLeague);
+  const saved = JSON.stringify(ESPN_KEY.bookmark.saved);
   // With no league carried from the walk, the ESPN page has to name one, or there is nothing to load.
   const needLeague = carriedLeagueId.trim() ? "false" : "true";
   const src =
@@ -68,7 +72,11 @@ export function buildEspnKeyBookmarklet(returnUrl: string, carriedLeagueId = "")
     "var s=g('espn_s2'),w=g('SWID'),l=q('leagueId'),t=q('teamId');" +
     `if(!s||!w){alert(${noKey});return}` +
     `if(!l&&${needLeague}){alert(${noLeague});return}` +
-    `location.href=${back}+'#s2='+encodeURIComponent(s)+'&swid='+encodeURIComponent(w)+'&league='+l+'&team='+t;` +
+    "var k='s2='+encodeURIComponent(s)+'&swid='+encodeURIComponent(w)+'&league='+l+'&team='+t;" +
+    // The code on the clipboard is the fallback for a browser that will not follow the jump.
+    `try{navigator.clipboard.writeText(${JSON.stringify(CODE_PREFIX)}+k)}catch(e){}` +
+    `alert(${saved});` +
+    `location.href=${back}+'#'+k;` +
     "})();";
   return "javascript:" + src;
 }
@@ -105,4 +113,11 @@ export function detectHand(userAgent: string): Hand {
 export function espnKeyReturnUrl(origin: string, leagueId: string): string {
   const id = leagueId.trim();
   return origin.replace(/\/+$/, "") + RETURN_PATH + (id ? `?id=${encodeURIComponent(id)}` : "");
+}
+
+/** The code the bookmark copied, pasted back by hand: the same key as the fragment, behind a prefix. */
+export function parseEspnCode(text: string): EspnKey | null {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith(CODE_PREFIX)) return null;
+  return parseEspnKeyReturn(trimmed.slice(CODE_PREFIX.length));
 }

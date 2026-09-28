@@ -59,12 +59,11 @@ const ALL_COPY: string[] = [
   PLAN.trade.title, PLAN.trade.from, PLAN.trade.locked(1), PLAN.trade.locked(3), PLAN.trade.unlock, PLAN.trade.none, PLAN.trade.surplus,
   TICKER.aria, TICKER.plate, TICKER.quiet, TICKER.loading, TICKER.proj, TICKER.score("A", 1, "B", 2), NAMEPLATE.connect, NAMEPLATE.week(2),
   ...Object.values(CONNECT),
-  // The ESPN key: the walk, the bookmark's two messages, the other doors and the form.
-  ESPN_KEY.eyebrow, ESPN_KEY.title, ESPN_KEY.lead, ESPN_KEY.time, ESPN_KEY.handAria, ...Object.values(ESPN_KEY.hand), ESPN_KEY.step(1), ...Object.values(ESPN_KEY.taps),
-  ...Object.values(ESPN_KEY.copy), ESPN_KEY.save.title, ...ESPN_KEY.save.iphone, ...ESPN_KEY.save.android, ...ESPN_KEY.save.computer,
-  ...Object.values(ESPN_KEY.open), ...Object.values(ESPN_KEY.tap), ...Object.values(ESPN_KEY.bookmark), ESPN_KEY.other,
-  ESPN_KEY.commissioner.title, ESPN_KEY.commissioner.body, ESPN_KEY.commissioner.button, ESPN_KEY.commissioner.copied, ESPN_KEY.commissioner.note("123456"),
-  ...Object.values(ESPN_KEY.paste), ...Object.values(ESPN_KEY.entry), ESPN_KEY.privacy, ESPN_KEY.back, ...Object.values(ESPN_KEY.saved), ...Object.values(ESPN_KEY.form),
+  // The ESPN key: the walk, the bookmark's messages and the form.
+  ESPN_KEY.eyebrow, ESPN_KEY.title, ESPN_KEY.lead, ESPN_KEY.handAria, ...Object.values(ESPN_KEY.hand), ESPN_KEY.step(1),
+  ...Object.values(ESPN_KEY.place), ...Object.values(ESPN_KEY.prime), ...Object.values(ESPN_KEY.go), ...Object.values(ESPN_KEY.paste),
+  ...Object.values(ESPN_KEY.bookmark), ESPN_KEY.privacy, ESPN_KEY.back, ...Object.values(ESPN_KEY.saved), ...Object.values(ESPN_KEY.entry),
+  ...Object.values(ESPN_KEY.form),
   ...Object.values(GROUPS).flatMap((g) => [g.clear, g.stamp]),
   ...LANDING.features.flatMap((f) => [f.room, f.title, f.body]),
   LANDING.exampleHead,
@@ -295,23 +294,22 @@ test("the account's words are the staff at the door: sign in, create, no magic l
   assert.match(ACCOUNT.reset.notSent, /nothing was sent/);
 });
 
-test("the ESPN key is asked for on a phone first, and never shown as a value", () => {
-  // Andrew, 2026-09-28: no "use a computer" as the first answer. The bookmark is named the
-  // same everywhere, because Chrome on Android runs it by its name.
-  assert.match(ESPN_KEY.form.needed, /this phone/);
-  const taps = [ESPN_KEY.tap.iphone, ESPN_KEY.tap.android, ESPN_KEY.tap.computer];
-  for (const line of [...ESPN_KEY.save.iphone, ...ESPN_KEY.save.android, ...ESPN_KEY.save.computer, ...taps]) {
-    assert.ok(!/DevTools|F12/.test(line), `the walk sends nobody to DevTools: ${line}`);
+test("the ESPN walk is one direction a step, in the least words, and never sends anyone to DevTools", () => {
+  // Andrew, 2026-09-28: the plan in one breath, then one direction per step.
+  assert.match(ESPN_KEY.lead, /^We add a bookmark/);
+  for (const step of [ESPN_KEY.place, ESPN_KEY.prime, ESPN_KEY.go]) {
+    for (const hand of ["iphone", "android", "computer"] as const) {
+      const line = step[hand];
+      assert.ok(!/DevTools|F12/.test(line), line);
+      assert.ok(line.split(" ").length <= 24, `too many words: ${line}`);
+    }
   }
-  for (const line of taps) assert.match(line, /Penthouse key/);
-  // The bookmark brings the league and the team back, so nobody digs out an ID on a phone.
-  for (const line of taps) assert.match(line, /league loaded/);
-  assert.match(ESPN_KEY.entry.body, /No ID to find/);
+  // Chrome on Android runs the bookmark by its name, so the name is said where it is set and where it is used.
+  assert.match(ESPN_KEY.prime.android, /Penthouse key/);
+  assert.match(ESPN_KEY.go.android, /Penthouse key/);
   // The bookmark's own messages are safe to embed in a single-line script.
   for (const line of Object.values(ESPN_KEY.bookmark)) assert.ok(!/[\n\r]/.test(line));
-  // The note to the commissioner names the switch ESPN actually has.
-  assert.match(ESPN_KEY.commissioner.note("99"), /Make League Viewable to Public/);
-  assert.match(ESPN_KEY.commissioner.note("99"), /99/);
+  assert.match(ESPN_KEY.bookmark.saved, /saved/);
 });
 
 test("connect's control says what it hands you", () => {

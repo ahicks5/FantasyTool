@@ -9,9 +9,8 @@
  *
  * The order is Andrew's (2026-09-28): the phone way leads. "Get my key" opens the walk at
  * /connect/espn for this league; the bookmark it builds comes back with the key saved and
- * this page loads the league on its own. Under it, folded: a note to the commissioner (one
- * switch in ESPN makes the league viewable and the key unnecessary), and the two fields for
- * anyone who already has the values.
+ * this page loads the league on its own. Under it, folded, the two fields for anyone who
+ * already has the values. One option (Andrew, 2026-09-28), so no commissioner note here.
  *
  * The honesty line below the fields is a disclosure, not copy. Both halves of it are true of
  * what the code does and neither can be cut: the values never leave this browser, and they
@@ -20,14 +19,13 @@
 
 import { useState } from "react";
 import { clearEspnAuth, saveEspnAuth, useEspnAuth } from "@/lib/espnAuth";
-import { IconChevron, IconCopy, IconLock } from "@/components/icons";
+import { IconChevron, IconLock } from "@/components/icons";
 import { Button, LinkButton } from "@/components/ui";
 import { ESPN_KEY } from "@/lib/vocab";
 
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 font-mono text-[13px] text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
 
-const DISCLOSURE = "min-h-11 text-left text-[14px] font-semibold text-ink underline underline-offset-4";
 
 export function EspnAuthForm({
   status,
@@ -48,14 +46,11 @@ export function EspnAuthForm({
   const stored = useEspnAuth();
   const [s2, setS2] = useState("");
   const [swid, setSwid] = useState("");
-  const [showAsk, setShowAsk] = useState(false);
   // The fields open on the walk's say-so until the reader touches the fold themselves.
   const [pasteToggle, setPasteToggle] = useState<boolean | null>(null);
   const showPaste = pasteToggle ?? openPaste;
-  const [copied, setCopied] = useState(false);
   const ready = s2.trim().length > 0 && swid.trim().length > 0;
   const walk = `/connect/espn?id=${encodeURIComponent(leagueId)}`;
-  const note = ESPN_KEY.commissioner.note(leagueId);
 
   return (
     <section className="mt-7 rounded-[var(--radius-card)] border border-line-2 bg-paper p-4" data-testid="espn-auth">
@@ -86,47 +81,14 @@ export function EspnAuthForm({
         </LinkButton>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1">
-        <button type="button" onClick={() => setShowAsk((v) => !v)} className={DISCLOSURE} aria-expanded={showAsk}>
-          {showAsk ? ESPN_KEY.form.askClose : ESPN_KEY.form.askOpen}
-        </button>
-        <button
-          type="button"
-          onClick={() => setPasteToggle(!showPaste)}
-          className={`${DISCLOSURE} font-normal text-muted`}
-          aria-expanded={showPaste}
-        >
-          {showPaste ? ESPN_KEY.form.pasteClose : ESPN_KEY.form.pasteOpen}
-        </button>
-      </div>
-
-      {showAsk && (
-        <div className="mt-3 rounded-xl bg-soft p-3.5">
-          <p className="text-[13px] leading-relaxed text-muted">{ESPN_KEY.commissioner.body}</p>
-          <div className="mt-3">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(note);
-                  setCopied(true);
-                } catch {
-                  setCopied(false);
-                }
-              }}
-            >
-              <IconCopy size={15} strokeWidth={2.2} />
-              {ESPN_KEY.commissioner.button}
-            </Button>
-          </div>
-          {copied && (
-            <p role="status" className="mt-2 text-[13px] font-semibold text-start">
-              {ESPN_KEY.commissioner.copied}
-            </p>
-          )}
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={() => setPasteToggle(!showPaste)}
+        className="mt-3 min-h-11 text-[13px] font-semibold text-muted underline underline-offset-4"
+        aria-expanded={showPaste}
+      >
+        {showPaste ? ESPN_KEY.form.pasteClose : ESPN_KEY.form.pasteOpen}
+      </button>
 
       {showPaste && (
         <div className="mt-3 space-y-3" data-testid="espn-paste">

@@ -367,13 +367,13 @@ test("the ESPN key: the walk renders on a phone, and the bookmark's return saves
   await expect(page.getByTestId("open-espn")).toHaveAttribute("href", /^https:\/\/fantasy\.espn\.com\//);
   // The key the page builds is a bookmarklet carrying the return address for this league.
   // It never contains a value: there is nothing to leak on the screen that shows it.
-  const key = await page.getByLabel(ESPN_KEY.copy.keyAria).inputValue();
+  const key = await page.getByLabel(ESPN_KEY.prime.keyAria).inputValue();
   expect(key.startsWith("javascript:")).toBe(true);
   expect(key).toContain("/connect/espn?id=424242");
   expect(key).not.toMatch(/AEB|\{[0-9A-F]{8}-/);
   // Switching the device switches the steps; the bookmark's name is said on every one.
   await page.getByRole("radio", { name: ESPN_KEY.hand.android }).click();
-  await expect(page.getByText(ESPN_KEY.tap.android)).toBeVisible();
+  await expect(page.getByText(ESPN_KEY.go.android)).toBeVisible();
   await assertNoHorizontalOverflow(page);
   expect(problems, "the walk logged browser errors").toEqual([]);
 
@@ -395,6 +395,13 @@ test("the ESPN key: the walk renders on a phone, and the bookmark's return saves
   expect(page.url()).not.toContain("s2=");
   await expect(page.getByRole("radio", { name: "ESPN" })).toHaveAttribute("aria-checked", "true");
   await expect(page.locator("#league-id")).toHaveValue("424242");
+  // The code the bookmark copied, pasted into step 4 by hand, lands the same way.
+  await page.evaluate(() => localStorage.removeItem("booth.espn.auth"));
+  await page.goto("/connect/espn");
+  await page.getByTestId("paste-code").fill("PHF:s2=AEBpasted&swid=%7BPASTED%7D&league=555&team=1");
+  await page.getByTestId("paste-code").press("Enter");
+  await page.waitForURL(/\/connect\?platform=espn&id=555&team=1$/);
+  expect(JSON.parse((await page.evaluate(() => localStorage.getItem("booth.espn.auth"))) ?? "null")).toEqual({ s2: "AEBpasted", swid: "{PASTED}" });
   // Going back does not land on a URL that carries the key.
   await page.goBack();
   expect(page.url()).not.toContain("swid=");

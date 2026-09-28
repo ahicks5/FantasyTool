@@ -33,6 +33,10 @@ gets them" and `docs/WEB.md` "The ESPN key".
 - [x] **EK-8** No league ID to dig out (Andrew, 2026-09-28): the bookmark reads `leagueId` and
       `teamId` off the ESPN team page's URL and brings them back; `/connect` loads the league
       and picks the team. "Link from ESPN" sits above the ID box for every ESPN league.
+- [x] **EK-9** Andrew's shape (2026-09-28, after seeing it live): the plan in one breath, one
+      direction per step, an arrow to the next; one option on /connect (the ID box behind
+      "I have a league ID"); the bookmark copies a code and says "saved", and step 4 is a
+      paste box for a browser that will not follow the jump. The commissioner note is gone.
 - [ ] **EK-7** Two short screen recordings (iPhone, Android) of the walk for the page and the
       FAQ, once EK-5 is done.
 ## Yahoo leagues (2026-09-28)

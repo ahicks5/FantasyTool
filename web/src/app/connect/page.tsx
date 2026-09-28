@@ -103,6 +103,10 @@ export default function ConnectPage() {
   // One box per platform, so switching platform cannot carry a Sleeper username into ESPN.
   const [typed, setInput] = useState<string | null>(null);
   const input = typed ?? deep?.id ?? "";
+  // The ESPN ID box is behind a link (Andrew, 2026-09-28: one option). It opens on its own
+  // when an id came in on the link, or once the owner has typed one.
+  const [askedIdBox, setShowIdBox] = useState(false);
+  const showIdBox = askedIdBox || input.trim().length > 0;
   const [leagues, setLeagues] = useState<SleeperLeagueRef[] | null>(null);
   const [league, setLeague] = useState<LeagueSummary | null>(null);
   const [teamId, setTeamId] = useState("");
@@ -500,9 +504,8 @@ export default function ConnectPage() {
           {/* The phone way first, for any ESPN league: the bookmark reads the league, the
               team and, if it is private, the key off ESPN's own page (Andrew, 2026-09-28:
               "do you still need to put in your league id? that's still hard"). */}
-          <div className="rounded-[var(--radius-card)] border border-line-2 bg-paper p-4" data-testid="espn-entry">
-            <h2 className="display text-[18px] leading-tight">{ESPN_KEY.entry.title}</h2>
-            <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{ESPN_KEY.entry.body}</p>
+          <div data-testid="espn-entry">
+            <p className="text-[15px] leading-relaxed text-ink">{ESPN_KEY.entry.title}</p>
             <div className="mt-3">
               <LinkButton
                 href={input.trim() ? `/connect/espn?id=${encodeURIComponent(input.trim())}` : "/connect/espn"}
@@ -513,7 +516,18 @@ export default function ConnectPage() {
                 <IconChevron size={14} strokeWidth={2.8} />
               </LinkButton>
             </div>
+            {!showIdBox && (
+              <button
+                type="button"
+                onClick={() => setShowIdBox(true)}
+                className="mt-3 min-h-11 text-[13px] font-semibold text-muted underline underline-offset-4"
+              >
+                {ESPN_KEY.entry.haveId}
+              </button>
+            )}
           </div>
+          {showIdBox && (
+          <>
           <label className="eyebrow mt-6 block" htmlFor="league-id">
             {ESPN_KEY.entry.or}
           </label>
@@ -540,6 +554,8 @@ export default function ConnectPage() {
           <p className="mt-2 text-[13px] leading-relaxed text-muted">
             The number after leagueId= in your ESPN league URL.
           </p>
+          </>
+          )}
         </section>
       )}
 

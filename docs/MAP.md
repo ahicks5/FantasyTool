@@ -181,8 +181,8 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 |---|---|---|
 | `web/src/app/account/page.tsx` | Your account: the plan flag, the leagues on file, the upgrades, the Thursday email, and your data. Signed in only. | 549 |
 | `web/src/app/admin/page.tsx` | The front office: every account, its plan and its leagues, and the owner's levers. Admin only. | 222 |
-| `web/src/app/connect/espn/page.tsx` | The ESPN key: an ESPN league linked from a phone, walked step by step. Copy the bookmark, save it, open your team on ESPN, tap it, and it brings you back here with the league, the team and the key. | 366 |
-| `web/src/app/connect/page.tsx` | Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, the key from /connect/espn; Yahoo takes a sign-in, then a pick from your own leagues. | 675 |
+| `web/src/app/connect/espn/page.tsx` | The ESPN link, walked in four steps: make a placeholder bookmark, prime it with our code, log in to ESPN and tap it, come back and paste. The bookmark usually brings you back on its own. | 305 |
+| `web/src/app/connect/page.tsx` | Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, the key from /connect/espn; Yahoo takes a sign-in, then a pick from your own leagues. | 691 |
 | `web/src/app/connect/yahoo/page.tsx` | Where Yahoo sends the owner back after they sign in (`?code=&state=`). Check the state is | 61 |
 | `web/src/app/error.tsx` | The boundary for anything a page throws while rendering. Without it Next shows its own | 35 |
 | `web/src/app/global-error.tsx` | Last resort: an error in the root layout itself, where the app's own chrome and | 45 |
@@ -221,7 +221,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Desk.tsx` | The owner's desk: the front page. Three stories, this week's matchup, and the staff's notebooks. | 416 |
 | `web/src/components/Elevator.tsx` | The ride up: the opening, played as an elevator to the office and a walk to the desk. Tap to skip. | 320 |
 | `web/src/components/EmailOptIn.tsx` | The weekly-email opt-in: one checkbox, on /login, under the signed-in block. | 104 |
-| `web/src/components/EspnAuthForm.tsx` | A private ESPN league, met on /connect: the key first, the two other doors folded under it. | 186 |
+| `web/src/components/EspnAuthForm.tsx` | A private ESPN league, met on /connect: the key first, the two other doors folded under it. | 148 |
 | `web/src/components/Film.tsx` | The film: the season looked back on, the record read against the scoring, week by week. | 136 |
 | `web/src/components/FilmWeek.tsx` | One week of the film: the final, then every call and what happened, stated flat. | 179 |
 | `web/src/components/LandingBar.tsx` | The landing page's follow-along bar: the clock and the one door, once the first button has scrolled away. | 52 |
@@ -282,7 +282,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/elevator.ts` | The ride up: the opening as an elevator to the top floor. Pure, so the schedule is tested. | 219 |
 | `web/src/lib/errors.ts` | Turning a failure into something worth reading. | 104 |
 | `web/src/lib/espnAuth.ts` | A private ESPN league needs two cookies from the user's own browser: `espn_s2` and `SWID`. | 92 |
-| `web/src/lib/espnKey.ts` | The ESPN key: how a phone gets a private league's two cookies without a computer. | 108 |
+| `web/src/lib/espnKey.ts` | The ESPN key: how a phone gets a private league's two cookies without a computer. | 123 |
 | `web/src/lib/film.ts` | The replay, worked out: one finished week turned into the cards the page draws. | 90 |
 | `web/src/lib/format.ts` | Pure helpers (no React, no DOM) so they can be unit tested with node:test. | 312 |
 | `web/src/lib/gameday.ts` | Pure helpers (no React, no DOM, no clock read at load) so they can be unit tested | 495 |
@@ -308,7 +308,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/ticker.ts` | The ticker: the desk's news as one line running along the bottom of every screen. Pure. | 124 |
 | `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 1612 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 1908 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 1880 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 168 |
 | `web/src/lib/wire.ts` | The top of Scouting, minus React: how hard to go after each pickup, and which ones lead. | 55 |
 | `web/src/lib/yahooAuth.ts` | Yahoo sign-in, held on this device. | 121 |

@@ -4,8 +4,10 @@ import {
   ESPN_URL,
   KEY_NAME,
   RETURN_PATH,
+  CODE_PREFIX,
   buildEspnKeyBookmarklet,
   detectHand,
+  parseEspnCode,
   espnKeyReturnUrl,
   parseEspnKeyReturn,
 } from "./espnKey.ts";
@@ -47,7 +49,8 @@ test("on ESPN with both cookies it leaves for Penthouse with the key in the frag
     hostname: "fantasy.espn.com",
     cookie: `region=ccpa; SWID=${SWID}; espn_s2=${S2}; edition=espn-en-us`,
   });
-  assert.deepEqual(alerts, []);
+  assert.equal(alerts.length, 1, "it says the info is saved, then leaves");
+  assert.match(alerts[0], /saved/);
   assert.ok(went?.startsWith(BACK + "#"), went ?? "did not leave");
   const key = parseEspnKeyReturn(new URL(went!).hash);
   // The percent-encoded s2 is the value ESPN wants back; it must survive the round trip byte for byte.
@@ -60,7 +63,7 @@ test("on a team page it brings the league and the team back too, so nobody digs 
     search: "?leagueId=98765&teamId=4&seasonId=2026",
     cookie: `SWID=${SWID}; espn_s2=${S2}`,
   });
-  assert.deepEqual(alerts, []);
+  assert.match(alerts[0], /saved/);
   assert.deepEqual(parseEspnKeyReturn(new URL(went!).hash), { s2: S2, swid: SWID, league: "98765", team: "4" });
 });
 
@@ -106,7 +109,7 @@ test("half a key is no key: it says so and never leaves with one value", () => {
     const { alerts, went } = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "fantasy.espn.com", cookie });
     assert.equal(went, null, cookie);
     assert.equal(alerts.length, 1);
-    assert.match(alerts[0], /sign back in/i);
+    assert.match(alerts[0], /log in/i);
     assert.ok(!alerts[0].includes(S2) && !alerts[0].includes(SWID), "the message never shows a value");
   }
 });
@@ -150,4 +153,13 @@ test("the bookmark's name and ESPN's door are fixed", () => {
   // Chrome on Android runs a bookmarklet by typing its name; the walk says this name.
   assert.equal(KEY_NAME, "Penthouse key");
   assert.match(ESPN_URL, /^https:\/\/fantasy\.espn\.com\//);
+});
+
+test("the pasted code is the fragment behind a prefix, and anything else is refused", () => {
+  const { went } = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname: "fantasy.espn.com", search: "?leagueId=5&teamId=2", cookie: `SWID=${SWID}; espn_s2=${S2}` });
+  const code = CODE_PREFIX + new URL(went!).hash.slice(1);
+  assert.deepEqual(parseEspnCode(`  ${code}\n`), { s2: S2, swid: SWID, league: "5", team: "2" });
+  assert.equal(parseEspnCode(new URL(went!).hash.slice(1)), null, "no prefix, no code");
+  assert.equal(parseEspnCode("hello"), null);
+  assert.equal(parseEspnCode(""), null);
 });

@@ -445,7 +445,9 @@ tap it. The bookmark (`lib/espnKey.buildEspnKeyBookmarklet`) reads `espn_s2` and
 `document.cookie` on the user's ESPN team page, plus `leagueId` and `teamId` off its URL, and
 comes back to `/connect/espn` with all four in the URL **fragment**; the page saves them (`lib/espnAuth`) and `router.replace`s
 to `/connect?platform=espn&id=<league>&team=<team>`, which picks ESPN, loads the league and
-picks the team on its own. On `/connect`, ESPN leads with "Link from ESPN" above the ID box. The
+picks the team on its own. On `/connect`, ESPN is one button, "Link from ESPN", with the ID box
+behind a link. The bookmark also copies a `PHF:`-prefixed code and says "saved", and step 4 of
+the walk is a paste box for it (`parseEspnCode`), for a browser that will not follow the jump. The
 fragment is never sent to a server and leaves history with the replaced entry. The form on
 `/connect` (`EspnAuthForm`) leads with "Get my key"; the note to the commissioner and the two
 paste fields are folded under it.
