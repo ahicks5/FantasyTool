@@ -30,6 +30,13 @@ CREATE TABLE IF NOT EXISTS feedback (email TEXT, platform TEXT, league_id TEXT, 
   action_type TEXT, verdict TEXT, reason TEXT, week INTEGER, created REAL);
 CREATE TABLE IF NOT EXISTS email_prefs (email TEXT PRIMARY KEY, opt_in INTEGER NOT NULL DEFAULT 0,
   created REAL, updated REAL);
+CREATE TABLE IF NOT EXISTS events (created REAL NOT NULL, name TEXT NOT NULL, anon_id TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '', sku TEXT NOT NULL DEFAULT '', amount_cents INTEGER,
+  props TEXT NOT NULL DEFAULT '{}', ref TEXT, UNIQUE(name, ref));
+CREATE INDEX IF NOT EXISTS events_created ON events (created);
+CREATE TABLE IF NOT EXISTS ad_spend (id TEXT PRIMARY KEY, day TEXT NOT NULL, channel TEXT NOT NULL,
+  campaign TEXT NOT NULL DEFAULT '', cents INTEGER NOT NULL, clicks INTEGER, note TEXT NOT NULL DEFAULT '',
+  created REAL);
 """
 
 
@@ -37,7 +44,8 @@ def _user(row) -> dict | None:
     if not row:
         return None
     return {"email": row[0], "password_hash": row[1], "name": row[2] or "", "role": row[3],
-            "created": row[4], "last_login": row[5], "phone": row[6]}
+            "created": row[4], "last_login": row[5], "phone": row[6],
+            "attr": _attr(row[7]), "sms_opt_in": row[8]}
 
 
 class Store:
@@ -77,6 +85,12 @@ class Store:
         user_cols = {row[1] for row in self.db.execute("PRAGMA table_info(users)")}
         if "phone" not in user_cols:
             self.db.execute("ALTER TABLE users ADD COLUMN phone TEXT")
+        # Telemetry (docs/SPEC-ADMIN-METRICS.md): where the account first came from, and when
+        # it agreed to marketing texts. A login number is not consent; only the box is.
+        if "attr" not in user_cols:
+            self.db.execute("ALTER TABLE users ADD COLUMN attr TEXT")
+        if "sms_opt_in" not in user_cols:
+            self.db.execute("ALTER TABLE users ADD COLUMN sms_opt_in REAL")
         self.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_phone ON users (phone)")
         self.db.commit()
 
@@ -187,13 +201,13 @@ class Store:
 
     def get_user(self, email: str) -> dict | None:
         row = self.db.execute(
-            "SELECT email, password_hash, name, role, created, last_login, phone FROM users WHERE email=?",
+            "SELECT email, password_hash, name, role, created, last_login, phone, attr, sms_opt_in FROM users WHERE email=?",
             (email.lower(),)).fetchone()
         return _user(row)
 
     def user_by_phone(self, phone: str) -> dict | None:
         row = self.db.execute(
-            "SELECT email, password_hash, name, role, created, last_login, phone FROM users WHERE phone=?",
+            "SELECT email, password_hash, name, role, created, last_login, phone, attr, sms_opt_in FROM users WHERE phone=?",
             (phone,)).fetchone()
         return _user(row)
 
@@ -237,9 +251,9 @@ class Store:
     def users(self, limit: int = 500) -> list[dict]:
         """Every account, oldest first, without the hashes: the admin's list."""
         rows = self.db.execute(
-            "SELECT email, name, role, created, last_login, phone FROM users ORDER BY created, email LIMIT ?", (limit,))
-        return [{"email": r[0], "name": r[1] or "", "role": r[2], "created": r[3], "last_login": r[4], "phone": r[5]}
-                for r in rows]
+            "SELECT email, name, role, created, last_login, phone, attr, sms_opt_in FROM users "
+            "ORDER BY created, email LIMIT ?", (limit,))
+        return [_listed_user(r) for r in rows]
 
     def set_password(self, email: str, password_hash: str) -> bool:
         cur = self.db.execute("UPDATE users SET password_hash=? WHERE email=?", (password_hash, email.lower()))
@@ -412,12 +426,91 @@ class Store:
                         (season, email.lower(), platform, league_id))
         self.db.commit()
 
+    # ---- telemetry (docs/SPEC-ADMIN-METRICS.md) --------------------------------------
+    # An append-only log the admin metrics are computed from. Which names exist, and what may
+    # go in `props`, is edge/api/telemetry.py's business; the store only keeps rows. A `ref`
+    # makes an event once-only (a retried Stripe webhook is the same row); None never collides.
+
+    def log_event(self, name: str, anon_id: str = "", email: str = "", sku: str = "",
+                  amount_cents: int | None = None, props: dict | None = None, ref: str | None = None,
+                  at: float | None = None) -> bool:
+        """Append one event. False when `ref` was already logged under this name."""
+        import json as _json
+        cur = self.db.execute(
+            "INSERT OR IGNORE INTO events (created, name, anon_id, email, sku, amount_cents, props, ref) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (at or time.time(), name, anon_id or "", (email or "").lower(), sku or "", amount_cents,
+             _json.dumps(props or {}), ref or None))
+        self.db.commit()
+        return cur.rowcount == 1
+
+    def events(self, since: float = 0, until: float | None = None, names: tuple[str, ...] | None = None,
+               email: str | None = None, limit: int = 200_000) -> list[dict]:
+        """Events in [since, until), oldest first, optionally only some names or one account."""
+        sql = "SELECT created, name, anon_id, email, sku, amount_cents, props FROM events WHERE created >= ?"
+        args: list = [since]
+        if until is not None:
+            sql += " AND created < ?"
+            args.append(until)
+        if names:
+            sql += f" AND name IN ({','.join('?' * len(names))})"
+            args.extend(names)
+        if email is not None:
+            sql += " AND email = ?"
+            args.append(email.lower())
+        sql += " ORDER BY created, rowid LIMIT ?"
+        args.append(limit)
+        return [_event(r) for r in self.db.execute(sql, args)]
+
+    def activity(self, since: float = 0) -> list[tuple[str, float]]:
+        """(email, when) for every signed-in engine call since `since`: who came back, and when."""
+        rows = self.db.execute("SELECT email, created FROM runs WHERE email != '' AND created >= ? ORDER BY created",
+                               (since,))
+        return [(r[0], r[1]) for r in rows]
+
+    def set_attr(self, email: str, attr: dict) -> bool:
+        """Record where an account first came from. First touch wins: never overwritten."""
+        import json as _json
+        cur = self.db.execute("UPDATE users SET attr=? WHERE email=? AND (attr IS NULL OR attr='' OR attr='{}')",
+                              (_json.dumps(attr), email.lower()))
+        self.db.commit()
+        return cur.rowcount == 1
+
+    def set_sms_opt_in(self, email: str, on: bool, at: float | None = None) -> bool:
+        """Tick (a timestamp: when they agreed) or untick (NULL) the marketing-text box."""
+        cur = self.db.execute("UPDATE users SET sms_opt_in=? WHERE email=?",
+                              ((at or time.time()) if on else None, email.lower()))
+        self.db.commit()
+        return cur.rowcount == 1
+
+    def add_spend(self, day: str, channel: str, cents: int, campaign: str = "", clicks: int | None = None,
+                  note: str = "") -> str:
+        """One day's ad spend on one channel, typed in by the admin. Returns its id."""
+        import uuid
+        sid = uuid.uuid4().hex[:12]
+        self.db.execute("INSERT INTO ad_spend (id, day, channel, campaign, cents, clicks, note, created) "
+                        "VALUES (?,?,?,?,?,?,?,?)", (sid, day, channel, campaign, int(cents), clicks, note, time.time()))
+        self.db.commit()
+        return sid
+
+    def spend(self, since_day: str = "", until_day: str = "9999-12-31") -> list[dict]:
+        """Spend rows with since_day <= day <= until_day (ISO dates compare as strings), by day."""
+        rows = self.db.execute("SELECT id, day, channel, campaign, cents, clicks, note FROM ad_spend "
+                               "WHERE day >= ? AND day <= ? ORDER BY day, created", (since_day, until_day))
+        return [_spend(r) for r in rows]
+
+    def delete_spend(self, spend_id: str) -> bool:
+        cur = self.db.execute("DELETE FROM ad_spend WHERE id=?", (spend_id,))
+        self.db.commit()
+        return cur.rowcount == 1
+
     # ---- data subject requests ----
     # A privacy policy that promises export and deletion needs code behind it, and the
     # promise is cheap to keep because we hold so little: an email, which leagues it picked,
     # what it bought, and what we recommended.
 
-    USER_TABLES = ("users", "purchases", "leagues", "runs", "feedback", "email_prefs", "sessions", "resets")
+    USER_TABLES = ("users", "purchases", "leagues", "runs", "feedback", "email_prefs", "sessions", "resets",
+                   "events")
     # Columns that are secrets rather than data about the person: never in an export.
     HIDDEN_COLUMNS = ("password_hash", "token_hash")
 
@@ -480,3 +573,34 @@ def _live_skus(rows: list[tuple[str, float]], now: float | None = None) -> list[
         by.setdefault(sku, []).append(created)
     return [sku for sku, created in by.items()
             if products.duration_s(sku) is None or _pass_until(sku, created, now) is not None]
+
+
+def _attr(raw: str | None) -> dict:
+    """Shared by both stores: the stored first touch, or {}."""
+    import json as _json
+    try:
+        return _json.loads(raw) if raw else {}
+    except ValueError:
+        return {}
+
+
+def _listed_user(r) -> dict:
+    """Shared by both stores: one row of the admin's account list."""
+    return {"email": r[0], "name": r[1] or "", "role": r[2], "created": r[3], "last_login": r[4], "phone": r[5],
+            "attr": _attr(r[6]), "sms_opt_in": r[7]}
+
+
+def _event(r) -> dict:
+    """Shared by both stores: one events row as a dict."""
+    import json as _json
+    try:
+        props = _json.loads(r[6]) if r[6] else {}
+    except ValueError:
+        props = {}
+    return {"created": r[0], "name": r[1], "anon_id": r[2], "email": r[3], "sku": r[4],
+            "amount_cents": r[5], "props": props}
+
+
+def _spend(r) -> dict:
+    """Shared by both stores: one ad_spend row as a dict."""
+    return {"id": r[0], "day": r[1], "channel": r[2], "campaign": r[3], "cents": r[4], "clicks": r[5], "note": r[6]}

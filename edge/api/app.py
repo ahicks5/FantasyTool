@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from edge import products
 from edge.api import desk, directory as directory_mod, lenses as lenses_mod, scout as scout_mod, service, share as share_mod
-from edge.api import accounts, auth
+from edge.api import accounts, auth, telemetry
 from edge.api import phone as phone_mod
 from edge.api.auth import current_user, optional_user
 from edge.api.limits import PRODUCTION_WEB_ORIGIN, RateLimitMiddleware, client_ip, cors_origins, validate_id, validate_platform
@@ -92,6 +92,7 @@ def _account(email: str) -> dict:
     out["league_slots"] = _slots(email)
     # When a week pass runs out (epoch seconds), so the account page can say so; None without one.
     out["pass_until"] = store.pass_until(email, products.WEEK_SKU, _season()) if email else None
+    out["sms_opt_in"] = bool((store.get_user(email) or {}).get("sms_opt_in")) if email else False
     return out
 
 
@@ -127,6 +128,32 @@ def _open_session(email: str) -> dict:
     return {"token": token, "me": _me(email)}
 
 
+def anon_id(x_anon_id: str | None = Header(default=None)) -> str:
+    """The browser's random telemetry id (`booth.aid`), or '' (docs/SPEC-ADMIN-METRICS.md)."""
+    return telemetry.clean_anon(x_anon_id)
+
+
+def _paywall_seen(email: str | None, feature: str) -> None:
+    """A signed-in account hit a 402: once per feature per day, so a retrying page is one view."""
+    if email:
+        from edge.business.metrics import et_day
+        telemetry.log(store, "paywall_view", email=email, props={"feature": feature},
+                      ref=f"{email}:{feature}:{et_day(time.time())}")
+
+
+def _signed_up(email: str, anon: str, attr: dict, method: str) -> None:
+    """Record a new account: where it came from (first touch, kept) and the event."""
+    attr = telemetry.clean_attr(attr)
+    if attr:
+        store.set_attr(email, attr)
+    telemetry.log(store, "signup", anon_id=anon, email=email, props=attr | {"method": method})
+
+
+def _attribution(email: str) -> dict:
+    """The account's first touch, as stored at sign-up."""
+    return (store.get_user(email) or {}).get("attr") or {}
+
+
 def require_admin(email: str = Depends(current_user)) -> str:
     """The signed-in caller, if they are an admin by role or by `EDGE_ADMINS`; else 403."""
     user = store.get_user(email)
@@ -137,6 +164,7 @@ def require_admin(email: str = Depends(current_user)) -> str:
 
 def _require(email: str | None, feature: str, teaser: str | None = None) -> None:
     if not products.can(_skus(email), feature):
+        _paywall_seen(email, feature)
         raise HTTPException(402, detail={"error": f"{feature} requires a purchase", "feature": feature,
                                          "teaser": teaser, "upsell": products.upsell(_skus(email), feature)})
 
@@ -210,6 +238,7 @@ class RegisterIn(BaseModel):
     email: str
     password: str
     name: str = ""
+    attr: dict = {}  # first-touch attribution from the browser (telemetry.ATTR_KEYS)
 
 
 class LoginIn(BaseModel):
@@ -232,7 +261,7 @@ class PasswordIn(BaseModel):
 
 
 @app.post("/api/auth/register")
-def register(body: RegisterIn):
+def register(body: RegisterIn, anon: str = Depends(anon_id)):
     """Create an account and sign it in. 409 when the address already has one."""
     email = accounts.normalize_email(body.email)
     if not accounts.valid_email(email):
@@ -242,6 +271,7 @@ def register(body: RegisterIn):
         raise HTTPException(400, problem)
     if not store.create_user(email, accounts.hash_password(body.password), body.name.strip()[:80]):
         raise HTTPException(409, "that email already has an account; sign in instead")
+    _signed_up(email, anon, body.attr, "email")
     return _open_session(email)
 
 
@@ -439,6 +469,9 @@ class PhoneCompleteIn(BaseModel):
     ticket: str
     name: str = ""
     email: str = ""
+    attr: dict = {}
+    # The marketing-text box. Unticked by default, and a login number is not consent.
+    sms_opt_in: bool = False
 
 
 @app.post("/api/auth/phone/start")
@@ -476,7 +509,7 @@ def phone_verify(body: PhoneCodeIn):
 
 
 @app.post("/api/auth/phone/complete")
-def phone_complete(body: PhoneCompleteIn):
+def phone_complete(body: PhoneCompleteIn, anon: str = Depends(anon_id)):
     """Finish signing up a verified number: name, and an email if they want one."""
     email = accounts.normalize_email(body.email) if body.email.strip() else ""
     if email and (not accounts.valid_email(email) or accounts.is_placeholder(email)):
@@ -492,6 +525,10 @@ def phone_complete(body: PhoneCompleteIn):
     key = email or accounts.phone_key(phone)
     if not store.create_user(key, "", body.name.strip()[:80], phone=phone):
         raise HTTPException(409, "that email already has an account; sign in with it")
+    _signed_up(key, anon, body.attr, "phone")
+    if body.sms_opt_in:
+        store.set_sms_opt_in(key, True)
+        telemetry.log(store, "sms_opt_in", anon_id=anon, email=key, props={"wording": SMS_CONSENT_VERSION})
     return _open_session(key)
 
 
@@ -560,10 +597,8 @@ def upgrade(body: UpgradeIn, email: str = Depends(current_user)):
     if not products.for_sale(body.sku):
         raise HTTPException(400, "unknown, free or retired sku")
     if _stripe_configured():
-        from edge.api import payments
-        url = payments.create_checkout(email, body.sku, _season(), body.success_url, body.cancel_url,
-                                       price_cents=_price_for(email, body.sku))
-        return {"url": url, "granted": False, "me": None}
+        return {"url": _start_checkout(email, body.sku, body.success_url, body.cancel_url),
+                "granted": False, "me": None}
     import uuid
     store.grant(email, body.sku, _season(), source="complimentary", ref=f"comp_{uuid.uuid4().hex}")
     return {"url": None, "granted": True, "me": _me(email)}
@@ -605,12 +640,21 @@ class RoleIn(BaseModel):
 def admin_users(_: str = Depends(require_admin)):
     season = _season()
     out = []
+    revenue: dict[str, int] = {}
+    for e in store.events(names=telemetry.MONEY_EVENTS):
+        revenue[e["email"]] = revenue.get(e["email"], 0) + int(e["amount_cents"] or 0)
     for u in store.users():
         skus = store.skus(u["email"], season)
+        leagues = store.leagues(u["email"])
+        used = [l.get("last_used") or 0 for l in leagues]
         out.append(u | {"plan": products.plan(skus), "skus": skus,
-                        "leagues": store.leagues(u["email"]),
+                        "leagues": leagues,
                         "leagues_allowed": products.leagues_allowed(skus, store.count_sku(u["email"], products.ADD_ON_SKU, season)),
-                        "is_admin": accounts.is_admin(u["email"], u["role"])})
+                        "is_admin": accounts.is_admin(u["email"], u["role"]),
+                        "source": telemetry.source_of(u.get("attr")),
+                        "revenue_cents": revenue.get(u["email"], 0),
+                        # The later of a league opened and a sign-in: when we last saw them.
+                        "last_active": max(used + [u.get("last_login") or 0]) or None})
     return {"users": out, "season": season, "checkout": _stripe_configured()}
 
 
@@ -650,6 +694,106 @@ def admin_reset_link(email: str, admin: str = Depends(require_admin)):
     if not store.get_user(target):
         raise HTTPException(404, "no such account")
     return {"ok": True, "url": _reset_link(target), "hours": accounts.RESET_HOURS}
+
+
+# ---- telemetry and the admin's numbers (docs/SPEC-ADMIN-METRICS.md) ----
+
+# Bump when the words beside the sign-up box change: consent is to the words shown.
+SMS_CONSENT_VERSION = "2026-09-28"
+
+
+class EventIn(BaseModel):
+    name: str
+    props: dict = {}
+
+
+@app.post("/api/events")
+def browser_event(body: EventIn, anon: str = Depends(anon_id), email: str | None = Depends(optional_user)):
+    """The one event the browser writes (`landing_view`). Everything else is logged by the
+    server where it happens, so an ad blocker cannot make a sale disappear."""
+    if body.name not in telemetry.BROWSER_EVENTS:
+        raise HTTPException(400, "unknown event")
+    if not anon:
+        raise HTTPException(400, "missing X-Anon-Id")
+    props = telemetry.clean_attr(body.props)
+    telemetry.log(store, body.name, anon_id=anon, email=email or "", props=props)
+    return {"ok": True}
+
+
+class SmsPrefIn(BaseModel):
+    sms_opt_in: bool
+
+
+@app.put("/api/me/sms")
+def set_sms_pref(body: SmsPrefIn, email: str = Depends(current_user)):
+    """Tick or untick marketing texts. Unticking is always one tap, and it is immediate."""
+    store.set_sms_opt_in(email, body.sms_opt_in)
+    if body.sms_opt_in:
+        telemetry.log(store, "sms_opt_in", email=email, props={"wording": SMS_CONSENT_VERSION})
+    return {"sms_opt_in": body.sms_opt_in}
+
+
+def _paying_now() -> int:
+    season = _season()
+    return sum(1 for u in store.users(limit=100_000)
+               if products.is_premium(store.skus(u["email"], season)))
+
+
+@app.get("/api/admin/metrics")
+def admin_metrics(frm: str | None = None, to: str | None = None, _: str = Depends(require_admin)):
+    """Every number on the admin page for one range (default: this NFL week, Tue-Mon ET).
+    `frm` / `to` are ISO dates, both inclusive. See edge/business/metrics.py."""
+    from edge.business import metrics
+    now = time.time()
+    try:
+        start, end = metrics.resolve_range(frm, to, now)
+    except ValueError:
+        raise HTTPException(400, "dates are YYYY-MM-DD")
+    span = end - start
+    return metrics.report(store.events(until=end), store.users(limit=100_000), store.spend(),
+                          store.activity(since=start - 6 * metrics.WEEK - span),
+                          _paying_now(), start, end, now, shares=store.share_stats(10))
+
+
+class SpendIn(BaseModel):
+    day: str
+    channel: str
+    dollars: float
+    campaign: str = ""
+    clicks: int | None = None
+    note: str = ""
+
+
+@app.post("/api/admin/spend")
+def admin_add_spend(body: SpendIn, _: str = Depends(require_admin)):
+    """One day's spend on one channel, typed in from the ad platform. The channel must be
+    the same word as the ads' utm_source, or CAC cannot find its buyers."""
+    import datetime as _dt
+    try:
+        _dt.date.fromisoformat(body.day)
+    except ValueError:
+        raise HTTPException(400, "day is YYYY-MM-DD")
+    channel = body.channel.strip().lower()[:40]
+    if not channel or body.dollars < 0 or body.dollars > 100_000:
+        raise HTTPException(400, "a channel and a dollar amount, please")
+    sid = store.add_spend(body.day, channel, round(body.dollars * 100), body.campaign.strip()[:80],
+                          body.clicks, body.note.strip()[:200])
+    return {"ok": True, "id": sid}
+
+
+@app.delete("/api/admin/spend/{spend_id}")
+def admin_delete_spend(spend_id: str, _: str = Depends(require_admin)):
+    if not store.delete_spend(spend_id):
+        raise HTTPException(404, "no such spend row")
+    return {"ok": True}
+
+
+@app.get("/api/admin/users/{email}/events")
+def admin_user_events(email: str, _: str = Depends(require_admin)):
+    """One account's timeline, newest first: the fastest way to answer "I paid and it's
+    still locked"."""
+    rows = store.events(email=accounts.normalize_email(email))
+    return {"events": list(reversed(rows[-200:]))}
 
 
 class EmailPrefIn(BaseModel):
@@ -714,11 +858,14 @@ def connect(body: ConnectIn, email: str = Depends(current_user), auth=Depends(es
     already = (body.platform, body.league_id) in used
     allowed = _leagues_allowed(email)
     if not already and len(used) >= allowed:
+        _paywall_seen(email, "leagues")
         raise HTTPException(402, detail={"error": "league limit reached", "feature": "leagues",
                                          "teaser": f"Your account keeps {allowed} league{'s' if allowed != 1 else ''} "
                                                    f"and all {allowed} are taken. Add a slot for one more.",
                                          "upsell": products.league_upsell(_skus(email))})
     store.connect_league(email, body.platform, body.league_id, t.id, b.league.name, t.name)
+    if not already:
+        telemetry.log(store, "league_linked", email=email, props={"platform": body.platform})
     return {"ok": True, "saved": True,
             "league": {"platform": body.platform, "league_id": body.league_id, "team_id": t.id,
                        "team_name": t.name, "name": b.league.name, "week": b.league.week},
@@ -731,14 +878,21 @@ class CheckoutIn(BaseModel):
     cancel_url: str | None = None
 
 
+def _start_checkout(email: str, sku: str, success_url: str | None, cancel_url: str | None) -> str:
+    """A Stripe Checkout session, carrying the account's first touch, and its event."""
+    from edge.api import payments
+    price = _price_for(email, sku)
+    url = payments.create_checkout(email, sku, _season(), success_url, cancel_url,
+                                   price_cents=price, attribution=_attribution(email))
+    telemetry.log(store, "checkout_start", email=email, sku=sku, amount_cents=price)
+    return url
+
+
 @app.post("/api/checkout")
 def checkout(body: CheckoutIn, email: str = Depends(current_user)):
-    from edge.api import payments
     if not products.for_sale(body.sku):
         raise HTTPException(400, "unknown, free or retired sku")
-    url = payments.create_checkout(email, body.sku, _season(), body.success_url, body.cancel_url,
-                                   price_cents=_price_for(email, body.sku))
-    return {"url": url}
+    return {"url": _start_checkout(email, body.sku, body.success_url, body.cancel_url)}
 
 
 @app.post("/api/stripe/webhook")
@@ -754,9 +908,25 @@ async def stripe_webhook(request: Request):
     if not event:
         return {"received": True, "granted": False, "revoked": 0, "restored": 0}
 
+    if event["action"] in ("abandon", "cancel"):
+        # Nothing to grant or take: the subscription's paid weeks run out on their own.
+        name = "checkout_abandon" if event["action"] == "abandon" else "cancel"
+        props = {}
+        if name == "cancel" and products.SEASON_SKU in _skus(event["email"]):
+            props["upgraded"] = True  # we ended it ourselves when the season landed
+        telemetry.log(store, name, email=event["email"], sku=event["sku"], props=props, ref=event["ref"] or None)
+        return {"received": True, "granted": False, "revoked": 0, "restored": 0}
+
     if event["action"] == "grant":
+        sku = event["sku"]
+        before = store.count_sku(event["email"], sku, event["season"])
         store.grant(event["email"], event["sku"], event["season"], source="stripe",
                     ref=event["ref"], payment_ref=event.get("payment_ref", ""))
+        if store.count_sku(event["email"], sku, event["season"]) > before:  # a replay adds no row, and no event
+            renewal = sku == products.WEEK_SKU and before > 0
+            name = "upgrade" if event.get("upgrade") else "renewal" if renewal else "purchase"
+            telemetry.log(store, name, email=event["email"], sku=sku, amount_cents=event.get("amount_cents"),
+                          ref=event["ref"] or None)
         # The season replaces the week: stop billing the week (upgrade or not).
         cancelled = payments.cancel_week_subscriptions(event["email"]) if event["sku"] == products.SEASON_SKU else 0
         return {"received": True, "granted": True, "revoked": 0, "restored": 0, "cancelled": cancelled}
@@ -764,6 +934,9 @@ async def stripe_webhook(request: Request):
     # A refund or chargeback withdraws access; a dispute we win gives it back.
     if event["action"] == "revoke":
         n = store.revoke(event["payment_ref"])
+        if event.get("reason") == "refunded":
+            telemetry.log(store, "refund", amount_cents=event.get("amount_cents"),
+                          props={"payment_ref": event["payment_ref"]}, ref=event.get("ref") or event["payment_ref"] or None)
         return {"received": True, "granted": False, "revoked": n, "restored": 0, "reason": event.get("reason")}
 
     n = store.restore(event["payment_ref"])
@@ -1419,6 +1592,7 @@ def create_share(body: ShareIn, email: str | None = Depends(optional_user)):
                                   body.week or 0, body.give_players, body.get_players)
     sid = share_mod.new_id()
     store.put_share(sid, snap)
+    telemetry.log(store, "share_create", email=email or "", props={"kind": kind, "share": sid})
     base = os.environ.get("EDGE_WEB_URL", "http://localhost:3000").rstrip("/")
     return {"id": sid, "url": f"{base}/s/{sid}"}
 
@@ -1472,6 +1646,7 @@ def read_share(share_id: str):
     snap = store.get_share(share_id)
     if not snap:
         raise HTTPException(404, "that share link has expired or never existed")
+    telemetry.log(store, "share_open", props={"kind": snap.get("kind") or "trade", "share": share_id})
     return snap
 
 

@@ -882,3 +882,24 @@ def test_cancel_week_subscriptions_only_touches_this_accounts_weeks(monkeypatch)
     assert payments.cancel_week_subscriptions("a@b.c") == 1
     assert cancelled == ["sub_week"]
     assert "metadata['email']:'a@b.c'" in queries[0] and "status:'active'" in queries[0]
+
+
+# ---- telemetry on the league routes (docs/SPEC-ADMIN-METRICS.md) --------------------------
+
+def test_linking_logs_a_new_league_once_and_never_its_id(client, league):
+    body = {"platform": "sleeper", "league_id": "1403186749361901568", "team_id": league.teams[0].id}
+    for _ in range(2):
+        assert client.post("/api/connect", headers=H, json=body).status_code == 200
+    (e,) = app_mod.store.events(names=("league_linked",))
+    assert e["email"] == "andrew@example.com" and e["props"] == {"platform": "sleeper"}
+    assert "1403186749361901568" not in str(app_mod.store.events()), "no league id in telemetry"
+
+
+def test_a_paywall_is_one_view_per_feature_per_day_and_strangers_are_not_counted(client, league):
+    tid = league.teams[0].id
+    assert client.get(f"{LG}/team/{tid}/waivers").status_code == 402
+    assert app_mod.store.events(names=("paywall_view",)) == [], "no account, nothing to follow up"
+    for _ in range(3):
+        assert client.get(f"{LG}/team/{tid}/waivers", headers=H).status_code == 402
+    (e,) = app_mod.store.events(names=("paywall_view",))
+    assert e["email"] == "andrew@example.com" and e["props"] == {"feature": "waivers"}
