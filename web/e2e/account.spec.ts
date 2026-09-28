@@ -157,7 +157,10 @@ test("a stranger's door is the account: register, land on it, then link a league
 
   // The top bar wears the initial; the account page shows the league on file and the flag.
   await expect(page.getByRole("link", { name: ACCOUNT.topbar.account("Andrew") })).toHaveText("A");
-  await page.goto("/account");
+  // By the top bar's link, not a reload: a reload would refetch the account and hide the
+  // bug where the session cache still listed the leagues from before the save (2026-09-28).
+  await page.getByRole("link", { name: ACCOUNT.topbar.account("Andrew") }).click();
+  await page.waitForURL("**/account");
   await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.title })).toBeVisible();
   await expect(page.getByTestId("league-room")).toHaveText("1 of 3 leagues");
   await expect(page.getByText(CONNECTION.league_name).first()).toBeVisible();

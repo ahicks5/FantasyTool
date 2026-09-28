@@ -300,6 +300,10 @@ export default function ConnectPage() {
         team_name: team?.name ?? `Team ${teamId}`,
         week: league.week,
       });
+      // The account is remembered for the session and only re-read on a sign-in, so
+      // without this the account page kept listing the leagues from before this save
+      // (Andrew, 2026-09-28: "the league isn't attached to my account").
+      session.refresh();
       router.push("/home");
     }
   }
