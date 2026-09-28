@@ -127,6 +127,20 @@ no email (`edge/api/share.py`).
  "waiver_type":"faab","faab_budget":100,"starting_slots":["QB","RB",...],
  "teams":[{"id":"1","name":"HusH","owner_name":"HusH","record":"2-0","points_for":159.1,"faab_remaining":100}]}
 ```
+**Yahoo.** `platform` is `yahoo` and `league_id` is Yahoo's league key, `461.l.12345`. Every Yahoo
+call needs header `X-Yahoo-Token` (the user's access token; Yahoo has no public read). A missing
+or rejected token is `403 {"detail":{"error","platform":"yahoo","needs_yahoo_auth":bool}}`;
+`false` means expired, so refresh once and retry. Sign-in (setup in `docs/DEPLOY.md`, "Yahoo"):
+
+- `GET /api/yahoo/status` → `{"enabled":bool}`: all three `YAHOO_*` env vars set.
+- `GET /api/yahoo/authorize?state=<16-128 url-safe chars>` → `{"url"}`: Yahoo's sign-in page. 503 when not configured.
+- `POST /api/yahoo/token {"code"}` → `{"access_token","refresh_token","expires_in"}`.
+- `POST /api/yahoo/refresh {"refresh_token"}` → the same shape; the refresh token may be new.
+- `GET /api/yahoo/leagues` (with `X-Yahoo-Token`) → this season's leagues, the Sleeper list's shape.
+
+Each platform gets only its own credential: ESPN cookie headers reach ESPN routes and nothing
+else, the Yahoo token reaches Yahoo routes and nothing else.
+
 `POST /api/connect {"platform":"sleeper","league_id":"...","team_id":"1"}` (signed in; 401 to a stranger) → saves to the
 account's leagues with the team's name and returns `{"ok","saved":true,"league":{...},"leagues":[...],"leagues_allowed":3}`.
 Over the cap: 402 with `feature:"leagues"` and `upsell:[league_slot, full_report]`. Linking a league already on file
