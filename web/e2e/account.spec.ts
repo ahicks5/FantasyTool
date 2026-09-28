@@ -134,6 +134,8 @@ test("a stranger's door is the account: register, land on it, then link a league
   await welcome.getByRole("link", { name: ACCOUNT.welcome.cta }).click();
   await page.waitForURL("**/connect");
   await expect(gate).toHaveCount(0);
+  // A way back out to the account, in the header.
+  await expect(page.getByTestId("back-to-account")).toHaveAttribute("href", "/account");
 
   // Link the fixture league the way a visitor does.
   await page.getByRole("radio", { name: "Sleeper" }).click();

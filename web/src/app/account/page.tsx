@@ -443,7 +443,7 @@ function AccountBody() {
         </p>
         {!hasSeason && (
           <Button variant="start" className="mt-4 w-full" onClick={() => buy("full_report", LINES.paywallBundle)} data-testid="upgrade-bundle">
-            {ACCOUNT.plan.upgrade}
+            {weekOnly ? ACCOUNT.plan.upgradeWeek : ACCOUNT.plan.upgrade}
             <IconChevron size={16} strokeWidth={2.6} />
           </Button>
         )}

@@ -176,6 +176,11 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
   const season = offers.find((o) => o.sku === "full_report");
   const week = offers.find((o) => o.sku === "week_pass");
   const stack = season && week ? offerStack(products) : null;
+  // The API prices the season per account: a live paid week brings it down. The page only
+  // shows that number; the checkout charges what the server computes, never this.
+  const seasonCents = season ? (session.me?.season_price_cents ?? season.price_cents) : 0;
+  const credited = !!season && seasonCents < season.price_cents;
+  const saving = !credited && stack?.weeklyCents != null && stack.weeklyCents > stack.seasonCents;
 
   async function buy(offer: Product) {
     setBusy(offer.sku);
@@ -216,27 +221,35 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
           <div className="hero p-5" data-testid="season-offer">
             <div className="flex items-center justify-between gap-3">
               <span className="eyebrow">{ACCOUNT.upgrade.seasonHead}</span>
-              {stack?.weeklyCents != null && stack.weeklyCents > stack.seasonCents && (
-                <span className="rounded-full bg-start-fill px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-white">
-                  {ACCOUNT.upgrade.save(formatCents(stack.weeklyCents - stack.seasonCents))}
+              {(credited || saving) && (
+                <span className="shrink-0 whitespace-nowrap rounded-full bg-start-fill px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-white">
+                  {credited ? ACCOUNT.upgrade.weekCounts : ACCOUNT.upgrade.save(formatCents((stack?.weeklyCents ?? 0) - (stack?.seasonCents ?? 0)))}
                 </span>
               )}
             </div>
             <div className="mt-2 flex items-end gap-3">
-              <span className="display tnum text-[52px] leading-none">{formatCents(season.price_cents)}</span>
-              {stack?.weeklyCents != null && stack.weeklyCents > stack.seasonCents && (
-                <span className="tnum mb-1.5 text-[20px] font-bold text-white/45 line-through">{formatCents(stack.weeklyCents)}</span>
+              <span className="display tnum text-[52px] leading-none" data-testid="season-price">{formatCents(seasonCents)}</span>
+              {(credited || saving) && (
+                <span className="tnum mb-1.5 text-[20px] font-bold text-white/45 line-through">
+                  {formatCents(credited ? season.price_cents : (stack?.weeklyCents ?? 0))}
+                </span>
               )}
             </div>
-            {stack?.weeksLeft != null && stack.weeklyCents != null && stack.weeklyCents > stack.seasonCents && (
-              <p className="mt-1.5 text-[13px] text-white/60">{ACCOUNT.upgrade.vsWeekly(stack.weeksLeft, formatCents(stack.weeklyCents))}</p>
+            {credited ? (
+              <p className="mt-1.5 text-[13px] text-white/60">{ACCOUNT.upgrade.weekCountsLine}</p>
+            ) : (
+              saving &&
+              stack?.weeksLeft != null && (
+                <p className="mt-1.5 text-[13px] text-white/60">{ACCOUNT.upgrade.vsWeekly(stack.weeksLeft, formatCents(stack.weeklyCents ?? 0))}</p>
+              )
             )}
             <p className="mt-3 text-[15px] leading-snug text-white/85">{ACCOUNT.upgrade.seasonSub}</p>
             <Button variant="start" className="mt-4 w-full" busy={busy === season.sku} disabled={!!busy && busy !== season.sku} onClick={() => buy(season)}>
               {busy === season.sku ? ACCOUNT.upgrade.busy : ACCOUNT.upgrade.takeSeason}
             </Button>
           </div>
-          {week && (
+          {/* A live week holder is buying the season from their week; offering the week again is noise. */}
+          {week && !credited && (
             <>
               <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.14em] text-muted" aria-hidden>
                 <span className="h-px flex-1 bg-line" />

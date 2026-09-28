@@ -16,6 +16,11 @@ ADD_ON_SKU = "league_slot"
 
 DAY_S = 24 * 60 * 60
 
+# Andrew, 2026-09-28: a week-pass holder's current paid week counts toward the season, so
+# the season costs them this instead of the full price. Only the week in hand counts, never
+# weeks stacked before it, so it is one fixed price rather than a running credit.
+SEASON_UPGRADE_CENTS = 1999
+
 # Andrew, 2026-09-27: the week pass is $4.99 and renews weekly (a Stripe subscription, cancel
 # anytime); the season is $24.99 and the league slot $2.99, each one payment. Nothing is sold
 # à la carte any more.
@@ -77,6 +82,12 @@ def live_until(sku: str, created: list[float]) -> float | None:
     if dur is None or not created:
         return None
     return max(created) + dur
+
+
+def season_price_cents(week_live: bool, has_season: bool = False) -> int:
+    """What the season pass costs this account: the upgrade price while a paid week is live."""
+    full = BY_SKU[SEASON_SKU]["price_cents"]
+    return SEASON_UPGRADE_CENTS if week_live and not has_season else full
 
 
 def features_for(skus: list[str] | set[str]) -> set[str]:

@@ -28,7 +28,7 @@ The free tier, then only what is on sale. `week_pass` is a weekly Stripe subscri
 `duration_days + grace_days`. `full_report` is the season pass (one payment; `through` is display-only). The
 retired `waivers` (Wire Pass) and `trade_lab` (Trade Lab) never appear here but still resolve for accounts that
 hold them. `league_slot` is an add-on: it unlocks nothing and stacks, one more league per purchase.
-`leagues_allowed` is the highest tier cap held (3 free, 5 with either pass) plus one per slot. `leagues_used` is the slots taken this season: the leagues on file plus any forgotten this season.
+`leagues_allowed` is the highest tier cap held (3 free, 5 with either pass) plus one per slot. `leagues_used` is the slots taken this season: the leagues on file plus any forgotten this season. `season_price_cents` is what the season pass costs this account now: 1999 while a paid week is live, else 2499. Checkout charges the server's number, never the client's, and a season grant cancels any active week-pass subscription on the account.
 
 `GET /api/me` →
 ```json
