@@ -21,6 +21,68 @@ first-party log **and** a hosted tool; pixels yes; SMS consent box yes; Resend p
 - [ ] Nothing sends marketing texts yet: the consent is collected, the sender is not built
 - Paused by Andrew: Resend (reset mail and the email list)
 
+## ESPN private leagues from a phone: the key (2026-09-28)
+
+Andrew's brief, in his words: "i want an option that can be done on phone, easily, and with
+least work possible ... i'm fine if you do the bookmark javascript, run it on a page, copy ids,
+that kind of thing. but that's the most complex i'd do and it'd have visuals ... something a
+bit more complicated but based on the yahoo thing where you sign up thru a second page then
+come back and it's set up." ESPN has no OAuth, so "come back and it's set up" is done with a
+bookmark that returns to us carrying the key in the URL fragment. `docs/DATA.md` "How a phone
+gets them" and `docs/WEB.md` "The ESPN key".
+
+- [x] **EK-1** `web/src/lib/espnKey.ts`: the bookmarklet, built from the site's origin and the
+      league id; wrong site and missing cookie say so and never show a value; the return
+      fragment parsed strictly. Run against a fake page in `espnKey.test.ts`.
+- [x] **EK-2** `/connect/espn`: the walk, per device (iPhone Safari, Android Chrome, computer),
+      with the phone's own buttons drawn as chips; the landing that saves the key and leaves
+      by `replace`; the commissioner note; the paste door. `e2e/smoke.spec.ts` covers the
+      render at 375px and the return end to end.
+- [x] **EK-3** `/connect?platform=espn&id=…` deep link picks the platform and loads the league;
+      `&paste=1` opens the fields. `EspnAuthForm` leads with "Get my key".
+- [x] **EK-4** `lib/href.ts`: the address as a store, so no page copies the URL into state.
+- [ ] **EK-5** Andrew: tap it through on a real iPhone against a real private league. Confirmed
+      by reading Disney's OneID.js that `espn_s2` is written from page script (so readable),
+      not yet confirmed on a device in this session.
+- [ ] **EK-6** Decision: the FantasyPros way. Their mobile app asks for the ESPN email and
+      password and signs in through Disney's API behind the scenes. That is the true "second
+      page then come back" flow and it is one afternoon of work, but it means handling ESPN
+      passwords, Disney's one-time codes break it unpredictably, and it is against ESPN's terms.
+      Not built. See "Decisions needed from Andrew".
+- [ ] **EK-7** Two short screen recordings (iPhone, Android) of the walk for the page and the
+      FAQ, once EK-5 is done.
+## Yahoo leagues (2026-09-28)
+
+Built end to end and off until Yahoo approves our app: the connect page shows "Yahoo · Soon"
+until the three `YAHOO_*` env vars are set on Render, then offers it. Setup: `docs/DEPLOY.md`, "Yahoo".
+
+- [x] **Y-1** `edge/data/yahoo_api.py`: OAuth (authorize, code, refresh) and XML reads. Tokens
+      live in the browser, never stored by the API.
+- [x] **Y-2** `edge/connectors/yahoo.py`: league, scoring from `stat_modifiers`, roster slots,
+      starters, standings, FAAB, injuries, free agents; Sleeper ids via `yahoo_id` then name.
+      Tested on Yahoo's own documented sample league (`tests/test_yahoo_connector.py`).
+- [x] **Y-3** API: `/api/yahoo/{status,authorize,token,refresh,leagues}`, league keys validate,
+      each platform gets only its own credential (`tests/test_yahoo_api.py`).
+- [x] **Y-4** Web: sign in with Yahoo, pick from your leagues, pick your team; refresh on
+      expiry; forged callbacks refused; credit line. Both themes at 375px.
+- [x] **Y-5** Privacy page and `docs/DATA_INVENTORY.md` name Yahoo and the token handling.
+- [x] **Y-6** Andrew applied at https://sports.yahoo.com/developer/ on 2026-09-28 ("submitted,
+      we'll be in touch"). Read-only access is all Yahoo offers, which is all we use.
+- [ ] **Y-7** Andrew: once approved, create the app (Fantasy Sports: Read, redirect
+      `https://penthousefantasy.com/connect/yahoo`) and set the three env vars on Render.
+- [ ] **Y-8** Record a real league (`edge.cli yahoo <key> --record`) and replace the
+      hand-written `free_agents.xml`; confirm stat ids beyond the documented sample (1-3, 7,
+      14, 17, 24-28, 30) and the FAAB budget ($100 assumed, never stated by Yahoo).
+- [ ] **Y-9** Yahoo's official logo beside the credit line (their file, as supplied), per their terms.
+- [ ] **Y-10** Flip the landing line "Yahoo soon" (`LANDING.eyebrow` in `vocab.ts`) once live;
+      `launch/ROLLOUT_PLAN.md` says not to mention Yahoo before then.
+- [ ] **Y-11** Later: the film for Yahoo (past weeks via `league/{key}/scoreboard;week=N`),
+      bid history and manager tendencies from `league/{key}/transactions`, the trade clock
+      from `trade_end_date`, and preselecting the owner's own team.
+- [ ] **Y-12** Decision for Andrew: the weekly email cannot read a Yahoo league, because we
+      keep no token. Storing the refresh token (encrypted, revocable, read-only scope) would fix
+      that; it is a store change and a privacy-page change.
+
 ## New pricing: week pass, season pass, no à la carte (2026-09-27)
 
 Andrew's decision: Free (unchanged), **week pass $4.99/week** (a Stripe subscription, cancel
@@ -491,6 +553,12 @@ themes. All eight are done and on production.
   `/api` itself, so that value 404s every call while the page still renders. Corrected.
 
 ## Decisions needed from Andrew
+
+- **ESPN sign-in with a password (2026-09-28).** The only way to make a private ESPN league
+  a true "sign in on their page, come back, done" flow is to take the user's ESPN email and
+  password and log in through Disney's API server-side, the way FantasyPros' app does. We would
+  never store the password, but we would handle it, and ESPN's one-time-code prompts break it
+  for some accounts without warning. The bookmark shipped instead. Say the word and it is a day.
 
 - **The landing page (2026-09-27).** Three calls, none blocking. (a) **The guarantee is on the
   page now**: "Not useful? Ask within 14 days and it is refunded in full. No reasoning required."
@@ -985,7 +1053,7 @@ Build in this order; each is its own commit.
 
 ## Later (not v1)
 - [ ] Private ESPN leagues (espn_s2 / SWID)
-- [ ] Yahoo
+- [~] Yahoo: built, waiting on Yahoo's API approval. See "Yahoo leagues" at the top.
 
 ## Go-to-market — team/league access (plan: docs/MARKETING.md)
 Proposed pivot: entitlement keyed to the **team**, not the email. Kills the login, kills the

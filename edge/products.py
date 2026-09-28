@@ -17,6 +17,11 @@ ADD_ON_SKU = "league_slot"
 
 DAY_S = 24 * 60 * 60
 
+# The scouting board shows a free account its top rows only; the rest of the board is the
+# wire's room and needs a pass (Andrew, 2026-09-28: "only show top 3 ... rest are blurred").
+FREE_BOARD_ROWS = 3
+BOARD_FEATURE = "waivers"
+
 # Andrew, 2026-09-28: a week-pass holder's current paid week counts toward the season, so
 # the season costs them this instead of the full price. Only the week in hand counts, never
 # weeks stacked before it, so it is one fixed price rather than a running credit.

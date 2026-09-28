@@ -87,6 +87,20 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
+      <Section heading="Yahoo leagues: you sign in with Yahoo, and the keys stay with you">
+        <p>
+          Yahoo opens every league only to its members, so connecting one means signing in with Yahoo and letting
+          Penthouse read your fantasy leagues. Yahoo asks you to approve that on its own page; we never see your Yahoo
+          password.
+        </p>
+        <p>
+          Yahoo then issues a pair of keys that can read your fantasy data and nothing else. Like the ESPN cookies,
+          they stay in your browser and ride along with the request that needs them. Our server passes them to Yahoo
+          and does not write them to our database or to disk. You can withdraw our access at any time in your Yahoo
+          account settings, or clear it on this device from the connect page.
+        </p>
+      </Section>
+
       <Section heading="Public share pages">
         <p>
           Turning a trade verdict into a link at <code>/s/…</code> publishes a display-only snapshot: the verdict, the
@@ -107,7 +121,7 @@ export default function PrivacyPage() {
               nothing else about you, and it checks the code; we never see it.
             </>,
             <>
-              <strong>Sleeper and ESPN</strong> are read to fetch your league, rosters and projections. We read from
+              <strong>Sleeper, ESPN and Yahoo</strong> are read to fetch your league, rosters and projections. We read from
               them; we do not send them anything about you beyond what the request requires.
             </>,
             <>

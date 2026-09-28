@@ -528,6 +528,12 @@ export const SCOUT = {
   back: "All players",
   /** The research half of the tab: who is out there, through a lens a filter cannot be. */
   research: "All players",
+  /** A free account's board: the top three, then the rest behind a pass (Andrew, 2026-09-28). */
+  boardLock: {
+    eyebrow: "The full board",
+    line: (n: number) => `${n.toLocaleString("en-US")} more player${n === 1 ? "" : "s"} on the board.`,
+    cta: "Unlock the full board",
+  },
   lenses: {
     eyebrow: "Lenses",
     /** The chip that turns the lens off. */
@@ -649,6 +655,140 @@ export const CONNECT = {
   submit: "Show my moves",
   /** While the connection is being written. */
   busy: "Wiring you in\u2026",
+} as const;
+
+/**
+ * The ESPN key: a private ESPN league, linked from a phone (Andrew, 2026-09-28).
+ *
+ * ESPN has no sign-in door for other apps, so a private league is read with two values
+ * ESPN's own site keeps in the browser. Every guide says "on a computer, open DevTools".
+ * The ceiling Andrew set is a bookmark that runs a script, so the page walks that: copy the
+ * key, save it as a bookmark, open ESPN, tap it, and it brings you back here with the key
+ * saved. Everything a person reads on that walk, in the form and in the bookmark's own two
+ * messages, is here. Voice: the staff walking you through it. Short, one instruction a line.
+ */
+export const ESPN_KEY = {
+  eyebrow: "ESPN \u00b7 private league",
+  title: "Get your ESPN key.",
+  lead: "ESPN has no sign-in door for other apps. Your key is two values ESPN keeps in your browser. One bookmark reads them and brings you straight back here.",
+  time: "Two minutes, once. You keep the bookmark, so next time it is one tap.",
+  /** The device switch: the steps differ by browser, so the page picks and the reader can correct it. */
+  handAria: "Which device are you on",
+  hand: { iphone: "iPhone", android: "Android", computer: "Computer" },
+  step: (n: number) => `Step ${n}`,
+  copy: {
+    title: "Copy the key",
+    body: "One tap. It goes on your clipboard.",
+    button: "Copy the key",
+    copied: "Copied. Now save it as a bookmark.",
+    failed: "Copy did not take. Press and hold the key below, Select All, then Copy.",
+    show: "Show the key",
+    hide: "Hide the key",
+    keyAria: "The key, as text",
+  },
+  /** The phone's own button names, drawn as chips above the lines so the reader recognises them first. */
+  taps: { share: "Share", addBookmark: "Add Bookmark", save: "Save", bookmarks: "Bookmarks" },
+  save: {
+    title: "Save it as a bookmark",
+    iphone: [
+      "Tap Share, then Add Bookmark, then Save. This page is fine.",
+      "Open Bookmarks, tap Edit, tap the bookmark you just saved.",
+      "Clear the address, paste the key, name it Penthouse key. Tap Done.",
+    ],
+    android: [
+      "Tap the three dots, then the star. This page is bookmarked.",
+      "Three dots, Bookmarks, then the three dots on the new one, then Edit.",
+      "Clear the address, paste the key, name it Penthouse key. Go back.",
+    ],
+    computer: [
+      "Show the bookmarks bar, right-click it, Add page.",
+      "Paste the key as the address, name it Penthouse key.",
+    ],
+  },
+  open: {
+    title: "Open ESPN",
+    body: "Sign in if it asks. Any page of your league will do.",
+    button: "Open fantasy.espn.com",
+  },
+  tap: {
+    title: "Tap the bookmark",
+    iphone: "On the ESPN page, open Bookmarks and tap Penthouse key. It brings you back here with the key saved.",
+    android: "On the ESPN page, tap the address bar, type Penthouse key, and tap it in the list under the bar. Chrome only runs it from there. It brings you back here with the key saved.",
+    computer: "On the ESPN page, click Penthouse key in the bar. It brings you back here with the key saved.",
+  },
+  /** The bookmark's two messages, shown by ESPN's page. It never shows the values. */
+  bookmark: {
+    wrongSite: "Open fantasy.espn.com and sign in, then tap this bookmark.",
+    noKey: "No key on this browser yet. Sign out of ESPN, sign back in here, then tap this bookmark again.",
+  },
+  /** The other doors, under the walk. */
+  other: "Two other ways in",
+  commissioner: {
+    title: "Ask the commissioner to make it viewable",
+    body: "One switch in ESPN: League, Settings, Edit, Make League Viewable to Public. The league stays private to join. Then the ID is all you need, and the weekly email can read it too.",
+    button: "Copy a note to the commissioner",
+    copied: "Copied. Send it in the league chat.",
+    note: (leagueId: string) =>
+      `Can you make our ESPN league viewable? In ESPN: League, Settings, Edit, Basic Settings, Make League Viewable to Public, then Yes. It stays private to join, it only lets tools read it. Our league ID is ${leagueId}. Thanks.`,
+  },
+  paste: {
+    title: "Paste the two values yourself",
+    body: "On a computer: F12, Application, Cookies, espn.com. Copy espn_s2 and SWID.",
+    button: "Paste them on the connect page",
+  },
+  /** The disclosure. Both halves are true of the code and neither can be cut. */
+  privacy: "The key stays on this device. It comes back in the part of the address that never leaves your browser, and the server never writes it down. It is a read session for your whole ESPN account, so Forget it on the connect page wipes it any time.",
+  back: "Back to connect",
+  /** The landing, once the bookmark has brought you back. */
+  saved: {
+    eyebrow: "ESPN \u00b7 key saved",
+    title: "Key saved.",
+    loading: "Loading your league.",
+    noLeague: "Head back and load your league.",
+  },
+  /** The form on /connect, which now leads with the phone. */
+  form: {
+    title: "Private league only",
+    sub: "A public league needs nothing here.",
+    needed: "That league is private. Get your key, two minutes on this phone.",
+    expired: "Your key stopped working. ESPN rotates them now and then. Get a fresh one.",
+    get: "Get my key",
+    stored: "Key saved on this device.",
+    forget: "Forget it",
+    /** The two folded doors under the button. */
+    askOpen: "Ask the commissioner instead",
+    askClose: "Hide the note",
+    pasteOpen: "Paste the two values instead",
+    pasteClose: "Hide the fields",
+    s2: "espn_s2",
+    swid: "SWID",
+    swidHint: "Braces or no braces. We tidy it either way.",
+    save: "Save these",
+    checking: "Checking with ESPN\u2026",
+    handling: "These stay in this browser and the server never writes them down. They are a read session for your whole ESPN account, not just this league.",
+  },
+} as const;
+
+/**
+ * Yahoo on the connect page and its sign-in return. Yahoo opens a league only to its
+ * members, so unlike Sleeper and ESPN there is no ID to paste: the owner signs in with Yahoo
+ * and picks from their own list. `attribution` is Yahoo's required credit line, word for
+ * word, and must not be reworded.
+ */
+export const YAHOO = {
+  label: "Yahoo",
+  soon: "Soon",
+  signIn: "Sign in with Yahoo",
+  why: "Yahoo opens a league only to its members. Sign in, pick yours. We read, never write.",
+  expired: "Your Yahoo sign-in ran out. Sign in again.",
+  pick: "Pick your Yahoo league",
+  none: "No Yahoo football leagues on this account this season.",
+  saved: "Yahoo sign-in saved on this device.",
+  forget: "Forget it",
+  returning: "Signing you in with Yahoo\u2026",
+  badState: "That Yahoo sign-in did not start here. Start it again.",
+  back: "Back to connect",
+  attribution: "Fantasy data provided by Yahoo Fantasy",
 } as const;
 
 /**
@@ -1190,7 +1330,7 @@ export const LANDING = {
       },
       {
         q: "ESPN private league?",
-        a: "Yes. Paste two cookies once. They stay in your browser, never on our side. A public league needs the ID only.",
+        a: "Yes. One bookmark on your phone fetches your key, once. It stays in your browser, never on our side. A public league needs the ID only.",
       },
       {
         q: "Why an account before a league?",

@@ -1,6 +1,6 @@
 // Mirrors docs/API.md (Penthouse API contract v1).
 
-export type Platform = "sleeper" | "espn";
+export type Platform = "sleeper" | "espn" | "yahoo";
 
 export type Feature = "my_team" | "waivers" | "trade_lab" | "full_report";
 
@@ -1423,6 +1423,8 @@ export interface PlayerBoard {
   facets: BoardFacets;
   lens?: Lens | null;
   algo_version?: string;
+  /** Rows a free account cannot see: the board shows the top three and counts the rest. */
+  locked?: number;
 }
 
 /** What the board is being asked for. Everything optional; the server holds the defaults. */

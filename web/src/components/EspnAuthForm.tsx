@@ -1,49 +1,64 @@
 "use client";
 /**
- * The two ESPN cookies a private league needs, asked for in the shape of a form rather than
- * a lecture.
+ * A private ESPN league, met on /connect: the key first, the two other doors folded under it.
  *
  * It only mounts once a request has come back saying the league is private, so a public
  * league never meets it. That is also why `status` is required rather than nullable: there
- * is always a failure to name above the fields — either we need the two values, or the ones
- * we have stopped working. Same form either way.
+ * is always a failure to name above the button, either we need the key or the one we have
+ * stopped working. Same card either way.
+ *
+ * The order is Andrew's (2026-09-28): the phone way leads. "Get my key" opens the walk at
+ * /connect/espn for this league; the bookmark it builds comes back with the key saved and
+ * this page loads the league on its own. Under it, folded: a note to the commissioner (one
+ * switch in ESPN makes the league viewable and the key unnecessary), and the two fields for
+ * anyone who already has the values.
  *
  * The honesty line below the fields is a disclosure, not copy. Both halves of it are true of
  * what the code does and neither can be cut: the values never leave this browser, and they
- * are a session for the whole ESPN account. Everything else is behind a click.
+ * are a session for the whole ESPN account.
  */
 
 import { useState } from "react";
 import { clearEspnAuth, saveEspnAuth, useEspnAuth } from "@/lib/espnAuth";
-import { IconLock } from "@/components/icons";
-import { Button } from "@/components/ui";
+import { IconChevron, IconCopy, IconLock } from "@/components/icons";
+import { Button, LinkButton } from "@/components/ui";
+import { ESPN_KEY } from "@/lib/vocab";
 
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 font-mono text-[13px] text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
 
 const DISCLOSURE = "min-h-11 text-left text-[14px] font-semibold text-ink underline underline-offset-4";
 
-const CODE = "font-mono text-[13px] text-ink";
-
 export function EspnAuthForm({
   status,
+  leagueId,
   onSaved,
   busy = false,
+  openPaste = false,
 }: {
-  /** The failure that opened this form. `expired` picks which one sentence to show. */
+  /** The failure that opened this card. `expired` picks which one sentence to show. */
   status: { expired: boolean };
+  /** The league the key is for, so the walk's bookmark comes back to it. */
+  leagueId: string;
   onSaved: () => void;
   busy?: boolean;
+  /** Arrived from the walk's "paste them yourself" door: open the fields at once. */
+  openPaste?: boolean;
 }) {
   const stored = useEspnAuth();
   const [s2, setS2] = useState("");
   const [swid, setSwid] = useState("");
-  const [showFind, setShowFind] = useState(false);
-  const [showTrust, setShowTrust] = useState(false);
+  const [showAsk, setShowAsk] = useState(false);
+  // The fields open on the walk's say-so until the reader touches the fold themselves.
+  const [pasteToggle, setPasteToggle] = useState<boolean | null>(null);
+  const showPaste = pasteToggle ?? openPaste;
+  const [copied, setCopied] = useState(false);
   const ready = s2.trim().length > 0 && swid.trim().length > 0;
+  const walk = `/connect/espn?id=${encodeURIComponent(leagueId)}`;
+  const note = ESPN_KEY.commissioner.note(leagueId);
 
   return (
-    <section className="mt-7 rounded-[var(--radius-card)] border border-line-2 bg-paper p-4">
+    <section className="mt-7 rounded-[var(--radius-card)] border border-line-2 bg-paper p-4" data-testid="espn-auth">
       <div className="flex items-start gap-3">
         <span
           aria-hidden
@@ -52,8 +67,8 @@ export function EspnAuthForm({
           <IconLock size={18} strokeWidth={2} />
         </span>
         <div className="min-w-0">
-          <h2 className="display text-[18px] leading-tight">Private league only</h2>
-          <p className="mt-0.5 text-[13px] leading-snug text-muted">A public league needs nothing here.</p>
+          <h2 className="display text-[18px] leading-tight">{ESPN_KEY.form.title}</h2>
+          <p className="mt-0.5 text-[13px] leading-snug text-muted">{ESPN_KEY.form.sub}</p>
         </div>
       </div>
 
@@ -61,107 +76,111 @@ export function EspnAuthForm({
         role="status"
         className="mt-3 rounded-xl bg-sit-soft px-3.5 py-2.5 text-[13px] font-semibold leading-snug text-sit"
       >
-        {status.expired
-          ? "Those two stopped working. ESPN rotates them every few weeks. Paste fresh ones."
-          : "That league is private. Paste the two values below."}
+        {status.expired ? ESPN_KEY.form.expired : ESPN_KEY.form.needed}
       </p>
 
-      <div className="mt-4 space-y-3">
-        <label className="block">
-          <span className="text-[13px] font-semibold text-ink">espn_s2</span>
-          <input
-            className={`${FIELD} mt-1.5`}
-            value={s2}
-            onChange={(e) => setS2(e.target.value)}
-            placeholder="AEB1x..."
-            autoComplete="off"
-            spellCheck={false}
-          />
-        </label>
-        <label className="block">
-          <span className="text-[13px] font-semibold text-ink">SWID</span>
-          <input
-            className={`${FIELD} mt-1.5`}
-            value={swid}
-            onChange={(e) => setSwid(e.target.value)}
-            placeholder="{XXXXXXXX-XXXX-…}"
-            autoComplete="off"
-            spellCheck={false}
-          />
-          <span className="mt-1.5 block text-[12px] leading-relaxed text-muted">
-            Braces or no braces. We tidy it either way.
-          </span>
-        </label>
+      <div className="mt-4">
+        <LinkButton href={walk} variant="start" className="w-full">
+          {ESPN_KEY.form.get}
+          <IconChevron size={14} strokeWidth={2.8} />
+        </LinkButton>
       </div>
 
-      <p className="mt-3 text-[12px] leading-relaxed text-muted">
-        These stay in this browser and the server never writes them down. They are a read session for your whole ESPN
-        account, not just this league.
-      </p>
-
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1">
-        <button type="button" onClick={() => setShowFind((v) => !v)} className={DISCLOSURE} aria-expanded={showFind}>
-          {showFind ? "Hide" : "Where do I find these?"}
+        <button type="button" onClick={() => setShowAsk((v) => !v)} className={DISCLOSURE} aria-expanded={showAsk}>
+          {showAsk ? ESPN_KEY.form.askClose : ESPN_KEY.form.askOpen}
         </button>
         <button
           type="button"
-          onClick={() => setShowTrust((v) => !v)}
+          onClick={() => setPasteToggle(!showPaste)}
           className={`${DISCLOSURE} font-normal text-muted`}
-          aria-expanded={showTrust}
+          aria-expanded={showPaste}
         >
-          {showTrust ? "Hide" : "Handling rules"}
+          {showPaste ? ESPN_KEY.form.pasteClose : ESPN_KEY.form.pasteOpen}
         </button>
       </div>
 
-      {showFind && (
-        <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-[14px] leading-snug text-muted">
-          <li>
-            On a computer, open <span className={CODE}>fantasy.espn.com</span>, signed in.
-          </li>
-          <li>
-            Press <span className={CODE}>F12</span> → <b className="text-ink">Application</b> →{" "}
-            <b className="text-ink">Cookies</b> → <span className={CODE}>espn.com</span>. Firefox calls it{" "}
-            <b className="text-ink">Storage</b>.
-          </li>
-          <li>
-            Copy <span className={CODE}>espn_s2</span> and <span className={CODE}>SWID</span>. Paste them above.
-          </li>
-        </ol>
+      {showAsk && (
+        <div className="mt-3 rounded-xl bg-soft p-3.5">
+          <p className="text-[13px] leading-relaxed text-muted">{ESPN_KEY.commissioner.body}</p>
+          <div className="mt-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(note);
+                  setCopied(true);
+                } catch {
+                  setCopied(false);
+                }
+              }}
+            >
+              <IconCopy size={15} strokeWidth={2.2} />
+              {ESPN_KEY.commissioner.button}
+            </Button>
+          </div>
+          {copied && (
+            <p role="status" className="mt-2 text-[13px] font-semibold text-start">
+              {ESPN_KEY.commissioner.copied}
+            </p>
+          )}
+        </div>
       )}
 
-      {showTrust && (
-        <ul className="mt-2 grid gap-1.5 text-[13px] leading-relaxed text-muted">
-          <li>ESPN cannot scope them to one league, and we cannot revoke them. That is why they live with you.</li>
-          <li>Never paste them into a chat, an email or a bug report. Pull fresh ones instead.</li>
-          <li>&ldquo;Forget these&rdquo; wipes them from this device.</li>
-          <li>The trade-off: because we keep nothing, the weekly email cannot read a private league.</li>
-        </ul>
+      {showPaste && (
+        <div className="mt-3 space-y-3" data-testid="espn-paste">
+          <label className="block">
+            <span className="text-[13px] font-semibold text-ink">{ESPN_KEY.form.s2}</span>
+            <input
+              className={`${FIELD} mt-1.5`}
+              value={s2}
+              onChange={(e) => setS2(e.target.value)}
+              placeholder="AEB1x..."
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </label>
+          <label className="block">
+            <span className="text-[13px] font-semibold text-ink">{ESPN_KEY.form.swid}</span>
+            <input
+              className={`${FIELD} mt-1.5`}
+              value={swid}
+              onChange={(e) => setSwid(e.target.value)}
+              placeholder="{XXXXXXXX-XXXX-…}"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <span className="mt-1.5 block text-[12px] leading-relaxed text-muted">{ESPN_KEY.form.swidHint}</span>
+          </label>
+          <p className="text-[12px] leading-relaxed text-muted">{ESPN_KEY.form.handling}</p>
+          <Button
+            busy={busy}
+            disabled={!ready}
+            onClick={() => {
+              saveEspnAuth(s2, swid);
+              setS2("");
+              setSwid("");
+              onSaved();
+            }}
+          >
+            {busy ? ESPN_KEY.form.checking : ESPN_KEY.form.save}
+          </Button>
+        </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button
-          busy={busy}
-          disabled={!ready}
-          onClick={() => {
-            saveEspnAuth(s2, swid);
-            setS2("");
-            setSwid("");
-            onSaved();
-          }}
-        >
-          {busy ? "Checking with ESPN…" : "Save these"}
-        </Button>
-        {stored && (
+      {stored && (
+        <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted">
+          {ESPN_KEY.form.stored}
           <button
             type="button"
-            className="min-h-11 text-[14px] font-semibold text-muted underline underline-offset-4"
+            className="min-h-11 text-[13px] font-semibold text-ink underline underline-offset-4"
             onClick={() => clearEspnAuth()}
           >
-            Forget these
+            {ESPN_KEY.form.forget}
           </button>
-        )}
-      </div>
-      {stored && <p className="mt-1 text-[12px] text-muted">Saved on this device.</p>}
+        </p>
+      )}
     </section>
   );
 }

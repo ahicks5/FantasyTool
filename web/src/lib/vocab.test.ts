@@ -24,7 +24,7 @@ import {
   SCOUT_OPEN,
   WIRE,
   OFFICE,
-  CALL, FILM, ACCOUNT, PRICING } from "./vocab.ts";
+  CALL, FILM, ACCOUNT, PRICING, ESPN_KEY, YAHOO } from "./vocab.ts";
 
 /**
  * The vocabulary is the one file that is allowed to say a section's name, so it is also
@@ -38,6 +38,7 @@ const ALL_COPY: string[] = [
   ...SECTION_VALUES.flatMap((s) => [s.label, s.title, s.gate]),
   ...Object.values(LINES),
   ...Object.values(RIDE),
+  ...Object.values(YAHOO),
   // The desk's words: the strings, plus every templated line rendered once.
   DESK.aria, DESK.owner, DESK.letterhead, DESK.news.eyebrow, DESK.news.quiet, DESK.news.window(72), DESK.news.also(2),
   DESK.news.more(3), DESK.news.less, ...DESK.news.severity, DESK.news.plan, DESK.news.planAria("Saquon Barkley"), DESK.news.tag.own("RB", true),
@@ -58,6 +59,12 @@ const ALL_COPY: string[] = [
   PLAN.trade.title, PLAN.trade.from, PLAN.trade.locked(1), PLAN.trade.locked(3), PLAN.trade.unlock, PLAN.trade.none, PLAN.trade.surplus,
   TICKER.aria, TICKER.plate, TICKER.quiet, TICKER.loading, TICKER.proj, TICKER.score("A", 1, "B", 2), NAMEPLATE.connect, NAMEPLATE.week(2),
   ...Object.values(CONNECT),
+  // The ESPN key: the walk, the bookmark's two messages, the other doors and the form.
+  ESPN_KEY.eyebrow, ESPN_KEY.title, ESPN_KEY.lead, ESPN_KEY.time, ESPN_KEY.handAria, ...Object.values(ESPN_KEY.hand), ESPN_KEY.step(1), ...Object.values(ESPN_KEY.taps),
+  ...Object.values(ESPN_KEY.copy), ESPN_KEY.save.title, ...ESPN_KEY.save.iphone, ...ESPN_KEY.save.android, ...ESPN_KEY.save.computer,
+  ...Object.values(ESPN_KEY.open), ...Object.values(ESPN_KEY.tap), ...Object.values(ESPN_KEY.bookmark), ESPN_KEY.other,
+  ESPN_KEY.commissioner.title, ESPN_KEY.commissioner.body, ESPN_KEY.commissioner.button, ESPN_KEY.commissioner.copied, ESPN_KEY.commissioner.note("123456"),
+  ...Object.values(ESPN_KEY.paste), ESPN_KEY.privacy, ESPN_KEY.back, ...Object.values(ESPN_KEY.saved), ...Object.values(ESPN_KEY.form),
   ...Object.values(GROUPS).flatMap((g) => [g.clear, g.stamp]),
   ...LANDING.features.flatMap((f) => [f.room, f.title, f.body]),
   LANDING.exampleHead,
@@ -293,6 +300,22 @@ test("the account's words are the staff at the door: sign in, create, no magic l
   // The sheet says plainly when a grant is free and when nothing was sent.
   assert.match(ACCOUNT.upgrade.comp, /no charge/);
   assert.match(ACCOUNT.reset.notSent, /nothing was sent/);
+});
+
+test("the ESPN key is asked for on a phone first, and never shown as a value", () => {
+  // Andrew, 2026-09-28: no "use a computer" as the first answer. The bookmark is named the
+  // same everywhere, because Chrome on Android runs it by its name.
+  assert.match(ESPN_KEY.form.needed, /this phone/);
+  const taps = [ESPN_KEY.tap.iphone, ESPN_KEY.tap.android, ESPN_KEY.tap.computer];
+  for (const line of [...ESPN_KEY.save.iphone, ...ESPN_KEY.save.android, ...ESPN_KEY.save.computer, ...taps]) {
+    assert.ok(!/DevTools|F12/.test(line), `the walk sends nobody to DevTools: ${line}`);
+  }
+  for (const line of taps) assert.match(line, /Penthouse key/);
+  // The bookmark's own messages are safe to embed in a single-line script.
+  for (const line of Object.values(ESPN_KEY.bookmark)) assert.ok(!/[\n\r]/.test(line));
+  // The note to the commissioner names the switch ESPN actually has.
+  assert.match(ESPN_KEY.commissioner.note("99"), /Make League Viewable to Public/);
+  assert.match(ESPN_KEY.commissioner.note("99"), /99/);
 });
 
 test("connect's control says what it hands you", () => {

@@ -99,11 +99,12 @@ def test_the_live_site_is_allowed_even_with_no_env_set(monkeypatch):
 
 def test_a_league_identifier_has_to_look_like_one():
     assert validate_id("1403186749361901568", "league id") == "1403186749361901568"
-    assert validate_platform("sleeper") == "sleeper"
-    for bad in ["../../etc/passwd", "1 OR 1=1", "a" * 65, "", "has space", "x/y"]:
+    assert validate_platform("sleeper") == "sleeper" and validate_platform("yahoo") == "yahoo"
+    assert validate_id("461.l.12345", "league id") == "461.l.12345"   # a Yahoo league key
+    for bad in ["../../etc/passwd", "1 OR 1=1", "a" * 65, "", "has space", "x/y", "461..12345", "..", "461.l.1.t.2"]:
         with pytest.raises(Exception):
             validate_id(bad, "league id")
-    for bad in ["yahoo", "SLEEPER", "", "espn2"]:
+    for bad in ["fleaflicker", "SLEEPER", "", "espn2", "YAHOO"]:
         with pytest.raises(Exception):
             validate_platform(bad)
 
@@ -189,7 +190,7 @@ def test_a_bad_identifier_is_refused_before_any_upstream_call(monkeypatch):
 
     from edge.api.app import app
     c = TestClient(app, raise_server_exceptions=False)
-    assert c.get("/api/league/yahoo/123").status_code == 404
+    assert c.get("/api/league/fleaflicker/123").status_code == 404
     assert c.get("/api/league/sleeper/has%20space").status_code == 422
     assert called == []
 

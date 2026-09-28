@@ -53,6 +53,31 @@ export const IconMoon = (p: P) => (
 export const IconChevron = (p: P) => (
   <Svg {...p}><path d="M9 5.5 15.5 12 9 18.5" /></Svg>
 );
+/* The ESPN key's walk: the buttons the reader is about to tap, drawn as the phone draws them. */
+export const IconShare = (p: P) => (
+  <Svg {...p}><path d="M12 3.5v11" /><path d="M8.5 7 12 3.5 15.5 7" /><path d="M7 10.5H5.5v10h13v-10H17" /></Svg>
+);
+export const IconBookmark = (p: P) => (
+  <Svg {...p}><path d="M6.5 4.5h11v16l-5.5-4-5.5 4z" /></Svg>
+);
+export const IconCopy = (p: P) => (
+  <Svg {...p}><rect x="8.5" y="8.5" width="11" height="11" rx="2" /><path d="M5.5 15.5h-1v-11h11v1" /></Svg>
+);
+export const IconMore = (p: P) => (
+  <Svg {...p}><circle cx="12" cy="5.5" r="1.4" fill="currentColor" /><circle cx="12" cy="12" r="1.4" fill="currentColor" /><circle cx="12" cy="18.5" r="1.4" fill="currentColor" /></Svg>
+);
+export const IconStar = (p: P) => (
+  <Svg {...p}><path d="m12 3.8 2.5 5.3 5.7.7-4.2 4 1.1 5.7L12 16.7l-5.1 2.8 1.1-5.7-4.2-4 5.7-.7z" /></Svg>
+);
+export const IconGlobe = (p: P) => (
+  <Svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.6 2.6 2.6 14.4 0 17M12 3.5c-2.6 2.6-2.6 14.4 0 17" /></Svg>
+);
+export const IconTap = (p: P) => (
+  <Svg {...p}><path d="M9.5 12.5V6a1.75 1.75 0 0 1 3.5 0v5.5" /><path d="M13 11.5V10a1.75 1.75 0 0 1 3.5 0v2M16.5 12a1.75 1.75 0 0 1 3.5 0v3.5c0 3.3-2.2 5.5-5.5 5.5H13a5 5 0 0 1-4.2-2.3l-3-4.6a1.6 1.6 0 0 1 2.6-1.8l1.1 1.4" /></Svg>
+);
+export const IconKey = (p: P) => (
+  <Svg {...p}><circle cx="8" cy="14.5" r="4" /><path d="M11 12 20 3M16 7l2.5 2.5M13.5 9.5 16 12" /></Svg>
+);
 
 /**
  * The mark: the ball and the box. A football stood upright with its top floor lit —

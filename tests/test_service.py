@@ -37,7 +37,7 @@ def test_load_sleeper_assembles_full_bundle(monkeypatch):
 def test_unknown_platform_raises():
     import pytest
     with pytest.raises(ValueError):
-        service.get_bundle("yahoo", "1")
+        service.get_bundle("fleaflicker", "1")
 
 
 def test_the_sleeper_path_stamps_bye_weeks_onto_players(monkeypatch):

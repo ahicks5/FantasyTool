@@ -169,22 +169,36 @@ def _require(email: str | None, feature: str, teaser: str | None = None) -> None
                                          "teaser": teaser, "upsell": products.upsell(_skus(email), feature)})
 
 
-def espn_auth(x_espn_s2: str | None = Header(default=None),
-              x_espn_swid: str | None = Header(default=None)):
-    """A private ESPN league's cookies, sent per request by the browser that holds them.
-
-    Penthouse never stores these — see `espn_api.EspnAuth`. They arrive as headers rather than in
-    a body or a query string so they stay out of URLs, logs and referrers.
-    """
+def _auth_for(platform: str | None, s2: str | None, swid: str | None, yahoo_token: str | None):
+    """The credential this platform needs, from the headers the browser sent, or None."""
+    if platform == "yahoo":
+        from edge.data.yahoo_api import YahooAuth
+        return YahooAuth(yahoo_token) if yahoo_token and yahoo_token.strip() else None
     from edge.data.espn_api import EspnAuth
-    if not (x_espn_s2 and x_espn_swid):
+    if platform != "espn" or not (s2 and swid):
         return None
-    auth = EspnAuth(s2=x_espn_s2, swid=x_espn_swid)
+    auth = EspnAuth(s2=s2, swid=swid)
     return auth or None
+
+
+def espn_auth(request: Request,
+              x_espn_s2: str | None = Header(default=None),
+              x_espn_swid: str | None = Header(default=None),
+              x_yahoo_token: str | None = Header(default=None)):
+    """A league's read credential, sent per request by the browser that holds it: a private
+    ESPN league's cookies, or a Yahoo access token (every Yahoo league needs one).
+
+    Penthouse never stores either — see `espn_api.EspnAuth` and `yahoo_api`. They arrive as
+    headers rather than in a body or a query string so they stay out of URLs, logs and
+    referrers. The browser sends every credential it holds; the `{platform}` in the path
+    picks the one that applies, so ESPN cookies never reach Yahoo and the reverse.
+    """
+    return _auth_for(request.path_params.get("platform"), x_espn_s2, x_espn_swid, x_yahoo_token)
 
 
 def _bundle(platform: str, league_id: str, auth=None) -> service.Bundle:
     from edge.data.espn_api import EspnLeagueNotFound, EspnPrivateLeague
+    from edge.data.yahoo_api import YahooAuthError, YahooLeagueNotFound, YahooNotConfigured
     # Every league route funnels through here, so this is the one place identifiers from
     # the URL have to be checked before they are built into an upstream request.
     validate_platform(platform)
@@ -198,6 +212,15 @@ def _bundle(platform: str, league_id: str, auth=None) -> service.Bundle:
                                          "needs_espn_auth": e.needs_auth})
     except EspnLeagueNotFound as e:
         raise HTTPException(404, str(e))
+    except YahooAuthError as e:
+        # Same shape as ESPN's: the web app refreshes an expired token once (needs_auth
+        # False) and otherwise shows "Sign in with Yahoo".
+        raise HTTPException(403, detail={"error": str(e), "platform": "yahoo",
+                                         "needs_yahoo_auth": e.needs_auth})
+    except YahooLeagueNotFound as e:
+        raise HTTPException(404, str(e))
+    except YahooNotConfigured as e:
+        raise HTTPException(503, str(e))
     except Exception as e:  # noqa: BLE001
         raise HTTPException(404, f"could not load league: {e}")
 
@@ -844,7 +867,9 @@ class ConnectIn(BaseModel):
 
 
 @app.post("/api/connect")
-def connect(body: ConnectIn, email: str = Depends(current_user), auth=Depends(espn_auth)):
+def connect(body: ConnectIn, email: str = Depends(current_user),
+            x_espn_s2: str | None = Header(default=None), x_espn_swid: str | None = Header(default=None),
+            x_yahoo_token: str | None = Header(default=None)):
     """Connect a league to the account. Signed in only (Andrew, 2026-09-24: sign in before
     linking), so a league is on file and comes back on any device.
 
@@ -852,6 +877,8 @@ def connect(body: ConnectIn, email: str = Depends(current_user), auth=Depends(es
     keeping the league, which is what the cap is about. Over the cap is a 402 whose upsell
     is the slot add-on, then the season pass.
     """
+    # The platform is in the body here, not the path, so the credential is picked by hand.
+    auth = _auth_for(body.platform, x_espn_s2, x_espn_swid, x_yahoo_token)
     b = _bundle(body.platform, body.league_id, auth)
     t = _team(b, body.team_id)
     used = store.leagues_used(email, _season())
@@ -953,6 +980,77 @@ def sleeper_leagues(username: str):
         raise HTTPException(404, f"sleeper user not found: {e}")
 
 
+# ---- Yahoo sign-in (OAuth 2.0; see edge/data/yahoo_api.py) ----
+#
+# The browser starts the sign-in, Yahoo sends it back to the web app's /connect/yahoo with a
+# one-time code, and the web app trades the code for tokens here, because only the API holds
+# the client secret. The tokens go back to the browser and are never written down here.
+
+def _yahoo_call(fn):
+    from edge.data import yahoo_api
+    try:
+        return fn()
+    except yahoo_api.YahooNotConfigured as e:
+        raise HTTPException(503, str(e))
+    except yahoo_api.YahooAuthError as e:
+        raise HTTPException(403, detail={"error": str(e), "platform": "yahoo", "needs_yahoo_auth": e.needs_auth})
+    except yahoo_api.YahooError as e:
+        raise HTTPException(404, str(e))
+    except Exception as e:  # noqa: BLE001 — an upstream outage is a plain message, not a 500
+        raise HTTPException(502, f"could not reach Yahoo: {e}")
+
+
+@app.get("/api/yahoo/status")
+def yahoo_status():
+    """Whether Yahoo sign-in is switched on for this deployment (all three env vars set)."""
+    from edge.data import yahoo_api
+    return {"enabled": yahoo_api.configured()}
+
+
+@app.get("/api/yahoo/authorize")
+def yahoo_authorize(state: str):
+    """The Yahoo sign-in URL. `state` is the browser's random nonce; it checks it on return."""
+    from edge.data import yahoo_api
+    if not 16 <= len(state) <= 128 or not state.replace("-", "").replace("_", "").isalnum():
+        raise HTTPException(422, "invalid state")
+    return {"url": _yahoo_call(lambda: yahoo_api.authorize_url(state))}
+
+
+class YahooCodeIn(BaseModel):
+    code: str
+
+
+class YahooRefreshIn(BaseModel):
+    refresh_token: str
+
+
+@app.post("/api/yahoo/token")
+def yahoo_token(body: YahooCodeIn):
+    """Trade Yahoo's one-time code for {access_token, refresh_token, expires_in}."""
+    from edge.data import yahoo_api
+    if not body.code or len(body.code) > 512:
+        raise HTTPException(422, "invalid code")
+    return _yahoo_call(lambda: yahoo_api.exchange_code(body.code))
+
+
+@app.post("/api/yahoo/refresh")
+def yahoo_refresh(body: YahooRefreshIn):
+    """A new access token for the browser, whose one-hour token has run out."""
+    from edge.data import yahoo_api
+    if not body.refresh_token or len(body.refresh_token) > 2048:
+        raise HTTPException(422, "invalid refresh token")
+    return _yahoo_call(lambda: yahoo_api.refresh(body.refresh_token))
+
+
+@app.get("/api/yahoo/leagues")
+def yahoo_leagues(x_yahoo_token: str | None = Header(default=None)):
+    """The signed-in Yahoo user's NFL leagues this season, shaped like the Sleeper list."""
+    from edge.connectors import yahoo
+    from edge.data import yahoo_api
+    auth = _auth_for("yahoo", None, None, x_yahoo_token)
+    return _yahoo_call(lambda: yahoo.leagues_for_user(yahoo_api.user_leagues(auth)))
+
+
 @app.get("/api/league/{platform}/{league_id}")
 def league_summary(platform: str, league_id: str, auth=Depends(espn_auth)):
     b = _bundle(platform, league_id, auth)
@@ -1037,13 +1135,17 @@ def league_standings(platform: str, league_id: str, email: str | None = Depends(
 
 @app.get("/api/league/{platform}/{league_id}/players/search")
 def player_search(platform: str, league_id: str, q: str, team_id: str | None = None,
-                  auth=Depends(espn_auth)):
+                  email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     """Every player the platform carries, by name, for the scouting tab's search box.
 
-    Free, like the profile it leads to, and it opens nothing. See the profile below for why.
+    Free, like the profile it leads to, and it opens nothing. A free account gets the top
+    `products.FREE_BOARD_ROWS` matches, the same line the board draws.
     """
     b = _bundle(platform, league_id, auth)
-    return scout_mod.search(b, q, team_id)
+    hits = scout_mod.search(b, q, team_id)
+    if not products.can(_skus(email), products.BOARD_FEATURE) and isinstance(hits, list):
+        hits = hits[:products.FREE_BOARD_ROWS]
+    return hits
 
 
 @app.get("/api/league/{platform}/{league_id}/players")
@@ -1052,8 +1154,12 @@ def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
                      sort: str = directory_mod.DEFAULT_SORT, order: str = "desc",
                      limit: int = directory_mod.DEFAULT_LIMIT, offset: int = 0,
                      team_id: str | None = None, lens: str = "", season: bool = False,
-                     auth=Depends(espn_auth)):
+                     email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     """The scouting board: every player in the league, filtered and sorted.
+
+    **A free account sees the top `products.FREE_BOARD_ROWS` of whatever it asked for**
+    (Andrew, 2026-09-28); `locked` says how many more a pass opens, and those rows never
+    leave the server, so a blur on the page hides nothing that could be read out of it.
 
     **Free, on the same line the search box and the profile are free on, and it opens
     nothing.** What it hands back is each player's own numbers -- the projection the
@@ -1083,9 +1189,21 @@ def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
             ranks = directory_mod.season_ranks(nfl_stats.season_line(b.league.season), b.league.scoring)
         except Exception:  # noqa: BLE001
             ranks = None
-    return directory_mod.query(b, q=q, pos=pos, nfl_team=nfl_team, avail=avail, owner=owner,
-                               sort=sort, order=order, limit=limit, offset=offset,
-                               team_id=team_id, lens=lens, ctx=ctx, season=ranks)
+    out = directory_mod.query(b, q=q, pos=pos, nfl_team=nfl_team, avail=avail, owner=owner,
+                              sort=sort, order=order, limit=limit, offset=offset,
+                              team_id=team_id, lens=lens, ctx=ctx, season=ranks)
+    return _board_preview(out, email)
+
+
+def _board_preview(out: dict, email: str | None) -> dict:
+    """Trim the board to its free rows for an account without a pass. `total` stays true."""
+    if products.can(_skus(email), products.BOARD_FEATURE):
+        out["locked"] = 0
+        return out
+    keep = max(0, products.FREE_BOARD_ROWS - int(out.get("offset") or 0))
+    out["rows"] = out["rows"][:keep]
+    out["locked"] = max(0, out["total"] - products.FREE_BOARD_ROWS)
+    return out
 
 
 @app.get("/api/league/{platform}/{league_id}/players/lenses")

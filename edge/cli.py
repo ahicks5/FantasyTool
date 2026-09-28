@@ -2,6 +2,7 @@
   python -m edge.cli sleeper <league_id> [--week N]
   python -m edge.cli leagues <sleeper_username>
   python -m edge.cli espn <league_id> [--season YYYY] [--week N]
+  python -m edge.cli yahoo [<league_key>] [--record]   (needs YAHOO_REFRESH_TOKEN, see docs/DEPLOY.md)
 """
 from __future__ import annotations
 
@@ -50,6 +51,49 @@ def cmd_espn(args):
         sys.exit(1)
     except requests.RequestException as e:
         print(f"error: could not reach ESPN ({e})", file=sys.stderr)
+        sys.exit(1)
+    _print_league(lg)
+
+
+def cmd_yahoo(args):
+    """A Yahoo league, live. Yahoo has no public read, so this needs a refresh token for an
+    account that is in the league (YAHOO_REFRESH_TOKEN) and the app's own credentials. With
+    no league key it lists that account's leagues. `--record` writes the raw responses to
+    tests/fixtures/yahoo/recorded/<league_key>/ to replace the hand-written fixtures."""
+    import os
+    import xml.etree.ElementTree as ET
+    from pathlib import Path
+
+    from edge.connectors import yahoo
+    from edge.data import yahoo_api
+
+    token = os.environ.get("YAHOO_REFRESH_TOKEN", "").strip()
+    if not token:
+        print("error: set YAHOO_REFRESH_TOKEN (docs/DEPLOY.md, 'Yahoo')", file=sys.stderr)
+        sys.exit(1)
+    try:
+        auth = yahoo_api.YahooAuth(yahoo_api.refresh(token)["access_token"])
+        if not args.league_key:
+            for l in yahoo.leagues_for_user(yahoo_api.user_leagues(auth)):
+                print(f"{l['league_id']}  {l['name']}  ({l['total_rosters']} teams, {l['status']})")
+            return
+        if args.record:
+            out = Path("tests/fixtures/yahoo/recorded") / args.league_key
+            out.mkdir(parents=True, exist_ok=True)
+            responses = {"settings": yahoo_api.settings(args.league_key, auth),
+                         "standings": yahoo_api.standings(args.league_key, auth),
+                         "rosters": yahoo_api.rosters(args.league_key, auth)}
+            for i, page in enumerate(yahoo_api.free_agents(args.league_key, auth)):
+                responses[f"free_agents_{i}"] = page
+            for name, root in responses.items():
+                (out / f"{name}.xml").write_text(ET.tostring(root, encoding="unicode"))
+            print(f"recorded {len(responses)} responses to {out}")
+        lg = yahoo.load_league(args.league_key, auth)
+    except yahoo_api.YahooError as e:
+        print(f"error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except requests.RequestException as e:
+        print(f"error: could not reach Yahoo ({e})", file=sys.stderr)
         sys.exit(1)
     _print_league(lg)
 
@@ -205,6 +249,8 @@ def main(argv: list[str] | None = None):
     s = sub.add_parser("leagues"); s.add_argument("username"); s.set_defaults(fn=cmd_leagues)
     s = sub.add_parser("espn", help="public ESPN league"); s.add_argument("league_id")
     s.add_argument("--season", type=int); s.add_argument("--week", type=int); s.set_defaults(fn=cmd_espn)
+    s = sub.add_parser("yahoo", help="Yahoo league (needs YAHOO_REFRESH_TOKEN)"); s.add_argument("league_key", nargs="?")
+    s.add_argument("--record", action="store_true"); s.set_defaults(fn=cmd_yahoo)
     s = sub.add_parser("card"); s.add_argument("league_id"); s.add_argument("my_team_id"); s.add_argument("their_team_id")
     s.add_argument("give"); s.add_argument("get"); s.add_argument("--out", default="launch/cards"); s.add_argument("--html-only", action="store_true")
     s.add_argument("--shape", default="square", choices=("square", "story"), help="1080x1080 feed card, or 1080x1920 for a story")

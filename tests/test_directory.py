@@ -47,11 +47,14 @@ def client(bundle, monkeypatch, tmp_path):
     monkeypatch.setattr(api, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(player_index, "_cache", None)
     monkeypatch.setenv("EDGE_DEV", "1")
+    # The board's mechanics are tested as a paying reader; a free account sees only the top
+    # rows (Andrew, 2026-09-28), pinned on its own below.
+    app_mod.store.grant("andrew@example.com", "full_report", 2026, source="test", ref="t1")
     return TestClient(app_mod.app)
 
 
-def _board(client, **params):
-    r = client.get(f"{LG}/players", params=params)
+def _board(client, headers=H, **params):
+    r = client.get(f"{LG}/players", params=params, headers=headers)
     assert r.status_code == 200, r.text
     return r.json()
 
@@ -279,9 +282,10 @@ def test_the_board_never_prices_a_claim(client):
 
 def test_the_board_does_not_open_the_wire(client):
     """Free board, paid plan. Making one free must not have made the other free."""
-    assert client.get(f"{LG}/players", headers=H).status_code == 200
-    assert client.get(f"{LG}/team/1/waivers", headers=H).status_code == 402
-    assert client.get(f"{LG}/team/1/waivers/plan", headers=H).status_code == 402
+    free = {"X-Edge-User": "free@example.com"}
+    assert client.get(f"{LG}/players", headers=free).status_code == 200
+    assert client.get(f"{LG}/team/1/waivers", headers=free).status_code == 402
+    assert client.get(f"{LG}/team/1/waivers/plan", headers=free).status_code == 402
 
 
 def test_the_board_is_free_without_signing_in(client):
@@ -323,3 +327,25 @@ def test_the_board_carries_the_season_only_when_asked(client, monkeypatch):
     assert pts == sorted(pts, reverse=True)
     # Still description only: no fit, no bid, no drop.
     assert not any(k in r for r in body["rows"] for k in ("fit_score", "bid", "drop"))
+
+
+# ------------------------------------------------------------ the free preview ---
+
+def test_a_free_reader_sees_the_top_three_and_a_count_of_the_rest(client):
+    paid = _board(client, limit=50)
+    free = _board(client, headers={}, limit=50)
+    assert paid["locked"] == 0 and len(paid["rows"]) == 50
+    assert [r["id"] for r in free["rows"]] == [r["id"] for r in paid["rows"][:3]]
+    assert free["total"] == paid["total"] and free["locked"] == paid["total"] - 3
+
+
+def test_a_free_reader_cannot_page_past_the_preview(client):
+    assert _board(client, headers={}, limit=10, offset=10)["rows"] == []
+    assert len(_board(client, headers={}, limit=10, offset=2)["rows"]) == 1
+
+
+def test_the_name_search_gives_a_free_reader_three(client):
+    free = client.get(f"{LG}/players/search", params={"q": "a"}).json()
+    paid = client.get(f"{LG}/players/search", params={"q": "a"}, headers=H).json()
+    if isinstance(paid, list) and len(paid) > 3:
+        assert len(free) == 3 and free == paid[:3]

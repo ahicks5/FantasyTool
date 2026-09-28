@@ -50,6 +50,22 @@ read it.
 
 Accepted cost: a scheduled job (the weekly email) cannot read a private league.
 
+**How a phone gets them (2026-09-28).** Every guide says "open DevTools on a computer";
+Andrew ruled that out. `web/src/lib/espnKey.ts` builds a bookmarklet, "Penthouse key", and
+`/connect/espn` walks the user through saving it (iPhone Safari, Android Chrome, or a
+computer). Tapped on fantasy.espn.com it reads `espn_s2` and `SWID` off `document.cookie`
+and sends the browser back to `/connect/espn?id=<league>#s2=…&swid=…`. The two values ride in
+the **fragment**, which the browser never sends in a request, so the server still never sees
+them; the page saves them to `booth.espn.auth` and leaves with a `router.replace`, which takes
+the fragment out of history. This works because Disney's sign-in SDK (OneID.js) writes
+`espn_s2` from page script, so it is not HttpOnly on a browser that signed in through the web.
+When the cookie is missing or unreadable (a server-set copy would be), the bookmark says so
+and the two fields are still there. The bookmark's behaviour is pinned by
+`web/src/lib/espnKey.test.ts`, which runs it against a fake page; the return is pinned in
+`web/e2e/smoke.spec.ts`. Two other doors on the same page: a note the user can send the
+commissioner (ESPN's "Make League Viewable to Public" makes the key unnecessary, and lets the
+weekly email read the league), and the fields for anyone who already has the values.
+
 A private league answers **403** with `needs_espn_auth`: `true` means "ask for cookies",
 `false` means "the ones you gave have expired". The web turns each into a different form.
 Verified end to end on a real private league.

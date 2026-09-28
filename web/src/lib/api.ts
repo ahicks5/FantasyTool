@@ -50,6 +50,7 @@ import type {
 } from "./types";
 import * as mocks from "./mocks";
 import { espnAuthHeaders } from "./espnAuth";
+import { clearYahooAuth, loadYahooAuth, saveYahooAuth, yahooAuthHeaders } from "./yahooAuth";
 import { clearToken, loadToken, saveToken } from "./auth";
 import { HttpError } from "./errors";
 import { anonHeaders, firstTouch, pixel, type Attr } from "./track";
@@ -89,6 +90,39 @@ export class EspnAuthError extends Error {
 }
 
 /**
+ * Thrown on HTTP 403 from a Yahoo league. Every Yahoo league needs a Yahoo sign-in; by the
+ * time this reaches a page, an expired token has already been refreshed once and failed.
+ */
+export class YahooAuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "YahooAuthError";
+  }
+}
+
+/**
+ * Trade the stored refresh token for a new pair. One try; a failure clears the sign-in, so
+ * the page asks for Yahoo again rather than retrying a revoked token forever.
+ */
+async function refreshYahoo(): Promise<boolean> {
+  const t = loadYahooAuth();
+  if (!t) return false;
+  try {
+    const res = await fetch(`${API_URL}/api/yahoo/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: t.refresh_token }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    saveYahooAuth(await res.json());
+    return true;
+  } catch {
+    clearYahooAuth();
+    return false;
+  }
+}
+
+/**
  * Auth headers for the API. A session token from `lib/auth.ts` wins: Authorization: Bearer.
  * Dev, with no token: NEXT_PUBLIC_DEV_USER → X-Edge-User (the API must run with EDGE_DEV=1).
  */
@@ -100,16 +134,18 @@ export function getAuthHeaders(): Record<string, string> {
   return {};
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
   const auth = getAuthHeaders();
   const res = await fetch(`${API_URL}/api${path}`, {
     ...init,
     // ESPN cookies go on every call, because any of them may hit a private league. They are
     // headers, not query params, so they stay out of URLs, logs and referrers.
+    // Same for the Yahoo token; the API hands each platform only its own.
     headers: {
       "Content-Type": "application/json",
       ...auth,
       ...espnAuthHeaders(),
+      ...yahooAuthHeaders(),
       // A random browser id, so the server can join an arrival to a sign-up (lib/track.ts).
       ...anonHeaders(),
       ...(init?.headers ?? {}),
@@ -117,13 +153,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   const body = (await res.json().catch(() => ({}))) as T & {
     error?: string;
-    detail?: string | PaywallDetail | { error: string; needs_espn_auth?: boolean };
+    detail?: string | PaywallDetail | { error: string; needs_espn_auth?: boolean; needs_yahoo_auth?: boolean };
   };
   if (!res.ok) {
     const d = body?.detail;
     if (res.status === 402 && d && typeof d === "object" && "upsell" in d) throw new PaywallError(d as PaywallDetail);
     if (res.status === 403 && d && typeof d === "object" && "needs_espn_auth" in d) {
       throw new EspnAuthError(d.error, d.needs_espn_auth !== false);
+    }
+    if (res.status === 403 && d && typeof d === "object" && "needs_yahoo_auth" in d) {
+      // An hour-old token: refresh once and ask again before bothering anyone.
+      if (d.needs_yahoo_auth === false && !retried && (await refreshYahoo())) return request<T>(path, init, true);
+      throw new YahooAuthError(d.error);
     }
     if (res.status === 401) {
       // The API says which: a token that has died reads differently from no token at all.
@@ -487,6 +528,33 @@ export async function adminResetLink(email: string): Promise<string> {
 export async function getSleeperLeagues(username: string): Promise<SleeperLeagueRef[]> {
   if (USE_MOCKS) return mocks.SLEEPER_LEAGUES;
   return request<SleeperLeagueRef[]>(`/sleeper/leagues?username=${encodeURIComponent(username)}`);
+}
+
+/** Whether this deployment has Yahoo sign-in switched on. Off in the demo build. */
+export async function getYahooStatus(): Promise<{ enabled: boolean }> {
+  if (USE_MOCKS) return { enabled: false };
+  return request<{ enabled: boolean }>("/yahoo/status");
+}
+
+/** The Yahoo sign-in URL for this tab's `state` nonce. */
+export async function getYahooAuthorizeUrl(state: string): Promise<string> {
+  const out = await request<{ url: string }>(`/yahoo/authorize?state=${encodeURIComponent(state)}`);
+  return out.url;
+}
+
+/** Yahoo's one-time code -> tokens, stored on this device. */
+export async function finishYahooSignIn(code: string): Promise<void> {
+  const t = await request<{ access_token: string; refresh_token: string; expires_in: number }>("/yahoo/token", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+  saveYahooAuth(t);
+}
+
+/** The signed-in Yahoo user's leagues this season, in the Sleeper list's shape. */
+export async function getYahooLeagues(): Promise<SleeperLeagueRef[]> {
+  if (USE_MOCKS) return mocks.SLEEPER_LEAGUES;
+  return request<SleeperLeagueRef[]>("/yahoo/leagues");
 }
 
 export async function getLeague(platform: Platform, leagueId: string): Promise<LeagueSummary> {
