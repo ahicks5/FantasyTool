@@ -64,7 +64,7 @@ const ALL_COPY: string[] = [
   ...Object.values(ESPN_KEY.copy), ESPN_KEY.save.title, ...ESPN_KEY.save.iphone, ...ESPN_KEY.save.android, ...ESPN_KEY.save.computer,
   ...Object.values(ESPN_KEY.open), ...Object.values(ESPN_KEY.tap), ...Object.values(ESPN_KEY.bookmark), ESPN_KEY.other,
   ESPN_KEY.commissioner.title, ESPN_KEY.commissioner.body, ESPN_KEY.commissioner.button, ESPN_KEY.commissioner.copied, ESPN_KEY.commissioner.note("123456"),
-  ...Object.values(ESPN_KEY.paste), ESPN_KEY.privacy, ESPN_KEY.back, ...Object.values(ESPN_KEY.saved), ...Object.values(ESPN_KEY.form),
+  ...Object.values(ESPN_KEY.paste), ...Object.values(ESPN_KEY.entry), ESPN_KEY.privacy, ESPN_KEY.back, ...Object.values(ESPN_KEY.saved), ...Object.values(ESPN_KEY.form),
   ...Object.values(GROUPS).flatMap((g) => [g.clear, g.stamp]),
   ...LANDING.features.flatMap((f) => [f.room, f.title, f.body]),
   LANDING.exampleHead,
@@ -311,6 +311,9 @@ test("the ESPN key is asked for on a phone first, and never shown as a value", (
     assert.ok(!/DevTools|F12/.test(line), `the walk sends nobody to DevTools: ${line}`);
   }
   for (const line of taps) assert.match(line, /Penthouse key/);
+  // The bookmark brings the league and the team back, so nobody digs out an ID on a phone.
+  for (const line of taps) assert.match(line, /league loaded/);
+  assert.match(ESPN_KEY.entry.body, /No ID to find/);
   // The bookmark's own messages are safe to embed in a single-line script.
   for (const line of Object.values(ESPN_KEY.bookmark)) assert.ok(!/[\n\r]/.test(line));
   // The note to the commissioner names the switch ESPN actually has.

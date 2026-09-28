@@ -177,6 +177,9 @@ const PAGES: PageCase[] = [
       await expect(yahoo).toBeVisible();
       await expect(yahoo).toBeDisabled();
       await expect(page.locator("#sleeper-input")).toHaveCount(0);
+      // ESPN leads with the phone way: the door to the walk sits above the ID box.
+      await page.getByRole("radio", { name: "ESPN" }).click();
+      await expect(page.getByTestId("espn-entry").getByRole("link")).toHaveAttribute("href", "/connect/espn");
       await sleeper.click();
       await expect(page.locator("#sleeper-input")).toBeVisible();
 
@@ -378,6 +381,13 @@ test("the ESPN key: the walk renders on a phone, and the bookmark's return saves
   // device (the same slot the headers read, see lib/espnAuth), leaves the fragment behind
   // and goes to /connect with ESPN picked and the league loading. The s2 ESPN writes is
   // percent-encoded, and it has to come out of the fragment byte for byte.
+  await page.goto("/connect/espn?id=424242#s2=AEBfixture%252Bs2%253D&swid=%7BFIXTURE-SWID%7D");
+  await page.waitForURL(/\/connect\?platform=espn&id=424242$/);
+  // Tapped on a team page, the bookmark also brings the league and the team, and the page's
+  // league outranks the one the walk was opened for (Andrew, 2026-09-28: no ID to dig out).
+  await page.goto("/connect/espn#s2=AEBfixture%252Bs2%253D&swid=%7BFIXTURE-SWID%7D&league=777&team=3");
+  await page.waitForURL(/\/connect\?platform=espn&id=777&team=3$/);
+  await expect(page.locator("#league-id")).toHaveValue("777");
   await page.goto("/connect/espn?id=424242#s2=AEBfixture%252Bs2%253D&swid=%7BFIXTURE-SWID%7D");
   await page.waitForURL(/\/connect\?platform=espn&id=424242$/);
   const stored = JSON.parse((await page.evaluate(() => localStorage.getItem("booth.espn.auth"))) ?? "null");

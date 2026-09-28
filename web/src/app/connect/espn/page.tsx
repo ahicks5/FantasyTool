@@ -1,6 +1,6 @@
 "use client";
 /**
- * The ESPN key: a private ESPN league linked from a phone, walked step by step. Copy the bookmark, save it, open ESPN, tap it, and it brings you back here with the key saved.
+ * The ESPN key: an ESPN league linked from a phone, walked step by step. Copy the bookmark, save it, open your team on ESPN, tap it, and it brings you back here with the league, the team and the key.
  *
  * Two jobs in one route, because the bookmark has to come back somewhere and the place it
  * comes back to should be the place that sent it:
@@ -132,15 +132,20 @@ export default function EspnKeyPage() {
   // The landing: the bookmark has just brought us back. Save the key to this device, then
   // leave for /connect with a `replace`, which takes the fragment out of history with this
   // entry: no history row, no share sheet and no screenshot of the walk carries it.
-  const back = leagueId ? `/connect?platform=espn&id=${encodeURIComponent(leagueId)}` : "/connect?platform=espn";
+  // The league ESPN's page named wins over the one the walk was opened for; the team rides
+  // along so /connect can pick it.
   useEffect(() => {
     const key = parseEspnKeyReturn(hash);
     if (!key) return;
     saveEspnAuth(key.s2, key.swid);
-    router.replace(back);
-  }, [hash, back, router]);
+    const league = key.league || leagueId;
+    const q = new URLSearchParams({ platform: "espn" });
+    if (league) q.set("id", league);
+    if (league && key.team) q.set("team", key.team);
+    router.replace(`/connect?${q}`);
+  }, [hash, leagueId, router]);
 
-  const bookmarklet = origin ? buildEspnKeyBookmarklet(espnKeyReturnUrl(origin, leagueId)) : "";
+  const bookmarklet = origin ? buildEspnKeyBookmarklet(espnKeyReturnUrl(origin, leagueId), leagueId) : "";
   const note = ESPN_KEY.commissioner.note(leagueId || "…");
 
   async function copyKey() {

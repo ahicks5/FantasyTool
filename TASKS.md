@@ -49,6 +49,9 @@ gets them" and `docs/WEB.md` "The ESPN key".
       page then come back" flow and it is one afternoon of work, but it means handling ESPN
       passwords, Disney's one-time codes break it unpredictably, and it is against ESPN's terms.
       Not built. See "Decisions needed from Andrew".
+- [x] **EK-8** No league ID to dig out (Andrew, 2026-09-28): the bookmark reads `leagueId` and
+      `teamId` off the ESPN team page's URL and brings them back; `/connect` loads the league
+      and picks the team. "Link from ESPN" sits above the ID box for every ESPN league.
 - [ ] **EK-7** Two short screen recordings (iPhone, Android) of the walk for the page and the
       FAQ, once EK-5 is done.
 ## Yahoo leagues (2026-09-28)

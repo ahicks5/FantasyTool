@@ -82,8 +82,6 @@ the value is visible and the names are not.
 | What is left to build? | `TASKS.md` |
 | What is the player page, and what is decided about it? | `docs/SPEC-PLAYER-PAGE.md` |
 | What is the film becoming (the replay, the league, the ledger), and what is decided? | `docs/SPEC-FILM.md` |
-| What do we track, and what should the admin metrics view show? | `docs/SPEC-ADMIN-METRICS.md` |
-| What is the three-week paid launch plan? | `launch/three-week-plan.pdf` (source `.html`), `docs/MARKETING.md` |
 | Which player-page step is next, and which files may it touch? | `docs/PLAYER-PAGE-STEPS.md` |
 | What are real leagues actually like? | `docs/LEAGUE_SURVEY.md` |
 
@@ -185,8 +183,8 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 |---|---|---|
 | `web/src/app/account/page.tsx` | Your account: the plan flag, the leagues on file, the upgrades, the Thursday email, and your data. Signed in only. | 591 |
 | `web/src/app/admin/page.tsx` | The front office: every account, its plan and its leagues, and the owner's levers. Admin only. | 300 |
-| `web/src/app/connect/espn/page.tsx` | The ESPN key: a private ESPN league linked from a phone, walked step by step. Copy the bookmark, save it, open ESPN, tap it, and it brings you back here with the key saved. | 361 |
-| `web/src/app/connect/page.tsx` | Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, the key from /connect/espn; Yahoo takes a sign-in, then a pick from your own leagues. | 651 |
+| `web/src/app/connect/espn/page.tsx` | The ESPN key: an ESPN league linked from a phone, walked step by step. Copy the bookmark, save it, open your team on ESPN, tap it, and it brings you back here with the league, the team and the key. | 366 |
+| `web/src/app/connect/page.tsx` | Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, the key from /connect/espn; Yahoo takes a sign-in, then a pick from your own leagues. | 675 |
 | `web/src/app/connect/yahoo/page.tsx` | Where Yahoo sends the owner back after they sign in (`?code=&state=`). Check the state is | 61 |
 | `web/src/app/error.tsx` | The boundary for anything a page throws while rendering. Without it Next shows its own | 35 |
 | `web/src/app/global-error.tsx` | Last resort: an error in the root layout itself, where the app's own chrome and | 45 |
@@ -290,7 +288,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/elevator.ts` | The ride up: the opening as an elevator to the top floor. Pure, so the schedule is tested. | 219 |
 | `web/src/lib/errors.ts` | Turning a failure into something worth reading. | 104 |
 | `web/src/lib/espnAuth.ts` | A private ESPN league needs two cookies from the user's own browser: `espn_s2` and `SWID`. | 92 |
-| `web/src/lib/espnKey.ts` | The ESPN key: how a phone gets a private league's two cookies without a computer. | 99 |
+| `web/src/lib/espnKey.ts` | The ESPN key: how a phone gets a private league's two cookies without a computer. | 108 |
 | `web/src/lib/film.ts` | The replay, worked out: one finished week turned into the cards the page draws. | 90 |
 | `web/src/lib/format.ts` | Pure helpers (no React, no DOM) so they can be unit tested with node:test. | 312 |
 | `web/src/lib/gameday.ts` | Pure helpers (no React, no DOM, no clock read at load) so they can be unit tested | 495 |
@@ -317,7 +315,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/track.ts` | Telemetry in the browser (docs/SPEC-ADMIN-METRICS.md). | 165 |
 | `web/src/lib/types.ts` | Mirrors docs/API.md (Penthouse API contract v1). | 1726 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 1995 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 2003 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 168 |
 | `web/src/lib/wire.ts` | The top of Scouting, minus React: how hard to go after each pickup, and which ones lead. | 55 |
 | `web/src/lib/yahooAuth.ts` | Yahoo sign-in, held on this device. | 121 |

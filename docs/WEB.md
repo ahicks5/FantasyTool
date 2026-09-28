@@ -442,9 +442,10 @@ A private ESPN league needs two cookies, and the only advice anywhere is "on a c
 DevTools". Andrew would not ship that. The ceiling he set is a bookmark that runs a script, so
 `/connect/espn` is that walk: pick the device, copy the key, save it as a bookmark, open ESPN,
 tap it. The bookmark (`lib/espnKey.buildEspnKeyBookmarklet`) reads `espn_s2` and `SWID` off
-`document.cookie` on fantasy.espn.com and comes back to `/connect/espn?id=<league>` with the
-two values in the URL **fragment**; the page saves them (`lib/espnAuth`) and `router.replace`s
-to `/connect?platform=espn&id=<league>`, which picks ESPN and loads the league on its own. The
+`document.cookie` on the user's ESPN team page, plus `leagueId` and `teamId` off its URL, and
+comes back to `/connect/espn` with all four in the URL **fragment**; the page saves them (`lib/espnAuth`) and `router.replace`s
+to `/connect?platform=espn&id=<league>&team=<team>`, which picks ESPN, loads the league and
+picks the team on its own. On `/connect`, ESPN leads with "Link from ESPN" above the ID box. The
 fragment is never sent to a server and leaves history with the replaced entry. The form on
 `/connect` (`EspnAuthForm`) leads with "Get my key"; the note to the commissioner and the two
 paste fields are folded under it.

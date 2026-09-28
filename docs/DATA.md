@@ -53,8 +53,9 @@ Accepted cost: a scheduled job (the weekly email) cannot read a private league.
 **How a phone gets them (2026-09-28).** Every guide says "open DevTools on a computer";
 Andrew ruled that out. `web/src/lib/espnKey.ts` builds a bookmarklet, "Penthouse key", and
 `/connect/espn` walks the user through saving it (iPhone Safari, Android Chrome, or a
-computer). Tapped on fantasy.espn.com it reads `espn_s2` and `SWID` off `document.cookie`
-and sends the browser back to `/connect/espn?id=<league>#s2=…&swid=…`. The two values ride in
+computer). Tapped on the user's team page it reads `espn_s2` and `SWID` off `document.cookie`, and
+`leagueId` and `teamId` off the page URL, and sends the browser back to
+`/connect/espn#s2=…&swid=…&league=…&team=…`, so nobody digs an ID out of a URL on a phone. The two values ride in
 the **fragment**, which the browser never sends in a request, so the server still never sees
 them; the page saves them to `booth.espn.auth` and leaves with a `router.replace`, which takes
 the fragment out of history. This works because Disney's sign-in SDK (OneID.js) writes
