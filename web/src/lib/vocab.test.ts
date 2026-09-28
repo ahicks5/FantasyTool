@@ -69,7 +69,7 @@ const ALL_COPY: string[] = [
   ...LANDING.features.flatMap((f) => [f.room, f.title, f.body]),
   LANDING.exampleHead,
   // The rest of the landing page: every string, every templated line rendered once.
-  LANDING.eyebrow, LANDING.headline, LANDING.avatar, LANDING.staff, LANDING.cta, LANDING.login, LANDING.loginLead,
+  LANDING.eyebrow, LANDING.eyebrowShort, LANDING.headline, LANDING.avatar, LANDING.staff, LANDING.cta, LANDING.login, LANDING.loginLead,
   ...LANDING.proof.flatMap((p) => [p.head, p.body]),
   LANDING.desk.eyebrow, LANDING.desk.title, LANDING.desk.week, LANDING.desk.foot,
   ...Object.values(LANDING.desk.coach), ...Object.values(LANDING.desk.scout),

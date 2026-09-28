@@ -2,6 +2,19 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## The front page on a phone (2026-09-28)
+
+Andrew: "way too wordy on mobile, fine on desktop", and "some movement in the hero".
+
+- [x] Under 640px the hero is the headline, one line, the door and the call sheet; the staff
+      sentence, the three proof lines, the sheet's foot, the film and close paragraphs, every
+      room's and step's sentence, and the third-plus lines of "who it's for" wait for a wide
+      screen. Desktop is unchanged. `e2e/smoke.spec.ts` renders it at 375px.
+- [x] The hero's call sheet now shows on every width and prints: rows `print` on a slower
+      clock, each stamp `slam`s once its row lands, the figure `tick`s, then a `sweep` sheen
+      crosses the sheet every few seconds (`.sheet-row`, `.callsheet-live` in `globals.css`).
+      Still under reduced motion.
+
 ## Telemetry and the admin metrics view (2026-09-28)
 
 Spec: `docs/SPEC-ADMIN-METRICS.md`. Plan it serves: `launch/three-week-plan.pdf`. Andrew, 2026-09-28:

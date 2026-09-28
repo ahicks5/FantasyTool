@@ -1183,6 +1183,8 @@ export const LANDING = {
 
   /** Line one: everyone is welcome, and the platforms we read. */
   eyebrow: "All owners welcome · Sleeper · ESPN · Yahoo soon",
+  /** The same line on a phone, where the welcome does not fit beside the platforms. */
+  eyebrowShort: "Sleeper · ESPN · Yahoo soon",
   /** The headline: you are walking into your office to make the calls. */
   headline: "Step into your front office.",
   /** Status: this is where the owners who win sit. */
