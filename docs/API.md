@@ -754,3 +754,5 @@ What a caller has to handle:
 - **Playoffs** are arithmetic only: record, then points for; `games` is games clear of the
   first team out for a seed, games back of the last seed for everyone else. Null when the
   league does not say how many make it. No odds, no divisions yet.
+
+**Scouting board preview (2026-09-28).** `GET /players` and `GET /players/search` give an account without a pass the top `products.FREE_BOARD_ROWS` (3) rows only; `/players` adds `locked`, the count of rows a pass would open. The hidden rows never leave the server.
