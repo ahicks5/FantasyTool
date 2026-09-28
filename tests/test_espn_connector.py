@@ -289,3 +289,17 @@ def test_by_the_yard_kicker_is_priced_from_sleepers_fgm_yds(espn_raw, sleeper_ra
     assert kickers, "the fixture rosters priced kickers"
     xp_only = max(p.projected for p in kickers)
     assert xp_only > 3, "a kicker projects more than his extra points once fgm_yds counts"
+
+
+def test_a_special_teams_recovery_scores_like_a_defensive_one():
+    """Andrew's Giants, week 3 2026: ESPN 9.0, us 7.0. Sleeper filed the fumble recovery as
+    `def_st_fum_rec` (punt coverage) and the forced fumble as `def_st_ff`; ESPN's FR and FF
+    items count both units, so the map has to carry both keys."""
+    from edge.connectors.espn import map_scoring
+    from edge.data import scoring
+    items = [{"statId": 96, "points": 2.0}, {"statId": 106, "points": 1.0}, {"statId": 95, "points": 2.0},
+             {"statId": 91, "points": 3.0}]
+    sc = map_scoring(items)
+    assert sc["fum_rec"] == 2 and sc["def_st_fum_rec"] == 2 and sc["ff"] == 1 and sc["def_st_ff"] == 1
+    line = {"int": 1.0, "def_st_fum_rec": 1.0, "def_st_ff": 1.0, "pts_allow": 7.0, "pts_allow_7_13": 1.0}
+    assert scoring.score(line, sc) == 8.0, "INT 2 + FR 2 + FF 1 + 7-13 allowed 3"

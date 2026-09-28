@@ -48,6 +48,9 @@ ESPN vocabulary gaps, on purpose (`edge/connectors/espn.py` docstring):
   `scripts/record_espn_corpus.py` is run again.
 - Return yards (114/115) map to `def_kr_yd` / `def_pr_yd`; Sleeper prices no player
   kick-return yards, so an individual returner's yardage stays unscored.
+- ESPN's fumbles recovered (96) and forced (106) count the special-teams unit; Sleeper
+  files those as `def_st_fum_rec` / `def_st_ff`, so both keys carry the item. Found on a
+  punt-coverage recovery that scored 0 with us and 2 on ESPN (2026 week 3).
 
 **Matchups** come off the same `mMatchup`/`mMatchupScore` payload as the league:
 `espn.build_matchups` turns the current matchup period's schedule entries into the rows

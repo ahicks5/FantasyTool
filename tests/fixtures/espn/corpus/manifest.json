@@ -15,7 +15,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 40,
+  "scoring_keys": 41,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -50,7 +50,7 @@
   "qb_slots": 2,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 41,
+  "scoring_keys": 42,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -86,7 +86,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 50,
+  "scoring_keys": 52,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -121,7 +121,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 38,
+  "scoring_keys": 40,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -155,7 +155,7 @@
   "qb_slots": 2,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 34,
+  "scoring_keys": 35,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -189,7 +189,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 42,
+  "scoring_keys": 44,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -224,7 +224,7 @@
   "qb_slots": 2,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 35,
+  "scoring_keys": 37,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -259,7 +259,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 57,
+  "scoring_keys": 58,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -293,7 +293,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 45,
+  "scoring_keys": 46,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -327,7 +327,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 42,
+  "scoring_keys": 43,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -395,7 +395,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 42,
+  "scoring_keys": 43,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -429,7 +429,7 @@
   "qb_slots": 1,
   "rec_yd": 0.0,
   "rush_yd": 0.0,
-  "scoring_keys": 33,
+  "scoring_keys": 34,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -456,7 +456,7 @@
   "has_def": true,
   "has_k": true,
   "league_id": "899513",
-  "name": "Bustin’ with the boys",
+  "name": "Bustin\u2019 with the boys",
   "pass_int": -2.0,
   "pass_td": 4.0,
   "pass_yd": 0.04,
@@ -464,7 +464,7 @@
   "qb_slots": 0,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 40,
+  "scoring_keys": 41,
   "season": 2026,
   "starting_slots": [
    "FLEX",
@@ -496,7 +496,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 45,
+  "scoring_keys": 46,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -531,7 +531,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 40,
+  "scoring_keys": 41,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -565,7 +565,7 @@
   "qb_slots": 2,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 32,
+  "scoring_keys": 33,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -600,7 +600,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 42,
+  "scoring_keys": 43,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -626,7 +626,7 @@
   "has_def": false,
   "has_k": false,
   "league_id": "21575912",
-  "name": "Ryan Tannehill’s Fan Club",
+  "name": "Ryan Tannehill\u2019s Fan Club",
   "pass_int": -2.0,
   "pass_td": 4.0,
   "pass_yd": 0.04,
@@ -667,7 +667,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 42,
+  "scoring_keys": 43,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -701,7 +701,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 48,
+  "scoring_keys": 49,
   "season": 2026,
   "starting_slots": [
    "QB",

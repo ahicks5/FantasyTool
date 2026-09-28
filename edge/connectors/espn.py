@@ -111,14 +111,18 @@ ESPN_STAT_TO_SLEEPER: dict[int, tuple[str, ...]] = {
     134: ("yds_allow_450_499",), 135: ("yds_allow_500_549",), 136: ("yds_allow_550p",),
     # team defense: plays
     93: ("def_st_td",),   # blocked kick returned for TD
-    95: ("int",), 96: ("fum_rec",), 97: ("blk_kick",), 98: ("safe",), 99: ("sack",),
+    # 96 (fumbles recovered) and 106 (forced) count the special-teams unit too on ESPN;
+    # Sleeper files those separately (`def_st_fum_rec`, `def_st_ff`), so both keys carry
+    # the item or a punt-coverage recovery scores 0 (Andrew's Giants, week 3 2026: 7.0 to
+    # ESPN's 9.0).
+    95: ("int",), 96: ("fum_rec", "def_st_fum_rec"), 97: ("blk_kick",), 98: ("safe",), 99: ("sack",),
     94: ("def_td",),      # fumble or INT return TD (combined)
     101: ("def_st_td",),  # kickoff return TD
     102: ("def_st_td",),  # punt return TD
     103: ("def_td",),     # interception return TD
     104: ("def_td",),     # fumble return TD
     105: ("def_st_td",),  # total return TD
-    106: ("ff",),
+    106: ("ff", "def_st_ff"),
     114: ("def_kr_yd",),  # kickoff return yards (D/ST; Sleeper prices no player kr_yd)
     115: ("def_pr_yd",),  # punt return yards (D/ST)
 }

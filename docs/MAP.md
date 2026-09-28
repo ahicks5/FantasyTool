@@ -112,7 +112,7 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (61 modules, 18,027 lines)
+### `edge/` — the Python engine and API (61 modules, 18,031 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
@@ -135,7 +135,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/business/metrics.py` | The admin's numbers, computed from the telemetry log (docs/SPEC-ADMIN-METRICS.md). | metrics | 348 |
 | `edge/calibration.py` | How sure are we, really? Confidence from measured projection error, not from raw margin. | calibration, decisions +3 | 222 |
 | `edge/cli.py` | Demo commands. Live network. Usage: | espn_connector, send | 281 |
-| `edge/connectors/espn.py` | ESPN (public league) -> normalized League. `build_league` is pure so tests run offline. | espn_connector, espn_corpus +7 | 575 |
+| `edge/connectors/espn.py` | ESPN (public league) -> normalized League. `build_league` is pure so tests run offline. | espn_connector, espn_corpus +7 | 579 |
 | `edge/connectors/sleeper.py` | Sleeper -> normalized League. Pure mapping functions take raw JSON so tests run offline. | sleeper_connector, deadlines +10 | 391 |
 | `edge/connectors/yahoo.py` | Yahoo -> normalized League. `build_league` is pure (parsed XML in, League out) so tests run offline. | yahoo_api, yahoo_connector | 338 |
 | `edge/data/depth_charts.py` | Who is on each NFL team, at what depth, and what the platform last said about him. | decisions, desk_api +3 | 119 |
