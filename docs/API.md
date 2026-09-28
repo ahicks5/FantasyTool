@@ -443,8 +443,9 @@ no field on this payload carries a fit, a bid or a drop.
 
 #### Lenses (`edge/api/lenses.py`)
 
-A `lens` cuts the board to one question and hands back its own order (the column `sort` is
-ignored) plus one fact per row under `lens`:
+A `lens` cuts the board to one question and hands back its own order when no `sort` is
+named (leave the parameter off; a column the reader presses sorts within the lens) plus
+one fact per row under `lens`:
 
 | Lens | Rows | `lens` fact | Order |
 |---|---|---|---|
@@ -530,13 +531,15 @@ With `trade_lab` -> the full board:
   "blockers":[...],"algo_version":"trade_finder.v1"}`
 
 Without it -> **200, not 402**, and the same board with the move taken out (D3):
-`{"preview":true,"week":2,"my_positions":{"surplus":["RB"],"need":["TE"]},"summary":"...",
+`{"preview":true,"week":2,"hidden":9,"my_positions":{"surplus":["RB"],"need":["TE"]},"summary":"...",
   "partners":[{"team_id":"9","team_name":"...","owner_name":"...","fit":"Best fit",
                "headline":"...","positions":{"surplus":["WR"],"need":["RB"]}}],
   "algo_version":"trade_finder.v1"}`
 
 Free is the shape of the room: what you can spare, where you are thin, which rosters are
-the mirror image of yours. Paid is the move. So the preview carries no offer, no player
+the mirror image of yours. Paid is the move. It names **one** GM, the best fit, and
+`hidden` counts the partners a pass would open (Andrew, 2026-09-28: "one GM max, blur the
+rest"); the page hazes placeholder rows, never names. The preview carries no offer, no player
 name, no rest-of-season figure, no fairness number and no `blockers` -- the blocker
 sentence names the player you want and who holds him, so the summary falls back to the
 neutral "Hold" line when there is no partner. Positions are ordered lists rather than
@@ -565,6 +568,35 @@ counter -- is unchanged and still 402s.
  // give_players / get_players (name, position, nfl_team, photo, team_logo) for headshots.
 }
 ```
+
+### The week in progress (2026-09-28)
+
+Once a starter's game has kicked off, `/lineup` also carries `live` and every player carries
+`game` and `points` (`edge/engine/live.py`):
+
+```json
+{"live":{"played":5,"on":2,"to_play":2,"scored":98.4,"live_total":131.1},
+ "slots":[{"slot":"QB","player":{"id":"4984","name":"Josh Allen","projected":22.1,"game":"final","points":27.6}, "confidence":"Lock",
+           "reason":"Josh Allen has played: 27.6."}]}
+```
+
+`game` is `pre`, `in` or `final`, null for a man with no game this week (bye, free agent)
+and before the scoreboard has anything to say; `points` is what he has scored so far in
+**this league's scoring**, computed from the week's raw stat lines, null until his game is
+on. `live` is null before any starter's game has started: `scored` is the locked men's
+points, `live_total` adds the projections of those still to play. A man whose game is
+`in` or `final` is **locked**: he is never swapped in or out, his role is never a decision,
+and his slot reads `Lock` with the played line. Sunday night this is the difference between
+a page of swaps nobody can make and a page that tells you what is left to set.
+
+The scoreboard is ESPN's per-week feed (`schedule.load_week_games`, re-read every 15
+minutes until every game is final); a kickoff in the past counts as `in` even if the
+cached file has no status yet. Stat lines are Sleeper's for the week (`nfl_stats.week_lines`,
+same 15-minute clock). Either feed failing leaves nothing locked, which is the free page's
+floor.
+
+The matchup (`/actions`, `/desk`) carries the platform's own points once either side has any:
+`{"my_points":98.4,"their_points":101.2,"live":true}`, null and false before kickoff.
 
 ## Head to head (free)
 

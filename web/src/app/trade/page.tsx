@@ -6,7 +6,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/Shell";
-import { Locked } from "@/components/Locked";
+import { GhostRows, Locked } from "@/components/Locked";
 import { ShareCard } from "@/components/ShareCard";
 import { Avatar } from "@/components/Avatar";
 import { PlayerLine } from "@/components/Players";
@@ -20,7 +20,7 @@ import { Compare } from "@/components/Compare";
 import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { Grades, LeagueSummary, Player, TeamGrades, TradeFinderResponse, TradeResult } from "@/lib/types";
-import { OFFICE, TRADE } from "@/lib/vocab";
+import { OFFICE } from "@/lib/vocab";
 import { officeKey } from "@/lib/office";
 
 function sortRoster(players: Player[]): Player[] {
@@ -306,15 +306,18 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
         <TradeFinderWait />
       )}
 
-      {/* Once, under the whole list. One lock per card would read as a shakedown. */}
+      {/* The other GMs, under a haze (Andrew, 2026-09-28: one GM, blur the rest). The rows
+          under it are ghosts: the server sent one partner and a count, never the names. */}
       {preview && (
         <Locked
           signedIn={signedIn}
           sku="trade_lab"
           what="Trade Lab"
-          teaser={paywall?.teaser ?? TRADE.lockTeaser}
+          teaser={found?.hidden ? OFFICE.hiddenLine(found.hidden) : OFFICE.hiddenNone}
           onUnlocked={refresh}
-        />
+        >
+          <GhostRows n={Math.min(Math.max(found?.hidden ?? 0, 3), 6)} />
+        </Locked>
       )}
 
       {/* Free, there is no builder to offer: grading an offer is the thing being sold. */}

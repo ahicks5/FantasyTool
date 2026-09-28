@@ -1931,6 +1931,10 @@ button, a.btn, select, input { min-height: 44px; }
 .roster-name { display: flex; min-width: 0; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; line-height: 1.1; }
 .roster-rank { font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-muted); text-align: right; }
 .roster-proj { font-size: 16px; line-height: 1; text-align: right; }
+/* His points once his game is on or over: the state in small caps above the number. */
+.roster-live { display: grid; justify-items: end; gap: 2px; }
+.roster-live-state { font-size: 8.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-muted); }
+.roster-live-on .roster-live-state { color: var(--color-start); }
 .roster-total { background: var(--color-soft); }
 
 /* A required change: the out man's face under a red X, an arrow, the in man ringed green,
@@ -3062,3 +3066,41 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
 @media (prefers-reduced-motion: reduce) {
   .callsheet-live::after { animation: none; }
 }
+
+/* ------------------------------------------------------------------- the haze ---
+   The paywall (Andrew, 2026-09-28): the room's shape under a blur, a veil over it, and
+   one card that names the price and opens the payment sheet. The ghost under it is a
+   sketch, never the paid payload (see Locked.tsx). Works on paper in both themes: the
+   veil is the page colour, the card is the hero.                                    */
+
+.haze { position: relative; min-height: 300px; overflow: hidden; border-radius: var(--radius-card); }
+.haze-compact { min-height: 220px; }
+.haze-ghost {
+  filter: blur(5px);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.9;
+}
+.haze-veil {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-paper) 20%, transparent) 0%, color-mix(in srgb, var(--color-paper) 78%, transparent) 45%, var(--color-paper) 100%);
+}
+.haze-card {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(100% - 24px, 22rem);
+  padding: 18px 18px 12px;
+  border-radius: var(--radius-card);
+  background: linear-gradient(160deg, var(--color-hero-2) 0%, var(--color-hero) 55%);
+  color: #f7f6f3;
+  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.07), var(--shadow-hero);
+  border: 1px solid rgb(255 255 255 / 0.1);
+}
+.haze-card .eyebrow { color: rgb(247 246 243 / 0.55); }
+
+.ghost-rows { display: grid; gap: 10px; padding: 12px 14px; }
+.ghost-row { display: flex; align-items: center; gap: 12px; }
+.ghost-face { width: 36px; height: 36px; border-radius: 999px; background: var(--color-line-2); flex: none; }
+.ghost-lines { display: grid; gap: 7px; flex: 1; min-width: 0; }
+.ghost-bar { display: block; height: 11px; border-radius: 6px; background: var(--color-line-2); }
+.ghost-bar-thin { height: 8px; opacity: 0.7; }
+.ghost-num { width: 44px; height: 18px; border-radius: 6px; background: var(--color-line-2); flex: none; }

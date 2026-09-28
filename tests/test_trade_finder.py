@@ -230,14 +230,16 @@ def test_preview_keeps_the_shape_of_the_room(league, ros, profiles):
     prev = trade_finder.preview(found)
 
     assert prev["preview"] is True
-    assert set(prev) == {"preview", "week", "my_positions", "summary", "partners", "algo_version"}
+    assert set(prev) == {"preview", "week", "my_positions", "summary", "partners", "hidden", "algo_version"}
     assert prev["week"] == found["week"] and prev["algo_version"] == found["algo_version"]
     assert prev["summary"] == found["summary"]
     # Positions are the words, in the engine's own order, and nothing else.
     assert prev["my_positions"]["surplus"] == list(found["my_positions"]["surplus"])
     assert prev["my_positions"]["need"] == list(found["my_positions"]["need"])
 
-    assert len(prev["partners"]) == len(found["partners"])
+    # One GM named, the rest counted (Andrew, 2026-09-28).
+    assert len(prev["partners"]) == min(trade_finder.FREE_PARTNERS, len(found["partners"]))
+    assert prev["hidden"] == len(found["partners"]) - len(prev["partners"])
     for i, (p, src) in enumerate(zip(prev["partners"], found["partners"])):
         assert set(p) == {"team_id", "team_name", "owner_name", "fit", "headline", "positions"}
         assert p["team_id"] == src["team_id"] and p["team_name"] == src["team_name"]

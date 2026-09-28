@@ -20,9 +20,10 @@ turns back into a passing test the moment the engine is fixed.
     swap inside the noise band, and one further team (114052 "Raleigh Silly Nannies") is
     advised into a lineup 0.32 points WORSE than the one it had already set.
     See test_no_unforced_swap_is_recommended_inside_the_noise_margin.
-  * ESPN statId 214 ("points per field-goal yard") is unmapped. Four leagues score kickers
-    that way and nothing else, so our kickers project ~7 points a week under ESPN's own
-    number. See test_our_kicker_projections_track_espns_own.
+  * ESPN statId 214 ("points per field-goal yard") was unmapped. Four leagues score kickers
+    that way and nothing else, so our kickers projected ~7 points a week under ESPN's own
+    number. Now mapped to Sleeper's `fgm_yds`; test_our_kicker_projections_track_espns_own
+    holds those leagues to the same tolerance as the bucket-scored ones.
   * ESPN roster spots we do not model (TQB, P) leave those players unmapped and unpriced. That
     is safe — they never start, never get dropped, never reach the wire — but in league 899513
     it means we ignore a starting TQB slot worth ~18 points a week.
@@ -38,8 +39,8 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from edge.connectors.espn import (ESPN_STAT_PER_N, ESPN_STAT_TO_SLEEPER, LINEUP_SLOTS, POSITIONS,
-                                  UNMAPPED_WARN, build_league, item_points)
+from edge.connectors.espn import (ESPN_STAT_FALLBACK, ESPN_STAT_PER_N, ESPN_STAT_TO_SLEEPER, LINEUP_SLOTS,
+                                  POSITIONS, UNMAPPED_WARN, build_league, item_points)
 from edge.data.schedule import bye_weeks, load_schedule
 from edge.engine import actions as actions_mod
 from edge import calibration
@@ -53,11 +54,12 @@ from scripts import espn_corpus
 # Positions our projection provider (Sleeper) prices. Anything else ESPN lets a league roster
 # — TQB, P, HC, IDP — comes through as "?" and must be quarantined, not guessed at.
 SUPPORTED_POSITIONS = {"QB", "RB", "WR", "TE", "K", "DEF"}
-# ESPN scoring ids we knowingly skip, documented in edge/connectors/espn.py: 121/125 are
-# points-allowed buckets that straddle Sleeper's boundaries, 206/209 are rare two-point
-# return plays. Any OTHER unmapped id with points on it means the league scores something we
-# cannot re-score, which is the one honest reason for our number to drift from ESPN's.
-HARMLESS_UNMAPPED_STAT_IDS = frozenset({121, 125, 206, 209})
+# ESPN scoring ids we knowingly skip, documented in edge/connectors/espn.py: 206/209 are rare
+# two-point return plays. (121/125, the points-allowed buckets that straddle Sleeper's
+# boundaries, are now fallbacks in `ESPN_STAT_FALLBACK`.) Any OTHER unmapped id with points
+# on it means the league scores something we cannot re-score, which is the one honest reason
+# for our number to drift from ESPN's.
+HARMLESS_UNMAPPED_STAT_IDS = frozenset({206, 209})
 # Any of these means the league scores a made field goal in a way we DO map.
 FGM_STAT_IDS = frozenset({74, 77, 80, 83, 198, 201})
 GHOST = "Zzqq Unmatchable"          # a name no Sleeper player can answer to
@@ -202,7 +204,7 @@ def _unmapped_scoring(raw_league: dict) -> dict[int, float]:
     """
     return {sid: pts for sid, pts in _scoring_items(raw_league).items()
             if pts and sid not in ESPN_STAT_TO_SLEEPER and sid not in ESPN_STAT_PER_N
-            and sid not in HARMLESS_UNMAPPED_STAT_IDS}
+            and sid not in ESPN_STAT_FALLBACK and sid not in HARMLESS_UNMAPPED_STAT_IDS}
 
 
 def _errors(pairs: list[tuple[float, float]]) -> tuple[float, float]:
@@ -353,17 +355,17 @@ def test_our_defense_projections_track_espns_own(league_id, corpus):
 
 
 @per_league
-def test_our_kicker_projections_track_espns_own(league_id, corpus):
+def test_our_kicker_projections_track_espns_own(league_id, corpus, shared_slice):
     """Kickers, where the vendor gap and a real mapping gap both live.
 
     Where the league scores a made field goal by distance bucket (ESPN 74/77/80/83/198/201) we
     track ESPN to within ~2.8 points; the residue is Sleeper not projecting long field goals,
     which hits Sleeper leagues identically.
 
-    Where it scores kickers by FIELD-GOAL YARDAGE — ESPN statId 214, "points per FG yard",
-    unmapped in `ESPN_STAT_TO_SLEEPER` — our kicker is left with extra points only, and lands
-    ~7 points a week under ESPN. That is our bug, not the vendor's: Sleeper ships a
-    field-goal-yardage stat, so 214 can be mapped. Recorded as xfail with the number.
+    Where it scores kickers by FIELD-GOAL YARDAGE — ESPN statId 214, "points per FG yard" —
+    the mapping to Sleeper's `fgm_yds` (`ESPN_STAT_TO_SLEEPER[214]`) is what keeps our kicker
+    from sitting ~7 points a week under ESPN, so those leagues are held to the same tolerance
+    and the league is named in the failure when the map regresses.
     """
     c = corpus(league_id)
     ks = [(p.projected, c.espn_own[p.id]) for p in c.rostered
@@ -372,13 +374,20 @@ def test_our_kicker_projections_track_espns_own(league_id, corpus):
         pytest.skip(f"{c.label()} rosters no kickers")
     err, median_espn = _errors(ks)
     items = _scoring_items(c.raw["league"])
-    if not any(items.get(sid) for sid in FGM_STAT_IDS):
-        by_the_yard = {sid: pts for sid, pts in items.items() if sid == 214 and pts}
-        pytest.xfail(c.label(f": scores made field goals by yardage (statId 214 = {by_the_yard}), "
-                             f"which we do not map, so our kickers sit {err:.1f} points under "
-                             f"ESPN's median of {median_espn:.1f}"))
+    by_the_yard = {sid: pts for sid, pts in items.items() if sid == 214 and pts}
+    if by_the_yard and not any(items.get(sid) for sid in FGM_STAT_IDS):
+        assert c.league.scoring.get("fgm_yds") == by_the_yard[214], \
+            c.label(f": statId 214 = {by_the_yard} must map to fgm_yds")
+        if not any("fgm_yds" in (r.get("stats") or {}) for r in shared_slice["weekly"]):
+            # The slice was trimmed to `scripts.espn_corpus.scorable_keys()` when 214 was
+            # unmapped, so it carries no fgm_yds and this league cannot be re-scored from it.
+            # tests/test_espn_connector.py pins 214 end to end on the Sleeper fixture that
+            # does carry the key; this becomes a real check on the next corpus recording.
+            pytest.skip(c.label(": corpus projections predate the fgm_yds key — re-record "
+                                "with scripts/record_espn_corpus.py"))
     assert err <= _tolerance(median_espn, 3.0, 0.35), \
-        c.label(f": K median error {err:.2f} vs ESPN median {median_espn:.1f}")
+        c.label(f": K median error {err:.2f} vs ESPN median {median_espn:.1f}"
+                + (f" (scores field goals by the yard, statId 214 = {by_the_yard})" if by_the_yard else ""))
 
 
 # ---- 3. the name bridge to Sleeper ids -------------------------------------------------

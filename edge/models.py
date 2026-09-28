@@ -93,6 +93,17 @@ class Player:
     # name matching missed. Different from projecting 0.0, which is a real answer (bye week,
     # deep bench). We know nothing about an unpriced player, so we must not advise on him.
     unpriced: bool = False
+    # The week in progress (`edge/engine/live.py`): where his game stands -- "pre", "in" or
+    # "final" -- and what he has scored so far in this league's scoring. None until the
+    # scoreboard says otherwise, and None for a man with no game (bye, free agent). A man
+    # whose game is "in" or "final" is locked: no swap moves him, in or out.
+    game_status: str | None = None
+    points: float | None = None
+
+    @property
+    def locked(self) -> bool:
+        """His game has kicked off or finished: the platform will not let him move."""
+        return self.game_status in ("in", "final")
 
     @property
     def positions(self) -> list[str]:

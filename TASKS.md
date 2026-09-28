@@ -2,6 +2,42 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Sunday-night pass: the haze, one GM, the live week, ESPN matchups and scoring (2026-09-28)
+
+Andrew, Sunday night after the games, with two screenshots (ESPN 170.02 played; Penthouse
+"projected 162.6"): the paywall as a haze, one GM, the film shown then blurred, sortable
+Proj/ROS, the mid-weekend look, "no matchup this week" on ESPN, ESPN scoring, live scores.
+
+- [x] **The paywall is a haze.** `Locked.tsx` draws the room's sketch under a blur, a veil,
+      and one card: teaser, "As low as $4.99/week" (from the catalog), "Go premium" to the
+      payment sheet. `docs/WEB.md` "The paywall is a haze".
+- [x] **GM's Office, free: one GM.** `trade_finder.preview` names one partner and counts
+      the rest in `hidden`; the page hazes ghost rows where they would be.
+- [x] **The film, free: more, then hazed.** The story cards (titles only) and the league
+      half (four superlative panels) as sketches under the haze.
+- [x] **Proj and ROS sort inside a lens.** The shortlist (where the board opens) ignored
+      the headings. A pressed heading now sorts within the lens; no heading keeps the
+      lens's order (`sort` left off the request).
+- [x] **The week in progress** (`edge/engine/live.py`): every player stamped `game`
+      (pre/in/final) and `points` so far in league scoring; a locked man is never swapped
+      or decided; the hero reads "On the board", the roster prints points under FINAL/LIVE,
+      the desk and the matchup lead with the platform's points. `tests/test_live.py`.
+- [x] **ESPN matchups.** The bundle never carried them. `espn.build_matchups` reads the
+      `schedule` rows already fetched (live totals via `mMatchupScore`).
+- [x] **ESPN scoring audit.** D/ST overrides honoured, 214 FG yards, 121/125 brackets,
+      kick/punt return yards, disabled items no longer block a specific one. Gaps that
+      remain (ESPN's 14-17 vs Sleeper's 14-20 bracket, per-position weights) in
+      `docs/DATA.md`.
+- [ ] SN-1 Live points for a man on the field read 0.0 until Sleeper's weekly line lands
+      (they update every 15 minutes). Worth a "0.0 so far" word on the row if it reads as
+      a scoreless game.
+- [ ] SN-2 The ESPN league's own live totals come off `totalPointsLive`; per-player ESPN
+      actuals (`statSourceId == 0`) are not read yet, so an ESPN roster's points are
+      Sleeper's lines scored by the league's mapped settings. If Andrew's "scoring looks
+      off" persists, compare one played week against ESPN's box score row by row.
+- [ ] SN-3 Re-record the ESPN corpus (`scripts/record_espn_corpus.py`) so the four
+      by-the-yard kicker leagues prove 214 offline (they skip until then).
+
 ## The front page on a phone (2026-09-28)
 
 Andrew: "way too wordy on mobile, fine on desktop", and "some movement in the hero".

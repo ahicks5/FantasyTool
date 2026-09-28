@@ -581,8 +581,13 @@ test("a lens cuts the board: defenses carry their next three weeks", async ({ pa
   await expect(rows.first()).toBeVisible({ timeout: 10_000 });
   await expect(rows.first().locator(".board-pos")).toHaveText("DEF");
   await expect(rows.first().locator(".lens-week")).toHaveCount(3);
-  // The lens owns the order, so the column headings stop being sort buttons.
-  await expect(page.getByRole("button", { name: `${BOARD_LABELS.sortBy} ${BOARD_LABELS.proj}` })).toHaveCount(0);
+  // The lens owns the order until a heading is pressed (Andrew, 2026-09-28: Proj and ROS
+  // did nothing on the shortlist). No heading is pressed yet; pressing one sorts within the lens.
+  const proj = page.getByRole("button", { name: `${BOARD_LABELS.sortBy} ${BOARD_LABELS.proj}` });
+  await expect(proj).toHaveAttribute("aria-pressed", "false");
+  await proj.click();
+  await expect(proj).toHaveAttribute("aria-pressed", "true");
+  await expect(rows.first().locator(".board-pos")).toHaveText("DEF", { timeout: 10_000 });
   await assertNoHorizontalOverflow(page);
 });
 

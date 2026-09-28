@@ -20,6 +20,7 @@ from edge.connectors import sleeper
 from edge.data import nfl_stats, schedule
 from edge.engine import decisions, grades
 from edge.engine import lineup as lineup_mod
+from edge.engine import live as live_mod
 from edge.engine import actions as actions_mod
 from edge.engine import recap as recap_mod
 from edge.engine import plan, report, trade, trade_finder, waiver_plan, waivers
@@ -204,7 +205,7 @@ def _bundle(platform: str, league_id: str, auth=None) -> service.Bundle:
     validate_platform(platform)
     validate_id(league_id, "league id")
     try:
-        return service.get_bundle(platform, league_id, auth=auth)
+        b = service.get_bundle(platform, league_id, auth=auth)
     except EspnPrivateLeague as e:
         # 403, not 404: the league exists and the answer is "sign in", which the web app
         # turns into the cookie form instead of a dead end.
@@ -223,6 +224,26 @@ def _bundle(platform: str, league_id: str, auth=None) -> service.Bundle:
         raise HTTPException(503, str(e))
     except Exception as e:  # noqa: BLE001
         raise HTTPException(404, f"could not load league: {e}")
+    _refresh_live(b)
+    return b
+
+
+# How often the week in progress is re-read per cached bundle. The feeds behind it keep
+# their own 15-minute clocks; this only stops every request re-scoring the league.
+LIVE_EVERY = 60
+
+
+def _refresh_live(b: service.Bundle) -> None:
+    """Stamp the bundle's players with the week in progress (`engine/live.py`): who has
+    played, what he scored. Once a minute per cached bundle, never on a test bundle that
+    stubbed the feeds away (they answer empty and nothing locks)."""
+    if time.time() - getattr(b, "_live_at", 0.0) < LIVE_EVERY:
+        return
+    try:
+        live_mod.refresh(b.league)
+    except Exception:  # noqa: BLE001 - the lineup paints from projections, which is its floor
+        pass
+    b._live_at = time.time()  # noqa: SLF001
 
 
 def _team(b: service.Bundle, team_id: str):
@@ -1151,7 +1172,7 @@ def player_search(platform: str, league_id: str, q: str, team_id: str | None = N
 @app.get("/api/league/{platform}/{league_id}/players")
 def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
                      nfl_team: str = "", avail: str = "all", owner: str | None = None,
-                     sort: str = directory_mod.DEFAULT_SORT, order: str = "desc",
+                     sort: str = "", order: str = "desc",
                      limit: int = directory_mod.DEFAULT_LIMIT, offset: int = 0,
                      team_id: str | None = None, lens: str = "", season: bool = False,
                      email: str | None = Depends(optional_user), auth=Depends(espn_auth)):

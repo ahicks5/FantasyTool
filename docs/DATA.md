@@ -30,6 +30,30 @@ Two ESPN scoring traps the tests now guard:
 - A category's value can live in `pointsOverrides` rather than `points`. Every league does
   this for D/ST.
 - Yardage is often an "every N yards" stat id rather than a per-unit one.
+- A disabled item (`points: 0`, no overrides) never claims a key a later item scores: per
+  key the first non-zero value wins and zeros only fill what nothing else wrote.
+- Team-defense ids (points/yards allowed, sacks, return TDs...) read the D/ST override
+  (`pointsOverrides["16"]`) first, even when `points` is non-zero. Per-position weights on
+  a player stat are not supported: the most common override value is taken.
+
+ESPN vocabulary gaps, on purpose (`edge/connectors/espn.py` docstring):
+
+- **Points-allowed brackets differ.** ESPN scores 14-17 (92), 18-21 (121), 22-27 (122),
+  35-45 (124), 46+ (125); Sleeper's keys are `pts_allow_14_20`, `_21_27`, `_28_34`, `_35p`.
+  92/122/124 are the stand-ins; 121 and 125 only fill `pts_allow_14_20` / `pts_allow_35p`
+  when 92 / 124 are absent (`ESPN_STAT_FALLBACK`). A league that pays 18-21 and 22-27
+  differently is approximated at the 20/21 boundary; fixing that means a new stat vocabulary.
+- **Field goals by the yard** (214) map to Sleeper's `fgm_yds`. The recorded corpus slice
+  predates that key, so `tests/test_espn_corpus.py` skips the four by-the-yard leagues until
+  `scripts/record_espn_corpus.py` is run again.
+- Return yards (114/115) map to `def_kr_yd` / `def_pr_yd`; Sleeper prices no player
+  kick-return yards, so an individual returner's yardage stays unscored.
+
+**Matchups** come off the same `mMatchup`/`mMatchupScore` payload as the league:
+`espn.build_matchups` turns the current matchup period's schedule entries into the rows
+Sleeper's `/matchups` gives (`roster_id`, `matchup_id`, `points`), so the call sheet's
+matchup and the desk's scoreboard work on ESPN without a second request. `points` is
+`totalPointsLive` when ESPN sends it, else `totalPoints` (0.0 before kickoff).
 
 **Free agents come from ESPN**, never from "Sleeper players nobody rosters"
 (`espn_api.free_agents`, `view=kona_player_info` + `X-Fantasy-Filter` on
@@ -73,6 +97,16 @@ Verified end to end on a real private league.
 
 > **Never paste these cookies into a chat, an issue or a commit.** They cannot be scoped and
 > they cannot be revoked. Grab them fresh from the browser each time.
+
+## The week in progress (2026-09-28)
+
+`edge/engine/live.py` reads two feeds already in this file and stamps every player with
+where his game stands and what he has scored so far: the per-week ESPN scoreboard
+(`schedule.load_week_games`, status and kickoff per game) and Sleeper's weekly stat lines
+(`nfl_stats.week_lines`), scored by `edge/data/scoring.py` against the league's own settings.
+Never a platform's pre-scored total. A man whose game is on or over is locked: the lineup
+engine will not move him. Both feeds re-read every 15 minutes while games are on; a failure
+in either leaves nothing locked.
 
 ## The name-match guard
 

@@ -8,7 +8,7 @@ import { Projector } from "@/components/film/Projector";
 import { ShareFilm } from "@/components/film/ShareFilm";
 import { standout } from "@/lib/film";
 import type { FilmCover, FilmShare, WeekFilm } from "@/lib/types";
-import { Locked } from "@/components/Locked";
+import { GhostRows, Locked } from "@/components/Locked";
 import { Film } from "@/components/Film";
 import { Standings } from "@/components/Standings";
 import { ErrorBox, Opening, SkeletonList, useHeldWait } from "@/components/ui";
@@ -74,7 +74,14 @@ function ReportBody({ c, paid, signedIn, refresh }: {
         ) : (
           <SkeletonList rows={6} />
         )}
-        {paid && <LeagueSection c={c} />}
+        {paid ? (
+          <LeagueSection c={c} />
+        ) : (
+          // The league half, hazed: the shape of the superlatives and the ledger, no names.
+          <Locked signedIn={signedIn} sku="full_report" what={FILM.league.head} teaser={FILM.league.locked} onUnlocked={refresh} compact>
+            <GhostPanels titles={[FILM.league.title.top_score, FILM.league.title.unluckiest, FILM.league.title.best_manager, FILM.league.title.best_claim]} />
+          </Locked>
+        )}
       </section>
 
       {paid && (
@@ -82,6 +89,20 @@ function ReportBody({ c, paid, signedIn, refresh }: {
           <FilmBody c={c} />
         </div>
       )}
+    </div>
+  );
+}
+
+/** Story cards with their titles and nothing in them: the sketch under the film's haze. */
+function GhostPanels({ titles, rows = 1 }: { titles: readonly string[]; rows?: number }) {
+  return (
+    <div className="grid gap-2.5">
+      {titles.map((t) => (
+        <div key={t} className="card p-3.5">
+          <span className="eyebrow">{t}</span>
+          <GhostRows n={rows} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -125,6 +146,9 @@ function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
   if (!data) return <SkeletonList rows={3} />;
 
   if (!paid || data.locked) {
+    // The cover is free. Under it, the story the pass tells, as a sketch under a haze
+    // (Andrew, 2026-09-28: show more, then blur it). The server sent the cover only, so
+    // the cards under the blur are shapes with the card titles, never the week's facts.
     return (
       <div className="grid min-w-0 gap-3">
         {data.cover && <Cover cover={data.cover} week={data.cover.week ?? 0} />}
@@ -133,9 +157,11 @@ function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
           signedIn={signedIn}
           sku="full_report"
           what={FILM.product}
-          teaser={data.cover?.line ?? fallbackTeaser}
+          teaser={data.cover?.line ?? fallbackTeaser ?? FILM.moreLine}
           onUnlocked={refresh}
-        />
+        >
+          <GhostPanels titles={[FILM.card.swing, FILM.card.standout, FILM.card.dud, FILM.card.lineup, FILM.card.takeaway]} rows={2} />
+        </Locked>
       </div>
     );
   }

@@ -436,6 +436,38 @@ so moving to or from it shifted the page by the height of a heading.
 half-applied. Every line the brand says lives there too (`LINES`). Never inline a section
 name, a tagline or a piece of voice copy in a component.
 
+## The paywall is a haze (2026-09-28)
+
+`Locked.tsx` no longer draws a card in the flow. It draws whatever the page hands it as
+`children` under a blur, a veil of the page colour over that, and one dark card in the
+middle: the eyebrow, the teaser, "As low as $4.99/week" read off the catalog, and one
+button, "Go premium", which opens the upgrade sheet (the sheet offers the season and the
+week; a small text link under the button goes straight to the week). What sits under the
+blur is a **sketch**, never the paid payload: `GhostRows` (grey bars), or `GhostPanels` on
+the film (the card titles with nothing in them). The server does not send a free account
+the paid rows, so nothing under the haze can be read out of the DOM; the same rule
+`PlayerBoard`'s `board-locked` block has kept since the board shipped.
+
+Where it sits: `/trade` shows one GM (the server's preview sends one and a `hidden` count)
+and the haze where the rest would be; `/report` shows the free cover, then the story cards
+hazed, and the league half hazed under the standings; `/waivers` and `/trade/deal` as before.
+The browser test still clicks `locked-season` and sees `locked-week`.
+
+## The week in progress: locked men, points on the board (2026-09-28)
+
+Sunday night the lineup tab used to say "Projected" over a week that was mostly played and
+list swaps nobody could make (Andrew). Now every player on `/lineup` carries `game` and
+`points` (`edge/engine/live.py`, see docs/API.md), and `lineup.live` is set once a starter's
+game has kicked off. `LineupView` then: the hero's eyebrow is "On the board", the big number
+is what the locked starters have scored, "Projects" beside it is the total as it stands,
+and a line under it counts played / on the field / to play; a roster row prints his points
+under a FINAL or LIVE mark instead of his projection; the table's last row is "So far". The
+engine has already dropped every swap and decision that touches a locked man, so the two
+piles only ever name men who can still move. The desk's matchup paper and `/home/matchup`
+lead with the platform's points once `matchup.live`, with the projection in small under.
+The fixture server pins the live clock to the day before the fixture week's first kickoff,
+so nothing is locked there; `tests/test_live.py` covers the locked states.
+
 ## The ESPN key: a private league from a phone (2026-09-28)
 
 A private ESPN league needs two cookies, and the only advice anywhere is "on a computer, open

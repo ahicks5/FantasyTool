@@ -190,3 +190,19 @@ def test_no_lens_ever_prices_a_claim(client, lens):
     text = json.dumps(body)
     for word in ('"fit_score"', '"bid"', '"drop"', '"weekly_gain"'):
         assert word not in text
+
+
+def test_a_pressed_column_sorts_within_a_lens(client):
+    """Andrew, 2026-09-28: the Proj and ROS headings did nothing on the shortlist. Naming a
+    sort keeps the lens's rows and orders them by that column; leaving it off keeps the
+    lens's own order."""
+    own = client.get(f"{LG}/players", params={"lens": "defenses", "avail": "free", "team_id": "1", "limit": 200}).json()
+    by_ros = client.get(f"{LG}/players", params={"lens": "defenses", "avail": "free", "team_id": "1",
+                                                 "sort": "ros", "order": "asc", "limit": 200}).json()
+    assert by_ros["lens"] == "defenses" and by_ros["sort"] == "ros" and by_ros["order"] == "asc"
+    # A stranger sees the free preview of each, so it is the count that proves the rows are the same cut.
+    assert by_ros["total"] == own["total"] and by_ros["rows"], "the same rows, reordered"
+    assert all(r["position"] == "DEF" for r in by_ros["rows"])
+    values = [r["ros"] for r in by_ros["rows"] if r["ros"] is not None]
+    assert values == sorted(values)
+    assert all(r["ros"] is not None for r in by_ros["rows"][:len(values)]), "unknown sorts last"

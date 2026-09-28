@@ -20,6 +20,7 @@ import { pct, signed } from "@/lib/format";
 import { EVEN_MARGIN, matchupCall, printProj, splitMatchup, type SlotDuel } from "@/lib/matchup";
 import type { Connection } from "@/lib/storage";
 import type { ActionFeed, Lineup, Player } from "@/lib/types";
+import { DESK, LINEUP } from "@/lib/vocab";
 import { IconChevron } from "@/components/icons";
 
 /**
@@ -65,7 +66,14 @@ function Side({ p, mine = false, won }: { p: Player | null; mine?: boolean; won:
           {p?.nfl_team ? ` · ${p.position} ${p.nfl_team}` : ""}
         </div>
       </div>
-      <span className="display tnum shrink-0 text-[17px] leading-none">{printProj(p)}</span>
+      {p && p.points != null && (p.game === "in" || p.game === "final") ? (
+        <span className="display tnum shrink-0 text-right text-[17px] leading-none">
+          <span className={`block text-[8.5px] font-extrabold uppercase tracking-[0.1em] ${p.game === "in" ? "text-start" : "text-muted"}`}>{p.game === "in" ? LINEUP.live.on : LINEUP.live.final}</span>
+          {p.points.toFixed(1)}
+        </span>
+      ) : (
+        <span className="display tnum shrink-0 text-[17px] leading-none">{printProj(p)}</span>
+      )}
     </div>
   );
 }
@@ -122,8 +130,12 @@ function MatchupBody({ c }: { c: Connection }) {
     );
   }
 
-  const ahead = m.my_proj >= m.their_proj;
-  const diff = m.my_proj - m.their_proj;
+  // The games are on: the platform's points lead the hero, the projection sits under them.
+  const live = !!m.live && m.my_points != null && m.their_points != null;
+  const myBig = live ? m.my_points! : m.my_proj;
+  const theirBig = live ? m.their_points! : m.their_proj;
+  const ahead = myBig >= theirBig;
+  const diff = myBig - theirBig;
   const share = m.win_prob ?? 0.5;
   const split = mine && theirs ? splitMatchup(mine, theirs) : null;
 
@@ -135,15 +147,16 @@ function MatchupBody({ c }: { c: Connection }) {
           <Countdown onHero />
         </div>
         <div className="p-5">
-          <Eyebrow>Week {feed.week}</Eyebrow>
+          <Eyebrow>{live ? `${DESK.matchup.live} · ` : ""}Week {feed.week}</Eyebrow>
           {/* Names above the numbers, each on its own half, so a long team name
               truncates instead of pushing the scoreline around. */}
           <div className="mt-1.5 flex items-start gap-3">
             <div className="min-w-0 flex-1">
               <div className="truncate text-[12px] font-bold text-white/60">{feed.team}</div>
               <div className={`display tnum text-[36px] leading-none ${ahead ? "text-white" : "text-white/55"}`}>
-                {m.my_proj.toFixed(1)}
+                {myBig.toFixed(1)}
               </div>
+              {live && <div className="tnum mt-1 text-[11px] font-bold text-white/50">{DESK.matchup.proj(m.my_proj.toFixed(1))}</div>}
             </div>
             <div aria-hidden className="pt-4 text-[16px] font-bold text-white/35">
               –
@@ -151,8 +164,9 @@ function MatchupBody({ c }: { c: Connection }) {
             <div className="min-w-0 flex-1 text-right">
               <div className="truncate text-[12px] font-bold text-white/60">{m.opponent}</div>
               <div className={`display tnum text-[36px] leading-none ${ahead ? "text-white/55" : "text-white"}`}>
-                {m.their_proj.toFixed(1)}
+                {theirBig.toFixed(1)}
               </div>
+              {live && <div className="tnum mt-1 text-[11px] font-bold text-white/50">{DESK.matchup.proj(m.their_proj.toFixed(1))}</div>}
             </div>
           </div>
 
@@ -175,7 +189,7 @@ function MatchupBody({ c }: { c: Connection }) {
             <span className="display tnum shrink-0 rounded-lg bg-white/10 px-2.5 py-1.5 text-[19px] leading-none text-white">
               {signed(diff)}
             </span>
-            <p className="min-w-0 flex-1 text-[13px] leading-snug text-white/70">{matchupCall(m.my_proj, m.their_proj)}</p>
+            <p className="min-w-0 flex-1 text-[13px] leading-snug text-white/70">{matchupCall(myBig, theirBig)}</p>
           </div>
         </div>
       </section>

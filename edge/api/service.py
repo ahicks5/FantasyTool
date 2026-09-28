@@ -87,7 +87,7 @@ def load_sleeper(league_id: str, week: int | None = None) -> Bundle:
                                   projections_raw=to_raw(provider.weekly(season, week, positions)))
     byes = bye_weeks(load_schedule(season))
     # Neither platform sends a bye week on a player, so it is stamped on from the schedule
-    # we already loaded. The ESPN path gets this inside `espn.load_league`; this one builds
+    # we already loaded. The ESPN path gets this inside `espn.load_league_and_matchups`; this one builds
     # the league directly, so without the call here a Sleeper league -- every league in the
     # test account -- reports no byes at all and the depth chart cannot flag a starter who
     # is not playing. Costs nothing: `byes` is already in hand on the line above.
@@ -127,10 +127,13 @@ def get_bundle(platform: str, league_id: str, auth=None) -> Bundle:
         b = load_sleeper(league_id)
     elif platform == "espn":
         from edge.connectors import espn  # optional connector
-        league = espn.load_league(league_id, auth=auth)
+        # `matchups` comes off the same `mMatchup` payload the league does, in the row shape
+        # Sleeper's /matchups gives, so the call sheet's matchup and the desk's scoreboard
+        # work for an ESPN league without a second request.
+        league, matchups = espn.load_league_and_matchups(league_id, auth=auth)
         byes = bye_weeks(load_schedule(league.season))
         b = Bundle(league=league, ros=ros_values(league, get_provider().season(league.season), byes), byes=byes,
-                   bid_stats={}, profiles={}, pos_counts={})
+                   bid_stats={}, profiles={}, pos_counts={}, matchups=matchups)
     elif platform == "yahoo":
         from edge.connectors import yahoo
         league = yahoo.load_league(league_id, auth=auth)

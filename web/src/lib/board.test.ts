@@ -124,8 +124,9 @@ test("paging is not a different board, but any filter is", () => {
   assert.notEqual(queryKey(base), queryKey({ ...base, q: "chase" }));
 });
 
-test("an unset field and its default are the same board", () => {
-  assert.equal(queryKey({}), queryKey({ q: "", pos: [], nfl_team: [], avail: "all", sort: "projected", order: "desc" }));
+test("an unset field and its default are the same board, but an unset sort is the lens's own order", () => {
+  assert.equal(queryKey({}), queryKey({ q: "", pos: [], nfl_team: [], avail: "all" }));
+  assert.notEqual(queryKey({}), queryKey({ sort: "projected", order: "desc" }), "no column named is not the same as projection pressed");
 });
 
 /* ------------------------------------------------------------------- sorting ---- */
@@ -227,4 +228,18 @@ test("the shortlist opens free-only, steps aside for a typed name, and takes fre
 test("shortlist reasons are one tag per rank, best first", () => {
   assert.deepEqual(topTags({ proj: 1, ros: 1, adds: 4 }), [{ n: 1, boards: ["proj", "ros"] }, { n: 4, boards: ["adds"] }]);
   assert.deepEqual(topTags({}), []);
+});
+
+test("a lens opens in its own order, a pressed heading sorts within it, and leaving the lens sorts by projection again", () => {
+  // Andrew, 2026-09-28: the Proj and ROS headings did nothing on the shortlist, where the board opens.
+  assert.equal(DEFAULT_QUERY.sort, undefined, "no column named: the lens's own order");
+  const on = withLens({ ...DEFAULT_QUERY, lens: null, sort: "ros", order: "asc" }, "backups");
+  assert.equal(on.sort, undefined);
+  const pressed = pressColumn(on, "ros");
+  assert.equal(pressed.lens, "backups", "the lens holds");
+  assert.deepEqual([pressed.sort, pressed.order], ["ros", "desc"]);
+  assert.equal(pressColumn(pressed, "ros").order, "asc", "the same heading flips");
+  assert.deepEqual([withLens(pressed, null).sort, withLens(pressed, null).order], ["projected", "desc"]);
+  assert.equal(withView(on, "market").sort, undefined, "the view switch keeps a lens's order");
+  assert.notEqual(queryKey(on), queryKey(pressed), "a pressed heading is a new board");
 });

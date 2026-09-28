@@ -116,8 +116,7 @@ export const DEFAULT_QUERY: BoardQuery = {
   pos: [],
   nfl_team: [],
   avail: "free",
-  sort: "projected",
-  order: "desc",
+  // No column named: the lens's own order stands until a heading is pressed.
   lens: "shortlist",
 };
 
@@ -195,8 +194,8 @@ export function queryKey(q: BoardQuery): string {
     [...(q.nfl_team ?? [])].sort(),
     q.avail ?? "all",
     q.owner ?? "",
-    q.sort ?? "projected",
-    q.order ?? "desc",
+    q.sort ?? "",
+    q.order ?? "",
     q.lens ?? "",
     q.season ? 1 : 0,
   ]);
@@ -232,11 +231,14 @@ export function withText(q: BoardQuery, text: string): BoardQuery {
  * worth knowing about wherever he is rostered, every other lens is a question about who
  * you can actually add. The reader can still widen it; the first press lands on the answer.
  * Pressing the lens already on turns it off.
+ *
+ * A lens opens in its own order (no column named); a heading pressed while it is on sorts
+ * within it (Andrew, 2026-09-28). Off a lens, the board is by projection again.
  */
 export function withLens(q: BoardQuery, lens: Lens | null): BoardQuery {
   // Off the shortlist is "everyone": the shortlist brought free-only with it, so it takes it away.
-  if (!lens || q.lens === lens) return { ...q, lens: null, avail: q.lens === "shortlist" ? "all" : q.avail };
-  return { ...q, lens, avail: lens === "handcuffs" ? "all" : "free", owner: null };
+  if (!lens || q.lens === lens) return { ...q, lens: null, avail: q.lens === "shortlist" ? "all" : q.avail, sort: "projected", order: "desc" };
+  return { ...q, lens, avail: lens === "handcuffs" ? "all" : "free", owner: null, sort: undefined, order: undefined };
 }
 
 /**
@@ -354,7 +356,8 @@ export const VIEW_COLUMNS: Record<BoardView, readonly BoardSort[]> = {
 /** Switching views: the sort follows to the new view's first column unless the reader
  *  had already sorted by something that view still shows (or by name). */
 export function withView(q: BoardQuery, view: BoardView): BoardQuery {
-  const keep = q.sort === "name" || VIEW_COLUMNS[view].includes(q.sort ?? "projected");
+  // A lens's own order (no column named) is kept whichever two columns are showing.
+  const keep = !q.sort || q.sort === "name" || VIEW_COLUMNS[view].includes(q.sort);
   return keep ? q : withSort(q, VIEW_COLUMNS[view][0]);
 }
 

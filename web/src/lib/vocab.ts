@@ -141,6 +141,10 @@ export const LINES = {
   paywallBundleCta: "Take the season",
   /** The week pass as a control: the low step in, next to the season. */
   paywallWeekCta: "Try a week",
+  /** The one button on the haze (Andrew, 2026-09-28): it opens the payment sheet, which offers both passes. */
+  paywallGo: "Go premium",
+  /** Under the teaser on the haze: the cheapest way in, read off the catalog. */
+  paywallFrom: (price: string) => `As low as ${price}`,
 } as const;
 
 /**
@@ -256,6 +260,9 @@ export const DESK = {
     standing: (record: string, rank: number, teams: number) => `${record} \u00b7 ${rank} of ${teams}`,
     go: "Full matchup",
     none: "No game this week",
+    /** The games are on: the platform's points lead, the projection sits under them. */
+    live: "On the board",
+    proj: (n: string) => `proj ${n}`,
   },
   /** The spiral notebooks. Each says what it is and who it is from. */
   notebooks: {
@@ -1417,6 +1424,26 @@ export const LINEUP = {
     call: "Head coach\u2019s call",
   },
   projected: (week: number) => `Projected \u00b7 Week ${week}`,
+  /** The week in progress (Andrew, 2026-09-28: Sunday night the page still said "projected"
+   *  over a week that was mostly played). The hero shows what is on the board. */
+  live: {
+    scored: (week: number) => `On the board \u00b7 Week ${week}`,
+    /** Beside the score: where the week ends up if the rest hit their projections. */
+    projectsLabel: "Projects",
+    /** The count under the number. */
+    count: (played: number, on: number, toPlay: number) => {
+      const parts: string[] = [];
+      if (played) parts.push(`${played} played`);
+      if (on) parts.push(`${on} on the field`);
+      if (toPlay) parts.push(`${toPlay} to play`);
+      return parts.join(" \u00b7 ");
+    },
+    /** The mark on a roster row: his game is over, or on. */
+    final: "Final",
+    on: "Live",
+    /** The last row of the table once the games are on. */
+    total: "So far",
+  },
   /** Beside the number: where the projection ranks in the league this week, as an eyebrow
    *  and a figure. Not a margin against your own lineup, which a tipped coin flip can
    *  legitimately move down. */
@@ -1638,7 +1665,10 @@ export const OFFICE = {
   youGetShort: "You get",
   none: "Nobody in the league has what you need for what you can spare. Quiet week.",
   locked: "Locked",
-  lockedLine: "Three GMs worth a call, and the deal for each. Trade Lab names them.",
+  lockedLine: "Your best fit is named. The deal itself is Trade Lab's.",
+  /** Over the haze where the other GMs would be (Andrew, 2026-09-28: one GM, blur the rest). */
+  hiddenLine: (n: number) => (n === 1 ? "One more GM worth a call, with the deal for each." : `${n} more GMs worth a call, with the deal for each.`),
+  hiddenNone: "Every GM in the league, the deal for each, and the trade room.",
   goAria: (team: string) => `The deal with ${team}`,
   partners: "Every GM",
   partnersHint: "Best fit first. What they have, what they need, the best deal.",
@@ -1906,6 +1936,8 @@ export const FILM = {
   noneHead: "Nothing on tape",
   lineByLine: "This platform sends the scoreline but not who scored it, so the line-by-line is not here yet.",
   product: "The replay: every week, told",
+  /** Over the haze on the free film: what the paid replay holds (Andrew, 2026-09-28: show it, then blur it). */
+  moreLine: "The play that decided it, who carried you, who let you down, and what to do before Thursday.",
   season: "Week by week",
   /** Sharing the cover: free, like a Lock card (SPEC-FILM D2). */
   share: {

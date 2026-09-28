@@ -81,6 +81,19 @@ export function useHandled(week: number): [Set<string>, (label: string, on: bool
   return [handled, set];
 }
 
+/** His number on the row: his points once his game is on or over, his projection before. */
+function RowNumber({ p }: { p: Player }) {
+  if (p.points != null && (p.game === "in" || p.game === "final")) {
+    return (
+      <span className={`roster-proj display tnum roster-live ${p.game === "in" ? "roster-live-on" : ""}`}>
+        <span className="roster-live-state">{p.game === "in" ? LINEUP.live.on : LINEUP.live.final}</span>
+        {p.points.toFixed(1)}
+      </span>
+    );
+  }
+  return <span className="roster-proj display tnum">{p.projected.toFixed(1)}</span>;
+}
+
 /** "RB12": where he ranks at his position in this league this week. A dash without one. */
 function PosRank({ p }: { p: Player }) {
   return <span className="roster-rank tnum">{p.pos_rank ? `${p.position}${p.pos_rank.rank}` : "\u2014"}</span>;
@@ -125,7 +138,7 @@ function RosterRow({ label, p, confidence, role, changed }: { label: string; p: 
             <InjuryTag status={p.injury_status} />
           </span>
           <PosRank p={p} />
-          <span className="roster-proj display tnum">{p.projected.toFixed(1)}</span>
+          <RowNumber p={p} />
         </PlayerTarget>
       ) : (
         <span className="roster-row-main">
@@ -325,6 +338,8 @@ export function LineupView({
   const faces = [...required.map((c) => c.in), ...open.map((r) => r.pick)]
     .filter((p): p is Player => !!p && "projected" in p)
     .slice(0, 6);
+  // The games are on (Andrew, 2026-09-28): the hero reads the board, not the projection.
+  const live = lineup.live ?? null;
 
   return (
     <div className="grid min-w-0 gap-5">
@@ -349,11 +364,17 @@ export function LineupView({
         <div className="px-4 pb-4 pt-3">
           <div className="flex items-end justify-between gap-4">
             <div className="min-w-0">
-              <Eyebrow className="whitespace-nowrap">{LINEUP.projected(lineup.week)}</Eyebrow>
-              <CountUp value={lineup.projected_total} animate={animate} className="display mt-0.5 text-[40px] leading-none text-white" />
+              <Eyebrow className="whitespace-nowrap">{live ? LINEUP.live.scored(lineup.week) : LINEUP.projected(lineup.week)}</Eyebrow>
+              <CountUp value={live ? live.scored : lineup.projected_total} animate={animate} className="display mt-0.5 text-[40px] leading-none text-white" />
+              {live && <div className="tnum mt-1 text-[11px] font-bold text-white/60" data-testid="lineup-live">{LINEUP.live.count(live.played, live.on, live.to_play)}</div>}
             </div>
             <div className="shrink-0 pb-1 text-right">
-              {set ? (
+              {live ? (
+                <>
+                  <Eyebrow className="whitespace-nowrap">{LINEUP.live.projectsLabel}</Eyebrow>
+                  <div className="display tnum mt-0.5 whitespace-nowrap text-[22px] leading-none text-white/85">{live.live_total.toFixed(1)}</div>
+                </>
+              ) : set ? (
                 // Inked white: the hero is dark in both themes, where status green would vanish.
                 <Stamp ink="text-white" slam={animate}>
                   <IconCheck size={12} strokeWidth={3.4} />
@@ -452,14 +473,15 @@ export function LineupView({
             // Lock there even if a bench man who sits at another role projects near him.
             <RosterRow key={i} label={roles[i]?.label ?? s.slot} p={s.player} confidence={roles[i]?.confidence ?? s.confidence} role={roles[i]} changed={s.change} />
           ))}
-          {/* The same number as the hero, so the table adds up to what the page promised. */}
+          {/* The same number as the hero, so the table adds up to what the page promised:
+              the projection, or once the games are on, the total as it stands. */}
           <li className="roster-row roster-total">
             <span className="roster-row-main">
-              <span className="roster-role">{LINEUP.total}</span>
+              <span className="roster-role">{live ? LINEUP.live.total : LINEUP.total}</span>
               <span aria-hidden />
               <span className="roster-name" />
               <span className="roster-rank" />
-              <span className="roster-proj display tnum">{lineup.projected_total.toFixed(1)}</span>
+              <span className="roster-proj display tnum">{(live ? live.live_total : lineup.projected_total).toFixed(1)}</span>
             </span>
             <span className="roster-mark" aria-hidden />
           </li>

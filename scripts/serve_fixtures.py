@@ -103,6 +103,15 @@ def install_fixture_sleeper() -> None:
     depth_charts.load = lambda: charts
     desk_mod.depth_charts.load = lambda: charts
     desk_mod.now_ms = lambda: depth["recorded_at"]
+    # The week in progress (`edge/engine/live.py`) reads a clock pinned to the day before
+    # the fixture week's first kickoff, so nothing is locked and the lineup paints from
+    # projections whatever day the suite actually runs on. (The depth charts were recorded
+    # on a later Sunday, which would put every man of week 2 on the field with no stats.)
+    from datetime import datetime, timedelta, timezone
+    from edge.engine import live as live_mod
+    first = min(datetime.strptime(g["kickoff"], "%Y-%m-%dT%H:%MZ") for g in games.get(str(WEEK), []))
+    eve = (first - timedelta(days=1)).replace(tzinfo=timezone.utc).timestamp()
+    live_mod.clock = lambda: eve
 
     # The bye-week table normally comes from ESPN's scoreboard; serve the recorded one.
     from edge.api import service as service_mod

@@ -18,7 +18,9 @@ from typing import Any
 import requests
 
 BASE = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl"
-DEFAULT_VIEWS = ("mTeam", "mRoster", "mSettings", "mMatchup")
+# mMatchupScore adds each side's `totalPointsLive` to the schedule once games are on; the
+# rest of the schedule (ids, periods, `totalPoints`) rides on mMatchup. Cheap: same request.
+DEFAULT_VIEWS = ("mTeam", "mRoster", "mSettings", "mMatchup", "mMatchupScore")
 MIN_SEASON = 2018
 
 

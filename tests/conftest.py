@@ -22,10 +22,17 @@ def _no_cache_between_tests():
     so the caches are emptied around every test rather than in the few that remember to.
     """
     from edge.data import nfl_stats, player_index
+    from edge.api import app as app_mod
     _reset_rate_limits()
     nfl_stats.clear()
     player_index._cache = None
+    # The fixtures are a Wednesday: no game has kicked off, and the API must not read the
+    # real scoreboard to find that out (`edge/engine/live.py` would lock every man in a
+    # league recorded weeks ago). `tests/test_live.py` calls the engine directly.
+    real_refresh = app_mod._refresh_live
+    app_mod._refresh_live = lambda b: None
     yield
+    app_mod._refresh_live = real_refresh
     nfl_stats.clear()
     player_index._cache = None
 

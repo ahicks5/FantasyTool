@@ -347,6 +347,10 @@ def _blockers(league: League, my_team: Team, mine: PositionProfile, ros: dict[st
     return out[:limit]
 
 
+# How many GMs the free board names. One (Andrew, 2026-09-28).
+FREE_PARTNERS = 1
+
+
 def fit_tier(rank: int) -> str:
     """The word a free user reads in place of the complement score."""
     return BEST_FIT if rank == 0 else WORTH_A_CALL
@@ -368,6 +372,10 @@ def preview(found: dict) -> dict:
 
     Positions come out as ordered lists rather than `{"RB": 41.2}`: the magnitudes are
     rest-of-season points and the UI only ever reads the keys.
+
+    One GM, no more (Andrew, 2026-09-28: "just show 1 GM max and blur anything else"): the
+    best fit is named, and `hidden` counts the partners a pass would open. Those never
+    leave the server, so the haze on the page covers placeholder rows, not names.
     """
     def _positions(d: dict | None) -> dict:
         d = d or {}
@@ -387,6 +395,7 @@ def preview(found: dict) -> dict:
         "week": found.get("week"),
         "my_positions": _positions(found.get("my_positions")),
         "summary": (found.get("summary") or NO_DEAL) if partners else NO_DEAL,
-        "partners": partners,
+        "partners": partners[:FREE_PARTNERS],
+        "hidden": max(0, len(partners) - FREE_PARTNERS),
         "algo_version": found.get("algo_version") or ALGO_VERSION,
     }

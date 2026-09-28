@@ -6,6 +6,18 @@ by Sleeper id, so each Player also gets `ext_ids["sleeper"]` via edge.data.playe
 we call the Sleeper connector's `apply_projections` with that translator. Free agents come
 from ESPN's own pool (`espn_api.free_agents`), so an add we recommend is one this league
 really has available; they keep ESPN ids like everyone else.
+
+Matchups: `build_matchups` reads the `mMatchup` schedule into the same rows the Sleeper
+connector hands the engine (`{"roster_id", "matchup_id", "points"}`), so `report.matchup`
+and the desk's scoreboard work for an ESPN league without knowing where the rows came from.
+
+Scoring vocabulary gaps (all documented in `docs/DATA.md`): ESPN's points-allowed brackets
+are 14-17 (92), 18-21 (121), 22-27 (122), 35-45 (124) and 46+ (125), while Sleeper's are
+14-20, 21-27, 28-34 and 35+. 92/122/124 are the primary stand-ins; 121 and 125 only fill
+`pts_allow_14_20` / `pts_allow_35p` when the primary id is missing (`ESPN_STAT_FALLBACK`),
+so a league that scores 18-21 and 22-27 differently is approximated at the 20/21 boundary.
+Per-position weights are not supported either: our scoring dict is position-agnostic, so
+an item whose `pointsOverrides` differ between QB/RB/WR/TE takes the most common value.
 """
 from __future__ import annotations
 
@@ -58,11 +70,11 @@ INJURY_STATUS: dict[str, str | None] = {
 }
 
 # ESPN scoring statId -> Sleeper stat key(s). Items are applied in descending statId order and
-# the first value written for a key wins, so a specific bucket (201: 60+ yd FG) beats a coarse
-# one (74: 50+ yd FG). Ids not listed here are skipped (IDP tackles, punting, head coach,
-# per-game averages, and buckets Sleeper has no key for: ESPN 121 = 18-21 points allowed and
-# 125 = 46+ straddle Sleeper's boundaries, and 124 (35-45) is the better stand-in for
-# pts_allow_35p, so 125 stays unmapped and lets 124 win).
+# the first NON-ZERO value written for a key wins, so a specific bucket (201: 60+ yd FG) beats
+# a coarse one (74: 50+ yd FG) and a disabled item (points 0, no overrides) never claims a
+# key a later item scores; zeros fill only what nothing else wrote. Ids not listed here are
+# skipped (IDP tackles, punting, head coach, per-game averages). 121/125 live in
+# `ESPN_STAT_FALLBACK`: see the module docstring for the bracket mismatch.
 ESPN_STAT_TO_SLEEPER: dict[int, tuple[str, ...]] = {
     # passing
     0: ("pass_att",), 1: ("pass_cmp",), 2: ("pass_inc",), 3: ("pass_yd",), 4: ("pass_td",),
@@ -80,12 +92,13 @@ ESPN_STAT_TO_SLEEPER: dict[int, tuple[str, ...]] = {
     211: ("pass_fd",), 212: ("rush_fd",), 213: ("rec_fd",),
     # fumbles
     63: ("fum_rec_td",), 68: ("fum",), 72: ("fum_lost",),
-    # kicking (ESPN 80/82 = under 40 yds -> Sleeper's three short buckets)
+    # kicking (ESPN 80/82 = under 40 yds -> Sleeper's three short buckets; 214 = a point per
+    # field-goal yard, which Sleeper's kicker projections carry as `fgm_yds`)
     74: ("fgm_50_59", "fgm_60p"), 76: ("fgmiss_50p",), 77: ("fgm_40_49",), 79: ("fgmiss_40_49",),
     198: ("fgm_50_59",), 200: ("fgmiss_50p",),
     80: ("fgm_0_19", "fgm_20_29", "fgm_30_39"), 82: ("fgmiss_0_19", "fgmiss_20_29", "fgmiss_30_39"),
     83: ("fgm",), 84: ("fga",), 85: ("fgmiss",), 86: ("xpm",), 87: ("xpa",), 88: ("xpmiss",),
-    201: ("fgm_60p",),
+    201: ("fgm_60p",), 214: ("fgm_yds",),
     # team defense: points allowed. 188-195 are ESPN's D/ST-only duplicates of 89-124.
     89: ("pts_allow_0",), 90: ("pts_allow_1_6",), 91: ("pts_allow_7_13",), 92: ("pts_allow_14_20",),
     120: ("pts_allow",), 122: ("pts_allow_21_27",), 123: ("pts_allow_28_34",), 124: ("pts_allow_35p",),
@@ -106,6 +119,15 @@ ESPN_STAT_TO_SLEEPER: dict[int, tuple[str, ...]] = {
     104: ("def_td",),     # fumble return TD
     105: ("def_st_td",),  # total return TD
     106: ("ff",),
+    114: ("def_kr_yd",),  # kickoff return yards (D/ST; Sleeper prices no player kr_yd)
+    115: ("def_pr_yd",),  # punt return yards (D/ST)
+}
+
+# Brackets that straddle Sleeper's boundaries, used only when the primary id above is absent:
+# ESPN 121 (18-21 allowed) stands in for pts_allow_14_20 when 92 (14-17) is not scored, and
+# 125 (46+) for pts_allow_35p when 124 (35-45) is not.
+ESPN_STAT_FALLBACK: dict[int, tuple[str, ...]] = {
+    121: ("pts_allow_14_20",), 125: ("pts_allow_35p",),
 }
 
 # ESPN's "every N units" scoring (PY25 = a point per 25 passing yards, REY10, REC5, ...).
@@ -124,38 +146,78 @@ ESPN_STAT_PER_N: dict[int, tuple[str, int]] = {
 
 DST_POSITION_ID = "16"
 
+# Sleeper keys only a team defense ever scores. An ESPN item whose keys are all in here is
+# read with the D/ST override first, whatever `points` says (see `item_points`).
+DST_KEY_PREFIXES = ("pts_allow", "yds_allow", "def_")
+DST_KEYS = frozenset({"sack", "int", "fum_rec", "safe", "blk_kick", "ff"})
 
-def item_points(item: dict) -> float | None:
+
+def _is_dst_key(key: str) -> bool:
+    return key in DST_KEYS or key.startswith(DST_KEY_PREFIXES)
+
+
+def is_dst_stat(stat_id: int) -> bool:
+    """True when every Sleeper key this ESPN id maps to is a team-defense stat."""
+    keys = ESPN_STAT_TO_SLEEPER.get(stat_id) or ESPN_STAT_FALLBACK.get(stat_id) or ()
+    return bool(keys) and all(_is_dst_key(k) for k in keys)
+
+
+def item_points(item: dict, dst: bool = False) -> float | None:
     """Points for one scoring item, or None if it carries no value.
 
     ESPN parks a whole category's value in `pointsOverrides` (position id -> points) and
-    leaves `points` at 0. Every D/ST category is written this way in practice — sacks,
+    often leaves `points` at 0. Every D/ST category is written this way in practice — sacks,
     interceptions, points allowed — so reading `points` alone scores every defense at zero.
-    Our scoring dict is position-agnostic (the stat keys are position-specific anyway), so
-    take the D/ST override when there is one, else the value most positions share.
+    Our scoring dict is position-agnostic (the stat keys are position-specific anyway), so:
+
+    * `dst=True` (the id maps only to team-defense keys): the D/ST override wins whenever it
+      is present, even over a non-zero `points` — a kick-return TD that pays a player 6 and
+      the defense 4 is a defense stat in our vocabulary, so it is worth 4.
+    * otherwise: `points` when it is non-zero; else the value most positions share among the
+      overrides (D/ST's own override last, so a player key is not priced off the defense).
+      Per-position weights that differ are not supported (module docstring).
     """
     pts = item.get("points")
-    overrides = item.get("pointsOverrides") or {}
+    overrides = {str(k): float(v) for k, v in (item.get("pointsOverrides") or {}).items()}
+    if dst and DST_POSITION_ID in overrides:
+        return overrides[DST_POSITION_ID]
     if not pts and overrides:
-        vals = [float(v) for v in overrides.values()]
-        pts = overrides.get(DST_POSITION_ID, max(set(vals), key=vals.count))
+        players = [v for k, v in overrides.items() if k != DST_POSITION_ID]
+        vals = players or list(overrides.values())
+        pts = max(set(vals), key=vals.count)
     return None if pts is None else float(pts)
 
 
 def map_scoring(scoring_items: list[dict]) -> dict[str, float]:
+    """ESPN scoringItems -> {Sleeper stat key: points}.
+
+    Passes, each `setdefault` so the earlier pass wins: non-zero primary ids, non-zero
+    fallback brackets, non-zero every-N ids; then the same three for zeros, so a disabled
+    item only fills a key nothing else scored.
+    """
     items = sorted(scoring_items, key=lambda i: -int(i.get("statId", 0)))
-    scoring: dict[str, float] = {}
-    for item in items:
-        pts = item_points(item)
-        if pts is None:
-            continue
-        for key in ESPN_STAT_TO_SLEEPER.get(int(item["statId"]), ()):
-            scoring.setdefault(key, pts)
+    plan: list[tuple[str, float]] = []      # (key, points) in priority order
+    for table in (ESPN_STAT_TO_SLEEPER, ESPN_STAT_FALLBACK):
+        for item in items:
+            sid = int(item.get("statId", -1))
+            keys = table.get(sid)
+            if not keys:
+                continue
+            pts = item_points(item, dst=is_dst_stat(sid))
+            if pts is None:
+                continue
+            plan += [(k, pts) for k in keys]
     for item in items:
         per_n = ESPN_STAT_PER_N.get(int(item.get("statId", -1)))
         pts = item_points(item) if per_n else None
         if per_n and pts is not None:
-            scoring.setdefault(per_n[0], round(pts / per_n[1], 6))
+            plan.append((per_n[0], round(pts / per_n[1], 6)))
+    scoring: dict[str, float] = {}
+    for key, pts in plan:
+        if pts:
+            scoring.setdefault(key, pts)
+    for key, pts in plan:
+        scoring.setdefault(key, pts)
     return scoring
 
 
@@ -452,11 +514,47 @@ def attach_sleeper_ids(league: League, players: dict[str, dict]) -> int:
     return missed
 
 
+def build_matchups(raw: dict, week: int | None = None) -> list[dict]:
+    """This week's games from the `mMatchup` schedule, in the Sleeper row shape.
+
+    One row per side: `roster_id` is the ESPN team id as a string (the same id
+    `build_league` gives a Team), `matchup_id` is the schedule entry's id, `points` is the
+    side's live total when ESPN sends one (`totalPointsLive`, view mMatchupScore) else its
+    `totalPoints` (0.0 before kickoff, as Sleeper's rows are). The period is
+    `status.currentMatchupPeriod` when the payload carries it, else `week`, else the
+    league's `scoringPeriodId`. A payload without a schedule is an empty list, never an
+    error: the engine then shows no matchup rather than a wrong one.
+    """
+    status = raw.get("status") or {}
+    period = status.get("currentMatchupPeriod") or week or raw.get("scoringPeriodId")
+    if not period:
+        return []
+    rows: list[dict] = []
+    for m in raw.get("schedule") or []:
+        if int(m.get("matchupPeriodId") or 0) != int(period):
+            continue
+        for side in (m.get("home"), m.get("away")):
+            if not side or side.get("teamId") is None:
+                continue
+            pts = side.get("totalPointsLive")
+            if pts is None:
+                pts = side.get("totalPoints")
+            rows.append({
+                "roster_id": str(side["teamId"]),
+                "matchup_id": m.get("id"),
+                "points": round(float(pts or 0.0), 2),
+                "points_projected": None,
+            })
+    return rows
+
+
 # ---- live entry point ----
 
-def load_league(league_id: str | int, season: int | None = None, week: int | None = None,
-                auth: "api.EspnAuth | None" = None) -> League:
-    """`auth` carries the user's ESPN cookies for a private league; see `espn_api.EspnAuth`.
+def load_league_and_matchups(league_id: str | int, season: int | None = None, week: int | None = None,
+                             auth: "api.EspnAuth | None" = None) -> tuple[League, list[dict]]:
+    """The league and this week's matchup rows (`build_matchups`) from one ESPN payload.
+
+    `auth` carries the user's ESPN cookies for a private league; see `espn_api.EspnAuth`.
     Public leagues ignore it."""
     st = sleeper_api.state()
     season = season or int(st["season"])
@@ -466,5 +564,12 @@ def load_league(league_id: str | int, season: int | None = None, week: int | Non
         fas = api.free_agents(season, league_id, week, auth=auth)
     except api.EspnError:
         fas = None  # fall back to the derived pool rather than showing no waiver advice at all
-    return build_league(raw, week, projections_raw=to_raw(get_provider().weekly(season, week)),
-                        players=sleeper_api.players(), free_agents_raw=fas, byes=season_byes(season))
+    league = build_league(raw, week, projections_raw=to_raw(get_provider().weekly(season, week)),
+                          players=sleeper_api.players(), free_agents_raw=fas, byes=season_byes(season))
+    return league, build_matchups(raw, week)
+
+
+def load_league(league_id: str | int, season: int | None = None, week: int | None = None,
+                auth: "api.EspnAuth | None" = None) -> League:
+    """`load_league_and_matchups` for callers that only want the League (the CLI)."""
+    return load_league_and_matchups(league_id, season, week, auth=auth)[0]

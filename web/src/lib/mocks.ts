@@ -1282,6 +1282,8 @@ export function playerBoard(query: BoardQuery = {}, teamId?: string): PlayerBoar
     return true;
   });
 
+  // A lens keeps its own order until a column is pressed, the server's rule.
+  const pressed = !!query.sort;
   const sort = query.sort ?? "projected";
   const desc = (query.order ?? "desc") !== "asc";
   const numeric: Record<string, (r: BoardRow) => number | null> = {
@@ -1290,7 +1292,7 @@ export function playerBoard(query: BoardQuery = {}, teamId?: string): PlayerBoar
     trending: (r) => r.trending_adds,
     season: (r) => r.season_pts ?? null,
   };
-  if (!lensed) matched = [...matched].sort((a, b) => {
+  if (!lensed || pressed) matched = [...matched].sort((a, b) => {
     if (sort === "name") return a.name.localeCompare(b.name) * (desc ? -1 : 1);
     if (sort === "position") return a.position.localeCompare(b.position) * (desc ? -1 : 1) || a.name.localeCompare(b.name);
     const get = numeric[sort] ?? numeric.projected;

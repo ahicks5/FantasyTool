@@ -50,6 +50,8 @@ def player_dict(p: Player | None) -> dict | None:
             "injury_status": p.injury_status, "injury_body_part": p.injury_body_part,
             "news_updated": p.news_updated, "bye_week": p.bye_week or None,
             "projected": p.projected,
+            # The week in progress (`engine/live.py`): null until his game has kicked off.
+            "game": p.game_status, "points": p.points,
             "photo": photo_url(p), "team_logo": team_logo_url(p.nfl_team)}
 
 
@@ -95,6 +97,7 @@ def lineup_dict(adv: LineupAdvice) -> dict:
     return {
         "week": adv.week, "projected_total": adv.projected_total, "current_total": adv.current_total,
         "standing": {"rank": adv.standing[0], "of": adv.standing[1]},
+        "live": adv.live,
         "summary": {"required": len(adv.required) + len(adv.holes),
                     "decisions": sum(1 for r in adv.roles if r.decision)},
         "required": [_swap_dict(ch) for ch in adv.required],
@@ -139,8 +142,12 @@ def matchup(league: League, team: Team, matchups_raw: list[dict] | None) -> dict
         return {"opponent": None, "my_proj": my_proj, "their_proj": None, "win_prob": None}
     other = league.team(str(opp["roster_id"]))
     their_proj = lineup_mod.lineup_total(other.players, league.starting_slots) if other else 0.0
+    # The platform's own points once the games are on (0.0 before kickoff reads as null).
+    my_pts, their_pts = float(mine.get("points") or 0.0), float(opp.get("points") or 0.0)
+    live = bool(my_pts or their_pts)
     return {"opponent": other.name if other else None, "opponent_id": other.id if other else None,
-            "my_proj": my_proj, "their_proj": their_proj, "win_prob": win_probability(my_proj, their_proj)}
+            "my_proj": my_proj, "their_proj": their_proj, "win_prob": win_probability(my_proj, their_proj),
+            "my_points": my_pts if live else None, "their_points": their_pts if live else None, "live": live}
 
 
 def scoreboard(league: League, matchups_raw: list[dict] | None) -> list[dict]:

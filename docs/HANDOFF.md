@@ -24,6 +24,22 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## Sunday night: the haze, the live week, ESPN matchups (2026-09-28)
+
+Andrew opened the app after the Sunday games and everything projected was stale. What
+shipped: the paywall is a haze over a sketch of the room (`Locked.tsx`; one GM on `/trade`,
+the story and league hazed on `/report`); Proj/ROS sort inside a lens; the week in
+progress (`edge/engine/live.py`, docs/API.md "The week in progress"): locked men, points on
+the board, the desk and matchup on live points; ESPN leagues finally carry a matchup
+(`espn.build_matchups`); the ESPN scoring map audited (`docs/DATA.md`). Open: TASKS.md
+SN-1..3.
+
+**Traps.** `tests/conftest.py` stubs `app._refresh_live`, and the fixture server pins
+`live.clock` to the eve of the fixture week: without either, a suite run on a Sunday locks
+every man in a league recorded on a Wednesday. `next dev` did not hydrate under Playwright
+here (no API call ever fired); screenshots need `next build` with the `NEXT_PUBLIC_*` vars
+baked in, then `next start`, the way `playwright.config.ts` does it.
+
 ## Telemetry and the admin's numbers (2026-09-28)
 
 Andrew asked for a three-week paid launch plan (`launch/three-week-plan.pdf`) and the telemetry

@@ -36,7 +36,7 @@ const SECTION_VALUES = Object.values(SECTIONS);
 /** Everything a user reads out of this module, flattened for the sweeps below. */
 const ALL_COPY: string[] = [
   ...SECTION_VALUES.flatMap((s) => [s.label, s.title, s.gate]),
-  ...Object.values(LINES),
+  ...Object.values(LINES).map((l) => (typeof l === "function" ? l("$4.99/week") : l)),
   ...Object.values(RIDE),
   ...Object.values(YAHOO),
   // The desk's words: the strings, plus every templated line rendered once.
@@ -49,7 +49,7 @@ const ALL_COPY: string[] = [
   DESK.notebooks.locked, DESK.notebooks.lit(2), DESK.notebooks.best("+4.2 pts"), DESK.notebooks.quiet,
   DESK.notebooks.film("W", 127.78, 101.4, 2, 3), DESK.notebooks.filmNone, DESK.notebooks.filmCover("W", 130.08, 116.08, "Your best score of the season"), DESK.notebooks.filmCover("L", 116.3, 146.6, null),
   DESK.matchup.eyebrow, DESK.matchup.from, DESK.matchup.you, DESK.matchup.them, DESK.matchup.go, DESK.matchup.none,
-  DESK.matchup.standing("1-1", 7, 12),
+  DESK.matchup.standing("1-1", 7, 12), DESK.matchup.live, DESK.matchup.proj("101.2"),
   ...(["team", "waivers", "trade", "report"] as const).flatMap((k) => [DESK.notebooks[k].title, DESK.notebooks[k].from]),
   PLAN.title, PLAN.back, PLAN.gone, ...Object.values(PLAN.posture).flatMap((p) => [p.head, p.body]),
   PLAN.status("Out", "Knee"), PLAN.practice("Limited"), PLAN.nextUp.title, PLAN.nextUp.from, PLAN.nextUp.depth(2), PLAN.nextUp.depth(3),
@@ -100,7 +100,7 @@ const ALL_COPY: string[] = [
   ...Object.values(LINEUP.coach), LINEUP.projected(2), LINEUP.standingLabel, LINEUP.standing(1, 12), LINEUP.standing(2, 12), LINEUP.standing(3, 12), LINEUP.standing(11, 12),
   LINEUP.required(1), LINEUP.required(2), LINEUP.decisions(1), LINEUP.decisions(3), LINEUP.clear,
   LINEUP.stamp.urgent, LINEUP.stamp.clear, LINEUP.stamp.aria, LINEUP.stamp.then, LINEUP.stamp.close, LINEUP.stamp.closeAria,
-  LINEUP.jump, LINEUP.total, ...Object.values(LINEUP.section), LINEUP.mark.lock, LINEUP.mark.flag("RB2"), LINEUP.mark.out, LINEUP.requiredClear, LINEUP.requiredClearLine, LINEUP.decisionsQuiet,
+  LINEUP.jump, LINEUP.total, LINEUP.live.scored(3), LINEUP.live.projectsLabel, LINEUP.live.count(5, 2, 2), LINEUP.live.count(0, 0, 9), LINEUP.live.final, LINEUP.live.on, LINEUP.live.total, ...Object.values(LINEUP.section), LINEUP.mark.lock, LINEUP.mark.flag("RB2"), LINEUP.mark.out, LINEUP.requiredClear, LINEUP.requiredClearLine, LINEUP.decisionsQuiet,
   LINEUP.handled(2), LINEUP.showHandled, LINEUP.change.empty, LINEUP.change.forced, LINEUP.change.settled, LINEUP.change.saves, LINEUP.change.outAria("Alec Pierce"), LINEUP.change.inAria("Romeo Doubs"), LINEUP.change.hole, LINEUP.change.wire,
   LINEUP.role.question("RB2"), LINEUP.role.aria("RB2"), LINEUP.role.change, LINEUP.role.keep, LINEUP.role.tipped, LINEUP.role.considered,
   LINEUP.role.others, LINEUP.role.start("Travis Kelce"), LINEUP.role.grid, LINEUP.role.gridAria("TE"), LINEUP.role.band,
@@ -124,7 +124,7 @@ const ALL_COPY: string[] = [
   ...Object.values(SCOUT_OPEN).map((v) => (typeof v === "function" ? v(2) : v)),
   // The GM's Office and its call.
   OFFICE.title, OFFICE.seeAll(11), ...Object.values(OFFICE.heat), OFFICE.youGet, OFFICE.forWord, OFFICE.ros, OFFICE.fair,
-  OFFICE.shape, ...Object.values(OFFICE.shapeWord), OFFICE.shapeHint, OFFICE.shapeAria("WR", "Spare"), OFFICE.jump, OFFICE.youGive, OFFICE.youGetShort, OFFICE.none, OFFICE.locked, OFFICE.lockedLine,
+  OFFICE.shape, ...Object.values(OFFICE.shapeWord), OFFICE.shapeHint, OFFICE.shapeAria("WR", "Spare"), OFFICE.jump, OFFICE.youGive, OFFICE.youGetShort, OFFICE.none, OFFICE.locked, OFFICE.lockedLine, OFFICE.hiddenLine(1), OFFICE.hiddenLine(4), OFFICE.hiddenNone, FILM.moreLine,
   OFFICE.partners, OFFICE.partnersHint, OFFICE.has, OFFICE.needs, OFFICE.offers(2), OFFICE.build, OFFICE.buildHint,
   OFFICE.buildOpen, OFFICE.buildClose, OFFICE.deal.back, OFFICE.deal.rank(1), OFFICE.deal.offers, OFFICE.deal.theirShape,
   OFFICE.deal.gone, OFFICE.deal.grade, OFFICE.deal.why,

@@ -231,6 +231,24 @@ export interface Player {
   /** Where he ranks at his position among every rostered player in this league this week
    *  (RB12 of 56). Optional: only the lineup payload carries it. */
   pos_rank?: { rank: number; of: number } | null;
+  /** The week in progress (`edge/engine/live.py`): where his game stands, and what he has
+   *  scored so far in this league's scoring. Null until his game has kicked off, and null
+   *  for a man with no game this week. A man whose game is `in` or `final` is locked. */
+  game?: GameState | null;
+  points?: number | null;
+}
+
+export type GameState = "pre" | "in" | "final";
+
+/** What the lineup has on the board once a starter's game has kicked off. */
+export interface LineupLive {
+  played: number;
+  on: number;
+  to_play: number;
+  /** The locked starters' points so far. */
+  scored: number;
+  /** The total as it stands: actuals for the locked men, projections for the rest. */
+  live_total: number;
 }
 
 export interface Roster {
@@ -432,6 +450,8 @@ export interface Lineup {
   roles?: LineupRole[];
   /** Where this lineup's projection ranks among the league's this week. */
   standing?: { rank: number; of: number };
+  /** Null (or absent, on an older API build) until a starter's game has kicked off. */
+  live?: LineupLive | null;
   slots: LineupSlot[];
   bench: BenchEntry[];
   /** Every swap the lineup makes from the one you set, required or decided. */
@@ -850,6 +870,8 @@ export interface TradeFinderResponse {
   my_positions: { surplus: Record<string, number>; need: Record<string, number> };
   summary: string;
   partners: TradePartner[];
+  /** The free preview names one GM; this counts the partners a pass would open. */
+  hidden?: number;
   algo_version: string;
 }
 
@@ -1015,6 +1037,11 @@ export interface Matchup {
   my_proj: number;
   their_proj: number | null;
   win_prob: number | null;
+  /** The platform's own points once the games are on; null before kickoff and on an
+   *  older API build. `live` is true when either side has any. */
+  my_points?: number | null;
+  their_points?: number | null;
+  live?: boolean;
   /** On the desk only: the opponent's record and competition rank out of `teams`, from the
    *  same standings table as the nameplate. Null when the opponent is not in the table. */
   opponent_record?: string | null;

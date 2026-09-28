@@ -256,7 +256,7 @@ def facets(rows: list[dict], b: service.Bundle) -> dict:
 
 
 def query(b: service.Bundle, *, q: str = "", pos: str = "", nfl_team: str = "",
-          avail: str = "all", owner: str | None = None, sort: str = DEFAULT_SORT,
+          avail: str = "all", owner: str | None = None, sort: str = "",
           order: str = "desc", limit: int = DEFAULT_LIMIT, offset: int = 0,
           team_id: str | None = None, lens: str = "",
           ctx: lenses_mod.LensContext | None = None,
@@ -268,10 +268,13 @@ def query(b: service.Bundle, *, q: str = "", pos: str = "", nfl_team: str = "",
 
     A `lens` (`lenses.py`) cuts the universe to one question -- my handcuffs, the next man
     up, the defences with a soft run -- and hands back its own order and one fact per row.
-    Every other filter still narrows it; the column sort gives way to the lens's order,
-    because the lens *is* the order the reader asked for.
+    Every other filter still narrows it. With no column named, the lens's own order stands,
+    because the lens *is* the order the reader asked for; a column he then presses sorts
+    within the lens (Andrew, 2026-09-28: the Proj and ROS headings did nothing on the
+    shortlist, which is where the board opens).
     """
-    sort = sort if sort in SORTS else DEFAULT_SORT
+    pressed = sort in SORTS
+    sort = sort if pressed else DEFAULT_SORT
     avail = avail if avail in AVAILABILITY else "all"
     desc = order != "asc"
     limit = max(1, min(int(limit or DEFAULT_LIMIT), MAX_LIMIT))
@@ -317,7 +320,7 @@ def query(b: service.Bundle, *, q: str = "", pos: str = "", nfl_team: str = "",
                 scored.append((t, r))
         scored.sort(key=lambda s: (s[0], _sort_key(s[1], sort, desc)))
         matched = [r for _, r in scored]
-    elif not lens:
+    elif not lens or pressed:
         matched.sort(key=lambda r: _sort_key(r, sort, desc))
 
     return {

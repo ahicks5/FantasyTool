@@ -124,13 +124,13 @@ def fake_espn(monkeypatch, league):
     from edge.connectors import espn
     loads = []
 
-    def load_league(league_id, season=None, week=None, auth=None):
+    def load_league_and_matchups(league_id, season=None, week=None, auth=None):
         loads.append(auth.fingerprint if auth else None)
         if auth is None:
             raise EspnPrivateLeague("private", needs_auth=True)
-        return league
+        return league, []
 
-    monkeypatch.setattr(espn, "load_league", load_league)
+    monkeypatch.setattr(espn, "load_league_and_matchups", load_league_and_matchups)
     monkeypatch.setattr(service, "_cache", {})
     monkeypatch.setattr(service, "ros_values", lambda *a, **k: {})
     return loads

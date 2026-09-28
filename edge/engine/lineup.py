@@ -303,13 +303,18 @@ def settle(team: Team, slots: list[str], ctx: decisions_mod.Context | None = Non
 
     An unpriced incumbent (no projection row found at all) is never swapped out: we know
     nothing about him, so every "upgrade" over him would be fabricated.
+
+    A **locked** man (his game is on or over, `engine/live.py`) is never moved either way:
+    the platform would refuse the swap, and Sunday night a page full of swaps nobody can
+    make is worse than no page (Andrew, 2026-09-28). A locked starter holds his slot
+    whatever he scored; a locked bench man is not a candidate.
     """
     n = len(slots)
     set_ = [team.player(pid) for pid in team.starters[:n]] + [None] * max(0, n - len(team.starters))
     set_ids = {p.id for p in set_ if p}
-    keep = [p for p in set_ if p and (effective(p) > 0 or p.unpriced)]
-    down = [p for p in set_ if p and not (effective(p) > 0 or p.unpriced)]
-    bench = [p for p in team.players if p.id not in set_ids and _healthy(p)]
+    keep = [p for p in set_ if p and (effective(p) > 0 or p.unpriced or p.locked)]
+    down = [p for p in set_ if p and not (effective(p) > 0 or p.unpriced or p.locked)]
+    bench = [p for p in team.players if p.id not in set_ids and _healthy(p) and not p.locked]
     fills: list[tuple[Player, str]] = []          # (in_, slot) for the empty slots
     required: list[Swap] = []
     decisions: list[Decision] = []
@@ -330,13 +335,13 @@ def settle(team: Team, slots: list[str], ctx: decisions_mod.Context | None = Non
                 # flip and the reads tip it (the checks below). Same slot, so the placement is
                 # the one the manager would actually make.
                 base = optimize(keep, slots)
-                seats = [(i, d) for i, (sl, d) in enumerate(zip(slots, base)) if d and fits_key(sl, _pos_key(b)) and not d.unpriced]
+                seats = [(i, d) for i, (sl, d) in enumerate(zip(slots, base)) if d and fits_key(sl, _pos_key(b)) and not d.unpriced and not d.locked]
                 if not seats:
                     continue
                 i, dropped = min(seats, key=lambda x: effective(x[1]))
                 placed = list(base)
                 placed[i] = b
-            if dropped is not None and dropped.unpriced:
+            if dropped is not None and (dropped.unpriced or dropped.locked):
                 continue
             gain = effective(b) - (effective(dropped) if dropped else 0.0)
             if dropped is None:
@@ -402,7 +407,7 @@ def settle(team: Team, slots: list[str], ctx: decisions_mod.Context | None = Non
     starters = [p for p in lineup if p]
     seen = {(d.start.id, d.sit.id) for d in decisions} | {(d.sit.id, d.start.id) for d in decisions}
     for slot, s in zip(slots, lineup):
-        if s is None or s.unpriced or effective(s) <= 0:
+        if s is None or s.unpriced or effective(s) <= 0 or s.locked:
             continue
         alts = [b for b in bench if b.id not in {x.id for x in starters} and player_fits(slot, b)]
         if not alts:
@@ -428,7 +433,7 @@ def settle(team: Team, slots: list[str], ctx: decisions_mod.Context | None = Non
     required.sort(key=lambda s: (not s.forced, -s.gain))
     holes = [Hole(slot, p, (f"{p.name} {_status_note(p).strip() or 'projects 0.0'} and nobody healthy on the roster can take {slot}. Hit the wire."
                             if p else f"Nobody on the roster can fill {slot}. Hit the wire."))
-             for slot, p in zip(slots, lineup) if p is None or effective(p) <= 0]
+             for slot, p in zip(slots, lineup) if p is None or (effective(p) <= 0 and not p.locked)]
     return Settled(lineup, required, decisions, holes)
 
 
@@ -523,7 +528,7 @@ def roles(team: Team, slots: list[str], settled: Settled, ctx: decisions_mod.Con
     set_ids = {p.id for p in set_ if p}
     starters = [p for p in lineup if p]
     starter_ids = {p.id for p in starters}
-    bench = [p for p in team.players if p.id not in starter_ids and _healthy(p)]
+    bench = [p for p in team.players if p.id not in starter_ids and _healthy(p) and not p.locked]
     labels = role_labels(slots, lineup)
     tipped_by = {d.start.id: d for d in settled.decisions if d.change}
     state = ((decisions_mod.game_state(ctx) or {}).get("state")) if ctx else None
@@ -540,6 +545,11 @@ def roles(team: Team, slots: list[str], settled: Settled, ctx: decisions_mod.Con
 
     out: list[Role] = []
     for i, (slot, label, pick, was) in enumerate(zip(slots, labels, lineup, set_)):
+        if pick is not None and pick.locked:
+            # His game is on or over: nothing to decide, whatever he scored (`engine/live.py`).
+            out.append(Role(slot, label, pick, was, [], LOCK, 1.0, False, False, False,
+                            _played_line(pick), None, None, None))
+            continue
         if pick is None or effective(pick) <= 0:
             # A hole, or a man who cannot score: `holes`/`required` already say so.
             out.append(Role(slot, label, pick, was, [], FLIP, 0.0, False, False, False,
@@ -569,6 +579,12 @@ def roles(team: Team, slots: list[str], settled: Settled, ctx: decisions_mod.Con
                         pick.id not in set_ids, tipped is not None, reason, game,
                         decisions_mod.game_line(ctx, pick), decisions_mod.card(ctx, pick, others, state)))
     return out
+
+
+def _played_line(p: Player) -> str:
+    """The one line under a locked man: where his game stands and what he has so far."""
+    pts = f"{p.points:.1f}" if p.points is not None else "0.0"
+    return f"{p.name} is on the field with {pts} so far." if p.game_status == "in" else f"{p.name} has played: {pts}."
 
 
 def standing(league: League, team: Team, projected: float) -> tuple[int, int]:
@@ -632,6 +648,24 @@ class LineupAdvice:
     roles: list[Role] = field(default_factory=list)
     standing: tuple[int, int] = (1, 1)
     pos_rank: dict[str, tuple[int, int]] = field(default_factory=dict)
+    # The week in progress (`engine/live.py`): None until a starter's game has kicked off.
+    live: dict | None = None
+
+
+def live_tally(lineup: list[Player | None]) -> dict | None:
+    """What the lineup has on the board: starters played, on the field and still to play,
+    the points the locked men have so far, and the total as it stands (actuals for the
+    locked, projections for the rest). None before any starter's game has started."""
+    starters = [p for p in lineup if p]
+    locked = [p for p in starters if p.locked]
+    if not locked:
+        return None
+    scored = round(sum(p.points or 0.0 for p in locked), 2)
+    rest = round(sum(effective(p) for p in starters if not p.locked), 2)
+    return {"played": sum(1 for p in locked if p.game_status == "final"),
+            "on": sum(1 for p in locked if p.game_status == "in"),
+            "to_play": len(starters) - len(locked),
+            "scored": scored, "live_total": round(scored + rest, 2)}
 
 
 def _status_note(p: Player) -> str:
@@ -663,7 +697,11 @@ def advise(league: League, team: Team, ctx: decisions_mod.Context | None = None)
         if p is None:
             calls.append(SlotCall(slot, None, FLIP, "No eligible player. Hit the waiver wire."))
             continue
-        alt = max((b for b in bench if player_fits(slot, b)), key=effective, default=None)
+        if p.locked:
+            # His game is on or over: the call is made, and the page prints his points.
+            calls.append(SlotCall(slot, p, LOCK, _played_line(p), change=False, margin=0.0))
+            continue
+        alt = max((b for b in bench if player_fits(slot, b) and not b.locked), key=effective, default=None)
         margin = effective(p) - (effective(alt) if alt else 0.0)
         conf, prob = _tag(effective(p), effective(alt)) if alt else (LOCK, 1.0)
         if effective(p) <= 0:
@@ -698,9 +736,12 @@ def advise(league: League, team: Team, ctx: decisions_mod.Context | None = None)
             note = f"Sit: no {b.position} slot to fill."
         if b.is_out:
             note = f"{b.injury_status}. Bench or drop."
+        if b.locked:
+            note = _played_line(b)
         bench_notes.append((b, note))
 
     total = round(sum(effective(p) for p in best if p), 2)
     return LineupAdvice(league.week, total, current_total, calls, bench_notes,
                         settled.changes, settled.required, settled.decisions, settled.holes,
-                        roles(team, slots, settled, ctx), standing(league, team, total), position_ranks(league))
+                        roles(team, slots, settled, ctx), standing(league, team, total), position_ranks(league),
+                        live=live_tally(best))

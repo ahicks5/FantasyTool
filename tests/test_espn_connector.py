@@ -207,3 +207,85 @@ def test_cli_espn_prints_error_not_traceback(monkeypatch, capsys):
         cli.main(["espn", "123"])
     assert ei.value.code == 1
     assert "not found" in capsys.readouterr().err
+
+
+# ---- scoring map: overrides, zeros, brackets and the by-the-yard kicker ----
+
+def test_dst_only_items_prefer_the_dst_override_even_over_nonzero_points():
+    """101 (kick-return TD) pays a player 6 and the defense 4; def_st_td is a defense stat."""
+    sc = espn.map_scoring([{"statId": 101, "points": 6, "pointsOverrides": {"16": 4}}])
+    assert sc["def_st_td"] == 4
+
+
+def test_player_items_take_the_most_common_override_when_points_is_zero():
+    sc = espn.map_scoring([{"statId": 53, "points": 0, "pointsOverrides": {"1": 0.5, "2": 0.5, "3": 0.5, "4": 1}}])
+    assert sc["rec"] == 0.5
+
+
+def test_player_items_keep_points_and_never_price_off_the_dst_override():
+    # fum_lost -2 for everyone, 0 for the defense (the fixture's own item 72)
+    sc = espn.map_scoring([{"statId": 72, "points": -2, "pointsOverrides": {"16": 0}}])
+    assert sc["fum_lost"] == -2
+    # points 0 and only a D/ST override: it is the only value there is
+    assert espn.item_points({"statId": 72, "points": 0, "pointsOverrides": {"16": 1}}) == 1
+
+
+def test_a_disabled_item_does_not_block_a_specific_one():
+    """A zero 201 (60+ yd FG) sorts before 74 (50+) and must not claim fgm_60p from it."""
+    sc = espn.map_scoring([{"statId": 74, "points": 5}, {"statId": 201, "points": 0}])
+    assert sc["fgm_50_59"] == 5 and sc["fgm_60p"] == 5
+    # zero still fills a key nothing else scores
+    assert espn.map_scoring([{"statId": 201, "points": 0}])["fgm_60p"] == 0
+    # a zero per-unit id no longer hides an every-N id for the same key
+    sc = espn.map_scoring([{"statId": 3, "points": 0}, {"statId": 8, "points": 1}])
+    assert sc["pass_yd"] == 0.04
+
+
+def test_field_goals_by_the_yard_map_to_fgm_yds():
+    assert espn.map_scoring([{"statId": 214, "points": 0.1}]) == {"fgm_yds": 0.1}
+
+
+def test_points_allowed_fallback_brackets_only_fill_what_the_primary_ids_leave():
+    # both present: 92 (14-17) and 124 (35-45) win over 121 (18-21) and 125 (46+)
+    sc = espn.map_scoring([{"statId": 92, "points": 1}, {"statId": 121, "points": 0},
+                           {"statId": 124, "points": -5}, {"statId": 125, "points": -7}])
+    assert sc["pts_allow_14_20"] == 1 and sc["pts_allow_35p"] == -5
+    # primary absent: the straddling bracket stands in
+    sc = espn.map_scoring([{"statId": 121, "points": 2}, {"statId": 125, "points": -7}])
+    assert sc["pts_allow_14_20"] == 2 and sc["pts_allow_35p"] == -7
+
+
+def test_return_yards_map_to_the_defense_keys():
+    sc = espn.map_scoring([{"statId": 114, "points": 0, "pointsOverrides": {"16": 0.05}},
+                           {"statId": 115, "points": 0.04}])
+    assert sc["def_kr_yd"] == 0.05 and sc["def_pr_yd"] == 0.04
+
+
+def test_fixture_league_scores_a_hand_computed_stat_line(espn_league):
+    """The whole map, end to end: raw stat lines through `edge.data.scoring.score` against
+    the fixture league's rules, checked against totals worked out by hand from the ESPN
+    scoringItems in tests/fixtures/espn/league_2026.json."""
+    from edge.data.scoring import score
+    sc = espn_league.scoring
+    qb = {"pass_yd": 300, "pass_td": 2, "pass_int": 1, "pass_att": 35, "pass_cmp": 24}
+    assert score(qb, sc) == 300 * 0.04 + 2 * 4 - 2 == 18.0
+    rb = {"rush_yd": 100, "rush_att": 20, "rec": 5, "rec_tgt": 6, "rec_yd": 40, "rush_td": 1}
+    assert score(rb, sc) == 100 * 0.1 + 5 * 1 + 40 * 0.1 + 6 == 25.0
+    k = {"fgm": 2, "fga": 2, "fgm_40_49": 2, "xpm": 3, "xpa": 3}
+    assert score(k, sc) == 2 * 4 + 3 * 1 == 11.0
+    dst = {"pts_allow": 14, "pts_allow_14_20": 1, "sack": 3, "int": 1, "yds_allow": 310, "yds_allow_300_349": 1}
+    assert score(dst, sc) == 1 + 3 * 1 + 1 * 2 + 0 == 6.0
+
+
+def test_by_the_yard_kicker_is_priced_from_sleepers_fgm_yds(espn_raw, sleeper_raw):
+    """A league scoring only 214 gives its kicker the yardage points, not extra points alone."""
+    settings = espn_raw["settings"]
+    items = [i for i in settings["scoringSettings"]["scoringItems"] if i["statId"] not in (74, 77, 80, 85)]
+    items.append({"statId": 214, "points": 0.1, "pointsOverrides": {}})
+    raw = {**espn_raw, "settings": {**settings, "scoringSettings": {**settings["scoringSettings"], "scoringItems": items}}}
+    lg = espn.build_league(raw, week=2, projections_raw=sleeper_raw["projections"], players=sleeper_raw["players"])
+    assert lg.scoring["fgm_yds"] == 0.1 and "fgm_40_49" not in lg.scoring
+    kickers = [p for t in lg.teams for p in t.players if p.position == "K" and p.projected]
+    assert kickers, "the fixture rosters priced kickers"
+    xp_only = max(p.projected for p in kickers)
+    assert xp_only > 3, "a kicker projects more than his extra points once fgm_yds counts"

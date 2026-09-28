@@ -96,7 +96,7 @@ function SortMark({ on, order }: { on: boolean; order: "asc" | "desc" | undefine
  * does, because the lens *is* the order he asked for.
  */
 function Th({ label, sort, query, onSort, className = "" }: { label: string; sort: BoardSort; query: BoardQuery; onSort: ((s: BoardSort) => void) | null; className?: string }) {
-  const on = query.sort === sort && !query.lens;
+  const on = query.sort === sort;
   const body = (
     <>
       {label}
@@ -443,7 +443,8 @@ export function PlayerBoard({ c, picks = [] }: { c: Connection; picks?: readonly
   // decoration over placeholder bars, not over real names.
   const locked = current?.board.locked ?? 0;
   const tabs = facets ? positionTabs(facets.positions) : [];
-  const onSort = query.lens ? null : (s: BoardSort) => setQuery((q) => pressColumn(q, s));
+  // A heading sorts inside a lens too (Andrew, 2026-09-28: Proj and ROS did nothing on the shortlist).
+  const onSort = (s: BoardSort) => setQuery((q) => pressColumn(q, s));
   // The bar under each projection is against the best on the board, so it reads as "how
   // close to the top" rather than as an absolute scale nobody can hold in their head.
   const max = rows.reduce((m, r) => Math.max(m, r.projected ?? 0), 0);

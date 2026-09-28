@@ -50,7 +50,7 @@
   "qb_slots": 2,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 40,
+  "scoring_keys": 41,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -86,7 +86,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 48,
+  "scoring_keys": 50,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -121,7 +121,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 37,
+  "scoring_keys": 38,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -189,7 +189,7 @@
   "qb_slots": 1,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 39,
+  "scoring_keys": 42,
   "season": 2026,
   "starting_slots": [
    "QB",
@@ -456,7 +456,7 @@
   "has_def": true,
   "has_k": true,
   "league_id": "899513",
-  "name": "Bustin\u2019 with the boys",
+  "name": "Bustin’ with the boys",
   "pass_int": -2.0,
   "pass_td": 4.0,
   "pass_yd": 0.04,
@@ -464,7 +464,7 @@
   "qb_slots": 0,
   "rec_yd": 0.1,
   "rush_yd": 0.1,
-  "scoring_keys": 37,
+  "scoring_keys": 40,
   "season": 2026,
   "starting_slots": [
    "FLEX",
@@ -626,7 +626,7 @@
   "has_def": false,
   "has_k": false,
   "league_id": "21575912",
-  "name": "Ryan Tannehill\u2019s Fan Club",
+  "name": "Ryan Tannehill’s Fan Club",
   "pass_int": -2.0,
   "pass_td": 4.0,
   "pass_yd": 0.04,
