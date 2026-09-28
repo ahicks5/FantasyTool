@@ -2,6 +2,20 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Telemetry and the admin metrics view (2026-09-28)
+
+Spec: `docs/SPEC-ADMIN-METRICS.md`. Plan it serves: `launch/three-week-plan.pdf`. Nothing built yet.
+
+- [ ] 1. `events` table + `log_event` in both stores, contract test
+- [ ] 2. Server events: signup, league_linked, paywall_view, checkout_start, purchase (+ amount)
+- [ ] 3. First-touch attribution: cookie → signup → `users.attr` → Stripe metadata
+- [ ] 4. Webhooks: `checkout.session.expired`, `customer.subscription.deleted/updated`
+- [ ] 5. `GET /api/admin/metrics` (Today, Funnel, Channels) + `ad_spend`
+- [ ] 6. Admin tabs 1–3 on `/admin`
+- [ ] 7. Pixels + privacy page update
+- [ ] 8. Revenue, Retention, Loop tabs
+- Blocked on Andrew: Resend key on Render; SMS consent wording; pixels yes/no; the $1,500 budget.
+
 ## New pricing: week pass, season pass, no à la carte (2026-09-27)
 
 Andrew's decision: Free (unchanged), **week pass $4.99/week** (a Stripe subscription, cancel

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Penthouse — Three Weeks to Paid</title>
+<style>
+  @page { size: letter; margin: 0.35in 0.4in; }
+  @media print { body { zoom: 0.94; } }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Liberation Sans", "DejaVu Sans", Arial, sans-serif; color: #111; background: #fff;
+         font-size: 8.4pt; line-height: 1.32; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #111;
+           padding-bottom: 5px; }
+  h1 { font-size: 19pt; letter-spacing: -0.3px; line-height: 1; }
+  h1 span { font-weight: 400; color: #444; }
+  .meta { text-align: right; font-size: 7.6pt; color: #333; }
+  .thesis { margin: 7px 0 7px; padding: 6px 9px; background: #111; color: #fff; font-size: 9.2pt; }
+  .thesis b { color: #ffd23f; }
+  h2 { font-size: 8.4pt; text-transform: uppercase; letter-spacing: 0.9px; border-bottom: 1.5px solid #111;
+       padding-bottom: 2px; margin: 8px 0 4px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 10px; }
+  ol, ul { padding-left: 13px; }
+  li { margin-bottom: 1.6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 7.9pt; }
+  th, td { text-align: left; padding: 2.2px 4px; border-bottom: 1px solid #bbb; vertical-align: top; }
+  th { background: #eee; font-weight: 700; }
+  .hot td { background: #fff3c4; font-weight: 700; }
+  .wk { border: 1.5px solid #111; padding: 5px 7px; }
+  .wk h3 { font-size: 9pt; margin-bottom: 1px; }
+  .wk .sub { font-size: 7.4pt; color: #444; margin-bottom: 3px; }
+  .wk .spend { display: inline-block; background: #111; color: #fff; padding: 0 5px; font-weight: 700; font-size: 7.6pt; }
+  .gate { border-left: 4px solid #c8102e; padding-left: 7px; }
+  .rules li b { white-space: nowrap; }
+  .no li { list-style: none; margin-left: -13px; }
+  .no li::before { content: "✕ "; color: #c8102e; font-weight: 700; }
+  .ask { border: 1.5px dashed #111; padding: 4px 7px; }
+  .ask li { margin-bottom: 1px; }
+  footer { margin-top: 6px; font-size: 7pt; color: #555; border-top: 1px solid #bbb; padding-top: 3px;
+           display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<header>
+  <h1>PENTHOUSE <span>· Three weeks to paid</span></h1>
+  <div class="meta">NFL weeks 4–6 · Tue Sep 29 → Wed Oct 21, 2026<br>Budget $1,500 · penthousefantasy.com</div>
+</header>
+
+<div class="thesis">Sell the <b>$4.99 week pass</b> into panic windows (Sunday morning, waiver night), make that week
+feel like a win, then sell the <b>$19.99 season upgrade</b> before the second weekly charge.</div>
+
+<div class="grid2">
+  <div class="gate">
+    <h2>Days 0–2 · Gates. Zero spend until all six are green</h2>
+    <ol>
+      <li><b>First-party events</b> for the funnel: landing → sign-up → league linked → paywall → checkout → paid (spec: <i>docs/SPEC-ADMIN-METRICS.md</i>).</li>
+      <li><b>UTMs</b> stored on the account at sign-up and passed into Stripe metadata.</li>
+      <li><b>Pixels</b>: Meta, Reddit, Google. Update the privacy page first.</li>
+      <li><b>Resend on.</b> Email is <code>dry-run</code> today; unpaid sign-ups are unreachable.</li>
+      <li><b>SMS opt-in box</b> at phone sign-up. Login numbers ≠ marketing consent.</li>
+      <li><b>One real $4.99 purchase</b> → cancel → refund, on a phone, in production.</li>
+    </ol>
+  </div>
+  <div>
+    <h2>The weekly clock (ET)</h2>
+    <table>
+      <tr><th>When</th><th>Intent</th><th>What ships</th></tr>
+      <tr><td>Tue 8p → Wed 10a</td><td>Scouting</td><td>Email + Reddit: "Your 5 claims and what to bid."</td></tr>
+      <tr><td>Wed</td><td>Owned</td><td>Free public wire post, sign-up link at foot</td></tr>
+      <tr><td>Thu 5p → 8p</td><td>TNF lineup</td><td>Retarget linked-but-unpaid</td></tr>
+      <tr class="hot"><td>Sun 8:30a → 12:45p</td><td>Depth chart</td><td>~60% of weekly spend · 9a email · 11a SMS (opt-ins)</td></tr>
+      <tr><td>Mon</td><td>Retention</td><td>No paid. Film email to paid users.</td></tr>
+    </table>
+  </div>
+</div>
+
+<h2>The three weeks</h2>
+<div class="grid3">
+  <div class="wk">
+    <h3>Week 1 · Find the message</h3>
+    <div class="sub">NFL wk 4 · Oct 1–7 · <span class="spend">$300</span></div>
+    <ul>
+      <li><b>Megathread grind</b> 90 min Thu/Sat/Sun: real answers + stamped card, no link unless asked. Read sub rules first.</li>
+      <li><b>Share loop</b>: every sign-up prompted to send the free Lock card to the league chat.</li>
+      <li><b>5 micro-creators</b> (10–50k): season pass for their league + $50–100/video.</li>
+      <li><b>Google Search $150</b>: "start sit week 4", "waiver wire week 4", "fantasy trade analyzer".</li>
+      <li><b>Reddit $150</b>: conversation placement, 3 hooks head to head.</li>
+    </ul>
+  </div>
+  <div class="wk">
+    <h3>Week 2 · Scale the winner</h3>
+    <div class="sub">NFL wk 5 · Oct 8–14 · byes begin · <span class="spend">$600</span></div>
+    <ul>
+      <li><b>Retarget</b> linked-but-unpaid on Meta + Reddit ($250).</li>
+      <li><b>2× the winning hook</b>; kill the loser; 3 new first lines.</li>
+      <li><b>Bye-week wire</b> creative, Tuesday night only.</li>
+      <li><b>Spark Ads</b> $100–150 behind the best creator post.</li>
+      <li><b>Upgrade test</b>: in-app vs Monday email, "Season $19.99, replaces your weekly."</li>
+      <li>One genuinely useful <b>r/FFCommish</b> post.</li>
+    </ul>
+  </div>
+  <div class="wk">
+    <h3>Week 3 · Keep the machine</h3>
+    <div class="sub">NFL wk 6 · Oct 15–21 · <span class="spend">$600</span></div>
+    <ul>
+      <li>Consolidate into the 1–2 channels <b>under target CAC</b>; cut the rest.</li>
+      <li><b>Referral test</b>: league-mate buys → you get a free week.</li>
+      <li><b>Deadline waitlist</b>: build the list for the November trade-deadline push (GM's Office).</li>
+      <li>Write the learnings into <i>docs/MARKETING.md</i>: channel, CAC, hook, upgrade rate.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="grid2">
+  <div>
+    <h2>Hooks to test (static + 9-sec screen recording each)</h2>
+    <table>
+      <tr><th>A · Clock</th><td>"Lineups lock at 1:00. Your three moves are ready."</td></tr>
+      <tr><th>B · Pain</th><td>"Your bench outscored your starters again. Fix it in 30 seconds."</td></tr>
+      <tr><th>C · Product</th><td>Silent screen recording: link Sleeper → call sheet. Captions only.</td></tr>
+    </table>
+    <h2>Funnel targets</h2>
+    <table>
+      <tr><th>Step</th><th>Healthy</th><th>Leak if under</th></tr>
+      <tr><td>Landing → sign-up</td><td>15%</td><td>8%</td></tr>
+      <tr><td>Sign-up → league linked</td><td>70%</td><td>50%</td></tr>
+      <tr><td>Linked → paid in 7 days</td><td>5%</td><td>2%</td></tr>
+      <tr><td>Week pass → 2nd week or season</td><td>50%</td><td>30%</td></tr>
+    </table>
+  </div>
+  <div>
+    <h2>Decision rules (every Tuesday, with the backtest)</h2>
+    <ul class="rules">
+      <li><b>Target CAC ≤ $8</b> per first purchase (week nets $4.38, season $23.05).</li>
+      <li><b>Kill</b>: ad set spends $16 with no purchase → off. No "learning" at this budget.</li>
+      <li><b>Scale</b>: under target 2 days running → +30% budget, never more.</li>
+      <li><b>Creative</b>: Mondays, cut the bottom half by CTR, clone the top half.</li>
+      <li><b>Leak first</b>: linked → paid under 2%? Stop spend, fix the paywall.</li>
+    </ul>
+    <h2>Never</h2>
+    <ul class="no">
+      <li>Betting or DFS words in ads (gambling ad category).</li>
+      <li>NFL or team logos.</li>
+      <li>Accuracy %, user counts, testimonials we don't have.</li>
+      <li>Free trial (delays revenue; refund guarantee already de-risks).</li>
+      <li>Broad cold Instagram, Product Hunt.</li>
+    </ul>
+    <div class="ask" style="margin-top:5px">
+      <b>Andrew decides:</b>
+      <ol>
+        <li>$1,500 budget, yes or a number.</li>
+        <li>SMS marketing opt-in box.</li>
+        <li>Creator comps + up to $100 cash/video.</li>
+        <li>Referral reward (a pricing change in <i>edge/products.py</i>).</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<footer><span>Own the week.</span><span>Numbers from docs/UNIT_ECONOMICS.md · plan written 2026-09-28</span></footer>
+</body>
+</html>

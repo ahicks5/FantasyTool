@@ -82,6 +82,8 @@ the value is visible and the names are not.
 | What is left to build? | `TASKS.md` |
 | What is the player page, and what is decided about it? | `docs/SPEC-PLAYER-PAGE.md` |
 | What is the film becoming (the replay, the league, the ledger), and what is decided? | `docs/SPEC-FILM.md` |
+| What do we track, and what should the admin metrics view show? | `docs/SPEC-ADMIN-METRICS.md` |
+| What is the three-week paid launch plan? | `launch/three-week-plan.pdf` (source `.html`), `docs/MARKETING.md` |
 | Which player-page step is next, and which files may it touch? | `docs/PLAYER-PAGE-STEPS.md` |
 | What are real leagues actually like? | `docs/LEAGUE_SURVEY.md` |
 
