@@ -2,6 +2,37 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## ESPN private leagues from a phone: the key (2026-09-28)
+
+Andrew's brief, in his words: "i want an option that can be done on phone, easily, and with
+least work possible ... i'm fine if you do the bookmark javascript, run it on a page, copy ids,
+that kind of thing. but that's the most complex i'd do and it'd have visuals ... something a
+bit more complicated but based on the yahoo thing where you sign up thru a second page then
+come back and it's set up." ESPN has no OAuth, so "come back and it's set up" is done with a
+bookmark that returns to us carrying the key in the URL fragment. `docs/DATA.md` "How a phone
+gets them" and `docs/WEB.md` "The ESPN key".
+
+- [x] **EK-1** `web/src/lib/espnKey.ts`: the bookmarklet, built from the site's origin and the
+      league id; wrong site and missing cookie say so and never show a value; the return
+      fragment parsed strictly. Run against a fake page in `espnKey.test.ts`.
+- [x] **EK-2** `/connect/espn`: the walk, per device (iPhone Safari, Android Chrome, computer),
+      with the phone's own buttons drawn as chips; the landing that saves the key and leaves
+      by `replace`; the commissioner note; the paste door. `e2e/smoke.spec.ts` covers the
+      render at 375px and the return end to end.
+- [x] **EK-3** `/connect?platform=espn&id=…` deep link picks the platform and loads the league;
+      `&paste=1` opens the fields. `EspnAuthForm` leads with "Get my key".
+- [x] **EK-4** `lib/href.ts`: the address as a store, so no page copies the URL into state.
+- [ ] **EK-5** Andrew: tap it through on a real iPhone against a real private league. Confirmed
+      by reading Disney's OneID.js that `espn_s2` is written from page script (so readable),
+      not yet confirmed on a device in this session.
+- [ ] **EK-6** Decision: the FantasyPros way. Their mobile app asks for the ESPN email and
+      password and signs in through Disney's API behind the scenes. That is the true "second
+      page then come back" flow and it is one afternoon of work, but it means handling ESPN
+      passwords, Disney's one-time codes break it unpredictably, and it is against ESPN's terms.
+      Not built. See "Decisions needed from Andrew".
+- [ ] **EK-7** Two short screen recordings (iPhone, Android) of the walk for the page and the
+      FAQ, once EK-5 is done.
+
 ## New pricing: week pass, season pass, no à la carte (2026-09-27)
 
 Andrew's decision: Free (unchanged), **week pass $4.99/week** (a Stripe subscription, cancel
@@ -472,6 +503,12 @@ themes. All eight are done and on production.
   `/api` itself, so that value 404s every call while the page still renders. Corrected.
 
 ## Decisions needed from Andrew
+
+- **ESPN sign-in with a password (2026-09-28).** The only way to make a private ESPN league
+  a true "sign in on their page, come back, done" flow is to take the user's ESPN email and
+  password and log in through Disney's API server-side, the way FantasyPros' app does. We would
+  never store the password, but we would handle it, and ESPN's one-time-code prompts break it
+  for some accounts without warning. The bookmark shipped instead. Say the word and it is a day.
 
 - **The landing page (2026-09-27).** Three calls, none blocking. (a) **The guarantee is on the
   page now**: "Not useful? Ask within 14 days and it is refunded in full. No reasoning required."

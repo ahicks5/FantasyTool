@@ -1,6 +1,6 @@
 "use client";
-/** Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, two cookies. */
-import { useEffect, useState } from "react";
+/** Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, the key from /connect/espn. */
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { EspnAuthError, PaywallError, connect, getLeague, getProducts, getSleeperLeagues } from "@/lib/api";
@@ -12,10 +12,11 @@ import { resolveSleeperInput } from "@/lib/leagueInput";
 import { saveConnection } from "@/lib/storage";
 import { EspnAuthForm } from "@/components/EspnAuthForm";
 import { clearEspnAuth, useEspnAuth } from "@/lib/espnAuth";
+import { useLocation } from "@/lib/href";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck, IconChevron } from "@/components/icons";
 import { Button, Countdown, ErrorBox, Eyebrow, LinkButton, Wordmark } from "@/components/ui";
-import { ACCOUNT, CONNECT, LINES } from "@/lib/vocab";
+import { ACCOUNT, CONNECT, ESPN_KEY, LINES } from "@/lib/vocab";
 
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
@@ -48,9 +49,24 @@ export default function ConnectPage() {
   // sheet at the save is only a safety net for a token that dies mid-form.
   // Nothing is chosen on arrival. The page is a question, not a filled-in form, and every
   // field below is the answer to the platform button rather than something to scroll past.
-  const [platform, setPlatform] = useState<Platform | null>(null);
+  //
+  // The deep link: `/connect?platform=espn&id=123` picks ESPN and loads that league. It is
+  // how the key's walk (`/connect/espn`) hands back the league it was asked for, so the
+  // bookmark's return is one motion: land, key saved, league loading. `?paste=1` opens the
+  // two fields at once. Read off the address (lib/href) rather than `useSearchParams`, which
+  // would make the route dynamic for one optional parameter. A tap on a platform button
+  // outranks it from then on.
+  const here = useLocation();
+  const deep = useMemo(() => {
+    const p = here?.searchParams.get("platform");
+    if (p !== "espn" && p !== "sleeper") return null;
+    return { platform: p as Platform, id: here?.searchParams.get("id")?.trim() ?? "", paste: here?.searchParams.get("paste") === "1" };
+  }, [here]);
+  const [pickedPlatform, setPlatform] = useState<Platform | null>(null);
+  const platform = pickedPlatform ?? deep?.platform ?? null;
   // One box per platform, so switching platform cannot carry a Sleeper username into ESPN.
-  const [input, setInput] = useState("");
+  const [typed, setInput] = useState<string | null>(null);
+  const input = typed ?? deep?.id ?? "";
   const [leagues, setLeagues] = useState<SleeperLeagueRef[] | null>(null);
   const [league, setLeague] = useState<LeagueSummary | null>(null);
   const [teamId, setTeamId] = useState("");
@@ -73,6 +89,16 @@ export default function ConnectPage() {
   // Only to offer the wipe below. The cookies themselves ride on requests from
   // `espnAuthHeaders`, which reads storage directly and never comes through here.
   const storedEspn = useEspnAuth();
+
+  // A deep-linked league loads itself once the owner is known to be signed in. Once per id,
+  // so a re-render after the load (or its failure) does not ask ESPN again.
+  const loaded = useRef<string | null>(null);
+  useEffect(() => {
+    const id = deep?.id;
+    if (!id || session.loading || !session.signedIn || loaded.current === id) return;
+    loaded.current = id;
+    queueMicrotask(() => pickLeague(id));
+  });
 
   async function run<T>(fn: () => Promise<T>): Promise<T | undefined> {
     setBusy(true);
@@ -413,7 +439,13 @@ export default function ConnectPage() {
           fields to someone whose league is public is a wall in front of the one case that
           needs nothing, so a public ID loads straight through and this never appears. */}
       {platform === "espn" && espnAuthNeeded && (
-        <EspnAuthForm status={espnAuthNeeded} busy={busy} onSaved={() => pickLeague(lastLeagueId || input)} />
+        <EspnAuthForm
+          status={espnAuthNeeded}
+          leagueId={lastLeagueId || input}
+          busy={busy}
+          openPaste={deep?.paste ?? false}
+          onSaved={() => pickLeague(lastLeagueId || input)}
+        />
       )}
 
       {/* The one way back out, and it has to live here rather than in the form.
@@ -425,13 +457,13 @@ export default function ConnectPage() {
           Nothing shows for the public-league case, which never stored anything. */}
       {platform === "espn" && storedEspn && !espnAuthNeeded && (
         <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted">
-          ESPN sign-in saved on this device.
+          {ESPN_KEY.form.stored}
           <button
             type="button"
             onClick={() => clearEspnAuth()}
             className="min-h-11 font-semibold text-ink underline underline-offset-4"
           >
-            Forget it
+            {ESPN_KEY.form.forget}
           </button>
         </p>
       )}

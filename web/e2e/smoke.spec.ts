@@ -3,7 +3,7 @@ import { DEV_USER } from "../playwright.config";
 import { DESK, LINEUP, PLAN, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
-import { CALL, FILM, OFFICE, SCOUT, SCOUT_OPEN, WIRE } from "../src/lib/vocab";
+import { CALL, ESPN_KEY, FILM, OFFICE, SCOUT, SCOUT_OPEN, WIRE } from "../src/lib/vocab";
 import { AVAILABILITY_LABELS, BOARD_LABELS } from "../src/lib/board";
 
 /**
@@ -351,6 +351,43 @@ for (const p of PAGES) {
     expect(problems, `${p.path} logged browser errors`).toEqual([]);
   });
 }
+
+test("the ESPN key: the walk renders on a phone, and the bookmark's return saves the key and loads the league", async ({ page }) => {
+  // Andrew, 2026-09-28: a private ESPN league has to be linkable from a phone. The walk is
+  // a page; the bookmark it builds comes back here with the key in the URL fragment.
+  const { status, problems } = await visit(page, "/connect/espn?id=424242");
+  expect(status).toBe(200);
+  await expect(page.getByRole("heading", { name: ESPN_KEY.title })).toBeVisible();
+  await expect(page.getByRole("radio", { name: ESPN_KEY.hand.iphone })).toBeVisible();
+  await expect(page.getByTestId("copy-key")).toBeEnabled();
+  await expect(page.getByTestId("open-espn")).toHaveAttribute("href", /^https:\/\/fantasy\.espn\.com\//);
+  // The key the page builds is a bookmarklet carrying the return address for this league.
+  // It never contains a value: there is nothing to leak on the screen that shows it.
+  const key = await page.getByLabel(ESPN_KEY.copy.keyAria).inputValue();
+  expect(key.startsWith("javascript:")).toBe(true);
+  expect(key).toContain("/connect/espn?id=424242");
+  expect(key).not.toMatch(/AEB|\{[0-9A-F]{8}-/);
+  // Switching the device switches the steps; the bookmark's name is said on every one.
+  await page.getByRole("radio", { name: ESPN_KEY.hand.android }).click();
+  await expect(page.getByText(ESPN_KEY.tap.android)).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+  expect(problems, "the walk logged browser errors").toEqual([]);
+
+  // The return. The bookmark lands with `#s2=…&swid=…`; the page saves the key to this
+  // device (the same slot the headers read, see lib/espnAuth), leaves the fragment behind
+  // and goes to /connect with ESPN picked and the league loading. The s2 ESPN writes is
+  // percent-encoded, and it has to come out of the fragment byte for byte.
+  await page.goto("/connect/espn?id=424242#s2=AEBfixture%252Bs2%253D&swid=%7BFIXTURE-SWID%7D");
+  await page.waitForURL(/\/connect\?platform=espn&id=424242$/);
+  const stored = JSON.parse((await page.evaluate(() => localStorage.getItem("booth.espn.auth"))) ?? "null");
+  expect(stored).toEqual({ s2: "AEBfixture%2Bs2%3D", swid: "{FIXTURE-SWID}" });
+  expect(page.url()).not.toContain("s2=");
+  await expect(page.getByRole("radio", { name: "ESPN" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.locator("#league-id")).toHaveValue("424242");
+  // Going back does not land on a URL that carries the key.
+  await page.goBack();
+  expect(page.url()).not.toContain("swid=");
+});
 
 test("the scout: search a player, his page rises", async ({ page }) => {
   // The whole feature end to end through the real engine: the board finds him by name,

@@ -436,6 +436,30 @@ so moving to or from it shifted the page by the height of a heading.
 half-applied. Every line the brand says lives there too (`LINES`). Never inline a section
 name, a tagline or a piece of voice copy in a component.
 
+## The ESPN key: a private league from a phone (2026-09-28)
+
+A private ESPN league needs two cookies, and the only advice anywhere is "on a computer, open
+DevTools". Andrew would not ship that. The ceiling he set is a bookmark that runs a script, so
+`/connect/espn` is that walk: pick the device, copy the key, save it as a bookmark, open ESPN,
+tap it. The bookmark (`lib/espnKey.buildEspnKeyBookmarklet`) reads `espn_s2` and `SWID` off
+`document.cookie` on fantasy.espn.com and comes back to `/connect/espn?id=<league>` with the
+two values in the URL **fragment**; the page saves them (`lib/espnAuth`) and `router.replace`s
+to `/connect?platform=espn&id=<league>`, which picks ESPN and loads the league on its own. The
+fragment is never sent to a server and leaves history with the replaced entry. The form on
+`/connect` (`EspnAuthForm`) leads with "Get my key"; the note to the commissioner and the two
+paste fields are folded under it.
+
+Traps. **Lint forbids `setState` in an effect**, so nothing on these pages is copied from the
+URL into state: `lib/href.useLocation()` reads the address through `useSyncExternalStore` (the
+server sees `""`), and the league id, the origin, the landing and the deep link are all
+derived from it; a tap on a platform button is a separate state that outranks the link. The
+device is read the same way (`detectHand`) and the user's pick outranks it. **The bookmark's
+alerts are user-read words**, so they come from `ESPN_KEY.bookmark` in `vocab.ts` and are
+embedded with `JSON.stringify`; they must stay one line. **`text-start` is the colour**, not
+`text-align`, in this codebase. **The e2e return test** puts the key in the fragment of
+`page.goto`, so the ESPN cookie's percent-encoding has to survive a double encode
+(`%2B` → `%252B` in the fragment → `%2B` stored); if that test fails, it is the encoding.
+
 ## Storage keys are load-bearing
 
 The `booth.*` browser keys (`booth.theme`, `booth.called.*`, the connected league) keep their

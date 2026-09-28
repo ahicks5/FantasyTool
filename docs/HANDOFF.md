@@ -24,6 +24,32 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## ESPN private leagues from a phone (2026-09-28)
+
+Andrew's brief: linking a private ESPN league must work on a phone, with the least work, and
+"use a computer" is not an answer; a bookmark that runs a script is the most he will ask of a
+user. ESPN has no OAuth, so the Yahoo-style "sign in over there and come back" is built as a
+bookmark, **Penthouse key**, that runs on fantasy.espn.com, reads the two cookies and comes
+back to `/connect/espn?id=…` with them in the URL fragment; the page saves them to the device
+and goes to `/connect?platform=espn&id=…`, which loads the league. The server never sees the
+values, which keeps `docs/DATA.md` true. The walk is per device (iPhone Safari, Android Chrome,
+computer) with the phone's own buttons drawn as chips; under it, a note to send the
+commissioner (one ESPN switch makes the league viewable and the key unnecessary) and the paste
+fields. `TASKS.md` "ESPN private leagues from a phone" has the items.
+
+What was checked and what was not. The claim online that `espn_s2` is HttpOnly (and so
+unreadable by a bookmarklet) was tested against Disney's sign-in SDK: OneID.js writes the
+cookie with `document.cookie=` after a web sign-in, so it is readable on that browser; a copy
+set by a server would not be, and the bookmark reports that case instead of returning with
+half a key. **Not yet tapped through on a real iPhone against a real private league** (EK-5);
+that is the first thing to do. The alternative (ESPN email and password, signed in through
+Disney's API, as FantasyPros' app does) was not built and is in "Decisions needed from Andrew".
+
+Traps from this round: the React lint forbids `setState` inside an effect, so every value
+these pages take from the URL is derived through `lib/href.useLocation()` rather than copied;
+`useCallback` around a derived value trips "existing memoization could not be preserved", so
+plain functions; the bookmark's two alerts are user-read words and live in `ESPN_KEY.bookmark`.
+
 ## The landing page is a funnel now (2026-09-27)
 
 Andrew asked for the best front page we can build, on Hormozi's playbook: leads, conversions,
