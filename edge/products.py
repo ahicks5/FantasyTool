@@ -6,8 +6,9 @@ FEATURES = ("my_team", "waivers", "trade_lab", "full_report")
 EVERYTHING = list(FEATURES)
 
 # Every account keeps up to this many leagues on file, paid or not (Andrew, 2026-09-24:
-# "max 3 per account, with more to be bought as an add-on"). Both passes carry five; a
-# `league_slot` purchase adds one on top of whichever cap applies.
+# "max 3 per account, with more to be bought as an add-on"). The passes carry the same
+# three (Andrew, 2026-09-28: "max 3 for all users, premium or free"); each `league_slot`
+# purchase adds one.
 BASE_LEAGUES = 3
 
 WEEK_SKU = "week_pass"
@@ -29,15 +30,15 @@ PRODUCTS = [
      "kind": "free", "for_sale": False, "blurb": "Start/sit calls for up to three leagues, every week."},
     # Each paid weekly invoice grants one window: the week plus a day's grace, so a renewal
     # that settles a few hours late does not lock anyone out. Cancel, and it lapses at the end.
-    {"sku": WEEK_SKU, "name": "Week pass", "price_cents": 499, "features": EVERYTHING, "leagues": 5,
+    {"sku": WEEK_SKU, "name": "Week pass", "price_cents": 499, "features": EVERYTHING, "leagues": BASE_LEAGUES,
      "kind": "pass", "for_sale": True, "recurring": "week", "duration_days": 7, "grace_days": 1,
-     "blurb": "Everything in the Penthouse, up to 5 leagues, for as long as you keep it."},
-    {"sku": SEASON_SKU, "name": "The Penthouse", "price_cents": 2499, "features": EVERYTHING, "leagues": 5,
+     "blurb": "Everything in the Penthouse, for as long as you keep it."},
+    {"sku": SEASON_SKU, "name": "The Penthouse", "price_cents": 2499, "features": EVERYTHING, "leagues": BASE_LEAGUES,
      "kind": "bundle", "for_sale": True,
      # Display only: the Monday after NFL week 17, the usual championship, so the pricing page
      # can say how many weeks are left. The pass itself is keyed by season, not by this date.
      "through": "2027-01-04",
-     "blurb": "Everything in the Penthouse for the rest of the season, up to 5 leagues."},
+     "blurb": "Everything in the Penthouse for the rest of the season."},
     # An add-on, not a tier: it unlocks nothing and stacks. Bought twice, it is two more leagues.
     {"sku": ADD_ON_SKU, "name": "League slot", "price_cents": 299, "features": [], "leagues": 1,
      "kind": "add_on", "for_sale": True, "blurb": "One more league on your account. Rest of season."},

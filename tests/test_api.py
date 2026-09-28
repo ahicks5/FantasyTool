@@ -74,7 +74,7 @@ def test_paid_features_are_gated_then_unlocked(client, league):
     r = client.get(f"{LG}/team/{tid}/report", headers=H)
     assert r.status_code == 200 and "<h2>Waivers" in r.json()["html"]
     me = client.get("/api/me", headers=H).json()
-    assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"} and me["leagues_allowed"] == 5
+    assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"} and me["leagues_allowed"] == 3
     assert me["account"]["plan"] == {"tier": "premium", "name": "The Penthouse", "skus": ["full_report"]}
 
 
@@ -122,9 +122,10 @@ def test_connect_respects_league_limit(client, league):
     assert client.post("/api/connect", headers=H, json=body).status_code == 200   # same league: idempotent
     r = client.post("/api/connect", headers=H, json=body | {"league_id": "4"})
     assert r.status_code == 402, "three is the cap for every account"
-    assert [u["sku"] for u in r.json()["detail"]["upsell"]] == ["league_slot", "full_report"]
+    # Only a slot buys a league: the passes carry the same three (Andrew, 2026-09-28).
+    assert [u["sku"] for u in r.json()["detail"]["upsell"]] == ["league_slot"]
     assert r.json()["detail"]["teaser"]
-    # A slot is one more league; the bundle is five. Both count.
+    # A slot is one more league.
     app_mod.store.grant("andrew@example.com", "league_slot", 2026, source="test", ref="s1")
     assert client.get("/api/me", headers=H).json()["leagues_allowed"] == 4
     assert client.post("/api/connect", headers=H, json=body | {"league_id": "4"}).status_code == 200
@@ -272,7 +273,7 @@ def test_demo_unlock_opens_every_paid_route(client, league, monkeypatch):
     monkeypatch.setenv("EDGE_DEMO_UNLOCK", "1")
     me = client.get("/api/me").json()
     assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"}
-    assert me["leagues_allowed"] == 5
+    assert me["leagues_allowed"] == 3
     for path in ("waivers/plan", "trades/find", "waivers", "report"):
         assert client.get(f"{LG}/team/{tid}/{path}").status_code == 200, path
     # Anonymous too: a demo visitor has no account to attach a purchase to.
