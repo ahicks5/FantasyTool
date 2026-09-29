@@ -24,6 +24,19 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## ESPN leagues show ESPN's own projection (2026-09-29)
+
+Andrew compared his ESPN roster (starters add to 175.5) with Penthouse (168.9) and asked why.
+Answer: two vendors. We re-scored Rotowire-via-Sleeper's raw line with the league's rules, and
+across 21 real ESPN leagues that ran ~4% under ESPN with a median per-player error of 1.1
+points (`docs/LEAGUE_SURVEY.md`). His decision: match the app. An ESPN league's weekly
+`projected` is now ESPN's `appliedTotal` (`espn.apply_own_projections`; rules in
+`docs/DATA.md`). Nothing in the engine read the raw stat line, so the swap lives in the
+connector; the raw line stays on `proj_stats` for the scoring audit and as the fallback.
+Not done, and said so: rest-of-season values (Trade Lab, the wire's ranking) are still
+Sleeper's (`TASKS.md` EP-1), and the Lock/Lean rates were graded on Sleeper's numbers (EP-2).
+Off switch: `EDGE_ESPN_PROJECTIONS=sleeper`.
+
 ## Sunday night: the haze, the live week, ESPN matchups (2026-09-28)
 
 Andrew opened the app after the Sunday games and everything projected was stale. What

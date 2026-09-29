@@ -1,9 +1,13 @@
 """ESPN (public league) -> normalized League. `build_league` is pure so tests run offline.
 
 Ids: Player.id is ESPN's player id as a string (team D/ST keeps ESPN's negative id, e.g.
-"-16034", with nfl_team set from proTeamId). Projections come from Sleeper and are keyed
-by Sleeper id, so each Player also gets `ext_ids["sleeper"]` via edge.data.player_map, and
-we call the Sleeper connector's `apply_projections` with that translator. Free agents come
+"-16034", with nfl_team set from proTeamId). Sleeper's projections are keyed by Sleeper id,
+so each Player also gets `ext_ids["sleeper"]` via edge.data.player_map, and we call the
+Sleeper connector's `apply_projections` with that translator. **This week's number is then
+ESPN's own** (`apply_own_projections`): the `appliedTotal` ESPN prints in its app, already in
+the league's scoring, so a user sees the same projection here and there. Sleeper's re-scored
+line stays as the fallback and as `proj_stats`; `EDGE_ESPN_PROJECTIONS=sleeper` turns the
+override off. Free agents come
 from ESPN's own pool (`espn_api.free_agents`), so an add we recommend is one this league
 really has available; they keep ESPN ids like everyone else.
 
@@ -22,6 +26,7 @@ an item whose `pointsOverrides` differ between QB/RB/WR/TE takes the most common
 from __future__ import annotations
 
 import logging
+import os
 
 from edge.connectors.sleeper import apply_projections, season_byes, stamp_byes
 from edge.data import espn_api as api
@@ -368,6 +373,87 @@ def playoff_settings(settings: dict) -> tuple[int | None, int | None]:
     return (teams if isinstance(teams, int) and teams > 0 else None), start
 
 
+# ---- ESPN's own weekly projection ----
+
+# Every roster and free-agent row carries ESPN's projection for the current scoring period:
+# `player.stats[statSourceId == 1, scoringPeriodId == week].appliedTotal`, already scored in
+# the league's own settings. That is the number the ESPN app prints, so an ESPN league shows
+# it here too (Andrew, 2026-09-29: "people should see the same number"). Two vendors were
+# never going to agree -- Rotowire-via-Sleeper ran ~4% under ESPN across 21 leagues
+# (docs/LEAGUE_SURVEY.md) -- and a user cannot tell a vendor gap from a bug.
+#
+# What still comes from Sleeper: `proj_stats` (the raw line, which the scoring audit in
+# scripts/survey_leagues.py re-scores to check our ESPN scoring map), rest-of-season values
+# (Trade Lab, the wire), news and byes. A player ESPN has no row for -- or a week other than
+# ESPN's current one -- keeps Sleeper's re-scored number. An `unpriced` player (no Sleeper
+# match) stays unpriced and at 0.0: the flag means "we cannot value him", and a week number
+# without a rest-of-season value would make him the wire's first drop.
+ESPN_PROJECTIONS_ENV = "EDGE_ESPN_PROJECTIONS"
+_OFF = ("sleeper", "0", "off", "no", "false")
+
+
+def espn_projections_enabled() -> bool:
+    """On unless `EDGE_ESPN_PROJECTIONS` says `sleeper` (or 0/off/no/false)."""
+    return os.environ.get(ESPN_PROJECTIONS_ENV, "espn").strip().lower() not in _OFF
+
+
+def own_projection(player_raw: dict, week: int) -> float | None:
+    """ESPN's projected total for `week` off one player payload, or None when it has none."""
+    for st in player_raw.get("stats") or []:
+        if st.get("statSourceId") == 1 and int(st.get("scoringPeriodId") or 0) == int(week) \
+                and st.get("appliedTotal") is not None:
+            return round(float(st["appliedTotal"]), 2)
+    return None
+
+
+def own_projections(raw: dict, week: int, free_agents_raw: list[dict] | None = None) -> dict[str, float]:
+    """ESPN player id -> ESPN's own projection for `week`, over every roster and pool row."""
+    out: dict[str, float] = {}
+    for t in raw.get("teams") or []:
+        for e in (t.get("roster") or {}).get("entries") or []:
+            player = (e.get("playerPoolEntry") or {}).get("player") or {}
+            pid = str(e.get("playerId") or player.get("id"))
+            v = own_projection(player, week)
+            if v is not None:
+                out[pid] = v
+    for row in free_agents_raw or []:
+        player = row.get("player") or {}
+        pid = str(row.get("id") or player.get("id"))
+        v = own_projection(player, week)
+        if v is not None:
+            out[pid] = v
+    return out
+
+
+def apply_own_projections(league: League, theirs: dict[str, float]) -> int:
+    """Make ESPN's number this week's `projected` wherever ESPN has one.
+
+    Rostered players: overwritten unless `unpriced` (see above). Free agents: overwritten,
+    and one ESPN projects at zero leaves the pool, exactly as Sleeper's zeros never enter
+    it -- the wire sells "add this man", and a 0.0 is not that. Anyone ESPN has no row for
+    keeps Sleeper's re-scored number. The pool is re-sorted. Returns how many took ESPN's.
+    """
+    n = 0
+    for team in league.teams:
+        for pl in team.players:
+            v = theirs.get(pl.id)
+            if v is not None and not pl.unpriced:
+                pl.projected = v
+                n += 1
+    kept: list[Player] = []
+    for pl in league.free_agents:
+        v = theirs.get(pl.id)
+        if v is not None:
+            if v <= 0:
+                continue
+            pl.projected = v
+            n += 1
+        kept.append(pl)
+    kept.sort(key=lambda p: -(p.projected or 0))
+    league.free_agents = kept
+    return n
+
+
 def build_league(
     raw: dict,
     week: int | None = None,
@@ -375,6 +461,7 @@ def build_league(
     players: dict[str, dict] | None = None,
     free_agents_raw: list[dict] | None = None,
     byes: dict[str, int] | None = None,
+    espn_projections: bool | None = None,
 ) -> League:
     """Map one ESPN league response (mTeam+mRoster+mSettings) to a League.
 
@@ -386,6 +473,8 @@ def build_league(
     failed to tie to a roster. `week` defaults to ESPN's current scoringPeriodId.
     `byes` is {nfl_team: bye week} from `edge.data.schedule.bye_weeks`; ESPN's payload has
     no bye week in it, so without it every Player keeps `bye_week = None`.
+    `espn_projections` makes this week's `projected` ESPN's own `appliedTotal`
+    (`apply_own_projections`); None reads `EDGE_ESPN_PROJECTIONS`, which is on by default.
     """
     settings = raw.get("settings") or {}
     acq = settings.get("acquisitionSettings") or {}
@@ -480,6 +569,9 @@ def build_league(
                     fa.ext_ids.setdefault("sleeper", fa.id)
                     if fa.position == "DEF":
                         fa.name = _dst_name(fa.name, fa.nfl_team, espn_def_names)
+    if espn_projections if espn_projections is not None else espn_projections_enabled():
+        took = apply_own_projections(league, own_projections(raw, league.week, free_agents_raw))
+        log.info("ESPN league %s week %s: %d players carry ESPN's own projection", league.id, league.week, took)
     stamp_byes(league, byes)
     return league
 

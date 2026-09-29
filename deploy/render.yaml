@@ -45,5 +45,9 @@ services:
       # A real paywall bypass — unset it before anyone can be charged.
       - key: EDGE_DEMO_UNLOCK
         value: "0"
+      # An ESPN league shows ESPN's own weekly projection (matches the ESPN app). Set to
+      # "sleeper" to go back to re-scoring Sleeper's line for the week. Unset is on.
+      # - key: EDGE_ESPN_PROJECTIONS
+      #   value: sleeper
       # EDGE_DEV is deliberately absent. It makes the API accept an X-Edge-User header as
       # proof of identity, so any caller can claim to be any email. Never set it here.

@@ -12,7 +12,8 @@ number here looks wrong for a format, that is the next thing to fix in the engin
 
 The one accuracy check it does make is against ESPN itself: every fixture carries ESPN's own
 weekly projected total per player, so `proj_vs_espn` compares our re-scored Sleeper
-projection to it. A league whose median error is large is a league whose scoring settings we
+projection to it (re-scored from `proj_stats`: on an ESPN league `projected` itself is
+ESPN's number now, see `espn.apply_own_projections`). A league whose median error is large is a league whose scoring settings we
 are reading wrong — that is exactly how the "every 25 passing yards" bug was found.
 """
 from __future__ import annotations
@@ -22,6 +23,7 @@ import statistics
 from collections import Counter
 
 from edge.data.schedule import bye_weeks, load_schedule
+from edge.data.scoring import score
 from edge.engine import actions as actions_mod
 from edge.engine import lineup, trade, trade_finder, waiver_plan
 from edge.engine.values import ros_values
@@ -48,9 +50,11 @@ def proj_vs_espn(league, raw_league: dict, top: int = 40) -> dict:
     an error there cannot change a recommendation.
     """
     theirs = espn_own_projections(raw_league)
-    pairs = [(p.projected or 0.0, theirs[p.id])
+    # `projected` is ESPN's own number on an ESPN league now, so re-score Sleeper's raw line
+    # (`proj_stats`) for the comparison: that is the number our scoring map produces.
+    pairs = [(score(p.proj_stats, league.scoring), theirs[p.id])
              for t in league.teams for p in t.players
-             if p.id in theirs and not p.unpriced and (p.projected or 0) > 0]
+             if p.id in theirs and not p.unpriced and p.proj_stats]
     pairs.sort(key=lambda x: -x[1])
     pairs = pairs[:top]
     if len(pairs) < 5:

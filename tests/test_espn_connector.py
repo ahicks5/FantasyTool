@@ -124,11 +124,18 @@ def test_sleeper_ids_attached(espn_league):
     assert len(matched) >= 0.5 * len(by_name), "players_subset only covers part of the pool"
 
 
-def test_projections_applied_via_sleeper_ids(espn_league):
+def test_projections_applied_via_sleeper_ids(espn_league, espn_raw, sleeper_raw):
+    """Sleeper's row reaches every ESPN player through the name map: the raw line lands on
+    `proj_stats` and re-scores against the league's rules. This week's `projected` itself is
+    ESPN's own (see test_espn_own_projections.py), so the re-scored check builds without it."""
     lg = espn_league
     gibbs = next(p for t in lg.teams for p in t.players if p.name == "Jahmyr Gibbs")
     assert gibbs.proj_stats and 5 < gibbs.projected < 40
-    assert gibbs.projected == pytest.approx(
+    ours = espn.build_league(espn_raw, week=2, projections_raw=sleeper_raw["projections"],
+                             players=sleeper_raw["players"], espn_projections=False)
+    gibbs_ours = next(p for t in ours.teams for p in t.players if p.name == "Jahmyr Gibbs")
+    assert gibbs_ours.proj_stats == gibbs.proj_stats
+    assert gibbs_ours.projected == pytest.approx(
         sum(gibbs.proj_stats.get(k, 0) * w for k, w in lg.scoring.items()), abs=0.01)
     projected = [p for t in lg.teams for p in t.players if (p.projected or 0) > 0]
     assert len(projected) >= 40

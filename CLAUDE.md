@@ -49,7 +49,9 @@ Then only what you need:
 - Everything downstream of a connector is platform-agnostic: connectors map into
   `edge/models.py` and nothing after that knows which platform it came from.
 - Scoring is always computed from the league's own scoring settings. **Never assume PPR.**
-- Raw stats, never points, until `edge/data/scoring.py` says otherwise.
+- Raw stats, never points, until `edge/data/scoring.py` says otherwise. One exception, on purpose:
+  an ESPN league's *weekly* number is ESPN's own `appliedTotal`, so it matches the ESPN app
+  (`espn.apply_own_projections`, `docs/DATA.md`). Sleeper's line still rides underneath.
 - **The LLM explains; it never ranks, values or invents a number.**
 - Nothing outside `edge/data/providers.py` talks to a projection vendor.
 - `edge/products.py` is the only source of truth for what is free and what is paid, and for the league cap.

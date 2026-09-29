@@ -2,7 +2,7 @@
  {
   "bench": 8,
   "faab_budget": 100,
-  "free_agents": 171,
+  "free_agents": 164,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -37,7 +37,7 @@
  {
   "bench": 6,
   "faab_budget": 200,
-  "free_agents": 171,
+  "free_agents": 164,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -73,7 +73,7 @@
  {
   "bench": 6,
   "faab_budget": 1000,
-  "free_agents": 164,
+  "free_agents": 152,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -108,7 +108,7 @@
  {
   "bench": 8,
   "faab_budget": 100,
-  "free_agents": 167,
+  "free_agents": 160,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -142,7 +142,7 @@
  {
   "bench": 9,
   "faab_budget": 100,
-  "free_agents": 159,
+  "free_agents": 142,
   "fum_lost": -2.0,
   "has_def": false,
   "has_k": false,
@@ -176,7 +176,7 @@
  {
   "bench": 9,
   "faab_budget": null,
-  "free_agents": 162,
+  "free_agents": 147,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -211,7 +211,7 @@
  {
   "bench": 6,
   "faab_budget": 100,
-  "free_agents": 163,
+  "free_agents": 151,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -246,7 +246,7 @@
  {
   "bench": 8,
   "faab_budget": 100,
-  "free_agents": 160,
+  "free_agents": 145,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -280,7 +280,7 @@
  {
   "bench": 9,
   "faab_budget": 100,
-  "free_agents": 172,
+  "free_agents": 165,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -314,7 +314,7 @@
  {
   "bench": 6,
   "faab_budget": 100,
-  "free_agents": 163,
+  "free_agents": 152,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -348,7 +348,7 @@
  {
   "bench": 8,
   "faab_budget": null,
-  "free_agents": 155,
+  "free_agents": 138,
   "fum_lost": -1.0,
   "has_def": false,
   "has_k": false,
@@ -382,7 +382,7 @@
  {
   "bench": 8,
   "faab_budget": 100,
-  "free_agents": 164,
+  "free_agents": 143,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": false,
@@ -416,7 +416,7 @@
  {
   "bench": 13,
   "faab_budget": null,
-  "free_agents": 167,
+  "free_agents": 152,
   "fum_lost": 0.0,
   "has_def": true,
   "has_k": true,
@@ -451,7 +451,7 @@
  {
   "bench": 9,
   "faab_budget": 200,
-  "free_agents": 164,
+  "free_agents": 157,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -483,7 +483,7 @@
  {
   "bench": 9,
   "faab_budget": 100,
-  "free_agents": 167,
+  "free_agents": 157,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -518,7 +518,7 @@
  {
   "bench": 7,
   "faab_budget": 100,
-  "free_agents": 170,
+  "free_agents": 163,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -552,7 +552,7 @@
  {
   "bench": 4,
   "faab_budget": 250,
-  "free_agents": 169,
+  "free_agents": 162,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -587,7 +587,7 @@
  {
   "bench": 9,
   "faab_budget": null,
-  "free_agents": 171,
+  "free_agents": 164,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -621,7 +621,7 @@
  {
   "bench": 7,
   "faab_budget": 100,
-  "free_agents": 127,
+  "free_agents": 115,
   "fum_lost": 0.0,
   "has_def": false,
   "has_k": false,
@@ -654,7 +654,7 @@
  {
   "bench": 8,
   "faab_budget": null,
-  "free_agents": 186,
+  "free_agents": 185,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,
@@ -688,7 +688,7 @@
  {
   "bench": 6,
   "faab_budget": null,
-  "free_agents": 174,
+  "free_agents": 168,
   "fum_lost": -2.0,
   "has_def": true,
   "has_k": true,

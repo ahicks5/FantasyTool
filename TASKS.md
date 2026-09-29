@@ -2,6 +2,30 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## ESPN shows ESPN's number (2026-09-29)
+
+Andrew, with four screenshots (ESPN 175.5 for his starters, Penthouse 168.9): "I just want
+people to see the same number." Two vendors, not a bug (`docs/LEAGUE_SURVEY.md`: ours ran
+~4% under ESPN across 21 leagues), so an ESPN league now takes ESPN's own weekly projection.
+
+- [x] **This week's `projected` is ESPN's `appliedTotal`** on every rostered player and
+      free agent of an ESPN league (`espn.apply_own_projections`). Sleeper's line stays as
+      `proj_stats` and as the fallback; unpriced players stay at 0.0; a pool player ESPN
+      projects at 0 leaves the wire. `EDGE_ESPN_PROJECTIONS=sleeper` turns it off.
+      `tests/test_espn_own_projections.py`; `docs/DATA.md`.
+- [x] The vendor audit (`test_our_projections_agree_with_espns_own`, `survey_leagues.py`)
+      re-scores `proj_stats` so it still measures our scoring map. Corpus manifest
+      re-summarised offline (pool counts moved).
+- [ ] EP-1 **Rest-of-season from ESPN too**, so Trade Lab and the wire's ranking match the
+      app's season outlook. ESPN's season projection is `statSourceId 1, scoringPeriodId 0`
+      but the roster view sends only the current week; needs `kona_player_info` with a
+      season filter, mapped onto `ros_values`. About a day.
+- [ ] EP-2 Confidence tags (Lock 75%) were graded on Sleeper's numbers. Grade a few ESPN
+      weeks through `scripts/weekly.py` before claiming any rate for ESPN leagues;
+      `docs/CALIBRATION.md` gets an ESPN row when there is one.
+- [ ] EP-3 Yahoo publishes projected points as well; same override once EP-1 settles the
+      shape.
+
 ## Sunday-night pass: the haze, one GM, the live week, ESPN matchups and scoring (2026-09-28)
 
 Andrew, Sunday night after the games, with two screenshots (ESPN 170.02 played; Penthouse

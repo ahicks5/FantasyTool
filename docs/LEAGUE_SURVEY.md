@@ -34,7 +34,8 @@ thing we have to seeing the product's output across the formats people actually 
 ## Our projections vs ESPN's own
 
 ESPN publishes its own weekly projection per player; we re-score Sleeper's raw stats with
-the league's settings. A large *median* error means we are reading this league's scoring
+the league's settings. (Since 2026-09-29 an ESPN league *shows* ESPN's number; this table
+re-scores `proj_stats` and is only about the scoring map.) A large *median* error means we are reading this league's scoring
 wrong. Scatter is normal (two vendors); a consistent ratio away from 1.0 is a bug.
 
 | League | Top-N compared | Median abs err | Mean | Worst | Ours mean | ESPN mean | Ratio |

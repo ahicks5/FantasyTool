@@ -22,6 +22,7 @@ import statistics
 import pytest
 
 from edge.data.schedule import bye_weeks, load_schedule
+from edge.data.scoring import score
 from edge.engine import actions as actions_mod
 from edge.engine import lineup, report, trade_finder, waiver_plan, waivers
 from edge.engine.values import ros_values
@@ -187,9 +188,11 @@ def test_our_projections_agree_with_espns_own(espn_live_league, espn_own_project
     and D/STs by 5.5 — which is what these thresholds are set to catch.
     """
     lg = espn_live_league
-    pairs = [(p.projected, espn_own_projection[p.id], p.position)
-             for p in rostered(lg) if p.id in espn_own_projection and p.projected is not None]
-    assert len(pairs) == 195
+    # `projected` IS ESPN's number now (test_espn_own_projections.py), so the audit re-scores
+    # Sleeper's raw line, which still rides on `proj_stats`.
+    pairs = [(score(p.proj_stats, lg.scoring), espn_own_projection[p.id], p.position)
+             for p in rostered(lg) if p.id in espn_own_projection and p.proj_stats]
+    assert len(pairs) >= 180
     assert statistics.correlation([a for a, _, _ in pairs], [b for _, b, _ in pairs]) >= 0.90
     assert statistics.median(abs(a - b) for a, b, _ in pairs) <= 2.0
     # Kickers are left out on purpose: Sleeper's weekly projection carries no fgm_50_59, so

@@ -112,7 +112,7 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (61 modules, 18,031 lines)
+### `edge/` — the Python engine and API (61 modules, 18,123 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
@@ -135,7 +135,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/business/metrics.py` | The admin's numbers, computed from the telemetry log (docs/SPEC-ADMIN-METRICS.md). | metrics | 348 |
 | `edge/calibration.py` | How sure are we, really? Confidence from measured projection error, not from raw margin. | calibration, decisions +3 | 222 |
 | `edge/cli.py` | Demo commands. Live network. Usage: | espn_connector, send | 281 |
-| `edge/connectors/espn.py` | ESPN (public league) -> normalized League. `build_league` is pure so tests run offline. | espn_connector, espn_corpus +7 | 579 |
+| `edge/connectors/espn.py` | ESPN (public league) -> normalized League. `build_league` is pure so tests run offline. | espn_connector, espn_corpus +8 | 671 |
 | `edge/connectors/sleeper.py` | Sleeper -> normalized League. Pure mapping functions take raw JSON so tests run offline. | sleeper_connector, deadlines +10 | 391 |
 | `edge/connectors/yahoo.py` | Yahoo -> normalized League. `build_league` is pure (parsed XML in, League out) so tests run offline. | yahoo_api, yahoo_connector | 338 |
 | `edge/data/depth_charts.py` | Who is on each NFL team, at what depth, and what the platform last said about him. | decisions, desk_api +3 | 119 |
@@ -146,7 +146,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/data/player_map.py` | Match players from other platforms (ESPN, ...) to Sleeper player ids by name. | espn_connector, espn_live_fixture | 87 |
 | `edge/data/providers.py` | Projection providers — the engine's only door to projection data. | providers, compliance +2 | 272 |
 | `edge/data/schedule.py` | NFL schedule / bye weeks from ESPN's free scoreboard endpoint. Cached per season. | actions, api +26 | 160 |
-| `edge/data/scoring.py` | Score a raw stat line against a league's scoring settings (Sleeper stat vocabulary). | scoring, espn_connector +6 | 16 |
+| `edge/data/scoring.py` | Score a raw stat line against a league's scoring settings (Sleeper stat vocabulary). | scoring, espn_connector +8 | 16 |
 | `edge/data/sleeper_api.py` | Thin HTTP layer for Sleeper. Everything public, no auth. Cached players file on disk. | directory, espn_matchups +7 | 106 |
 | `edge/data/yahoo_api.py` | Thin HTTP layer for Yahoo Fantasy Sports (v2), plus the OAuth 2.0 sign-in it requires. | yahoo_api, yahoo_connector | 205 |
 | `edge/delivery/send.py` | Actually putting the weekly email in someone's inbox. | send | 169 |
@@ -158,7 +158,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/engine/film.py` | The replay: why each man scored what he did, what decided the week, and what to do next. | espn_film, film | 658 |
 | `edge/engine/grades.py` | Letter grades for a roster, position by position — the draft-grade idea, kept live. | grades, league_film +1 | 287 |
 | `edge/engine/league_film.py` | The film's league half: everyone, compared (SPEC-FILM F-5, F-6, F-7). | league_film | 419 |
-| `edge/engine/lineup.py` | Lineup optimizer + start/sit calls with confidence and one-line reasons. | lineup, actions +14 | 747 |
+| `edge/engine/lineup.py` | Lineup optimizer + start/sit calls with confidence and one-line reasons. | lineup, actions +15 | 747 |
 | `edge/engine/live.py` | The week in progress: who has played, what he scored so far, and the lineup that is left to set. | live | 148 |
 | `edge/engine/newsdesk.py` | The news desk: what just happened in the NFL that changes this roster, and nothing else. | newsdesk, plan | 205 |
 | `edge/engine/plan.py` | The action plan: one story off the news desk, and every door out of it. | plan | 171 |

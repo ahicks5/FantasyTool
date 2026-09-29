@@ -63,6 +63,31 @@ matchup and the desk's scoreboard work on ESPN without a second request. `points
 `FREEAGENT`/`WAIVERS`). Only ESPN knows who is actually free *in this league*, and a derived
 pool carries every K and D/ST whether or not the league has a slot for one.
 
+### The weekly number is ESPN's own (2026-09-29)
+
+On an ESPN league **this week's `projected` is ESPN's own projection**, the `appliedTotal`
+every roster and free-agent row carries for the current scoring period
+(`player.stats[statSourceId=1, scoringPeriodId=week]`), already in the league's scoring.
+Andrew's brief: a user should see the same number in Penthouse and in the ESPN app. Two
+vendors were never going to agree (Rotowire-via-Sleeper ran ~4% under ESPN across 21 leagues,
+`docs/LEAGUE_SURVEY.md`) and a user cannot tell a vendor gap from a bug.
+
+Rules, all pinned by `tests/test_espn_own_projections.py`:
+
+- Sleeper's row is still applied first and stays on `proj_stats`. It is the fallback for a
+  player ESPN sends no row for, for any week other than ESPN's current one, and what the
+  scoring audit (`scripts/survey_leagues.py`, `test_our_projections_agree_with_espns_own`)
+  re-scores to check the ESPN scoring map.
+- An `unpriced` player (no Sleeper match) stays unpriced and at 0.0: no rest-of-season
+  value, so a week number would make him the wire's first drop.
+- A free agent ESPN projects at 0.0 leaves the pool, as Sleeper's zeros never enter it.
+- Rest-of-season values (Trade Lab, the wire's ranking), news and byes still come from
+  Sleeper. Matching those to ESPN is the open item in `TASKS.md`.
+- `EDGE_ESPN_PROJECTIONS=sleeper` turns the override off (`espn.apply_own_projections`).
+
+The film already graded ESPN weeks against ESPN's own projection (`service.played_weeks`),
+so the number a user is graded on is now the number he was shown.
+
 ### Private ESPN leagues, and the cookies
 
 Private leagues work. The user's `espn_s2` + `SWID` ride in as the `X-ESPN-S2` /

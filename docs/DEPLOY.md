@@ -159,6 +159,7 @@ API (Railway):
 |---|---|---|
 | `EDGE_DB` | a path on the mounted volume | SQLite via `edge/api/store.py`. On an ephemeral filesystem every entitlement is lost on restart. |
 | `EDGE_CACHE_DIR` | a path on the mounted volume | The 14MB Sleeper player file is cached here for 24h. |
+| `EDGE_ESPN_PROJECTIONS` | unset (on) or `sleeper` | On an ESPN league this week's projection is ESPN's own number, so it matches the ESPN app. `sleeper` goes back to re-scoring Sleeper's line for the week (`docs/DATA.md`). |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Stripe | Checkout for the week pass (a weekly subscription), the season pass and league slots, and the webhook that grants them. Events below. |
 | `EDGE_BILLING_PORTAL_URL` | Stripe customer-portal login link | Not a secret. Where a week-pass subscriber manages or cancels (Stripe dashboard → Settings → Billing → Customer portal → enable, copy the login link). Unset, the account page shows no "Manage or cancel" link. `/api/me` carries it as `billing_portal_url`. |
 | `EDGE_SMS_PROVIDER` | `twilio` | **Phone sign-in.** Unset, the door is email and password only. `twilio` needs the three below; a half-set one leaves phone sign-in off and says why in the logs. (`dev` works only with `EDGE_DEV=1` and returns the code in the reply: tests only.) |
