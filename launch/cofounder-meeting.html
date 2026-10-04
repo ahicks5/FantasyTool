@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Penthouse — Cofounder meeting: agenda and to-dos</title>
+<style>
+  @page { size: letter; margin: 0.38in 0.45in; }
+  @media print { body { zoom: 0.88; } }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Liberation Sans", "DejaVu Sans", Arial, sans-serif; color: #111; background: #fff;
+         font-size: 9.2pt; line-height: 1.34; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #111;
+           padding-bottom: 6px; }
+  h1 { font-size: 20pt; letter-spacing: -0.3px; line-height: 1; }
+  h1 span { font-weight: 400; color: #444; }
+  .meta { text-align: right; font-size: 8pt; color: #333; }
+  .thesis { margin: 9px 0 10px; padding: 7px 10px; background: #111; color: #fff; font-size: 9.8pt; }
+  .thesis b { color: #ffd23f; }
+  h2 { font-size: 9.2pt; text-transform: uppercase; letter-spacing: 0.9px; border-bottom: 1.5px solid #111;
+       padding-bottom: 2px; margin: 11px 0 5px; display: flex; justify-content: space-between; }
+  h2 .t { font-weight: 400; text-transform: none; letter-spacing: 0; color: #444; }
+  h3 { font-size: 9.4pt; margin: 6px 0 2px; }
+  p { margin-bottom: 4px; }
+  ol, ul { padding-left: 15px; }
+  li { margin-bottom: 2.4px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+  .box { border: 1.5px solid #111; padding: 6px 9px; margin-bottom: 8px; }
+  .gate { border-left: 5px solid #c8102e; }
+  .todo { list-style: none; padding-left: 0; }
+  .todo li { padding-left: 18px; position: relative; margin-bottom: 3.2px; }
+  .todo li::before { content: ""; position: absolute; left: 0; top: 2px; width: 10px; height: 10px;
+                     border: 1.5px solid #111; background: #fff; }
+  .todo li.done::before { background: #111; }
+  .todo li.done::after { content: "✓"; position: absolute; left: 1.5px; top: -1px; color: #fff; font-size: 8pt; font-weight: 700; }
+  .todo li.done { color: #555; }
+  .who { display: inline-block; font-size: 7.4pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+         padding: 0 4px; border: 1px solid #111; margin-right: 4px; vertical-align: 1px; }
+  .who.a { background: #111; color: #fff; }
+  .who.c { background: #fff; color: #111; }
+  .who.b { background: #ffd23f; border-color: #ffd23f; color: #111; }
+  .red { color: #c8102e; font-weight: 700; }
+  .no li { list-style: none; margin-left: -15px; }
+  .no li::before { content: "✕ "; color: #c8102e; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 8.8pt; }
+  th, td { text-align: left; padding: 3px 5px; border-bottom: 1px solid #bbb; vertical-align: top; }
+  th { background: #eee; font-weight: 700; }
+  td.n { white-space: nowrap; font-weight: 700; }
+  .ask { border: 1.5px dashed #111; padding: 5px 9px; }
+  .fill { border-bottom: 1px solid #999; display: inline-block; min-width: 2.2in; height: 1em; vertical-align: bottom; }
+  .lines .l { border-bottom: 1px solid #bbb; height: 16px; }
+  footer { margin-top: 10px; font-size: 7.4pt; color: #555; border-top: 1px solid #bbb; padding-top: 3px;
+           display: flex; justify-content: space-between; }
+  .pb { break-before: page; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>PENTHOUSE <span>· Cofounder meeting</span></h1>
+  <div class="meta">Agenda and to-dos · drafted Sat Oct 4, 2026 (NFL week 5)<br>penthousefantasy.com · 2 hours, 6 items</div>
+</header>
+
+<div class="thesis">It is week 5 of a season that is the whole market. Trade season peaks weeks 4–10; the deadline lands
+weeks 11–13. Judge every item below by one question: <b>does it help us sell before the deadline?</b></div>
+
+<h2>Agenda <span class="t">2 hours · timeboxes are the agenda</span></h2>
+<table>
+  <tr><th style="width:0.55in">Time</th><th style="width:1.9in">Item</th><th>Outcome we leave with</th></tr>
+  <tr><td class="n">0:00</td><td><b>1. Where we stand</b><br><span style="color:#444">Andrew presents, no debate</span></td>
+      <td>Shared picture: what is live, what is dark, what is blocked on us and not on code.</td></tr>
+  <tr><td class="n">0:10</td><td><b>2. Do we feel good about the product?</b></td>
+      <td>Each of us has used it on our own league, on a phone, this week. Three answers (below). The launch gates agreed.</td></tr>
+  <tr><td class="n">0:40</td><td><b>3. Marketing plan</b></td>
+      <td>The open decisions in <i>launch/ROLLOUT_PLAN.md</i> made. Hours per week named. Channels cut to fit.</td></tr>
+  <tr><td class="n">1:10</td><td><b>4. Company name</b></td>
+      <td>Criteria agreed first. A shortlist of three to screen this week. Final call in seven days, not tonight.</td></tr>
+  <tr><td class="n">1:30</td><td><b>5. What is not on the list</b></td>
+      <td>Cofounder terms, money, legal exposure, support, kill criteria, roles for 30 days.</td></tr>
+  <tr><td class="n">1:50</td><td><b>6. Close</b></td>
+      <td>Three to-dos each, with dates. Next meeting booked.</td></tr>
+</table>
+
+<div class="grid2" style="margin-top:10px">
+  <div>
+    <h2>1 · Where we stand</h2>
+    <ul>
+      <li><b>Live</b> at penthousefantasy.com on the real API. Sleeper and public ESPN work end to end.</li>
+      <li><b>Private ESPN</b> works through the bookmark (the “Penthouse key”). Never tapped through on a real iPhone.</li>
+      <li><b>Yahoo</b> is built and dark until Yahoo approves the app (applied Sep 28).</li>
+      <li><b>Pricing decided:</b> free tier · $4.99 week pass · $24.99 season pass ($19.99 mid-week) · $2.99 extra league.</li>
+      <li><b>Admin and telemetry</b> built: six tabs of funnel, revenue, retention numbers. Reading zero until the Stripe events and pixel ids are in.</li>
+      <li><b>Tests:</b> 1,375 Python, 391 node, browser smoke at 375px. CI gates on all of it.</li>
+    </ul>
+
+    <h2>2 · Three questions on the product</h2>
+    <p>Make it concrete or it becomes vibes. Both of us connect a league we actually play in, on a phone, and read this week’s calls out loud. Then:</p>
+    <ol>
+      <li><b>Would you pay $4.99 for what you just saw?</b> If not, which of the three moves failed you?</li>
+      <li><b>Is Lock honest?</b> It delivers 75% and people read it as 80%. The calibrated model is wired in. Enough, or do the tag names change?</li>
+      <li><b>Which one screen would embarrass us in a Reddit screenshot?</b> Fix only that one.</li>
+    </ol>
+  </div>
+  <div>
+    <div class="box gate">
+      <h3 style="margin-top:0">Launch gates · <span class="red">no public post until all five are true</span></h3>
+      <ul class="todo">
+        <li><span class="who a">Andrew</span> <b>Turn <code>EDGE_DEV</code> off on Render.</b> While it is on, anyone can claim any email with a header. Security hole, not a nit.</li>
+        <li><span class="who a">Andrew</span> Real Stripe test-mode run: subscribe, renew (test clock), cancel, refund a renewal.</li>
+        <li><span class="who a">Andrew</span> Tap the ESPN key through on a real iPhone against a real private league.</li>
+        <li><span class="who a">Andrew</span> Set the support email on Vercel. Today nobody can reach us.</li>
+        <li><span class="who a">Andrew</span> Stripe: add <code>invoice.paid</code> and the three new webhook events; enable the customer portal.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3 style="margin-top:0">Switched off, by choice or by waiting</h3>
+      <ul>
+        <li><b>Twilio</b> → phone sign-in is dark; the door is email and password.</li>
+        <li><b>Resend</b> (paused by Andrew) → no reset mail, no Thursday email, unpaid sign-ups unreachable.</li>
+        <li><b>Pixels and PostHog</b> → ad numbers and churn read zero until the ids are pasted in.</li>
+        <li><b>Yahoo</b> → waiting on Yahoo.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h2>3 · Marketing plan <span class="t">start from launch/ROLLOUT_PLAN.md, do not start from zero</span></h2>
+<div class="grid2">
+  <div>
+    <p><b>The one loop that matters:</b> a verdict card pasted into a league chat. Everything else is secondary until that loop shows a conversion.</p>
+    <p><b>The week, by day:</b> waiver content Tue · verdict cards Wed · email Thu · start/sit content Sat night · “were we right” Mon.</p>
+    <p><b>Decide tonight:</b></p>
+    <ul class="todo">
+      <li>Whose Reddit and X accounts. Plan says Andrew’s own, with disclosure.</li>
+      <li>Real hours per week, each of us. Plan assumes ~5 through week 17. Cut Discord first, then X, never the Monday post.</li>
+      <li>Paid ads before the Sleeper licensing reply: yes or no. Plan says no spend until they answer.</li>
+      <li>Who sends the Sleeper licensing email, and when. It is still the first action on the list.</li>
+    </ul>
+  </div>
+  <div>
+    <h3 style="margin-top:0">What we cannot say in public yet</h3>
+    <ul class="no">
+      <li>Any decision-accuracy figure. Nothing is scored on a real week.</li>
+      <li>A user count or a testimonial. None exist. Nothing invented.</li>
+      <li>“80% of Locks hit.” The measured figure is 75%.</li>
+      <li>“Yahoo” on the landing page until it is actually on.</li>
+    </ul>
+    <p style="margin-top:6px"><b>First honest proof point, and when:</b> <span class="fill"></span></p>
+  </div>
+</div>
+
+<footer><span>Penthouse · cofounder meeting · page 1 of 2</span><span>Sources: TASKS.md, docs/HANDOFF.md, launch/ROLLOUT_PLAN.md</span></footer>
+
+<div class="pb"></div>
+
+<header>
+  <h1>PENTHOUSE <span>· Cofounder meeting</span></h1>
+  <div class="meta">Page 2 · name, the unlisted items, the to-do list</div>
+</header>
+
+<h2>4 · Company name <span class="t">criteria first, names second</span></h2>
+<div class="grid2">
+  <div>
+    <p>This would be the <b>fourth name</b> (Edge → The Booth → Penthouse). Agree why Penthouse fails before anyone says a new one.</p>
+    <ol>
+      <li><b>Is it the word?</b> “Penthouse” carries the magazine. It will come up in every pitch and every thread.</li>
+      <li><b>Is it trademark?</b> The screen on classes 9, 41, 42 was never done. Do it before falling for any name, this one included.</li>
+      <li><b>What does a rename cost?</b> Domain, the mark in four places, one vocab file, OG images, social handles. About a day of work. The real cost is throwing away recognition mid-season.</li>
+    </ol>
+  </div>
+  <div class="ask">
+    <h3 style="margin-top:0">Shortlist to screen this week (trademark + domain + handles)</h3>
+    <div class="lines"><div class="l"></div><div class="l"></div><div class="l"></div></div>
+    <p style="margin-top:6px"><b>Keep Penthouse?</b> ☐ yes &nbsp; ☐ no &nbsp; ☐ decide by <span class="fill" style="min-width:1.2in"></span></p>
+  </div>
+</div>
+
+<h2>5 · What is not on the list</h2>
+<div class="grid2">
+  <div>
+    <ul>
+      <li><b>Cofounder terms.</b> Equity split, vesting, who decides what, what happens if one of us stops. Settle before revenue exists.</li>
+      <li><b>Money.</b> Who owns Stripe, the bank account, Vercel and Render bills. Monthly burn. LLC before the first dollar?</li>
+      <li><b>Legal exposure, ranked.</b> Sleeper’s terms want a conversation about commercial use. The ESPN bookmark reads cookies; the password route is against ESPN’s terms. Player headshots have an NIL question (recommendation on file: ship with photos off). Which get a lawyer, which do we accept?</li>
+    </ul>
+  </div>
+  <div>
+    <ul>
+      <li><b>Support.</b> Who answers, how fast. The site promises a 14-day refund, no reasoning required. Make sure we both mean that.</li>
+      <li><b>Kill or continue.</b> Two numbers for three weeks (paid conversions, share-card opens). Agree in advance what number means stop.</li>
+      <li><b>The accuracy program.</b> The one thing that lets marketing say something true and strong. Blocked because the weekly job cannot reach the production database. Unblock it or not?</li>
+      <li><b>Roles, next 30 days.</b> One owner for product, one for distribution. Names: <span class="fill" style="min-width:1.6in"></span></li>
+    </ul>
+  </div>
+</div>
+
+<h2>To-do list <span class="t"><span class="who a">Andrew</span> <span class="who c">Cofounder</span> <span class="who b">Build</span></span></h2>
+<div class="grid2">
+  <div>
+    <h3 style="margin-top:0">This week</h3>
+    <ul class="todo">
+      <li><span class="who a">Andrew</span> <code>EDGE_DEV</code> off on Render. Verify with the curl in HANDOFF.</li>
+      <li><span class="who a">Andrew</span> Stripe test-mode run, all four steps.</li>
+      <li><span class="who a">Andrew</span> Stripe webhook events + customer portal + <code>EDGE_BILLING_PORTAL_URL</code>.</li>
+      <li><span class="who a">Andrew</span> ESPN key on a real iPhone, real private league.</li>
+      <li><span class="who a">Andrew</span> Support email on Vercel.</li>
+      <li><span class="who c">Cofounder</span> Use the app on your own league, on a phone, before the meeting.</li>
+      <li><span class="who c">Cofounder</span> Send the Sleeper licensing email (draft in ROLLOUT_PLAN §8).</li>
+      <li><span class="who c">Cofounder</span> Trademark screen on Penthouse and the shortlist.</li>
+      <li><span class="who c">Cofounder</span> Domain and handle check on the shortlist.</li>
+    </ul>
+    <h3>Decisions to record</h3>
+    <ul class="todo">
+      <li>Keep or rename. If rename: the name, and the date.</li>
+      <li>Hours per week, each. Channels kept.</li>
+      <li>Paid ads before Sleeper answers: yes / no.</li>
+      <li>Photos on launch: on / off.</li>
+      <li>Scouting board stays free: yes / no.</li>
+      <li>Kill criteria: the two numbers and the line.</li>
+    </ul>
+  </div>
+  <div>
+    <h3 style="margin-top:0">Next two weeks</h3>
+    <ul class="todo">
+      <li><span class="who a">Andrew</span> PostHog project + three ad accounts; ids into Vercel.</li>
+      <li><span class="who a">Andrew</span> Twilio on, or decide phone sign-in waits.</li>
+      <li><span class="who a">Andrew</span> Resend on, or decide the Thursday email waits. (Lead magnet on the landing page depends on it.)</li>
+      <li><span class="who a">Andrew</span> Yahoo: when approved, create the app and set the three env vars.</li>
+      <li><span class="who b">Build</span> Score one real week (<code>score_runs.py</code> has never seen live data). Needs the database reachable from the job.</li>
+      <li><span class="who b">Build</span> Rest-of-season numbers from ESPN too, so Trade Lab and the wire match the app (EP-1, about a day).</li>
+      <li><span class="who b">Build</span> Two screen recordings of the ESPN key walk (iPhone, Android), after it is proven.</li>
+      <li><span class="who b">Build</span> If renaming: mark ×4, vocab, OG images, domain, one commit.</li>
+    </ul>
+    <h3>Already done, so it is not re-litigated</h3>
+    <ul class="todo">
+      <li class="done">Pricing: week pass, season pass, no à la carte.</li>
+      <li class="done">Standings, trade preview, last week’s calls: free.</li>
+      <li class="done">Landing page drops the 80% figure; honest rates on the depth chart.</li>
+      <li class="done">Accounts are first-party; upgrades are free grants until Stripe is live.</li>
+      <li class="done">Paywall is a haze, not a wall. One free GM in the office.</li>
+      <li class="done">ESPN leagues show ESPN’s own weekly number.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="box" style="margin-top:8px">
+  <h3 style="margin-top:0">6 · Close</h3>
+  <div class="grid2">
+    <div><b>Andrew, three things by</b> <span class="fill" style="min-width:1in"></span>
+      <div class="lines"><div class="l"></div><div class="l"></div><div class="l"></div></div></div>
+    <div><b>Cofounder, three things by</b> <span class="fill" style="min-width:1in"></span>
+      <div class="lines"><div class="l"></div><div class="l"></div><div class="l"></div></div></div>
+  </div>
+  <p style="margin-top:6px"><b>Next meeting:</b> <span class="fill"></span></p>
+</div>
+
+<footer><span>Penthouse · cofounder meeting · page 2 of 2</span><span>Trade deadline window: NFL weeks 11–13 (Nov 16 → Dec 6)</span></footer>
+
+</body>
+</html>
