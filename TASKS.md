@@ -2,6 +2,25 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Memory limit and slow loads (2026-10-05)
+Render restarted edge-api for exceeding 512 MB. While it restarted the app hung on the loader,
+then said it could not reach the server. Branch `claude/memory-and-fast-load`, **not merged**.
+- [x] Cause, measured: the page opens with 4-5 requests at once, and each built the same league
+      side by side, each parsing its own ~70 MB copy of Sleeper's players file. A cold home load
+      peaked at 475 MB. Now 163 MB (132 MB with a warm disk). `tests/test_bundle_cache.py`.
+- [x] One build per league, two at most at once, sixteen held (LRU), finished weeks capped, one
+      shared players parse, one Chromium at a time, `MALLOC_ARENA_MAX=2`. docs/DEPLOY.md "Memory".
+- [x] The API serves a league past its 10-minute TTL immediately and rebuilds it in the
+      background (up to 6 h old). `X-Edge-As-Of` out, `X-Edge-Fresh` in. Warm load 7 s → 3.8 s.
+- [x] The browser keeps the last answer per league read and paints it on reload (~0.1 s), with
+      "Updated 12 min ago · Refresh" under the title. With the API down, the desk still shows.
+      `web/src/lib/saved.ts`, `saved.test.ts`; docs/WEB.md.
+- [ ] **Andrew:** check Render → edge-api → Instance Type. Free sleeps after 15 min idle, and the
+      next open waits 30-60 s for a boot. Starter ($7/mo) does not sleep.
+- [ ] **Andrew:** check Render → edge-api → Disks. Without a disk, every restart re-downloads
+      the players file, projections and schedule (the 44 s cold load).
+- [ ] **Andrew:** merge to production once it has been clicked through on a preview.
+
 ## Owner's Suite — rename (2026-10-05)
 Andrew's call: the name is **Owner's Suite**, replacing Penthouse. A rename, nothing else:
 same mark, same chrome, same rooms, same passes. Everything a user reads, every docstring,

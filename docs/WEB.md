@@ -18,8 +18,24 @@ resource, `once()` for screens whose effects are tangled with local state. `useS
 caches `me` the same way. A cached page paints on the first frame and passes `animate={false}`
 so it does not play its entry animation again.
 
-The cache is **deliberately in memory only**. A hard reload still gets fresh numbers, because
-projections move during the week and stale advice is worse than a spinner.
+**A reload paints the last answer, then refreshes** (2026-10-05, Andrew's call). Under the
+in-memory map, `lib/saved.ts` keeps the last answer for each league read (`KEPT`: desk, call
+sheet, lineup, grades, league, standings, recap, film) in localStorage under `booth.saved.*`.
+`useCached` paints that answer on the first frame, as `instant`, and fetches underneath. If
+the fetch fails, the saved answer stays up. If it is refused (402, 401/403, a revoked ESPN or
+Yahoo key), the saved copy is dropped and the page shows the refusal. Never kept: `me`, a
+player page, anything older than three days. `cacheClear()` (sign-in, sign-out, a purchase)
+clears the saved copies too, so one person's paid call sheet is never painted for the next
+person on the phone.
+
+Stale advice is only safe if it is labelled, so the shell has an **age line** under the title
+band on every tab with a league (`components/Freshness.tsx`): "Updated 12 min ago · Refresh",
+"Refreshing…", or "Couldn't refresh · 2 hr ago". The age is the API's own `X-Edge-As-Of` (when
+the league was built), which `lib/api.ts` stamps on each body off its enumerable keys. The API
+may serve a league up to six hours old while it rebuilds one behind it (docs/DEPLOY.md,
+"Memory"), and the line is what keeps that honest. **Refresh** (`refreshReads`) clears the
+memory map, refetches every mounted read in place and sends `X-Edge-Fresh: 1` for five
+seconds. The API answers that burst with one rebuild.
 
 **The room opens once, and only one wait is ever on screen.** `lib/wait.ts` owns both,
 because they are the same question: the narrated "pulling film / re-scoring" sequence is a
