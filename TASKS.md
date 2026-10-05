@@ -2,18 +2,20 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
-## Integration branch: every 2026-10-05 chat merged for testing (`claude/integration-1005`)
+## Integration branch: every 2026-10-05 chat merged and shipped (`claude/integration-1005`)
 Production plus nine branches, merged in this order: phone-first-auth, password-reset-guide,
 signin-session-sync, onboarding-experience-plan, landing-signup-push, position-battle-feature,
-memory-and-fast-load, responsive-tablet-desktop, ios-app. Not on production yet.
+memory-and-fast-load, responsive-tablet-desktop, ios-app. Shipped to production 2026-10-05.
 - [x] Conflicts resolved: `/connect` is onboarding's `LeagueLinker` with the signed-in wordmark fix
       carried into it (and into the responsive `Shell.tsx`); `/account` keeps phone-first order plus
       the email-confirm line; admin metrics keep both the walk and the landing doors; Position Battle's
       `battle` feature rides on the $29.99 season.
 - [x] Gates on the merged tree: pytest (1 known base failure, below), lint, `npm test`, build,
       demo + demo:pack, e2e 52/52.
-- [ ] Store contract against Postgres not run on the merged tree (no `TEST_DATABASE_URL` here).
-- [ ] Andrew: test the Vercel preview of this branch, then ship it to production.
+- [x] Store contract against Postgres 16: green in CI on the merged tree.
+- [x] Fixed on the way: the walk's reveal and offer writes raced on the API (read-modify-write),
+      so a finished account could see its first call again. The reveal is now awaited.
+- [ ] Andrew: click through the live site (sign-up walk, free week, Position Battle, account).
 - [ ] Docs still on $24.99: `docs/UNIT_ECONOMICS.md` (margins need recomputing), `launch/*.html`.
 
 ## Sign-in that stays put across tabs and the back button (2026-10-05)
