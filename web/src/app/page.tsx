@@ -10,20 +10,25 @@ import { LANDING, LINES } from "@/lib/vocab";
 
 const DESK = LANDING.desk;
 
-/** The players in the worked example. The headshots are real Sleeper CDN images. */
+/**
+ * The players in the worked example. The headshots are real Sleeper CDN images, keyed by
+ * Sleeper player id. Picked from Sleeper's own week 5 (2026) projections and trending
+ * adds (Andrew, 2026-10-05): each call is one a real owner would hesitate over, never a
+ * first-rounder they would start anyway.
+ */
 const FACES = {
-  gibbs: { name: "Jahmyr Gibbs", photo: "https://sleepercdn.com/content/nfl/players/thumb/9221.jpg", team: "det" },
-  swift: { name: "D'Andre Swift", photo: "https://sleepercdn.com/content/nfl/players/thumb/6790.jpg", team: "chi" },
-  brooks: { name: "Chris Brooks", photo: "https://sleepercdn.com/content/nfl/players/thumb/11370.jpg", team: "gb" },
-  meyers: { name: "Jakobi Meyers", photo: "https://sleepercdn.com/content/nfl/players/thumb/5947.jpg", team: "jax" },
-  mason: { name: "Jordan Mason", photo: "https://sleepercdn.com/content/nfl/players/thumb/8408.jpg", team: "min" },
+  stevenson: { name: "Rhamondre Stevenson", photo: "https://sleepercdn.com/content/nfl/players/thumb/7611.jpg", team: "ne" },
+  kamara: { name: "Alvin Kamara", photo: "https://sleepercdn.com/content/nfl/players/thumb/4035.jpg", team: "no" },
+  wilson: { name: "Emanuel Wilson", photo: "https://sleepercdn.com/content/nfl/players/thumb/11435.jpg", team: "sea" },
+  sutton: { name: "Courtland Sutton", photo: "https://sleepercdn.com/content/nfl/players/thumb/5045.jpg", team: "den" },
+  montgomery: { name: "David Montgomery", photo: "https://sleepercdn.com/content/nfl/players/thumb/5892.jpg", team: "hou" },
 };
 
 /** The call sheet in the hero: the week's three moves, as the app writes them. */
 const SHEET = [
-  { tag: DESK.coach.tag, title: `${DESK.coach.call} ${DESK.coach.over}`, gain: DESK.coach.gain, unit: DESK.coach.unit, stamp: DESK.coach.stamp, bars: 3, face: FACES.gibbs },
-  { tag: DESK.scout.tag, title: `${DESK.scout.call} · ${DESK.scout.bid}`, gain: DESK.scout.gain, unit: DESK.scout.unit, stamp: DESK.scout.stamp, bars: 2, face: FACES.brooks },
-  { tag: DESK.gm.tag, title: DESK.gm.offer(DESK.gm.giveName, DESK.gm.getName), gain: DESK.gm.gain, unit: DESK.gm.unit, stamp: "Lean", bars: 2, face: FACES.meyers },
+  { tag: DESK.coach.tag, title: `${DESK.coach.call} ${DESK.coach.over}`, gain: DESK.coach.gain, unit: DESK.coach.unit, stamp: DESK.coach.stamp, bars: 3, face: FACES.stevenson },
+  { tag: DESK.scout.tag, title: `${DESK.scout.call} · ${DESK.scout.bid}`, gain: DESK.scout.gain, unit: DESK.scout.unit, stamp: DESK.scout.stamp, bars: 2, face: FACES.wilson },
+  { tag: DESK.gm.tag, title: DESK.gm.offer(DESK.gm.giveName, DESK.gm.getName), gain: DESK.gm.gain, unit: DESK.gm.unit, stamp: "Lean", bars: 2, face: FACES.sutton },
 ];
 
 /**
@@ -316,8 +321,8 @@ export default function Landing() {
             <DeskCard from={DESK.gm.from} q={DESK.gm.q} className="w-full">
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: DESK.gm.give, who: DESK.gm.giveName, face: FACES.meyers },
-                  { label: DESK.gm.get, who: DESK.gm.getName, face: FACES.mason },
+                  { label: DESK.gm.give, who: DESK.gm.giveName, face: FACES.sutton },
+                  { label: DESK.gm.get, who: DESK.gm.getName, face: FACES.montgomery },
                 ].map((side) => (
                   <div key={side.label} className="flex items-center gap-2.5">
                     <Face name={side.face.name} photo={side.face.photo} team={side.face.team} />
@@ -338,7 +343,7 @@ export default function Landing() {
             <Reveal className="flex" delay={120}>
             <DeskCard from={DESK.scout.from} q={DESK.scout.q} className="w-full">
               <div className="flex items-center gap-3">
-                <Face name={FACES.brooks.name} photo={FACES.brooks.photo} team={FACES.brooks.team} />
+                <Face name={FACES.wilson.name} photo={FACES.wilson.photo} team={FACES.wilson.team} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="display text-[16px]">{DESK.scout.call}</span>
@@ -356,10 +361,10 @@ export default function Landing() {
             <Reveal className="flex" delay={0}>
             <DeskCard from={DESK.coach.from} q={DESK.coach.q} className="w-full">
               <div className="flex items-center gap-3">
-                <Face name={FACES.gibbs.name} photo={FACES.gibbs.photo} team={FACES.gibbs.team} />
+                <Face name={FACES.stevenson.name} photo={FACES.stevenson.photo} team={FACES.stevenson.team} />
                 <span className="text-[11px] font-black uppercase tracking-[0.12em] text-white/40">{DESK.coach.vs}</span>
                 <span className="opacity-50">
-                  <Face name={FACES.swift.name} photo={FACES.swift.photo} team={FACES.swift.team} />
+                  <Face name={FACES.kamara.name} photo={FACES.kamara.photo} team={FACES.kamara.team} />
                 </span>
                 <span className="ml-auto">
                   <HeroStamp filled={3} label={DESK.coach.stamp} />

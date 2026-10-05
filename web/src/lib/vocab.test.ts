@@ -73,7 +73,7 @@ const ALL_COPY: string[] = [
   ...LANDING.proof.flatMap((p) => [p.head, p.body]),
   LANDING.desk.eyebrow, LANDING.desk.title, LANDING.desk.week, LANDING.desk.foot,
   ...Object.values(LANDING.desk.coach), ...Object.values(LANDING.desk.scout),
-  ...Object.values(LANDING.desk.gm).filter((v) => typeof v === "string"), LANDING.desk.gm.offer("Jakobi Meyers", "Jordan Mason"),
+  ...Object.values(LANDING.desk.gm).filter((v) => typeof v === "string"), LANDING.desk.gm.offer("Courtland Sutton", "David Montgomery"),
   LANDING.desk.film.from, LANDING.desk.film.q, LANDING.desk.film.line, ...LANDING.desk.film.grades.flatMap((g) => [g.pos, g.grade]),
   LANDING.fit.head, ...LANDING.fit.yes, LANDING.fit.noHead, ...LANDING.fit.no,
   LANDING.roomsHead, LANDING.roomsLead,
