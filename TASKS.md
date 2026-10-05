@@ -2,6 +2,26 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## iPad, tablet and desktop (2026-10-05, branch `claude/responsive-tablet-desktop`)
+Andrew: perfect on an iPhone, odd elsewhere; the ticker "sits weirdly" on a friend's iPad.
+Cause: the whole app was the phone's 512px column at every size, with the ticker and tabs
+pinned to the bottom of the screen a hand's width below the last card. Phones unchanged.
+- [x] Ticker never half-empty on a wide screen: each loop copy fills the strip, and the
+      pace is per pixel of strip, not just per character (`lib/ticker.ts`, tested).
+- [x] Tablet shell at 704px+ (`tablet:` breakpoint; iPad mini upright counts): tabs in the
+      top bar, ticker under it, no bottom block, content column 512 → 768px. e2e test at 744.
+- [ ] Not merged to production. Andrew to look on an iPad / laptop first — **Andrew**
+- [ ] Sheets (player sheet, upgrade/sign-in sheets) are still phone bottom sheets capped at
+      512px; from tablet up they should be a centred dialog or a right-hand side panel.
+- [ ] Desktop (1180px+) two-column rooms: desk news beside the matchup and front office;
+      scouting's shortlist beside the board; lineup decisions beside the field.
+- [ ] Scouting's top pickups show 3 and "See 2 more" at every width; show all 5 on tablet.
+- [ ] Hover and keyboard pass for mouse users (focus rings on rows, hover on cards).
+- [ ] Phone held sideways (e.g. 844×390) now gets the top-bar shell; check the desk and
+      the sheets at that height.
+- [ ] `test_the_lineup_splits_required_changes_from_decisions_and_prices_every_swap` fails
+      on production too (a role with an empty `reason`); not from this branch.
+
 ## Owner's Suite — rename (2026-10-05)
 Andrew's call: the name is **Owner's Suite**, replacing Penthouse. A rename, nothing else:
 same mark, same chrome, same rooms, same passes. Everything a user reads, every docstring,

@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
-import { DESK, LINEUP, PLAN, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
+import { DESK, LINEUP, PLAN, RIDE, SECTIONS, TABS_ARIA, TICKER } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { CALL, ESPN_KEY, FILM, OFFICE, SCOUT, SCOUT_OPEN, WIRE } from "../src/lib/vocab";
@@ -223,7 +223,8 @@ const PAGES: PageCase[] = [
       await expect(boom.getByText(/^(Urgent|All set)/)).toBeVisible();
       await boom.getByRole("button", { name: LINEUP.stamp.closeAria }).click();
       await expect(boom).toHaveCount(0);
-      await expect(page.getByText(/Projected/i).first()).toBeVisible();
+      // In `main`: the ticker carries "Projected scores" too, and on a phone its top-bar copy is hidden.
+      await expect(page.locator("main").getByText(/Projected/i).first()).toBeVisible();
       // The split, stated plainly and never blurred: a count of required changes and a
       // count of decisions, two chips on one row under the number. No kickoff clock.
       await expect(page.getByText(/^\d+ required changes?$/).first()).toBeVisible();
@@ -824,6 +825,31 @@ test("the ticker runs the desk's news along the bottom of a tab that is not the 
   expect(box.y + box.height).toBeLessThanOrEqual(812);
   await ticker.click();
   await page.waitForURL(`**${SECTIONS.home.href}`);
+});
+
+test("from tablet width up the tabs ride in the top bar and the ticker runs under it", async ({ page }) => {
+  // An iPad mini held upright, the narrowest screen that gets the tablet shell. On an iPad
+  // the phone's bottom block floated far below the last card; up here it cannot.
+  await page.setViewportSize({ width: 744, height: 1133 });
+  await visit(page, SECTIONS.waivers.href);
+  const tabs = page.getByRole("navigation", { name: TABS_ARIA });
+  await expect(tabs).toBeVisible();
+  await expect(tabs.getByRole("link", { name: SECTIONS.waivers.label })).toHaveAttribute("aria-current", "page");
+  // Exactly one ticker on screen, and it sits in the top bar's band, not at the bottom.
+  const ticker = page.getByRole("link", { name: TICKER.aria });
+  await expect(ticker).toHaveCount(1);
+  await expect(ticker.locator(".ticker-item").first()).toBeAttached();
+  const box = (await ticker.boundingBox())!;
+  expect(box.y).toBeLessThan(120);
+  expect(box.width).toBe(744);
+  // The strip is never half empty: each copy of the track is at least the strip's width.
+  const track = (await ticker.locator(".ticker-track").first().boundingBox())!;
+  expect(track.width).toBeGreaterThanOrEqual(box.width - 120);
+  // The room widens past the phone column, and nothing scrolls sideways.
+  expect((await page.locator("main").boundingBox())!.width).toBeGreaterThan(600);
+  await assertNoHorizontalOverflow(page);
+  await tabs.getByRole("link", { name: SECTIONS.trade.label }).click();
+  await page.waitForURL(`**${SECTIONS.trade.href}`);
 });
 
 test("the first open rides up to the call sheet, and the second does not", async ({ page }) => {

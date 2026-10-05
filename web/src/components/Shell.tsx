@@ -8,7 +8,7 @@ import { PlayerSheetProvider } from "./player/PlayerSheetProvider";
 import { Ticker } from "./Ticker";
 import { UnlockingBanner, useUnlockOnReturn } from "./Unlocking";
 import { LinkButton, OnAir, Opening, Spinner, Wordmark } from "./ui";
-import { ACCOUNT, NAMEPLATE, SECTIONS, TAB_ORDER, type SectionKey, type TabKey } from "@/lib/vocab";
+import { ACCOUNT, NAMEPLATE, SECTIONS, TAB_ORDER, TABS_ARIA, type SectionKey, type TabKey } from "@/lib/vocab";
 import { accountLabel, initialOf } from "@/lib/account";
 
 // Coach vocabulary, and every label still says what the screen is: scouting is the
@@ -24,7 +24,7 @@ const TAB_ICONS: Record<TabKey, (p: { size?: number; strokeWidth?: number }) => 
 };
 
 /**
- * The wordmark, the theme switch and the account. Nothing else.
+ * The wordmark, the account, and from tablet width up the tabs and the ticker.
  *
  * The league and team used to live up here as a two-line block on the right, which
  * put the least urgent words on the screen at the top of every page and squeezed the
@@ -36,10 +36,11 @@ export function TopBar({ session }: { session: Session }) {
   const premium = session.premium;
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4">
-        <Link href="/" aria-label="Owner's Suite home" className="min-w-0 flex-1">
+      <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4 tablet:max-w-3xl">
+        <Link href="/" aria-label="Owner's Suite home" className="min-w-0 flex-1 tablet:flex-none">
           <Wordmark className="text-[20px]" short={!!account} />
         </Link>
+        <TopTabs />
         {/* The account: an initial once signed in (ringed in the start colour on a premium
             account, so the flag is visible from every room), else the two words. */}
         {account ? (
@@ -64,7 +65,53 @@ export function TopBar({ session }: { session: Session }) {
           </Link>
         )}
       </div>
+      {/* Tablet and up, the bottom line runs under the top bar instead of over the tabs:
+          on an iPad the bottom block floated a hand's width below the last card and read
+          as a phone app stretched to fit. The same cached desk payload, so no second read. */}
+      {session.connection && (
+        <div className="hidden tablet:block">
+          <Ticker c={session.connection} />
+        </div>
+      )}
     </header>
+  );
+}
+
+/**
+ * The tabs in the top bar, tablet width and up: where iPadOS and every desktop app keep
+ * them. Same order, icons and words as the bottom bar, so nothing has two names.
+ */
+function TopTabs() {
+  const path = usePathname();
+  return (
+    <nav className="hidden min-w-0 flex-1 justify-center tablet:flex" aria-label={TABS_ARIA}>
+      <ul className="flex items-center gap-1">
+        {TAB_ORDER.map((key) => {
+          const { href, label } = SECTIONS[key];
+          const Icon = TAB_ICONS[key];
+          const active = path === href || path.startsWith(href + "/");
+          return (
+            <li key={href}>
+              <Link
+                href={href}
+                className={`top-tab relative flex h-10 items-center gap-1.5 rounded-full px-3 text-[13px] font-bold tracking-tight ${
+                  active ? "bg-soft text-ink" : "text-muted"
+                }`}
+                aria-current={active ? "page" : undefined}
+              >
+                {/* An active marker that is not colour alone, as on the bottom bar. */}
+                <span
+                  aria-hidden
+                  className={`absolute inset-x-3 -bottom-[8px] h-[3px] rounded-t-full bg-start transition-opacity ${active ? "opacity-100" : "opacity-0"}`}
+                />
+                <TabIcon Icon={Icon} active={active} size={17} />
+                {label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }
 
@@ -106,10 +153,18 @@ export function Nameplate({ session }: { session: Session }) {
  * Without it, tapping a tab whose chunk is not cached does nothing visible until
  * the page swaps — which reads as a dead tap on a stalled app.
  */
-function TabIcon({ Icon, active }: { Icon: (p: { size?: number; strokeWidth?: number }) => React.ReactElement; active: boolean }) {
+function TabIcon({
+  Icon,
+  active,
+  size = 21,
+}: {
+  Icon: (p: { size?: number; strokeWidth?: number }) => React.ReactElement;
+  active: boolean;
+  size?: number;
+}) {
   const { pending } = useLinkStatus();
-  if (pending) return <Spinner size={21} label="Loading" />;
-  return <Icon size={21} strokeWidth={active ? 2.3 : 1.8} />;
+  if (pending) return <Spinner size={size} label="Loading" />;
+  return <Icon size={size} strokeWidth={active ? 2.3 : 1.8} />;
 }
 
 /**
@@ -117,11 +172,12 @@ function TabIcon({ Icon, active }: { Icon: (p: { size?: number; strokeWidth?: nu
  *
  * Both live in one fixed block so the whole assembly has a single height — which is what
  * the page's bottom padding is reserved against (`pb-28` on `main`: ticker and bar).
+ * Phones only: from tablet width up the tabs and the ticker live in the top bar.
  */
 export function TabBar({ session }: { session: Session }) {
   const path = usePathname();
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20">
+    <div className="fixed inset-x-0 bottom-0 z-20 tablet:hidden">
       {/* The bottom line: the desk's news running over the tabs, on every screen that
           has a team. Its height is part of what `main`'s bottom padding reserves. */}
       {session.connection && <Ticker c={session.connection} />}
@@ -194,7 +250,7 @@ export function AppShell({
     <PlayerSheetProvider>
     <div className="flex min-h-screen flex-col">
       <TopBar session={session} />
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5 tablet:max-w-3xl tablet:px-6 tablet:pb-16 tablet:pt-7">
         {/* The band is one fixed height and every tab pays the same one, so moving between
             tabs never shifts the page. The h1 on the left; on the right the page's own
             `aside` when it has one (the back chevron on a scout report), otherwise the
