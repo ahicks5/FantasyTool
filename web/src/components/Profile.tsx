@@ -24,6 +24,7 @@ import type { Connection } from "@/lib/storage";
 import type { PlayerProfile } from "@/lib/types";
 import { SCOUT, SECTIONS } from "@/lib/vocab";
 import { IconChevron } from "./icons";
+import { BattleDoor } from "./battle/BattleDoor";
 import { Report } from "./player/Report";
 import { AppShell } from "./Shell";
 import { ErrorBox, H2, Opening, useHeldWait } from "./ui";
@@ -67,7 +68,14 @@ function ProfileBody({ c, playerId }: { c: Connection; playerId: string }) {
   if (cause instanceof HttpError && cause.status === 404) return <NotFound />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (waiting || !view) return <Opening />;
-  return <Report view={view} />;
+  return (
+    <>
+      <div className="mb-4">
+        <BattleDoor playerId={playerId} name={view.name} size="wide" />
+      </div>
+      <Report view={view} />
+    </>
+  );
 }
 
 function NotFound() {

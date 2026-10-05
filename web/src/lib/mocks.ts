@@ -1,8 +1,13 @@
 // Mock data matching docs/API.md exactly. Player names, rosters and week-2
 // half-PPR projections come from tests/fixtures/sleeper/* ("The Megalabowl").
 import { ADMIN_METRICS_FIXTURE } from "./adminMetrics.mock";
+import { BATTLE_FIXTURE, BATTLE_FIXTURE_TEASER } from "./battle.mock";
 import { withArticle } from "./format";
 import type {
+  Battle,
+  BattleBrief,
+  BattleOptions,
+  BattleWhere,
   AdminUsersResponse,
   PromoResponse,
   FilmSeason,
@@ -1729,3 +1734,75 @@ export const LEAGUE_FILM: LeagueFilm = {
     ties: 0, points_for: 159.1, in: true, games: 1 }] },
   algo_version: "league_film.v1",
 };
+
+/* ------------------------------------------------------------ Position Battle --- */
+
+/** Where a mock man stands relative to the demo's own team. */
+function battleWhere(p: Player): BattleWhere {
+  const mine = rosterFor(MY_TEAM_ID);
+  const i = mine.starters.findIndex((x) => x.id === p.id);
+  if (i >= 0) return { kind: "starter", slot: STARTING_SLOTS[i] ?? null, label: STARTING_SLOTS[i] ?? p.position, team_name: null };
+  if (mine.bench.some((x) => x.id === p.id)) return { kind: "bench", slot: null, label: "Bench", team_name: null };
+  const owner = ROSTERS.find((r) => [...r.starters, ...r.bench].some((x) => x.id === p.id));
+  if (!owner) return { kind: "wire", slot: null, label: "Free agent", team_name: null };
+  return { kind: "trade", slot: null, label: owner.name, team_name: owner.name };
+}
+
+function battleBrief(p: Player): BattleBrief {
+  return {
+    id: p.id,
+    name: p.name,
+    position: p.position,
+    nfl_team: p.nfl_team ?? null,
+    photo: p.photo ?? null,
+    team_logo: p.team_logo ?? null,
+    injury_status: p.injury_status ?? null,
+    projected: p.projected ?? 0,
+    ros: rosValue(p),
+    where: battleWhere(p),
+  };
+}
+
+function battlePool(): Player[] {
+  return [...mockPlayers(), ...mockFreeAgents()];
+}
+
+export function battleOptionsFor(playerId: string): BattleOptions {
+  const pool = battlePool();
+  const p = pool.find((x) => x.id === playerId) ?? pool[0];
+  const flex = ["RB", "WR", "TE"];
+  const positions = flex.includes(p.position) ? [p.position, ...flex.filter((x) => x !== p.position)] : [p.position];
+  const rows = pool.filter((x) => x.id !== p.id && positions.includes(x.position)).map(battleBrief);
+  const byRos = (a: BattleBrief, b: BattleBrief) => b.ros - a.ros;
+  const seen = new Set<string>();
+  const uniq = rows.filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
+  return {
+    player: battleBrief(p),
+    positions,
+    roster: uniq.filter((r) => r.where.kind === "starter" || r.where.kind === "bench").sort(byRos),
+    wire: uniq.filter((r) => r.where.kind === "wire").sort(byRos),
+    trade: uniq.filter((r) => r.where.kind === "trade").sort(byRos),
+    week: WEEK,
+  };
+}
+
+/**
+ * One real battle (`battle.mock.ts`, the engine's own output over the fixtures) wearing the
+ * two men the demo asked for. The tape is the fixture pair's; the faces, names and the
+ * headline numbers are the demo pair's. Demo only: production reads the API.
+ */
+export function battleFor(a: string, b: string): Battle {
+  const pool = battlePool();
+  const pa = pool.find((x) => x.id === a) ?? pool[0];
+  const pb = pool.find((x) => x.id === b) ?? pool[1];
+  const ba = battleBrief(pa);
+  const bb = battleBrief(pb);
+  return {
+    ...BATTLE_FIXTURE,
+    spot: ba.where.kind === "starter" ? ba.where.label : pa.position,
+    a: { ...BATTLE_FIXTURE.a, ...ba },
+    b: { ...BATTLE_FIXTURE.b, ...bb },
+  };
+}
+
+export const BATTLE_TEASER = BATTLE_FIXTURE_TEASER;

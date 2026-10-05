@@ -76,6 +76,14 @@ export const SECTIONS = {
     title: "The film",
     gate: "the film",
   },
+  /** Position Battle: two men, one spot. Under `/team/` so the Lineup tab stays lit; the
+   *  two men are named in the query string, which the static export can serve. */
+  battle: {
+    href: "/team/battle",
+    label: "Battle",
+    title: "Position Battle",
+    gate: "the battle",
+  },
   /** A room off the call sheet, not a tab of its own: it lives under `/home/` so the
    *  call sheet tab stays lit while you are reading the week's opponent. */
   matchup: {
@@ -1393,6 +1401,7 @@ export const PRICING = {
     waivers: "The wire: claims, the bid, and the drop",
     trade_lab: "Trade verdicts and counters",
     full_report: "The full weekly film",
+    battle: "Position Battle: any two men, one spot, four verdicts",
   },
   badge: { best: "Best value", flex: "No commitment" },
   leagues: (n: number) => `${n} league${n === 1 ? "" : "s"}`,
@@ -2018,4 +2027,166 @@ export const FILM = {
     record: (w: number, l: number, t: number) => (t ? `${w}-${l}-${t}` : `${w}-${l}`),
     empty: "The league half fills in after the first finished week.",
   },
+} as const;
+
+/**
+ * Position Battle (Andrew, 2026-10-05): two men, one spot, the tale of the tape.
+ *
+ * Boxing's corners, because that is what it is: the man in the spot is the **blue corner**,
+ * the challenger the **red corner**. The colours are reinforcement only; every verdict
+ * names its man (`docs/BRAND.md` section 7). Row labels are keyed by the engine's row keys
+ * (`edge/engine/battle.py tape`), so a row the engine adds without a label here is caught by
+ * `lib/battle.test.ts`.
+ */
+export const BATTLE = {
+  title: "Position Battle",
+  /** The red button on every player page. */
+  button: "Position Battle",
+  buttonSub: "Pick a fight",
+  /** Spoken, on the button. */
+  buttonAria: (name: string) => `Start a Position Battle with ${name}`,
+  eyebrow: (spot: string) => `Position Battle · ${spot}`,
+  corners: { a: "Blue corner", b: "Red corner" },
+  /** Under each fighter's name: where he stands. */
+  holds: (label: string) => `Holds ${label}`,
+  where: {
+    starter: (label: string) => `Your ${label}`,
+    bench: "Your bench",
+    wire: "Free agent",
+    trade: (team: string) => `Trade · ${team}`,
+  },
+  vs: "VS",
+  /** The empty red corner, before a challenger is picked. */
+  pickHead: "Who wants his spot?",
+  pickLine: "Pick a challenger: one of yours, one off the wire, or a trade target.",
+  tabs: { roster: "Your roster", wire: "Wire", trade: "Trade" },
+  tabAria: "Where the challenger comes from",
+  search: "Find a challenger",
+  searchAria: "Search the challengers by name",
+  allPositions: "All",
+  noneHere: "Nobody here can fight for this spot.",
+  noMatch: (q: string) => `Nobody called "${q}" in this corner.`,
+  rowProj: "Wk",
+  rowRos: "ROS",
+  pickAria: (name: string) => `Battle ${name}`,
+  /** The clash. */
+  clash: {
+    skip: "Skip",
+    intro: "In the blue corner",
+    challenger: "And the challenger",
+    fight: "Fight",
+    sealed: "Verdict sealed",
+    waiting: "The judges are scoring it",
+  },
+  /** The headline, after the clash. */
+  headline: {
+    sweep: (name: string) => `${name} sweeps`,
+    split: "Split decision",
+    draw: "Dead even",
+    splitLine: (now: string, later: string) => `${now} wins now. ${later} wins the stretch.`,
+    sweepLine: (n: number) => `All ${n} horizons, one way.`,
+    tally: (a: number, b: number, rows: number) => `Tape: ${a} to ${b} across ${rows} rows`,
+  },
+  horizons: {
+    week: "This week",
+    next5: "Next 5",
+    ros: "Rest of season",
+    playoffs: "Playoffs",
+  },
+  /** The weeks under a horizon's name. */
+  span: (first: number, last: number) => (first === last ? `Wk ${first}` : `Wk ${first}–${last}`),
+  assumed: "Your league did not set its playoffs. Read as weeks 15 to 17.",
+  strength: {
+    clear: "Clear edge",
+    edge: "Slight edge",
+    even: "Dead even",
+  },
+  /** This week's strength carries the calibrated chance. */
+  chance: (p: number) => `${p}% to outscore`,
+  tipped: "The reads tipped it",
+  tippedLater: "The schedule tipped it",
+  held: "Too close to move. He keeps the spot.",
+  noWinner: "Neither scores",
+  pts: (n: number) => `${n.toFixed(1)}`,
+  games: (n: number | null) => (n == null ? "" : n === 1 ? "1 game" : `${n} games`),
+  /** The tale of the tape. */
+  tape: "Tale of the tape",
+  tapeSub: "Every row says who it favours, or neither. A count, never a weighted score.",
+  familyTally: (a: number, b: number) => `${a}–${b}`,
+  families: {
+    outlook: "The projection",
+    season: "The season so far",
+    usage: "Usage",
+    risk: "Floor, ceiling and health",
+    schedule: "The schedule",
+    situation: "The situation around him",
+    depth: "Who is behind him",
+  },
+  rows: {
+    proj_week: "Projected this week",
+    rank_week: "Rank this week",
+    proj_next5: "Projected, next 5",
+    proj_ros: "Projected, rest of season",
+    proj_playoffs: "Projected, playoffs",
+    rank_ros: "Rank, rest of season",
+    rate_ros: "Points a game from here",
+    rank_season: "Rank so far",
+    ppg: "Points a game",
+    points: "Points so far",
+    last_game: "Last game",
+    form: "Form, last 3",
+    last_season: "Last season, a game",
+    snap: "Snap share",
+    target_share: "Target share",
+    rush_share: "Carry share",
+    touches: "Touches a game",
+    red_zone: "Red-zone touches a game",
+    snap_trend: "Snaps, last game vs season",
+    depth: "NFL depth chart",
+    style: "Boom or steady",
+    floor: "Floor (worst game)",
+    ceiling: "Ceiling (best game)",
+    spread: "Week-to-week swing (sd)",
+    start_weeks: "Startable weeks",
+    boom_weeks: "Elite weeks",
+    availability: "Games played",
+    health: "Health",
+    matchup: "This week's matchup",
+    sos_next5: "Schedule, next 5",
+    sos_ros: "Schedule, rest of season",
+    sos_playoffs: "Schedule, playoffs",
+    bye: "Bye week",
+    rest: "Rest before kickoff",
+    offense: "His offence, points a game",
+    qb: "His quarterback",
+    sacks: "Sacks his line allows a game",
+    run_game: "His team's yards a carry",
+    line_hurt: "Linemen hurt",
+    around: "Injuries around him",
+    team_change: "Team",
+    experience: "Experience",
+    handcuff: "Next man up behind him",
+    ahead: "Man ahead of him",
+    buzz: "Adds in the last day",
+  } as Record<string, string>,
+  /** What the strip of weeks is. */
+  road: "The road to week 17",
+  roadSub: "Every opponent graded by what it allows his position, in your scoring.",
+  roadKey: { soft: "Soft", average: "Average", tough: "Tough", bye: "Bye", playoffs: "Playoffs" },
+  /** This week's reads, folded under the verdict. */
+  whyWeek: "What tips this week",
+  /** Things the tape cannot read yet, said rather than faked. */
+  notRead: "Not read yet: coaching changes, scheme, and line grades. Sacks allowed and yards a carry stand in for the line.",
+  /** The paywall. */
+  lockedWhat: "Position Battle",
+  /** Doors at the bottom. */
+  share: "Share this battle",
+  sharing: "Making the link…",
+  copy: "Copy",
+  copied: "Copied",
+  rematch: "New challenger",
+  openPage: (name: string) => `${name}'s page`,
+  /** The public card. */
+  sharedPitch: "Two men, one spot. Every number that separates them.",
+  sharedCta: "Run your own battle",
 } as const;

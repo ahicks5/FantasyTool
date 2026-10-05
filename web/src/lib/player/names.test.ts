@@ -34,6 +34,17 @@ const RENDERED_NAME = /(^|[^$=])\{\s*[A-Za-z_$][\w.?[\]"']*\.name\s*(\?\?[^}]*)?
  */
 const ALLOWED: Record<string, string> = {
   "src/components/Players.tsx": "PlayerName itself: this is the one place a name is printed.",
+  "src/components/battle/BattleView.tsx":
+    "Position Battle's corner list. The whole row is the button that puts him in the ring, so " +
+    "the name inside cannot also be a button; under the verdict, a button per man opens his page.",
+  "src/components/battle/Clash.tsx":
+    "The clash animation. Any tap skips it; there is nothing to open until it lands.",
+  "src/components/battle/Fighter.tsx":
+    "The arena's two corners: the battle is about these two men, and the verdict carries a " +
+    "button to each one's page under it.",
+  "src/components/battle/Tape.tsx":
+    "The road strip's two row labels, inside the battle about these two men; the verdict's " +
+    "buttons open their pages.",
   "src/components/TopPickups.tsx":
     "Scouting's top pickups. Every panel and every See-more row is a link into that pickup's " +
     "full read (/waivers/pickup), whose button opens his page, so the name inside cannot also " +

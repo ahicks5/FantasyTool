@@ -252,7 +252,7 @@ test("the offer is stacked, guaranteed and never typed", () => {
   assert.equal(PRICING.stack.weekly(14), "Week pass, 14 more weeks");
   assert.doesNotMatch(PRICING.stack.even(5), /\$\d/, "the anchor line quotes no price of its own");
   // Every entitlement the API can send has a line in the user's words.
-  assert.deepEqual(Object.keys(PRICING.unlocks).sort(), ["full_report", "my_team", "trade_lab", "waivers"]);
+  assert.deepEqual(Object.keys(PRICING.unlocks).sort(), ["battle", "full_report", "my_team", "trade_lab", "waivers"]);
 });
 
 test("the objections are answered in the reader's words, and the page says no to someone", () => {
