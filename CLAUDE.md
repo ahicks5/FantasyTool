@@ -30,6 +30,7 @@ Then only what you need:
 | How the web app is wired, and the traps in it | `docs/WEB.md` |
 | What the brand allows | `docs/BRAND.md` |
 | The API contract | `docs/API.md` |
+| The iPhone app (Expo), and how it ships to TestFlight | `docs/IOS.md` |
 | Everything else (risk, legal, economics, accuracy) | the index at the end of `docs/MAP.md` |
 
 ## Rules
@@ -41,6 +42,8 @@ Then only what you need:
   `npm run demo && npm run demo:pack` (the static export fails in ways the normal build
   does not) · `npm run test:e2e` (browser smoke at 375px; Playwright boots
   `scripts/serve_fixtures.py` and its own Next build, so it needs a Chromium).
+  The iPhone app is a sixth job: `cd mobile && npm run typecheck && npm test && npm run bundle:check`,
+  and it imports `web/src/lib`, so run it after touching that folder too.
   One test: `uv run pytest tests/test_lineup.py -q`, or `-k stabilize`;
   `cd web && node --test src/lib/format.test.ts`.
 - **17 store-contract tests skip silently unless `TEST_DATABASE_URL` is set**, so a green

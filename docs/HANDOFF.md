@@ -24,6 +24,17 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## The iPhone app is on its own branch (2026-10-05)
+
+Andrew asked for an iOS app and a walk to a TestFlight beta, without disturbing the launch.
+Branch `claude/ios-app` (cut from production at `fadfaa6`) adds `mobile/`: an Expo SDK 57 app
+that frames the live site and adds ESPN's own login (in place of the bookmark, which cannot
+work in an app), local kickoff reminders, the share sheet, haptics and an offline screen.
+Payments: US storefront, Stripe in a Safari sheet, allowed under guideline 3.1.1(a) since 2025
+with no commission. `docs/IOS.md` has the plan, six decisions for Andrew and the step-by-step to
+TestFlight. The `web/` half is small and inert in a browser, but the app only gets it once it
+reaches production (IOS-3). Nothing was pushed to production.
+
 ## ESPN leagues show ESPN's own projection (2026-09-29)
 
 Andrew compared his ESPN roster (starters add to 175.5) with Owner's Suite (168.9) and asked why.

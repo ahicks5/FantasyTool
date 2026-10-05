@@ -2,6 +2,33 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## The iPhone app (2026-10-05, branch `claude/ios-app`)
+
+Andrew: "make this into an iOS app ... walk me thru the expo process ... to ship it to beta".
+An Expo SDK 57 app in `mobile/` framing the live site, plus ESPN's own login, kickoff
+reminders, the share sheet and haptics. Plan, decisions and the TestFlight walk: `docs/IOS.md`.
+Built on its own branch; production is untouched.
+
+- [x] `mobile/`: the frame, link policy (Stripe and outside links in a Safari sheet, reload after
+      checkout), bridge (route, theme, haptics, share), ESPN sheet, local reminders, offline
+      screen. 22 node tests incl. contracts with `web/src/lib/espnKey.ts` and `native.ts`;
+      `tsc` clean; iOS bundle builds; `expo-doctor` 21/21.
+- [x] `web/`: `lib/native.ts` (+ test), share sheet on the three share buttons, ad tags off in
+      the app, `NATIVE` words in `vocab.ts`. All inert in a browser.
+- [x] App icon and splash from `icon.svg` via `scripts/render_brand_assets.py`; `mobile/` in
+      `docs/MAP.md`; a `mobile` job in CI.
+- [ ] IOS-1 Andrew: decisions D-1..D-6 in `docs/IOS.md` (bundle id, US-only link-out, the
+      store name, reviewer account, shipping the web half). — **Andrew**
+- [ ] IOS-2 Andrew: Expo Go on his phone (`npx expo start`), then `eas init`, first build,
+      submit, internal TestFlight (`docs/IOS.md` steps 2-6). — **Andrew**
+- [ ] IOS-3 Ship this branch's `web/` commits to production (inert for web visitors) before
+      external testers, so they get the share sheet and the Google Ads tag stays off in the app.
+- [ ] IOS-4 First real-iPhone run of the ESPN sheet against a private league (also closes EK-5).
+- [ ] IOS-5 External TestFlight group + public link, with the reviewer account.
+- [ ] IOS-6 App Store: 6.9-inch screenshots, privacy label, review notes, re-read 3.1.1(a).
+- [ ] IOS-7 Next: server push for "starter ruled out", universal links for `/s/…`, a lock-screen
+      countdown widget. IAP (RevenueCat) only if selling outside the US.
+
 ## Owner's Suite — rename (2026-10-05)
 Andrew's call: the name is **Owner's Suite**, replacing Penthouse. A rename, nothing else:
 same mark, same chrome, same rooms, same passes. Everything a user reads, every docstring,
