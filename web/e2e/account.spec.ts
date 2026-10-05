@@ -140,7 +140,14 @@ test("a stranger's door is the account: register, land on it, then link a league
 
   // The landing page leads to /register: the sign-up walk, one question a screen.
   await page.goto("/");
+  // The press is counted, by name, before the page moves on (`cta_click`, /admin's funnel tab).
+  const pressed = page.waitForRequest(
+    (r) => r.url().endsWith("/api/events") && r.method() === "POST" && r.postData()?.includes('"cta_click"') === true,
+  );
   await page.locator('a[href="/register"]:visible').first().click();
+  const press = await pressed;
+  expect(JSON.parse(press.postData() ?? "{}")).toEqual({ name: "cta_click", props: { door: "hero" } });
+  expect((await press.response())?.status(), "the API took it").toBe(200);
   await page.waitForURL("**/register");
   await walkIn(page, phone, { name: "Andrew", email });
   expect(await page.evaluate(() => localStorage.getItem("booth.session"))).toBeTruthy();
@@ -321,6 +328,8 @@ test("the owner's front office lists every account and the levers work", async (
   await expect(page.getByText(M.tiles.signups, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: M.tabs.funnel }).click();
   await expect(page.getByTestId("funnel-landing_signup")).toBeVisible();
+  // Which landing button people press sits under the steps.
+  await expect(page.getByTestId("funnel-doors").getByText(M.doorsTitle)).toBeVisible();
   // Spend goes in on Channels, and its row shows up with a verdict.
   await page.getByRole("button", { name: M.tabs.channels }).click();
   await page.getByLabel(M.spendChannel).fill("e2e");

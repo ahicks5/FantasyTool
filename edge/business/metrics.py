@@ -16,7 +16,7 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from edge.api.telemetry import MONEY_EVENTS, source_of
+from edge.api.telemetry import DOORS, MONEY_EVENTS, source_of
 from edge.business.economics import Fees
 
 ET = ZoneInfo("America/New_York")
@@ -208,6 +208,7 @@ def _funnel(events: list[dict], start: float, end: float, now: float) -> dict:
     abandoned = sum(e["name"] == "checkout_abandon" for e in inr)
     return {
         "steps": steps,
+        "doors": _doors(events, inr),
         "paywall": sorted(({"feature": k, "views": v} for k, v in walls.items()), key=lambda r: -r["views"]),
         "checkout": {"started": started, "finished": finished, "abandoned": abandoned,
                      "finish_rate": _rate(finished, started)},
@@ -239,6 +240,42 @@ def _walk(events: list[dict], start: float, end: float) -> dict:
         before = n
     skipped = len(cohort & {e["email"] for e in events if e["name"] == "offer_skip"})
     return {"cohort": len(cohort), "steps": steps, "offer_skipped": skipped}
+
+
+def _doors(events: list[dict], inr: list[dict]) -> list[dict]:
+    """Which landing button people press, and which one their sign-up came through.
+
+    `clicks` and `people` are this range's presses. A sign-up is credited to the last
+    button that browser pressed before signing up (last click), so the column adds up to
+    sign-ups rather than counting one person under every button they touched. It counts
+    browsers that pressed in this range and signed up any time up to now, like the
+    funnel's first step. Every door is listed, so a button nobody presses shows as zero
+    rather than vanishing.
+    """
+    clicks: dict[str, int] = defaultdict(int)
+    people: dict[str, set] = defaultdict(set)
+    for e in inr:
+        door = e["props"].get("door")
+        if e["name"] == "cta_click" and door and e["anon_id"]:
+            clicks[door] += 1
+            people[door].add(e["anon_id"])
+    pressed = set().union(*people.values()) if people else set()
+    # One pass, oldest first: the latest press per browser until its first sign-up.
+    last: dict[str, str] = {}
+    signed: set[str] = set()
+    credited: dict[str, int] = defaultdict(int)
+    for e in events:
+        anon = e["anon_id"]
+        if anon not in pressed or anon in signed:
+            continue
+        if e["name"] == "cta_click" and e["props"].get("door") in DOORS:
+            last[anon] = e["props"]["door"]
+        elif e["name"] == "signup":
+            signed.add(anon)
+            if anon in last:
+                credited[last[anon]] += 1
+    return [{"door": d, "clicks": clicks[d], "people": len(people[d]), "signups": credited[d],
+             "rate": _rate(credited[d], len(people[d]))} for d in DOORS]
 
 
 def _verdict(spend: int, buyers: int, cac: int | None) -> str:

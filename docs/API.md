@@ -150,8 +150,10 @@ lower-cased and must match the ads' `utm_source`.
 `DELETE /api/admin/spend/{id}` → `{"ok":true}`; 404 for no such row.
 
 ### Telemetry
-`POST /api/events {"name":"landing_view","props":{utm_*,referrer,share}}` with `X-Anon-Id` → `{"ok":true}`. The only
-event a browser may write; any other name is 400, and so is a missing id. Every other event is logged by the API
+`POST /api/events {"name":"landing_view","props":{utm_*,referrer,share}}` with `X-Anon-Id` → `{"ok":true}`, and
+`{"name":"cta_click","props":{"door":"hero"}}` when a landing sign-up button is pressed (`door` must be one of
+`telemetry.DOORS`, else 400; nothing but the door is kept). The only two events a browser may write; any other name is
+400, and so is a missing id. Every other event is logged by the API
 where it happens (`edge/api/telemetry.py` has the list). Every web request carries `X-Anon-Id` (`web/src/lib/track.ts`).
 `POST /api/auth/register` and `/api/auth/phone/complete` accept `"attr"` (first touch, kept once); `/phone/complete`
 also `"sms_opt_in"`.

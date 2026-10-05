@@ -20,6 +20,22 @@ const ARRIVED_KEY = "booth.arrived";
 export const ATTR_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "referrer", "share"] as const;
 export type Attr = Partial<Record<(typeof ATTR_KEYS)[number], string>>;
 
+/**
+ * The landing page's sign-up buttons, by where they sit, for the `cta_click` event. Must
+ * match `DOORS` in edge/api/telemetry.py: the API refuses any other name (`track.test.ts`
+ * reads the Python tuple to keep the two the same).
+ */
+export const DOORS = ["header", "hero", "sheet", "steps", "desk", "staff", "film", "close", "bar"] as const;
+export type Door = (typeof DOORS)[number];
+
+/** The door a click went through: the nearest `data-door` around the link that was clicked, or null. */
+export function doorOf(target: EventTarget | null): Door | null {
+  const el = target as Element | null;
+  const link = el?.closest?.("a");
+  const door = link?.closest("[data-door]")?.getAttribute("data-door");
+  return door && (DOORS as readonly string[]).includes(door) ? (door as Door) : null;
+}
+
 /** The pixel-side names for the moments the ad platforms optimise toward. */
 export type PixelEvent = "landing" | "signup" | "league_linked" | "checkout" | "purchase";
 

@@ -255,6 +255,32 @@ anytime), **season pass $24.99** once (sku `full_report`, "The Owner's Suite", s
       portal and set `EDGE_BILLING_PORTAL_URL` on Render (`docs/DEPLOY.md`, "Stripe").
 - [ ] **PR-7** A real test-mode run: subscribe, renew (test clock), cancel, refund a renewal.
 
+## The landing page, tuned for one job: start the sign-up (2026-10-05)
+
+Andrew's brief: the landing page exists to get a visitor to press the door. Branch
+`claude/landing-signup-push`, not yet on production. Words in `LANDING` (`vocab.ts`), pinned by
+`landing.test.ts` and `vocab.test.ts`.
+
+- [x] **LS-1** The ask names the outcome: "Get this week's moves" (hero, header, bar, close).
+- [x] **LS-2** The effort under the first and last buttons: "30 seconds. A phone number and a code."
+- [x] **LS-3** A phone gets one line of what it does (`staffShort`); the staff sentence was desktop-only.
+- [x] **LS-4** The header wordmark no longer wraps to two lines at 375px.
+- [x] **LS-5** The example sheet is a door, ending on "Get your league's sheet" on every width.
+- [x] **LS-6** All four desk cards are doors, each ending "Ask about your team".
+- [x] **LS-7** "How it works" moved up to straight after the hero, ending on a "Start step 1" button.
+- [x] **LS-8** The three proof lines are things the product does (scoring, linking, grading), not claims.
+- [x] **LS-9** The FAQ answers the sign-up objections first: "Does it work with my league?", "Why my phone number?".
+- [x] **LS-10** `WarmDoor` asks the API for `me` on the landing, so /register opens on the phone form
+      instead of flashing email + password first, and a cold Render is awake before the click.
+      The bar shows "30 seconds to get in" days from kickoff, the clock inside a day.
+- [ ] **LS-11** "Free" is allowed now (Andrew, 2026-10-05). The plan: a free week with a card
+      from the start, then the weekly or season sale. The trial is being built in another
+      session; once it ships, the landing's ask and the `vocab.test.ts` no-"free" guard follow it.
+- [x] **LS-12** Which button converts: every landing sign-up button carries `data-door`, one
+      listener (`DoorClicks`) sends `cta_click` with the door to our own API, and /admin's Funnel
+      tab shows presses, people and sign-ups per button (last press before the sign-up wins).
+      Needs the API deployed on Render as well as the web on Vercel; until then the presses 400.
+
 ## The landing page, rebuilt as a funnel (2026-09-27)
 
 Andrew's brief: the best front page we can build, on Hormozi's playbook, for leads, conversions

@@ -68,11 +68,12 @@ const ALL_COPY: string[] = [
   ...LANDING.features.flatMap((f) => [f.room, f.title, f.body]),
   LANDING.exampleHead,
   // The rest of the landing page: every string, every templated line rendered once.
-  LANDING.eyebrow, LANDING.eyebrowShort, LANDING.headline, LANDING.avatar, LANDING.staff, LANDING.cta, LANDING.login, LANDING.loginLead,
+  LANDING.eyebrow, LANDING.eyebrowShort, LANDING.headline, LANDING.avatar, LANDING.staff, LANDING.staffShort, LANDING.cta, LANDING.effort, LANDING.login, LANDING.loginLead,
+  LANDING.sheetCta, LANDING.deskCta, LANDING.steps.cta,
   ...LANDING.proof.flatMap((p) => [p.head, p.body]),
   LANDING.desk.eyebrow, LANDING.desk.title, LANDING.desk.week, LANDING.desk.foot,
   ...Object.values(LANDING.desk.coach), ...Object.values(LANDING.desk.scout),
-  ...Object.values(LANDING.desk.gm).filter((v) => typeof v === "string"), LANDING.desk.gm.offer("Jakobi Meyers", "Jordan Mason"),
+  ...Object.values(LANDING.desk.gm).filter((v) => typeof v === "string"), LANDING.desk.gm.offer("Courtland Sutton", "David Montgomery"),
   LANDING.desk.film.from, LANDING.desk.film.q, LANDING.desk.film.line, ...LANDING.desk.film.grades.flatMap((g) => [g.pos, g.grade]),
   LANDING.fit.head, ...LANDING.fit.yes, LANDING.fit.noHead, ...LANDING.fit.no,
   LANDING.roomsHead, LANDING.roomsLead,
@@ -236,6 +237,12 @@ test("the landing page sells the room, not the price", () => {
   assert.match(LANDING.staff, /GM/);
   assert.match(LANDING.staff, /scouting/);
   assert.equal(LANDING.cta, LANDING.close.cta, "the first ask and the last ask are the same door");
+  assert.equal(LANDING.cta, LANDING.bar.cta, "the bar carries the same door");
+  // The ask names the outcome, in the product's own word for it (`exampleHead`).
+  assert.match(LANDING.cta, /moves/);
+  // The effort under the button is the one the steps promise.
+  assert.match(LANDING.effort, /^30 seconds/);
+  assert.equal(LANDING.steps.items[0].when, "30 seconds");
   const page = JSON.stringify(LANDING);
   assert.doesNotMatch(page, /refund|no card|\bfree\b|\/week|\$\d+\.\d\d/i, "the front page quotes no price, no refund and no free hedge");
 });

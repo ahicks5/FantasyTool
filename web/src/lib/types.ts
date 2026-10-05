@@ -1730,6 +1730,15 @@ export interface FunnelStep {
   scope: "range" | "to_date";
 }
 
+/** One landing button's row: presses this range, and the sign-ups credited to it (last press wins). */
+export interface DoorRow {
+  door: string;
+  clicks: number;
+  people: number;
+  signups: number;
+  rate: number | null;
+}
+
 export type ChannelVerdict = "scale" | "watch" | "kill" | "organic";
 
 export interface ChannelRow {
@@ -1776,6 +1785,8 @@ export interface AdminMetrics {
   };
   funnel: {
     steps: FunnelStep[];
+    /** Absent from an API older than `cta_click`. */
+    doors?: DoorRow[];
     paywall: { feature: string; views: number }[];
     checkout: { started: number; finished: number; abandoned: number; finish_rate: number | null };
   };

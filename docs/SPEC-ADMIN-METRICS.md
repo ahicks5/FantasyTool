@@ -68,6 +68,7 @@ CREATE INDEX IF NOT EXISTS events_anon ON events (anon_id);
 | Event | Fired by | Why the plan needs it |
 |---|---|---|
 | `landing_view` | web, landing page load | top of funnel, denominator for sign-up rate |
+| `cta_click` | web, a landing sign-up button pressed (`props.door`: header, hero, sheet, steps, desk, staff, film, close, bar) | which button earns the sign-up |
 | `signup` | API, account created | funnel step 1 |
 | `league_linked` | API, `POST /api/connect` success | activation, the retargeting audience |
 | `paywall_view` | API, every 402 served to a signed-in user (once per sku per day) | where intent shows up |
@@ -82,8 +83,8 @@ CREATE INDEX IF NOT EXISTS events_anon ON events (anon_id);
 | `share_open` | API, `/s/{id}` viewed (replaces the bare counter as the source of truth) | the loop |
 | `sms_opt_in` | API, sign-up with the consent box ticked | the Sunday SMS audience |
 
-Rules: the server writes every event it can (the browser only writes `landing_view`, because ad
-blockers eat browser events); an unknown name is a 400; `props` is capped at 1 KB; the same
+Rules: the server writes every event it can (the browser only writes `landing_view` and
+`cta_click`, both to our own API, because ad blockers eat browser events); an unknown name is a 400; `props` is capped at 1 KB; the same
 honesty rules as `docs/DATA.md` apply — no ESPN cookie, league id or roster ever goes in.
 
 ### 2.2 Attribution: first touch, kept forever
@@ -159,8 +160,10 @@ between, red under leak):
 | Linked → paid in 7 days | accounts paid ≤ 7 days after first link ÷ linked | 5% | 2% |
 | Week pass → 2nd week or season | week buyers with `renewal` or `upgrade` ÷ week buyers ≥ 8 days old | 50% | 30% |
 
-Under the table: paywall views by sku (which room people hit the wall in), and checkout started
-vs finished (abandonment rate).
+Under the table: **landing buttons** (`cta_click`: presses and distinct browsers per button this
+range, and the sign-ups credited to each, a sign-up going to the last button that browser pressed
+before it, so the column adds up to sign-ups), paywall views by sku (which room people hit the
+wall in), and checkout started vs finished (abandonment rate).
 
 ### Tab 3 · Channels
 

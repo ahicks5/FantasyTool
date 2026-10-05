@@ -21,7 +21,7 @@ import {
   scaleMax,
   type RangePreset,
 } from "@/lib/adminMetrics";
-import type { AdminMetrics, ChannelRow, CohortRow, MetricTiles } from "@/lib/types";
+import type { AdminMetrics, ChannelRow, CohortRow, DoorRow, MetricTiles } from "@/lib/types";
 import { ACCOUNT } from "@/lib/vocab";
 
 const W = ACCOUNT.admin.metrics;
@@ -117,6 +117,8 @@ function Funnel({ m }: { m: AdminMetrics }) {
         ))}
       </ul>
       {m.walk && <Walk w={m.walk} />}
+      {/* `?? []`: an API from before `cta_click` sends no doors, and the tab must not fall over while the two deploys catch up. */}
+      <Doors rows={f.doors ?? []} />
       <Card className="mt-2">
         <div className="eyebrow">{W.checkoutTitle}</div>
         <p className="tnum mt-1 text-[14px] text-ink">
@@ -140,6 +142,47 @@ function Funnel({ m }: { m: AdminMetrics }) {
         )}
       </Card>
     </>
+  );
+}
+
+/** Which landing button people press, busiest first; a button nobody pressed sinks to the bottom. */
+function Doors({ rows }: { rows: DoorRow[] }) {
+  const C = W.doorCols;
+  const pressed = rows.some((r) => r.clicks > 0);
+  const sorted = [...rows].sort((a, b) => b.clicks - a.clicks || b.signups - a.signups);
+  return (
+    <div className="card mt-2 p-0" data-testid="funnel-doors">
+      <div className="px-4 pt-4">
+        <div className="eyebrow">{W.doorsTitle}</div>
+        <p className="mt-1 text-[12px] leading-relaxed text-muted">{pressed ? W.doorsLead : W.doorsNone}</p>
+      </div>
+      {pressed && (
+        <div className="mt-2 overflow-x-auto">
+        <table className="w-full text-left text-[13px]">
+          <thead>
+            <tr className="whitespace-nowrap border-b border-line text-[11px] uppercase tracking-wide text-muted">
+              <th className="py-2 pl-4 pr-1.5 font-bold">{C.door}</th>
+              <th className="px-1.5 py-2 text-right font-bold">{C.clicks}</th>
+              <th className="px-1.5 py-2 text-right font-bold">{C.people}</th>
+              <th className="px-1.5 py-2 text-right font-bold">{C.signups}</th>
+              <th className="px-3 py-2 text-right font-bold">{C.rate}</th>
+            </tr>
+          </thead>
+          <tbody className="tnum">
+            {sorted.map((r) => (
+              <tr key={r.door} className={`border-b border-line last:border-0 ${r.clicks ? "" : "text-muted"}`}>
+                <td className="py-2 pl-4 pr-1.5 font-bold">{W.doorNames[r.door] ?? r.door}</td>
+                <td className="px-1.5 py-2 text-right">{r.clicks}</td>
+                <td className="px-1.5 py-2 text-right">{r.people}</td>
+                <td className="px-1.5 py-2 text-right">{r.signups}</td>
+                <td className="px-3 py-2 text-right">{rate(r.rate)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        </div>
+      )}
+    </div>
   );
 }
 

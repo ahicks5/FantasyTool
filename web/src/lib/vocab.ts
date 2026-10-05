@@ -1086,6 +1086,22 @@ export const ACCOUNT = {
       walkNone: "No sign-ups in this range.",
       toDate: "to date",
       status: { healthy: "Healthy", watch: "Watch", leak: "Leak", none: "No data" },
+      /** Which landing button people press (`cta_click`), and which one each sign-up came through. */
+      doorsTitle: "Landing buttons",
+      doorsLead: "Presses this range. A sign-up counts for the last button that browser pressed before signing up.",
+      doorsNone: "Nobody pressed a landing button in this range.",
+      doorCols: { door: "Button", clicks: "Presses", people: "People", signups: "Sign-ups", rate: "Rate" },
+      doorNames: {
+        header: "Header",
+        hero: "Hero",
+        sheet: "Sheet",
+        steps: "Steps",
+        desk: "Desk",
+        staff: "Staff",
+        film: "Film",
+        close: "Close",
+        bar: "Bar",
+      } as Record<string, string>,
       paywallTitle: "Where they hit the wall",
       paywallNone: "Nobody signed in hit a paywall in this range.",
       checkoutTitle: "Checkout",
@@ -1194,16 +1210,37 @@ export const LANDING = {
   avatar: "For fantasy football owners who expect to win their league, not just play in it.",
   /** The staff, in one sentence. */
   staff: "Your GM works the trades, your head of scouting finds the pickups, and your head coach sets the lineup.",
-  cta: "Open your Owner's Suite",
+  /**
+   * What it does, for a phone, where the staff sentence is hidden. Without it a cold
+   * reader on a phone met a headline and a status line and had to work out from the
+   * example sheet what the product is.
+   */
+  staffShort: "Start/sit, waiver bids and trade offers, called for your league every week.",
+  /**
+   * The ask names what you walk away with, not the building you walk into: a reader who
+   * has never seen the app does not know what an Owner's Suite holds, but they know they
+   * want this week's moves. The product's own word for them (`exampleHead`).
+   */
+  cta: "Get this week\u2019s moves",
+  /** Under the button: what the click costs in effort. True while phone sign-in is on (`GET /api/health`). */
+  effort: "30 seconds. A phone number and a code.",
   login: "Log in",
   loginLead: "Already have an office?",
 
-  /** Three reasons to trust the room. */
+  /**
+   * Three reasons to believe it, each one a thing the product does that a reader can check
+   * for themselves once inside. No rate, no user count, nothing that is not built.
+   */
   proof: [
-    { head: "Trusted by owners", body: "across the country, in every kind of league." },
-    { head: "Built by engineers", body: "with defined algorithms that have won leagues." },
-    { head: "Backed by deep statistics", body: "and explained by artificial intelligence." },
+    { head: "Scored your way.", body: "Every projection re-scored to your league\u2019s settings." },
+    { head: "Linked in a minute.", body: "Sleeper or ESPN, public or private." },
+    { head: "Graded every week.", body: "The film checks every call against the box score." },
   ],
+
+  /** The example sheet is a door: its last row, on every width. */
+  sheetCta: "Get your league\u2019s sheet",
+  /** The desk cards are doors too; this is the line each one ends on. */
+  deskCta: "Ask about your team",
 
   /**
    * The desk: the four questions every owner asks in a week, each answered the way the
@@ -1212,13 +1249,14 @@ export const LANDING = {
   desk: {
     eyebrow: "On your desk",
     title: "Answers to your biggest questions, right on your desk.",
-    week: "Week 2 · The Megalabowl",
+    /** The week the example was drawn from (Sleeper projections, 2026). */
+    week: "Week 5 · The Megalabowl",
     coach: {
       from: "Head coach",
       tag: "Start",
       q: "Who do I start?",
-      call: "Start Jahmyr Gibbs",
-      over: "over D'Andre Swift",
+      call: "Start Rhamondre Stevenson",
+      over: "over Alvin Kamara",
       vs: "vs",
       gain: "+4.2",
       unit: "projected points",
@@ -1228,11 +1266,11 @@ export const LANDING = {
       from: "Head of scouting",
       tag: "Claim",
       q: "Who is worth a claim?",
-      call: "Add Chris Brooks",
-      bid: "Bid $13 to $25",
-      gain: "+7.8",
+      call: "Add Emanuel Wilson",
+      bid: "Bid $18 to $32",
+      gain: "+5.4",
       unit: "this week",
-      ros: "+48 rest of season",
+      ros: "+41 rest of season",
       stamp: "Lean",
     },
     gm: {
@@ -1242,9 +1280,9 @@ export const LANDING = {
       offer: (give: string, get: string) => `Offer ${give} for ${get}`,
       give: "You give",
       get: "You get",
-      giveName: "Jakobi Meyers",
-      getName: "Jordan Mason",
-      gain: "+51",
+      giveName: "Courtland Sutton",
+      getName: "David Montgomery",
+      gain: "+38",
       unit: "rest-of-season lineup points",
       why: "Their WR room is thin. They say yes.",
     },
@@ -1331,12 +1369,18 @@ export const LANDING = {
       { title: "Link your league", when: "About a minute", body: "A Sleeper username or an ESPN league ID." },
       { title: "Make the calls", when: "Every week", body: "Your staff has the week’s moves waiting on your desk." },
     ],
+    /** The ask that follows "it is quick", while the reader still believes it. */
+    cta: "Start step 1",
   },
 
   /** The objections, in the reader's words, answered in ours. */
   faq: {
     head: "Straight answers",
     items: [
+      {
+        q: "Does it work with my league?",
+        a: "Sleeper and ESPN, public or private, any size, any scoring. Yahoo is coming.",
+      },
       {
         q: "My league’s scoring is weird.",
         a: "Good. Every projection is re-scored to your settings. We never assume PPR.",
@@ -1346,8 +1390,8 @@ export const LANDING = {
         a: "Yes. One bookmark on your phone fetches your key, once. It stays in your browser, never on our side. A public league needs the ID only.",
       },
       {
-        q: "Why an account before a league?",
-        a: "So the league stays on file and follows you to every device.",
+        q: "Why my phone number?",
+        a: "It is how you sign in: we text a code, so there is no password to forget. Other texts only if you tick the box.",
       },
       {
         q: "How long does it take?",
@@ -1362,12 +1406,14 @@ export const LANDING = {
     eyebrow: "The clock is running",
     title: "Your office is ready.",
     body: "Link a league and your staff has the week’s calls on your desk in about a minute.",
-    cta: "Open your Owner's Suite",
+    cta: "Get this week\u2019s moves",
   },
 
   /** The bar that follows the reader down the page once the first button has scrolled away. */
   bar: {
-    cta: "Open your Owner's Suite",
+    cta: "Get this week\u2019s moves",
+    /** Days from kickoff a clock is not urgent, so the bar says how quick the door is instead. */
+    effort: "30 seconds to get in",
   },
 } as const;
 

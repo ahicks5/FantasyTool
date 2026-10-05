@@ -1,27 +1,34 @@
-/** The landing page: the front office you walk into, the answers on your desk, the staff, the film, how quick it is, and the door. Indexable. */
+/** The landing page: the front office you walk into, how quick it is, the answers on your desk, the staff, the film, and the door. Indexable. */
 import Link from "next/link";
 import { LandingBar } from "@/components/LandingBar";
 import { Reveal } from "@/components/Reveal";
+import { WarmDoor } from "@/components/WarmDoor";
+import { DoorClicks } from "@/components/DoorClicks";
 import { IconCheck, IconChevron, IconFilm, IconTeam, IconTrade, IconWire, IconX } from "@/components/icons";
 import { Countdown, Eyebrow, LinkButton, OnAir, Wordmark } from "@/components/ui";
 import { LANDING, LINES } from "@/lib/vocab";
 
 const DESK = LANDING.desk;
 
-/** The players in the worked example. The headshots are real Sleeper CDN images. */
+/**
+ * The players in the worked example. The headshots are real Sleeper CDN images, keyed by
+ * Sleeper player id. Picked from Sleeper's own week 5 (2026) projections and trending
+ * adds (Andrew, 2026-10-05): each call is one a real owner would hesitate over, never a
+ * first-rounder they would start anyway.
+ */
 const FACES = {
-  gibbs: { name: "Jahmyr Gibbs", photo: "https://sleepercdn.com/content/nfl/players/thumb/9221.jpg", team: "det" },
-  swift: { name: "D'Andre Swift", photo: "https://sleepercdn.com/content/nfl/players/thumb/6790.jpg", team: "chi" },
-  brooks: { name: "Chris Brooks", photo: "https://sleepercdn.com/content/nfl/players/thumb/11370.jpg", team: "gb" },
-  meyers: { name: "Jakobi Meyers", photo: "https://sleepercdn.com/content/nfl/players/thumb/5947.jpg", team: "jax" },
-  mason: { name: "Jordan Mason", photo: "https://sleepercdn.com/content/nfl/players/thumb/8408.jpg", team: "min" },
+  stevenson: { name: "Rhamondre Stevenson", photo: "https://sleepercdn.com/content/nfl/players/thumb/7611.jpg", team: "ne" },
+  kamara: { name: "Alvin Kamara", photo: "https://sleepercdn.com/content/nfl/players/thumb/4035.jpg", team: "no" },
+  wilson: { name: "Emanuel Wilson", photo: "https://sleepercdn.com/content/nfl/players/thumb/11435.jpg", team: "sea" },
+  sutton: { name: "Courtland Sutton", photo: "https://sleepercdn.com/content/nfl/players/thumb/5045.jpg", team: "den" },
+  montgomery: { name: "David Montgomery", photo: "https://sleepercdn.com/content/nfl/players/thumb/5892.jpg", team: "hou" },
 };
 
 /** The call sheet in the hero: the week's three moves, as the app writes them. */
 const SHEET = [
-  { tag: DESK.coach.tag, title: `${DESK.coach.call} ${DESK.coach.over}`, gain: DESK.coach.gain, unit: DESK.coach.unit, stamp: DESK.coach.stamp, bars: 3, face: FACES.gibbs },
-  { tag: DESK.scout.tag, title: `${DESK.scout.call} · ${DESK.scout.bid}`, gain: DESK.scout.gain, unit: DESK.scout.unit, stamp: DESK.scout.stamp, bars: 2, face: FACES.brooks },
-  { tag: DESK.gm.tag, title: DESK.gm.offer(DESK.gm.giveName, DESK.gm.getName), gain: DESK.gm.gain, unit: DESK.gm.unit, stamp: "Lean", bars: 2, face: FACES.meyers },
+  { tag: DESK.coach.tag, title: `${DESK.coach.call} ${DESK.coach.over}`, gain: DESK.coach.gain, unit: DESK.coach.unit, stamp: DESK.coach.stamp, bars: 3, face: FACES.stevenson },
+  { tag: DESK.scout.tag, title: `${DESK.scout.call} · ${DESK.scout.bid}`, gain: DESK.scout.gain, unit: DESK.scout.unit, stamp: DESK.scout.stamp, bars: 2, face: FACES.wilson },
+  { tag: DESK.gm.tag, title: DESK.gm.offer(DESK.gm.giveName, DESK.gm.getName), gain: DESK.gm.gain, unit: DESK.gm.unit, stamp: "Lean", bars: 2, face: FACES.sutton },
 ];
 
 /**
@@ -105,14 +112,25 @@ function gradeTone(grade: string): string {
   return "text-sit";
 }
 
-/** One question on the desk: who on the staff answers it, the question, and the answer. */
+/**
+ * One question on the desk: who on the staff answers it, the question, and the answer.
+ * Every card is a door, because a reader who has just read "Who do I start?" with a
+ * worked answer under it is at the moment they most want their own, and a card that does
+ * nothing when tapped is a dead end at the peak of the page.
+ */
 function DeskCard({ from, q, children, className = "" }: { from: string; q: string; children: React.ReactNode; className?: string }) {
   return (
-    <article className={`hero flex flex-col p-5 ${className}`}>
-      <div className="eyebrow">{from}</div>
-      <h3 className="display mt-1 text-[21px] leading-tight">{q}</h3>
-      <div className="mt-4 flex flex-1 flex-col border-t border-white/10 pt-4">{children}</div>
-    </article>
+    <Link href={WAY_IN} data-door="desk" className={`hero group flex flex-col p-5 hover:opacity-95 ${className}`}>
+      <article className="flex flex-1 flex-col">
+        <div className="eyebrow">{from}</div>
+        <h3 className="display mt-1 text-[21px] leading-tight">{q}</h3>
+        <div className="mt-4 flex flex-1 flex-col border-t border-white/10 pt-4">{children}</div>
+        <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-bold text-white/80 group-hover:text-white">
+          {LANDING.deskCta}
+          <IconChevron size={13} strokeWidth={2.8} />
+        </span>
+      </article>
+    </Link>
   );
 }
 
@@ -124,7 +142,9 @@ export default function Landing() {
           Log in is always visible; the loud door hides below 480px, where the hero's
           button is one thumb away and the wordmark needs the width. */}
       <header className="flex h-16 items-center justify-between gap-2">
-        <Wordmark className="text-[24px]" />
+        {/* 20px below 480: at 24px "OWNER'S SUITE" wrapped to two lines beside the log-in
+            pill on a 375px phone, which doubled the header and pushed the door down. */}
+        <Wordmark className="whitespace-nowrap text-[20px] min-[480px]:text-[24px]" />
         <nav className="flex shrink-0 items-center gap-2" aria-label="Account">
           <Link
             href={LOGIN}
@@ -134,6 +154,7 @@ export default function Landing() {
           </Link>
           <Link
             href={WAY_IN}
+            data-door="header"
             className="btn hidden min-h-11 items-center gap-1 whitespace-nowrap rounded-full bg-start-fill px-4 text-[13px] font-bold text-white hover:opacity-90 min-[480px]:inline-flex"
           >
             {LANDING.bar.cta}
@@ -163,11 +184,13 @@ export default function Landing() {
             <h1 className="display mt-3 text-[43px] leading-[0.98] rise rise-2 sm:text-[56px] lg:text-[64px]">{LANDING.headline}</h1>
             <p className="display mt-4 max-w-[34rem] text-[18px] leading-snug text-ink rise rise-3 sm:mt-5 sm:text-[21px]">{LANDING.avatar}</p>
             <p className="mt-3 hidden max-w-[32rem] text-[16px] leading-relaxed text-ink-2 rise rise-3 sm:block">{LANDING.staff}</p>
+            <p className="mt-2.5 text-[15px] leading-snug text-ink-2 rise rise-3 sm:hidden">{LANDING.staffShort}</p>
             <div className="mt-6 grid max-w-[26rem] gap-3 rise rise-4 sm:mt-7">
-              <div id={HERO_CTA_ID}>
+              <div id={HERO_CTA_ID} data-door="hero">
                 <LinkButton href={WAY_IN} variant="start" className="w-full">
                   {LANDING.cta}
                 </LinkButton>
+                <p className="mt-2 text-center text-[13px] font-bold text-ink-2">{LANDING.effort}</p>
               </div>
               <p className="text-center text-[13px] text-muted">
                 {LANDING.loginLead}{" "}
@@ -189,7 +212,10 @@ export default function Landing() {
             </ul>
           </div>
 
-          <div className="hero callsheet sweep callsheet-live rise rise-4" aria-label="Example call sheet">
+          {/* The example sheet is the biggest thing on the first screen and the thing people
+              tap, so it is a door: the whole sheet opens the register page, and its last
+              row says so on every width. */}
+          <Link href={WAY_IN} data-door="sheet" className="hero callsheet sweep callsheet-live group block rise rise-4 hover:opacity-95" aria-label={`Example call sheet. ${LANDING.sheetCta}`}>
             <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
               <OnAir className="text-white/70" />
               <Countdown onHero />
@@ -222,7 +248,61 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-            <p className="hidden border-t border-white/10 px-5 py-3.5 text-center text-[13px] text-white/55 sm:block">{DESK.foot}</p>
+            <p className="hidden border-t border-white/10 px-5 pt-3.5 text-center text-[13px] text-white/55 sm:block">{DESK.foot}</p>
+            <span className="flex items-center justify-center gap-1 border-t border-white/10 px-4 py-3.5 text-[14px] font-black text-white group-hover:underline sm:mt-3.5 sm:px-5">
+              {LANDING.sheetCta}
+              <IconChevron size={14} strokeWidth={2.8} />
+            </span>
+          </Link>
+        </section>
+
+        {/* ----------------------------------------------------------------- steps ---
+            Quick is the point: three boxes on a rail, each with the time it takes. It sits
+            straight after the hero because "how much work is this?" is the question
+            between reading the pitch and pressing the button, and it ends on a button
+            while the answer ("two minutes") is still on screen. */}
+        <section className="mt-12 sm:mt-16 lg:mt-24">
+          <Reveal>
+            <Eyebrow>{LANDING.steps.head}</Eyebrow>
+            <h2 className="display mt-2 text-[28px] leading-[1.05] sm:text-[38px]">{LANDING.steps.title}</h2>
+          </Reveal>
+          {/* On a phone each step is one row: the number, the step, how long. The sentence
+              under it is for md and up, where the three sit side by side. */}
+          <ol className="relative mt-5 grid gap-3 sm:mt-6 md:grid-cols-3 lg:gap-4">
+            {LANDING.steps.items.map((s, i) => (
+              <li key={s.title} className="relative flex">
+                <Reveal className="flex w-full" delay={i * 140}>
+                <div className="card flex w-full items-center gap-4 p-4 md:flex-col md:items-stretch md:p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="display flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-start-fill text-[18px] text-white">
+                    {i + 1}
+                  </span>
+                  <span className="hidden rounded-full bg-start-soft px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-start md:inline">
+                    {s.when}
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="display text-[18px] leading-tight md:mt-5 md:text-[20px]">{s.title}</div>
+                  <p className="mt-0.5 text-[12px] font-black uppercase tracking-[0.12em] text-start md:hidden">{s.when}</p>
+                  <p className="mt-1.5 hidden text-[14px] leading-relaxed text-muted md:block">{s.body}</p>
+                </div>
+                </div>
+                </Reveal>
+                {i < LANDING.steps.items.length - 1 && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-[14px] top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-line-2 bg-plane text-muted md:flex lg:-right-[18px]"
+                  >
+                    <IconChevron size={14} strokeWidth={2.8} />
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+          <div className="mx-auto mt-5 max-w-[26rem] sm:mt-6" data-door="steps">
+            <LinkButton href={WAY_IN} variant="start" className="w-full">
+              {LANDING.steps.cta}
+            </LinkButton>
           </div>
         </section>
 
@@ -241,8 +321,8 @@ export default function Landing() {
             <DeskCard from={DESK.gm.from} q={DESK.gm.q} className="w-full">
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: DESK.gm.give, who: DESK.gm.giveName, face: FACES.meyers },
-                  { label: DESK.gm.get, who: DESK.gm.getName, face: FACES.mason },
+                  { label: DESK.gm.give, who: DESK.gm.giveName, face: FACES.sutton },
+                  { label: DESK.gm.get, who: DESK.gm.getName, face: FACES.montgomery },
                 ].map((side) => (
                   <div key={side.label} className="flex items-center gap-2.5">
                     <Face name={side.face.name} photo={side.face.photo} team={side.face.team} />
@@ -263,7 +343,7 @@ export default function Landing() {
             <Reveal className="flex" delay={120}>
             <DeskCard from={DESK.scout.from} q={DESK.scout.q} className="w-full">
               <div className="flex items-center gap-3">
-                <Face name={FACES.brooks.name} photo={FACES.brooks.photo} team={FACES.brooks.team} />
+                <Face name={FACES.wilson.name} photo={FACES.wilson.photo} team={FACES.wilson.team} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="display text-[16px]">{DESK.scout.call}</span>
@@ -281,10 +361,10 @@ export default function Landing() {
             <Reveal className="flex" delay={0}>
             <DeskCard from={DESK.coach.from} q={DESK.coach.q} className="w-full">
               <div className="flex items-center gap-3">
-                <Face name={FACES.gibbs.name} photo={FACES.gibbs.photo} team={FACES.gibbs.team} />
+                <Face name={FACES.stevenson.name} photo={FACES.stevenson.photo} team={FACES.stevenson.team} />
                 <span className="text-[11px] font-black uppercase tracking-[0.12em] text-white/40">{DESK.coach.vs}</span>
                 <span className="opacity-50">
-                  <Face name={FACES.swift.name} photo={FACES.swift.photo} team={FACES.swift.team} />
+                  <Face name={FACES.kamara.name} photo={FACES.kamara.photo} team={FACES.kamara.team} />
                 </span>
                 <span className="ml-auto">
                   <HeroStamp filled={3} label={DESK.coach.stamp} />
@@ -358,7 +438,7 @@ export default function Landing() {
               const art = FEATURE_ART[f.key];
               return (
                 <Reveal key={f.key} className="flex" delay={i * 120}>
-                <Link href={WAY_IN} className="card flex w-full items-center gap-4 p-4 hover:bg-soft md:flex-col md:items-start md:p-6">
+                <Link href={WAY_IN} data-door="staff" className="card flex w-full items-center gap-4 p-4 hover:bg-soft md:flex-col md:items-start md:p-6">
                   <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${art.tone}`}>
                     <art.Icon size={23} strokeWidth={2} />
                   </span>
@@ -376,7 +456,7 @@ export default function Landing() {
 
           {/* The film room, on its own: the depth behind every call. */}
           <Reveal>
-          <Link href={WAY_IN} className="hero mt-3 grid gap-5 p-5 hover:opacity-95 sm:gap-6 sm:p-6 md:grid-cols-[1.3fr_1fr] md:items-center lg:mt-4 lg:p-8">
+          <Link href={WAY_IN} data-door="film" className="hero mt-3 grid gap-5 p-5 hover:opacity-95 sm:gap-6 sm:p-6 md:grid-cols-[1.3fr_1fr] md:items-center lg:mt-4 lg:p-8">
             <div>
               <div className="flex items-center gap-2.5">
                 <IconFilm size={20} strokeWidth={2} className="text-white/70" />
@@ -395,48 +475,6 @@ export default function Landing() {
             </ul>
           </Link>
           </Reveal>
-        </section>
-
-        {/* ----------------------------------------------------------------- steps ---
-            Quick is the point: three boxes on a rail, each with the time it takes. */}
-        <section className="mt-12 sm:mt-16 lg:mt-24">
-          <Reveal>
-            <Eyebrow>{LANDING.steps.head}</Eyebrow>
-            <h2 className="display mt-2 text-[28px] leading-[1.05] sm:text-[38px]">{LANDING.steps.title}</h2>
-          </Reveal>
-          {/* On a phone each step is one row: the number, the step, how long. The sentence
-              under it is for md and up, where the three sit side by side. */}
-          <ol className="relative mt-5 grid gap-3 sm:mt-6 md:grid-cols-3 lg:gap-4">
-            {LANDING.steps.items.map((s, i) => (
-              <li key={s.title} className="relative flex">
-                <Reveal className="flex w-full" delay={i * 140}>
-                <div className="card flex w-full items-center gap-4 p-4 md:flex-col md:items-stretch md:p-6">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="display flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-start-fill text-[18px] text-white">
-                    {i + 1}
-                  </span>
-                  <span className="hidden rounded-full bg-start-soft px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-start md:inline">
-                    {s.when}
-                  </span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="display text-[18px] leading-tight md:mt-5 md:text-[20px]">{s.title}</div>
-                  <p className="mt-0.5 text-[12px] font-black uppercase tracking-[0.12em] text-start md:hidden">{s.when}</p>
-                  <p className="mt-1.5 hidden text-[14px] leading-relaxed text-muted md:block">{s.body}</p>
-                </div>
-                </div>
-                </Reveal>
-                {i < LANDING.steps.items.length - 1 && (
-                  <span
-                    aria-hidden
-                    className="absolute -right-[14px] top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-line-2 bg-plane text-muted md:flex lg:-right-[18px]"
-                  >
-                    <IconChevron size={14} strokeWidth={2.8} />
-                  </span>
-                )}
-              </li>
-            ))}
-          </ol>
         </section>
 
         {/* ------------------------------------------------------------------- faq ---
@@ -467,10 +505,11 @@ export default function Landing() {
           </div>
           <h2 className="display mx-auto mt-3 max-w-[22rem] text-[32px] leading-[1.02] sm:text-[40px]">{LANDING.close.title}</h2>
           <p className="mx-auto mt-3 hidden max-w-[26rem] text-[15px] leading-relaxed text-white/70 sm:block">{LANDING.close.body}</p>
-          <div id={CLOSE_CTA_ID} className="mx-auto mt-6 max-w-[26rem]">
+          <div id={CLOSE_CTA_ID} data-door="close" className="mx-auto mt-6 max-w-[26rem]">
             <LinkButton href={WAY_IN} variant="start" className="w-full">
               {LANDING.close.cta}
             </LinkButton>
+            <p className="mt-2 text-[13px] font-bold text-white/75">{LANDING.effort}</p>
           </div>
           <p className="mt-3 text-[13px] text-white/60">
             {LANDING.loginLead}{" "}
@@ -504,6 +543,9 @@ export default function Landing() {
       </footer>
 
       <LandingBar heroId={HERO_CTA_ID} closeId={CLOSE_CTA_ID} href={WAY_IN} />
+      <WarmDoor />
+      {/* Which button people press, for /admin's funnel tab (`cta_click`, docs/SPEC-ADMIN-METRICS.md). */}
+      <DoorClicks />
     </div>
   );
 }
