@@ -82,6 +82,7 @@ the value is visible and the names are not.
 | What is left to build? | `TASKS.md` |
 | What is the player page, and what is decided about it? | `docs/SPEC-PLAYER-PAGE.md` |
 | What is the film becoming (the replay, the league, the ledger), and what is decided? | `docs/SPEC-FILM.md` |
+| How does a new owner sign up, link a league and put a card on file for the free week, and what is decided? | `docs/SPEC-ONBOARDING.md` |
 | Which player-page step is next, and which files may it touch? | `docs/PLAYER-PAGE-STEPS.md` |
 | What are real leagues actually like? | `docs/LEAGUE_SURVEY.md` |
 

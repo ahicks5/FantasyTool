@@ -2,6 +2,21 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Onboarding wizard (docs/SPEC-ONBOARDING.md, 2026-10-05)
+Andrew's brief: the sign-up is the most important screen in the building. One question per
+screen, phone first (email as the side door), name as the nameplate, a league linked on the
+walk, then a card on file for a free first week (`FREEWEEK`) at $4.99/week or **$29.99** for
+the season. Planned only; nothing built yet. Sections O-1..O-7 in the spec, each with its
+evidence, acceptance and tests.
+- [ ] O-1 Prices: season $24.99 → $29.99, `FREEWEEK` as a trial code, one free week per account
+- [ ] O-2 Stripe trial (card up front, $0 today), webhook learns `trial_start` / `trial_convert`
+- [ ] O-3 The wizard frame and the identity screens; `/register` becomes the walk
+- [ ] O-4 The league screen, with `/connect` sharing one `useLeagueLink` hook
+- [ ] O-5 The reveal (first real call), the offer (card), done (the elevator)
+- [ ] O-6 Email verification placeholder (table, routes, page; sends only with a provider)
+- [ ] O-7 The funnel tiles on `/admin`
+- [ ] Decisions D4–D8 and the Stripe dashboard switches — **Andrew** (spec §3, §8, §10)
+
 ## Owner's Suite — rename (2026-10-05)
 Andrew's call: the name is **Owner's Suite**, replacing Penthouse. A rename, nothing else:
 same mark, same chrome, same rooms, same passes. Everything a user reads, every docstring,
