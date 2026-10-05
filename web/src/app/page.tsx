@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LandingBar } from "@/components/LandingBar";
 import { Reveal } from "@/components/Reveal";
 import { WarmDoor } from "@/components/WarmDoor";
+import { DoorClicks } from "@/components/DoorClicks";
 import { IconCheck, IconChevron, IconFilm, IconTeam, IconTrade, IconWire, IconX } from "@/components/icons";
 import { Countdown, Eyebrow, LinkButton, OnAir, Wordmark } from "@/components/ui";
 import { LANDING, LINES } from "@/lib/vocab";
@@ -114,7 +115,7 @@ function gradeTone(grade: string): string {
  */
 function DeskCard({ from, q, children, className = "" }: { from: string; q: string; children: React.ReactNode; className?: string }) {
   return (
-    <Link href={WAY_IN} className={`hero group flex flex-col p-5 hover:opacity-95 ${className}`}>
+    <Link href={WAY_IN} data-door="desk" className={`hero group flex flex-col p-5 hover:opacity-95 ${className}`}>
       <article className="flex flex-1 flex-col">
         <div className="eyebrow">{from}</div>
         <h3 className="display mt-1 text-[21px] leading-tight">{q}</h3>
@@ -148,6 +149,7 @@ export default function Landing() {
           </Link>
           <Link
             href={WAY_IN}
+            data-door="header"
             className="btn hidden min-h-11 items-center gap-1 whitespace-nowrap rounded-full bg-start-fill px-4 text-[13px] font-bold text-white hover:opacity-90 min-[480px]:inline-flex"
           >
             {LANDING.bar.cta}
@@ -179,7 +181,7 @@ export default function Landing() {
             <p className="mt-3 hidden max-w-[32rem] text-[16px] leading-relaxed text-ink-2 rise rise-3 sm:block">{LANDING.staff}</p>
             <p className="mt-2.5 text-[15px] leading-snug text-ink-2 rise rise-3 sm:hidden">{LANDING.staffShort}</p>
             <div className="mt-6 grid max-w-[26rem] gap-3 rise rise-4 sm:mt-7">
-              <div id={HERO_CTA_ID}>
+              <div id={HERO_CTA_ID} data-door="hero">
                 <LinkButton href={WAY_IN} variant="start" className="w-full">
                   {LANDING.cta}
                 </LinkButton>
@@ -208,7 +210,7 @@ export default function Landing() {
           {/* The example sheet is the biggest thing on the first screen and the thing people
               tap, so it is a door: the whole sheet opens the register page, and its last
               row says so on every width. */}
-          <Link href={WAY_IN} className="hero callsheet sweep callsheet-live group block rise rise-4 hover:opacity-95" aria-label={`Example call sheet. ${LANDING.sheetCta}`}>
+          <Link href={WAY_IN} data-door="sheet" className="hero callsheet sweep callsheet-live group block rise rise-4 hover:opacity-95" aria-label={`Example call sheet. ${LANDING.sheetCta}`}>
             <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
               <OnAir className="text-white/70" />
               <Countdown onHero />
@@ -292,7 +294,7 @@ export default function Landing() {
               </li>
             ))}
           </ol>
-          <div className="mx-auto mt-5 max-w-[26rem] sm:mt-6">
+          <div className="mx-auto mt-5 max-w-[26rem] sm:mt-6" data-door="steps">
             <LinkButton href={WAY_IN} variant="start" className="w-full">
               {LANDING.steps.cta}
             </LinkButton>
@@ -431,7 +433,7 @@ export default function Landing() {
               const art = FEATURE_ART[f.key];
               return (
                 <Reveal key={f.key} className="flex" delay={i * 120}>
-                <Link href={WAY_IN} className="card flex w-full items-center gap-4 p-4 hover:bg-soft md:flex-col md:items-start md:p-6">
+                <Link href={WAY_IN} data-door="staff" className="card flex w-full items-center gap-4 p-4 hover:bg-soft md:flex-col md:items-start md:p-6">
                   <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${art.tone}`}>
                     <art.Icon size={23} strokeWidth={2} />
                   </span>
@@ -449,7 +451,7 @@ export default function Landing() {
 
           {/* The film room, on its own: the depth behind every call. */}
           <Reveal>
-          <Link href={WAY_IN} className="hero mt-3 grid gap-5 p-5 hover:opacity-95 sm:gap-6 sm:p-6 md:grid-cols-[1.3fr_1fr] md:items-center lg:mt-4 lg:p-8">
+          <Link href={WAY_IN} data-door="film" className="hero mt-3 grid gap-5 p-5 hover:opacity-95 sm:gap-6 sm:p-6 md:grid-cols-[1.3fr_1fr] md:items-center lg:mt-4 lg:p-8">
             <div>
               <div className="flex items-center gap-2.5">
                 <IconFilm size={20} strokeWidth={2} className="text-white/70" />
@@ -498,7 +500,7 @@ export default function Landing() {
           </div>
           <h2 className="display mx-auto mt-3 max-w-[22rem] text-[32px] leading-[1.02] sm:text-[40px]">{LANDING.close.title}</h2>
           <p className="mx-auto mt-3 hidden max-w-[26rem] text-[15px] leading-relaxed text-white/70 sm:block">{LANDING.close.body}</p>
-          <div id={CLOSE_CTA_ID} className="mx-auto mt-6 max-w-[26rem]">
+          <div id={CLOSE_CTA_ID} data-door="close" className="mx-auto mt-6 max-w-[26rem]">
             <LinkButton href={WAY_IN} variant="start" className="w-full">
               {LANDING.close.cta}
             </LinkButton>
@@ -537,6 +539,8 @@ export default function Landing() {
 
       <LandingBar heroId={HERO_CTA_ID} closeId={CLOSE_CTA_ID} href={WAY_IN} />
       <WarmDoor />
+      {/* Which button people press, for /admin's funnel tab (`cta_click`, docs/SPEC-ADMIN-METRICS.md). */}
+      <DoorClicks />
     </div>
   );
 }

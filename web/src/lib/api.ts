@@ -54,7 +54,7 @@ import { espnAuthHeaders } from "./espnAuth";
 import { clearYahooAuth, loadYahooAuth, saveYahooAuth, yahooAuthHeaders } from "./yahooAuth";
 import { clearToken, loadToken, saveToken } from "./auth";
 import { HttpError } from "./errors";
-import { anonHeaders, firstTouch, pixel, type Attr } from "./track";
+import { anonHeaders, firstTouch, pixel, type Attr, type Door } from "./track";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 export const USE_MOCKS = API_URL === "";
@@ -522,6 +522,16 @@ export async function adminUserEvents(email: string): Promise<AdminEvent[]> {
 export async function logArrival(attr: Attr): Promise<void> {
   if (USE_MOCKS) return;
   await request<unknown>("/events", { method: "POST", body: JSON.stringify({ name: "landing_view", props: attr }) });
+}
+
+/**
+ * Which landing button was pressed (`cta_click`). Fire and forget: `keepalive` lets it
+ * finish if the click leaves the page, and a failure costs one row of a chart, never the
+ * click itself.
+ */
+export function logDoor(door: Door): void {
+  if (USE_MOCKS) return;
+  request<unknown>("/events", { method: "POST", body: JSON.stringify({ name: "cta_click", props: { door } }), keepalive: true }).catch(() => {});
 }
 
 /** Tick or untick marketing texts. */

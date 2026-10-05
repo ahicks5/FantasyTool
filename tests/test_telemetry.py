@@ -75,6 +75,19 @@ def test_the_browser_may_log_a_landing_view_and_nothing_else(client):
     assert client.post("/api/events", json={"name": "landing_view"}).status_code == 400, "no id, no event"
 
 
+def test_the_browser_may_say_which_landing_button_was_pressed_and_nothing_more(client):
+    r = client.post("/api/events", headers=ANON, json={"name": "cta_click",
+                                                        "props": {"door": "hero", "email": "ann@x.com"}})
+    assert r.status_code == 200
+    (e,) = events("cta_click")
+    assert e["anon_id"] == ANON["X-Anon-Id"] and e["props"] == {"door": "hero"}, "only the door is kept"
+    assert client.post("/api/events", headers=ANON, json={"name": "cta_click", "props": {"door": "made_up"}}
+                       ).status_code == 400, "a door that is not on the page is refused"
+    assert client.post("/api/events", headers=ANON, json={"name": "cta_click"}).status_code == 400
+    assert client.post("/api/events", json={"name": "cta_click", "props": {"door": "hero"}}).status_code == 400
+    assert len(events("cta_click")) == 1
+
+
 # ---- sign-up and first touch -------------------------------------------------------------
 
 def test_signup_logs_once_and_keeps_the_first_touch(client):

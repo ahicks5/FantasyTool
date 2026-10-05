@@ -43,7 +43,7 @@ export function LandingBar({ heroId, closeId, href }: { heroId: string; closeId:
   return (
     // `inert` keeps the door out of the tab order while the bar is below the fold, so a
     // keyboard cannot focus a button it cannot see.
-    <div className={`landing-bar ${show ? "landing-bar-on" : ""}`} aria-hidden={!show} inert={!show} data-testid="landing-bar">
+    <div className={`landing-bar ${show ? "landing-bar-on" : ""}`} aria-hidden={!show} inert={!show} data-testid="landing-bar" data-door="bar">
       <div className="landing-bar-inner">
         {/* The clock carries its own word (Kickoff, Soon, Last call), so nothing is printed over it. */}
         {band === "open" ? (

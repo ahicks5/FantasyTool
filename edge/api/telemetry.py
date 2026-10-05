@@ -4,8 +4,10 @@ docs/SPEC-ADMIN-METRICS.md is the spec. Every admin number is computed from thes
 so the rules are strict:
 
 - A fixed list of event names. Anything else is a bug, not a new metric.
-- The server logs everything it can. The browser logs one thing, `landing_view`, because
-  ad blockers drop browser events and a count we cannot trust is worse than none.
+- The server logs everything it can. The browser logs two things, both about the landing
+  page and both to our own API rather than a vendor: `landing_view`, and `cta_click`
+  naming which of the page's buttons was pressed. Nothing else, because ad blockers drop
+  browser events and a count we cannot trust is worse than none.
 - `props` are small and flat, and they are never a roster, a league id, an ESPN cookie or
   a phone number (docs/DATA.md).
 - Logging never breaks the request it rides on. A sale that fails because its receipt
@@ -22,6 +24,7 @@ log_ = logging.getLogger(__name__)
 
 EVENTS = (
     "landing_view",      # browser: the landing page loaded
+    "cta_click",         # browser: a sign-up button on the landing page was pressed (props: door)
     "signup",            # an account was created (email or phone)
     "league_linked",     # POST /api/connect saved a new league
     "paywall_view",      # a signed-in account was shown a 402 (once per feature per day)
@@ -36,7 +39,10 @@ EVENTS = (
     "share_open",        # a share card page was read
     "sms_opt_in",        # the marketing-text box was ticked
 )
-BROWSER_EVENTS = ("landing_view",)
+BROWSER_EVENTS = ("landing_view", "cta_click")
+# The landing page's sign-up buttons, by where they sit. Must match `DOORS` in
+# web/src/lib/track.ts (a web test reads this tuple to keep the two the same).
+DOORS = ("header", "hero", "sheet", "steps", "desk", "staff", "film", "close", "bar")
 # The events that move money, in cents on the row.
 MONEY_EVENTS = ("purchase", "renewal", "upgrade")
 
@@ -71,6 +77,12 @@ def clean_attr(raw: dict | None) -> dict:
             continue
         out[k] = _short(v).lower() if k in ("utm_source", "utm_medium") else _short(v)
     return out
+
+
+def clean_door(raw: dict | None) -> dict:
+    """A `cta_click` keeps one thing: which button, if it is one of ours. Else nothing."""
+    door = (raw or {}).get("door")
+    return {"door": door} if door in DOORS else {}
 
 
 def clean_props(raw: dict | None) -> dict:

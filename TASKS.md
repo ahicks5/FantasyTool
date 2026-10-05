@@ -242,7 +242,10 @@ Andrew's brief: the landing page exists to get a visitor to press the door. Bran
 - [ ] **LS-11** "Free" is allowed now (Andrew, 2026-10-05). The plan: a free week with a card
       from the start, then the weekly or season sale. The trial is being built in another
       session; once it ships, the landing's ask and the `vocab.test.ts` no-"free" guard follow it.
-- [ ] **LS-12** Measure which door converts: a `cta_click` browser event with the placement.
+- [x] **LS-12** Which button converts: every landing sign-up button carries `data-door`, one
+      listener (`DoorClicks`) sends `cta_click` with the door to our own API, and /admin's Funnel
+      tab shows presses, people and sign-ups per button (last press before the sign-up wins).
+      Needs the API deployed on Render as well as the web on Vercel; until then the presses 400.
 
 ## The landing page, rebuilt as a funnel (2026-09-27)
 

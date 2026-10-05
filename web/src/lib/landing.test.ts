@@ -62,7 +62,7 @@ test("the front page carries no pricing table and no theme switch", () => {
 
 test("the things a reader taps are doors: the example sheet and every desk card", () => {
   // The sheet is the biggest thing on the first screen; a tap on it used to do nothing.
-  assert.match(PAGE, /<Link href=\{WAY_IN\} className="hero callsheet/);
+  assert.match(PAGE, /<Link href=\{WAY_IN\}[^>]*className="hero callsheet/);
   assert.match(PAGE, /LANDING\.sheetCta/);
   // DeskCard renders a Link, so all four answers open the register page.
   assert.match(PAGE, /function DeskCard[\s\S]*?<Link href=\{WAY_IN\}/);

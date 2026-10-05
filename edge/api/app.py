@@ -783,13 +783,19 @@ class EventIn(BaseModel):
 
 @app.post("/api/events")
 def browser_event(body: EventIn, anon: str = Depends(anon_id), email: str | None = Depends(optional_user)):
-    """The one event the browser writes (`landing_view`). Everything else is logged by the
-    server where it happens, so an ad blocker cannot make a sale disappear."""
+    """The two events the browser writes: `landing_view`, and `cta_click` naming which
+    landing button was pressed. Everything else is logged by the server where it happens,
+    so an ad blocker cannot make a sale disappear."""
     if body.name not in telemetry.BROWSER_EVENTS:
         raise HTTPException(400, "unknown event")
     if not anon:
         raise HTTPException(400, "missing X-Anon-Id")
-    props = telemetry.clean_attr(body.props)
+    if body.name == "cta_click":
+        props = telemetry.clean_door(body.props)
+        if not props:
+            raise HTTPException(400, "unknown door")
+    else:
+        props = telemetry.clean_attr(body.props)
     telemetry.log(store, body.name, anon_id=anon, email=email or "", props=props)
     return {"ok": True}
 

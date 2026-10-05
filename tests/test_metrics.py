@@ -25,6 +25,11 @@ EVENTS = sorted([
     *[ev("landing_view", T + H, anon=f"a{i}", utm_source="reddit") for i in range(1, 6)],
     *[ev("landing_view", T + H, anon=f"a{i}", utm_source="google") for i in (6, 7)],
     *[ev("landing_view", T + H, anon=f"a{i}") for i in (8, 9, 10)],
+    # the buttons they pressed: a1 and a6 the hero, a2 the sheet, a3 the bar (and never signs up)
+    ev("cta_click", T + H + 60, anon="a1", door="hero"),
+    ev("cta_click", T + H + 60, anon="a6", door="hero"),
+    ev("cta_click", T + H + 60, anon="a2", door="sheet"),
+    ev("cta_click", T + H + 60, anon="a3", door="bar"),
     ev("signup", T + 2 * H, "ann@x", "a1", utm_source="reddit", utm_campaign="wk4", utm_content="hookA"),
     ev("signup", T + 2 * H, "bob@x", "a2", utm_source="reddit"),
     ev("signup", T + 2 * H, "cat@x", "a6", utm_source="google"),
@@ -105,6 +110,9 @@ def test_the_funnel(r):
     assert (steps["week_retained"]["num"], steps["week_retained"]["den"]) == (1, 1), "Ann's week is not over yet"
     assert steps["week_retained"]["scope"] == "to_date"
     assert r["funnel"]["paywall"] == [{"feature": "waivers", "views": 2}, {"feature": "trade_lab", "views": 1}]
+    doors = {d["door"]: d for d in r["funnel"]["doors"]}
+    assert (doors["hero"]["clicks"], doors["hero"]["people"], doors["hero"]["signups"]) == (2, 2, 2), "Ann and Cat"
+    assert (doors["sheet"]["signups"], doors["bar"]["signups"], doors["bar"]["rate"]) == (1, 0, 0.0)
     assert r["funnel"]["checkout"] == {"started": 3, "finished": 2, "abandoned": 1, "finish_rate": 2 / 3}
 
 
@@ -144,3 +152,30 @@ def test_retention_and_the_loop(r):
     assert [row["size"] for row in r["retention"]["paying"]] == [1, 2]
     assert r["loop"] == {"created": 2, "opens": 5, "opens_per_card": 2.5, "signups": 1, "buyers": 0,
                          "top": [{"id": "abc", "views": 5, "created": T}]}
+
+
+def test_the_landing_doors_credit_each_signup_to_the_last_button_pressed():
+    events = sorted([
+        # b1 presses the hero, then the bar, then signs up: the bar gets the sign-up.
+        ev("cta_click", T + H, anon="b1", door="hero"),
+        ev("cta_click", T + 2 * H, anon="b1", door="bar"),
+        ev("signup", T + 3 * H, "b1@x", "b1"),
+        ev("cta_click", T + 4 * H, anon="b1", door="close"),  # after signing up: a press, no credit
+        # b2 presses the hero twice and never signs up.
+        ev("cta_click", T + H, anon="b2", door="hero"),
+        ev("cta_click", T + 2 * H, anon="b2", door="hero"),
+        # b3 presses the sheet and signs up.
+        ev("cta_click", T + H, anon="b3", door="sheet"),
+        ev("signup", T + 2 * H, "b3@x", "b3"),
+        # b4 signs up without pressing anything: no door is credited.
+        ev("signup", T + 2 * H, "b4@x", "b4"),
+        # Last week's press is outside the range.
+        ev("cta_click", T - 2 * m.DAY, anon="b5", door="desk"),
+    ], key=lambda e: e["created"])
+    doors = {d["door"]: d for d in m.report(events, [], [], [], 0, T, T + m.WEEK, NOW)["funnel"]["doors"]}
+    assert set(doors) == set(m.DOORS), "every door is listed, pressed or not"
+    assert (doors["hero"]["clicks"], doors["hero"]["people"], doors["hero"]["signups"]) == (3, 2, 0)
+    assert (doors["bar"]["clicks"], doors["bar"]["signups"], doors["bar"]["rate"]) == (1, 1, 1.0)
+    assert (doors["sheet"]["signups"], doors["close"]["clicks"], doors["close"]["signups"]) == (1, 1, 0)
+    assert doors["desk"]["clicks"] == 0 and doors["desk"]["rate"] is None
+    assert sum(d["signups"] for d in doors.values()) == 2
