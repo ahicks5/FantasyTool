@@ -54,6 +54,7 @@ import { espnAuthHeaders } from "./espnAuth";
 import { clearYahooAuth, loadYahooAuth, saveYahooAuth, yahooAuthHeaders } from "./yahooAuth";
 import { clearToken, loadToken, saveToken } from "./auth";
 import { HttpError } from "./errors";
+import { stampAsOf, wantsFresh } from "./saved";
 import { anonHeaders, firstTouch, pixel, type Attr } from "./track";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -149,6 +150,8 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
       ...yahooAuthHeaders(),
       // A random browser id, so the server can join an arrival to a sign-up (lib/track.ts).
       ...anonHeaders(),
+      // The reader pressed Refresh: rebuild the league rather than serve the cached one.
+      ...(wantsFresh() ? { "X-Edge-Fresh": "1" } : {}),
       ...(init?.headers ?? {}),
     },
   });
@@ -173,6 +176,8 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
     }
     throw new HttpError(res.status, typeof d === "string" ? d : (body?.error ?? `HTTP ${res.status}`));
   }
+  // How old the league behind this answer is, for "Updated 12 min ago" (lib/saved.ts).
+  stampAsOf(body, res.headers.get("X-Edge-As-Of"));
   return body;
 }
 

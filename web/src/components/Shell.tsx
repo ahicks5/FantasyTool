@@ -4,6 +4,7 @@ import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, type Session } from "@/lib/session";
 import { IconFilm, IconSheet, IconTeam, IconTrade, IconWire } from "./icons";
+import { Freshness } from "./Freshness";
 import { PlayerSheetProvider } from "./player/PlayerSheetProvider";
 import { Ticker } from "./Ticker";
 import { UnlockingBanner, useUnlockOnReturn } from "./Unlocking";
@@ -203,6 +204,8 @@ export function AppShell({
           <h1 className="min-w-0 truncate text-[26px]">{title}</h1>
           {aside ?? <Nameplate session={session} />}
         </div>
+        {/* How old the numbers are, and a Refresh. Fixed height, so it cannot move the page. */}
+        {session.connection && <Freshness />}
         <UnlockingBanner state={unlock} />
         {needsMe && session.loading ? (
           <Opening />

@@ -383,6 +383,28 @@ export const NAMEPLATE = {
   week: (w: number) => `Wk ${w}`,
 } as const;
 
+/**
+ * The age line under the title band: how old the numbers on screen are, and the Refresh.
+ * A reload paints the last answer this browser kept (`lib/saved.ts`) and refreshes
+ * underneath; this line is what keeps that honest.
+ */
+export const FRESH = {
+  updated: (ago: string) => `Updated ${ago}`,
+  refreshing: "Refreshing\u2026",
+  failed: (ago: string) => `Couldn\u2019t refresh \u00b7 ${ago}`,
+  refresh: "Refresh",
+  aria: "Refresh the numbers on this screen",
+  ago: (ms: number) => {
+    const m = Math.floor(Math.max(0, ms) / 60_000);
+    if (m < 1) return "just now";
+    if (m < 60) return `${m} min ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h} hr ago`;
+    const d = Math.floor(h / 24);
+    return d === 1 ? "1 day ago" : `${d} days ago`;
+  },
+} as const;
+
 /** The ticker along the bottom of every screen: the desk's news, one line, running. */
 /* ------------------------------------------------------------- the loader ---
    Any wait that is not the ride: the mark in the middle of the page, a ring turning
