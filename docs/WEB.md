@@ -299,8 +299,15 @@ dead token reads as signed out; the e2e suite relies on that to play a stranger 
 the dev header at the network layer.
 
 `useSession` carries the flags the views check: `signedIn`, `premium` (`account.plan.tier`),
-`isAdmin`, and `account`. A sign-in or sign-out anywhere drops the cached `me` and wakes every
-mounted hook. **A returning account lands on its league without re-entering it**:
+`isAdmin`, and `account`. A sign-in or sign-out anywhere — this tab or another, through the
+`storage` event `lib/auth.ts` listens for — drops the cached `me` and wakes every mounted hook.
+**Traps, all fixed on 2026-10-05, do not bring them back:** a failed `/api/me` must not read as
+signed out (it is retried, `identity.ME_RETRY_MS`, and the last answer stands); an answer in
+flight across a sign-in must be discarded (`generation`), or its "signed out" deletes the new
+token; a tab restored from the back-forward cache gets no storage events, so `pageshow` and
+`visibilitychange` call `revalidate()`, which compares the token on file with the one the
+answer was asked with and repaints only when `identity.identityKey` changes. Sign-out
+(`api.logout`) forgets the open league too, so a shared browser does not hand it on. **A returning account lands on its league without re-entering it**:
 `restoreConnection` runs once per session when there is no `booth.connection` and the account
 has leagues on file, picks the one with the newest `last_used` (`lib/account.pickLeague`),
 reads the league for the week and the team's name, and saves the connection. The account page

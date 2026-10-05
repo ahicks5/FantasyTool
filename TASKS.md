@@ -2,6 +2,20 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Sign-in that stays put across tabs and the back button (2026-10-05)
+Andrew: "finicky whether it knows I'm signed in". Branch `claude/signin-session-sync`.
+- [x] A sign-in or sign-out in one tab reaches every other tab (`storage` event, `lib/auth.ts`).
+- [x] Back button / coming back to the tab re-checks quietly and repaints only on a change (`revalidate`).
+- [x] A failed `/api/me` (Render redeploy, cold start) is retried and never read as signed out.
+- [x] A slow signed-out answer can no longer delete a token from a sign-in that landed meanwhile.
+- [x] Any `401 session expired` drops the token everywhere at once, not one room at a time.
+- [x] Sign-out forgets the open league on that device (was only on `/account`, not `/login`).
+- [x] Sessions slide: 30 days from last use, not from sign-in (both stores, contract-tested on Postgres 16).
+- [x] Signed-in API answers are `private, no-store`; `?next=` refuses `/\host` and control characters.
+- [x] Tests: `identity.test.ts`, `auth.test.ts`, two e2e (cross-tab, dead token), pytest for sliding + no-store.
+- [ ] Pre-existing, not this branch: `tests/test_api.py::test_the_lineup_splits_required_changes_from_decisions_and_prices_every_swap`
+      fails on the base too (a role with an empty `reason`).
+
 ## Owner's Suite — rename (2026-10-05)
 Andrew's call: the name is **Owner's Suite**, replacing Penthouse. A rename, nothing else:
 same mark, same chrome, same rooms, same passes. Everything a user reads, every docstring,

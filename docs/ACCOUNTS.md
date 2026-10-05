@@ -13,13 +13,21 @@ The contract is `docs/API.md` "Accounts"; the web wiring is `docs/WEB.md` "The a
 | Add or change the email | `/account` → Email | `POST /api/account/email` | a real address, not taken; the password if the account has one. Every row moves to the new key; reset links on file die. |
 | Register with email | `/register` → "Use email and password instead" | `POST /api/auth/register` | address shape (≤254), password 8–256 chars, name ≤80; 409 if the address is taken. Signs in on success and lands on `/account`. |
 | Sign in | `/login`, or the sheet | `POST /api/auth/login` | one 401 for wrong password and unknown address, same scrypt cost for both; 10 failures per address per 15 min → 429. |
-| Stay signed in | every page | `Authorization: Bearer` | token hash looked up in `sessions`; 30 days; an unknown or expired token is cleared from the browser (`session.ts`). |
-| Sign out | `/account`, `/login` | `POST /api/auth/logout` | this device only; the browser drops the token even if the call fails. |
+| Stay signed in | every page, every tab | `Authorization: Bearer` | token hash looked up in `sessions`; 30 days **from last use** (a live token slides forward at most once a day, `RENEW_SLACK`); an unknown or expired token is cleared from the browser (`session.ts`, and any `401 session expired` in `api.ts`). Every signed-in answer is `Cache-Control: private, no-store`. |
+| Sign out | `/account`, `/login` | `POST /api/auth/logout` | this device only; the browser drops the token and the open league even if the call fails, and every other tab follows. |
 | Sign out other devices | `/account` → Sign-in and security | `POST /api/auth/logout-others` | every session but this one. |
 | Change password | `/account` → Sign-in and security | `POST /api/auth/password` | needs the current password (a borrowed unlocked phone cannot take the account); ends every other session and every unspent reset link. |
 | Forgot password | `/login` → Forgot your password? | `POST /api/auth/forgot` | always `ok`; 3 mails per address per hour; the link lasts 2 hours and works once. |
 | Set a new password | `/reset?token=…` | `POST /api/auth/reset` | token spent atomically; ends every session and every other link; clears the sign-in throttle; signs in here. The page takes the token off the address bar. |
 | Delete the account | `/account` → type "delete" | `DELETE /api/me?confirm=delete` | removes the user, sessions, resets, leagues, purchases, prefs, runs and feedback. The address can register again. |
+
+**One answer per browser, kept honest** (`web/src/lib/session.ts`, rules in `identity.ts`). The
+token is shared by every tab (`booth.session`), and the app's idea of "signed in" follows it:
+a sign-in or sign-out in one tab reaches the others through the `storage` event; coming back to
+a tab after a minute, or through the back button, re-checks `/api/me` in the background and
+repaints only if something changed; a failed check (a redeploy, a cold start) is retried for
+about 18 seconds and is **never** read as signed out; an answer that left before a sign-in is
+thrown away rather than undoing it. An open sign-in sheet closes itself when another tab signs in.
 
 Pages that need an account check it twice: the view asks the sheet (`useAccountGate`) and the
 API answers 401 regardless. `/account` and `/admin` are guarded; `POST /api/connect` is 401 to a
