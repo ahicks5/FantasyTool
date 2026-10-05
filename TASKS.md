@@ -19,10 +19,10 @@ Built on its own branch; production is untouched.
       `docs/MAP.md`; a `mobile` job in CI.
 - [x] IOS-1 Andrew: decisions D-1..D-6 in `docs/IOS.md` (bundle id, US-only link-out, the
       store name, reviewer account, shipping the web half). All as recommended, 2026-10-05.
-- [~] IOS-2 Andrew (branch `claude/ios-testflight`): Expo Go on his phone (`npx expo start`), then `eas init`, first build,
+- [x] IOS-2 Andrew (branch `claude/ios-testflight`): Expo Go on his phone (`npx expo start`), then `eas init`, first build,
       submit, internal TestFlight (`docs/IOS.md` steps 2-6). — **Andrew**
-      2026-10-05: EAS project `@ahicks5/owners-suite`; build 1.0.0 (2) finished and submitted
-      to App Store Connect. Left: internal testing group, install, the phone checklist.
+      2026-10-05: EAS project `@ahicks5/owners-suite`; build 1.0.0 (2) built, submitted, and
+      installed on Andrew's iPhone through internal TestFlight. "It's on my TestFlight and good."
 - [ ] IOS-3 Ship this branch's `web/` commits to production (inert for web visitors) before
       external testers, so they get the share sheet and the Google Ads tag stays off in the app.
 - [ ] IOS-4 First real-iPhone run of the ESPN sheet against a private league (also closes EK-5).
