@@ -54,6 +54,8 @@ import { espnAuthHeaders } from "./espnAuth";
 import { clearYahooAuth, loadYahooAuth, saveYahooAuth, yahooAuthHeaders } from "./yahooAuth";
 import { clearToken, loadToken, saveToken } from "./auth";
 import { HttpError } from "./errors";
+import { isDeadSession } from "./identity";
+import { clearConnection } from "./storage";
 import { anonHeaders, firstTouch, pixel, type Attr } from "./track";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -168,6 +170,10 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
       throw new YahooAuthError(d.error);
     }
     if (res.status === 401) {
+      // A token the API no longer knows (expired, signed out from another device): drop it
+      // here, so every room and every tab reads signed out at once instead of one call at a
+      // time. Only if it is still the token on file: a sign-in may have replaced it meanwhile.
+      if (isDeadSession(401, d) && auth.Authorization && auth.Authorization === getAuthHeaders().Authorization) clearToken();
       // The API says which: a token that has died reads differently from no token at all.
       throw new HttpError(401, typeof d === "string" && /expired/.test(d) ? "Your session expired. Sign in again." : "Sign in to continue.");
     }
@@ -320,6 +326,16 @@ export async function login(email: string, password: string): Promise<AuthRespon
   return out;
 }
 
+/**
+ * Forget the account on this device: the token, and the league it had open, so the next
+ * person on a shared browser does not walk into it. Every tab hears it (`auth.ts`). Signing
+ * back in brings the league back from the account (`restoreConnection`).
+ */
+function signOutHere(): void {
+  clearConnection();
+  clearToken();
+}
+
 export async function logout(): Promise<void> {
   if (USE_MOCKS) {
     try {
@@ -327,14 +343,14 @@ export async function logout(): Promise<void> {
     } catch {
       /* ignore */
     }
-    clearToken();
+    signOutHere();
     return;
   }
   try {
     await request<unknown>("/auth/logout", { method: "POST" });
   } finally {
     // The token goes whatever the API said: a sign-out that fails on the wire still signs out here.
-    clearToken();
+    signOutHere();
   }
 }
 
@@ -469,7 +485,7 @@ export async function deleteMyAccount(): Promise<void> {
   try {
     await request<unknown>("/me?confirm=delete", { method: "DELETE" });
   } finally {
-    clearToken();
+    signOutHere();
   }
 }
 

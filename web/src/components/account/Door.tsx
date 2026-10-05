@@ -7,6 +7,7 @@ import { AuthForm, type AuthMode } from "./AuthForm";
 import { logout } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { accountContact, accountLabel } from "@/lib/account";
+import { safeNext } from "@/lib/identity";
 import { IconChevron } from "@/components/icons";
 import { Button, Card, Eyebrow, LinkButton, Wordmark } from "@/components/ui";
 import { ACCOUNT, LINES } from "@/lib/vocab";
@@ -41,10 +42,8 @@ export function DoorFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Where a sign-in page sends you afterwards: `?next=`, kept on our own site. */
-export function safeNext(raw: string | null, fallback = "/home"): string {
-  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : fallback;
-}
+/** Where a sign-in page sends you afterwards; the rule lives with the other sign-in rules. */
+export { safeNext };
 
 export function SignedInCard({ next }: { next: string }) {
   const session = useSession();

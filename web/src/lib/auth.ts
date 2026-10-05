@@ -5,11 +5,15 @@
  * only its hash. The token lives here, under a `booth.*` key like every other thing the
  * browser remembers, and rides on every API call from `lib/api.ts`. Nothing here talks to
  * the network; the calls are in `lib/api.ts`, so this file can be tested flat.
+ *
+ * One token per browser, shared by every tab: a sign-in or sign-out in one tab reaches the
+ * others through the `storage` event, so no tab goes on believing something another undid.
  */
 
-const KEY = "booth.session";
+export const KEY = "booth.session";
 
 const listeners = new Set<() => void>();
+let crossTabWired = false;
 
 export function loadToken(): string | null {
   try {
@@ -46,9 +50,21 @@ function notify() {
   listeners.forEach((l) => l());
 }
 
-/** Called after every sign-in and sign-out, so `useSession` refetches who is calling. */
+/** Another tab wrote the token (or cleared all storage): tell this tab's listeners too. */
+function onStorage(e: StorageEvent) {
+  if (e.key === KEY || e.key === null) notify();
+}
+
+/**
+ * Called after every sign-in and sign-out, in this tab or another, so `useSession`
+ * refetches who is calling.
+ */
 export function onAuthChange(cb: () => void): () => void {
   listeners.add(cb);
+  if (!crossTabWired && typeof window !== "undefined" && window.addEventListener) {
+    crossTabWired = true;
+    window.addEventListener("storage", onStorage);
+  }
   return () => {
     listeners.delete(cb);
   };
