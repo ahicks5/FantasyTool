@@ -33,6 +33,12 @@
       ],
       "expo-notifications",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e7dfb06a-a6ca-4860-8066-f2a4c5509a40"
+      }
+    },
+    "owner": "ahicks5"
   }
 }
