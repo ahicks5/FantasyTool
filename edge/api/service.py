@@ -2,6 +2,9 @@
 cached for a few minutes so a page view doesn't hammer Sleeper."""
 from __future__ import annotations
 
+import contextvars
+import os
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -18,6 +21,35 @@ from edge.evaluate import rosters_from_matchups
 from edge.models import League, Team
 
 TTL = 600
+# Past TTL a bundle is still served, while a fresh one is built behind it, up to this age.
+# Rebuilding a Sleeper league is ~25 upstream calls and several seconds; making the reader
+# wait for that every ten minutes is what "the app takes forever to load" was. The week in
+# progress is not held back by this: `app._refresh_live` re-stamps live scoring every minute
+# on whichever bundle is served. Older than this, the request waits for a rebuild.
+STALE_MAX = 6 * 3600
+# A refresh the reader asks for (`want_fresh`) within this many seconds of the last build is
+# that build. The web's Refresh fires several requests at once; one rebuild answers all.
+FRESH_MIN = 60
+# Leagues held in memory at once, least recently used dropped first. A bundle is a few MB.
+MAX_BUNDLES = int(os.environ.get("EDGE_MAX_BUNDLES", "16"))
+# Leagues *built* at once. A cold build holds its upstream payloads while it runs, so on a
+# 512 MB box four of them side by side was the memory limit (docs/DEPLOY.md, "Memory").
+_builds = threading.BoundedSemaphore(int(os.environ.get("EDGE_BUILD_CONCURRENCY", "2")))
+
+#: Set per request from the `X-Edge-Fresh` header (app.py): the reader pressed Refresh.
+want_fresh: contextvars.ContextVar[bool] = contextvars.ContextVar("want_fresh", default=False)
+#: A per-request box `app.py` reads back into the `X-Edge-As-Of` header: when the oldest league
+#: this request answered from was built. A box rather than a value because a sync route runs in
+#: a worker thread with a copy of the context, and only a shared object survives the copy.
+served_as_of: contextvars.ContextVar[dict | None] = contextvars.ContextVar("served_as_of", default=None)
+
+
+def _note_served(b: "Bundle") -> "Bundle":
+    b.used_at = time.time()
+    box = served_as_of.get()
+    if box is not None:
+        box["at"] = min(box.get("at", b.loaded_at), b.loaded_at)
+    return b
 
 
 @dataclass
@@ -41,35 +73,55 @@ class Bundle:
     # Kept because the film's swing names a waiver claim that started; small JSON.
     transactions: list[dict] = field(default_factory=list)
     loaded_at: float = field(default_factory=time.time)
+    used_at: float = field(default_factory=time.time)
 
     def hoarded(self, roster_id: str) -> list[str]:
         return hoarded_positions(self.pos_counts, roster_id)
 
 
 _cache: dict[tuple[str, str, str], Bundle] = {}
+# One lock per league key: the page opens with four requests at once, and before this each
+# of them built the same league side by side. Now the first builds and the rest wait for it.
+_locks: dict[tuple[str, str, str], threading.Lock] = {}
+_locks_guard = threading.Lock()
 
 
 def _transactions_history(league_raw: dict, week: int) -> list[dict]:
     """This season's transactions and last season's, each stamped with the league it came
     from: Sleeper's rows carry no league id, and the film must not read a claim from last
-    season as one from this (`claims`)."""
+    season as one from this (`claims`).
+
+    Up to ~22 requests, one per week, and they are fetched side by side: one after another
+    they were most of a league's load time (seconds, on every rebuild). The rules for a
+    failed week are unchanged: this season stops at the first week that fails, and last
+    season stops at its first failure and skips empty weeks.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
     lid = league_raw["league_id"]
+    prev = league_raw.get("previous_league_id")
+    jobs = [(lid, w) for w in range(1, week + 1)] + ([(prev, w) for w in range(1, 19)] if prev else [])
+
+    def fetch(job):
+        try:
+            return api.transactions(*job)
+        except Exception:  # noqa: BLE001
+            return None
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        got = dict(zip(jobs, pool.map(fetch, jobs)))
     tx: list[dict] = []
     for w in range(1, week + 1):
-        try:
-            tx += [{**t, "league_id": lid} for t in api.transactions(lid, w)]
-        except Exception:  # noqa: BLE001
+        rows = got[(lid, w)]
+        if rows is None:
             break
-    prev = league_raw.get("previous_league_id")
+        tx += [{**t, "league_id": lid} for t in rows]
     if prev:
         for w in range(1, 19):
-            try:
-                t = api.transactions(prev, w)
-            except Exception:  # noqa: BLE001
+            rows = got[(prev, w)]
+            if rows is None:
                 break
-            if not t:
-                continue
-            tx += [{**row, "league_id": prev} for row in t]
+            tx += [{**row, "league_id": prev} for row in rows]
     return tx
 
 
@@ -110,7 +162,7 @@ def load_sleeper(league_id: str, week: int | None = None) -> Bundle:
     )
 
 
-def get_bundle(platform: str, league_id: str, auth=None) -> Bundle:
+def get_bundle(platform: str, league_id: str, auth=None, fresh: bool | None = None) -> Bundle:
     """`auth` is an `espn_api.EspnAuth` for a private ESPN league, a `yahoo_api.YahooAuth`
     for any Yahoo league (Yahoo has no public read), or None.
 
@@ -120,9 +172,69 @@ def get_bundle(platform: str, league_id: str, auth=None) -> Bundle:
     a different key, so proving it is the same as fetching it.
     """
     key = (platform, league_id, auth.fingerprint if auth else "")
+    fresh = want_fresh.get() if fresh is None else fresh
     b = _cache.get(key)
-    if b and time.time() - b.loaded_at < TTL:
+    if b:
+        age = time.time() - b.loaded_at
+        if age < (FRESH_MIN if fresh else TTL):
+            return _note_served(b)
+        if not fresh and age < STALE_MAX:
+            _rebuild_behind(key, platform, league_id, auth)
+            return _note_served(b)
+    return _note_served(_build_once(key, platform, league_id, auth, fresh))
+
+
+def _lock_for(key: tuple[str, str, str]) -> threading.Lock:
+    with _locks_guard:
+        return _locks.setdefault(key, threading.Lock())
+
+
+def _build_once(key, platform: str, league_id: str, auth, fresh: bool) -> Bundle:
+    """Build the league unless another request is already building it, then wait for that."""
+    with _lock_for(key):
+        b = _cache.get(key)
+        if b and time.time() - b.loaded_at < (FRESH_MIN if fresh else TTL):
+            return b  # built by the request we were waiting behind
+        with _builds:
+            b = _build(platform, league_id, auth)
+        _keep(key, b)
         return b
+
+
+def _rebuild_behind(key, platform: str, league_id: str, auth) -> None:
+    """Start a rebuild in the background, unless one is already running for this league."""
+    lock = _lock_for(key)
+    if not lock.acquire(blocking=False):
+        return
+
+    def run() -> None:
+        try:
+            with _builds:
+                _keep(key, _build(platform, league_id, auth))
+        except Exception:  # noqa: BLE001 - the stale bundle stays; the next request tries again
+            pass
+        finally:
+            lock.release()
+
+    threading.Thread(target=run, name=f"rebuild-{platform}-{league_id}", daemon=True).start()
+
+
+def _keep(key, b: Bundle) -> None:
+    """Cache a bundle, then drop what is too old and, past MAX_BUNDLES, the least recently used."""
+    _cache[key] = b
+    now = time.time()
+    for k, v in list(_cache.items()):
+        if now - v.loaded_at > STALE_MAX:
+            _cache.pop(k, None)
+    while len(_cache) > MAX_BUNDLES:
+        oldest = min(_cache, key=lambda k: _cache[k].used_at)
+        _cache.pop(oldest, None)
+    with _locks_guard:
+        for k in [k for k, lock in _locks.items() if k not in _cache and not lock.locked()]:
+            _locks.pop(k, None)
+
+
+def _build(platform: str, league_id: str, auth=None) -> Bundle:
     if platform == "sleeper":
         b = load_sleeper(league_id)
     elif platform == "espn":
@@ -145,7 +257,6 @@ def get_bundle(platform: str, league_id: str, auth=None) -> Bundle:
                    bid_stats={}, profiles={}, pos_counts={})
     else:
         raise ValueError(f"unknown platform {platform}")
-    _cache[key] = b
     return b
 
 
@@ -162,6 +273,15 @@ def get_bundle(platform: str, league_id: str, auth=None) -> Bundle:
 # `TTL`. An unfinished week is never cached at all: its scores are still moving. Keyed by
 # (platform, league_id, week) — the same league is shared by every user who connected it.
 _played: dict[tuple[str, str, int], recap_mod.PlayedWeek] = {}
+# Finished weeks held at once, oldest first out: about 25 leagues' seasons. Before the cap
+# this grew for the life of the process, one entry per league per week ever read.
+MAX_PLAYED = 300
+
+
+def _keep_played(key: tuple[str, str, int], pw: recap_mod.PlayedWeek) -> None:
+    _played[key] = pw
+    while len(_played) > MAX_PLAYED:
+        _played.pop(next(iter(_played)), None)
 
 
 def _sleeper_played_week(league_raw: dict, users_raw: list[dict], players_raw: dict,
@@ -300,7 +420,7 @@ def played_weeks(platform: str, league_id: str, b: Bundle, auth=None,
             try:
                 box = espn_api.boxscore(b.league.season, league_id, w.week, auth=auth)
                 w = _espn_boxscore_week(box, w.week, b.league.starting_slots, w)
-                _played[key] = w
+                _keep_played(key, w)
             except Exception:  # noqa: BLE001 — one week's boxscore failing costs its line-by-line only
                 pass
             out.append(w)
@@ -328,7 +448,7 @@ def played_weeks(platform: str, league_id: str, b: Bundle, auth=None,
             pw = _sleeper_played_week(league_raw, users_raw, players_raw, week, matchups_raw)
             if not pw.played:
                 continue  # in progress or not kicked off — and never cached, the scores move
-            _played[key] = pw
+            _keep_played(key, pw)
         out.append(pw)
     return out
 

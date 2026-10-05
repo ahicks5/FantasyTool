@@ -182,6 +182,12 @@ Deletion revokes the season pass along with the data — that is the honest cons
 no email (`edge/api/share.py`).
 
 ## Leagues
+
+**Freshness headers, on every league route.** A response that read a league carries
+`X-Edge-As-Of: <epoch seconds>`, the time that league was built. Past its 10-minute TTL a
+league is still served (up to 6 h old) while a fresh one builds behind it, so this can be
+older than the request. Send `X-Edge-Fresh: 1` to make the API rebuild instead. A rebuild
+within 60 s of the last one is that one. The header is exposed to the browser through CORS.
 `GET /api/sleeper/leagues?username=X` → `[{"league_id","name","status","total_rosters"}]`
 `GET /api/league/{platform}/{league_id}` → summary
 ```json
