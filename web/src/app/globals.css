@@ -3104,3 +3104,19 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
 .ghost-bar { display: block; height: 11px; border-radius: 6px; background: var(--color-line-2); }
 .ghost-bar-thin { height: 8px; opacity: 0.7; }
 .ghost-num { width: 44px; height: 18px; border-radius: 6px; background: var(--color-line-2); flex: none; }
+
+/* ---------------------------------------------------------------- the walk ---
+   The sign-up walk (docs/SPEC-ONBOARDING.md): one question a screen, each sliding in
+   from the side it is heading. Under reduced motion it fades. */
+@keyframes walk-in-fwd { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes walk-in-back { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+@keyframes walk-fade { from { opacity: 0; } to { opacity: 1; } }
+.walk-fwd { animation: walk-in-fwd 0.34s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.walk-back { animation: walk-in-back 0.34s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.walk-bar-fill { transition: width 0.45s cubic-bezier(0.2, 0.7, 0.3, 1); }
+/* A name the reader has not paid for: a shape where the words would be. */
+.walk-haze { filter: blur(4px); user-select: none; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  .walk-fwd, .walk-back { animation: walk-fade 0.2s ease both; }
+  .walk-bar-fill { transition: none; }
+}

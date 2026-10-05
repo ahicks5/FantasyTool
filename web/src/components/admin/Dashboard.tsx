@@ -66,6 +66,32 @@ function Today({ m }: { m: AdminMetrics }) {
   );
 }
 
+/** The sign-up walk: of this range's sign-ups, how many reached each screen, and the drop at each. */
+function Walk({ w }: { w: NonNullable<AdminMetrics["walk"]> }) {
+  return (
+    <Card className="mt-2" data-testid="funnel-walk">
+      <div className="eyebrow">{W.walkTitle}</div>
+      {w.cohort === 0 ? (
+        <p className="mt-1 text-[14px] text-muted">{W.walkNone}</p>
+      ) : (
+        <>
+          <p className="mt-1 text-[13px] text-muted">{W.walkCohort(w.cohort)}</p>
+          <ul className="mt-2 grid gap-1.5">
+            {w.steps.map((s) => (
+              <li key={s.key} className="grid grid-cols-[1fr_auto_auto] items-baseline gap-3 text-[14px]">
+                <span className="text-ink-2">{s.label}</span>
+                <span className="tnum font-bold text-ink">{s.num}</span>
+                <span className="tnum w-12 text-right text-[12px] text-muted">{s.of_previous == null ? "" : rate(s.of_previous)}</span>
+              </li>
+            ))}
+          </ul>
+          {w.offer_skipped > 0 && <p className="mt-2 text-[12px] text-muted">{W.walkSkipped(w.offer_skipped)}</p>}
+        </>
+      )}
+    </Card>
+  );
+}
+
 function Funnel({ m }: { m: AdminMetrics }) {
   const f = m.funnel;
   return (
@@ -90,6 +116,7 @@ function Funnel({ m }: { m: AdminMetrics }) {
           </li>
         ))}
       </ul>
+      {m.walk && <Walk w={m.walk} />}
       <Card className="mt-2">
         <div className="eyebrow">{W.checkoutTitle}</div>
         <p className="tnum mt-1 text-[14px] text-ink">

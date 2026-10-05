@@ -24,7 +24,7 @@ import {
   SCOUT_OPEN,
   WIRE,
   OFFICE,
-  CALL, FILM, ACCOUNT, PRICING, ESPN_KEY, YAHOO } from "./vocab.ts";
+  CALL, FILM, ACCOUNT, PRICING, ESPN_KEY, YAHOO, ONBOARD } from "./vocab.ts";
 
 /**
  * The vocabulary is the one file that is allowed to say a section's name, so it is also
@@ -150,6 +150,8 @@ const ALL_COPY: string[] = [
   // The account: every string, every templated line rendered once.
   // Walked all the way down: the admin's numbers nest a level deeper than the rest.
   ...allStrings(ACCOUNT),
+  // The sign-up walk: every screen's words.
+  ...allStrings(ONBOARD),
 ];
 
 /** Every string in a nested copy object, each templated line rendered once with sample values. */

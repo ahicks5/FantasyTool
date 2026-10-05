@@ -1,7 +1,7 @@
 "use client";
-/** Create an account: the same door as /login, opened on the register side. */
-import { AuthDoor } from "@/components/account/Door";
+/** Create an account: the sign-up walk, one question a screen, from the phone to a linked league and the free week (docs/SPEC-ONBOARDING.md). */
+import { Onboarding } from "@/components/onboard/Onboarding";
 
 export default function RegisterPage() {
-  return <AuthDoor start="register" />;
+  return <Onboarding />;
 }

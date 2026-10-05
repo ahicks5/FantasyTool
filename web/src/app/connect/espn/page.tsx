@@ -35,6 +35,7 @@ import {
   type EspnKey,
   type Hand,
 } from "@/lib/espnKey";
+import { leagueHome, walkStore } from "@/lib/onboarding";
 import { saveEspnAuth } from "@/lib/espnAuth";
 import { useLocation } from "@/lib/href";
 import { useSession } from "@/lib/session";
@@ -113,14 +114,15 @@ export default function EspnKeyPage() {
   const codeBox = useRef<HTMLTextAreaElement>(null);
 
   /** Save the key to this device and go load the league. The league ESPN's page named wins
-   *  over the one the walk was opened for; the team rides along so /connect can pick it. */
+   *  over the one the walk was opened for; the team rides along so /connect can pick it.
+   *  Opened from the sign-up walk, the league loads back in the walk instead (`leagueHome`). */
   function finish(key: EspnKey) {
     saveEspnAuth(key.s2, key.swid);
     const league = key.league || leagueId;
     const q = new URLSearchParams({ platform: "espn" });
     if (league) q.set("id", league);
     if (league && key.team) q.set("team", key.team);
-    router.replace(`/connect?${q}`);
+    router.replace(`${leagueHome(walkStore())}?${q}`);
   }
 
   // The landing: the bookmark has just brought us back.
@@ -132,7 +134,7 @@ export default function EspnKeyPage() {
     const q = new URLSearchParams({ platform: "espn" });
     if (league) q.set("id", league);
     if (league && key.team) q.set("team", key.team);
-    router.replace(`/connect?${q}`);
+    router.replace(`${leagueHome(walkStore())}?${q}`);
   }, [hash, leagueId, router]);
 
   const code = origin ? buildEspnKeyBookmarklet(espnKeyReturnUrl(origin, leagueId), leagueId) : "";

@@ -19,6 +19,7 @@ import type {
   WaiverPlanResponse,
   CheckoutResponse,
   PromoResponse,
+  VerifyStartResponse,
   FeedbackRequest,
   PaywallDetail,
   Roster,
@@ -48,6 +49,7 @@ import type {
   Role,
   UpgradeResponse,
   Health,
+  OnboardStep,
 } from "./types";
 import * as mocks from "./mocks";
 import { espnAuthHeaders } from "./espnAuth";
@@ -438,6 +440,29 @@ export async function upgrade(sku: Sku, returnTo?: string, promo?: string): Prom
   if (promo) body.promo = promo;
   const out = await request<UpgradeResponse>("/account/upgrade", { method: "POST", body: JSON.stringify(body) });
   if (out.url) pixel("checkout", { sku });
+  return out;
+}
+
+/**
+ * Tell the API where the sign-up walk is: a screen reached, a skip, or the nameplate.
+ * Every write is idempotent on the server, so a repeated call is harmless.
+ */
+export async function setOnboarding(body: { step?: OnboardStep; skip?: "name" | "email" | "offer"; name?: string }): Promise<Me | null> {
+  if (USE_MOCKS) return null;
+  return (await request<{ me: Me }>("/me/onboarding", { method: "PUT", body: JSON.stringify(body) })).me;
+}
+
+/** Send a confirm-your-address link. `sent` is false when no mail provider is set. */
+export async function startEmailVerify(): Promise<VerifyStartResponse> {
+  if (USE_MOCKS) return { ok: true, sent: false, verified: false };
+  return request<VerifyStartResponse>("/auth/email/verify/start", { method: "POST" });
+}
+
+/** Spend a confirm link: the address is proved and this device is signed in. */
+export async function verifyEmail(token: string): Promise<AuthResponse> {
+  if (USE_MOCKS) return mockSignIn("you@example.com");
+  const out = await request<AuthResponse>("/auth/email/verify", { method: "POST", body: JSON.stringify({ token }) });
+  saveToken(out.token);
   return out;
 }
 

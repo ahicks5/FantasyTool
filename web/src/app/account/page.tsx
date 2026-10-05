@@ -7,13 +7,15 @@ import { DoorFrame } from "@/components/account/Door";
 import { IconCheck, IconChevron } from "@/components/icons";
 import { Loading } from "@/components/Loading";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton, OnAir, ThemeSetting } from "@/components/ui";
-import { addPhone, changePassword, setSmsOptIn, deleteMyAccount, phoneStart, setAccountEmail, forgetLeague, getLeague, logout, logoutOthers, markLeagueUsed } from "@/lib/api";
+import { addPhone, changePassword, setSmsOptIn, deleteMyAccount, phoneStart, setAccountEmail, forgetLeague, getLeague, logout, logoutOthers, markLeagueUsed, startEmailVerify } from "@/lib/api";
+import { dayFromSeconds } from "@/lib/onboarding";
+import { formatCents } from "@/lib/format";
 import { describeAuthError } from "@/lib/authError";
 import { displayPhone, leagueRoom, shortDate } from "@/lib/account";
 import { useSession } from "@/lib/session";
 import { clearConnection, saveConnection } from "@/lib/storage";
 import type { MeLeague, Sku } from "@/lib/types";
-import { ACCOUNT, LINES, PRICING, YAHOO } from "@/lib/vocab";
+import { ACCOUNT, LINES, ONBOARD, PRICING, YAHOO } from "@/lib/vocab";
 
 function PlanFlag({ premium, admin }: { premium: boolean; admin: boolean }) {
   return (
@@ -75,6 +77,46 @@ function SmsOptIn({ on, onSaved }: { on: boolean; onSaved: () => void }) {
   );
 }
 
+/**
+ * Whether the address on file is proved by a clicked link (docs/SPEC-ONBOARDING.md O-6).
+ * With no mail provider on the API the button says plainly that nothing was sent.
+ */
+function ConfirmAddress({ verified }: { verified: boolean }) {
+  const [state, setState] = useState<"idle" | "busy" | "sent" | "notSent">("idle");
+  if (verified) {
+    return (
+      <p className="flex items-center gap-1.5 text-[12px] font-bold text-start" data-testid="email-verified">
+        <IconCheck size={12} strokeWidth={3} />
+        {ONBOARD.verified}
+      </p>
+    );
+  }
+  return (
+    <p className="flex flex-wrap items-center gap-x-3 text-[12px] text-muted" data-testid="email-unverified">
+      <span>{ONBOARD.unverified}</span>
+      {state === "sent" ? (
+        <span className="font-bold text-ink">{ONBOARD.linkSent}</span>
+      ) : state === "notSent" ? (
+        <span>{ONBOARD.linkNotSent}</span>
+      ) : (
+        <button
+          type="button"
+          disabled={state === "busy"}
+          className="min-h-11 font-bold text-ink underline underline-offset-4"
+          onClick={() => {
+            setState("busy");
+            startEmailVerify()
+              .then((r) => setState(r.sent ? "sent" : "notSent"))
+              .catch(() => setState("notSent"));
+          }}
+        >
+          {ONBOARD.sendLink}
+        </button>
+      )}
+    </p>
+  );
+}
+
 /** The ways in on file: the phone and the email, each addable or changeable. */
 function Contact() {
   const session = useSession();
@@ -129,6 +171,7 @@ function Contact() {
           )}
         </div>
         {!account.email && open !== "email" && <p className="text-[12px] leading-snug text-muted">{ACCOUNT.emailOnFile.none}</p>}
+        {account.email && open !== "email" && <ConfirmAddress verified={account.email_verified === true} />}
         {open === "email" && (
           <form
             className="card grid gap-3 p-4"
@@ -384,6 +427,7 @@ function AccountBody() {
   const weekOnly = account.plan.skus.includes("week_pass") && !hasSeason;
   const planName = account.plan.skus.length === 1 ? (PRICING.names as Record<string, string>)[account.plan.skus[0]] ?? account.plan.name : account.plan.name;
   const current = session.connection;
+  const trial = me.trial ?? null;
   const fresh = me.leagues.length === 0 && !me.leagues_used;
   const row = "flex min-h-12 w-full items-center justify-between gap-3 rounded-xl px-4 text-[14px] font-bold";
 
@@ -408,7 +452,8 @@ function AccountBody() {
         <div className="hero mt-6 p-6 rise rise-1" data-testid="welcome">
           <OnAir className="text-white/45" label="Off air" />
           <p className="mt-3 max-w-[20rem] text-[16px] leading-relaxed text-white/80">{ACCOUNT.welcome.body}</p>
-          <LinkButton href="/connect" variant="onHero" className="mt-5 w-full">
+          {/* The rest of the sign-up walk: the league, the first call, the free week. */}
+          <LinkButton href="/register" variant="onHero" className="mt-5 w-full">
             {ACCOUNT.welcome.cta}
           </LinkButton>
         </div>
@@ -481,7 +526,13 @@ function AccountBody() {
         <Eyebrow>{ACCOUNT.plan.eyebrow}</Eyebrow>
         <p className="display mt-1 text-[24px] leading-tight">{planName}</p>
         <p className="mt-1 text-[13px] leading-snug text-muted" data-testid="plan-line">
-          {weekOnly && account.pass_until ? ACCOUNT.plan.weekLine(shortDate(account.pass_until)) : premium ? ACCOUNT.plan.premiumLine : ACCOUNT.plan.freeLine}
+          {trial?.active
+            ? trial.next_charge_at && trial.next_charge_cents != null && me.checkout
+              ? ACCOUNT.plan.trialLine(formatCents(trial.next_charge_cents), dayFromSeconds(trial.next_charge_at))
+              : trial.cancelled
+                ? ACCOUNT.plan.trialCancelled(dayFromSeconds(trial.until))
+                : ACCOUNT.plan.trialOpen(dayFromSeconds(trial.until))
+            : weekOnly && account.pass_until ? ACCOUNT.plan.weekLine(shortDate(account.pass_until)) : premium ? ACCOUNT.plan.premiumLine : ACCOUNT.plan.freeLine}
         </p>
         {!hasSeason && (
           <Button variant="start" className="mt-4 w-full" onClick={() => buy("full_report", LINES.paywallBundle)} data-testid="upgrade-bundle">

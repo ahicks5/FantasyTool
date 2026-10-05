@@ -7,6 +7,7 @@
  */
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { leagueHome, walkStore } from "@/lib/onboarding";
 import { finishYahooSignIn } from "@/lib/api";
 import { takeYahooState } from "@/lib/yahooAuth";
 import { ErrorBox, Eyebrow, LinkButton } from "@/components/ui";
@@ -30,7 +31,8 @@ function YahooReturnInner() {
     (async () => {
       if (!code || !takeYahooState(state)) throw new Error(denied ? YAHOO.expired : YAHOO.badState);
       await finishYahooSignIn(code);
-      router.replace("/connect?platform=yahoo");
+      // Opened from the sign-up walk, the league list opens back in the walk (`leagueHome`).
+      router.replace(`${leagueHome(walkStore())}?platform=yahoo`);
     })().catch(setError);
   }, [params, router]);
 

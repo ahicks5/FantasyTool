@@ -66,8 +66,15 @@ def _leagues_allowed(email: str | None) -> int:
 
 
 def _week_live(email: str | None) -> bool:
+    """A paid week is running. The free week is a week-pass row too, but it was not paid
+    for, so on its own it does not earn the week-to-season credit."""
     until = store.pass_until(email, products.WEEK_SKU, _season()) if email else None
-    return bool(until and until > time.time())
+    if not (until and until > time.time()):
+        return False
+    t = store.trial(email)
+    only_the_free_week = (t and t["season"] == _season() and t["revoked"] is None
+                          and store.count_sku(email, products.WEEK_SKU, _season()) <= 1)
+    return not only_the_free_week
 
 
 def _season_price(email: str | None, promo: str | None = None) -> int:

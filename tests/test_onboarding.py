@@ -90,6 +90,15 @@ def test_a_free_week_toward_the_season_bills_the_season(client):
     assert me["skus"] == ["week_pass"]
 
 
+def test_the_free_week_does_not_earn_the_week_to_season_credit(client):
+    """Only a paid week counts toward the season; the free one costs nothing to credit."""
+    h = signup(client)
+    client.post("/api/account/upgrade", headers=h, json={"sku": "week_pass", "promo": "FREEWEEK"})
+    assert client.get("/api/me", headers=h).json()["season_price_cents"] == 2999
+    app_mod.store.grant("ann@x.com", "week_pass", app_mod._season(), source="stripe", ref="in_paid")
+    assert client.get("/api/me", headers=h).json()["season_price_cents"] == 2500
+
+
 def test_an_account_already_paying_is_not_offered_a_free_week(client):
     h = signup(client)
     client.post("/api/account/upgrade", headers=h, json={"sku": "week_pass"})

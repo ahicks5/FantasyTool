@@ -53,6 +53,7 @@ const ALLOWED: Record<string, string> = {
     "lines and the bench rows above and below it do go through PlayerName.",
   "src/components/player/Report.tsx": "The player page's own header. It is already his page.",
   "src/components/Pricing.tsx": "A product's name on the price list, not a player's.",
+  "src/components/onboard/Onboarding.tsx": "A pass's name on the sign-up walk's offer, not a player's.",
   "src/components/Unlocking.tsx": "A product's name, said back after a purchase, not a player's.",
   "src/components/Standings.tsx": "A fantasy team's name in the table, not a player's.",
   "src/components/ShareCard.tsx":
@@ -72,7 +73,7 @@ const ALLOWED: Record<string, string> = {
     "filters, the sort and every row paged in after the first fifty. /waivers/<id> is " +
     "untouched and still the deep link (SPEC-PLAYER-PAGE.md, D-8).",
   "src/app/s/[id]/page.tsx": "The shared verdict page. Same `SharedPlayer` with no id, and it is read signed-out.",
-  "src/app/connect/page.tsx": "League and team names on the way in, before there is a league to score anyone by.",
+  "src/components/LeagueLinker.tsx": "League and team names on the way in, before there is a league to score anyone by.",
   "src/app/account/page.tsx": "The account: plan names, league names and product names. No player is ever on this page.",
   "src/app/admin/page.tsx": "The admin's list: account names, plan names and league names. No player is ever on this page.",
   "src/components/account/AccountGate.tsx": "The upgrade sheet prints product names (Wire Pass, The Owner's Suite), never a player's.",

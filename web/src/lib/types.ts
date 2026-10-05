@@ -80,6 +80,32 @@ export interface Account {
   phone?: string | null;
   /** False for an account made with a phone, which signs in by text code. */
   has_password?: boolean;
+  /** True once a confirm link to the address on file was clicked. Absent on old payloads. */
+  email_verified?: boolean;
+}
+
+/** The free first week (docs/SPEC-ONBOARDING.md), as `/api/me` describes it. Unix seconds. */
+export interface Trial {
+  /** The pass it bills when it ends. */
+  sku: Sku;
+  started: number;
+  /** When access lapses if nothing is paid (the week plus its grace day). */
+  until: number | null;
+  active: boolean;
+  converted: boolean;
+  cancelled: boolean;
+  /** When the first charge lands, and how much; null once cancelled, paid or revoked. */
+  next_charge_at: number | null;
+  next_charge_cents: number | null;
+}
+
+/** A screen of the sign-up walk the API counts (`PUT /api/me/onboarding`). */
+export type OnboardStep = "named" | "email" | "league" | "reveal" | "offer" | "done";
+
+/** What the sign-up walk remembers on the server: screens reached and skips, each a unix time. */
+export interface OnboardingState {
+  reached?: Partial<Record<"named" | "email" | "league" | "reveal" | "offer" | "done", number>>;
+  skipped?: Partial<Record<"name" | "email" | "offer", number>>;
 }
 
 export interface Me {
@@ -102,6 +128,16 @@ export interface Me {
   phone_sign_in?: boolean;
   /** Stripe's customer-portal login link, where a week-pass subscriber manages or cancels. */
   billing_portal_url?: string | null;
+  /** The free first week on file, if any. Absent on old payloads. */
+  trial?: Trial | null;
+  /** Whether this account may still start its one free week. */
+  trial_eligible?: boolean;
+  /** How long the free week is. */
+  trial_days?: number;
+  /** What the sign-up walk remembers. */
+  onboarding?: OnboardingState;
+  /** True when a confirm-your-address mail would really be sent (a provider is set). */
+  email_sending?: boolean;
 }
 
 /** `POST /api/auth/phone/start`. `dev_code` only from a dev API, which texts nothing. */
@@ -137,6 +173,18 @@ export interface PromoResponse {
   sku: Sku;
   percent_off: number;
   price_cents: number | null;
+  /** A free-week code: the days before the first charge. 0 for a discount code. */
+  trial_days?: number;
+  /** A free-week code only: whether this account may still use it. */
+  eligible?: boolean;
+}
+
+/** `POST /api/auth/email/verify/start`. `dev_link` only from a dev API, which mails nothing. */
+export interface VerifyStartResponse {
+  ok: boolean;
+  sent: boolean;
+  verified: boolean;
+  dev_link?: string;
 }
 
 /** One row on the admin's list: the account, its plan and its leagues. */
@@ -1719,6 +1767,12 @@ export interface AdminMetrics {
     current: MetricTiles & { paying_now: number };
     previous: MetricTiles;
     last_hour: { signups: number; checkouts: number; purchases: number };
+  };
+  /** The sign-up walk for this range's sign-ups (docs/SPEC-ONBOARDING.md). Absent on older APIs. */
+  walk?: {
+    cohort: number;
+    offer_skipped: number;
+    steps: { key: string; label: string; num: number; of_signups: number | null; of_previous: number | null }[];
   };
   funnel: {
     steps: FunnelStep[];
