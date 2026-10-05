@@ -16,6 +16,26 @@ Andrew: "finicky whether it knows I'm signed in". Branch `claude/signin-session-
 - [ ] Pre-existing, not this branch: `tests/test_api.py::test_the_lineup_splits_required_changes_from_decisions_and_prices_every_swap`
       fails on the base too (a role with an empty `reason`).
 
+## Onboarding wizard (docs/SPEC-ONBOARDING.md, 2026-10-05)
+Andrew's brief: the sign-up is the most important screen in the building. One question per
+screen, phone first (email as the side door), name as the nameplate, a league linked on the
+walk, then a card on file for a free first week (`FREEWEEK`) at $4.99/week or **$29.99** for
+the season. Built the same day ("build it all now"); defaults taken for D4–D8 (spec, Status).
+- [x] O-1 Prices: season $24.99 → $29.99, upgrade credit $25.00, STHTIKTOK $14.99, `FREEWEEK` trial code
+- [x] O-2 Stripe trial (card up front, $0 today), webhook: `trial_start`, `trial_convert`, `trial_ending`
+- [x] O-3 The walk's frame and identity screens; `/register` is the walk; resume from `/api/me`
+- [x] O-4 The league screen: `LeagueLinker` shared with `/connect`; ESPN and Yahoo return to the walk
+- [x] O-5 The reveal (first real call), the offer (card), done (the elevator); the pass sheet learns the free week
+- [x] O-6 Email verification placeholder: table on both stores, routes, `/verify`, the flag, the account control
+- [x] O-7 The walk on `/admin` → Funnel
+- [ ] Stripe dashboard: trial-ending reminder email on, customer portal on, add the
+      `customer.subscription.trial_will_end` event to the webhook — **Andrew** (docs/DEPLOY.md)
+- [ ] One test-mode Checkout with `FREEWEEK` on each pass against real Stripe before launch: the
+      $0 invoice, the day-8 charge (Stripe's test clock), the season's subscription ending itself.
+- [ ] Twilio Verify template ending `@penthousefantasy.com #<code>` for Android code autofill — **Andrew**
+- [ ] Decide: require a confirmed email before an email-only account's first purchase, once mail sends — **Andrew**
+- [ ] Confirm the defaults: week preselected, the skip's words, $25.00 credit — **Andrew**
+
 ## Owner's Suite — rename (2026-10-05)
 Andrew's call: the name is **Owner's Suite**, replacing Penthouse. A rename, nothing else:
 same mark, same chrome, same rooms, same passes. Everything a user reads, every docstring,

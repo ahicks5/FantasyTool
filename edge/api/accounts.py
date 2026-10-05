@@ -130,6 +130,9 @@ PHONE_FAILURES = Throttle(5, 10 * 60)
 #: Reset emails per account per hour. Past it the form still says "sent": it must not tell
 #: a stranger anything, and it must not become a way to flood someone's inbox.
 RESET_REQUESTS = Throttle(3, 60 * 60)
+# Confirm-your-address links: the same cap as resets, per address.
+VERIFY_REQUESTS = Throttle(3, 60 * 60)
+VERIFY_HOURS = 48
 
 
 def new_token() -> str:
@@ -181,6 +184,10 @@ PHONE_KEY_DOMAIN = "phone.invalid"
 TICKET_MINUTES = 30
 
 
+def verify_expiry(now: float | None = None) -> float:
+    return (now or time.time()) + VERIFY_HOURS * 3600
+
+
 def phone_key(phone: str) -> str:
     return f"p{''.join(c for c in phone if c.isdigit())}@{PHONE_KEY_DOMAIN}"
 
@@ -225,4 +232,6 @@ def public_user(row: dict | None, email: str, env: dict | None = None) -> dict:
         "last_login": row.get("last_login"),
         "phone": row.get("phone") or None,
         "has_password": bool(row.get("password_hash")),
+        # A clicked confirm link on the address on file (docs/SPEC-ONBOARDING.md O-6).
+        "email_verified": bool(row.get("email_verified")) and not is_placeholder(email),
     }

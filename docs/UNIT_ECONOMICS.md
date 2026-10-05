@@ -15,6 +15,22 @@ the module — change one, re-run, and the conclusions change with it.
 
 ---
 
+## 0a. The season went to $29.99, and the first week is free (Andrew, 2026-10-05)
+
+Re-run of `uv run python -m edge.cli economics` on the new catalog:
+
+| SKU | Price | Stripe | LLM | Net | Margin | Runway |
+|---|---|---|---|---|---|---|
+| League slot | $2.99 | $0.39 | — | $2.51 | 84.1% | unlimited |
+| Week pass (per paid week) | $4.99 | $0.44 | $0.01 | $4.38 | 87.9% | 326 verdicts |
+| Season pass | $29.99 | $1.17 | $0.16 | $27.76 | 92.6% | 2,068 verdicts |
+
+The free week (`FREEWEEK`, docs/SPEC-ONBOARDING.md) costs Stripe nothing (a $0 invoice has no
+fee) and costs us one week of explanations for anyone who uses Trade Lab during it, about 16 cents
+at the usual pace. The number that matters is the share of free weeks that convert on day eight;
+the admin's walk funnel counts it (`trial_start` → `trial_convert`). The week-to-season credit
+stays one week, so the upgrade from a paid week is $25.00, and a free week earns no credit.
+
 ## 0. The catalog changed (Andrew, 2026-09-27)
 
 Week pass **$4.99/week** (a Stripe subscription), season pass **$24.99** once, league slot

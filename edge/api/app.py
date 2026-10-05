@@ -86,12 +86,20 @@ def _leagues_allowed(email: str | None) -> int:
 
 
 def _week_live(email: str | None) -> bool:
+    """A paid week is running. The free week is a week-pass row too, but it was not paid
+    for, so on its own it does not earn the week-to-season credit."""
     until = store.pass_until(email, products.WEEK_SKU, _season()) if email else None
-    return bool(until and until > time.time())
+    if not (until and until > time.time()):
+        return False
+    t = store.trial(email)
+    only_the_free_week = (t and t["season"] == _season() and t["revoked"] is None
+                          and store.count_sku(email, products.WEEK_SKU, _season()) <= 1)
+    return not only_the_free_week
 
 
 def _season_price(email: str | None, promo: str | None = None) -> int:
-    """The season pass's price for this account: $19.99 while a paid week is live (Andrew, 2026-09-28),
+    """The season pass's price for this account: $25.00 while a paid week is live (Andrew, 2026-09-28;
+    the season went to $29.99 on 2026-10-05 and the credit stays one week),
     or a promo code's price when that is lower."""
     return products.season_price_cents(_week_live(email), products.SEASON_SKU in _skus(email), promo)
 
@@ -149,7 +157,51 @@ def _me(email: str | None) -> dict:
             "checkout": _stripe_configured(),
             # Stripe's customer-portal login link, where a week-pass subscriber manages or
             # cancels. Set in the Stripe dashboard, then as EDGE_BILLING_PORTAL_URL.
-            "billing_portal_url": os.environ.get("EDGE_BILLING_PORTAL_URL", "").strip() or None}
+            "billing_portal_url": os.environ.get("EDGE_BILLING_PORTAL_URL", "").strip() or None,
+            # The free first week (docs/SPEC-ONBOARDING.md): the one on file, and whether this
+            # account may still start one. Dates and amounts are the server's, never typed.
+            "trial": _trial_info(email) if email else None,
+            "trial_eligible": _trial_eligible(email),
+            "trial_days": products.TRIAL_DAYS,
+            # What the sign-up walk remembers (skips, the screens reached).
+            "onboarding": ((store.get_user(email) or {}).get("onboarding") or {}) if email else {},
+            # Whether a confirm-your-address mail would really be sent (a provider is set).
+            "email_sending": _email_sending()}
+
+
+def _email_sending() -> bool:
+    return (os.environ.get("EDGE_EMAIL_PROVIDER") or "dry-run").strip().lower() not in ("", "dry-run")
+
+
+def _trial_eligible(email: str | None) -> bool:
+    """One free week per account, ever, and never on top of a pass already running."""
+    if not email or _demo_unlock():
+        return False
+    return store.trial(email) is None and not products.is_premium(_skus(email))
+
+
+def _trial_info(email: str) -> dict | None:
+    """The account's free week: what it bills, when, and whether it is still running.
+
+    `next_charge_at` is when Stripe takes the first payment (day eight's morning, give or
+    take the hour Stripe bills in); `until` is when access lapses if nothing is paid, which
+    includes the grace day every week pass carries. A cancel during the week drops the charge.
+    """
+    t = store.trial(email)
+    if not t:
+        return None
+    start = float(t["created"] or 0)
+    charge_at = start + products.TRIAL_DAYS * products.DAY_S
+    until = products.live_until(products.WEEK_SKU, [start])
+    cancelled = any(e["created"] >= start for e in store.events(since=start, names=("cancel",), email=email))
+    paid = t["sku"] in _skus(email) and (t["sku"] != products.WEEK_SKU or
+                                        store.count_sku(email, products.WEEK_SKU, t["season"]) > 1)
+    now = time.time()
+    return {"sku": t["sku"], "started": start, "until": until,
+            "active": t["revoked"] is None and until is not None and until > now and not paid,
+            "converted": paid, "cancelled": cancelled,
+            "next_charge_at": None if (cancelled or paid or t["revoked"]) else charge_at,
+            "next_charge_cents": None if (cancelled or paid or t["revoked"]) else products.BY_SKU[t["sku"]]["price_cents"]}
 
 
 def _open_session(email: str) -> dict:
@@ -647,9 +699,114 @@ def set_account_email(body: EmailIn, email: str = Depends(current_user)):
             raise HTTPException(400, "your current password is wrong")
     if not store.rekey(email, new):
         raise HTTPException(409, "that email already has an account")
-    # A reset link sent to the old address must not reach the account at its new one.
+    # A reset link sent to the old address must not reach the account at its new one, and
+    # the old address being confirmed proves nothing about the new one.
     store.revoke_resets(new)
+    if new != email:
+        store.revoke_verifications(new)
+        store.set_email_verified(new, None)
     return {"ok": True, "me": _me(new)}
+
+
+# ---- the sign-up walk (docs/SPEC-ONBOARDING.md) ----
+# Where an owner is in the walk is worked out from what the account holds (a name, an
+# address, a league, a pass); this only remembers what cannot be worked out: what they
+# chose to skip, and which screens they reached, for the admin's funnel.
+
+ONBOARD_STEPS = ("named", "email", "league", "reveal", "offer", "done")
+ONBOARD_SKIPS = ("name", "email", "offer")
+
+
+class OnboardIn(BaseModel):
+    step: str | None = Field(None, max_length=20)
+    skip: str | None = Field(None, max_length=20)
+    name: str | None = Field(None, max_length=80)
+
+
+@app.put("/api/me/onboarding")
+def onboarding(body: OnboardIn, email: str = Depends(current_user)):
+    """Record a screen reached, a skip, or the nameplate. Every write is idempotent."""
+    user = store.get_user(email)
+    if not user:
+        raise HTTPException(404, "no account on file for this sign-in")
+    state = dict(user.get("onboarding") or {})
+    now = time.time()
+    if body.name is not None:
+        store.set_name(email, body.name.strip()[:80])
+    if body.skip is not None:
+        if body.skip not in ONBOARD_SKIPS:
+            raise HTTPException(400, f"skip must be one of {', '.join(ONBOARD_SKIPS)}")
+        state.setdefault("skipped", {})[body.skip] = now
+        if body.skip == "offer":
+            telemetry.log(store, "offer_skip", email=email, ref=f"{email}:offer_skip:{int(now // 86400)}")
+    if body.step is not None:
+        if body.step not in ONBOARD_STEPS:
+            raise HTTPException(400, f"step must be one of {', '.join(ONBOARD_STEPS)}")
+        reached = state.setdefault("reached", {})
+        if body.step not in reached:
+            reached[body.step] = now
+            if body.step == "offer":
+                telemetry.log(store, "offer_view", email=email, ref=f"{email}:offer_view")
+            else:
+                telemetry.log(store, "onboard_step", email=email, props={"step": body.step},
+                              ref=f"{email}:onboard:{body.step}")
+    store.set_onboarding(email, state)
+    return {"ok": True, "me": _me(email)}
+
+
+# ---- confirm your address (docs/SPEC-ONBOARDING.md O-6) ----
+# Built whole and switched off: with no email provider on the API nothing is sent, the reply
+# says so, and no screen claims otherwise. In dev the link comes back in the reply.
+
+class VerifyIn(BaseModel):
+    token: str = Field(..., max_length=200)
+
+
+@app.post("/api/auth/email/verify/start")
+def email_verify_start(email: str = Depends(current_user)):
+    """Send a confirm-your-address link to the address on file. `sent` says whether it went."""
+    user = store.get_user(email)
+    if not user:
+        raise HTTPException(404, "no account on file for this sign-in")
+    if accounts.is_placeholder(email):
+        raise HTTPException(400, "add an email to your account first")
+    if user.get("email_verified"):
+        return {"ok": True, "sent": False, "verified": True}
+    if accounts.VERIFY_REQUESTS.blocked(email):
+        raise HTTPException(429, "we just sent one; check your inbox, or wait an hour")
+    accounts.VERIFY_REQUESTS.hit(email)
+    token = accounts.new_token()
+    store.create_verification(email, accounts.token_hash(token), accounts.verify_expiry())
+    link = f"{_web_base()}/verify?token={token}"
+    sent = False
+    try:
+        from edge.delivery import send
+        result = send.sender_from_env().send(
+            to=email, subject="Confirm your Owner's Suite email",
+            html=(f"<p>Confirm this is the address for your Owner&rsquo;s Suite account:</p>"
+                  f'<p><a href="{link}">{link}</a></p>'
+                  f"<p>The link lasts {accounts.VERIFY_HOURS} hours. If you did not sign up, ignore this email.</p>"),
+            text=(f"Confirm this is the address for your Owner's Suite account:\n{link}\n\n"
+                  f"The link lasts {accounts.VERIFY_HOURS} hours. If you did not sign up, ignore this email."))
+        sent = not result.dry_run
+    except Exception:  # noqa: BLE001 — a mail failure is reported as not sent, never raised
+        sent = False
+    out = {"ok": True, "sent": sent, "verified": False}
+    if not sent and os.environ.get("EDGE_DEV") == "1":
+        out["dev_link"] = link  # dev only: nothing was mailed, so the link comes back
+    return out
+
+
+@app.post("/api/auth/email/verify")
+def email_verify(body: VerifyIn):
+    """Spend a confirm link: the address is proved, and this device is signed in."""
+    email = store.consume_verification(accounts.token_hash(body.token))
+    if not email or not store.get_user(email):
+        raise HTTPException(400, "that link has expired or was already used")
+    store.set_email_verified(email, time.time())
+    store.revoke_verifications(email)
+    telemetry.log(store, "email_verified", email=email, ref=f"{email}:email_verified")
+    return _open_session(email)
 
 
 # ---- the account: upgrade, leagues on file ----
@@ -672,8 +829,14 @@ def check_promo(body: PromoIn, email: str | None = Depends(optional_user)):
     prices the code again on the server."""
     p = products.promo(body.code, body.sku)
     if not p:
-        return {"ok": False, "code": None, "sku": body.sku, "percent_off": 0, "price_cents": None}
-    return {"ok": True, "code": p["code"], "sku": p["sku"], "percent_off": p["percent_off"],
+        return {"ok": False, "code": None, "sku": body.sku, "percent_off": 0, "trial_days": 0, "price_cents": None}
+    if p["trial_days"]:
+        # A free week takes nothing off: it moves the first charge. The price is what day eight bills.
+        price = (_price_for(email, body.sku, None) if email else None)
+        return {"ok": True, "code": p["code"], "sku": body.sku, "percent_off": 0, "trial_days": p["trial_days"],
+                "price_cents": price if price is not None else products.BY_SKU[body.sku]["price_cents"],
+                "eligible": _trial_eligible(email) if email else True}
+    return {"ok": True, "code": p["code"], "sku": p["sku"], "percent_off": p["percent_off"], "trial_days": 0,
             "price_cents": _price_for(email, p["sku"], p["code"]) if email else products.promo_price_cents(p["sku"], p["code"])}
 
 
@@ -690,12 +853,38 @@ def upgrade(body: UpgradeIn, email: str = Depends(current_user)):
     if not products.for_sale(body.sku):
         raise HTTPException(400, "unknown, free or retired sku")
     promo = _checked_promo(body.sku, body.promo)
+    trial = _checked_trial(email, body.sku, promo)
     if _stripe_configured():
-        return {"url": _start_checkout(email, body.sku, body.success_url, body.cancel_url, promo),
+        return {"url": _start_checkout(email, body.sku, body.success_url, body.cancel_url, promo, trial),
                 "granted": False, "me": None}
     import uuid
+    if trial:
+        # No Stripe, so no card: the free week is written as it would be by Stripe's $0 invoice,
+        # and nothing bills on day eight. The walk can be driven end to end without a key.
+        _start_trial(email, body.sku, _season(), ref=f"comp_trial_{uuid.uuid4().hex}", promo=promo)
+        return {"url": None, "granted": True, "me": _me(email)}
     store.grant(email, body.sku, _season(), source="complimentary", ref=f"comp_{uuid.uuid4().hex}")
     return {"url": None, "granted": True, "me": _me(email)}
+
+
+def _checked_trial(email: str, sku: str, promo: str | None) -> int:
+    """The free days a checked code gives this purchase, or 0; a 400 when the account has used its week."""
+    days = products.trial_days(promo, sku)
+    if days and not _trial_eligible(email):
+        raise HTTPException(400, "your free week has been used; the pass starts today")
+    return days
+
+
+def _start_trial(email: str, sku: str, season: int, ref: str, promo: str | None = None) -> bool:
+    """Open a free week that will bill `sku`. A week-pass grant marked as a trial, so it
+    opens everything for the week and lapses on its own if nothing is paid. True when new."""
+    before = store.trial(email)
+    store.grant(email, products.WEEK_SKU, season, source=products.trial_source(sku), ref=ref)
+    if before is None and store.trial(email) is not None:
+        telemetry.log(store, "trial_start", email=email, sku=sku, amount_cents=0,
+                      props={"promo": promo} if promo else None, ref=ref or None)
+        return True
+    return False
 
 
 @app.post("/api/leagues/{platform}/{league_id}/use")
@@ -978,14 +1167,17 @@ class CheckoutIn(BaseModel):
 
 
 def _start_checkout(email: str, sku: str, success_url: str | None, cancel_url: str | None,
-                    promo: str | None = None) -> str:
+                    promo: str | None = None, trial_days: int = 0) -> str:
     """A Stripe Checkout session, carrying the account's first touch, and its event."""
     from edge.api import payments
     price = _price_for(email, sku, promo)
+    kwargs = {"trial_days": trial_days} if trial_days else {}
     url = payments.create_checkout(email, sku, _season(), success_url, cancel_url,
-                                   price_cents=price, attribution=_attribution(email), promo=promo)
-    telemetry.log(store, "checkout_start", email=email, sku=sku, amount_cents=price,
-                  props={"promo": promo} if promo else None)
+                                   price_cents=price, attribution=_attribution(email), promo=promo, **kwargs)
+    props = {"promo": promo} if promo else {}
+    if trial_days:
+        props["trial_days"] = trial_days
+    telemetry.log(store, "checkout_start", email=email, sku=sku, amount_cents=price, props=props or None)
     return url
 
 
@@ -994,7 +1186,8 @@ def checkout(body: CheckoutIn, email: str = Depends(current_user)):
     if not products.for_sale(body.sku):
         raise HTTPException(400, "unknown, free or retired sku")
     promo = _checked_promo(body.sku, body.promo)
-    return {"url": _start_checkout(email, body.sku, body.success_url, body.cancel_url, promo)}
+    trial = _checked_trial(email, body.sku, promo)
+    return {"url": _start_checkout(email, body.sku, body.success_url, body.cancel_url, promo, trial)}
 
 
 @app.post("/api/stripe/webhook")
@@ -1010,25 +1203,47 @@ async def stripe_webhook(request: Request):
     if not event:
         return {"received": True, "granted": False, "revoked": 0, "restored": 0}
 
+    if event["action"] == "trial_ending":
+        # Stripe mails the reminder itself (a dashboard switch, docs/DEPLOY.md); we count it.
+        telemetry.log(store, "trial_ending", email=event["email"], sku=event["sku"], ref=event["ref"] or None)
+        return {"received": True, "granted": False, "revoked": 0, "restored": 0}
+
     if event["action"] in ("abandon", "cancel"):
         # Nothing to grant or take: the subscription's paid weeks run out on their own.
         name = "checkout_abandon" if event["action"] == "abandon" else "cancel"
         props = {}
         if name == "cancel" and products.SEASON_SKU in _skus(event["email"]):
             props["upgraded"] = True  # we ended it ourselves when the season landed
+        if name == "cancel" and event.get("in_trial"):
+            props["in_trial"] = True
         telemetry.log(store, name, email=event["email"], sku=event["sku"], props=props, ref=event["ref"] or None)
         return {"received": True, "granted": False, "revoked": 0, "restored": 0}
 
+    if event["action"] == "grant" and event.get("trial"):
+        # The free week's $0 first invoice: open the week; the pass bills on day eight.
+        _start_trial(event["email"], event["sku"], event["season"], ref=event["ref"], promo=event.get("promo"))
+        return {"received": True, "granted": True, "revoked": 0, "restored": 0, "trial": True}
+
     if event["action"] == "grant":
         sku = event["sku"]
+        trial = store.trial(event["email"])
+        # The free week is a week-pass row of its own; it is not a paid week.
+        own_trial = 1 if (trial and sku == products.WEEK_SKU and trial["season"] == event["season"]
+                          and trial["revoked"] is None) else 0
         before = store.count_sku(event["email"], sku, event["season"])
         store.grant(event["email"], event["sku"], event["season"], source="stripe",
                     ref=event["ref"], payment_ref=event.get("payment_ref", ""))
         if store.count_sku(event["email"], sku, event["season"]) > before:  # a replay adds no row, and no event
-            renewal = sku == products.WEEK_SKU and before > 0
-            name = "upgrade" if event.get("upgrade") else "renewal" if renewal else "purchase"
+            paid_before = before - own_trial
+            converting = bool(trial) and trial["sku"] == sku and paid_before == 0
+            renewal = sku == products.WEEK_SKU and paid_before > 0
+            name = ("trial_convert" if converting else "upgrade" if event.get("upgrade")
+                    else "renewal" if renewal else "purchase")
             telemetry.log(store, name, email=event["email"], sku=sku, amount_cents=event.get("amount_cents"),
                           props={"promo": event["promo"]} if event.get("promo") else None, ref=event["ref"] or None)
+        # The season on a free week was a subscription only to hold the card: end it now.
+        if event.get("one_shot") and event.get("subscription"):
+            payments.cancel_subscription(event["subscription"])
         # The season replaces the week: stop billing the week (upgrade or not).
         cancelled = payments.cancel_week_subscriptions(event["email"]) if event["sku"] == products.SEASON_SKU else 0
         return {"received": True, "granted": True, "revoked": 0, "restored": 0, "cancelled": cancelled}

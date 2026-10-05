@@ -16,10 +16,12 @@ only, because there is no other way in.
 
 | Flow | Page | API | What is checked |
 |---|---|---|---|
-| Sign up / sign in with a phone | `/register`, `/login`, the sheet (the default when `phone_sign_in`) | `POST /api/auth/phone/start`, `/verify`, `/complete` | a textable number (US/CA); code from Twilio Verify, 10 minutes, 5 tries; 3 texts per number per 10 min and 10 per caller per hour. A number on file signs straight in; a new one gets a 30-minute one-shot ticket, then name and optional email (409 if taken). |
+| Sign up (the walk) | `/register` (docs/SPEC-ONBOARDING.md): one question a screen. Phone, code, nameplate, mailbox; or "No phone? Use email.": email, password, nameplate. Then the league, the first call, the free week | the phone routes below, `POST /api/auth/register`, `PUT /api/me/onboarding` | as below. The account is made at the mailbox screen (phone) or the nameplate (email); skips are kept on the account so the walk resumes at the first gap. "Create account" on `/login` and the sheet both open the walk. |
+| Sign in with a phone | `/login`, the sheet (the default when `phone_sign_in`) | `POST /api/auth/phone/start`, `/verify`, `/complete` | a textable number (US/CA); code from Twilio Verify, 10 minutes, 5 tries; 3 texts per number per 10 min and 10 per caller per hour. A number on file signs straight in; a new one gets a 30-minute one-shot ticket, then name and optional email (409 if taken). |
+| Confirm the email | the walk (only when mail can go out), `/account` → "Send the confirm link", `/verify?token=` | `POST /api/auth/email/verify/start`, `/api/auth/email/verify` | 48 hours, once, 3 per address per hour. Changing the address clears it. With no provider nothing is sent and every screen says so. Nothing is gated on it yet. |
 | Add or change the phone | `/account` → Phone | `POST /api/account/phone` | a fresh code for the new number; 409 if another account has it. |
 | Add or change the email | `/account` → Email | `POST /api/account/email` | a real address, not taken; the password if the account has one. Every row moves to the new key; reset links on file die. |
-| Register with email | `/register` → "Use email and password instead" | `POST /api/auth/register` | address shape (≤254), password 8–256 chars, name ≤80; 409 if the address is taken. Signs in on success and lands on `/account`. |
+| Register with email | `/register` → "No phone? Use email." | `POST /api/auth/register` | address shape (≤254), password 8–256 chars, name ≤80; 409 if the address is taken. Signs in on success and carries on to the league. |
 | Sign in | `/login`, or the sheet | `POST /api/auth/login` | one 401 for wrong password and unknown address, same scrypt cost for both; 10 failures per address per 15 min → 429. |
 | Stay signed in | every page, every tab | `Authorization: Bearer` | token hash looked up in `sessions`; 30 days **from last use** (a live token slides forward at most once a day, `RENEW_SLACK`); an unknown or expired token is cleared from the browser (`session.ts`, and any `401 session expired` in `api.ts`). Every signed-in answer is `Cache-Control: private, no-store`. |
 | Sign out | `/account`, `/login` | `POST /api/auth/logout` | this device only; the browser drops the token and the open league even if the call fails, and every other tab follows. |
@@ -66,7 +68,8 @@ text proves nothing. This is why the sign-up screen asks for an email.
 **Lost a phone or a shared laptop.** Sign in anywhere, then "Sign out other devices", or change
 the password, which does both.
 
-**Someone else registered my email.** There is no email verification yet, so this can happen.
+**Someone else registered my email.** Email verification is built but nothing requires it yet (and
+nothing is mailed until a provider is set), so this can happen.
 The real owner of the inbox runs "Forgot password": the link goes to them, the reset signs the
 squatter out everywhere, and the account is theirs. Leagues the squatter linked can be forgotten
 from `/account`.
@@ -89,8 +92,11 @@ Postgres before touching either store.
 
 1. **Reset email does not send yet.** Needs on Render: `EDGE_EMAIL_PROVIDER=resend`,
    `RESEND_API_KEY`, `EDGE_EMAIL_FROM` (a verified sending domain). Nothing in code changes.
-2. **No email verification.** Mitigated by the reset flow above. Worth adding once mail sends:
-   a "confirm your address" link, required before the first purchase.
+2. **Email verification is built and not required.** `email_verifications` on both stores, the
+   two routes, `/verify`, the flag on the account, and the "Send the confirm link" control on
+   `/account` (docs/SPEC-ONBOARDING.md O-6). It mails nothing until `EDGE_EMAIL_PROVIDER` is set,
+   and nothing waits on it. Requiring it before an email-only account's first purchase is
+   Andrew's call once mail sends.
 3. **The throttles are per process.** Right for one Render container; with several, the
    budget multiplies by the count and wants a shared counter (same note as `limits.py`).
 4. **Changing the sign-in email** is self-serve now (`/account` → Email), password required

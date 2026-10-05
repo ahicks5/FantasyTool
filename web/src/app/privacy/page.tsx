@@ -33,7 +33,9 @@ export default function PrivacyPage() {
             <>
               <strong>Your email address, your name if you gave one, and a hash of your password</strong>, if you
               create an account. The password itself is never stored, only a salted scrypt hash of it, which cannot be
-              turned back into the password. The email is the key that purchases and connected leagues hang off.
+              turned back into the password. The email is the key that purchases and connected leagues hang off. If
+              you confirm the address from the link we mail, we note when; if you skip a question while signing up,
+              we note that too, so we do not ask again.
             </>,
             <>
               <strong>Your mobile number</strong>, if you sign up or sign in with your phone. It is how you sign in:

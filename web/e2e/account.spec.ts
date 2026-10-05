@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page, type Route } from "@playwright/test";
 import { API_URL } from "../playwright.config";
-import { ACCOUNT, DESK, PRICING, RIDE, WIRE } from "../src/lib/vocab";
+import { ACCOUNT, CONNECT, DESK, ONBOARD, PRICING, RIDE, WIRE } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 
 /**
@@ -76,6 +76,27 @@ async function phoneIn(scope: Page | ReturnType<Page["getByRole"]>, phone: strin
   }
 }
 
+/** The sign-up walk's first screens (docs/SPEC-ONBOARDING.md): the number, the code, the nameplate, the mailbox. */
+async function walkIn(page: Page, phone: string, profile: { name: string; email: string }) {
+  await page.getByLabel(ONBOARD.phone.label).fill(phone);
+  await page.getByRole("button", { name: ONBOARD.phone.send }).click();
+  const dev = page.getByTestId("dev-code");
+  await expect(dev).toBeVisible();
+  const code = ((await dev.textContent()) ?? "").match(/(\d{6})/)?.[1] ?? "";
+  await page.getByLabel(ONBOARD.code.label).fill(code);
+  await expect(page.getByRole("heading", { level: 1, name: ONBOARD.name.title })).toBeVisible();
+  if (profile.name) {
+    await page.getByLabel(ONBOARD.name.label).fill(profile.name);
+    await page.getByRole("button", { name: ONBOARD.name.cta }).click();
+  } else await page.getByTestId("walk-skip-name").click();
+  await expect(page.getByRole("heading", { level: 1, name: ONBOARD.mailbox.title })).toBeVisible();
+  if (profile.email) {
+    await page.getByLabel(ONBOARD.mailbox.label).fill(profile.email);
+    await page.getByRole("button", { name: ONBOARD.mailbox.cta }).click();
+  } else await page.getByTestId("walk-skip-email").click();
+  await expect(page.getByTestId("walk-league")).toBeVisible();
+}
+
 /** The door opens on the phone; the email-and-password accounts are one tap away. */
 async function useEmail(scope: Page | ReturnType<Page["getByRole"]>) {
   await scope.getByRole("button", { name: ACCOUNT.phone.useEmail }).click();
@@ -117,41 +138,25 @@ test("a stranger's door is the account: register, land on it, then link a league
   await expect(gate.getByText(ACCOUNT.gate.title)).toBeVisible();
   await expect(page.getByRole("radio", { name: "Sleeper" })).toHaveCount(0);
 
-  // The landing page leads to /register; create the account there.
+  // The landing page leads to /register: the sign-up walk, one question a screen.
   await page.goto("/");
   await page.locator('a[href="/register"]:visible').first().click();
   await page.waitForURL("**/register");
-  // Phone first: the door asks for a number, and email is only the fallback link.
-  await expect(page.getByLabel(ACCOUNT.phone.label)).toBeVisible();
-  await expect(page.getByLabel(ACCOUNT.password)).toHaveCount(0);
-  await expect(page.getByRole("button", { name: ACCOUNT.phone.useEmail })).toBeVisible();
-  // Just a phone number, then the texted code, then the name and the email.
-  await phoneIn(page, phone, { name: "Andrew", email });
-
-  // A new account lands on its own page: you're in, one thing left.
-  await page.waitForURL("**/account");
+  await walkIn(page, phone, { name: "Andrew", email });
   expect(await page.evaluate(() => localStorage.getItem("booth.session"))).toBeTruthy();
-  await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.welcome.title("Andrew") })).toBeVisible();
-  const welcome = page.getByTestId("welcome");
-  await expect(welcome).toBeVisible();
-  await expect(page.getByTestId("league-room")).toHaveText("0 of 3 leagues");
-  await welcome.getByRole("link", { name: ACCOUNT.welcome.cta }).click();
-  await page.waitForURL("**/connect");
-  await expect(gate).toHaveCount(0);
-  // A way back out to the account, in the header.
-  await expect(page.getByTestId("back-to-account")).toHaveAttribute("href", "/account");
 
-  // Link the fixture league the way a visitor does.
+  // Link the fixture league the way a visitor does, inside the walk.
   await page.getByRole("radio", { name: "Sleeper" }).click();
   await page.locator("#sleeper-input").fill("someone");
   await page.getByRole("button", { name: "Find" }).click();
   await expect(page.getByRole("heading", { name: "Select your team" })).toBeVisible();
   await page.getByRole("button", { name: new RegExp(CONNECTION.team_name) }).click();
-  await page.getByRole("button", { name: /Show my moves/ }).click();
-  // A new league takes a slot, so the page says so once before it links.
-  const confirmLink = page.getByTestId("confirm-link");
-  await expect(confirmLink.getByText(ACCOUNT.confirmLink.body(3, 0))).toBeVisible();
-  await confirmLink.getByRole("button", { name: ACCOUNT.confirmLink.yes }).click();
+  await page.getByRole("button", { name: CONNECT.submit }).click();
+  // The first call, then not now to the free week: the account stays free for the sheet below.
+  await expect(page.getByTestId("walk-reveal")).toBeVisible();
+  await page.getByRole("button", { name: ONBOARD.reveal.cta }).click();
+  await page.getByTestId("offer-skip").click();
+  await page.getByTestId("walk-exit").click();
   await page.waitForURL("**/home");
   // Connecting clears the day's ride stamp, so the elevator plays here; a tap lands it.
   const ride = page.getByRole("status", { name: RIDE.aria });
@@ -184,7 +189,7 @@ test("a stranger's door is the account: register, land on it, then link a league
   await expect(up.getByText(ACCOUNT.upgrade.promo.bad)).toBeVisible();
   await promo.fill("sthtiktok");
   await up.getByRole("button", { name: ACCOUNT.upgrade.promo.apply }).click();
-  await expect(up.getByTestId("season-price")).toHaveText("$12.49");
+  await expect(up.getByTestId("season-price")).toHaveText("$14.99");
   await up.getByRole("button", { name: ACCOUNT.upgrade.takeSeason }).click();
   await expect(up.getByText(ACCOUNT.upgrade.done)).toBeVisible();
   await up.getByRole("button", { name: ACCOUNT.upgrade.close }).last().click();
@@ -360,8 +365,8 @@ test("a phone-only account adds an email later, and an email account adds a phon
   await beAStranger(context);
   await page.goto("/register");
   const phone = freshPhone();
-  await phoneIn(page, phone, { name: "Pat", email: "" });
-  await page.waitForURL("**/account");
+  await walkIn(page, phone, { name: "Pat", email: "" });
+  await page.goto("/account");
   const contact = page.getByTestId("contact");
   await expect(contact.getByText(ACCOUNT.emailOnFile.none)).toBeVisible();
   await contact.getByRole("button", { name: ACCOUNT.emailOnFile.add }).click();

@@ -195,6 +195,15 @@ Sort by any. A row expands to that user's event timeline, which is the fastest w
 
 ---
 
+### 3a. The sign-up walk (2026-10-05, docs/SPEC-ONBOARDING.md O-7)
+
+On the Funnel tab, under the steps: this range's sign-ups and how far each got through the walk,
+as a count and a share of the screen before. Signed up → named the office → linked a league → saw
+the first call → saw the free week → card on file (`trial_start`) → paid after the week
+(`trial_convert`), plus how many said not now to the free week. Computed by `metrics._walk` from
+`onboard_step`, `offer_view`, `offer_skip`, `trial_start` and `trial_convert`, all written by the
+server. A finished checkout now counts a free week starting, since that is where a card lands.
+
 ## 4. Build order (smallest that unblocks spend first)
 
 | # | Piece | Size | Unblocks |

@@ -32,7 +32,7 @@ def store(request, tmp_path):
     s = PostgresStore(TEST_DSN)
     # Each test starts from nothing, so ordering assertions mean something.
     with s.db.cursor() as cur:
-        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback, email_prefs, users, sessions, resets, phone_tickets, events, ad_spend")
+        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback, email_prefs, users, sessions, resets, phone_tickets, events, ad_spend, email_verifications")
     yield s
     s.close()
 
@@ -540,3 +540,45 @@ def test_activity_is_signed_in_engine_calls_only(store):
     (row,) = store.activity()
     assert row[0] == "ann@x.com" and row[1] > 0
     assert store.activity(since=row[1] + 1) == []
+
+
+# ---- the sign-up walk (docs/SPEC-ONBOARDING.md) ----------------------------------------
+
+def test_the_free_week_is_found_in_any_season_and_names_what_it_bills(store):
+    assert store.trial("a@b.c") is None
+    store.grant("a@b.c", "week_pass", 2026, source="stripe", ref="in_paid")
+    assert store.trial("a@b.c") is None, "a paid week is not a free one"
+    store.grant("A@b.c", "week_pass", 2025, source="trial:full_report", ref="in_t")
+    t = store.trial("a@b.c")
+    assert (t["sku"], t["pass_sku"], t["season"], t["revoked"]) == ("full_report", "week_pass", 2025, None)
+    store.revoke_sku("a@b.c", "week_pass", 2025)
+    assert store.trial("a@b.c")["revoked"] is not None, "a revoked free week is still the one free week"
+
+
+def test_the_walk_state_and_the_proved_address_round_trip(store):
+    store.create_user("a@b.c", "h", "Ann")
+    u = store.get_user("a@b.c")
+    assert u["onboarding"] == {} and u["email_verified"] is None
+    store.set_onboarding("a@b.c", {"skipped": {"offer": 1.0}})
+    store.set_email_verified("a@b.c", 5.0)
+    u = store.get_user("a@b.c")
+    assert u["onboarding"] == {"skipped": {"offer": 1.0}} and u["email_verified"] == 5.0
+    store.set_email_verified("a@b.c", None)
+    assert store.get_user("a@b.c")["email_verified"] is None
+
+
+def test_a_confirm_link_is_spent_once_dies_on_time_and_goes_with_the_account(store):
+    import time as _t
+    now = _t.time()
+    store.create_user("a@b.c", "h")
+    store.create_verification("a@b.c", "v1", now + 60)
+    store.create_verification("a@b.c", "v2", now - 1)
+    store.create_verification("a@b.c", "v3", now + 60)
+    assert store.consume_verification("v2", now) is None, "expired"
+    assert store.consume_verification("v1", now) == "a@b.c"
+    assert store.consume_verification("v1", now) is None, "spent"
+    assert store.revoke_verifications("a@b.c", now) == 2, "every unspent link, live or not"
+    assert store.consume_verification("v3", now) is None, "revoked when the address changed"
+    assert store.prune_auth(now) >= 3
+    store.create_verification("a@b.c", "v4", now + 60)
+    assert store.delete_user("a@b.c")["email_verifications"] == 1

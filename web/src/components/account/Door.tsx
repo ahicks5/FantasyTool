@@ -75,11 +75,13 @@ export function SignedInCard({ next }: { next: string }) {
 
 function LoginInner({ start }: { start: AuthMode }) {
   const router = useRouter();
-  // A sign-in goes back upstairs; a new account lands on its own page first, where the
-  // one thing left is to link a league. `?next=` overrides both (the connect gate uses it).
+  // A sign-in goes back upstairs; a new account (a new number signed up here) carries on
+  // into the sign-up walk at its first gap, the league. `?next=` overrides both.
   const asked = useSearchParams().get("next");
   const next = safeNext(asked, start === "register" ? "/account" : "/home");
-  const [mode, setMode] = useState<AuthMode>(start);
+  const [mode, setModeRaw] = useState<AuthMode>(start);
+  // Creating an account is the sign-up walk now (docs/SPEC-ONBOARDING.md), not this form.
+  const setMode = (m: AuthMode) => (m === "register" ? router.push(asked ? `/register?next=${encodeURIComponent(asked)}` : "/register") : setModeRaw(m));
   const session = useSession();
   const title = mode === "register" ? ACCOUNT.register : mode === "forgot" ? ACCOUNT.reset.title : ACCOUNT.signIn;
   // Fewest words at the door (Andrew, 2026-09-27): only the reset form keeps a line.
@@ -97,7 +99,7 @@ function LoginInner({ start }: { start: AuthMode }) {
           <SignedInCard next={next} />
         ) : (
           <div className="card p-5">
-            <AuthForm mode={mode} onMode={setMode} onDone={(_, created) => router.push(created && !asked ? "/account" : next)} />
+            <AuthForm mode={mode} onMode={setMode} onDone={(_, created) => router.push(created && !asked ? "/register" : next)} />
           </div>
         )}
       </div>

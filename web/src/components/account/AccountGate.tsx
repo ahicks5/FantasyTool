@@ -17,7 +17,8 @@ import type { Me, Product, Sku } from "@/lib/types";
 import { PRODUCTS as FALLBACK } from "@/lib/mocks";
 import { IconCheck, IconLock, IconX } from "@/components/icons";
 import { Button } from "@/components/ui";
-import { ACCOUNT } from "@/lib/vocab";
+import { ACCOUNT, ONBOARD } from "@/lib/vocab";
+import { chargeDate, dayLabel } from "@/lib/onboarding";
 import { AuthForm, type AuthMode } from "./AuthForm";
 
 type Reason = keyof typeof ACCOUNT.reason;
@@ -169,7 +170,14 @@ export function Popup({ title, eyebrow, onClose, children, testId }: { title: st
 }
 
 function SignInSheet({ reason, onClose, onDone }: { reason: Reason; onClose: () => void; onDone: (me: Me) => void }) {
-  const [mode, setMode] = useState<AuthMode>("signin");
+  const router = useRouter();
+  const [mode, setModeRaw] = useState<AuthMode>("signin");
+  // "Create account" leaves the sheet for the sign-up walk, and comes back here after it.
+  const setMode = (m: AuthMode) => {
+    if (m !== "register") return setModeRaw(m);
+    onClose();
+    router.push(`/register?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+  };
   const title = mode === "register" ? ACCOUNT.register : mode === "forgot" ? ACCOUNT.reset.title : ACCOUNT.signIn;
   return (
     <Popup title={title} eyebrow={ACCOUNT.eyebrow} onClose={onClose} testId="signin-sheet">
@@ -203,12 +211,17 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
   const seasonCents = promo ? Math.min(promo.cents, accountCents) : accountCents;
   const credited = !promo && !!season && seasonCents < season.price_cents;
   const saving = !promo && !credited && stack?.weeklyCents != null && stack.weeklyCents > stack.seasonCents;
+  // The free first week, while this account still has it: applied for them, on either pass,
+  // and it takes nothing off a price, so it gives way to a discount code (they never stack).
+  const [trialOff, setTrialOff] = useState(false);
+  const trial = !!session.me?.trial_eligible && !trialOff && !promo;
+  const trialDate = dayLabel(chargeDate(new Date(), session.me?.trial_days ?? 7));
 
   async function buy(offer: Product) {
     setBusy(offer.sku);
     setError(null);
     try {
-      const code = offer.sku === "full_report" ? promo?.code : undefined;
+      const code = trial ? "FREEWEEK" : offer.sku === "full_report" ? promo?.code : undefined;
       const out = await upgradeCall(offer.sku, returnTo ?? (typeof window === "undefined" ? undefined : window.location.pathname), code);
       if (out.url) {
         // Stripe: the page leaves; the app shell waits for the grant when the buyer returns.
@@ -241,6 +254,17 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
       ) : season ? (
         <div className="grid gap-3" data-upgrade="passes">
           {!checkout && <p className="rounded-xl bg-start-soft px-3.5 py-2.5 text-[13px] font-bold leading-snug text-start">{ACCOUNT.upgrade.comp}</p>}
+          {trial && (
+            <div className="flex items-center justify-between gap-3" data-testid="sheet-freeweek">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-start-fill px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-white">
+                <IconCheck size={12} strokeWidth={3.4} />
+                {ONBOARD.offer.applied("FREEWEEK")}
+              </span>
+              <button type="button" onClick={() => setTrialOff(true)} className="min-h-11 text-[12px] font-bold text-muted underline underline-offset-4">
+                {ONBOARD.offer.remove}
+              </button>
+            </div>
+          )}
           <div className="hero p-5" data-testid="season-offer">
             <div className="flex items-center justify-between gap-3">
               <span className="eyebrow">{ACCOUNT.upgrade.seasonHead}</span>
@@ -272,6 +296,7 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
                 <p className="mt-1.5 text-[13px] text-white/60">{ACCOUNT.upgrade.vsWeekly(stack.weeksLeft, formatCents(stack.weeklyCents ?? 0))}</p>
               )
             )}
+            {trial && <p className="tnum mt-1.5 text-[13px] font-bold text-white/80">{ONBOARD.offer.season.line(formatCents(seasonCents), trialDate)}</p>}
             <p className="mt-3 text-[15px] leading-snug text-white/85">{ACCOUNT.upgrade.seasonSub}</p>
             <Button variant="start" className="mt-4 w-full" busy={busy === season.sku} disabled={!!busy && busy !== season.sku} onClick={() => buy(season)}>
               {busy === season.sku ? ACCOUNT.upgrade.busy : ACCOUNT.upgrade.takeSeason}
@@ -289,7 +314,7 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
               <div className="card flex items-center gap-3 p-4" data-testid="week-offer">
                 <span className="min-w-0 flex-1">
                   <span className="display block text-[16px] leading-tight">{ACCOUNT.upgrade.weekHead}</span>
-                  <span className="tnum mt-0.5 block text-[14px] font-bold text-ink-2">{priceLabel(week)}</span>
+                  <span className="tnum mt-0.5 block text-[14px] font-bold text-ink-2">{trial ? ONBOARD.offer.week.line(formatCents(week.price_cents), trialDate) : priceLabel(week)}</span>
                   <span className="mt-0.5 block text-[12px] text-muted">{ACCOUNT.upgrade.weekSub}</span>
                 </span>
                 <Button size="sm" variant="secondary" busy={busy === week.sku} disabled={!!busy && busy !== week.sku} onClick={() => buy(week)}>

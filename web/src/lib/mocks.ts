@@ -70,7 +70,7 @@ export const PRODUCTS: Product[] = [
     kind: "pass", recurring: "week", duration_days: 7, for_sale: true, blurb: "Everything in the Owner's Suite, for as long as you keep it.",
   },
   {
-    sku: "full_report", name: "The Owner's Suite", price_cents: 2499, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 3,
+    sku: "full_report", name: "The Owner's Suite", price_cents: 2999, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 3,
     kind: "bundle", for_sale: true, through: "2027-01-04", blurb: "Everything in the Owner's Suite for the rest of the season.",
   },
   { sku: "league_slot", name: "League slot", price_cents: 299, features: [], leagues: 1, kind: "add_on", for_sale: true, blurb: "One more league on your account. Rest of season." },
@@ -80,6 +80,10 @@ export const PRODUCTS: Product[] = [
 export function mockPromo(code: string, sku: Sku): PromoResponse {
   const key = code.trim().toUpperCase();
   const season = PRODUCTS.find((p) => p.sku === "full_report");
+  // The free first week: either pass, nothing off, the first charge a week out.
+  const pass = PRODUCTS.find((p) => p.sku === sku);
+  if (key === "FREEWEEK" && pass && (sku === "week_pass" || sku === "full_report"))
+    return { ok: true, code: key, sku, percent_off: 0, trial_days: 7, eligible: true, price_cents: pass.price_cents };
   if (key !== "STHTIKTOK" || sku !== "full_report" || !season) return { ok: false, code: null, sku, percent_off: 0, price_cents: null };
   return { ok: true, code: key, sku, percent_off: 50, price_cents: Math.floor(season.price_cents / 2) };
 }

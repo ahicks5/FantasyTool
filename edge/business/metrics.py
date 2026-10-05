@@ -120,6 +120,7 @@ def report(events: list[dict], users: list[dict], spend: list[dict], activity: l
                   "start_day": et_day(start), "end_day": et_day(max(start, min(end, now) - 1))},
         "today": _today(events, spend_in, paying_now, (start, end), prev, now),
         "funnel": _funnel(events, start, end, now),
+        "walk": _walk(events, start, end),
         "channels": _channels(events, source, spend_in(start, end), start, end),
         "revenue": _revenue(events, start, end),
         "retention": _retention(users, activity, events, now),
@@ -200,7 +201,10 @@ def _funnel(events: list[dict], start: float, end: float, now: float) -> dict:
         if e["name"] == "paywall_view":
             walls[e["props"].get("feature") or "unknown"] += 1
     started = sum(e["name"] == "checkout_start" for e in inr)
-    finished = sum(e["name"] in MONEY_EVENTS and e["name"] != "renewal" for e in inr)
+    # A checkout is finished by a first payment, or by a free week starting (card on file,
+    # $0 today); the charge a week later is the trial converting, not a second checkout.
+    finished = sum((e["name"] in MONEY_EVENTS and e["name"] not in ("renewal", "trial_convert"))
+                   or e["name"] == "trial_start" for e in inr)
     abandoned = sum(e["name"] == "checkout_abandon" for e in inr)
     return {
         "steps": steps,
@@ -208,6 +212,33 @@ def _funnel(events: list[dict], start: float, end: float, now: float) -> dict:
         "checkout": {"started": started, "finished": finished, "abandoned": abandoned,
                      "finish_rate": _rate(finished, started)},
     }
+
+
+# The sign-up walk (docs/SPEC-ONBOARDING.md), in the order an owner meets it. Each stage is
+# the accounts that signed up this range and reached it, at any time up to now.
+WALK = (
+    ("signup", "Signed up", lambda e: e["name"] == "signup"),
+    ("named", "Named the office", lambda e: e["name"] == "onboard_step" and e["props"].get("step") == "named"),
+    ("league", "Linked a league", lambda e: e["name"] == "league_linked"),
+    ("reveal", "Saw the first call", lambda e: e["name"] == "onboard_step" and e["props"].get("step") == "reveal"),
+    ("offer", "Saw the free week", lambda e: e["name"] == "offer_view"),
+    ("trial", "Card on file", lambda e: e["name"] == "trial_start"),
+    ("convert", "Paid after the week", lambda e: e["name"] == "trial_convert"),
+)
+
+
+def _walk(events: list[dict], start: float, end: float) -> dict:
+    """How far this range's sign-ups got through the walk, and where they stopped."""
+    cohort = {e["email"] for e in events if e["name"] == "signup" and e["email"] and start <= e["created"] < end}
+    steps, before = [], None
+    for key, label, hit in WALK:
+        reached = cohort & {e["email"] for e in events if hit(e)}
+        n = len(reached)
+        steps.append({"key": key, "label": label, "num": n,
+                      "of_signups": _rate(n, len(cohort)), "of_previous": _rate(n, before) if before is not None else None})
+        before = n
+    skipped = len(cohort & {e["email"] for e in events if e["name"] == "offer_skip"})
+    return {"cohort": len(cohort), "steps": steps, "offer_skipped": skipped}
 
 
 def _verdict(spend: int, buyers: int, cac: int | None) -> str:

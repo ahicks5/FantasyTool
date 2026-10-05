@@ -15,7 +15,7 @@ import json
 import os
 import time
 from typing import Any
-from edge.api.store import _attr, _event, _listed_user, _live_skus, _pass_until, _spend
+from edge.api.store import _USER_COLS, _attr, _event, _listed_user, _live_skus, _pass_until, _spend, _trial
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS purchases (
@@ -74,6 +74,12 @@ CREATE TABLE IF NOT EXISTS events (
   anon_id TEXT NOT NULL DEFAULT '', email TEXT NOT NULL DEFAULT '', sku TEXT NOT NULL DEFAULT '',
   amount_cents INTEGER, props TEXT NOT NULL DEFAULT '{}', ref TEXT, UNIQUE (name, ref));
 CREATE INDEX IF NOT EXISTS events_created ON events (created);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified DOUBLE PRECISION;
+CREATE TABLE IF NOT EXISTS email_verifications (
+  token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, created DOUBLE PRECISION, expires DOUBLE PRECISION,
+  used DOUBLE PRECISION);
+CREATE INDEX IF NOT EXISTS email_verifications_email ON email_verifications (email);
 CREATE TABLE IF NOT EXISTS ad_spend (
   id TEXT PRIMARY KEY, day TEXT NOT NULL, channel TEXT NOT NULL, campaign TEXT NOT NULL DEFAULT '',
   cents INTEGER NOT NULL, clicks INTEGER, note TEXT NOT NULL DEFAULT '', created DOUBLE PRECISION);
@@ -85,7 +91,8 @@ def _user(row) -> dict | None:
         return None
     return {"email": row[0], "password_hash": row[1], "name": row[2] or "", "role": row[3],
             "created": row[4], "last_login": row[5], "phone": row[6],
-            "attr": _attr(row[7]), "sms_opt_in": row[8]}
+            "attr": _attr(row[7]), "sms_opt_in": row[8], "onboarding": _attr(row[9]),
+            "email_verified": row[10]}
 
 
 class PostgresStore:
@@ -166,6 +173,12 @@ class PostgresStore:
                          (email.lower(), sku, season))
         return _pass_until(sku, [r[0] for r in cur.fetchall()], now)
 
+    def trial(self, email: str) -> dict | None:
+        cur = self._exec(
+            "SELECT sku, season, source, created, revoked FROM purchases WHERE email=%s AND source LIKE 'trial%%' "
+            "ORDER BY created DESC LIMIT 1", (email.lower(),))
+        return _trial(cur.fetchone())
+
     def count_sku(self, email: str, sku: str, season: int) -> int:
         cur = self._exec("SELECT COUNT(*) FROM purchases WHERE email=%s AND sku=%s AND season=%s AND revoked IS NULL",
                          (email.lower(), sku, season))
@@ -217,7 +230,7 @@ class PostgresStore:
             (email.lower(), password_hash, name or "", "user", time.time(), phone or None))
         return cur.rowcount == 1
 
-    _USER_COLS = "email, password_hash, name, role, created, last_login, phone, attr, sms_opt_in"
+    _USER_COLS = _USER_COLS
 
     def get_user(self, email: str) -> dict | None:
         cur = self._exec(f"SELECT {self._USER_COLS} FROM users WHERE email=%s", (email.lower(),))
@@ -326,11 +339,39 @@ class PostgresStore:
         row = cur.fetchone()
         return row[0] if row else None
 
+    def set_onboarding(self, email: str, state: dict) -> bool:
+        cur = self._exec("UPDATE users SET onboarding=%s WHERE email=%s", (json.dumps(state or {}), email.lower()))
+        return cur.rowcount == 1
+
+    def set_email_verified(self, email: str, at: float | None) -> bool:
+        cur = self._exec("UPDATE users SET email_verified=%s WHERE email=%s", (at, email.lower()))
+        return cur.rowcount == 1
+
+    def create_verification(self, email: str, token_hash: str, expires: float) -> None:
+        self._exec(
+            "INSERT INTO email_verifications (token_hash, email, created, expires, used) VALUES (%s,%s,%s,%s,NULL) "
+            "ON CONFLICT (token_hash) DO UPDATE SET email=EXCLUDED.email, created=EXCLUDED.created, "
+            "expires=EXCLUDED.expires, used=NULL",
+            (token_hash, email.lower(), time.time(), expires))
+
+    def consume_verification(self, token_hash: str, now: float | None = None) -> str | None:
+        now = now or time.time()
+        cur = self._exec("UPDATE email_verifications SET used=%s WHERE token_hash=%s AND used IS NULL AND expires>=%s "
+                         "RETURNING email", (now, token_hash, now))
+        row = cur.fetchone()
+        return row[0] if row else None
+
+    def revoke_verifications(self, email: str, now: float | None = None) -> int:
+        cur = self._exec("UPDATE email_verifications SET used=%s WHERE email=%s AND used IS NULL",
+                         (now or time.time(), email.lower()))
+        return cur.rowcount
+
     def prune_auth(self, now: float | None = None) -> int:
         now = now or time.time()
         n = self._exec("DELETE FROM sessions WHERE expires IS NOT NULL AND expires<%s", (now,)).rowcount
         n += self._exec("DELETE FROM resets WHERE (expires IS NOT NULL AND expires<%s) OR used IS NOT NULL", (now,)).rowcount
         n += self._exec("DELETE FROM phone_tickets WHERE expires<%s OR used IS NOT NULL", (now,)).rowcount
+        n += self._exec("DELETE FROM email_verifications WHERE expires<%s OR used IS NOT NULL", (now,)).rowcount
         return n
 
     def disconnect_league(self, email: str, platform: str, league_id: str, season: int = 0) -> None:
@@ -474,7 +515,7 @@ class PostgresStore:
     # paying customer's rows — which is this one.
 
     USER_TABLES = ("users", "purchases", "leagues", "runs", "feedback", "email_prefs", "sessions", "resets",
-                   "events")
+                   "events", "email_verifications")
     HIDDEN_COLUMNS = ("password_hash", "token_hash")
 
     def export_user(self, email: str) -> dict:

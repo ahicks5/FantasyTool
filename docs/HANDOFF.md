@@ -24,6 +24,24 @@ Shipping the web app is a push to the production branch. Rolling back is the sam
 at an older sha. `docs/DEPLOY.md` has the commands, every environment variable, and the
 Chromium requirement that keeps share-card unfurls from silently 503ing.
 
+## The sign-up walk and the free week (2026-10-05)
+
+Andrew: onboarding is the most critical piece; make it a slide show, phone first, a league on the
+way in, and a card on file for a free first week. Planned in `docs/SPEC-ONBOARDING.md`, then built
+whole on `claude/onboarding-experience-plan-sz7088` (not yet on production). `/register` is now the
+walk: number, code, nameplate, mailbox (or email, password, nameplate), the league (the same
+`LeagueLinker` as `/connect`), the owner's first real call with the paid rooms' moves name-free
+under it, then the offer with `FREEWEEK` already applied, then the elevator. The season is $29.99.
+The free week is a Stripe trial with the card up front; without a Stripe key it is written
+directly. Email verification exists and is switched off until mail sends.
+
+**Traps.** The free week is a `week_pass` row with `source = "trial:<sku>"`: it opens every room,
+but it must never count as a paid week (`_week_live` excludes it, or the season would be $25 during
+a free week). A `$0` `invoice.paid` with a 100% Stripe promo code but no `trial` metadata is still a
+paid week, as before. The walk derives its screen from `/api/me`; hold a screen by hand only before
+the account exists. `react-hooks/refs` rejects reading a ref during render: the "has walked" marker
+is state.
+
 ## ESPN leagues show ESPN's own projection (2026-09-29)
 
 Andrew compared his ESPN roster (starters add to 175.5) with Owner's Suite (168.9) and asked why.

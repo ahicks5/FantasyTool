@@ -24,7 +24,7 @@ import {
   SCOUT_OPEN,
   WIRE,
   OFFICE,
-  CALL, FILM, ACCOUNT, PRICING, ESPN_KEY, YAHOO } from "./vocab.ts";
+  CALL, FILM, ACCOUNT, PRICING, ESPN_KEY, YAHOO, ONBOARD } from "./vocab.ts";
 
 /**
  * The vocabulary is the one file that is allowed to say a section's name, so it is also
@@ -81,7 +81,7 @@ const ALL_COPY: string[] = [
   LANDING.faq.head, ...LANDING.faq.items.flatMap((i) => [i.q, i.a]),
   ...Object.values(LANDING.close), ...Object.values(LANDING.bar),
   // The offer.
-  PRICING.eyebrow, PRICING.title("$24.99"), PRICING.lead, ...Object.values(PRICING.unlocks), ...Object.values(PRICING.badge),
+  PRICING.eyebrow, PRICING.title("$29.99"), PRICING.lead, ...Object.values(PRICING.unlocks), ...Object.values(PRICING.badge),
   ...Object.values(PRICING.names), ...Object.values(PRICING.per), ...Object.values(PRICING.term),
   PRICING.leagues(1), PRICING.leagues(5), PRICING.stack.head, PRICING.stack.weekly(1), PRICING.stack.weekly(14), PRICING.stack.season,
   PRICING.stack.even(5), PRICING.guarantee.head, PRICING.guarantee.body(14),
@@ -150,6 +150,8 @@ const ALL_COPY: string[] = [
   // The account: every string, every templated line rendered once.
   // Walked all the way down: the admin's numbers nest a level deeper than the rest.
   ...allStrings(ACCOUNT),
+  // The sign-up walk: every screen's words.
+  ...allStrings(ONBOARD),
 ];
 
 /** Every string in a nested copy object, each templated line rendered once with sample values. */
@@ -240,7 +242,7 @@ test("the landing page sells the room, not the price", () => {
 
 test("the offer is stacked, guaranteed and never typed", () => {
   // The price in the headline is a parameter, so a change in edge/products.py reaches it.
-  assert.equal(PRICING.title("$24.99"), "$24.99. The season.");
+  assert.equal(PRICING.title("$29.99"), "$29.99. The season.");
   assert.doesNotMatch(PRICING.lead, /\$\d/, "the lead quotes no price of its own");
   // The guarantee says the number of days the terms say, and nothing about a percentage.
   assert.match(PRICING.guarantee.body(14), /14 days/);

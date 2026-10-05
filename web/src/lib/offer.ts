@@ -46,7 +46,7 @@ export function offerStack(products: Product[], now: Date = new Date()): OfferSt
   };
 }
 
-/** "$4.99/week" for the subscription, "$24.99" for a one-time price, "Free" for free. */
+/** "$4.99/week" for the subscription, "$29.99" for a one-time price, "Free" for free. */
 export function priceLabel(p: Pick<Product, "price_cents" | "recurring">): string {
   const base = formatCents(p.price_cents);
   return p.recurring && p.price_cents > 0 ? `${base}${PRICING.per[p.recurring]}` : base;
