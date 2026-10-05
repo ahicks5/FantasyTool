@@ -10,6 +10,11 @@ COPY edge ./edge
 # proof of a pregame injury tag (edge/data/frozen.py reads /app/docs/frozen). Small.
 COPY docs/frozen ./docs/frozen
 ENV PATH="/app/.venv/bin:$PATH" EDGE_CACHE_DIR=/data/cache EDGE_DB=/data/edge.db
+# glibc gives every thread its own malloc arena, and a threaded Python server that touches
+# big JSON in several threads ends up holding several half-empty arenas it never hands back.
+# Two arenas is the usual cure, and it is a large part of staying under a 512 MB plan
+# (docs/DEPLOY.md, "Memory").
+ENV MALLOC_ARENA_MAX=2
 
 # Headless Chromium for the share card. The `playwright` package alone is not enough — it
 # ships no browser, so without this every /s/{id} link unfurls with a broken image and

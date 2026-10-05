@@ -259,6 +259,53 @@ Every account keeps up to **3 leagues** on file (`products.BASE_LEAGUES`), free 
 2026-09-28), and each `league_slot` purchase adds one. A forgotten league keeps its slot for the season. Leagues already on file stay (the cap only blocks linking a new one). `POST /api/connect` answers 401 to a stranger now:
 looking at a league is still free, keeping it is the account's job.
 
+## Memory, and why the API used to fall over
+
+Render emailed "edge-api exceeded its memory limit" and restarted the box. While it restarted,
+the web app showed its loader and then "can't reach the server". Measured locally on
+2026-10-05 against the test league:
+
+| One cold home-screen load (desk, actions, league, grades, lineup at once) | Peak memory | Time |
+|---|---|---|
+| Before | **475 MB** with nothing on disk, 391 MB with the disk cache warm | 46 s / 7 s |
+| After  | **163 MB** with nothing on disk, 132 MB with the disk cache warm | 44 s / 3.8 s |
+
+The limit on Render's free and Starter plans is 512 MB. **The cause:** the page opens with four
+or five requests at once, and each one built the same league independently, side by side,
+each with its own ~70 MB parse of Sleeper's 14 MB players file. One request alone peaked at
+~110 MB; five at once was most of the box. Two leagues loading together, or a share card's
+Chromium (150-250 MB) on top, was over it.
+
+What fixed it, and where it lives:
+
+- **One build per league** (`service.get_bundle`): the first request builds, the rest wait for it.
+- **At most two leagues built at once** (`EDGE_BUILD_CONCURRENCY`, default 2), **sixteen held**
+  (`EDGE_MAX_BUNDLES`, least recently used dropped), and finished weeks capped (`MAX_PLAYED`).
+  These caches used to grow for the life of the process.
+- **One parse of the players file**, shared (`sleeper_api.players`).
+- **One Chromium at a time** for share cards (`app._render_lock`).
+- **`MALLOC_ARENA_MAX=2`** in the `Dockerfile`, so threads do not each keep their own heap.
+
+Speed, from the same change: a league past its ten-minute TTL is **served at once while a fresh
+one builds behind it** (up to six hours old; `service.STALE_MAX`), so a returning reader no
+longer waits for ~25 upstream calls. Every league answer carries `X-Edge-As-Of` (when its data
+was built), and `X-Edge-Fresh: 1` asks for a rebuild. The web's Refresh button sends that header.
+Last season's transactions are fetched side by side rather than one at a time.
+
+The browser also keeps the last answer for each league read (`web/src/lib/saved.ts`), so a
+reload paints at once and refreshes underneath, even while the API is waking up.
+
+**Two things the code cannot fix, both on Render's dashboard:**
+
+1. **Free instances sleep after 15 minutes idle**, and the first request after that waits
+   for the container to boot (30-60 s with this image). If the service is on the free plan,
+   that is the "loading forever" on the first open of the day. Starter ($7/month) does not
+   sleep. Check: Render → edge-api → Settings → Instance Type.
+2. **The free plan has no persistent disk**, so every restart loses `EDGE_CACHE_DIR`, and the
+   next load re-downloads the 14 MB players file, projections and the season schedule.
+   That is the "nothing on disk" row above, 44 s. The blueprint asks for a 1 GB disk at `/data`.
+   Check: Render → edge-api → Disks.
+
 ## The one that bites: the share card needs a browser
 
 `GET /api/share/{id}/card.png` renders the verdict image with headless Chromium. That image

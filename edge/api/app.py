@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import threading
 import time
 from pathlib import Path
 
@@ -27,8 +28,45 @@ from edge.engine import plan, report, trade, trade_finder, waiver_plan, waivers
 from edge.engine.explain import explain
 
 app = FastAPI(title="Owner's Suite API", version="0.1")
+
+
+class FreshnessMiddleware:
+    """`X-Edge-Fresh: 1` in (the reader pressed Refresh), `X-Edge-As-Of` out.
+
+    In: the league is rebuilt rather than served from the cache (`service.want_fresh`).
+    Out: when the league this answer came from was built, in epoch seconds, so the web can
+    say "updated 12 min ago" truthfully. `service.get_bundle` may serve a bundle older than
+    its TTL while a fresh one builds behind it, and this header is how that stays honest.
+    A pure ASGI middleware, not `@app.middleware`, so the context it sets reaches the route.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        headers = dict(scope.get("headers") or [])
+        fresh = service.want_fresh.set(headers.get(b"x-edge-fresh") == b"1")
+        box: dict = {}
+        served = service.served_as_of.set(box)
+
+        async def stamped(message):
+            if message["type"] == "http.response.start" and "at" in box:
+                message = {**message, "headers": [*message.get("headers", []),
+                                                   (b"x-edge-as-of", str(int(box["at"])).encode())]}
+            await send(message)
+
+        try:
+            await self.app(scope, receive, stamped)
+        finally:
+            service.want_fresh.reset(fresh)
+            service.served_as_of.reset(served)
+
+
+app.add_middleware(FreshnessMiddleware)
 app.add_middleware(CORSMiddleware, allow_origins=cors_origins(),
-                   allow_methods=["*"], allow_headers=["*"])
+                   allow_methods=["*"], allow_headers=["*"], expose_headers=["X-Edge-As-Of"])
 # Outermost, so a refused request costs a dict lookup rather than an upstream fetch.
 app.add_middleware(RateLimitMiddleware)
 store = open_store()
@@ -1775,7 +1813,6 @@ def _share_image(share_id: str, shape: str):
     thousand times must not spin up a browser a thousand times. The cache key carries the
     shape, or the square card and the story would overwrite each other."""
     from fastapi.responses import FileResponse
-    from edge import graphics
 
     snap = store.get_share(share_id, count_view=False)
     if not snap:
@@ -1784,19 +1821,32 @@ def _share_image(share_id: str, shape: str):
     cache_dir.mkdir(parents=True, exist_ok=True)
     suffix = "" if shape == "square" else f".{shape}"
     out = cache_dir / f"{share_id}{suffix}.png"
-    if not out.exists():
-        # One door: `card_html` picks the verdict or the Lock layout off the snapshot, so
-        # this never branches on kind. It also decides the shape it can honour — a Lock has
-        # no story layout yet and falls back to square — so the viewport is sized from what
-        # comes back, not from what was asked for, or a Lock story would render letterboxed
-        # into 1080x1920 with 840px of empty plate under it.
-        html = graphics.card_html(snap, shape=shape)
-        width, height = graphics.SHAPES[graphics.card_shape(snap, shape)]
-        try:
-            graphics.render_png(html, out, width=width, height=height)
-        except Exception as e:  # noqa: BLE001 — no browser on this host, or a render failure
-            raise HTTPException(503, f"card rendering unavailable: {e}")
+    with _render_lock:
+        if not out.exists():
+            _render_card(snap, shape, out)
     return FileResponse(out, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
+# One Chromium at a time. A browser is 150-250 MB on its own, and a link pasted into a group
+# chat is fetched by several unfurlers at once: each found no PNG on disk and launched its
+# own, which on a 512 MB box is the memory limit (docs/DEPLOY.md, "Memory"). The second
+# caller waits, then finds the first one's file.
+_render_lock = threading.Lock()
+
+
+def _render_card(snap: dict, shape: str, out: Path) -> None:
+    from edge import graphics
+    # One door: `card_html` picks the verdict or the Lock layout off the snapshot, so
+    # this never branches on kind. It also decides the shape it can honour — a Lock has
+    # no story layout yet and falls back to square — so the viewport is sized from what
+    # comes back, not from what was asked for, or a Lock story would render letterboxed
+    # into 1080x1920 with 840px of empty plate under it.
+    html = graphics.card_html(snap, shape=shape)
+    width, height = graphics.SHAPES[graphics.card_shape(snap, shape)]
+    try:
+        graphics.render_png(html, out, width=width, height=height)
+    except Exception as e:  # noqa: BLE001 — no browser on this host, or a render failure
+        raise HTTPException(503, f"card rendering unavailable: {e}")
 
 
 @app.get("/api/share/{share_id}/card.png")
