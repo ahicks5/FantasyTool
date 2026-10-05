@@ -143,6 +143,18 @@ def web_rows() -> list[tuple[str, str, str]]:
     return rows
 
 
+def mobile_rows() -> list[tuple[str, str, str]]:
+    """The iPhone app (docs/IOS.md): its entry points and `src/`, without the tests."""
+    root = ROOT / "mobile"
+    paths = [root / "App.tsx", root / "index.ts", *sorted((root / "src").rglob("*.ts*"))]
+    rows = []
+    for path in paths:
+        if not path.exists() or path.name.endswith((".test.ts", ".test.tsx", ".d.ts")):
+            continue
+        rows.append((path.relative_to(ROOT).as_posix(), ts_description(path), str(_lines(path))))
+    return rows
+
+
 def _lines(path: Path) -> int:
     return len(path.read_text(encoding="utf-8").splitlines())
 
@@ -151,6 +163,7 @@ def undocumented() -> list[str]:
     """Files with nothing to say for themselves. The drift test fails on these."""
     missing = [rel for rel, desc, _, _ in python_rows() if not desc]
     missing += [rel for rel, desc, _ in web_rows() if not desc]
+    missing += [rel for rel, desc, _ in mobile_rows() if not desc]
     return sorted(missing)
 
 
@@ -168,6 +181,7 @@ def generated() -> str:
     app = [r for r in web if r[0].startswith("web/src/app/")]
     components = [r for r in web if r[0].startswith("web/src/components/")]
     lib = [r for r in web if r[0].startswith("web/src/lib/")]
+    mobile = mobile_rows()
 
     parts = [
         BEGIN,
@@ -190,6 +204,10 @@ def generated() -> str:
         f"### `web/src/lib/` — client logic ({len(lib)} files)",
         "",
         _table(["File", "What it is", "Lines"], lib),
+        "",
+        f"### `mobile/` — the iPhone app ({len(mobile)} files)",
+        "",
+        _table(["File", "What it is", "Lines"], mobile),
         "",
         END,
     ]
