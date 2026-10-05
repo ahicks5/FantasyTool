@@ -10,7 +10,7 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
   in Stripe metadata and telemetry props so TikTok sales can be counted. Stripe's own code field is off when
   ours applied (no stacking). Tests: `tests/test_api.py -k promo`, `e2e/account.spec.ts`.
 - [x] "Have a code?" under the season offer on the pass sheet (every upgrade path uses that sheet).
-- [ ] Decide (Andrew): end date or redemption cap for STHTIKTOK? Today it never expires.
+- [x] Andrew, 2026-10-05: no end date and no cap. Shipped to production the same day.
 - [ ] Maybe: `?promo=STHTIKTOK` on a link pre-fills the field, for a TikTok bio link.
 - Note: `test_the_lineup_splits_required_changes_from_decisions_and_prices_every_swap` fails on the base
   branch too, before this change.

@@ -31,6 +31,7 @@ SEASON_UPGRADE_CENTS = 1999
 # code. Each one names the sku it discounts and how much comes off the catalog price.
 # Andrew, 2026-10-05: "STHTIKTOK" is half off the season pass.
 PROMO_CODES = {
+    # No end date and no redemption cap (Andrew, 2026-10-05).
     "STHTIKTOK": {"sku": SEASON_SKU, "percent_off": 50},
 }
 
