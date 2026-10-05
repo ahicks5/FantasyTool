@@ -2,9 +2,31 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Owner's Suite — rename (2026-10-05)
+Andrew's call: the name is **Owner's Suite**, replacing Penthouse. A rename, nothing else:
+same mark, same chrome, same rooms, same passes. Everything a user reads, every docstring,
+every test and every launch document now says Owner's Suite; "Penthouse" survives only
+where it names the old brand as history, and in an ESPN team name inside a recorded fixture.
+- [x] Code, copy, tests, docs, launch HTML: `Owner's Suite` in prose, `OWNER'S SUITE` on the
+      nameplate (`&rsquo;` in HTML templates, the typographic apostrophe in the React
+      nameplates). Season pass is "The Owner's Suite"; Stripe line items say Owner's Suite.
+- [x] The signed-in top bar's short wordmark is **SUITE** (was PHF). Andrew to confirm.
+- [x] `opengraph-image.png` re-rendered by `scripts/render_brand_assets.py`; the two launch
+      PDFs re-rendered from their HTML.
+- [ ] **Domain.** Code, CORS, Yahoo redirect, reset links and the docs still say
+      `penthousefantasy.com` because that is the domain that resolves. When Andrew registers
+      the new one: `edge/api/limits.py`, `edge/cli.py`, `edge/delivery/weekly_email.py`,
+      `deploy/render.yaml`, `docs/DEPLOY.md`, the tests that pin them, then `EDGE_CORS`,
+      `EDGE_WEB_URL`, `YAHOO_REDIRECT_URI` on Render, `NEXT_PUBLIC_SITE_URL` on Vercel, and the
+      redirect URI on the Yahoo app. — **Andrew**
+- [ ] Social handle (`penthousefootball` in BRAND.md §2), the Twilio Verify service name, and
+      the Stripe product names already created in the dashboard — **Andrew**.
+- [ ] `launch/cards/` were already stale; re-render with `edge.cli card` before any post.
+- [ ] Trademark screen moves to "Owner's Suite" (B-10).
+
 ## ESPN shows ESPN's number (2026-09-29)
 
-Andrew, with four screenshots (ESPN 175.5 for his starters, Penthouse 168.9): "I just want
+Andrew, with four screenshots (ESPN 175.5 for his starters, Owner's Suite 168.9): "I just want
 people to see the same number." Two vendors, not a bug (`docs/LEAGUE_SURVEY.md`: ours ran
 ~4% under ESPN across 21 leagues), so an ESPN league now takes ESPN's own weekly projection.
 
@@ -28,7 +50,7 @@ people to see the same number." Two vendors, not a bug (`docs/LEAGUE_SURVEY.md`:
 
 ## Sunday-night pass: the haze, one GM, the live week, ESPN matchups and scoring (2026-09-28)
 
-Andrew, Sunday night after the games, with two screenshots (ESPN 170.02 played; Penthouse
+Andrew, Sunday night after the games, with two screenshots (ESPN 170.02 played; Owner's Suite
 "projected 162.6"): the paywall as a haze, one GM, the film shown then blurred, sortable
 Proj/ROS, the mid-weekend look, "no matchup this week" on ESPN, ESPN scoring, live scores.
 
@@ -166,7 +188,7 @@ until the three `YAHOO_*` env vars are set on Render, then offers it. Setup: `do
 ## New pricing: week pass, season pass, no à la carte (2026-09-27)
 
 Andrew's decision: Free (unchanged), **week pass $4.99/week** (a Stripe subscription, cancel
-anytime), **season pass $24.99** once (sku `full_report`, "The Penthouse", so comps stay valid),
+anytime), **season pass $24.99** once (sku `full_report`, "The Owner's Suite", so comps stay valid),
 **league slot $2.99**. Wire Pass and Trade Lab are no longer sold; holders keep them.
 
 - [x] **PR-1** Catalog in `edge/products.py` (`for_sale`, `recurring`, `duration_days` + `grace_days`,
@@ -391,7 +413,7 @@ that actually tip them.
 
 ## The video game (2026-09-21)
 
-Andrew wants Penthouse to play like MyGM: an owner, a staff, a building. The first piece is
+Andrew wants Owner's Suite to play like MyGM: an owner, a staff, a building. The first piece is
 the opening.
 
 - [x] **VG-1** **The ride up, and the office.** The opening is an elevator: doors close
@@ -605,7 +627,7 @@ themes. All eight are done and on production.
       is the language of speed, and the brand is the floor above the noise.
 - [x] **B-4** `LINES` in `web/src/lib/vocab.ts`, wired into `/login`, `/connect`, `Pricing`,
       `Locked` and the landing footer. The kit's four taglines retired.
-- [x] **B-5** Title/OG/Twitter carry "fantasy football call sheet"; "Penthouse Fantasy" never
+- [x] **B-5** Title/OG/Twitter carry "fantasy football call sheet"; "Owner's Suite Fantasy" never
       ships as a bare string. No `title.template` — every section page is a client component,
       so the only page it could reach is `/s/[id]`, which builds its own absolute title.
 - [x] **B-6** New mark: the ball and the box — a football stood upright with its top floor lit.
@@ -619,9 +641,9 @@ themes. All eight are done and on production.
 - [x] **B-9** Landing header no longer scrolls sideways. It wanted 448px of min-content on a
       320px phone. A 6-width spot check passed it twice; a full 300-1300px sweep found two
       broken bands. Now swept at every 10px in both themes.
-- [ ] **B-10** Trademark screen on "Penthouse" (class 9/41/42) — **Andrew**. Does not block the
+- [ ] **B-10** Trademark screen on "Owner's Suite" (class 9/41/42) — **Andrew**. Does not block the
       mark; does gate spending on the name. See BRAND.md §2.
-- [ ] **B-11** Post-result stamp lines (CALLED FROM THE PENTHOUSE / WE SAID SO — WEEK n). They
+- [ ] **B-11** Post-result stamp lines (CALLED FROM THE OWNER'S SUITE / WE SAID SO — WEEK n). They
       need a "how last week's calls landed" surface to sit on, which does not exist yet.
 - [ ] **B-12** Put the mark in the `Opening` frame (the kit's loading screen is emblem + bar,
       which `WaitHero` already frames).
@@ -653,7 +675,7 @@ themes. All eight are done and on production.
   in every test, and gives you an admin account today; the price is that a password reset
   cannot email itself until Resend is wired (`AC-9`). Say if you would rather go back to a
   hosted provider. (b) **Upgrades are free while there is no Stripe key.** Anyone who registers
-  can grant themselves The Penthouse; the sheet says so. Set `STRIPE_SECRET_KEY` on Render the
+  can grant themselves The Owner's Suite; the sheet says so. Set `STRIPE_SECRET_KEY` on Render the
   day you want to charge, and the same button becomes Checkout. (c) **The free cap is 3 leagues
   for every account, the bundle 5, a slot $2.** The numbers are `edge/products.py`. (d) **Set
   `EDGE_ADMINS=ahicks5.nd@gmail.com` on the Render service** (it is in `deploy/render.yaml`,
@@ -879,9 +901,9 @@ themes. All eight are done and on production.
 - [ ] ESPN's free-agent list is the top 250 by percent owned. Ample for a top-5 waiver list;
       raise the limit (600 works) if a deep-league user ever reports a missing name.
 
-## Penthouse — rebrand (this round)
+## Penthouse — rebrand (shipped, now superseded by Owner's Suite)
 Andrew's call: move from The Booth to **Penthouse**, the owner's box. Black and polished chrome,
-taken from the app icons he supplied. Section vocabulary stays coach on purpose — the penthouse is
+taken from the app icons he supplied. Section vocabulary stays coach on purpose — the owner's suite is
 where the call sheet gets read, not a reason to rename the sheet.
 - [x] Tokens rebuilt dark-first in `globals.css`. Dark is the default and is **not** keyed to
       `prefers-color-scheme`: that query also matches "no preference", which is most desktops, so
@@ -894,8 +916,8 @@ where the call sheet gets read, not a reason to rename the sheet.
 - [x] The mark: `IconCrown` + `web/src/app/icon.svg` as the source of truth, with
       `scripts/render_brand_assets.py` rasterising favicon/apple-icon/opengraph-image through
       Chromium. No image library added.
-- [x] Copy pass: Penthouse everywhere a user reads, tagline **"Own the week."**, bundle renamed
-      Full Booth → **The Penthouse**, "Take me upstairs" on the on-ramps. Wire Pass and Trade Lab
+- [x] Copy pass: Owner's Suite everywhere a user reads, tagline **"Own the week."**, bundle renamed
+      Full Booth → **The Owner's Suite**, "Take me upstairs" on the on-ramps. Wire Pass and Trade Lab
       keep their names.
 - [x] Off-app surfaces: both share-card renderers, the `/s/{id}` page, the weekly email (flat
       silver capitals — Outlook renders no gradient and no SVG), and `launch/posts.md`.
@@ -906,7 +928,7 @@ where the call sheet gets read, not a reason to rename the sheet.
       Verified all six do-not-break items — no `prefers-color-scheme` rule, `.chrome-type` still
       on the glyph span, favicon PNG is RGBA, `booth.*` keys and `edge/` untouched, email test
       green, crown path still shared by `icon.svg` and `IconCrown`.
-- [x] Top bar at 320px: "PENTHOUSE" is half again as wide as "THE BOOTH" and left the league
+- [x] Top bar at 320px: "OWNER'S SUITE" is half again as wide as "THE BOOTH" and left the league
       label 8px, so "The Megalabowl" rendered as "T". Below 360px the word steps aside and the
       crown carries the mark; the league reads in full again. The rule is in `globals.css`, not a
       `max-[359px]:hidden` utility — `.wordmark-type` is unlayered and beats Tailwind's layer.
@@ -921,7 +943,7 @@ where the call sheet gets read, not a reason to rename the sheet.
       already validated at `#14171c`, which is still the card colour, so this is a confirmation
       rather than a re-tune — but it has not been re-run.
 
-## The Booth — rebrand (shipped, now superseded by Penthouse)
+## The Booth — rebrand (shipped, now superseded by Penthouse, then Owner's Suite)
 Andrew's call: ffwrapped is an encyclopedia you browse; we are three moves you make before
 kickoff. Named it **The Booth** and rebuilt the shell around a coaching call sheet.
 - [x] Brand system in `web/src/app/globals.css`: ON AIR lamp token (`--color-signal`, chrome only),
@@ -1129,7 +1151,7 @@ Build in this order; each is its own commit.
       changes what users see (Lock becomes rarer and truer, the hold band scales from a flat
       1.5 points to 1.74 off a 5-point starter and 3.75 off a 20-point one).
 - [ ] Commissioner league pack, creator affiliate codes (growth, after launch)
-- [ ] A Penthouse Pro tier — deliberately not launched yet
+- [ ] An Owner's Suite Pro tier — deliberately not launched yet
 
 ## Later (not v1)
 - [ ] Private ESPN leagues (espn_s2 / SWID)
@@ -1178,11 +1200,11 @@ All eight are now in, and the branches themselves can be deleted.
 - [x] Launch readiness: Postgres behind the store contract, rate limits, refunds that revoke
       access, the Stripe return-URL origin check, Terms and Privacy, CI, the weekly email
       sender, and the accessibility pass. This branch predated the rebrand, so every web
-      surface collided with it; the Penthouse versions won and the functional work was grafted
+      surface collided with it; the Owner's Suite versions won and the functional work was grafted
       in. Details in the merge commit.
 - [x] Free Lock shares. Sharing used to need Trade Lab ($5); a start/sit card now needs only
       `my_team`, which is free. The pre-rebrand visual work on that branch (the flare accent,
-      the old wordmark) was dropped — superseded by Penthouse — so the Lock card is drawn in
+      the old wordmark) was dropped — superseded by Owner's Suite — so the Lock card is drawn in
       the current identity rather than ported.
 
 ### Found while merging, fixed here
@@ -1192,7 +1214,7 @@ All eight are now in, and the branches themselves can be deleted.
 - [x] Two branches each shipped their own legal pages. Kept `/terms` + `/privacy` (configurable
       refund window, `missingLegalConfig()` launch blocker, already in the sitemap); dropped
       `/legal/*`.
-- [x] Every user-facing "Edge" string in `web/src` now reads Penthouse. `X-Edge-User`, `EDGE_*`
+- [x] Every user-facing "Edge" string in `web/src` now reads Owner's Suite. `X-Edge-User`, `EDGE_*`
       and the `booth.*` storage keys deliberately stay.
 
 ### Not done
@@ -1208,7 +1230,7 @@ All eight are now in, and the branches themselves can be deleted.
         4a50958  Web: the flare accent, a wordmark that means something
         692be77  Redraw the share cards, and stop charging for the one that spreads
       The sharing change from the third is in; the flare accent and old wordmark are not, and
-      should not come back without a deliberate decision to leave Penthouse.
+      should not come back without a deliberate decision to leave Owner's Suite.
 - [ ] The e2e Playwright smoke test and the Postgres half of the store contract suite have not
       been run here — they need a browser and a live Postgres. CI now runs both.
 
@@ -1289,7 +1311,7 @@ Supersedes **S-5**.
 - [ ] **PP-5** Chat per player: a live room, signed-in to post, team name as handle. Own PR,
       after the first slice is live.
 - [ ] **PP-6** GM's Office from the footer: `/trade?player=<id>` opens the right partner card.
-- [ ] **PP-7** The Penthouse Composite: `CompositeProvider` averaging raw stat lines across
+- [ ] **PP-7** The Owner's Suite Composite: `CompositeProvider` averaging raw stat lines across
       Sleeper, ESPN (already fetched), props (vendor + terms check), Yahoo last.
 - [ ] **PP-8** Position Battle: placeholder button only. Defined as him vs his own NFL
       teammates at his position (snaps, targets, carries, week by week).
@@ -1401,7 +1423,7 @@ Andrew's brief: the tab is Spotify Wrapped for your week — the replay of how y
 *why* (attribution per player: usage, efficiency, TD luck, game script, injuries before and
 during), then how you compare to the league (superlatives, position groups, expectation,
 the gauntlet, a trade and waiver ledger graded so far, the playoff picture), week by week,
-with a projector opening. The carrot for The Penthouse. Sections F-1 to F-10 in the spec;
+with a projector opening. The carrot for The Owner's Suite. Sections F-1 to F-10 in the spec;
 build order in §8.
 
 - [x] **F-1** Data spine (2026-09-23). `edge/data/frozen.py` reads and scores the freeze;

@@ -31,7 +31,7 @@ import type { BenchScore, RecapStarter, SeasonRecap, Standings, StandingsTeam, W
 
 export const RECAP_COPY = {
   /** The paywall's product name. `edge/products.py` is the source of truth for it. */
-  product: "The Penthouse",
+  product: "The Owner's Suite",
 
   /** The season panel: the best thing on the page. */
   seasonHead: "The season",

@@ -65,11 +65,11 @@ export const PRODUCTS: Product[] = [
   { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 3, kind: "free", blurb: "Start/sit for up to three leagues." },
   {
     sku: "week_pass", name: "Week pass", price_cents: 499, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 3,
-    kind: "pass", recurring: "week", duration_days: 7, for_sale: true, blurb: "Everything in the Penthouse, for as long as you keep it.",
+    kind: "pass", recurring: "week", duration_days: 7, for_sale: true, blurb: "Everything in the Owner's Suite, for as long as you keep it.",
   },
   {
-    sku: "full_report", name: "The Penthouse", price_cents: 2499, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 3,
-    kind: "bundle", for_sale: true, through: "2027-01-04", blurb: "Everything in the Penthouse for the rest of the season.",
+    sku: "full_report", name: "The Owner's Suite", price_cents: 2499, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 3,
+    kind: "bundle", for_sale: true, through: "2027-01-04", blurb: "Everything in the Owner's Suite for the rest of the season.",
   },
   { sku: "league_slot", name: "League slot", price_cents: 299, features: [], leagues: 1, kind: "add_on", for_sale: true, blurb: "One more league on your account. Rest of season." },
 ];
@@ -431,7 +431,7 @@ export const ADMIN_USERS: AdminUsersResponse = {
   checkout: false,
   users: [
     { email: "you@example.com", name: "You", role: "admin", is_admin: true, created: 1_789_000_000, last_login: 1_790_000_000,
-      plan: { tier: "premium", name: "The Penthouse", skus: ["full_report"] }, skus: ["full_report"], leagues_allowed: 5,
+      plan: { tier: "premium", name: "The Owner's Suite", skus: ["full_report"] }, skus: ["full_report"], leagues_allowed: 5,
       leagues: [{ platform: "sleeper", league_id: LEAGUE_ID, name: "The Megalabowl", team_id: MY_TEAM_ID, team_name: "HusH", last_used: 1_790_000_000 }] },
     { email: "fan@example.com", name: "", role: "user", is_admin: false, created: 1_789_500_000, last_login: null,
       plan: { tier: "free", name: "Free", skus: [] }, skus: [], leagues_allowed: 3, leagues: [] },

@@ -1,4 +1,4 @@
-"""Penthouse API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload"""
+"""Owner's Suite API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload"""
 from __future__ import annotations
 
 import os
@@ -26,7 +26,7 @@ from edge.engine import recap as recap_mod
 from edge.engine import plan, report, trade, trade_finder, waiver_plan, waivers
 from edge.engine.explain import explain
 
-app = FastAPI(title="Penthouse API", version="0.1")
+app = FastAPI(title="Owner's Suite API", version="0.1")
 app.add_middleware(CORSMiddleware, allow_origins=cors_origins(),
                    allow_methods=["*"], allow_headers=["*"])
 # Outermost, so a refused request costs a dict lookup rather than an upstream fetch.
@@ -189,7 +189,7 @@ def espn_auth(request: Request,
     """A league's read credential, sent per request by the browser that holds it: a private
     ESPN league's cookies, or a Yahoo access token (every Yahoo league needs one).
 
-    Penthouse never stores either — see `espn_api.EspnAuth` and `yahoo_api`. They arrive as
+    Owner's Suite never stores either — see `espn_api.EspnAuth` and `yahoo_api`. They arrive as
     headers rather than in a body or a query string so they stay out of URLs, logs and
     referrers. The browser sends every credential it holds; the `{platform}` in the path
     picks the one that applies, so ESPN cookies never reach Yahoo and the reverse.
@@ -391,12 +391,12 @@ def forgot_password(body: ForgotIn):
         try:
             from edge.delivery import send
             result = send.sender_from_env().send(
-                to=email, subject="Reset your Penthouse password",
-                html=(f'<p>Someone asked to reset the password on your Penthouse account. If it was you, '
+                to=email, subject="Reset your Owner's Suite password",
+                html=(f'<p>Someone asked to reset the password on your Owner&rsquo;s Suite account. If it was you, '
                       f'set a new one here:</p><p><a href="{link}">{link}</a></p>'
                       f'<p>The link works once and lasts {accounts.RESET_HOURS} hours. If it was not you, '
                       f'ignore this email: your password has not changed.</p>'),
-                text=(f"Someone asked to reset the password on your Penthouse account. If it was you, "
+                text=(f"Someone asked to reset the password on your Owner's Suite account. If it was you, "
                       f"set a new one here:\n{link}\n\nThe link works once and lasts {accounts.RESET_HOURS} hours. "
                       f"If it was not you, ignore this email: your password has not changed."))
             sent = not result.dry_run

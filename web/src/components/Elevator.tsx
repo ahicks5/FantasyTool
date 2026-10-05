@@ -62,7 +62,7 @@ function Rules({ n, short = true }: { n: number; short?: boolean }) {
   );
 }
 
-/** A sheet of Penthouse letterhead: the wordmark small in the corner. */
+/** A sheet of Owner's Suite letterhead: the wordmark small in the corner. */
 function Letterhead() {
   return (
     <div className="ride-letterhead">
@@ -136,7 +136,7 @@ export function ElevatorRide() {
     if (rising && s.floor === k) return "ride-button-now";
     return "";
   };
-  const team = c?.team_name ?? "PENTHOUSE";
+  const team = c?.team_name ?? "OWNER’S SUITE";
   const m = desk?.matchup;
   const film = desk?.film;
   const stories = desk?.news.items.slice(0, 2) ?? [];
@@ -183,7 +183,7 @@ export function ElevatorRide() {
           <div className="ride-room">
             <div className="ride-wall">
               <div className="ride-nameplate display">
-                <span className="chrome-type">PENTHOUSE</span>
+                <span className="chrome-type">OWNER’S SUITE</span>
                 <span className="lamp" />
               </div>
               <div className="ride-window" />
@@ -300,7 +300,7 @@ export function ElevatorRide() {
             through. PH is pressed and glows for the ride; each floor lights as the car
             passes it; PH comes on white at the stop. */}
         <div className="ride-panel" aria-hidden>
-          <span className="ride-panel-brand chrome-type">PENTHOUSE</span>
+          <span className="ride-panel-brand chrome-type">OWNER’S SUITE</span>
           <span className={`ride-button ride-button-ph display ${pressed ? "ride-button-lit" : ""} ${arrived ? "ride-button-now" : ""}`}>PH</span>
           {PANEL_FLOORS.map((f) => (
             <span key={f} className={`ride-button tnum ${buttonClass(f)}`}>

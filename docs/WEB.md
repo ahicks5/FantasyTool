@@ -43,7 +43,7 @@ flick on in hard steps (`LIGHTS_MS`, `ride-flick`, `steps(1, end)`). The office 
 3D: a handful of planes (wall with window and nameplate, floor, the desk as a slab) placed
 around the desk top's centre, and the camera is the room's own transform. It walks in,
 turns around the desk to the owner's chair, tilts down onto three papers (the matchup, just
-in, the film, on Penthouse letterhead with the team's name on them), sits a moment, and the
+in, the film, on Owner's Suite letterhead with the team's name on them), sits a moment, and the
 papers fade into the desk that loaded underneath. The
 desk is dressed as an owner's: a nameplate with the team, read from the chair, a blotter with
 the mark embossed, a pen, a phone, a coffee and the mark as a trophy, all CSS shapes. Every

@@ -11,7 +11,7 @@ export function LegalPage({ title, children }: { title: string; children: React.
         {/* The word goes below 360px: the nameplate and the Terms/Privacy nav want 358px
             between them, so these two pages scrolled sideways on a small phone. The mark
             alone is still the mark and the link keeps its aria-label. */}
-        <Link href="/" aria-label="Penthouse home" className="flex min-h-11 items-center">
+        <Link href="/" aria-label="Owner's Suite home" className="flex min-h-11 items-center">
           <Wordmark className="text-[22px]" markOnlyOnTiny />
         </Link>
         <nav className="flex items-center gap-1 text-[13px] font-bold text-muted">
@@ -37,7 +37,7 @@ export function LegalPage({ title, children }: { title: string; children: React.
             Questions about either page: <a className="underline" href={`mailto:${LEGAL.supportEmail}`}>{LEGAL.supportEmail}</a>.
           </>
         ) : null}{" "}
-        Penthouse is not affiliated with the NFL, ESPN, Sleeper, Yahoo, or any other league platform.
+        Owner&rsquo;s Suite is not affiliated with the NFL, ESPN, Sleeper, Yahoo, or any other league platform.
       </footer>
     </div>
   );

@@ -8,7 +8,7 @@ test("being offline explains everything else, so it is checked first", () => {
   assert.equal(c.canRetry, true);
 });
 
-test("rate limiting tells you to wait rather than that Penthouse is broken", () => {
+test("rate limiting tells you to wait rather than that Owner's Suite is broken", () => {
   const c = describeError(new HttpError(429, "too many requests"));
   assert.match(c.title, /too many/i);
   assert.match(c.detail, /minute|slow/i);
@@ -23,7 +23,7 @@ test("a 404 does not offer a retry, because it will still be a 404", () => {
 
 test("a server error owns the problem instead of blaming the user", () => {
   const c = describeError(new HttpError(503, "HTTP 503"));
-  assert.match(c.title, /Penthouse is having a problem/i);
+  assert.match(c.title, /Owner's Suite is having a problem/i);
   assert.match(c.detail, /on us/i);
   assert.equal(c.canRetry, true);
 });

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { legalIsLaunchReady, missingLegalConfig, type LegalConfig } from "./legal.ts";
 
 const complete: LegalConfig = {
-  operator: "Penthouse",
+  operator: "Owner's Suite",
   supportEmail: "support@example.com",
   jurisdiction: "the State of Indiana, USA",
   effective: "18 September 2026",

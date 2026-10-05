@@ -16,11 +16,11 @@ to relive how you did, find out *why*, get your ego stroked, see how you stack u
 league, and leave with one thing to do before Thursday.
 
 Every other tab looks forward and tells you what to do. This one looks back and tells you a
-story. It is the carrot for The Penthouse.
+story. It is the carrot for The Owner's Suite.
 
 ### What it is not
 
-- It is **not a grade of Penthouse**. No hit rate, no "we were right 75% of the time", no
+- It is **not a grade of Owner's Suite**. No hit rate, no "we were right 75% of the time", no
   summed points-gained. `CLAUDE.md` bars every one of those until `scripts/score_runs.py`
   exists. Grading the *manager* is fine: "you set the best lineup" is his data.
 - It is **not a second lineup engine**. When the film says "he deserves a start" or "time to
@@ -102,7 +102,7 @@ Every line the replay can print traces to one of these. Nothing else may be clai
 
 Things we **cannot** say and must not approximate: routes run, "would have won if the play
 had gone differently" (we can price the fumble penalty, not the drive), anything about a
-decade before D6 is answered, and a hit rate for Penthouse.
+decade before D6 is answered, and a hit rate for Owner's Suite.
 
 ---
 
@@ -331,7 +331,7 @@ PlayedWeek + a stat log + a {player_id: projected} map and never calls a data mo
 (D5). "Best since" reports the earliest week in the log, which is 2025 today (D6).
 
 Honesty rules that are not negotiable: no hit rate, no summed points-gained, no
-accuracy claim about Penthouse anywhere in the payload (CLAUDE.md). Grading the
+accuracy claim about Owner's Suite anywhere in the payload (CLAUDE.md). Grading the
 manager is fine. Every reason line is printed only when the number is unusual for
 that player (section 5). TD luck is named as luck. In-game injury is inferred and
 the line says so. The "next" verdict comes from lineup.roles / values / waiver_plan

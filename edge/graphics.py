@@ -143,7 +143,7 @@ SHAPES = {"square": (1080, 1080), "story": (1080, 1920)}
 
 
 def _nameplate(size: int) -> str:
-    """PENTHOUSE as a nameplate: upright, tracked out, cut in chrome, lamp as the
+    """OWNER&rsquo;S SUITE as a nameplate: upright, tracked out, cut in chrome, lamp as the
     full stop. `margin-right` cancels the sidebearing that tracking adds after the
     final E, or the lamp floats away from the word. Mirrors `.wordmark-type`."""
     dot = max(6, round(size * 0.30))
@@ -152,7 +152,7 @@ def _nameplate(size: int) -> str:
         f'{mark_svg(round(size * 1.15))}'
         f'<span style="font-size:{size}px;font-weight:800;letter-spacing:.08em;margin-right:-.08em;'
         f'background-image:{CHROME};-webkit-background-clip:text;background-clip:text;'
-        f'-webkit-text-fill-color:transparent">PENTHOUSE</span>'
+        f'-webkit-text-fill-color:transparent">OWNER&rsquo;S SUITE</span>'
         f'<span style="width:{dot}px;height:{dot}px;border-radius:99px;background:{SIGNAL};'
         f'margin-left:{round(size * 0.1)}px"></span>'
         "</span>"
@@ -233,7 +233,7 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
        dead black above the signature. -->
   <div style="{'flex:1;display:flex;flex-direction:column;justify-content:center' if tall else ''}">
   <div style="margin-top:{56 if tall else 40}px;font-size:{27 if tall else 24}px;letter-spacing:.16em;
-    text-transform:uppercase;color:{PAPER}.45);font-weight:700">Penthouse&rsquo;s verdict</div>
+    text-transform:uppercase;color:{PAPER}.45);font-weight:700">Owner&rsquo;s Suite verdict</div>
   <div style="margin-top:18px;padding-left:10px">
     <span style="display:inline-block;transform:rotate(-3.5deg);border:11px solid {colour};border-radius:22px;
       padding:14px 34px 20px;color:{colour};font-size:{stamp_size}px;font-weight:900;line-height:1;letter-spacing:.04em;

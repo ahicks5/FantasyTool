@@ -24,7 +24,7 @@ export interface LegalConfig {
 const env = (name: string): string => (process.env[name] ?? "").trim();
 
 export const LEGAL: LegalConfig = {
-  operator: env("NEXT_PUBLIC_LEGAL_OPERATOR") || "Penthouse",
+  operator: env("NEXT_PUBLIC_LEGAL_OPERATOR") || "Owner's Suite",
   supportEmail: env("NEXT_PUBLIC_SUPPORT_EMAIL"),
   jurisdiction: env("NEXT_PUBLIC_LEGAL_JURISDICTION"),
   effective: env("NEXT_PUBLIC_LEGAL_EFFECTIVE"),

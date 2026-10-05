@@ -1,4 +1,4 @@
-# PENTHOUSE — fantasy football weekly moves
+# OWNER'S SUITE — fantasy football weekly moves
 
 Paid fantasy football web app. Connect a league, get this week's moves. NFL 2026 is underway
 and launch is days out: **speed > polish**.
@@ -82,7 +82,7 @@ Then only what you need:
 - **The package is still `edge/`.** Renaming it would touch every import, test and script for
   no user-visible gain. The env vars (`EDGE_DEV`, `EDGE_DB`, `X-Edge-User`) and the `booth.*`
   browser keys stay too — renaming those signs every existing user out of their league, their
-  theme and their ticked calls. Anything a *user* reads says Penthouse.
+  theme and their ticked calls. Anything a *user* reads says Owner's Suite.
 - **The mark exists four times** (`icon.svg`, `IconMark`, `MARK_PATH`, `ShareCard.tsx`).
   Redraw them in one commit and re-run `scripts/render_brand_assets.py`. See `docs/BRAND.md`.
 - **Making the Lock card free must never open Trade Lab as a side effect.** A start/sit card
@@ -99,13 +99,13 @@ Then only what you need:
 
 The product is the **owner's box**: the top floor, above the noise, where the staff still
 hands you a **call sheet** but you own the building. Competitors are encyclopedias you browse;
-we are three moves you make before kickoff. **Penthouse** is one word, everywhere a user reads
+we are three moves you make before kickoff. **Owner's Suite** is one word, everywhere a user reads
 it. Tagline: **"Own the week."** Voice: the staff in your ear — confident, clipped, verb
 first, plural. Never hedge on a call the engine is confident about; say plainly when it is a
 coin flip. Look: black and polished chrome, two type families, the metal is the only
 decoration. Sections are **call sheet** (home) · **depth chart** (team) · **scouting**
 (waivers) · **GM's Office** (trade) · **the film** (report) — but what you *buy* keeps its
-product name: the week pass and the season pass (sku `full_report`, still "The Penthouse" in
+product name: the week pass and the season pass (sku `full_report`, still "The Owner's Suite" in
 `edge/products.py`). Trade Lab is a room, no longer a separate purchase. Full guide: **`docs/BRAND.md`**; how it is
 actually built: **`docs/WEB.md`**.
 

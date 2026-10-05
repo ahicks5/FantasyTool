@@ -1,4 +1,4 @@
-# Penthouse — brand guide
+# Owner's Suite — brand guide
 
 The one page that says what the brand is, so nobody has to guess it from a folder of
 PNGs. `CLAUDE.md` carries the build rules; this carries the *why* and the rules a
@@ -14,7 +14,7 @@ see §12 for what landed and what is left.
 
 **Every competitor is an encyclopedia. We are three moves you make before kickoff.**
 
-ffwrapped and friends give you everything and let you browse. Penthouse gives you a call
+ffwrapped and friends give you everything and let you browse. Owner's Suite gives you a call
 sheet: who starts, who to claim, what to offer — and a confidence stamp on each. The
 user is not a researcher. They are the owner. The staff did the work; they make the call.
 
@@ -32,30 +32,29 @@ that sentence. If an asset could belong to a sportsbook or a DFS app, it is not 
 
 ## 2. Name
 
-**Product name: Penthouse.** One word, everywhere a user reads it.
+**Product name: Owner's Suite.** One word, everywhere a user reads it.
 
 **Descriptor: fantasy football call sheet.** It rides beside the name where context is
 missing — title tags, app-store listing, social bios, the first email — and never
 becomes part of the name.
 
 ```
-<title>          Penthouse · own the week
-og:title         Penthouse · fantasy football call sheet
-social bio       Penthouse. Fantasy football, three moves before kickoff.
+<title>          Owner's Suite · own the week
+og:title         Owner's Suite · fantasy football call sheet
+social bio       Owner's Suite. Fantasy football, three moves before kickoff.
 handle           penthousefootball  (not penthousefantasy)
 ```
 
-**"Penthouse Fantasy" is not the name.** The two-word string reads as something else
-entirely in search, and it does not disambiguate from the adult-magazine mark — it
-sharpens the collision. The kit's stacked lockup keeps FANTASY as a small descriptor
-under the wordmark, which is fine *inside artwork*; it never appears as a bare string.
+**"Owner's Suite Fantasy" is not the name.** The descriptor never fuses into the name.
+The kit's stacked lockup keeps FANTASY as a small descriptor under the wordmark, which is
+fine *inside artwork*; it never appears as a bare string. (The name was Penthouse until
+2026-10-05; it collided with the magazine's mark, which is why it went.)
 
-> **decide** — run a USPTO screen on "Penthouse" in class 9/41/42 before spending on a
-> wordmark. The magazine's owner has defended the mark before. This is a half-day check
-> and it gates the whole visual rebuild.
+> **decide** — run a USPTO screen on "Owner's Suite" in class 9/41/42 before spending on a
+> wordmark. This is a half-day check and it gates the whole visual rebuild.
 
 **What you buy is named for what it is** (Andrew, 2026-09-27): the week pass ($4.99/week,
-cancel anytime) and the season pass ($24.99, one payment; still "The Penthouse" in the catalog),
+cancel anytime) and the season pass ($24.99, one payment; still "The Owner's Suite" in the catalog),
 plus a league slot ($2.99). Prices live in `edge/products.py`; the names a user reads are
 `PRICING.names` in `vocab.ts`. The nav names a room; the pricing table names a pass. Wire Pass and
 Trade Lab are no longer sold.
@@ -80,8 +79,8 @@ The em dash rule is not a stylistic preference, it is the voice rule applied. An
 buys a second clause, and a second clause is the opposite of clipped. Almost every one in
 this app was a full stop wearing a disguise: *"No money here — claims run in order"* is two
 sentences pretending to be one. Where a real separator is wanted (a title, a label, a price),
-use the middot the app already uses everywhere else: `Penthouse · own the week`,
-`Open the Penthouse · free`. A lone `—` as the *no value yet* glyph (an empty countdown, a
+use the middot the app already uses everywhere else: `Owner's Suite · own the week`,
+`Open the Owner's Suite · free`. A lone `—` as the *no value yet* glyph (an empty countdown, a
 missing opponent) is not copy and stays.
 
 The coin-flip line matters more than it looks. A brand that says "we don't know" in its
@@ -92,7 +91,7 @@ sentence came from the engine.
 
 ### Vocabulary — **shipping**, `web/src/lib/vocab.ts`
 
-Coach vocabulary on purpose. The penthouse is where the sheet is *read*; it is not a
+Coach vocabulary on purpose. The owner's suite is where the sheet is *read*; it is not a
 reason to rename the sheet.
 
 | Room | Tab | What it is |
@@ -119,7 +118,7 @@ the landing page sound like a lobby.
 | `heroSub` | Everyone else hands you a database. We hand you a call sheet. | Landing, second beat |
 | `threshold` | Welcome to the owner's box. | `/login` eyebrow, `/connect` h1 |
 | `thresholdShort` | Take the top floor. | Meta description |
-| `paywallBundle` | The rest of the building. | The Penthouse card in `Pricing` |
+| `paywallBundle` | The rest of the building. | The Owner's Suite card in `Pricing` |
 | `paywallBundleCta` | Take the rest of the building | The bundle button in `Locked` |
 | `paywallPass` | Unlock the floor. | Any single-pass lock |
 
@@ -128,7 +127,7 @@ full stop reads badly against the price that follows it ("The rest of the buildi
 $7"). Prose keeps the full stop.
 
 Still **to write**, and not in `LINES` until they have a surface: the post-result stamp
-lines (*CALLED FROM THE PENTHOUSE*, *WE SAID SO — WEEK {n}*). They need a "how last
+lines (*CALLED FROM THE OWNER'S SUITE*, *WE SAID SO — WEEK {n}*). They need a "how last
 week's calls landed" card to sit on, which does not exist yet.
 
 **Retired:** *Fantasy builds legends · Strategy fuels legacy · Live the fantasy football
@@ -187,12 +186,12 @@ Rules:
 
 **Nameplate, not jersey.** The kit's wordmark leans forward with a swoosh underline.
 That is the visual language of speed — of a jersey number, a sports-car badge. The brand
-is the opposite: above the noise, still, decides. A penthouse has a **nameplate on the
+is the opposite: above the noise, still, decides. An owner's suite has a **nameplate on the
 door**: upright, heavy, wide-tracked, engraved in metal.
 
 ```
-Was:  PENTHOUSE   (Archivo 900, skewX −7°, tracking −0.02em)
-Now:  PENTHOUSE   (Archivo 800, upright, tracking +0.08em, all caps)
+Was:  OWNER'S SUITE   (Archivo 900, skewX −7°, tracking −0.02em)
+Now:  OWNER'S SUITE   (Archivo 800, upright, tracking +0.08em, all caps)
 ```
 
 - Upright. The skew is gone. `.wordmark-type` in `globals.css` carries no `transform`.
@@ -365,7 +364,7 @@ logo. Both shapes are built:
 ```
 ┌──────────────────────────────┐
 │ ● ON AIR   Week 3 · Megalabowl│  lamp left, week+league right
-│ PENTHOUSE'S VERDICT           │
+│ OWNER'S SUITE VERDICT           │
 │ ┌───────────────────────────┐ │
 │ │      C O U N T E R        │ │  the stamp — the largest thing
 │ └───────────────────────────┘ │
@@ -376,7 +375,7 @@ logo. Both shapes are built:
 │ One line of why, staff voice.  │
 │ Fairness 78% ▓▓▓▓▓▓▓▓░░░       │
 │ ─────────────────────────────  │
-│ ◆ PENTHOUSE •    OWN THE WEEK. │  signature: mark + nameplate + tagline
+│ ◆ OWNER'S SUITE •    OWN THE WEEK. │  signature: mark + nameplate + tagline
 └──────────────────────────────┘
 ```
 
@@ -412,7 +411,7 @@ enforces it. The kit's glows are not a bug in the email; they are just not possi
 
 ## 11. Don'ts
 
-- **Don't** ship "Penthouse Fantasy" as a bare string anywhere a user or a crawler reads.
+- **Don't** ship "Owner's Suite Fantasy" as a bare string anywhere a user or a crawler reads.
 - **Don't** tile the background pattern behind app surfaces. The metal is the only
   decoration.
 - **Don't** put the lamp on a player row, or status red on the chrome.
@@ -438,7 +437,7 @@ build`, `npm run lint` and `npm test` green.
 | 1 | `--color-paper` → Executive Charcoal `#1b1d21`, **and the hero re-seated to `#23272f`** | `globals.css` |
 | 2 | Nameplate wordmark: upright, Archivo 800, +0.08em | `globals.css`, `ui.tsx` |
 | 3 | `LINES` export, wired into `/login`, `/connect`, `Pricing`, `Locked`, landing footer | `vocab.ts` + 5 surfaces |
-| 4 | Title/OG/Twitter carry the descriptor; no bare "Penthouse Fantasy" | `layout.tsx` |
+| 4 | Title/OG/Twitter carry the descriptor; no bare "Owner's Suite Fantasy" | `layout.tsx` |
 | 6 | The ball-and-the-box mark, all four copies, assets re-rendered | `icon.svg`, `icons.tsx`, `graphics.py`, `ShareCard.tsx` |
 | 7 | Share card rebuilt around the verdict + a 9:16 story at `/api/share/{id}/story.png` | `graphics.py`, `api/app.py`, `cli.py` |
 | 8 | Landing h1 → "Three moves before kickoff." | `app/page.tsx` |
@@ -461,9 +460,9 @@ Three things the build taught us, recorded so they are not undone:
 
 ### Left for Andrew
 
-1. **The trademark screen** (§2) — a USPTO check on "Penthouse" in class 9/41/42. It
+1. **The trademark screen** (§2) — a USPTO check on "Owner's Suite" in class 9/41/42. It
    does not block the mark (that is a drawing, not the name), but it does gate spending
    on the name and it should happen before launch.
-2. **The post-result stamp lines** (§3) — *CALLED FROM THE PENTHOUSE* and *WE SAID SO —
+2. **The post-result stamp lines** (§3) — *CALLED FROM THE OWNER'S SUITE* and *WE SAID SO —
    WEEK {n}* need a "how last week's calls landed" surface before they mean anything.
 3. **The kit's raw PNGs stay out of git.** 23MB of 1.5MB renders; derivatives only.

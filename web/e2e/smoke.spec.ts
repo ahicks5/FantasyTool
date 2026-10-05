@@ -150,7 +150,7 @@ const PAGES: PageCase[] = [
     check: async (page) => {
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       // By destination, not by label: the CTA's words live in vocab.ts and have already
-      // changed once ("Connect your league" -> "Open the Penthouse · free"), which left
+      // changed once ("Connect your league" -> "Open the Owner's Suite · free"), which left
       // this assertion looking for a link that no longer existed.
       // `.first()` was the header pill until it started pointing at /connect too, and that
       // pill is deliberately hidden below 512px -- so the first match became an invisible

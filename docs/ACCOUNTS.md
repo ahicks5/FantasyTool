@@ -1,6 +1,6 @@
 # Accounts: register, sign in, recovery
 
-The one page for how a person gets into Penthouse, how they get back in when they are locked
+The one page for how a person gets into Owner's Suite, how they get back in when they are locked
 out, and what we hold. Owned by the accounts work; change it in the same commit as the code.
 The contract is `docs/API.md` "Accounts"; the web wiring is `docs/WEB.md` "The account".
 

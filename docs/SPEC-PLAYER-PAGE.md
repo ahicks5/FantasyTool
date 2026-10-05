@@ -21,14 +21,14 @@ Tap any player's name, anywhere in the app, and his page rises from the bottom o
 │ ┌────┐  Ja'Marr Chase            [Vibes|Stats]│  toggle, top right
 │ │ 📷 │  WR · CIN · vs CLE                     │
 │ └────┘  ROOKIE ▸ RISING  (lifecycle badge)   │
-│         This week 17.4 · Penthouse 18.1      │  weekly projection · composite
+│         This week 17.4 · Owner's Suite 18.1      │  weekly projection · composite
 ├──────────────────────────────────────────────┤
 │                                              │  ▼ scrolls
 │  VIBES                      STATS            │
 │  ─────                      ─────            │
 │  the quick read, in words   the identity     │
 │  short game / long game     the reads        │
-│  the Penthouse says…        this season /    │
+│  the Owner's Suite says…        this season /    │
 │  (no digits, no grades)     last season      │
 │                             game log + chart │
 │                             grades           │
@@ -62,19 +62,19 @@ is the chat's call, stated in its first message.
 
 | # | Decision | Answer |
 |---|---|---|
-| **D-1** | What is "chat"? | **A live room per player.** One real-time thread per player for every Penthouse user, on Supabase Realtime. Seeded with the Penthouse's own take so it is never empty. An "@staff" that answers in-thread is a later add, not v1. |
+| **D-1** | What is "chat"? | **A live room per player.** One real-time thread per player for every Owner's Suite user, on Supabase Realtime. Seeded with the Owner's Suite's own take so it is never empty. An "@staff" that answers in-thread is a later add, not v1. |
 | **D-2** | Does Vibes depend on the reader's league? | **No.** Generated once per (player, week), cached, served to everyone. League-specific facts stay on the Stats side. |
-| **D-3** | What is "our opinion", and may it carry a stamp? | **The start/sit call in the reader's league, with its stamp** — the one stamp allowed on Vibes, because it is a decision — plus a words-only take on the player under "The Penthouse says". |
-| **D-4** | Lifecycle badge names | Penthouse voice: **Rookie, rising · Rookie, unproven · Climbing · Prime · Fine wine · Last call.** Default prime windows RB 22–27, WR/TE 23–30, QB 25–36; tune with data, not taste. |
-| **D-5** | What is the Penthouse number? | **The composite projection, in the reader's league's points**, labelled with its source count. No 0–100 index. |
+| **D-3** | What is "our opinion", and may it carry a stamp? | **The start/sit call in the reader's league, with its stamp** — the one stamp allowed on Vibes, because it is a decision — plus a words-only take on the player under "The Owner's Suite says". |
+| **D-4** | Lifecycle badge names | Owner's Suite voice: **Rookie, rising · Rookie, unproven · Climbing · Prime · Fine wine · Last call.** Default prime windows RB 22–27, WR/TE 23–30, QB 25–36; tune with data, not taste. |
+| **D-5** | What is the Owner's Suite number? | **The composite projection, in the reader's league's points**, labelled with its source count. No 0–100 index. |
 | **D-6** | The two mode colours | **Brass for Vibes, chrome for Stats.** Tokens `--color-vibes` / `--color-stats` in both themes, 4.5:1 on their surfaces. Signed off on screen, both themes, before it ships. |
 | **D-7** | Who posts in chat, under what name? | **Anyone reads; posting needs a magic-link sign-in; the handle is the team name from the reader's connected league.** Email is never shown. |
 | **D-8** | Does the page keep a URL? | **Yes.** `?player=<id>` on the current page; `/waivers/<id>` stays as the deep link and the demo export's page. |
 | **D-9** | Build order after the frame | **PP-2 then PP-3** (header numbers, then Vibes), so the page reads well for a casual user first. Stats is the existing report until PP-4a. |
-| **D-10** | Data beyond the Sleeper feed | **nflverse play-by-play is green-lit** (PP-4b), after the licence and 2026-availability check. **Betting props are not** green-lit yet. ESPN's already-fetched projections were not ticked either, so the composite has no second source until Andrew names one — until then the header shows one projection, labelled with its source, and no "Penthouse" number (see PP-7). |
+| **D-10** | Data beyond the Sleeper feed | **nflverse play-by-play is green-lit** (PP-4b), after the licence and 2026-availability check. **Betting props are not** green-lit yet. ESPN's already-fetched projections were not ticked either, so the composite has no second source until Andrew names one — until then the header shows one projection, labelled with its source, and no "Owner's Suite" number (see PP-7). |
 | **D-11** | Position Battle | **Him vs his own teammates**: the depth chart on his NFL team at his position — who is taking the snaps, targets and carries from him, week by week. "Is he the guy?" Placeholder button in v1; the page is a later spec. |
 | **D-12** | A share button on the player page? | **Not in v1.** The Lock card stays the shareable asset. Revisit once Vibes copy is proven on screen. |
-| **D-13** | How much does Vibes say? | **Hook + three whys + take.** One display-type hook, three one-sentence reasons with an icon each, the short-game/long-game word, then "The Penthouse says". Fits one screen at 375px with the badge. |
+| **D-13** | How much does Vibes say? | **Hook + three whys + take.** One display-type hook, three one-sentence reasons with an icon each, the short-game/long-game word, then "The Owner's Suite says". Fits one screen at 375px with the badge. |
 | **D-14** | Handcuff (Andrew, 2026-09-21) | **A button in the player page's header, a handcuff mark, opening a page of his backups.** Who inherits his touches if he goes down: the men behind him on his own NFL depth chart, whether or not anyone in the league holds them, with the ones on the wire marked. See **PP-8**. |
 
 ## 3. What already exists (do not rebuild it)
@@ -295,7 +295,7 @@ is the reads, and they are full of digits.
    when not, so a cold cache does not slow the profile. Pick inline-when-cached plus a
    fire-and-forget generate; state the choice in `docs/API.md`.
 4. Web `VibesView` (shape per D-13): hook as display type; three "why" lines with the read's
-   icon; the horizon section from PP-2; "The Penthouse says" with the take and, per D-3, the
+   icon; the horizon section from PP-2; "The Owner's Suite says" with the take and, per D-3, the
    start/sit stamp when the reader's league has one. Nothing else; it fits one screen at 375px. A `take` that has not been generated yet shows
    the template lines from vocab so the page is never blank.
 5. `vocab.ts`: `VIBES` heads and the fallback lines.
@@ -518,7 +518,7 @@ builds the default (a live room per player, seeded, signed-in).
    Realtime is not configured (dev, demo), poll the GET every 10s. The room works either way.
 3. **Handle** per D-7: the reader's team name in their connected league; never the email.
 4. **Seed**: on the room's first read, the API inserts the player's current Vibes `hook` as a
-   message from "The Penthouse", so no room is ever empty.
+   message from "The Owner's Suite", so no room is ever empty.
 5. Web `ChatView` inside the sheet's middle (mode-independent) with a composer pinned above
    the footer; signed-out readers see the room and a sign-in line from vocab in place of the
    composer.
@@ -527,7 +527,7 @@ builds the default (a live room per player, seeded, signed-in).
 
 **Acceptance.** Two browsers, same player: a post in one appears in the other without a refresh.
 Signed out: read-only. A 281-character post is refused with a vocab line. The room shows the
-Penthouse's seed line before anyone has posted.
+Owner's Suite's seed line before anyone has posted.
 
 **Tests.** `tests/test_chat_api.py`: post requires auth, length cap, filter, rate limit, the seed.
 `tests/test_store_contract.py` (extend, both backends). E2E: post appears in the list.
@@ -548,7 +548,7 @@ behaviour is whatever `/trade` does today — the profile stays free, Trade Lab 
 **Acceptance / tests.** `web/src/lib/tradeFinder` helper (pure) that selects and orders offers
 for a given player id, node-tested; the free/paid pins untouched.
 
-## PP-7 — The Penthouse Composite
+## PP-7 — The Owner's Suite Composite
 
 **Problem.** One projection from one vendor is a guess with a logo on it. The notes want an
 index that averages every source, betting props included.
@@ -576,7 +576,7 @@ index that averages every source, betting props included.
    usually needs "not affiliated" wording and never a bet link. Decision for Andrew when the
    vendor is picked.
 4. Yahoo last: its projections are per-league behind OAuth; only if a Yahoo connector lands.
-5. Header shows "Penthouse 18.1" next to "This week 17.4 (Sleeper)" only once two or more
+5. Header shows "Owner's Suite 18.1" next to "This week 17.4 (Sleeper)" only once two or more
    sources exist; with one source the slot is not drawn. **As of D-10 only Sleeper is
    green-lit**, so the composite has no second source: the header carries one labelled
    projection and this section waits until Andrew names a second source (ESPN is free and
@@ -606,7 +606,7 @@ is a `breakdown.py` function and a page, not a new source.
 | On screen | Source | Scored by |
 |---|---|---|
 | This week (header) | `providers.py` current provider, via `service.py` | the league |
-| Penthouse (header) | `CompositeProvider` (PP-7) | the league |
+| Owner's Suite (header) | `CompositeProvider` (PP-7) | the league |
 | Lifecycle badge | `lifecycle.py`: age, years_exp, status from the Sleeper dump + ROS tier | words only |
 | Short game / long game | `lifecycle.py`: week tier × ROS tier at position | words only |
 | Reads, splits, game log | `profile.py` (exists) | the league |
@@ -720,7 +720,7 @@ enough to ship on. Step PP-8.1 is that check and it can stop the section.
 ## 7. The prompt for the chat that builds it
 
 ```
-You are picking up PENTHOUSE, a paid fantasy football web app, to build the player page.
+You are picking up OWNER'S SUITE, a paid fantasy football web app, to build the player page.
 Read CLAUDE.md first (short, non-negotiable), then docs/MAP.md, then docs/HANDOFF.md for
 the traps, then docs/SPEC-PLAYER-PAGE.md (what and why) and docs/PLAYER-PAGE-STEPS.md (the order,
 the isolation contract, and the checklist you tick as you go). §2 of that spec is

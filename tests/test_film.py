@@ -477,12 +477,12 @@ def test_on_a_real_league_every_reason_is_one_of_the_named_kinds_and_every_verdi
 
 
 def test_no_hit_rate_or_summed_points_gained_anywhere_in_the_payload(real):
-    """CLAUDE.md: no accuracy claim about Penthouse until scripts/score_runs.py exists."""
+    """CLAUDE.md: no accuracy claim about Owner's Suite until scripts/score_runs.py exists."""
     _, season = real
     keys = _walk_keys(season, set())
     assert not keys & BANNED_KEYS, keys & BANNED_KEYS
     for line in _all_lines(season, []):
-        assert not re.search(r"\b(we|penthouse|our|the call sheet was)\b.*\d+%", line, re.I), line
+        assert not re.search(r"\b(we|owner's suite|our|the call sheet was)\b.*\d+%", line, re.I), line
         assert not re.search(r"\b(accura|hit rate|right \d)", line, re.I), line
     json.dumps(season)      # the API can serve it as it stands
 
@@ -568,7 +568,7 @@ def test_the_demo_unlock_opens_the_film_for_testing(film_client, monkeypatch):
     assert film_client.get(FILM_URL).status_code == 200
 
 
-def test_the_endpoint_never_scores_penthouse(film_client, monkeypatch):
+def test_the_endpoint_never_scores_owners_suite(film_client, monkeypatch):
     monkeypatch.setenv("EDGE_DEMO_UNLOCK", "1")
     body = film_client.get(FILM_URL).json()
     assert not _walk_keys(body, set()) & BANNED_KEYS

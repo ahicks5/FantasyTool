@@ -47,7 +47,7 @@ and therefore do nothing on the deployed site. They are for `npm run dev` with n
 
 **This is the whole outage.** With neither `EDGE_CORS` nor `EDGE_WEB_URL` set, the API allows
 only localhost origins, so every call the browser makes from the live site is discarded and
-the app shows "Cannot reach Penthouse". The API itself is healthy; only browsers are blocked.
+the app shows "Cannot reach Owner's Suite". The API itself is healthy; only browsers are blocked.
 
 Verified live on 2026-09-19 by creating a share against the deployed API:
 
@@ -66,7 +66,7 @@ Nothing errors. Three things quietly point at a machine the user does not have:
 |---|---|---|
 | Share links | `app.py` `/api/share` | The copy-link button hands the user `http://localhost:3000/s/...`. `ShareLock.tsx` uses the API's `url` verbatim. **The whole organic loop is dead** — the Lock card exists to be pasted, and the link it comes with goes nowhere. |
 | Stripe redirect | `payments.py` | `same_origin()` pins the success and cancel URLs to that base, so a customer who pays is sent to localhost. |
-| CORS | `limits.py` | Falls back to `localhost:3000` / `127.0.0.1:3000`. **The site is dead for every real visitor.** A preflight from the live origin answers `400 Disallowed CORS origin`; a simple GET answers 200 with no `access-control-allow-origin`, so the browser throws `TypeError: Failed to fetch` and `errors.ts` renders "Cannot reach Penthouse". |
+| CORS | `limits.py` | Falls back to `localhost:3000` / `127.0.0.1:3000`. **The site is dead for every real visitor.** A preflight from the live origin answers `400 Disallowed CORS origin`; a simple GET answers 200 with no `access-control-allow-origin`, so the browser throws `TypeError: Failed to fetch` and `errors.ts` renders "Cannot reach Owner's Suite". |
 
 **Fix:** set `EDGE_WEB_URL=https://fantasy-tool-alpha.vercel.app` in the Render service's
 environment. `deploy/render.yaml` now carries the real domain, but Render does not re-read a
@@ -165,7 +165,7 @@ API (Railway):
 | `EDGE_SMS_PROVIDER` | `twilio` | **Phone sign-in.** Unset, the door is email and password only. `twilio` needs the three below; a half-set one leaves phone sign-in off and says why in the logs. (`dev` works only with `EDGE_DEV=1` and returns the code in the reply: tests only.) |
 | `TWILIO_ACCOUNT_SID` | `AC…` | Twilio Console home page. |
 | `TWILIO_AUTH_TOKEN` | secret | Twilio Console home page. Secret: set on Render only. |
-| `TWILIO_VERIFY_SID` | `VA…` | Twilio Console → Verify → Services → create one named Penthouse. Verify, not plain SMS: it needs no US carrier (10DLC) registration. |
+| `TWILIO_VERIFY_SID` | `VA…` | Twilio Console → Verify → Services → create one named Owner's Suite. Verify, not plain SMS: it needs no US carrier (10DLC) registration. |
 | `EDGE_SMS_COUNTRIES` | `1` | Calling codes we text. Default `1` (US and Canada); each extra country is SMS-fraud exposure. |
 | `EDGE_ADMINS` | comma-separated emails | **The admin account.** Anyone who signs in with one of these addresses gets the front office (`/admin`): every account, grant or revoke a pass, add league slots, hand out reset links, promote another admin. `deploy/render.yaml` carries Andrew's address; the running service still has to be set by hand. An admin can also be made from the store (`role` column) once one exists. |
 | `SUPABASE_JWT_SECRET` | optional | A Supabase JWT is still accepted as a bearer token when set. Nothing in the web sends one any more. |

@@ -4,8 +4,8 @@ import { Bullets, LegalPage, Section } from "@/components/LegalPage";
 import { LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Privacy · Penthouse",
-  description: "What Penthouse stores, what it deliberately does not, and who else sees it.",
+  title: "Privacy · Owner's Suite",
+  description: "What Owner's Suite stores, what it deliberately does not, and who else sees it.",
 };
 
 /**
@@ -90,7 +90,7 @@ export default function PrivacyPage() {
       <Section heading="Yahoo leagues: you sign in with Yahoo, and the keys stay with you">
         <p>
           Yahoo opens every league only to its members, so connecting one means signing in with Yahoo and letting
-          Penthouse read your fantasy leagues. Yahoo asks you to approve that on its own page; we never see your Yahoo
+          Owner&rsquo;s Suite read your fantasy leagues. Yahoo asks you to approve that on its own page; we never see your Yahoo
           password.
         </p>
         <p>
@@ -169,13 +169,13 @@ export default function PrivacyPage() {
       </Section>
 
       <Section heading="Age">
-        <p>Penthouse is not intended for anyone under 13, and we do not knowingly collect their information.</p>
+        <p>Owner&rsquo;s Suite is not intended for anyone under 13, and we do not knowingly collect their information.</p>
       </Section>
 
       <Section heading="Changes">
         <p>
           If this page changes in a way that matters, the date at the top changes and we say so in the app. Continuing
-          to use Penthouse after that means the new version applies.
+          to use Owner&rsquo;s Suite after that means the new version applies.
         </p>
       </Section>
     </LegalPage>

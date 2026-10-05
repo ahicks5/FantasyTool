@@ -151,7 +151,7 @@ Two things phase A needed that the contract did not list, both one line:
 - [ ] **B6** `VibesView`: three "why" lines, each with its read's icon (role, volume, chances,
       shape, efficiency from `icons.tsx`).
 - [ ] **B7** `VibesView`: the horizon section — the word as a heading, the vocab sentence under it.
-- [ ] **B8** `VibesView`: "The Penthouse says" — the take, and the start/sit stamp when the mock
+- [ ] **B8** `VibesView`: "The Owner's Suite says" — the take, and the start/sit stamp when the mock
       lineup has a call for him (`ConfidenceStamp` from `ui.tsx`). The one stamp on Vibes.
 - [ ] **B9** `web/src/lib/player/vibes.ts` + test: the view builder; **throws on any string with
       a digit**; handles a missing take by falling back to `PLAYER.vibes.fallback` lines.
@@ -249,7 +249,7 @@ component that only draws. Mock breakdown rows come from a new `mocks.ts` block 
 - [ ] **F3** `GET/POST .../player/{id}/chat`: auth required to post, 280 cap, word filter,
       `limits.py` rate limit, handle = the reader's team name. `tests/test_player_api.py`.
 - [ ] **F4** The seed: first read of an empty room inserts the player's `take.hook` from
-      "The Penthouse".
+      "The Owner's Suite".
 - [ ] **F5** Live: Supabase Realtime channel `player:<id>` on inserts; polling every 10s when
       Realtime is not configured. *Done when:* two browsers see each other's posts.
 - [ ] **F6** Footer *Chat* button enabled; e2e: post appears in the list.
@@ -267,13 +267,13 @@ component that only draws. Mock breakdown rows come from a new `mocks.ts` block 
 - [ ] **G5** The field graphic: chrome line-work field, grid overlaid, fill *and* number per cell.
       *You will see:* the route tree on a field. Slots into the Stats order at the marked spot.
 
-## Phase H — The Penthouse composite. Waits on a second source being named.
+## Phase H — The Owner's Suite composite. Waits on a second source being named.
 
 - [ ] **H1** `CompositeProvider` in `providers.py`: per-stat mean across sources that have the
       player, `sources` recorded, attribution lists all. `tests/test_providers.py`.
 - [ ] **H2** The second source (ESPN's already-fetched projections are the free candidate; props
       need a vendor and a terms check). Recorded fixture.
-- [ ] **H3** Header draws "Penthouse 18.1" only when two or more sources exist; Stats' projection
+- [ ] **H3** Header draws "Owner's Suite 18.1" only when two or more sources exist; Stats' projection
       panel lists each source and the composite.
 
 ## Phase J — Handcuff. *"If he goes down, who gets the work?"* (D-14, spec PP-8.)

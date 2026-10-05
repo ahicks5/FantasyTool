@@ -9,7 +9,7 @@ const ALL: Product["features"] = ["my_team", "waivers", "trade_lab", "full_repor
 const PRODUCTS: Product[] = [
   { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 3, kind: "free", blurb: "" },
   { sku: "week_pass", name: "Week pass", price_cents: 499, features: ALL, leagues: 5, kind: "pass", recurring: "week", duration_days: 7, blurb: "" },
-  { sku: "full_report", name: "The Penthouse", price_cents: 2499, features: ALL, leagues: 5, kind: "bundle", through: "2027-01-04", blurb: "" },
+  { sku: "full_report", name: "The Owner's Suite", price_cents: 2499, features: ALL, leagues: 5, kind: "bundle", through: "2027-01-04", blurb: "" },
   { sku: "league_slot", name: "League slot", price_cents: 299, features: [], leagues: 1, kind: "add_on", blurb: "" },
 ];
 

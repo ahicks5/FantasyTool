@@ -1,7 +1,7 @@
 /**
  * Every section name the app says out loud, in one place.
  *
- * Coach vocabulary, and it survives the rebrand on purpose: the penthouse is where the
+ * Coach vocabulary, and it survives the rebrand on purpose: the owner's suite is where the
  * sheet is *read*, not a reason to rename the sheet. The nav names a room (call sheet,
  * depth chart, scouting, the GM's Office, the film) while what you *buy* is named by what it
  * is (the week pass, the season pass, a league slot). Prices live in `edge/products.py`;
@@ -127,7 +127,7 @@ export const LINES = {
 
   /**
    * The h1 on /connect. It is the one page in the app that is a task rather than a
-   * welcome: somebody who has already tapped "Open the Penthouse" knows where they
+   * welcome: somebody who has already tapped "Open the Owner's Suite" knows where they
    * are and needs to be told what to do next, and a second welcome in a row reads as
    * a lobby with two receptionists. `threshold` still does the welcoming on /login,
    * where there is nothing to do but arrive.
@@ -155,7 +155,7 @@ export const LINES = {
  */
 export const RIDE = {
   /** What a screen reader is told the overlay is. */
-  aria: "Riding up to the Penthouse",
+  aria: "Riding up to the Owner's Suite",
   /** Above the doors while the car climbs. */
   goingUp: "Going up",
   /** Above the doors once it has stopped. */
@@ -699,7 +699,7 @@ export const ESPN_KEY = {
     hide: "Hide the code",
     keyAria: "The code, as text",
     iphone: "Bookmarks, Edit, tap the new bookmark, paste over the address, Done.",
-    android: "Three dots, Bookmarks, three dots on the new one, Edit. Paste over the address and name it Penthouse key.",
+    android: "Three dots, Bookmarks, three dots on the new one, Edit. Paste over the address and name it Owner's Suite key.",
     computer: "Right-click the new bookmark, Edit, paste over the address, Save.",
   },
   /** Step 3: on ESPN. */
@@ -707,7 +707,7 @@ export const ESPN_KEY = {
     title: "Log in to ESPN and tap the bookmark",
     button: "Open ESPN",
     iphone: "Log in, open your team, then Bookmarks and tap it. It says copied.",
-    android: "Log in, open your team, then type Penthouse key in the address bar and tap it. It says copied.",
+    android: "Log in, open your team, then type Owner's Suite key in the address bar and tap it. It says copied.",
     computer: "Log in, open your team, then click the bookmark. It says copied.",
   },
   /** Step 4: back here. */
@@ -723,7 +723,7 @@ export const ESPN_KEY = {
     wrongSite: "Open fantasy.espn.com and log in, then tap this bookmark.",
     noKey: "Not logged in on this browser yet. Log in to ESPN here, then tap this bookmark again.",
     noLeague: "Open your league on ESPN first, then tap this bookmark.",
-    saved: "Copied. Go back to the Penthouse tab and paste.",
+    saved: "Copied. Go back to the Owner's Suite tab and paste.",
   },
   privacy: "Your info stays on this device. Our server never sees it.",
   back: "Back to connect",
@@ -970,7 +970,7 @@ export const ACCOUNT = {
      */
     smsOptIn: "Text me the call sheet on game days",
     smsTerms:
-      "Up to 4 texts a week from Penthouse: your calls and offers. Msg & data rates may apply. Reply STOP to end, HELP for help. Not required to sign up or buy.",
+      "Up to 4 texts a week from Owner's Suite: your calls and offers. Msg & data rates may apply. Reply STOP to end, HELP for help. Not required to sign up or buy.",
     onFile: "Phone",
     none: "No phone on file.",
     add: "Add a phone",
@@ -1170,7 +1170,7 @@ export const LANDING = {
   avatar: "For fantasy football owners who expect to win their league, not just play in it.",
   /** The staff, in one sentence. */
   staff: "Your GM works the trades, your head of scouting finds the pickups, and your head coach sets the lineup.",
-  cta: "Open your Penthouse",
+  cta: "Open your Owner's Suite",
   login: "Log in",
   loginLead: "Already have an office?",
 
@@ -1303,7 +1303,7 @@ export const LANDING = {
     head: "How it works",
     title: "Two minutes to your first call.",
     items: [
-      { title: "Open your Penthouse", when: "30 seconds", body: "Your phone number and a code. No forms." },
+      { title: "Open your Owner's Suite", when: "30 seconds", body: "Your phone number and a code. No forms." },
       { title: "Link your league", when: "About a minute", body: "A Sleeper username or an ESPN league ID." },
       { title: "Make the calls", when: "Every week", body: "Your staff has the week’s moves waiting on your desk." },
     ],
@@ -1338,12 +1338,12 @@ export const LANDING = {
     eyebrow: "The clock is running",
     title: "Your office is ready.",
     body: "Link a league and your staff has the week’s calls on your desk in about a minute.",
-    cta: "Open your Penthouse",
+    cta: "Open your Owner's Suite",
   },
 
   /** The bar that follows the reader down the page once the first button has scrolled away. */
   bar: {
-    cta: "Open your Penthouse",
+    cta: "Open your Owner's Suite",
   },
 } as const;
 
@@ -1947,7 +1947,7 @@ export const FILM = {
     copied: "Copied",
     copyFail: "Could not copy. Select the link and copy it by hand.",
     carried: "Carried the week",
-    pitch: "Somebody watched their week back on Penthouse: the result, why it went that way, and what to do before Thursday.",
+    pitch: "Somebody watched their week back on Owner's Suite: the result, why it went that way, and what to do before Thursday.",
     title: (team: string, result: string, score: string) => `${team}: ${result} ${score}`,
   },
   /** The projector: the film's opening, once per graded week. */

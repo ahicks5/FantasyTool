@@ -295,7 +295,7 @@ def render_html(feed: dict, base_url: str = "https://penthousefantasy.com", unsu
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td valign="middle" style="font-size:18px;font-weight:800;color:{METAL};letter-spacing:0.5px;">
-              PENTHOUSE<span style="color:{SIGNAL};">&#9679;</span></td>
+              OWNER&rsquo;S SUITE<span style="color:{SIGNAL};">&#9679;</span></td>
             <td valign="middle" align="right" style="font-size:10px;font-weight:700;letter-spacing:1.6px;
                 text-transform:uppercase;color:#ffffff;">ON AIR</td>
           </tr>
@@ -335,7 +335,7 @@ def render_text(feed: dict, base_url: str = "https://penthousefantasy.com", film
     It carries the same margin numbers as the HTML, so a reply quoting "02" means the same
     call in either version.
     """
-    lines = ["PENTHOUSE — CALL SHEET",
+    lines = ["OWNER'S SUITE — CALL SHEET",
              f"Week {feed.get('week')} · {feed.get('team')}",
              feed.get("summary", ""), ""]
     lead = _film_phrase(film)

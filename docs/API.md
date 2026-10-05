@@ -1,4 +1,4 @@
-# Penthouse API contract (v1)
+# Owner's Suite API contract (v1)
 
 FastAPI app in `edge/api/app.py`, served at `/api`. All responses JSON. Errors: `{"error": "message"}` with 4xx. Two shapes carry more:
 - **402** — the feature needs a purchase: `{"error","feature","teaser","upsell":[product,...]}`.
@@ -10,7 +10,7 @@ accepted when `SUPABASE_JWT_SECRET` is set; `X-Edge-User: <email>` when `EDGE_DE
 whose detail says `expired`.
 
 The package, the env vars and the header keep the `edge`/`EDGE_` spelling on purpose — only what a
-user reads says Penthouse. Wire names below are the contract; `web/src/lib/types.ts` mirrors them.
+user reads says Owner's Suite. Wire names below are the contract; `web/src/lib/types.ts` mirrors them.
 
 ## Products / entitlements
 `GET /api/products` → pricing plus `attribution`, the credit line the active projection vendor
@@ -20,7 +20,7 @@ requires (Sleeper's docs ask for it on trending data). The UI must render it.
  "products":[
   {"sku":"free","name":"Free","price_cents":0,"features":["my_team"],"leagues":3,"kind":"free","blurb":"Start/sit calls for up to three leagues, every week."},
   {"sku":"week_pass","name":"Week pass","price_cents":499,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"pass","for_sale":true,"recurring":"week","duration_days":7,"grace_days":1,"blurb":"..."},
-  {"sku":"full_report","name":"The Penthouse","price_cents":2499,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","for_sale":true,"through":"2027-01-04","blurb":"..."},
+  {"sku":"full_report","name":"The Owner's Suite","price_cents":2499,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","for_sale":true,"through":"2027-01-04","blurb":"..."},
   {"sku":"league_slot","name":"League slot","price_cents":299,"features":[],"leagues":1,"kind":"add_on","for_sale":true,"blurb":"One more league on your account. Rest of season."}
 ]}
 ```
@@ -677,7 +677,7 @@ Things a caller has to handle, none of which are error states:
 
 ## The film (feature: full_report)
 
-The weekly write-up that ships with The Penthouse bundle. Wire name stays `full_report`.
+The weekly write-up that ships with The Owner's Suite bundle. Wire name stays `full_report`.
 `GET /api/league/{platform}/{league_id}/team/{team_id}/report` → `{"week":2,"lineup":{...},"waivers":{...},"trade_targets":[{"their_team_id":"4","give":[...],"get":[...],"verdict":"Fair","why":"..."}],"matchup":{"opponent":"...","my_proj":131.4,"their_proj":118.2,"win_prob":0.61},"html":"<...>"}`
 
 ### Season recap
@@ -770,7 +770,7 @@ What a caller has to handle:
   On ESPN, `source: "platform"` is ESPN's own stored projection for that week, and the
   reasons read the stat log through a name match to Sleeper ids (most men match; a man who
   does not simply gets no reasons).
-- **Nothing here scores Penthouse.** No hit rate, no summed points-gained, no "right N% of
+- **Nothing here scores Owner's Suite.** No hit rate, no summed points-gained, no "right N% of
   the time" (CLAUDE.md), and `tests/test_film.py` fails if one appears.
 
 ### The league (`edge/engine/league_film.py`, SPEC-FILM F-5 to F-7)

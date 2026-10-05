@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   PENTHOUSE — design tokens.
+   OWNER'S SUITE — design tokens.
 
    The product is the owner's box: the top floor, above the noise, where the
    staff still hands you a call sheet but you are the one who owns the building.
@@ -210,7 +210,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
    It used to lean forward at -7deg with the letters tightened to -0.02em, which is
    the visual language of speed — a jersey number, a car badge, the kit's own swoosh
    lettering. The brand is the opposite of speed: it is the floor above the noise,
-   and it decides. A penthouse has a plate on the door, so the word stands upright,
+   and it decides. An owner's suite has a plate on the door, so the word stands upright,
    drops to 800 (900 at this tracking goes from engraved to shouted) and opens up to
    +0.08em, because tracked-out caps are what reads as machined into metal.
 
@@ -224,7 +224,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   margin-right: -0.08em;
 }
 
-/* The top bar keeps the mark and drops the word below 360px. "PENTHOUSE" is half
+/* The top bar keeps the mark and drops the word below 360px. "OWNER'S SUITE" is half
    again as wide as the old wordmark, and on a 320px phone it left the league label
    8px — "The Megalabowl" rendered as a single "T". The mark is still the mark and
    the link keeps its aria-label, so nothing is lost but the letters.

@@ -75,7 +75,7 @@ def test_paid_features_are_gated_then_unlocked(client, league):
     assert r.status_code == 200 and "<h2>Waivers" in r.json()["html"]
     me = client.get("/api/me", headers=H).json()
     assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"} and me["leagues_allowed"] == 3
-    assert me["account"]["plan"] == {"tier": "premium", "name": "The Penthouse", "skus": ["full_report"]}
+    assert me["account"]["plan"] == {"tier": "premium", "name": "The Owner's Suite", "skus": ["full_report"]}
 
 
 def test_trade_endpoint_returns_verdict_and_graphic(client, league):
@@ -339,7 +339,7 @@ def test_checkout_falls_back_to_the_default_when_a_return_url_is_rejected(monkey
     assert "evil.example" not in captured["success_url"] + captured["cancel_url"]
     assert captured["allow_promotion_codes"] is True, "Andrew's promo codes need the field on Checkout"
     assert captured["line_items"][0]["price_data"]["unit_amount"] == 499
-    assert captured["line_items"][0]["price_data"]["product_data"]["name"] == "Penthouse — Week pass (7 days)"
+    assert captured["line_items"][0]["price_data"]["product_data"]["name"] == "Owner's Suite — Week pass (7 days)"
 
     payments.create_checkout(
         "a@b.c", "full_report", 2026,
@@ -347,7 +347,7 @@ def test_checkout_falls_back_to_the_default_when_a_return_url_is_rejected(monkey
         cancel_url=None,
     )
     assert captured["success_url"] == "https://edge.example.com/trade?paid=trade_lab"
-    assert captured["line_items"][0]["price_data"]["product_data"]["name"] == "Penthouse — Season pass (2026 season)"
+    assert captured["line_items"][0]["price_data"]["product_data"]["name"] == "Owner's Suite — Season pass (2026 season)"
     with pytest.raises(ValueError):
         payments.create_checkout("a@b.c", "trade_lab", 2026, None, None)
 

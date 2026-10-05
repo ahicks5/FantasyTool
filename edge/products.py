@@ -1,4 +1,4 @@
-"""Product catalog: free tier, the week pass, the season pass (The Penthouse) and the league-slot add-on. Prices in cents.
+"""Product catalog: free tier, the week pass, the season pass (The Owner's Suite) and the league-slot add-on. Prices in cents.
 Change prices here only; everything else reads this."""
 from __future__ import annotations
 
@@ -37,13 +37,13 @@ PRODUCTS = [
     # that settles a few hours late does not lock anyone out. Cancel, and it lapses at the end.
     {"sku": WEEK_SKU, "name": "Week pass", "price_cents": 499, "features": EVERYTHING, "leagues": BASE_LEAGUES,
      "kind": "pass", "for_sale": True, "recurring": "week", "duration_days": 7, "grace_days": 1,
-     "blurb": "Everything in the Penthouse, for as long as you keep it."},
-    {"sku": SEASON_SKU, "name": "The Penthouse", "price_cents": 2499, "features": EVERYTHING, "leagues": BASE_LEAGUES,
+     "blurb": "Everything in the Owner's Suite, for as long as you keep it."},
+    {"sku": SEASON_SKU, "name": "The Owner's Suite", "price_cents": 2499, "features": EVERYTHING, "leagues": BASE_LEAGUES,
      "kind": "bundle", "for_sale": True,
      # Display only: the Monday after NFL week 17, the usual championship, so the pricing page
      # can say how many weeks are left. The pass itself is keyed by season, not by this date.
      "through": "2027-01-04",
-     "blurb": "Everything in the Penthouse for the rest of the season."},
+     "blurb": "Everything in the Owner's Suite for the rest of the season."},
     # An add-on, not a tier: it unlocks nothing and stacks. Bought twice, it is two more leagues.
     {"sku": ADD_ON_SKU, "name": "League slot", "price_cents": 299, "features": [], "leagues": 1,
      "kind": "add_on", "for_sale": True, "blurb": "One more league on your account. Rest of season."},

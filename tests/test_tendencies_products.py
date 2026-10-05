@@ -47,7 +47,7 @@ def test_product_catalog_and_entitlements():
     assert products.plan([]) == {"tier": "free", "name": "Free", "skus": []}
     assert products.plan(["league_slot"])["tier"] == "free", "a slot alone opens no room"
     assert products.plan(["trade_lab", "waivers"])["name"] == "Wire Pass + Trade Lab"
-    assert products.plan(["waivers", "full_report"])["name"] == "The Penthouse"
+    assert products.plan(["waivers", "full_report"])["name"] == "The Owner's Suite"
     assert products.is_premium(["waivers"]) and not products.is_premium(["league_slot"])
     assert [u["sku"] for u in products.league_upsell([])] == ["league_slot"], "a pass no longer raises the cap"
     assert [u["sku"] for u in products.league_upsell(["full_report"])] == ["league_slot"]
@@ -63,7 +63,7 @@ def test_the_2026_09_27_catalog():
     assert products.features_for(["week_pass"]) == set(products.FEATURES)
     assert products.leagues_allowed(["week_pass"]) == 3
     assert products.plan(["week_pass"])["name"] == "Week pass"
-    assert products.plan(["week_pass", "full_report"])["name"] == "The Penthouse", "the season outranks the week"
+    assert products.plan(["week_pass", "full_report"])["name"] == "The Owner's Suite", "the season outranks the week"
     assert products.duration_s("full_report") is None
     # The season costs five weeks, give or take a nickel, and there are more than five left.
     assert abs(5 * price["week_pass"] - price["full_report"]) <= 5

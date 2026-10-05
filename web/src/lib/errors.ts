@@ -47,7 +47,7 @@ export function describeError(error: unknown, options: { online?: boolean } = {}
   if (options.online === false) {
     return {
       title: "You are offline",
-      detail: "Penthouse needs a connection to read your league. This will retry when you are back.",
+      detail: "Owner's Suite needs a connection to read your league. This will retry when you are back.",
       canRetry: true,
     };
   }
@@ -57,7 +57,7 @@ export function describeError(error: unknown, options: { online?: boolean } = {}
   if (status === 429) {
     return {
       title: "Too many requests",
-      detail: "Penthouse is asking your league platform to slow down. Give it a minute and try again.",
+      detail: "Owner's Suite is asking your league platform to slow down. Give it a minute and try again.",
       canRetry: true,
     };
   }
@@ -76,7 +76,7 @@ export function describeError(error: unknown, options: { online?: boolean } = {}
   }
   if (status >= 500) {
     return {
-      title: "Penthouse is having a problem",
+      title: "Owner's Suite is having a problem",
       detail: "This one is on us. It is usually brief — try again in a moment.",
       canRetry: true,
     };
@@ -84,7 +84,7 @@ export function describeError(error: unknown, options: { online?: boolean } = {}
 
   if (NETWORK.test(message) || (error instanceof TypeError && !status)) {
     return {
-      title: "Cannot reach Penthouse",
+      title: "Cannot reach Owner's Suite",
       detail: "Check your connection and try again.",
       canRetry: true,
     };

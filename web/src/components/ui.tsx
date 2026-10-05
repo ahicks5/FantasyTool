@@ -45,7 +45,7 @@ export function Eyebrow({ children, className = "" }: { children: React.ReactNod
 }
 
 /**
- * PENTHOUSE. The mark, the word cut in chrome and standing upright, and the ON
+ * OWNER'S SUITE. The mark, the word cut in chrome and standing upright, and the ON
  * AIR lamp as the full stop. `lamp={false}` for surfaces where the pulse would be
  * noise — a footer, a print card.
  *
@@ -63,7 +63,7 @@ export function Wordmark({
   lamp?: boolean;
   /**
    * Drop the word below 360px and keep the mark. Only the top bar asks for this:
-   * "PENTHOUSE" is half again as wide as the old wordmark, and on a 320px phone it
+   * "OWNER’S SUITE" is half again as wide as the old wordmark, and on a 320px phone it
    * left the league label about 14px — enough to render "The Megalabowl" as "T".
    * The mark alone is still the mark, and the link keeps its aria-label.
    *
@@ -72,7 +72,7 @@ export function Wordmark({
    * on that page the wordmark is the pitch and has to survive every width.
    */
   markOnlyOnTiny?: boolean;
-  /** "PHF" in place of the full word: the signed-in bar, where the owner already knows the building (Andrew, 2026-09-27). */
+  /** "SUITE" in place of the full word: the signed-in bar, where the owner already knows the building (Andrew, 2026-09-27). */
   short?: boolean;
 }) {
   return (
@@ -85,7 +85,7 @@ export function Wordmark({
           wrapper it paints nothing — the clip has no glyphs of its own to clip to —
           while the transparent text fill still inherits down, which renders the
           wordmark invisible. */}
-      <span className="wordmark-type chrome-type">{short ? "PHF" : "PENTHOUSE"}</span>
+      <span className="wordmark-type chrome-type">{short ? "SUITE" : "OWNER’S SUITE"}</span>
       {lamp && <span className="lamp ml-[0.1em]" aria-hidden />}
     </span>
   );
@@ -747,7 +747,7 @@ export function ErrorBox({
   describe?: typeof describeError;
 }) {
   // navigator.onLine is read at render: a dropped connection explains every other
-  // symptom, and "you are offline" beats "Penthouse is having a problem" when it is a tunnel.
+  // symptom, and "you are offline" beats "Owner's Suite is having a problem" when it is a tunnel.
   const copy = describe(error ?? message, { online: isOnline() });
   return (
     <div role="alert" className="rounded-[var(--radius-card)] border border-sit bg-sit-soft p-4 text-sit">

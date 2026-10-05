@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const v = await load(id);
   // Prod's wording, not "trade verdict": a snapshot can be a Lock now, and the middot
   // is the app's separator.
-  if (!v) return { title: "Penthouse · a call worth sharing" };
+  if (!v) return { title: "Owner's Suite · a call worth sharing" };
   const image = `${API}/api/share/${encodeURIComponent(id)}/card.png`;
   const title = isSharedFilm(v)
     ? FILM.share.title(v.team, v.result ? FILM.result[v.result] : "", FILM.score(v.my_points, v.their_points))
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       ? v.note || `Worth ${signed(v.gain, 1)} projected points in that league's scoring.`
       : v.explanation;
   return {
-    title: `${title} · Penthouse`,
+    title: `${title} · Owner's Suite`,
     description,
     openGraph: {
       title,
@@ -190,7 +190,7 @@ function LockBody({ v }: { v: SharedLock }) {
             {v.bench && <span className="block text-white/60">over {v.bench.name}</span>}
           </p>
           <p className="mt-3 text-[14px] leading-relaxed text-white/65">
-            Somebody ran their lineup through Penthouse. Every projection re-scored to that league&rsquo;s own
+            Somebody ran their lineup through Owner&rsquo;s Suite. Every projection re-scored to that league&rsquo;s own
             scoring, then one call: start him, or sit him.
           </p>
         </div>
@@ -270,7 +270,7 @@ function TradeBody({ v }: { v: SharedVerdict }) {
         <div className="px-6 pb-6 pt-4">
           <div className="flex items-center justify-between gap-3">
             <OnAir className="text-white/70" />
-            <Eyebrow>Penthouse&rsquo;s verdict</Eyebrow>
+            <Eyebrow>Owner&rsquo;s Suite verdict</Eyebrow>
           </div>
 
           <h1 className="mt-5 leading-none">
@@ -279,7 +279,7 @@ function TradeBody({ v }: { v: SharedVerdict }) {
           </h1>
           <p className="display mt-5 text-[20px] leading-snug text-white">{verdictBlurb(v.verdict)}</p>
           <p className="mt-2 text-[14px] leading-relaxed text-white/65">
-            Somebody ran this trade through Penthouse. Every projection re-scored to that league&rsquo;s own scoring,
+            Somebody ran this trade through Owner&rsquo;s Suite. Every projection re-scored to that league&rsquo;s own scoring,
             then one call: take it, counter it, or walk.
           </p>
         </div>
@@ -348,7 +348,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href="/" aria-label="Penthouse home" className="flex min-h-11 items-center">
+        <Link href="/" aria-label="Owner's Suite home" className="flex min-h-11 items-center">
           <Wordmark className="text-[26px]" />
         </Link>
         <span className="min-w-0 truncate text-right text-[12px] font-bold text-muted">

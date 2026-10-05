@@ -1,4 +1,4 @@
-// Mirrors docs/API.md (Penthouse API contract v1).
+// Mirrors docs/API.md (Owner's Suite API contract v1).
 
 export type Platform = "sleeper" | "espn" | "yahoo";
 

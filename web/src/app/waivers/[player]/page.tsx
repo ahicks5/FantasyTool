@@ -18,7 +18,7 @@ const DEMO = process.env.EDGE_DEMO_EXPORT === "1";
 export const metadata: Metadata = {
   // The template is "%s", so every title is absolute. The name is not known at build time
   // and the report is league-scoped anyway, so this is the room, not the player.
-  title: "Scout report · Penthouse",
+  title: "Scout report · Owner's Suite",
   description: "Every number a player has put up, scored by your league's own settings.",
 };
 

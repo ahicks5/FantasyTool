@@ -30,7 +30,7 @@ best pickup at his position, `hold` when a big week did not move his share of th
 Those numbers are the other engines'; this file compares two of them and links the tab.
 
 **No self-scoring.** Nothing here computes a hit rate, an accuracy or a summed points-gained
-for Penthouse (CLAUDE.md). Grading the manager's own lineup is his data and is fine.
+for Owner's Suite (CLAUDE.md). Grading the manager's own lineup is his data and is fine.
 
 Contract: `FilmSeason` / `WeekFilm` in docs/API.md and web/src/lib/types.ts.
 """

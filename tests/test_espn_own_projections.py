@@ -1,4 +1,4 @@
-"""An ESPN league shows ESPN's own weekly projection, so the number in Penthouse is the number
+"""An ESPN league shows ESPN's own weekly projection, so the number in Owner's Suite is the number
 in the ESPN app (Andrew, 2026-09-29). Sleeper's re-scored line stays underneath as the fallback
 and as `proj_stats`; `EDGE_ESPN_PROJECTIONS=sleeper` turns the override off."""
 import copy

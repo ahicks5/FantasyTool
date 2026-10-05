@@ -68,7 +68,7 @@ pool carries every K and D/ST whether or not the league has a slot for one.
 On an ESPN league **this week's `projected` is ESPN's own projection**, the `appliedTotal`
 every roster and free-agent row carries for the current scoring period
 (`player.stats[statSourceId=1, scoringPeriodId=week]`), already in the league's scoring.
-Andrew's brief: a user should see the same number in Penthouse and in the ESPN app. Two
+Andrew's brief: a user should see the same number in Owner's Suite and in the ESPN app. Two
 vendors were never going to agree (Rotowire-via-Sleeper ran ~4% under ESPN across 21 leagues,
 `docs/LEAGUE_SURVEY.md`) and a user cannot tell a vendor gap from a bug.
 
@@ -103,7 +103,7 @@ read it.
 Accepted cost: a scheduled job (the weekly email) cannot read a private league.
 
 **How a phone gets them (2026-09-28).** Every guide says "open DevTools on a computer";
-Andrew ruled that out. `web/src/lib/espnKey.ts` builds a bookmarklet, "Penthouse key", and
+Andrew ruled that out. `web/src/lib/espnKey.ts` builds a bookmarklet, "Owner's Suite key", and
 `/connect/espn` walks the user through saving it (iPhone Safari, Android Chrome, or a
 computer). Tapped on the user's team page it reads `espn_s2` and `SWID` off `document.cookie`, and
 `leagueId` and `teamId` off the page URL, and sends the browser back to

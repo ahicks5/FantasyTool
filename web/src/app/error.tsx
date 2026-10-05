@@ -13,13 +13,13 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
   useEffect(() => {
     // Nothing is wired to collect these yet, so at least leave them where a phone's
     // remote inspector can find them.
-    console.error("Penthouse crashed while rendering:", error);
+    console.error("Owner's Suite crashed while rendering:", error);
   }, [error]);
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-4">
       <header className="flex h-16 items-center">
-        <Link href="/" aria-label="Penthouse home">
+        <Link href="/" aria-label="Owner's Suite home">
           <Wordmark className="text-[22px]" />
         </Link>
       </header>

@@ -22,7 +22,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
         }}
       >
         <div style={{ maxWidth: "26rem", textAlign: "center" }}>
-          <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>Penthouse could not start</h1>
+          <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>Owner&rsquo;s Suite could not start</h1>
           <p style={{ color: "#c9c7c1", lineHeight: 1.6, marginTop: "10px" }}>
             Something failed before the app loaded. Reloading usually fixes it.
           </p>

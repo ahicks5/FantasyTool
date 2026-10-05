@@ -248,7 +248,7 @@ def test_upgrade_without_stripe_grants_the_pass_and_flips_the_flag(client):
     assert r.status_code == 200
     body = r.json()
     assert body["granted"] is True and body["url"] is None
-    assert body["me"]["account"]["plan"] == {"tier": "premium", "name": "The Penthouse", "skus": ["full_report"]}
+    assert body["me"]["account"]["plan"] == {"tier": "premium", "name": "The Owner's Suite", "skus": ["full_report"]}
     assert set(body["me"]["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"}
     assert body["me"]["leagues_allowed"] == 3, "a pass does not raise the cap (Andrew, 2026-09-28)"
     rows = app_mod.store.export_user("owner@example.com")["data"]["purchases"]

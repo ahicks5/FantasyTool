@@ -286,7 +286,7 @@ function mockMe(): Me {
       ...mocks.ME.account!,
       email,
       name: email.split("@")[0],
-      plan: premium ? { tier: "premium", name: "The Penthouse", skus: ["full_report"] } : { tier: "free", name: "Free", skus: [] },
+      plan: premium ? { tier: "premium", name: "The Owner's Suite", skus: ["full_report"] } : { tier: "free", name: "Free", skus: [] },
     },
   };
 }

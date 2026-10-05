@@ -4,16 +4,16 @@ import { Bullets, LegalPage, Section } from "@/components/LegalPage";
 import { LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Terms · Penthouse",
+  title: "Terms · Owner's Suite",
   description: "What you are buying, what it does and does not promise, and how refunds work.",
 };
 
 export default function TermsPage() {
   return (
     <LegalPage title="Terms">
-      <Section heading="What Penthouse is">
+      <Section heading="What Owner's Suite is">
         <p>
-          Penthouse reads a fantasy football league you already have and tells you what it would do this week: who to start,
+          Owner&rsquo;s Suite reads a fantasy football league you already have and tells you what it would do this week: who to start,
           who to claim and for how much, and whether a proposed trade is worth taking. It is information and opinion.
           The decisions stay yours.
         </p>
@@ -57,7 +57,7 @@ export default function TermsPage() {
 
       <Section heading="Refunds">
         <p>
-          If Penthouse is not useful to you, ask within {LEGAL.refundDays} days of buying and we will refund it in full. No
+          If Owner&rsquo;s Suite is not useful to you, ask within {LEGAL.refundDays} days of buying and we will refund it in full. No
           reasoning required.
         </p>
         <p>
@@ -66,9 +66,9 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section heading="What Penthouse does not promise">
+      <Section heading="What Owner's Suite does not promise">
         <p>
-          Projections come from third parties and are estimates. Penthouse re-scores them to your league&rsquo;s settings and
+          Projections come from third parties and are estimates. Owner&rsquo;s Suite re-scores them to your league&rsquo;s settings and
           reasons about them, but it cannot know whether a running back tweaks a hamstring in warmups.
         </p>
         <p>
@@ -77,16 +77,16 @@ export default function TermsPage() {
           loses is within the advertised behaviour rather than a defect.
         </p>
         <p>
-          Penthouse is provided as is. We are not liable for lineup outcomes, league placings, missed waiver claims, trades
+          Owner&rsquo;s Suite is provided as is. We are not liable for lineup outcomes, league placings, missed waiver claims, trades
           you accept or decline, or anything else that follows from acting on its advice. Nothing here is financial or
-          betting advice, and Penthouse is not a gambling service.
+          betting advice, and Owner&rsquo;s Suite is not a gambling service.
         </p>
       </Section>
 
       <Section heading="Using it fairly">
         <Bullets
           items={[
-            <>Use Penthouse for your own leagues. Do not resell, rebrand or redistribute what it produces as a service.</>,
+            <>Use Owner&rsquo;s Suite for your own leagues. Do not resell, rebrand or redistribute what it produces as a service.</>,
             <>
               Do not hammer the API, scrape it, or automate against it beyond ordinary use of the app. It sits on top of
               other people&rsquo;s rate limits as well as ours.
@@ -101,7 +101,7 @@ export default function TermsPage() {
 
       <Section heading="Availability">
         <p>
-          Penthouse is a seasonal product and is most useful during the NFL season. We aim to keep it up through the week
+          Owner&rsquo;s Suite is a seasonal product and is most useful during the NFL season. We aim to keep it up through the week
           that matters, particularly before kickoff, but it can be interrupted, and the data providers it depends on can
           change or withdraw without notice.
         </p>
@@ -109,7 +109,7 @@ export default function TermsPage() {
 
       <Section heading="Ending it">
         <p>
-          You can stop using Penthouse at any time and ask us to delete your account. We can suspend access for behaviour
+          You can stop using Owner&rsquo;s Suite at any time and ask us to delete your account. We can suspend access for behaviour
           that breaks these terms or that puts the service at risk, and where that happens through no fault of yours we
           will refund the unused part of a pass.
         </p>

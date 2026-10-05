@@ -1,4 +1,4 @@
-"""Render the Penthouse brand assets from the one SVG that defines the mark.
+"""Render the Owner's Suite brand assets from the one SVG that defines the mark.
 
     uv run python scripts/render_brand_assets.py
 
@@ -118,7 +118,7 @@ def main() -> None:
   <div style="display:flex;align-items:center;gap:22px">
     <span style="font-size:104px;font-weight:800;letter-spacing:.08em;margin-right:-.08em;
       background-image:linear-gradient(177deg,#fff 0%,#e6e9ee 18%,#9aa1ac 38%,#f2f4f7 52%,#7d858f 70%,#d7dbe1 88%,#fff 100%);
-      -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">PENTHOUSE</span>
+      -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">OWNER&rsquo;S SUITE</span>
     <span style="width:20px;height:20px;border-radius:99px;background:#ff4d3a;
       box-shadow:0 0 22px 3px rgba(255,77,58,.55)"></span>
   </div>

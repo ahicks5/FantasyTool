@@ -9,8 +9,8 @@ this file stays short.
 
 ## Where things stand
 
-The app is **Penthouse**: the owner's box, where the staff hands you a call sheet of three moves
-before kickoff. Rebranded from "Edge" to "The Booth" and then to Penthouse — black and chrome,
+The app is **Owner's Suite**: the owner's box, where the staff hands you a call sheet of three moves
+before kickoff. Rebranded from "Edge" to "The Booth", then Penthouse, then Owner's Suite (2026-10-05) — black and chrome,
 dark by default — with every screen rebuilt around that, deployed and live.
 
 | | |
@@ -26,7 +26,7 @@ Chromium requirement that keeps share-card unfurls from silently 503ing.
 
 ## ESPN leagues show ESPN's own projection (2026-09-29)
 
-Andrew compared his ESPN roster (starters add to 175.5) with Penthouse (168.9) and asked why.
+Andrew compared his ESPN roster (starters add to 175.5) with Owner's Suite (168.9) and asked why.
 Answer: two vendors. We re-scored Rotowire-via-Sleeper's raw line with the league's rules, and
 across 21 real ESPN leagues that ran ~4% under ESPN with a median per-player error of 1.1
 points (`docs/LEAGUE_SURVEY.md`). His decision: match the app. An ESPN league's weekly
@@ -69,7 +69,7 @@ Stripe webhook events and the pixel ids (`docs/DEPLOY.md`), or churn and the ad 
 Andrew's brief: linking a private ESPN league must work on a phone, with the least work, and
 "use a computer" is not an answer; a bookmark that runs a script is the most he will ask of a
 user. ESPN has no OAuth, so the Yahoo-style "sign in over there and come back" is built as a
-bookmark, **Penthouse key**, that runs on fantasy.espn.com, reads the two cookies and comes
+bookmark, **Owner's Suite key**, that runs on fantasy.espn.com, reads the two cookies and comes
 back to `/connect/espn?id=…` with them in the URL fragment; the page saves them to the device
 and goes to `/connect?platform=espn&id=…`, which loads the league. The server never sees the
 values, which keeps `docs/DATA.md` true. The walk is per device (iPhone Safari, Android Chrome,
@@ -324,7 +324,7 @@ relabelled to match the desk (this week, just in, the film).
 
 ## The opening is an elevator, then the office (2026-09-21)
 
-Andrew's direction: Penthouse should feel like MyGM, an owner with a staff and a building.
+Andrew's direction: Owner's Suite should feel like MyGM, an owner with a staff and a building.
 The first piece shipped is the opening: the first open of the day rides up to the office,
 walks to the desk, and the papers on it become the call sheet. Andrew decided the desk is
 the last frame before the call sheet and not a new home screen. `web/src/lib/elevator.ts`
@@ -445,7 +445,7 @@ decide which league a three-league manager's single weekly email covers.
   gate.** Fifty-six shots came back showing "The room's empty" and reported zero overflow,
   proving nothing about the free tier. `web/e2e/smoke.spec.ts` carries a comment about the
   same omission once taking six of its eight tests dark. Seed it, and wait for the staged
-  "Opening the Penthouse" sequence to finish or you photograph the spinner.
+  "Opening the Owner's Suite" sequence to finish or you photograph the spinner.
 - **A user-facing claim that is *computed* survives a grep.** The 80% figure lived in three
   more places than the two that were written down, because `actions.py` and `ui.tsx` both
   built the sentence from `HIT_RATE` at runtime. Changing the constant silently rewrote them
@@ -515,7 +515,7 @@ Every one of these was a real mistake in this repo, not a hypothetical.
 ## The prompt
 
 ```
-You are picking up PENTHOUSE, a paid fantasy football web app. Read CLAUDE.md first —
+You are picking up OWNER'S SUITE, a paid fantasy football web app. Read CLAUDE.md first —
 it is short and holds the non-negotiables — then docs/MAP.md, which routes any change to
 the files and the test that cover it, and docs/HANDOFF.md for the traps that have already
 cost time. Read further docs only when the map points you at one. TASKS.md is the backlog;

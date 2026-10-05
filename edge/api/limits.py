@@ -168,7 +168,7 @@ class RateLimitMiddleware:
 
 #: Our own deployed web app. In the default list because an unset env var used to take the
 #: whole site down silently: the API stayed healthy, answered every curl, and the browser
-#: threw away every response, so it read as "cannot reach Penthouse" rather than as config.
+#: threw away every response, so it read as "cannot reach Owner's Suite" rather than as config.
 #: This is our domain, not a wildcard — it grants nobody else anything.
 PRODUCTION_WEB_ORIGIN = "https://penthousefantasy.com"
 #: Other names the same deployment answers on: `www` redirects to the apex, and the Vercel

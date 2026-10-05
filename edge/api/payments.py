@@ -31,10 +31,10 @@ def same_origin(url: str | None, base: str) -> str | None:
 def checkout_name(sku: str, season: int) -> str:
     """The line the buyer reads on Stripe's page and their receipt."""
     if sku == products.WEEK_SKU:
-        return "Penthouse — Week pass (7 days)"
+        return "Owner's Suite — Week pass (7 days)"
     if sku == products.SEASON_SKU:
-        return f"Penthouse — Season pass ({season} season)"
-    return f"Penthouse — {products.BY_SKU[sku]['name']} ({season} season)"
+        return f"Owner's Suite — Season pass ({season} season)"
+    return f"Owner's Suite — {products.BY_SKU[sku]['name']} ({season} season)"
 
 
 def create_checkout(email: str, sku: str, season: int, success_url: str | None, cancel_url: str | None,

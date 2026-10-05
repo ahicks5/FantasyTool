@@ -1,4 +1,4 @@
-"""Who is calling? A Penthouse session token first, a Supabase JWT (HS256) second, X-Edge-User in dev. Stdlib only.
+"""Who is calling? An Owner's Suite session token first, a Supabase JWT (HS256) second, X-Edge-User in dev. Stdlib only.
 
 The session lookup is a hook the app installs (`session_lookup`), because this module
 does not know about the store and the tests swap the store out under the app.

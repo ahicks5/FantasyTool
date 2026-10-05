@@ -312,8 +312,8 @@ test("the ESPN walk is one direction a step, in the least words, and never sends
     }
   }
   // Chrome on Android runs the bookmark by its name, so the name is said where it is set and where it is used.
-  assert.match(ESPN_KEY.prime.android, /Penthouse key/);
-  assert.match(ESPN_KEY.go.android, /Penthouse key/);
+  assert.match(ESPN_KEY.prime.android, /Owner's Suite key/);
+  assert.match(ESPN_KEY.go.android, /Owner's Suite key/);
   // The bookmark's own messages are safe to embed in a single-line script.
   for (const line of Object.values(ESPN_KEY.bookmark)) assert.ok(!/[\n\r]/.test(line));
   assert.match(ESPN_KEY.bookmark.saved, /Copied/);

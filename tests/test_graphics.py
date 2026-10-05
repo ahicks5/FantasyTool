@@ -107,10 +107,10 @@ def test_the_lock_card_stamps_the_call_the_players_and_the_margin():
     assert "Week 2" in h and "FLEX" in h
 
 
-def test_the_lock_card_wears_the_penthouse_identity_not_the_old_one():
+def test_the_lock_card_wears_the_owners_suite_identity_not_the_old_one():
     """The card is marketing, so it is the one place the brand must not drift."""
     h = lock_card_html(LOCK)
-    assert "PENTHOUSE" in h and "Own the week." in h
+    assert "OWNER&rsquo;S SUITE" in h and "Own the week." in h
     assert "#d6f94a" not in h, "the flare accent predates the rebrand and is not coming back"
 
 
@@ -138,7 +138,7 @@ def test_the_verdict_is_the_largest_thing_and_the_logo_is_a_signature():
     g = {"verdict": "Accept", "give": ["A"], "get": ["B"], "my_delta_ros": 9.0, "fairness": 0.95}
     h = verdict_card_html(g, "Take it.", "League", 4)
     stamp = h.index("ACCEPT")
-    plate = h.index("PENTHOUSE<")          # the nameplate span, not the eyebrow
+    plate = h.index("OWNER&rsquo;S SUITE<")          # the nameplate span, not the eyebrow
     assert stamp < plate, "the verdict comes before the lockup"
     # the lamp never carries meaning alone — the words ride beside it
     assert "ON AIR" in h

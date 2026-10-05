@@ -8,7 +8,7 @@
  *
  * So this is that bookmark, built here rather than typed, and tested here rather than
  * trusted. It runs on fantasy.espn.com, reads the two cookies off `document.cookie`, and
- * sends the phone back to Penthouse with them in the URL **fragment**. A fragment never
+ * sends the phone back to Owner's Suite with them in the URL **fragment**. A fragment never
  * leaves the browser: it is not in the request, not in a server log, not in a referrer.
  * The return page (`/connect/espn`) saves the two values to this device and strips them
  * from the address before anything else happens. The server never sees them, which keeps
@@ -34,7 +34,7 @@ export interface EspnKey {
 }
 
 /** The bookmark's name. Chrome on Android runs a bookmarklet by typing its name in the address bar, so it has to be short and easy to spell. */
-export const KEY_NAME = "Penthouse key";
+export const KEY_NAME = "Owner's Suite key";
 
 /** Where the key comes back to. Kept in one place because the bookmark and the page must agree. */
 export const RETURN_PATH = "/connect/espn";

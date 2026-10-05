@@ -19,7 +19,7 @@ back of the last seed, weeks left. "If the season ended today" is the honest fra
 simulated probability is a later, separate decision (SPEC-FILM F-7 v2).
 
 **No self-scoring.** Projections here are the vendor's and the freeze's numbers against the
-teams' results, never a grade of Penthouse's advice (CLAUDE.md).
+teams' results, never a grade of Owner's Suite advice (CLAUDE.md).
 
 Contract: `LeagueFilm` in docs/API.md and web/src/lib/types.ts.
 """

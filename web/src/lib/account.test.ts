@@ -8,7 +8,7 @@ const L = (id: string, last_used: number | null): MeLeague => ({ platform: "slee
 const PRODUCTS: Product[] = [
   { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 3, kind: "free", blurb: "" },
   { sku: "week_pass", name: "Week pass", price_cents: 499, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "pass", recurring: "week", blurb: "" },
-  { sku: "full_report", name: "The Penthouse", price_cents: 2499, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "bundle", blurb: "" },
+  { sku: "full_report", name: "The Owner's Suite", price_cents: 2499, features: ["my_team", "waivers", "trade_lab", "full_report"], leagues: 5, kind: "bundle", blurb: "" },
   { sku: "league_slot", name: "League slot", price_cents: 299, features: [], leagues: 1, kind: "add_on", blurb: "" },
 ];
 

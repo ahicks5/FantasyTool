@@ -68,7 +68,7 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
         </div>
 
         <div style={{ marginTop: 44, fontSize: 26, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(247,246,243,0.45)", fontWeight: 700 }}>
-          Penthouse&rsquo;s verdict
+          Owner&rsquo;s Suite verdict
         </div>
         {/* The signature: the verdict is stamped, not typeset. Same device as the app. */}
         <div style={{ marginTop: 18, paddingLeft: 10 }}>
@@ -130,7 +130,7 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
               </svg>
               {/* Nameplate: upright and tracked out. `marginRight` cancels the sidebearing
                   the tracking adds after the final E, or the lamp floats off the word. */}
-              <span style={{ letterSpacing: "0.08em", marginRight: "-0.08em", color: "#cdd2d9" }}>PENTHOUSE</span>
+              <span style={{ letterSpacing: "0.08em", marginRight: "-0.08em", color: "#cdd2d9" }}>OWNER’S SUITE</span>
               <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 99, background: "#ff4d3a", marginLeft: 3 }} />
             </span>
             <span style={{ fontSize: 24, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(247,246,243,0.45)" }}>

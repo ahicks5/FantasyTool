@@ -1,11 +1,11 @@
-# Penthouse — own the week
+# Owner's Suite — own the week
 
 Take the top floor. Connect a Sleeper or ESPN league and we write this week's **call sheet**:
 who starts, who to claim, what to offer. Each call carries a confidence stamp, one line of why, and
 the number under it — and we publish our own hit rate every week.
 
 The Python package is still `edge/` (renaming it would touch every import for no user-visible gain).
-Anything a user reads says Penthouse.
+Anything a user reads says Owner's Suite.
 
 Working on this? `CLAUDE.md` is the rules and **`docs/MAP.md`** is where everything lives —
 including a routing table from "I want to change X" to the files and the test that cover it.
@@ -33,7 +33,7 @@ Tests: `uv run pytest -q` (offline, fixtures) and `cd web && npm test && npm run
 |---|---|---|
 | free | $0 | Start/sit, up to 3 leagues |
 | week_pass | $4.99 / week, Stripe subscription, cancel anytime | Everything, while paid (3 leagues, like everyone) |
-| full_report | $24.99 once, rest of season | Season pass ("The Penthouse"): everything (3 leagues, like everyone) |
+| full_report | $24.99 once, rest of season | Season pass ("The Owner's Suite"): everything (3 leagues, like everyone) |
 | league_slot | $2.99 once, rest of season, stacks | One more league |
 
 `waivers` (Wire Pass, $3) and `trade_lab` (Trade Lab, $5) were retired 2026-09-27: no longer sold, but

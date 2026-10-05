@@ -189,7 +189,7 @@ def test_no_playoff_picture_without_the_leagues_own_count():
 
 # ---------------------------------------------------------------- honesty and purity
 
-def test_the_league_film_never_scores_penthouse(world):
+def test_the_league_film_never_scores_owners_suite(world):
     _, _, out = world
     blob = json.dumps(out).lower()
     for word in ("hit_rate", "accuracy", "accurate", "correct", "win_rate", "beat_us"):

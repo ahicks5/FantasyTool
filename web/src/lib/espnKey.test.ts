@@ -52,7 +52,7 @@ test("the bookmark is one line, and carries no address to jump to", () => {
   assert.ok(!b.includes("location.href="), "it copies and says so; it does not navigate (Andrew, 2026-09-28)");
 });
 
-test("on ESPN with both cookies it leaves for Penthouse with the key in the fragment, untouched", () => {
+test("on ESPN with both cookies it leaves for Owner's Suite with the key in the fragment, untouched", () => {
   const r = run(buildEspnKeyBookmarklet(BACK, "123"), {
     hostname: "fantasy.espn.com",
     cookie: `region=ccpa; SWID=${SWID}; espn_s2=${S2}; edition=espn-en-us`,
@@ -158,7 +158,7 @@ test("the device is read off the user agent, and a Mac with touch is an iPad", (
 
 test("the bookmark's name and ESPN's door are fixed", () => {
   // Chrome on Android runs a bookmarklet by typing its name; the walk says this name.
-  assert.equal(KEY_NAME, "Penthouse key");
+  assert.equal(KEY_NAME, "Owner's Suite key");
   assert.match(ESPN_URL, /^https:\/\/fantasy\.espn\.com\//);
 });
 
