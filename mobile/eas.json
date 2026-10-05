@@ -1,0 +1,33 @@
+{
+  "cli": {
+    "version": ">= 18.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "base": {
+      "node": "22.22.0",
+      "env": {
+        "EXPO_PUBLIC_WEB_URL": "https://penthousefantasy.com"
+      }
+    },
+    "simulator": {
+      "extends": "base",
+      "ios": { "simulator": true },
+      "env": { "EXPO_PUBLIC_WEB_INSPECT": "1" }
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "env": { "EXPO_PUBLIC_WEB_INSPECT": "1" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {}
+    }
+  }
+}
