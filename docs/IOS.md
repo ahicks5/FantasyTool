@@ -64,6 +64,12 @@ same as Safari's.
 | D-5 | **Ship the web changes to production now?** They are inert for web visitors. | Yes, before inviting outside testers, so they get the share sheet. It is one push of this branch's `web/` commits. |
 | D-6 | **A reviewer account.** Apple's reviewers (and the external TestFlight review) need to sign in. | An account like `review@…` with the Megalabowl linked and a comp season pass from `/admin`. |
 
+**Decided 2026-10-05: Andrew took every recommendation.** D-1 `com.ownerssuite.app` (no
+change). D-2 link out to Stripe. D-3 United States only. D-4 "Owner's Suite", falling back to
+"Owner's Suite: Fantasy Football". D-5 ship the `web/` half before outside testers (IOS-3), not
+before internal TestFlight. D-6 a dedicated `review@…` account, set up before external testing
+(IOS-5).
+
 ## Payments, plainly
 
 Apple's rule (App Review Guideline 3.1.1(a)): on the **United States** storefront, an app may
