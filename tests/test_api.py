@@ -462,7 +462,7 @@ def test_the_week_pass_is_a_weekly_subscription_checkout(monkeypatch):
     payments.create_checkout("a@b.c", "full_report", 2026, None, None)
     assert captured["mode"] == "payment" and "subscription_data" not in captured
     assert "recurring" not in captured["line_items"][0]["price_data"] and \
-        captured["line_items"][0]["price_data"]["unit_amount"] == 2499
+        captured["line_items"][0]["price_data"]["unit_amount"] == 2999
 
 
 def _invoice_paid(inv_id="in_1", pi="pi_w1", shape="dahlia", email="Andrew@Example.com"):
@@ -784,24 +784,25 @@ def test_the_lineup_splits_required_changes_from_decisions_and_prices_every_swap
 
 # ---- the season upgrade from a live week (Andrew, 2026-09-28) ----
 
-def test_the_season_costs_19_99_while_a_paid_week_is_live(client, monkeypatch):
+def test_the_season_costs_25_00_while_a_paid_week_is_live(client, monkeypatch):
+    """Andrew, 2026-10-05: the season is $29.99, and the week in hand still counts: $25.00."""
     from edge import products
     from edge.api import payments
 
-    assert products.season_price_cents(False) == 2499
-    assert products.season_price_cents(True) == 1999
-    assert products.season_price_cents(True, has_season=True) == 2499
+    assert products.season_price_cents(False) == 2999
+    assert products.season_price_cents(True) == 2500
+    assert products.season_price_cents(True, has_season=True) == 2999
 
-    assert client.get("/api/me", headers=H).json()["season_price_cents"] == 2499
+    assert client.get("/api/me", headers=H).json()["season_price_cents"] == 2999
     app_mod.store.grant("andrew@example.com", "week_pass", 2026, source="stripe", ref="in_w1")
-    assert client.get("/api/me", headers=H).json()["season_price_cents"] == 1999
+    assert client.get("/api/me", headers=H).json()["season_price_cents"] == 2500
 
     # The server sets the price; the client never sends one.
     seen = {}
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
     monkeypatch.setattr(payments, "create_checkout", lambda *a, **k: seen.update(k) or "https://checkout.stripe.test/c/s")
     assert client.post("/api/account/upgrade", headers=H, json={"sku": "full_report"}).status_code == 200
-    assert seen["price_cents"] == 1999
+    assert seen["price_cents"] == 2500
     seen.clear()
     assert client.post("/api/account/upgrade", headers=H, json={"sku": "week_pass"}).status_code == 200
     assert seen["price_cents"] is None
@@ -813,7 +814,7 @@ def test_a_lapsed_week_does_not_discount_the_season(client):
     # Nine days ago: past the week and its grace day.
     app_mod.store.db.execute("UPDATE purchases SET created=? WHERE ref='in_old'", (t.time() - 9 * 86400,))
     app_mod.store.db.commit()
-    assert client.get("/api/me", headers=H).json()["season_price_cents"] == 2499
+    assert client.get("/api/me", headers=H).json()["season_price_cents"] == 2999
 
 
 def test_the_upgrade_checkout_charges_the_upgrade_price_and_marks_it(monkeypatch):
@@ -830,8 +831,8 @@ def test_the_upgrade_checkout_charges_the_upgrade_price_and_marks_it(monkeypatch
     import stripe
     monkeypatch.setattr(stripe.checkout, "Session", FakeSession)
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
-    payments.create_checkout("a@b.c", "full_report", 2026, None, None, price_cents=1999)
-    assert captured["line_items"][0]["price_data"]["unit_amount"] == 1999
+    payments.create_checkout("a@b.c", "full_report", 2026, None, None, price_cents=2500)
+    assert captured["line_items"][0]["price_data"]["unit_amount"] == 2500
     assert captured["metadata"]["upgrade_from"] == "week_pass"
 
 
@@ -911,16 +912,16 @@ def test_the_tiktok_code_takes_half_off_the_season_and_nothing_else():
     assert products.promo(" sthtiktok ")["code"] == "STHTIKTOK"
     assert products.promo("STHTIKTOK", "week_pass") is None
     assert products.promo("NOPE") is None
-    assert products.season_price_cents(False, code="STHTIKTOK") == 1249
+    assert products.season_price_cents(False, code="STHTIKTOK") == 1499
     # The lower of the two discounts wins; they never stack.
-    assert products.season_price_cents(True, code="STHTIKTOK") == 1249
-    assert products.season_price_cents(True, code="NOPE") == 1999
+    assert products.season_price_cents(True, code="STHTIKTOK") == 1499
+    assert products.season_price_cents(True, code="NOPE") == 2500
 
 
 def test_the_promo_route_prices_the_code_for_this_account(client):
     r = client.post("/api/promo", headers=H, json={"code": "sthtiktok"}).json()
-    assert r["ok"] is True and r["code"] == "STHTIKTOK" and r["price_cents"] == 1249
-    assert client.post("/api/promo", json={"code": "STHTIKTOK"}).json()["price_cents"] == 1249
+    assert r["ok"] is True and r["code"] == "STHTIKTOK" and r["price_cents"] == 1499
+    assert client.post("/api/promo", json={"code": "STHTIKTOK"}).json()["price_cents"] == 1499
     assert client.post("/api/promo", headers=H, json={"code": "FREE"}).json()["ok"] is False
     assert client.post("/api/promo", headers=H, json={"code": "STHTIKTOK", "sku": "week_pass"}).json()["ok"] is False
 
@@ -933,12 +934,12 @@ def test_a_promo_checkout_is_priced_by_the_server_and_a_bad_code_is_refused(clie
     monkeypatch.setattr(payments, "create_checkout", lambda *a, **k: seen.update(k) or "https://checkout.stripe.test/c/p")
     r = client.post("/api/account/upgrade", headers=H, json={"sku": "full_report", "promo": "sthtiktok"})
     assert r.status_code == 200
-    assert seen["price_cents"] == 1249 and seen["promo"] == "STHTIKTOK"
+    assert seen["price_cents"] == 1499 and seen["promo"] == "STHTIKTOK"
     assert client.post("/api/account/upgrade", headers=H, json={"sku": "full_report", "promo": "NOPE"}).status_code == 400
     assert client.post("/api/checkout", headers=H, json={"sku": "week_pass", "promo": "STHTIKTOK"}).status_code == 400
     seen.clear()
     assert client.post("/api/checkout", headers=H, json={"sku": "full_report", "promo": ""}).status_code == 200
-    assert seen["price_cents"] == 2499 and seen["promo"] is None
+    assert seen["price_cents"] == 2999 and seen["promo"] is None
 
 
 def test_a_promo_checkout_is_marked_as_a_promo_not_an_upgrade(monkeypatch):
@@ -955,8 +956,8 @@ def test_a_promo_checkout_is_marked_as_a_promo_not_an_upgrade(monkeypatch):
     import stripe
     monkeypatch.setattr(stripe.checkout, "Session", FakeSession)
     monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
-    payments.create_checkout("a@b.c", "full_report", 2026, None, None, price_cents=1249, promo="STHTIKTOK")
-    assert captured["line_items"][0]["price_data"]["unit_amount"] == 1249
+    payments.create_checkout("a@b.c", "full_report", 2026, None, None, price_cents=1499, promo="STHTIKTOK")
+    assert captured["line_items"][0]["price_data"]["unit_amount"] == 1499
     assert captured["metadata"]["promo"] == "STHTIKTOK"
     assert "upgrade_from" not in captured["metadata"]
     assert captured["allow_promotion_codes"] is False, "a Stripe code must not stack on ours"

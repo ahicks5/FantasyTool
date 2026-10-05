@@ -9,7 +9,7 @@ const ALL: Product["features"] = ["my_team", "waivers", "trade_lab", "full_repor
 const PRODUCTS: Product[] = [
   { sku: "free", name: "Free", price_cents: 0, features: ["my_team"], leagues: 3, kind: "free", blurb: "" },
   { sku: "week_pass", name: "Week pass", price_cents: 499, features: ALL, leagues: 5, kind: "pass", recurring: "week", duration_days: 7, blurb: "" },
-  { sku: "full_report", name: "The Owner's Suite", price_cents: 2499, features: ALL, leagues: 5, kind: "bundle", through: "2027-01-04", blurb: "" },
+  { sku: "full_report", name: "The Owner's Suite", price_cents: 2999, features: ALL, leagues: 5, kind: "bundle", through: "2027-01-04", blurb: "" },
   { sku: "league_slot", name: "League slot", price_cents: 299, features: [], leagues: 1, kind: "add_on", blurb: "" },
 ];
 
@@ -21,11 +21,11 @@ test("the season is anchored against the rest of the way, week to week, from the
   // Sunday of week 3 to the Monday after week 17: fourteen weeks left.
   assert.equal(s.weeksLeft, 14);
   assert.equal(s.weeklyCents, 14 * 499);
-  assert.equal(s.seasonCents, 2499);
+  assert.equal(s.seasonCents, 2999);
   // The anchor only works if the rest of the way costs more than the season. Pin it.
   assert.ok(s.weeklyCents! > s.seasonCents, "the season is no longer the better deal");
-  // Five weeks of the week pass, give or take a nickel.
-  assert.equal(s.evenWeeks, 5);
+  // Six weeks of the week pass, give or take a nickel.
+  assert.equal(s.evenWeeks, 6);
 });
 
 test("late in the year the weeks left run down, and never below zero", () => {
@@ -44,7 +44,7 @@ test("no season date, no weekly total; no pass, no stack", () => {
 
 test("the week reads per week, the season and the slot as one price", () => {
   assert.equal(priceLabel(PRODUCTS[1]), "$4.99/week");
-  assert.equal(priceLabel(PRODUCTS[2]), "$24.99");
+  assert.equal(priceLabel(PRODUCTS[2]), "$29.99");
   assert.equal(priceLabel(PRODUCTS[3]), "$2.99");
   assert.equal(priceLabel(PRODUCTS[0]), "Free");
 });

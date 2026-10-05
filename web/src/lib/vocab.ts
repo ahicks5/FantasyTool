@@ -137,7 +137,7 @@ export const LINES = {
   /** The season pass, as a sentence — it sits above the price on the pricing card. */
   paywallBundle: "The rest of the building.",
   /** The season as a control. Buttons are verb first, and a full stop reads badly
-   *  next to the price that follows it ("Take the season · $24.99"). */
+   *  next to the price that follows it ("Take the season · $29.99"). */
   paywallBundleCta: "Take the season",
   /** The week pass as a control: the low step in, next to the season. */
   paywallWeekCta: "Try a week",

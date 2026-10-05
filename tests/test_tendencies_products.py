@@ -55,18 +55,18 @@ def test_product_catalog_and_entitlements():
     assert [u["sku"] for u in ups] == ["week_pass", "full_report"], "no à la carte: the week, then the season"
 
 
-def test_the_2026_09_27_catalog():
-    """Andrew, 2026-09-27: week $4.99, season $24.99, slot $2.99, nothing sold à la carte."""
+def test_the_2026_10_05_catalog():
+    """Andrew, 2026-09-27: week $4.99, slot $2.99, nothing sold à la carte. 2026-10-05: season $29.99."""
     price = {p["sku"]: p["price_cents"] for p in products.FOR_SALE}
-    assert price == {"week_pass": 499, "full_report": 2499, "league_slot": 299}
+    assert price == {"week_pass": 499, "full_report": 2999, "league_slot": 299}
     assert not products.for_sale("waivers") and not products.for_sale("trade_lab") and not products.for_sale("free")
     assert products.features_for(["week_pass"]) == set(products.FEATURES)
     assert products.leagues_allowed(["week_pass"]) == 3
     assert products.plan(["week_pass"])["name"] == "Week pass"
     assert products.plan(["week_pass", "full_report"])["name"] == "The Owner's Suite", "the season outranks the week"
     assert products.duration_s("full_report") is None
-    # The season costs five weeks, give or take a nickel, and there are more than five left.
-    assert abs(5 * price["week_pass"] - price["full_report"]) <= 5
+    # The season costs six weeks, give or take a nickel, and there are more than six left.
+    assert abs(6 * price["week_pass"] - price["full_report"]) <= 5
     assert products.BY_SKU["week_pass"]["recurring"] == "week", "the week renews; the season is one payment"
     assert "recurring" not in products.BY_SKU["full_report"] and "recurring" not in products.BY_SKU["league_slot"]
     # Each paid week is its own window, plus a day's grace for a renewal that settles late.

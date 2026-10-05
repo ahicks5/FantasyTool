@@ -35,10 +35,19 @@ EVENTS = (
     "share_create",      # a share card was made
     "share_open",        # a share card page was read
     "sms_opt_in",        # the marketing-text box was ticked
+    # The sign-up walk (docs/SPEC-ONBOARDING.md). Logged by the server when the walk reports
+    # a screen, never by the browser alone.
+    "onboard_step",      # a screen of the walk was reached (props: step), once per account per step
+    "offer_view",        # the free-week offer screen was shown, once per account
+    "offer_skip",        # "Not now" on the offer screen
+    "trial_start",       # a free week began: card on file, $0 today (sku: the pass it will bill)
+    "trial_ending",      # Stripe's warning that a free week ends in three days
+    "trial_convert",     # the first real charge after a free week (sku and amount on the row)
+    "email_verified",    # a confirm-your-address link was clicked
 )
 BROWSER_EVENTS = ("landing_view",)
 # The events that move money, in cents on the row.
-MONEY_EVENTS = ("purchase", "renewal", "upgrade")
+MONEY_EVENTS = ("purchase", "renewal", "upgrade", "trial_convert")
 
 # First-touch attribution: the only keys kept, each a short string.
 ATTR_KEYS = ("utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "referrer", "share")

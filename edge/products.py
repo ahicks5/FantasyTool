@@ -25,19 +25,30 @@ BOARD_FEATURE = "waivers"
 # Andrew, 2026-09-28: a week-pass holder's current paid week counts toward the season, so
 # the season costs them this instead of the full price. Only the week in hand counts, never
 # weeks stacked before it, so it is one fixed price rather than a running credit.
-SEASON_UPGRADE_CENTS = 1999
+# 2026-10-05: the season went to $29.99, so the credit stays one week: $29.99 - $4.99.
+SEASON_UPGRADE_CENTS = 2500
+
+# The free first week (docs/SPEC-ONBOARDING.md). A card goes on file, nothing is charged for
+# this many days, then the pass the owner picked starts billing. One per account, ever.
+TRIAL_DAYS = 7
+# Every pass on sale takes a trial code; the league slot never does.
+ANY_PASS = "*"
 
 # Promo codes typed on our own pass sheet. The server prices them; the client only sends the
 # code. Each one names the sku it discounts and how much comes off the catalog price.
 # Andrew, 2026-10-05: "STHTIKTOK" is half off the season pass.
+# A code either takes money off (`percent_off`) or moves the first charge (`trial_days`),
+# never both: discounts never stack, and a free week is not a discount.
 PROMO_CODES = {
     # No end date and no redemption cap (Andrew, 2026-10-05).
     "STHTIKTOK": {"sku": SEASON_SKU, "percent_off": 50},
+    # The free first week, on either pass. The sign-up walk applies it for the owner.
+    "FREEWEEK": {"sku": ANY_PASS, "trial_days": TRIAL_DAYS},
 }
 
 # Andrew, 2026-09-27: the week pass is $4.99 and renews weekly (a Stripe subscription, cancel
-# anytime); the season is $24.99 and the league slot $2.99, each one payment. Nothing is sold
-# à la carte any more.
+# anytime); the season is one payment and the league slot $2.99. Nothing is sold à la carte
+# any more. Andrew, 2026-10-05: the season is $29.99 (was $24.99).
 PRODUCTS = [
     {"sku": "free", "name": "Free", "price_cents": 0, "features": ["my_team"], "leagues": BASE_LEAGUES,
      "kind": "free", "for_sale": False, "blurb": "Start/sit calls for up to three leagues, every week."},
@@ -46,7 +57,7 @@ PRODUCTS = [
     {"sku": WEEK_SKU, "name": "Week pass", "price_cents": 499, "features": EVERYTHING, "leagues": BASE_LEAGUES,
      "kind": "pass", "for_sale": True, "recurring": "week", "duration_days": 7, "grace_days": 1,
      "blurb": "Everything in the Owner's Suite, for as long as you keep it."},
-    {"sku": SEASON_SKU, "name": "The Owner's Suite", "price_cents": 2499, "features": EVERYTHING, "leagues": BASE_LEAGUES,
+    {"sku": SEASON_SKU, "name": "The Owner's Suite", "price_cents": 2999, "features": EVERYTHING, "leagues": BASE_LEAGUES,
      "kind": "bundle", "for_sale": True,
      # Display only: the Monday after NFL week 17, the usual championship, so the pricing page
      # can say how many weeks are left. The pass itself is keyed by season, not by this date.
@@ -98,22 +109,52 @@ def live_until(sku: str, created: list[float]) -> float | None:
     return max(created) + dur
 
 
+def _code_fits(code_sku: str, sku: str) -> bool:
+    """Does a code written for `code_sku` apply to `sku`? A trial code fits any pass on sale."""
+    if code_sku == ANY_PASS:
+        return BY_SKU.get(sku, {}).get("kind") in ("pass", "bundle") and for_sale(sku)
+    return code_sku == sku
+
+
 def promo(code: str | None, sku: str | None = None) -> dict | None:
     """The promo a typed code names, or None. Case and stray spaces do not matter; a code
     for another sku does not count when `sku` is given."""
     key = (code or "").strip().upper()
     found = PROMO_CODES.get(key)
-    if not found or (sku and found["sku"] != sku):
+    if not found or (sku and not _code_fits(found["sku"], sku)):
         return None
-    return {"code": key, **found}
+    return {"code": key, "percent_off": 0, "trial_days": 0, **found}
+
+
+def trial_days(code: str | None, sku: str | None = None) -> int:
+    """How many free days a code gives before the first charge; 0 for any other code."""
+    p = promo(code, sku)
+    return int(p["trial_days"]) if p else 0
 
 
 def promo_price_cents(sku: str, code: str | None) -> int | None:
-    """The catalog price with the code taken off, rounded down to the cent; None if it does not apply."""
+    """The catalog price with the code taken off, rounded down to the cent; None if it does
+    not apply, and None for a trial code, which moves the first charge rather than lowering it."""
     p = promo(code, sku)
-    if not p:
+    if not p or not p["percent_off"]:
         return None
     return BY_SKU[sku]["price_cents"] * (100 - p["percent_off"]) // 100
+
+
+def trial_source(sku: str) -> str:
+    """The purchases row's `source` for a free week that will bill `sku` when it ends.
+
+    The free week itself is always a week-pass grant (it opens everything for seven days and
+    a grace day, then lapses on its own); which pass it turns into rides in the source.
+    """
+    return f"trial:{sku}"
+
+
+def trial_target(source: str | None) -> str | None:
+    """The sku a trial row will bill, read back from its source; None for any other row."""
+    if not source or not source.startswith("trial"):
+        return None
+    return source.split(":", 1)[1] if ":" in source else WEEK_SKU
 
 
 def season_price_cents(week_live: bool, has_season: bool = False, code: str | None = None) -> int:

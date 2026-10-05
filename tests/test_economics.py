@@ -20,7 +20,7 @@ def test_stripe_fee_matches_the_published_rate():
 
 
 def test_the_fixed_fee_hurts_the_cheap_sku_most():
-    """A $4.99 week gives up a much bigger share of its price than the $24.99 season.
+    """A $4.99 week gives up a much bigger share of its price than the $29.99 season.
 
     This is the argument against a cheap tier — and the model shows it is an argument about
     fee *share*, not about whether the tier is profitable (see the margin test below).
@@ -30,7 +30,7 @@ def test_the_fixed_fee_hurts_the_cheap_sku_most():
     bundle = ec.contribution("full_report", a)
     assert cheap["fee_pct"] > 1.7 * bundle["fee_pct"]
     assert cheap["fee_pct"] == pytest.approx(8.9, abs=0.1)
-    assert bundle["fee_pct"] == pytest.approx(4.1, abs=0.1)
+    assert bundle["fee_pct"] == pytest.approx(3.9, abs=0.1)
 
 
 def test_llm_cost_is_priced_per_million_tokens():
@@ -81,9 +81,9 @@ def test_runway_is_the_call_budget_a_sale_buys():
     a = ec.Assumptions()
     runway = ec.runway_calls("full_report", a)
     per_call = a.call.cost_usd()
-    headroom = 24.99 - a.fees.on_cents(2499) / 100 - a.refund_rate * 24.99
+    headroom = 29.99 - a.fees.on_cents(2999) / 100 - a.refund_rate * 29.99
     assert runway == pytest.approx(headroom / per_call)
-    assert 1000 < runway < 3000, "sanity: a $24.99 season buys well over a thousand opus-5 verdicts"
+    assert 1000 < runway < 3000, "sanity: a $29.99 season buys well over a thousand opus-5 verdicts"
     assert 200 < ec.runway_calls("week_pass", a) < 500, "and a $4.99 week a few hundred"
 
     # A user who burns exactly the runway has consumed the whole sale.
@@ -109,8 +109,8 @@ def test_season_projection_adds_up():
     mix = {"full_report": 10}
     s = ec.season(mix, months=4.0, a=a)
     assert s["buyers"] == 10
-    assert s["revenue"] == pytest.approx(249.9)
-    assert s["avg_order"] == pytest.approx(24.99)
+    assert s["revenue"] == pytest.approx(299.9)
+    assert s["avg_order"] == pytest.approx(29.99)
     assert s["contribution"] == pytest.approx(s["revenue"] - s["variable_cost"])
     assert s["profit"] == pytest.approx(s["contribution"] - s["fixed_cost"])
     assert s["fixed_cost"] == pytest.approx(a.infra_total_monthly * 4.0)

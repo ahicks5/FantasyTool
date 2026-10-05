@@ -23,6 +23,9 @@ CREATE INDEX IF NOT EXISTS sessions_email ON sessions (email);
 CREATE INDEX IF NOT EXISTS resets_email ON resets (email);
 CREATE TABLE IF NOT EXISTS phone_tickets (token_hash TEXT PRIMARY KEY, phone TEXT NOT NULL, created REAL, expires REAL,
   used REAL);
+CREATE TABLE IF NOT EXISTS email_verifications (token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, created REAL,
+  expires REAL, used REAL);
+CREATE INDEX IF NOT EXISTS email_verifications_email ON email_verifications (email);
 CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, payload TEXT, created REAL, views INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS runs (email TEXT, platform TEXT, league_id TEXT, team_id TEXT, week INTEGER,
   kind TEXT, algo_version TEXT, payload TEXT, created REAL);
@@ -40,12 +43,16 @@ CREATE TABLE IF NOT EXISTS ad_spend (id TEXT PRIMARY KEY, day TEXT NOT NULL, cha
 """
 
 
+_USER_COLS = "email, password_hash, name, role, created, last_login, phone, attr, sms_opt_in, onboarding, email_verified"
+
+
 def _user(row) -> dict | None:
     if not row:
         return None
     return {"email": row[0], "password_hash": row[1], "name": row[2] or "", "role": row[3],
             "created": row[4], "last_login": row[5], "phone": row[6],
-            "attr": _attr(row[7]), "sms_opt_in": row[8]}
+            "attr": _attr(row[7]), "sms_opt_in": row[8], "onboarding": _attr(row[9]),
+            "email_verified": row[10]}
 
 
 class Store:
@@ -91,6 +98,12 @@ class Store:
             self.db.execute("ALTER TABLE users ADD COLUMN attr TEXT")
         if "sms_opt_in" not in user_cols:
             self.db.execute("ALTER TABLE users ADD COLUMN sms_opt_in REAL")
+        # The sign-up walk (docs/SPEC-ONBOARDING.md): what the owner chose to skip, as JSON,
+        # and when the address on file was proved by a clicked link (NULL: not yet).
+        if "onboarding" not in user_cols:
+            self.db.execute("ALTER TABLE users ADD COLUMN onboarding TEXT")
+        if "email_verified" not in user_cols:
+            self.db.execute("ALTER TABLE users ADD COLUMN email_verified REAL")
         self.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_phone ON users (phone)")
         self.db.commit()
 
@@ -139,6 +152,14 @@ class Store:
             "SELECT created FROM purchases WHERE email=? AND sku=? AND season=? AND revoked IS NULL",
             (email.lower(), sku, season)).fetchall()
         return _pass_until(sku, [r[0] for r in rows], now)
+
+    def trial(self, email: str) -> dict | None:
+        """The account's free week, in any season, revoked or not: there is one per account,
+        ever, so a refunded or lapsed one still counts as used. None if it never had one."""
+        row = self.db.execute(
+            "SELECT sku, season, source, created, revoked FROM purchases WHERE email=? AND source LIKE 'trial%' "
+            "ORDER BY created DESC LIMIT 1", (email.lower(),)).fetchone()
+        return _trial(row)
 
     def count_sku(self, email: str, sku: str, season: int) -> int:
         """How many live purchases of one sku this account holds: the add-on that stacks."""
@@ -201,14 +222,12 @@ class Store:
 
     def get_user(self, email: str) -> dict | None:
         row = self.db.execute(
-            "SELECT email, password_hash, name, role, created, last_login, phone, attr, sms_opt_in FROM users WHERE email=?",
-            (email.lower(),)).fetchone()
+            f"SELECT {_USER_COLS} FROM users WHERE email=?", (email.lower(),)).fetchone()
         return _user(row)
 
     def user_by_phone(self, phone: str) -> dict | None:
         row = self.db.execute(
-            "SELECT email, password_hash, name, role, created, last_login, phone, attr, sms_opt_in FROM users WHERE phone=?",
-            (phone,)).fetchone()
+            f"SELECT {_USER_COLS} FROM users WHERE phone=?", (phone,)).fetchone()
         return _user(row)
 
     def set_phone(self, email: str, phone: str | None) -> bool:
@@ -333,6 +352,44 @@ class Store:
         row = self.db.execute("SELECT phone FROM phone_tickets WHERE token_hash=?", (token_hash,)).fetchone()
         return row[0] if row else None
 
+    # ---- the sign-up walk and the proved address (docs/SPEC-ONBOARDING.md) ----------
+
+    def set_onboarding(self, email: str, state: dict) -> bool:
+        """Replace what the walk remembers for this account (the caller merges)."""
+        import json as _json
+        cur = self.db.execute("UPDATE users SET onboarding=? WHERE email=?", (_json.dumps(state or {}), email.lower()))
+        self.db.commit()
+        return cur.rowcount == 1
+
+    def set_email_verified(self, email: str, at: float | None) -> bool:
+        """Mark the address on file proved (a timestamp) or not (None, after it changes)."""
+        cur = self.db.execute("UPDATE users SET email_verified=? WHERE email=?", (at, email.lower()))
+        self.db.commit()
+        return cur.rowcount == 1
+
+    def create_verification(self, email: str, token_hash: str, expires: float) -> None:
+        self.db.execute("INSERT OR REPLACE INTO email_verifications (token_hash, email, created, expires, used) "
+                        "VALUES (?,?,?,?,NULL)", (token_hash, email.lower(), time.time(), expires))
+        self.db.commit()
+
+    def consume_verification(self, token_hash: str, now: float | None = None) -> str | None:
+        """Spend a confirm-your-address link: its email, once, before it expires; else None."""
+        now = now or time.time()
+        cur = self.db.execute("UPDATE email_verifications SET used=? WHERE token_hash=? AND used IS NULL AND expires>=?",
+                              (now, token_hash, now))
+        self.db.commit()
+        if cur.rowcount != 1:
+            return None
+        row = self.db.execute("SELECT email FROM email_verifications WHERE token_hash=?", (token_hash,)).fetchone()
+        return row[0] if row else None
+
+    def revoke_verifications(self, email: str, now: float | None = None) -> int:
+        """Kill every unspent link for this account: the address it was sent to has changed."""
+        cur = self.db.execute("UPDATE email_verifications SET used=? WHERE email=? AND used IS NULL",
+                              (now or time.time(), email.lower()))
+        self.db.commit()
+        return cur.rowcount
+
     def prune_auth(self, now: float | None = None) -> int:
         """Drop sessions and reset links that can never work again. Safe any time."""
         now = now or time.time()
@@ -340,6 +397,7 @@ class Store:
         n += self.db.execute("DELETE FROM resets WHERE (expires IS NOT NULL AND expires<?) OR used IS NOT NULL",
                              (now,)).rowcount
         n += self.db.execute("DELETE FROM phone_tickets WHERE expires<? OR used IS NOT NULL", (now,)).rowcount
+        n += self.db.execute("DELETE FROM email_verifications WHERE expires<? OR used IS NOT NULL", (now,)).rowcount
         self.db.commit()
         return n
 
@@ -510,7 +568,7 @@ class Store:
     # what it bought, and what we recommended.
 
     USER_TABLES = ("users", "purchases", "leagues", "runs", "feedback", "email_prefs", "sessions", "resets",
-                   "events")
+                   "events", "email_verifications")
     # Columns that are secrets rather than data about the person: never in an export.
     HIDDEN_COLUMNS = ("password_hash", "token_hash")
 
@@ -582,6 +640,16 @@ def _attr(raw: str | None) -> dict:
         return _json.loads(raw) if raw else {}
     except ValueError:
         return {}
+
+
+def _trial(row) -> dict | None:
+    """Shared by both stores: a trial purchases row as the free week it describes."""
+    from edge import products
+
+    if not row:
+        return None
+    return {"pass_sku": row[0], "season": row[1], "sku": products.trial_target(row[2]) or row[0],
+            "created": row[3], "revoked": row[4]}
 
 
 def _listed_user(r) -> dict:

@@ -144,3 +144,21 @@ def test_retention_and_the_loop(r):
     assert [row["size"] for row in r["retention"]["paying"]] == [1, 2]
     assert r["loop"] == {"created": 2, "opens": 5, "opens_per_card": 2.5, "signups": 1, "buyers": 0,
                          "top": [{"id": "abc", "views": 5, "created": T}]}
+
+
+def test_the_walk_counts_this_ranges_signups_through_each_screen():
+    from edge.business.metrics import _walk
+    T0 = 1_000_000.0
+    ev_ = lambda name, email, t, **props: {"name": name, "email": email, "created": t, "anon_id": "", "sku": "",
+                                         "amount_cents": None, "props": props}
+    rows = [ev_("signup", "a@x", T0), ev_("signup", "b@x", T0 + 1), ev_("signup", "old@x", T0 - 10_000),
+            ev_("onboard_step", "a@x", T0 + 2, step="named"), ev_("onboard_step", "b@x", T0 + 2, step="named"),
+            ev_("league_linked", "a@x", T0 + 3), ev_("league_linked", "old@x", T0 + 3),
+            ev_("onboard_step", "a@x", T0 + 4, step="reveal"), ev_("offer_view", "a@x", T0 + 5),
+            ev_("trial_start", "a@x", T0 + 6), ev_("offer_skip", "b@x", T0 + 6),
+            ev_("trial_convert", "a@x", T0 + 9 * 86400)]
+    w = _walk(rows, T0, T0 + 3600)
+    assert w["cohort"] == 2 and w["offer_skipped"] == 1
+    got = {s["key"]: (s["num"], s["of_previous"]) for s in w["steps"]}
+    assert got["signup"] == (2, None) and got["named"] == (2, 1.0) and got["league"] == (1, 0.5)
+    assert got["trial"] == (1, 1.0) and got["convert"] == (1, 1.0), "a conversion after the range still counts"

@@ -3,7 +3,12 @@ up in the Stripe dashboard except the webhook endpoint. Test mode is free.
 
 The season pass and the league slot are one payment each. The week pass is a subscription
 that renews weekly: every paid invoice (`invoice.paid`) writes one week of access, and a
-cancelled subscription simply stops writing them. docs/DEPLOY.md lists the events."""
+cancelled subscription simply stops writing them. docs/DEPLOY.md lists the events.
+
+The free first week (`FREEWEEK`, docs/SPEC-ONBOARDING.md) is a Stripe trial: the card goes
+on file at Checkout, the first invoice is $0 and opens the week, and the first real invoice
+seven days later bills the pass the owner picked. The season on a trial is a subscription
+that we end ourselves the moment its one payment lands, so it never renews."""
 from __future__ import annotations
 
 import os
@@ -28,6 +33,18 @@ def same_origin(url: str | None, base: str) -> str | None:
     return None
 
 
+def checkout_description(sku: str, season: int, trial_days: int = 0) -> str:
+    """The line under the name on Stripe's page. On a trial it says what happens on day eight,
+    because the card networks require the terms before the card is taken."""
+    p = products.BY_SKU[sku]
+    if not trial_days:
+        return p["blurb"]
+    if sku == products.SEASON_SKU:
+        return (f"Free for {trial_days} days, then one payment for the {season} season. "
+                f"Nothing renews. Cancel before then and you are not charged.")
+    return f"Free for {trial_days} days, then weekly until you cancel. Cancel any time from your account."
+
+
 def checkout_name(sku: str, season: int) -> str:
     """The line the buyer reads on Stripe's page and their receipt."""
     if sku == products.WEEK_SKU:
@@ -39,7 +56,7 @@ def checkout_name(sku: str, season: int) -> str:
 
 def create_checkout(email: str, sku: str, season: int, success_url: str | None, cancel_url: str | None,
                     price_cents: int | None = None, attribution: dict | None = None,
-                    promo: str | None = None) -> str:
+                    promo: str | None = None, trial_days: int = 0) -> str:
     """A Checkout session for one sku. `price_cents` overrides the catalog price; the API sets
     it (never the client) for the week-pass holder's season upgrade or a promo code the API
     has already checked. `promo` rides in the metadata so a sale can be traced to it. `attribution` is the
@@ -69,13 +86,28 @@ def create_checkout(email: str, sku: str, season: int, success_url: str | None, 
     if sku == products.SEASON_SKU and amount < p["price_cents"] and not promo:
         # The season bought from a live week: the webhook ends the weekly billing when it lands.
         metadata["upgrade_from"] = products.WEEK_SKU
+    trial_days = int(trial_days or 0) if sku in (products.WEEK_SKU, products.SEASON_SKU) else 0
+    if trial_days:
+        metadata["trial"] = str(trial_days)
+        if sku == products.SEASON_SKU:
+            # One payment, taken on day eight: a subscription so Stripe holds the card and
+            # bills it, which the webhook ends as soon as that payment lands.
+            metadata["one_shot"] = "1"
     price_data = {"currency": "usd", "unit_amount": amount,
-                  "product_data": {"name": checkout_name(sku, season), "description": p["blurb"]}}
-    if products.is_recurring(sku):
+                  "product_data": {"name": checkout_name(sku, season),
+                                   "description": checkout_description(sku, season, trial_days)}}
+    if products.is_recurring(sku) or trial_days:
         # The subscription carries the metadata too: each renewal's invoice reads it from
         # there, long after this session is gone.
-        price_data["recurring"] = {"interval": p["recurring"]}
-        mode = {"mode": "subscription", "subscription_data": {"metadata": metadata}}
+        price_data["recurring"] = {"interval": p.get("recurring") or "year"}
+        sub = {"metadata": metadata}
+        mode = {"mode": "subscription", "subscription_data": sub}
+        if trial_days:
+            sub["trial_period_days"] = trial_days
+            # No card, no trial: if a card somehow is not on file when the week ends, the
+            # subscription ends rather than sitting unpaid.
+            sub["trial_settings"] = {"end_behavior": {"missing_payment_method": "cancel"}}
+            mode["payment_method_collection"] = "always"
     else:
         mode = {"mode": "payment"}
     session = stripe.checkout.Session.create(
@@ -90,6 +122,22 @@ def create_checkout(email: str, sku: str, season: int, success_url: str | None, 
         cancel_url=cancel_url or f"{base}/?canceled=1",
     )
     return session.url
+
+
+def cancel_subscription(sub_id: str) -> bool:
+    """End one subscription now: the season on a trial, once its one payment has landed.
+    Any failure is swallowed (the season is paid for either way) and returns False."""
+    key = os.environ.get("STRIPE_SECRET_KEY")
+    if not (key and sub_id):
+        return False
+    try:
+        import stripe
+
+        stripe.api_key = key
+        stripe.Subscription.cancel(sub_id)
+        return True
+    except Exception:
+        return False
 
 
 def cancel_week_subscriptions(email: str) -> int:
@@ -136,7 +184,11 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
       {"action": "restore", payment_ref, reason}
       {"action": "abandon", email, sku, ref}          — a Checkout session expired unpaid
       {"action": "cancel",  email, sku, ref}          — a week-pass subscription ended or will
+      {"action": "trial_ending", email, sku, ref}     — Stripe's three-day warning on a free week
       None — an event we do not act on.
+
+    A grant from a free week's $0 first invoice carries `trial: True`; one whose subscription
+    must be ended once paid (the season on a trial) carries `one_shot` and `subscription`.
 
     A grant also carries `amount_cents` and `upgrade` (the season bought from a live week),
     and a revoke `amount_cents`, for the telemetry log. Abandon and cancel change no access:
@@ -194,7 +246,14 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
             before = (event["data"].get("previous_attributes") or {})
             if not (obj.get("cancel_at_period_end") and before.get("cancel_at_period_end") is False):
                 return None
-        return {"action": "cancel", "email": md["email"].lower(), "sku": md["sku"], "ref": obj.get("id", "")}
+        return {"action": "cancel", "email": md["email"].lower(), "sku": md["sku"], "ref": obj.get("id", ""),
+                "in_trial": obj.get("status") == "trialing"}
+
+    if kind == "customer.subscription.trial_will_end":
+        md = obj.get("metadata") or {}
+        if not (md.get("email") and md.get("sku")):
+            return None
+        return {"action": "trial_ending", "email": md["email"].lower(), "sku": md["sku"], "ref": obj.get("id", "")}
 
     if kind == "invoice.paid":
         # One paid week of a subscription. The invoice id is the ref, so a retried delivery
@@ -203,10 +262,19 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
         email = md.get("email") or obj.get("customer_email")
         if not (email and md.get("sku") and obj.get("id")):
             return None  # not one of ours: no metadata, nothing to grant
-        return {"action": "grant", "email": email.lower(), "sku": md["sku"],
-                "season": int(md.get("season", 0)), "ref": obj["id"],
-                "payment_ref": _invoice_payment_ref(obj) or _fetch_invoice_payment_ref(obj["id"]),
-                "amount_cents": obj.get("amount_paid"), "upgrade": False}
+        paid = obj.get("amount_paid") or 0
+        # The free week's first invoice: $0, at creation, on a subscription made with a trial.
+        # (A 100% promo code also makes a $0 invoice; without `trial` metadata it is a week.)
+        trial = bool(md.get("trial")) and paid == 0 and obj.get("billing_reason") in (None, "subscription_create")
+        out = {"action": "grant", "email": email.lower(), "sku": md["sku"],
+               "season": int(md.get("season", 0)), "ref": obj["id"],
+               "payment_ref": "" if trial else (_invoice_payment_ref(obj) or _fetch_invoice_payment_ref(obj["id"])),
+               "amount_cents": paid, "upgrade": False, "trial": trial,
+               "promo": md.get("promo") or None}
+        if md.get("one_shot") == "1" and not trial and paid > 0:
+            out["one_shot"] = True
+            out["subscription"] = _invoice_subscription(obj)
+        return out
 
     if kind == "charge.refunded":
         # Partial refunds happen (a goodwill gesture, a price adjustment) and should not
@@ -227,6 +295,17 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
         return {"action": "revoke", "payment_ref": _payment_ref(obj), "reason": "dispute_lost"}
 
     return None
+
+
+def _invoice_subscription(inv: dict) -> str:
+    """The subscription an invoice bills, wherever this API version put its id."""
+    for holder in (inv, inv.get("subscription_details"), (inv.get("parent") or {}).get("subscription_details")):
+        sub = (holder or {}).get("subscription")
+        if isinstance(sub, dict):
+            sub = sub.get("id")
+        if sub:
+            return sub
+    return ""
 
 
 def _invoice_metadata(inv: dict) -> dict:

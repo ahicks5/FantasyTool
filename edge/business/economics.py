@@ -31,7 +31,7 @@ from edge import products
 @dataclass(frozen=True)
 class Fees:
     """Stripe's standard US card rate. Cross-border and currency conversion cost more;
-    a $24.99 product sold to a stranger on the internet occasionally is one of those."""
+    a $29.99 product sold to a stranger on the internet occasionally is one of those."""
 
     pct: float = 0.029
     fixed_cents: int = 30
