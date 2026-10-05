@@ -239,7 +239,9 @@ Andrew's brief: the landing page exists to get a visitor to press the door. Bran
 - [x] **LS-10** `WarmDoor` asks the API for `me` on the landing, so /register opens on the phone form
       instead of flashing email + password first, and a cold Render is awake before the click.
       The bar shows "30 seconds to get in" days from kickoff, the clock inside a day.
-- [ ] **LS-11** Andrew: the page still never says "free" (2026-09-27 rule). It is the biggest lever left.
+- [ ] **LS-11** "Free" is allowed now (Andrew, 2026-10-05). The plan: a free week with a card
+      from the start, then the weekly or season sale. The trial is being built in another
+      session; once it ships, the landing's ask and the `vocab.test.ts` no-"free" guard follow it.
 - [ ] **LS-12** Measure which door converts: a `cta_click` browser event with the placement.
 
 ## The landing page, rebuilt as a funnel (2026-09-27)
