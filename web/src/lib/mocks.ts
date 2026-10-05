@@ -424,6 +424,8 @@ export const ME: Me = {
     plan: { tier: "free", name: "Free", skus: [] },
     league_slots: 0,
   },
+  // The demo opens the door on the phone, as production does with Twilio set.
+  phone_sign_in: true,
   // The demo has no Stripe, so an upgrade is a grant, the same as the API without a key.
   checkout: false,
 };

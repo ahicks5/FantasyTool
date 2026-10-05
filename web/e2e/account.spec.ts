@@ -121,6 +121,10 @@ test("a stranger's door is the account: register, land on it, then link a league
   await page.goto("/");
   await page.locator('a[href="/register"]:visible').first().click();
   await page.waitForURL("**/register");
+  // Phone first: the door asks for a number, and email is only the fallback link.
+  await expect(page.getByLabel(ACCOUNT.phone.label)).toBeVisible();
+  await expect(page.getByLabel(ACCOUNT.password)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: ACCOUNT.phone.useEmail })).toBeVisible();
   // Just a phone number, then the texted code, then the name and the email.
   await phoneIn(page, phone, { name: "Andrew", email });
 
@@ -241,6 +245,9 @@ test("a wrong password says one thing and signs nobody in", async ({ context, pa
   await expect(alert).toContainText(ACCOUNT.errors.wrong);
   await expect(alert).not.toContainText(/session|expired/i);
   expect(await page.evaluate(() => localStorage.getItem("booth.session"))).toBeNull();
+  // The email form leads with the way back to the phone.
+  await page.getByTestId("use-phone").click();
+  await expect(page.getByLabel(ACCOUNT.phone.label)).toBeVisible();
 });
 
 test("the account changes its password and signs out the other devices, and this one stays in", async ({ context, page }) => {

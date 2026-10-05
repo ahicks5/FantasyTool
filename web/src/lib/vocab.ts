@@ -940,7 +940,7 @@ export const ACCOUNT = {
     missing: "This link is missing its token. Ask for a new one.",
     back: "Back to sign in",
     /** Your sign-in name is your email; there is no separate username to forget. */
-    whichEmail: "Your sign-in is the email you signed up with. Not sure which one? Try each: this form never says which address has an account.",
+    whichEmail: "This is for email accounts. Signed up with your phone? Go back and sign in with your number: no password needed. Not sure which email? Try each: this form never says which address has an account.",
     support: (email: string) => `Still locked out? Email ${email} from the address you think it is, and we\u2019ll send a link by hand.`,
     expired: "That link has expired or was already used. Ask for a new one below.",
   },
@@ -969,10 +969,13 @@ export const ACCOUNT = {
     resent: "New code sent.",
     change: "Change number",
     devCode: (code: string) => `Dev API, nothing texted. Code: ${code}`,
-    useEmail: "Use email and password instead",
-    usePhone: "Use your phone instead",
+    /** Phone is the way in; email is the fallback for someone without a mobile. */
+    useEmail: "No mobile? Use email instead",
+    usePhone: "Use your phone number",
+    emailFallback: "Phone is the fastest way in. Email works if you don\u2019t have a mobile.",
     profileTitle: "Last thing.",
     emailOptional: "Email (optional)",
+    emailOptionalHint: "For receipts, and a backup way in if you change numbers.",
     finish: "Finish",
     busyFinish: "Setting up\u2026",
     /*

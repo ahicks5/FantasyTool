@@ -117,50 +117,7 @@ function Contact() {
   return (
     <section className="mt-3" data-testid="contact">
       <div className="grid gap-2">
-        <div className="card flex items-center gap-3 p-4">
-          <span className="min-w-0 flex-1">
-            <span className="eyebrow block">{ACCOUNT.emailOnFile.label}</span>
-            <span className="mt-0.5 block truncate text-[15px] font-bold">{account.email || ACCOUNT.emailOnFile.add}</span>
-          </span>
-          {open !== "email" && (
-            <Button size="sm" variant="secondary" onClick={() => reset("email")}>
-              {account.email ? ACCOUNT.emailOnFile.change : ACCOUNT.emailOnFile.add}
-            </Button>
-          )}
-        </div>
-        {!account.email && open !== "email" && <p className="text-[12px] leading-snug text-muted">{ACCOUNT.emailOnFile.none}</p>}
-        {open === "email" && (
-          <form
-            className="card grid gap-3 p-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void run(async () => {
-                await setAccountEmail(email.trim(), password);
-                session.refresh();
-                reset(null);
-                setNote(ACCOUNT.emailOnFile.saved);
-              });
-            }}
-          >
-            <label className="grid gap-1.5">
-              <span className="eyebrow">{ACCOUNT.email}</span>
-              <input className={FIELD} type="email" required autoComplete="email" inputMode="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus />
-            </label>
-            {hasPassword && (
-              <label className="grid gap-1.5">
-                <span className="eyebrow">{ACCOUNT.emailOnFile.needPassword}</span>
-                <input className={FIELD} type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              </label>
-            )}
-            <Button type="submit" variant="start" className="w-full" busy={busy} disabled={!email.trim() || (hasPassword && !password)}>
-              {ACCOUNT.emailOnFile.save}
-            </Button>
-            <Button type="button" variant="ghost" className="w-full" onClick={() => reset(null)}>
-              {ACCOUNT.security.cancel}
-            </Button>
-          </form>
-        )}
-
+        {/* Phone first: it is the way in. Email is the backup and the receipts. */}
         <div className="card flex items-center gap-3 p-4">
           <span className="min-w-0 flex-1">
             <span className="eyebrow block">{ACCOUNT.phone.onFile}</span>
@@ -206,6 +163,50 @@ function Contact() {
             )}
             <Button type="submit" variant="start" className="w-full" busy={busy} disabled={sent ? code.length < 4 : !number.trim()}>
               {sent ? ACCOUNT.phone.verify : ACCOUNT.phone.send}
+            </Button>
+            <Button type="button" variant="ghost" className="w-full" onClick={() => reset(null)}>
+              {ACCOUNT.security.cancel}
+            </Button>
+          </form>
+        )}
+
+        <div className="card flex items-center gap-3 p-4">
+          <span className="min-w-0 flex-1">
+            <span className="eyebrow block">{ACCOUNT.emailOnFile.label}</span>
+            <span className="mt-0.5 block truncate text-[15px] font-bold">{account.email || ACCOUNT.emailOnFile.add}</span>
+          </span>
+          {open !== "email" && (
+            <Button size="sm" variant="secondary" onClick={() => reset("email")}>
+              {account.email ? ACCOUNT.emailOnFile.change : ACCOUNT.emailOnFile.add}
+            </Button>
+          )}
+        </div>
+        {!account.email && open !== "email" && <p className="text-[12px] leading-snug text-muted">{ACCOUNT.emailOnFile.none}</p>}
+        {open === "email" && (
+          <form
+            className="card grid gap-3 p-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run(async () => {
+                await setAccountEmail(email.trim(), password);
+                session.refresh();
+                reset(null);
+                setNote(ACCOUNT.emailOnFile.saved);
+              });
+            }}
+          >
+            <label className="grid gap-1.5">
+              <span className="eyebrow">{ACCOUNT.email}</span>
+              <input className={FIELD} type="email" required autoComplete="email" inputMode="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus />
+            </label>
+            {hasPassword && (
+              <label className="grid gap-1.5">
+                <span className="eyebrow">{ACCOUNT.emailOnFile.needPassword}</span>
+                <input className={FIELD} type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              </label>
+            )}
+            <Button type="submit" variant="start" className="w-full" busy={busy} disabled={!email.trim() || (hasPassword && !password)}>
+              {ACCOUNT.emailOnFile.save}
             </Button>
             <Button type="button" variant="ghost" className="w-full" onClick={() => reset(null)}>
               {ACCOUNT.security.cancel}

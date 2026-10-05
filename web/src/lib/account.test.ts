@@ -88,6 +88,9 @@ test("a phone-only account is named by its name or its number, never its interna
   assert.equal(accountLabel({ ...phoneOnly, name: "Ann" }), "Ann");
   assert.equal(accountContact({ ...phoneOnly, name: "Ann" }), "(555) 234-5678");
   assert.equal(accountLabel({ email: "p15552345678@phone.invalid", name: "", phone: "+15552345678" }), "(555) 234-5678");
-  assert.equal(accountContact({ email: "a@b.co", name: "Ann", phone: "+15552345678" }), "a@b.co · (555) 234-5678");
+  // Phone first, email second: the number is the way in.
+  assert.equal(accountContact({ email: "a@b.co", name: "Ann", phone: "+15552345678" }), "(555) 234-5678 · a@b.co");
+  assert.equal(accountLabel({ email: "a@b.co", name: "", phone: "+15552345678" }), "(555) 234-5678");
+  assert.equal(accountContact({ email: "a@b.co", name: "", phone: "+15552345678" }), "a@b.co");
   assert.equal(displayPhone("+447911123456"), "+447911123456");
 });

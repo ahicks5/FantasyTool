@@ -35,14 +35,15 @@ export function shownEmail(email: string | null | undefined): string {
 
 /** What to call the account where one line names it: the name, else the email, else the phone. */
 export function accountLabel(account: { email: string; name?: string; phone?: string | null } | null | undefined): string {
-  return account?.name?.trim() || shownEmail(account?.email) || displayPhone(account?.phone) || "";
+  // Phone before email: the number is the way in, the email the backup.
+  return account?.name?.trim() || displayPhone(account?.phone) || shownEmail(account?.email) || "";
 }
 
 /** The line under the name: every way the account signs in that the label did not already say. */
 export function accountContact(account: { email: string; name?: string; phone?: string | null } | null | undefined): string {
   if (!account) return "";
   const label = accountLabel(account);
-  return [shownEmail(account.email), displayPhone(account.phone)].filter((x) => x && x !== label).join(" · ");
+  return [displayPhone(account.phone), shownEmail(account.email)].filter((x) => x && x !== label).join(" · ");
 }
 
 /** "2 of 3 leagues" and whether another can be linked. */
