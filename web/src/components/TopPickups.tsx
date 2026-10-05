@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { WaiverPick, Waivers } from "@/lib/types";
 import { signed } from "@/lib/format";
-import { pickupHref, splitPicks, urgency, type Urgency } from "@/lib/wire";
+import { pickupHref, splitPicks, tabletPicks, urgency, type Urgency } from "@/lib/wire";
 import { WIRE } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { IconChevron, IconLock } from "./icons";
@@ -48,10 +48,10 @@ function lastName(name: string): string {
  * Band, face, name, the week's gain (and the bid, when this league bids money), then the
  * cut on its own line so the name is never clipped.
  */
-function Panel({ p, i }: { p: WaiverPick; i: number }) {
+function Panel({ p, i, wideOnly = false }: { p: WaiverPick; i: number; wideOnly?: boolean }) {
   const u = urgency(p, i + 1);
   return (
-    <li className={`min-w-0 rise rise-${i + 1}`}>
+    <li className={`min-w-0 rise rise-${i + 1} ${wideOnly ? "hidden tablet:block" : ""}`}>
       <Link href={pickupHref(p.player.id)} aria-label={WIRE.goAria(p.player.name)} className={`pickup ${FRAME[u]}`}>
         <Band u={u} />
         <span className="flex justify-center">
@@ -89,10 +89,10 @@ function Panel({ p, i }: { p: WaiverPick; i: number }) {
 }
 
 /** One of the next seven: a single line, the same door. */
-function MoreRow({ p, n }: { p: WaiverPick; n: number }) {
+function MoreRow({ p, n, phoneOnly = false }: { p: WaiverPick; n: number; phoneOnly?: boolean }) {
   const u = urgency(p, n);
   return (
-    <li>
+    <li className={phoneOnly ? "tablet:hidden" : undefined}>
       <Link href={pickupHref(p.player.id)} aria-label={WIRE.goAria(p.player.name)} className="flex min-h-12 min-w-0 items-center gap-2.5 rounded-xl border border-line px-3 py-2 transition-colors hover:bg-soft">
         <span className="slug w-5 shrink-0 text-center text-[12px] text-muted">{n}</span>
         <Avatar name={p.player.name} photo={p.player.photo} teamLogo={p.player.team_logo} size="sm" />
@@ -111,13 +111,21 @@ function MoreRow({ p, n }: { p: WaiverPick; n: number }) {
 }
 
 /** The title, and on its right the door to the rest of the wire. No eyebrow, no clock. */
-function Header({ more, open, toggle }: { more?: number; open?: boolean; toggle?: () => void }) {
+function Header({ more, moreWide, open, toggle }: { more?: number; moreWide?: number; open?: boolean; toggle?: () => void }) {
   return (
     <div className="flex min-w-0 items-baseline justify-between gap-3">
       <h2 className="display text-[22px] leading-none">{WIRE.title}</h2>
+      {/* The count differs by width: on a tablet two of the phone's "more" are in the row. */}
       {!!more && toggle && (
-        <button type="button" onClick={toggle} aria-expanded={open} className="min-h-0 shrink-0 text-[13px] font-bold text-lean hover:underline">
-          {open ? WIRE.less : WIRE.more(more)}
+        <button type="button" onClick={toggle} aria-expanded={open} className={`min-h-0 shrink-0 text-[13px] font-bold text-lean hover:underline ${moreWide ? "" : "tablet:hidden"}`}>
+          {open ? (
+            WIRE.less
+          ) : (
+            <>
+              <span className="tablet:hidden">{WIRE.more(more)}</span>
+              <span className="hidden tablet:inline">{WIRE.more(moreWide ?? 0)}</span>
+            </>
+          )}
         </button>
       )}
     </div>
@@ -127,23 +135,25 @@ function Header({ more, open, toggle }: { more?: number; open?: boolean; toggle?
 export function TopPickups({ waivers }: { waivers: Waivers }) {
   const [open, setOpen] = useState(false);
   const { top, more } = splitPicks(waivers.picks);
+  // Five panels from tablet width up; the phone keeps three and shows those two as rows.
+  const { extra, moreAfter } = tabletPicks(waivers.picks);
 
   return (
     <section className="grid min-w-0 gap-2.5">
-      <Header more={more.length} open={open} toggle={() => setOpen((o) => !o)} />
+      <Header more={more.length} moreWide={moreAfter} open={open} toggle={() => setOpen((o) => !o)} />
       {top.length === 0 ? (
         <p className="card p-5 text-center text-[14px] text-ink-2">{WIRE.none}</p>
       ) : (
-        <ol className="grid min-w-0 grid-cols-3 gap-2">
-          {top.map((p, i) => (
-            <Panel key={p.player.id} p={p} i={i} />
+        <ol className="grid min-w-0 grid-cols-3 gap-2 tablet:grid-cols-5">
+          {[...top, ...extra].map((p, i) => (
+            <Panel key={p.player.id} p={p} i={i} wideOnly={i >= top.length} />
           ))}
         </ol>
       )}
       {open && more.length > 0 && (
         <ol className="grid min-w-0 gap-1.5">
           {more.map((p, i) => (
-            <MoreRow key={p.player.id} p={p} n={i + 4} />
+            <MoreRow key={p.player.id} p={p} n={i + 4} phoneOnly={i < extra.length} />
           ))}
         </ol>
       )}
@@ -156,9 +166,9 @@ export function TopPickupsLocked() {
   return (
     <section className="grid min-w-0 gap-3">
       <Header />
-      <ol className="grid min-w-0 grid-cols-3 gap-2" aria-label={WIRE.lockedLine}>
-        {[0, 1, 2].map((i) => (
-          <li key={i} className={`min-w-0 rise rise-${i + 1}`}>
+      <ol className="grid min-w-0 grid-cols-3 gap-2 tablet:grid-cols-5" aria-label={WIRE.lockedLine}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <li key={i} className={`min-w-0 rise rise-${i + 1} ${i >= 3 ? "hidden tablet:block" : ""}`}>
             <div className="pickup pickup-stash pickup-locked">
               <span className="pickup-band">{WIRE.mystery}</span>
               <span className="flex justify-center">

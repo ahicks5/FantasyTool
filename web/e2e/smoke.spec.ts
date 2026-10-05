@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
-import { DESK, LINEUP, PLAN, RIDE, SECTIONS, TABS_ARIA, TICKER } from "../src/lib/vocab";
+import { DESK, LINEUP, PLAN, PLAYER, RIDE, SECTIONS, TABS_ARIA, TICKER } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { CALL, ESPN_KEY, FILM, OFFICE, SCOUT, SCOUT_OPEN, WIRE } from "../src/lib/vocab";
@@ -282,8 +282,9 @@ const PAGES: PageCase[] = [
       // Paid page, unlocked for this user: the heading and the three panels. No budget
       // line and no kickoff clock over them (Andrew, 2026-09-23).
       await expect(page.getByRole("heading", { name: WIRE.title })).toBeVisible();
-      // Three panels, each a link into its own full read (the fixture league has five picks).
-      await expect(page.locator("a.pickup")).toHaveCount(3);
+      // Three panels, each a link into its own full read (the fixture league has five picks;
+      // the other two are panels too, shown only from tablet width up).
+      await expect(page.locator("a.pickup:visible")).toHaveCount(3);
       await expect(page.locator("a.pickup").first()).toHaveAttribute("href", /\/waivers\/pickup\?id=/);
       await expect(page.getByText(/requires a purchase/i)).toHaveCount(0);
     },
@@ -850,6 +851,58 @@ test("from tablet width up the tabs ride in the top bar and the ticker runs unde
   await assertNoHorizontalOverflow(page);
   await tabs.getByRole("link", { name: SECTIONS.trade.label }).click();
   await page.waitForURL(`**${SECTIONS.trade.href}`);
+});
+
+test("on an iPad a player's page docks on the right: a drag does not throw it, its X does", async ({ page }) => {
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await visit(page, "/team");
+  await dismissBoom(page);
+  await page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first().click();
+  const sheet = page.getByRole("dialog");
+  const panel = sheet.locator(".sheet-panel");
+  await expect(panel).toBeVisible();
+  // It slides in from the right; measure where it lands, not where it is mid-flight.
+  await panel.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+  const box = (await panel.boundingBox())!;
+  // Flush to the right edge, full height, and not the whole screen.
+  expect(Math.round(box.x + box.width)).toBe(820);
+  expect(box.y).toBe(0);
+  expect(Math.round(box.height)).toBe(1180);
+  expect(box.width).toBeLessThan(820 * 0.7);
+  // The phone's swipe-down is just reading here.
+  await page.mouse.move(box.x + box.width / 2, box.y + 30);
+  await page.mouse.down();
+  for (const step of [40, 90, 150, 220]) await page.mouse.move(box.x + box.width / 2, box.y + 30 + step);
+  await page.mouse.up();
+  await expect(panel).toBeVisible();
+  await panel.getByRole("button", { name: PLAYER.close }).first().click();
+  await expect(sheet).toHaveCount(0);
+});
+
+test("a laptop gets two columns: the lineup's calls beside its field, five pickups, a centred picker", async ({ page }) => {
+  await page.setViewportSize({ width: 1180, height: 820 });
+  await visit(page, "/team");
+  await dismissBoom(page);
+  const decisions = page.getByRole("heading", { name: LINEUP.section.decisions });
+  const field = page.getByRole("heading", { name: LINEUP.section.field });
+  const d = (await decisions.boundingBox())!;
+  const f = (await field.boundingBox())!;
+  expect(f.x, "the field sits to the right of the decisions").toBeGreaterThan(d.x + 300);
+  await assertNoHorizontalOverflow(page);
+
+  await visit(page, SECTIONS.waivers.href);
+  await expect(page.locator(".pickup:visible")).toHaveCount(5);
+  await assertNoHorizontalOverflow(page);
+
+  await visit(page, SECTIONS.trade.href);
+  await page.getByRole("button", { name: OFFICE.buildOpen }).click();
+  await page.getByRole("button", { name: /\+ Add/ }).first().click();
+  const picker = page.locator('div[role=dialog][aria-label="Your roster"] > div.relative');
+  await expect(picker).toBeVisible();
+  const p = (await picker.boundingBox())!;
+  // Centred, not hanging off the bottom edge.
+  expect(Math.abs(p.x + p.width / 2 - 590)).toBeLessThan(2);
+  expect(p.y + p.height).toBeLessThan(820 - 8);
 });
 
 test("the first open rides up to the call sheet, and the second does not", async ({ page }) => {

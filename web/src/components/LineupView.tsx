@@ -406,6 +406,11 @@ export function LineupView({
         </div>
       </section>
 
+      {/* Two piles side by side on a wide screen (1024px up): the calls to make on the
+          left, the board they change on the right, so a decision and the row it moves are
+          both on screen. One column everywhere else, and always in the report's embed. */}
+      <div className={`grid min-w-0 gap-5 ${compact ? "" : "lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-8"}`}>
+      <div className="grid min-w-0 content-start gap-5">
       {!compact && (
         <section className="min-w-0">
           <H2>{LINEUP.section.required}</H2>
@@ -465,7 +470,9 @@ export function LineupView({
         </section>
       )}
 
-      <section className="min-w-0 scroll-mt-16" id="roster">
+      </div>
+      <div className="grid min-w-0 content-start gap-5">
+      <section className="min-w-0 scroll-mt-16 tablet:scroll-mt-28" id="roster">
         <H2>{LINEUP.section.field}</H2>
         <ul className="card mt-2 min-w-0 divide-y divide-line overflow-hidden p-0">
           {lineup.slots.map((s, i) => (
@@ -509,6 +516,8 @@ export function LineupView({
           </ul>
         </section>
       )}
+      </div>
+      </div>
     </div>
   );
 }

@@ -31,12 +31,14 @@ const TAB_ICONS: Record<TabKey, (p: { size?: number; strokeWidth?: number }) => 
  * wordmark on a 320px phone. They are a nameplate, not navigation, so they moved to
  * the title band on the right — see `Nameplate`.
  */
-export function TopBar({ session }: { session: Session }) {
+export function TopBar({ session, wide = false }: { session: Session; wide?: boolean }) {
   const account = session.account;
   const premium = session.premium;
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4 tablet:max-w-3xl">
+    // Sticky, except on a screen under 500px tall (a phone held sideways), where the bar and
+    // the ticker would hold a quarter of the view; there it scrolls away with the page.
+    <header className="sticky top-0 z-20 [@media(max-height:500px)]:static border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
+      <div className={`mx-auto flex h-14 max-w-lg items-center gap-3 px-4 tablet:max-w-3xl tablet:px-6 ${wide ? "lg:max-w-6xl" : ""}`}>
         <Link href="/" aria-label="Owner's Suite home" className="min-w-0 flex-1 tablet:flex-none">
           <Wordmark className="text-[20px]" short={!!account} />
         </Link>
@@ -95,7 +97,7 @@ function TopTabs() {
               <Link
                 href={href}
                 className={`top-tab relative flex h-10 items-center gap-1.5 rounded-full px-3 text-[13px] font-bold tracking-tight ${
-                  active ? "bg-soft text-ink" : "text-muted"
+                  active ? "bg-soft text-ink" : "text-muted hover:bg-soft hover:text-ink"
                 }`}
                 aria-current={active ? "page" : undefined}
               >
@@ -232,12 +234,15 @@ export function AppShell({
   children,
   aside,
   needsMe = false,
+  wide = false,
 }: {
   section: SectionKey;
   children: (s: Session) => React.ReactNode;
   /** Right-hand slot on the title row, in place of the nameplate: a back chevron. One line, no wrap. */
   aside?: React.ReactNode;
   needsMe?: boolean;
+  /** A page laid out in two columns from 1024px up: the room widens to hold them. */
+  wide?: boolean;
 }) {
   const session = useSession();
   const { title, gate } = SECTIONS[section];
@@ -249,8 +254,8 @@ export function AppShell({
     // the tab you are on, and the tab stays lit because nothing navigated.
     <PlayerSheetProvider>
     <div className="flex min-h-screen flex-col">
-      <TopBar session={session} />
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5 tablet:max-w-3xl tablet:px-6 tablet:pb-16 tablet:pt-7">
+      <TopBar session={session} wide={wide} />
+      <main className={`mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5 tablet:max-w-3xl tablet:px-6 tablet:pb-16 tablet:pt-7 ${wide ? "lg:max-w-6xl" : ""}`}>
         {/* The band is one fixed height and every tab pays the same one, so moving between
             tabs never shifts the page. The h1 on the left; on the right the page's own
             `aside` when it has one (the back chevron on a scout report), otherwise the

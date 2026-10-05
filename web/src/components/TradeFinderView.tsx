@@ -208,7 +208,7 @@ function PartnerCard({ p, index, open, onToggle, preview = false }: { p: BoardPa
   const best = offers[0];
   const tier = p.fit ?? (index === 0 ? TRADE.bestFit : TRADE.worthACall);
   return (
-    <li id={`partner-${p.team_id}`} className={`card min-w-0 scroll-mt-20 overflow-hidden p-0 print print-${Math.min(index + 1, 5)}`}>
+    <li id={`partner-${p.team_id}`} className={`card min-w-0 scroll-mt-20 tablet:scroll-mt-28 overflow-hidden p-0 print print-${Math.min(index + 1, 5)}`}>
       <div className="flex min-w-0">
         {/* The margin, same as the call sheet: the line number over a rule. */}
         <div className="flex w-[36px] shrink-0 flex-col items-center border-r border-line bg-soft pt-4">

@@ -37,6 +37,20 @@ export function splitPicks(picks: readonly WaiverPick[]): { top: WaiverPick[]; m
   return { top: picks.slice(0, TOP_N), more: picks.slice(TOP_N, TOP_N + MORE_N) };
 }
 
+/** From tablet width up the row has room for five panels, not three. */
+export const TABLET_TOP_N = 5;
+
+/**
+ * The tablet's row: the two extra panels (the phone shows them as the first two lines of
+ * "See more"), and how many lines "See more" still holds once they have moved up. The
+ * component renders both and lets CSS pick, so a phone never flashes the wide row.
+ */
+export function tabletPicks(picks: readonly WaiverPick[]): { extra: WaiverPick[]; moreAfter: number } {
+  const { more } = splitPicks(picks);
+  const extra = picks.slice(TOP_N, TABLET_TOP_N);
+  return { extra, moreAfter: more.length - extra.length };
+}
+
 /** The pickup's own page. A query string, not a path, so the static demo export can serve it. */
 export function pickupHref(id: string): string {
   return `/waivers/pickup?id=${encodeURIComponent(id)}`;

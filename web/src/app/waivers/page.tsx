@@ -70,7 +70,7 @@ function Rooms({ c, refresh, signedIn }: { c: Connection; refresh: () => void; s
 
 export default function WaiversPage() {
   return (
-    <AppShell section="waivers" needsMe>
+    <AppShell section="waivers" needsMe wide>
       {(s) => <Rooms c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />}
     </AppShell>
   );

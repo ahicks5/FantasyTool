@@ -26,8 +26,10 @@ import { profileView } from "@/lib/profile";
 import { DEFAULT_MODE, MODES, decide, type Mode } from "@/lib/player/sheet";
 import type { Connection } from "@/lib/storage";
 import type { PlayerProfile } from "@/lib/types";
+import { isTabletUp } from "@/lib/viewport";
 import { PLAYER, SCOUT } from "@/lib/vocab";
 import { Avatar } from "../Avatar";
+import { IconX } from "../icons";
 import { ErrorBox, H2, InjuryTag, Opening } from "../ui";
 import { Report } from "./Report";
 import { VibesView } from "./VibesView";
@@ -136,6 +138,9 @@ export function PlayerSheet({
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     // A secondary button or a second finger is not a swipe.
     if (!e.isPrimary || e.button !== 0) return;
+    // From tablet width up the sheet is a side panel: it closes on its X, the backdrop or
+    // Escape, and a downward drag is just someone reading.
+    if (isTabletUp()) return;
     const target = e.target as Node;
     const inChrome = !middle.current?.contains(target);
     const atTop = (middle.current?.scrollTop ?? 0) <= 0;
@@ -185,12 +190,12 @@ export function PlayerSheet({
       <div
         data-mode={mode}
         data-dragging={dragging || undefined}
-        style={{ top: TOP_INSET, transform: drag ? `translateY(${drag}px)` : undefined }}
+        style={{ "--sheet-top": TOP_INSET, transform: drag ? `translateY(${drag}px)` : undefined } as React.CSSProperties}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        className="sheet-panel absolute inset-x-0 bottom-0 mx-auto grid w-full max-w-lg grid-rows-[auto_1fr_auto] overflow-hidden rounded-t-[28px] bg-paper shadow-[var(--shadow-lift)] rise"
+        className="sheet-panel absolute inset-x-0 bottom-0 top-[var(--sheet-top)] mx-auto grid w-full max-w-lg grid-rows-[auto_1fr_auto] overflow-hidden rounded-t-[28px] bg-paper shadow-[var(--shadow-lift)] rise tablet:left-auto tablet:right-0 tablet:top-0 tablet:mx-0 tablet:w-[min(30rem,100%)] tablet:rounded-none tablet:rounded-l-[28px]"
       >
         <Header head={head} mode={mode} onMode={setMode} onClose={onClose} />
         {/* `overscroll-contain` stops a flick at the end of the log from scrolling the page
@@ -227,8 +232,13 @@ function Header({
 }) {
   return (
     <div className="mode-chrome border-b border-line">
-      <button onClick={onClose} aria-label={PLAYER.close} className="flex min-h-0 w-full justify-center pb-1 pt-2.5">
-        <span aria-hidden className="h-1.5 w-10 rounded-full bg-line-2" />
+      {/* The grip on a phone; from tablet width up, where the sheet is a side panel and
+          is not swiped, the same button is an X in the corner. */}
+      <button onClick={onClose} aria-label={PLAYER.close} className="flex min-h-0 w-full justify-center pb-1 pt-2.5 tablet:justify-end tablet:px-3 tablet:pb-0 tablet:pt-3">
+        <span aria-hidden className="h-1.5 w-10 rounded-full bg-line-2 tablet:hidden" />
+        <span aria-hidden className="hidden h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-soft hover:text-ink tablet:flex">
+          <IconX size={18} strokeWidth={2.4} />
+        </span>
         {/* The gesture is still the way out, and still said -- just not printed over the
             man's name, where it was the third line of a header that only has room for two. */}
         <span className="sr-only">{PLAYER.swipe}</span>

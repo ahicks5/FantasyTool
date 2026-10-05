@@ -447,6 +447,33 @@ are mounted and one is `display: none`, so a test that reads the ticker's words 
 `getByText(...).first()` can hit the hidden one: scope it to `main`. Check new screens at
 744 and 1180 as well as 320 and 390.
 
+What else changes at width (2026-10-05, round two):
+
+- **Sheets.** `Sheet` (ui.tsx) is a centred card from `tablet:` up, like the account
+  `Popup` already was from `sm:`. The player sheet is a **side panel** docked right, full
+  height, 30rem wide, sliding in from the right; its grip becomes an X, and the swipe-down
+  is switched off there (`isTabletUp()` in `lib/viewport.ts`, whose test pins it to the CSS
+  breakpoint). On a phone both are the bottom sheets they always were.
+- **Two columns from `lg:` (1024px).** `AppShell wide` widens the room to `max-w-6xl` for
+  the desk, lineup, scouting and the GM's office. The desk splits news + matchup | the
+  notebooks; the lineup splits required + decisions | field + bench (never in the
+  report's compact embed); the office splits calls to return | every GM, and the trade
+  table stays centred at `max-w-3xl`. Scouting stays one column: the five pickups across
+  the top, the board under them. The film keeps the 768px room.
+- **Five pickups from `tablet:` up** (`tabletPicks`, `lib/wire.ts`). All five panels are
+  rendered and two are `hidden tablet:block`; the phone shows those two as the first rows
+  of "See more", which are `tablet:hidden`. So a test that counts `a.pickup` must count
+  `a.pickup:visible`.
+- **Things pinned to the phone's tab bar.** The trade page's sticky Grade button sits at
+  `bottom-24` to clear it and `tablet:bottom-6` where there is none. Anchor targets carry
+  `tablet:scroll-mt-28`, because the sticky header is 85px with the ticker in it.
+- **Short screens** (under 500px tall, a phone held sideways): the header is not sticky.
+- **Mouse and keyboard.** One zero-specificity focus ring (`:where(...):focus-visible`,
+  the lean blue) on every control, drawn inset on rows inside clipped cards; hover on
+  decision rows and the top tabs. The ticker pauses on hover only under a real pointer
+  (`@media (hover: hover)`): iPad Safari keeps `:hover` on the last thing tapped, which
+  could hold the strip still.
+
 **Section names live in `web/src/lib/vocab.ts`** — one file, so a rename cannot land
 half-applied. Every line the brand says lives there too (`LINES`). Never inline a section
 name, a tagline or a piece of voice copy in a component.

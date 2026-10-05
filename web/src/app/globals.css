@@ -1700,7 +1700,10 @@ html.ride-boot::before {
   letter-spacing: 0.01em;
   animation: ticker-run var(--ticker-ms, 20000ms) linear infinite;
 }
-.ticker:hover .ticker-track { animation-play-state: paused; }
+/* Paused under a real pointer, or while it holds keyboard focus. Not on a touch screen:
+   an iPad keeps :hover on whatever was last tapped, which stopped the strip dead. */
+@media (hover: hover) { .ticker:hover .ticker-track { animation-play-state: paused; } }
+.ticker:focus-visible .ticker-track { animation-play-state: paused; }
 .ticker-item { display: inline-flex; align-items: center; gap: 7px; padding-right: 34px; }
 .ticker-dot { width: 6px; height: 6px; border-radius: 99px; flex-shrink: 0; }
 .ticker-quiet { animation: none; color: #8b929d; }
@@ -3111,3 +3114,32 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
 .ghost-bar { display: block; height: 11px; border-radius: 6px; background: var(--color-line-2); }
 .ghost-bar-thin { height: 8px; opacity: 0.7; }
 .ghost-num { width: 44px; height: 18px; border-radius: 6px; background: var(--color-line-2); flex: none; }
+
+/* From tablet width up the player sheet is a side panel, so it arrives from the side it
+   lives on rather than rising. Reduced motion keeps `.rise`'s own "nothing moves". */
+@media (min-width: 44rem) and (prefers-reduced-motion: no-preference) {
+  .sheet-panel.rise { animation-name: sheet-slide; }
+}
+@keyframes sheet-slide { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+
+/* The desk's two halves start level: the notebooks' rule loses the gap it keeps under
+   the matchup paper in one column. */
+@media (min-width: 64rem) {
+  .desk-office-head { margin-top: 0; }
+}
+
+/* ------------------------------------------------------- mouse and keyboard ---
+   The app was drawn for a thumb. A laptop needs two more things: something under the
+   pointer that answers, and a ring that says where the Tab key is. Zero specificity
+   (`:where`), so any surface that draws its own focus (the board's rows) keeps it. */
+:where(a, button, select, input, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--color-lean);
+  outline-offset: 2px;
+}
+/* Rows inside a clipped card draw the ring inside themselves, or the card cuts it off. */
+:where(.role-row-link, .office-row, .deal-row, .roster-row a, .desk-news-row a):focus-visible { outline-offset: -2px; }
+@media (hover: hover) {
+  .role-row-link { transition: background-color 0.15s; }
+  .role-row-link:hover { background: var(--color-soft); }
+  .ticker:hover .ticker-plate { color: #fff; }
+}

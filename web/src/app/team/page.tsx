@@ -21,5 +21,5 @@ function TeamBody({ c }: { c: Connection }) {
 }
 
 export default function TeamPage() {
-  return <AppShell section="team">{(s) => <TeamBody c={s.connection!} />}</AppShell>;
+  return <AppShell section="team" wide>{(s) => <TeamBody c={s.connection!} />}</AppShell>;
 }
