@@ -7,13 +7,14 @@ import { DoorFrame } from "@/components/account/Door";
 import { IconCheck, IconChevron } from "@/components/icons";
 import { Loading } from "@/components/Loading";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton, OnAir, ThemeSetting } from "@/components/ui";
-import { addPhone, changePassword, setSmsOptIn, deleteMyAccount, phoneStart, setAccountEmail, forgetLeague, getLeague, logout, logoutOthers, markLeagueUsed, startEmailVerify } from "@/lib/api";
+import { addPhone, changePassword, setSmsOptIn, deleteMyAccount, phoneStart, setAccountEmail, forgetLeague, logout, logoutOthers, startEmailVerify } from "@/lib/api";
 import { dayFromSeconds } from "@/lib/onboarding";
 import { formatCents } from "@/lib/format";
 import { describeAuthError } from "@/lib/authError";
 import { displayPhone, leagueRoom, shortDate } from "@/lib/account";
 import { useSession } from "@/lib/session";
-import { clearConnection, saveConnection } from "@/lib/storage";
+import { clearConnection } from "@/lib/storage";
+import { openSavedLeague } from "@/lib/openLeague";
 import type { MeLeague, Sku } from "@/lib/types";
 import { ACCOUNT, LINES, ONBOARD, PRICING, YAHOO } from "@/lib/vocab";
 
@@ -367,17 +368,7 @@ function AccountBody() {
       setBusy(`open:${l.league_id}`);
       setError(null);
       try {
-        const league = await getLeague(l.platform, l.league_id);
-        const team = league.teams.find((t) => t.id === l.team_id);
-        saveConnection({
-          platform: l.platform,
-          league_id: l.league_id,
-          team_id: l.team_id,
-          league_name: league.name,
-          team_name: team?.name ?? l.team_name ?? `Team ${l.team_id}`,
-          week: league.week,
-        });
-        void markLeagueUsed(l.platform, l.league_id).catch(() => undefined);
+        await openSavedLeague(l);
         router.push("/home");
       } catch (e) {
         setError(e);

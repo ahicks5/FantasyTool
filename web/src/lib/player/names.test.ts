@@ -88,6 +88,7 @@ const ALLOWED: Record<string, string> = {
   "src/app/account/page.tsx": "The account: plan names, league names and product names. No player is ever on this page.",
   "src/app/admin/page.tsx": "The admin's list: account names, plan names and league names. No player is ever on this page.",
   "src/components/account/AccountGate.tsx": "The upgrade sheet prints product names (Wire Pass, The Owner's Suite), never a player's.",
+  "src/components/account/WhereTo.tsx": "The menu after sign-in lists the account's league names. No player is ever on it.",
   "src/components/account/AuthForm.tsx": "The register form's Name field label. It is the visitor's own name, not a player's.",
   "src/app/trade/page.tsx":
     "The selected-player chips are themselves buttons that remove the man from the offer, " +

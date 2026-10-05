@@ -6,7 +6,7 @@ import { resetPassword } from "@/lib/api";
 import { Button, ErrorBox, Eyebrow, LinkButton } from "@/components/ui";
 import { ACCOUNT, LINES } from "@/lib/vocab";
 import { describeAuthError } from "@/lib/authError";
-import { DoorFrame } from "@/components/account/Door";
+import { DoorFrame, DoorWaitPage } from "@/components/account/Door";
 
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
@@ -77,7 +77,7 @@ function ResetInner() {
 
 export default function ResetPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<DoorWaitPage />}>
       <ResetInner />
     </Suspense>
   );

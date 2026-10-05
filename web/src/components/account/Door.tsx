@@ -1,15 +1,15 @@
 "use client";
-/** The door: the frame, the signed-in card, and the sign-in page body that /login, /register and /reset share. */
-import { Suspense, useState } from "react";
+/** The door: the frame, the where-to menu once you are in, and the sign-in page body that /login and /reset share. */
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthForm, type AuthMode } from "./AuthForm";
-import { logout } from "@/lib/api";
+import { WhereTo } from "./WhereTo";
+import { hasToken } from "@/lib/auth";
 import { useSession } from "@/lib/session";
-import { accountContact, accountLabel } from "@/lib/account";
 import { safeNext } from "@/lib/identity";
 import { IconChevron } from "@/components/icons";
-import { Button, Card, Eyebrow, LinkButton, Wordmark } from "@/components/ui";
+import { Eyebrow, Wordmark } from "@/components/ui";
 import { ACCOUNT, LINES } from "@/lib/vocab";
 
 /**
@@ -45,31 +45,36 @@ export function DoorFrame({ children }: { children: React.ReactNode }) {
 /** Where a sign-in page sends you afterwards; the rule lives with the other sign-in rules. */
 export { safeNext };
 
-export function SignedInCard({ next }: { next: string }) {
-  const session = useSession();
-  const account = session.account;
-  if (!account) return null;
+/**
+ * What the door shows while it cannot yet say who you are: in the pre-built page (before the
+ * app's code has run) and while `/api/me` answers for a browser holding a token. A cold API
+ * can take a while to wake, so after a few seconds it says so instead of sitting silent.
+ */
+function DoorWait() {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(t);
+  }, []);
   return (
-    <Card>
-      <Eyebrow>{ACCOUNT.plan.current}</Eyebrow>
-      <p className="mt-1.5 text-[17px] font-bold break-words">{accountLabel(account)}</p>
-      {accountContact(account) && <p className="text-[13px] text-muted break-words">{accountContact(account)}</p>}
-      <p className="mt-2 text-[13px] font-bold text-ink-2">
-        {account.plan.tier === "premium" ? `${ACCOUNT.plan.premium} · ${account.plan.name}` : ACCOUNT.plan.free}
-        {account.is_admin && <span className="ml-2 rounded-full bg-ink px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-paper">{ACCOUNT.plan.admin}</span>}
-      </p>
-      <div className="mt-5 grid gap-2.5">
-        <LinkButton href={next} className="w-full">
-          {ACCOUNT.back}
-        </LinkButton>
-        <LinkButton href="/account" variant="secondary" className="w-full">
-          {ACCOUNT.title}
-        </LinkButton>
-        <Button variant="ghost" className="w-full" onClick={() => logout()}>
-          {ACCOUNT.signOut}
-        </Button>
+    <div className="mt-6 rise rise-1" data-testid="door-checking" role="status" aria-live="polite">
+      <div className="card flex items-center gap-3 p-5">
+        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-start motion-safe:animate-pulse" aria-hidden />
+        <span className="text-[15px] font-bold">{ACCOUNT.checking}</span>
       </div>
-    </Card>
+      {slow && <p className="mt-3 text-[13px] leading-relaxed text-muted">{ACCOUNT.checkingSlow}</p>}
+    </div>
+  );
+}
+
+export function DoorWaitPage() {
+  return (
+    <DoorFrame>
+      <div className="pt-8 rise">
+        <Eyebrow>{LINES.threshold}</Eyebrow>
+      </div>
+      <DoorWait />
+    </DoorFrame>
   );
 }
 
@@ -83,25 +88,42 @@ function LoginInner({ start }: { start: AuthMode }) {
   // Creating an account is the sign-up walk now (docs/SPEC-ONBOARDING.md), not this form.
   const setMode = (m: AuthMode) => (m === "register" ? router.push(asked ? `/register?next=${encodeURIComponent(asked)}` : "/register") : setModeRaw(m));
   const session = useSession();
+  // A browser holding a token is probably signed in: say we are checking rather than flash
+  // the sign-in form and then swap it for the account (Andrew, 2026-10-05: "that limbo").
+  const checking = session.loading && hasToken();
   const title = mode === "register" ? ACCOUNT.register : mode === "forgot" ? ACCOUNT.reset.title : ACCOUNT.signIn;
   // Fewest words at the door (Andrew, 2026-09-27): only the reset form keeps a line.
   const lead = mode === "forgot" ? ACCOUNT.reset.lead : null;
 
+  if (checking) return <DoorWaitPage />;
+  // In: a short menu (your leagues, add one, the account), not the settings page.
+  if (session.signedIn) {
+    return (
+      <DoorFrame>
+        <WhereTo next={asked ? next : null} />
+      </DoorFrame>
+    );
+  }
   return (
     <DoorFrame>
       <div className="pt-8 rise">
         <Eyebrow>{LINES.threshold}</Eyebrow>
-        <h1 className="display mt-2 text-[34px] leading-[1.04]">{session.signedIn ? "Signed in" : title}</h1>
-        {!session.signedIn && lead && <p className="mt-2 max-w-[24rem] text-[15px] leading-relaxed text-muted">{lead}</p>}
+        <h1 className="display mt-2 text-[34px] leading-[1.04]">{title}</h1>
+        {lead && <p className="mt-2 max-w-[24rem] text-[15px] leading-relaxed text-muted">{lead}</p>}
       </div>
       <div className="mt-6 rise rise-1">
-        {session.signedIn ? (
-          <SignedInCard next={next} />
-        ) : (
-          <div className="card p-5">
-            <AuthForm mode={mode} onMode={setMode} onDone={(_, created) => router.push(created && !asked ? "/register" : next)} />
-          </div>
-        )}
+        <div className="card p-5">
+          {/* Done: a new number carries on into the walk; an asked-for page is honoured;
+              otherwise this page turns into the menu once the session knows who you are. */}
+          <AuthForm
+            mode={mode}
+            onMode={setMode}
+            onDone={(_, created) => {
+              if (created && !asked) router.push("/register");
+              else if (asked) router.push(next);
+            }}
+          />
+        </div>
       </div>
     </DoorFrame>
   );
@@ -109,7 +131,7 @@ function LoginInner({ start }: { start: AuthMode }) {
 
 export function AuthDoor({ start }: { start: AuthMode }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<DoorWaitPage />}>
       <LoginInner start={start} />
     </Suspense>
   );

@@ -215,9 +215,11 @@ test("a stranger's door is the account: register, land on it, then link a league
   expect(await page.evaluate(() => localStorage.getItem("booth.session"))).toBeNull();
   await page.goto("/login");
   await expect(page.getByLabel(ACCOUNT.phone.label)).toBeVisible();
-  // And back in with the phone: a number on file signs straight in, no profile step.
+  // And back in with the phone: a number on file signs straight in, no profile step, onto
+  // the where-to menu with the league on it.
   await phoneIn(page, phone);
-  await page.waitForURL("**/home");
+  await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.whereTo.title })).toBeVisible();
+  await expect(page.getByTestId("where-league")).toHaveCount(1);
 });
 
 test("a returning account lands on its league without entering it again", async ({ context, page }) => {
@@ -416,9 +418,11 @@ test("signing in or out in one tab reaches the others without a reload", async (
   await page.getByLabel(ACCOUNT.email).fill(email);
   await page.getByLabel(ACCOUNT.password).fill(PASSWORD);
   await page.getByRole("button", { name: ACCOUNT.signIn, exact: true }).click();
-  await page.waitForURL("**/home");
+  await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.whereTo.title })).toBeVisible();
+  await expect(other.getByRole("heading", { level: 1, name: ACCOUNT.whereTo.title })).toBeVisible();
+  // Into the building, where the top bar shows the account.
+  await page.goto("/home");
   await expect(page.getByRole("link", { name: ACCOUNT.topbar.account("E2E") })).toBeVisible();
-  await expect(other.getByRole("heading", { level: 1, name: "Signed in" })).toBeVisible();
 
   // Sign out over there; this tab reads signed out and forgets the account.
   await other.getByRole("button", { name: ACCOUNT.signOut, exact: true }).click();
@@ -437,4 +441,50 @@ test("a token the API has ended is dropped, and the door asks to sign in", async
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.signIn })).toBeVisible();
   await expect.poll(() => page.evaluate(() => localStorage.getItem("booth.session"))).toBeNull();
+});
+
+test("a signed-in browser at the door sees 'checking you in', never a blank page or the form, while the API answers", async ({ context, page }) => {
+  await beAStranger(context);
+  const token = await registerViaApi(page, freshEmail("wait"));
+  await page.goto("/login");
+  await page.evaluate((t) => localStorage.setItem("booth.session", t), token);
+  // A cold API: hold who-is-this for a few seconds.
+  await page.route(`${API_URL}/api/me`, async (route) => {
+    await new Promise((r) => setTimeout(r, 2500));
+    await route.fallback();
+  });
+  await page.reload();
+  await expect(page.getByTestId("door-checking")).toBeVisible();
+  await expect(page.getByText(ACCOUNT.checking)).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.signIn })).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.whereTo.title })).toBeVisible();
+  await expect(page.getByTestId("door-checking")).toHaveCount(0);
+});
+
+test("signing in at the door lands on a short where-to menu: your league, add one, the account", async ({ context, page }) => {
+  await beAStranger(context);
+  const email = freshEmail("menu");
+  const token = await registerViaApi(page, email);
+  const linked = await page.request.post(`${API_URL}/api/connect`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { platform: CONNECTION.platform, league_id: CONNECTION.league_id, team_id: CONNECTION.team_id },
+  });
+  expect(linked.ok(), await linked.text()).toBe(true);
+  await page.goto("/login");
+  await useEmail(page);
+  await page.getByLabel(ACCOUNT.email).fill(email);
+  await page.getByLabel(ACCOUNT.password).fill(PASSWORD);
+  await page.getByRole("button", { name: ACCOUNT.signIn, exact: true }).click();
+
+  const menu = page.getByTestId("where-to");
+  await expect(menu.getByRole("heading", { level: 1, name: ACCOUNT.whereTo.title })).toBeVisible();
+  await expect(page).toHaveURL(/\/login/);
+  await expect(menu.getByTestId("where-league")).toHaveCount(1);
+  await expect(menu.getByTestId("where-add")).toHaveAttribute("href", "/connect");
+  await expect(menu.getByTestId("where-settings")).toHaveAttribute("href", "/account");
+  // One tap on the league opens it.
+  await menu.getByTestId("where-league").click();
+  await page.waitForURL("**/home");
+  const stored = JSON.parse((await page.evaluate(() => localStorage.getItem("booth.connection"))) ?? "null");
+  expect(stored?.league_id).toBe(CONNECTION.league_id);
 });

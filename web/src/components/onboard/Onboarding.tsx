@@ -78,7 +78,13 @@ const EMPTY: Draft = { number: "", phone: "", display: "", sentAt: 0, ticket: ""
 
 export function Onboarding() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-[100dvh] items-center justify-center">
+          <Spinner size={22} />
+        </div>
+      }
+    >
       <Walk />
     </Suspense>
   );

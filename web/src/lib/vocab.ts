@@ -821,6 +821,21 @@ export const YAHOO = {
  */
 export const ACCOUNT = {
   title: "Your account",
+  /** The door while it asks the API who this browser is: never a blank screen. */
+  checking: "Checking you in.",
+  checkingSlow: "Still checking. The building is waking up, a few more seconds.",
+  /** The door once you are in (Andrew, 2026-10-05): a short menu, not the settings page. */
+  whereTo: {
+    eyebrow: "You\u2019re in",
+    title: "Where to?",
+    hello: (name: string) => `Welcome back, ${name}.`,
+    leagues: "Your leagues",
+    openAria: (name: string) => `Open ${name}`,
+    add: "Add a league",
+    addLead: "Sleeper, ESPN or Yahoo.",
+    settings: "Account & settings",
+    settingsLead: "Your plan, your sign-in, your leagues on file.",
+  },
   eyebrow: "Owner",
   /** The two tabs on the sheet and the two controls everywhere else. */
   signIn: "Sign in",

@@ -189,7 +189,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 
 | File | What it is | Lines |
 |---|---|---|
-| `web/src/app/account/page.tsx` | Your account: the plan flag, the leagues on file, the upgrades, the Thursday email, and your data. Signed in only. | 641 |
+| `web/src/app/account/page.tsx` | Your account: the plan flag, the leagues on file, the upgrades, the Thursday email, and your data. Signed in only. | 632 |
 | `web/src/app/admin/page.tsx` | The front office: every account, its plan and its leagues, and the owner's levers. Admin only. | 300 |
 | `web/src/app/connect/espn/page.tsx` | The ESPN link, walked in four steps: make a placeholder bookmark, prime it with our code, log in to ESPN and tap it, come back and paste what it copied. | 310 |
 | `web/src/app/connect/page.tsx` | Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, the key from /connect/espn; Yahoo takes a sign-in, then a pick from your own leagues. | 8 |
@@ -221,7 +221,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/waivers/page.tsx` | Scouting, in the order a manager reads it: the three worth adding, then who is out there. | 77 |
 | `web/src/app/waivers/pickup/page.tsx` | One pickup, read in full: the arrow on each of Scouting's top panels lands here. | 189 |
 
-### `web/src/components/` — the view (64 files)
+### `web/src/components/` — the view (65 files)
 
 | File | What it is | Lines |
 |---|---|---|
@@ -270,7 +270,8 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/WarmDoor.tsx` | The landing page asks the API who is here before the reader reaches the door, so /register opens on the right form at once. | 23 |
 | `web/src/components/account/AccountGate.tsx` | The two popups every room can raise: sign in, and upgrade. One provider in the root | 428 |
 | `web/src/components/account/AuthForm.tsx` | The one sign-in form: sign in, create an account, or ask for a reset. The popup and the | 380 |
-| `web/src/components/account/Door.tsx` | The door: the frame, the signed-in card, and the sign-in page body that /login, /register and /reset share. | 116 |
+| `web/src/components/account/Door.tsx` | The door: the frame, the where-to menu once you are in, and the sign-in page body that /login and /reset share. | 138 |
+| `web/src/components/account/WhereTo.tsx` | Where to, once you are in: your leagues (one tap each), add a league, or the account. The door's signed-in face. | 114 |
 | `web/src/components/admin/Dashboard.tsx` | The owner's numbers: six tabs over GET /api/admin/metrics (docs/SPEC-ADMIN-METRICS.md). | 567 |
 | `web/src/components/battle/BattleDoor.tsx` | The red button: Position Battle, on every player page (Andrew, 2026-10-05: "always | 39 |
 | `web/src/components/battle/BattleView.tsx` | Position Battle: the man in the spot, a challenger, the clash, and the tale of the tape. | 339 |
@@ -283,14 +284,14 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/film/ShareFilm.tsx` | Turns last week's replay cover into a public link. Free, no account, like a Lock card: | 66 |
 | `web/src/components/icons.tsx` | Line icons at a common 24px grid. Emoji read as placeholder art in a paid product. | 181 |
 | `web/src/components/onboard/Frame.tsx` | The walk's chrome: the small wordmark, the way back, the bar, and one screen at a time sliding in. | 118 |
-| `web/src/components/onboard/Onboarding.tsx` | The sign-up walk (docs/SPEC-ONBOARDING.md): phone first, one question a screen, a league | 1192 |
+| `web/src/components/onboard/Onboarding.tsx` | The sign-up walk (docs/SPEC-ONBOARDING.md): phone first, one question a screen, a league | 1198 |
 | `web/src/components/player/PlayerSheet.tsx` | The player page: a full-height sheet that rises over whatever you were reading. | 393 |
 | `web/src/components/player/PlayerSheetProvider.tsx` | Who the player sheet is open on, and the URL that says so. | 132 |
 | `web/src/components/player/Report.tsx` | The scout report body: who he is, what the counts say, and every week he has on record. | 225 |
 | `web/src/components/player/VibesView.tsx` | Vibes: the player in words, and **not one digit**. | 99 |
 | `web/src/components/ui.tsx` | The kit: the shared devices every screen is built from — cards, stamps, meters, waits, the wordmark. | 885 |
 
-### `web/src/lib/` — client logic (53 files)
+### `web/src/lib/` — client logic (54 files)
 
 | File | What it is | Lines |
 |---|---|---|
@@ -326,6 +327,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/offer.ts` | The offer: the week pass against the season pass, worked out from the catalog rather than typed. | 58 |
 | `web/src/lib/office.ts` | The GM's Office, minus React: which deals lead, how hot each one is, and your roster's | 134 |
 | `web/src/lib/onboarding.ts` | The sign-up walk, minus React (docs/SPEC-ONBOARDING.md): which screen comes next, how far | 184 |
+| `web/src/lib/openLeague.ts` | Open a league already on the account: load it, make it this device's league, and note it was used. | 18 |
 | `web/src/lib/player/sheet.ts` | The player sheet's gesture and mode rules. Pure (no React, no DOM), so the one part of | 86 |
 | `web/src/lib/player/vibes.ts` | Vibes, built: what he *is*, then which way he is going. | 293 |
 | `web/src/lib/profile.ts` | The scout report, worked out: one player's recorded season turned into the tiles, | 558 |
@@ -343,7 +345,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/types.ts` | Mirrors docs/API.md (Owner's Suite API contract v1). | 1989 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
 | `web/src/lib/viewport.ts` | The tablet breakpoint, for the few places script has to know it. Pure. | 15 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 2468 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 2483 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 168 |
 | `web/src/lib/wire.ts` | The top of Scouting, minus React: how hard to go after each pickup, and which ones lead. | 69 |
 | `web/src/lib/yahooAuth.ts` | Yahoo sign-in, held on this device. | 121 |
