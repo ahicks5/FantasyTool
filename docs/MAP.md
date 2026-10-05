@@ -283,7 +283,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/film/ShareFilm.tsx` | Turns last week's replay cover into a public link. Free, no account, like a Lock card: | 66 |
 | `web/src/components/icons.tsx` | Line icons at a common 24px grid. Emoji read as placeholder art in a paid product. | 181 |
 | `web/src/components/onboard/Frame.tsx` | The walk's chrome: the small wordmark, the way back, the bar, and one screen at a time sliding in. | 118 |
-| `web/src/components/onboard/Onboarding.tsx` | The sign-up walk (docs/SPEC-ONBOARDING.md): phone first, one question a screen, a league | 1190 |
+| `web/src/components/onboard/Onboarding.tsx` | The sign-up walk (docs/SPEC-ONBOARDING.md): phone first, one question a screen, a league | 1192 |
 | `web/src/components/player/PlayerSheet.tsx` | The player page: a full-height sheet that rises over whatever you were reading. | 393 |
 | `web/src/components/player/PlayerSheetProvider.tsx` | Who the player sheet is open on, and the URL that says so. | 132 |
 | `web/src/components/player/Report.tsx` | The scout report body: who he is, what the counts say, and every week he has on record. | 225 |
