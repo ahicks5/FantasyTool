@@ -903,3 +903,60 @@ def test_a_paywall_is_one_view_per_feature_per_day_and_strangers_are_not_counted
         assert client.get(f"{LG}/team/{tid}/waivers", headers=H).status_code == 402
     (e,) = app_mod.store.events(names=("paywall_view",))
     assert e["email"] == "andrew@example.com" and e["props"] == {"feature": "waivers"}
+
+
+def test_the_tiktok_code_takes_half_off_the_season_and_nothing_else():
+    from edge import products
+
+    assert products.promo(" sthtiktok ")["code"] == "STHTIKTOK"
+    assert products.promo("STHTIKTOK", "week_pass") is None
+    assert products.promo("NOPE") is None
+    assert products.season_price_cents(False, code="STHTIKTOK") == 1249
+    # The lower of the two discounts wins; they never stack.
+    assert products.season_price_cents(True, code="STHTIKTOK") == 1249
+    assert products.season_price_cents(True, code="NOPE") == 1999
+
+
+def test_the_promo_route_prices_the_code_for_this_account(client):
+    r = client.post("/api/promo", headers=H, json={"code": "sthtiktok"}).json()
+    assert r["ok"] is True and r["code"] == "STHTIKTOK" and r["price_cents"] == 1249
+    assert client.post("/api/promo", json={"code": "STHTIKTOK"}).json()["price_cents"] == 1249
+    assert client.post("/api/promo", headers=H, json={"code": "FREE"}).json()["ok"] is False
+    assert client.post("/api/promo", headers=H, json={"code": "STHTIKTOK", "sku": "week_pass"}).json()["ok"] is False
+
+
+def test_a_promo_checkout_is_priced_by_the_server_and_a_bad_code_is_refused(client, monkeypatch):
+    from edge.api import payments
+
+    seen = {}
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
+    monkeypatch.setattr(payments, "create_checkout", lambda *a, **k: seen.update(k) or "https://checkout.stripe.test/c/p")
+    r = client.post("/api/account/upgrade", headers=H, json={"sku": "full_report", "promo": "sthtiktok"})
+    assert r.status_code == 200
+    assert seen["price_cents"] == 1249 and seen["promo"] == "STHTIKTOK"
+    assert client.post("/api/account/upgrade", headers=H, json={"sku": "full_report", "promo": "NOPE"}).status_code == 400
+    assert client.post("/api/checkout", headers=H, json={"sku": "week_pass", "promo": "STHTIKTOK"}).status_code == 400
+    seen.clear()
+    assert client.post("/api/checkout", headers=H, json={"sku": "full_report", "promo": ""}).status_code == 200
+    assert seen["price_cents"] == 2499 and seen["promo"] is None
+
+
+def test_a_promo_checkout_is_marked_as_a_promo_not_an_upgrade(monkeypatch):
+    from edge.api import payments
+
+    captured = {}
+
+    class FakeSession:
+        @staticmethod
+        def create(**kwargs):
+            captured.update(kwargs)
+            return type("S", (), {"url": "https://checkout.stripe.test/c/p"})()
+
+    import stripe
+    monkeypatch.setattr(stripe.checkout, "Session", FakeSession)
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_x")
+    payments.create_checkout("a@b.c", "full_report", 2026, None, None, price_cents=1249, promo="STHTIKTOK")
+    assert captured["line_items"][0]["price_data"]["unit_amount"] == 1249
+    assert captured["metadata"]["promo"] == "STHTIKTOK"
+    assert "upgrade_from" not in captured["metadata"]
+    assert captured["allow_promotion_codes"] is False, "a Stripe code must not stack on ours"

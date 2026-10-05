@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from edge import products
 from edge.api import desk, directory as directory_mod, lenses as lenses_mod, scout as scout_mod, service, share as share_mod
@@ -70,14 +70,26 @@ def _week_live(email: str | None) -> bool:
     return bool(until and until > time.time())
 
 
-def _season_price(email: str | None) -> int:
-    """The season pass's price for this account: $19.99 while a paid week is live (Andrew, 2026-09-28)."""
-    return products.season_price_cents(_week_live(email), products.SEASON_SKU in _skus(email))
+def _season_price(email: str | None, promo: str | None = None) -> int:
+    """The season pass's price for this account: $19.99 while a paid week is live (Andrew, 2026-09-28),
+    or a promo code's price when that is lower."""
+    return products.season_price_cents(_week_live(email), products.SEASON_SKU in _skus(email), promo)
 
 
-def _price_for(email: str, sku: str) -> int | None:
-    """The price the server charges, when it differs from the catalog. Never read from the client."""
-    return _season_price(email) if sku == products.SEASON_SKU else None
+def _price_for(email: str, sku: str, promo: str | None = None) -> int | None:
+    """The price the server charges, when it differs from the catalog. Never read from the client:
+    the client sends at most a promo code, and the server prices it."""
+    return _season_price(email, promo) if sku == products.SEASON_SKU else None
+
+
+def _checked_promo(sku: str, code: str | None) -> str | None:
+    """The canonical promo code for this purchase; a 400 when one was typed and does not apply."""
+    if not (code or "").strip():
+        return None
+    p = products.promo(code, sku)
+    if not p:
+        raise HTTPException(400, "that code is not valid for this pass")
+    return p["code"]
 
 
 def _stripe_configured() -> bool:
@@ -626,6 +638,23 @@ class UpgradeIn(BaseModel):
     sku: str
     success_url: str | None = None
     cancel_url: str | None = None
+    promo: str | None = Field(None, max_length=40)
+
+
+class PromoIn(BaseModel):
+    code: str = Field(..., max_length=40)
+    sku: str = products.SEASON_SKU
+
+
+@app.post("/api/promo")
+def check_promo(body: PromoIn, email: str | None = Depends(optional_user)):
+    """Does this code work, and what does the pass cost with it? Display only: checkout
+    prices the code again on the server."""
+    p = products.promo(body.code, body.sku)
+    if not p:
+        return {"ok": False, "code": None, "sku": body.sku, "percent_off": 0, "price_cents": None}
+    return {"ok": True, "code": p["code"], "sku": p["sku"], "percent_off": p["percent_off"],
+            "price_cents": _price_for(email, p["sku"], p["code"]) if email else products.promo_price_cents(p["sku"], p["code"])}
 
 
 @app.post("/api/account/upgrade")
@@ -640,8 +669,9 @@ def upgrade(body: UpgradeIn, email: str = Depends(current_user)):
     """
     if not products.for_sale(body.sku):
         raise HTTPException(400, "unknown, free or retired sku")
+    promo = _checked_promo(body.sku, body.promo)
     if _stripe_configured():
-        return {"url": _start_checkout(email, body.sku, body.success_url, body.cancel_url),
+        return {"url": _start_checkout(email, body.sku, body.success_url, body.cancel_url, promo),
                 "granted": False, "me": None}
     import uuid
     store.grant(email, body.sku, _season(), source="complimentary", ref=f"comp_{uuid.uuid4().hex}")
@@ -924,15 +954,18 @@ class CheckoutIn(BaseModel):
     sku: str
     success_url: str | None = None
     cancel_url: str | None = None
+    promo: str | None = Field(None, max_length=40)
 
 
-def _start_checkout(email: str, sku: str, success_url: str | None, cancel_url: str | None) -> str:
+def _start_checkout(email: str, sku: str, success_url: str | None, cancel_url: str | None,
+                    promo: str | None = None) -> str:
     """A Stripe Checkout session, carrying the account's first touch, and its event."""
     from edge.api import payments
-    price = _price_for(email, sku)
+    price = _price_for(email, sku, promo)
     url = payments.create_checkout(email, sku, _season(), success_url, cancel_url,
-                                   price_cents=price, attribution=_attribution(email))
-    telemetry.log(store, "checkout_start", email=email, sku=sku, amount_cents=price)
+                                   price_cents=price, attribution=_attribution(email), promo=promo)
+    telemetry.log(store, "checkout_start", email=email, sku=sku, amount_cents=price,
+                  props={"promo": promo} if promo else None)
     return url
 
 
@@ -940,7 +973,8 @@ def _start_checkout(email: str, sku: str, success_url: str | None, cancel_url: s
 def checkout(body: CheckoutIn, email: str = Depends(current_user)):
     if not products.for_sale(body.sku):
         raise HTTPException(400, "unknown, free or retired sku")
-    return {"url": _start_checkout(email, body.sku, body.success_url, body.cancel_url)}
+    promo = _checked_promo(body.sku, body.promo)
+    return {"url": _start_checkout(email, body.sku, body.success_url, body.cancel_url, promo)}
 
 
 @app.post("/api/stripe/webhook")
@@ -974,7 +1008,7 @@ async def stripe_webhook(request: Request):
             renewal = sku == products.WEEK_SKU and before > 0
             name = "upgrade" if event.get("upgrade") else "renewal" if renewal else "purchase"
             telemetry.log(store, name, email=event["email"], sku=sku, amount_cents=event.get("amount_cents"),
-                          ref=event["ref"] or None)
+                          props={"promo": event["promo"]} if event.get("promo") else None, ref=event["ref"] or None)
         # The season replaces the week: stop billing the week (upgrade or not).
         cancelled = payments.cancel_week_subscriptions(event["email"]) if event["sku"] == products.SEASON_SKU else 0
         return {"received": True, "granted": True, "revoked": 0, "restored": 0, "cancelled": cancelled}

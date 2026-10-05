@@ -130,6 +130,15 @@ export interface UpgradeResponse {
   me: Me | null;
 }
 
+/** `POST /api/promo`: does a typed code work, and what does the pass cost with it. Display only. */
+export interface PromoResponse {
+  ok: boolean;
+  code: string | null;
+  sku: Sku;
+  percent_off: number;
+  price_cents: number | null;
+}
+
 /** One row on the admin's list: the account, its plan and its leagues. */
 export interface AdminUser {
   email: string;

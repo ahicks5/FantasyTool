@@ -7,7 +7,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getProducts, upgrade as upgradeCall } from "@/lib/api";
+import { checkPromo, getProducts, upgrade as upgradeCall } from "@/lib/api";
 import { offersFor } from "@/lib/account";
 import { offerStack, priceLabel, productName } from "@/lib/offer";
 import { formatCents } from "@/lib/format";
@@ -178,15 +178,19 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
   const stack = season && week ? offerStack(products) : null;
   // The API prices the season per account: a live paid week brings it down. The page only
   // shows that number; the checkout charges what the server computes, never this.
-  const seasonCents = season ? (session.me?.season_price_cents ?? season.price_cents) : 0;
-  const credited = !!season && seasonCents < season.price_cents;
-  const saving = !credited && stack?.weeklyCents != null && stack.weeklyCents > stack.seasonCents;
+  // A promo code, once the API has said it works: the price it makes, and the code to send.
+  const [promo, setPromo] = useState<{ code: string; pct: number; cents: number } | null>(null);
+  const accountCents = season ? (session.me?.season_price_cents ?? season.price_cents) : 0;
+  const seasonCents = promo ? Math.min(promo.cents, accountCents) : accountCents;
+  const credited = !promo && !!season && seasonCents < season.price_cents;
+  const saving = !promo && !credited && stack?.weeklyCents != null && stack.weeklyCents > stack.seasonCents;
 
   async function buy(offer: Product) {
     setBusy(offer.sku);
     setError(null);
     try {
-      const out = await upgradeCall(offer.sku, returnTo ?? (typeof window === "undefined" ? undefined : window.location.pathname));
+      const code = offer.sku === "full_report" ? promo?.code : undefined;
+      const out = await upgradeCall(offer.sku, returnTo ?? (typeof window === "undefined" ? undefined : window.location.pathname), code);
       if (out.url) {
         // Stripe: the page leaves; the app shell waits for the grant when the buyer returns.
         window.location.assign(out.url);
@@ -221,21 +225,27 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
           <div className="hero p-5" data-testid="season-offer">
             <div className="flex items-center justify-between gap-3">
               <span className="eyebrow">{ACCOUNT.upgrade.seasonHead}</span>
-              {(credited || saving) && (
+              {(promo || credited || saving) && (
                 <span className="shrink-0 whitespace-nowrap rounded-full bg-start-fill px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-white">
-                  {credited ? ACCOUNT.upgrade.weekCounts : ACCOUNT.upgrade.save(formatCents((stack?.weeklyCents ?? 0) - (stack?.seasonCents ?? 0)))}
+                  {promo
+                    ? ACCOUNT.upgrade.promo.badge(promo.code)
+                    : credited
+                      ? ACCOUNT.upgrade.weekCounts
+                      : ACCOUNT.upgrade.save(formatCents((stack?.weeklyCents ?? 0) - (stack?.seasonCents ?? 0)))}
                 </span>
               )}
             </div>
             <div className="mt-2 flex items-end gap-3">
               <span className="display tnum text-[52px] leading-none" data-testid="season-price">{formatCents(seasonCents)}</span>
-              {(credited || saving) && (
+              {(promo || credited || saving) && (
                 <span className="tnum mb-1.5 text-[20px] font-bold text-white/45 line-through">
-                  {formatCents(credited ? season.price_cents : (stack?.weeklyCents ?? 0))}
+                  {formatCents(promo || credited ? season.price_cents : (stack?.weeklyCents ?? 0))}
                 </span>
               )}
             </div>
-            {credited ? (
+            {promo ? (
+              <p className="mt-1.5 text-[13px] text-white/60">{ACCOUNT.upgrade.promo.line(promo.code, formatCents(season.price_cents - seasonCents))}</p>
+            ) : credited ? (
               <p className="mt-1.5 text-[13px] text-white/60">{ACCOUNT.upgrade.weekCountsLine}</p>
             ) : (
               saving &&
@@ -247,6 +257,7 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
             <Button variant="start" className="mt-4 w-full" busy={busy === season.sku} disabled={!!busy && busy !== season.sku} onClick={() => buy(season)}>
               {busy === season.sku ? ACCOUNT.upgrade.busy : ACCOUNT.upgrade.takeSeason}
             </Button>
+            <PromoField applied={promo?.code ?? null} onApplied={setPromo} />
           </div>
           {/* A live week holder is buying the season from their week; offering the week again is noise. */}
           {week && !credited && (
@@ -308,5 +319,66 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
         </div>
       )}
     </Popup>
+  );
+}
+
+/** "Have a code?" under the season offer. The API checks the code and prices it for this
+ * account; the checkout prices it again, so nothing typed here can set what is charged. */
+function PromoField({ applied, onApplied }: { applied: string | null; onApplied: (p: { code: string; pct: number; cents: number } | null) => void }) {
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [bad, setBad] = useState(false);
+
+  async function apply(e: React.FormEvent) {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setChecking(true);
+    setBad(false);
+    try {
+      const r = await checkPromo(code.trim(), "full_report");
+      if (r.ok && r.code && r.price_cents != null) onApplied({ code: r.code, pct: r.percent_off, cents: r.price_cents });
+      else setBad(true);
+    } catch {
+      setBad(true);
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  if (applied) {
+    return (
+      <button type="button" className="mt-3 w-full text-center text-[12px] font-bold text-white/60 underline underline-offset-2 hover:text-white" onClick={() => { onApplied(null); setCode(""); }}>
+        {ACCOUNT.upgrade.promo.remove} {applied}
+      </button>
+    );
+  }
+  if (!open) {
+    return (
+      <button type="button" data-testid="promo-open" className="mt-3 w-full text-center text-[12px] font-bold text-white/60 underline underline-offset-2 hover:text-white" onClick={() => setOpen(true)}>
+        {ACCOUNT.upgrade.promo.open}
+      </button>
+    );
+  }
+  return (
+    <form className="mt-3 grid gap-1.5" onSubmit={apply} data-testid="promo-form">
+      <div className="flex gap-2">
+        <input
+          aria-label={ACCOUNT.upgrade.promo.label}
+          placeholder={ACCOUNT.upgrade.promo.placeholder}
+          value={code}
+          onChange={(e) => { setCode(e.target.value); setBad(false); }}
+          autoCapitalize="characters"
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={40}
+          className="h-11 min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 px-3 text-[15px] font-bold uppercase tracking-wider text-white placeholder:normal-case placeholder:tracking-normal placeholder:text-white/40 focus:border-white/50 focus:outline-none"
+        />
+        <Button type="submit" size="sm" variant="secondary" busy={checking} disabled={checking || !code.trim()}>
+          {checking ? ACCOUNT.upgrade.promo.checking : ACCOUNT.upgrade.promo.apply}
+        </Button>
+      </div>
+      {bad && <p role="alert" className="text-[12px] font-bold text-white/70">{ACCOUNT.upgrade.promo.bad}</p>}
+    </form>
   );
 }
