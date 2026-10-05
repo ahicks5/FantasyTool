@@ -74,7 +74,7 @@ def test_paid_features_are_gated_then_unlocked(client, league):
     r = client.get(f"{LG}/team/{tid}/report", headers=H)
     assert r.status_code == 200 and "<h2>Waivers" in r.json()["html"]
     me = client.get("/api/me", headers=H).json()
-    assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"} and me["leagues_allowed"] == 3
+    assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report", "battle"} and me["leagues_allowed"] == 3
     assert me["account"]["plan"] == {"tier": "premium", "name": "The Owner's Suite", "skus": ["full_report"]}
 
 
@@ -272,7 +272,7 @@ def test_demo_unlock_opens_every_paid_route(client, league, monkeypatch):
 
     monkeypatch.setenv("EDGE_DEMO_UNLOCK", "1")
     me = client.get("/api/me").json()
-    assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report"}
+    assert set(me["entitlements"]) == {"my_team", "waivers", "trade_lab", "full_report", "battle"}
     assert me["leagues_allowed"] == 3
     for path in ("waivers/plan", "trades/find", "waivers", "report"):
         assert client.get(f"{LG}/team/{tid}/{path}").status_code == 200, path

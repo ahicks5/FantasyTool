@@ -2,7 +2,10 @@
 Change prices here only; everything else reads this."""
 from __future__ import annotations
 
-FEATURES = ("my_team", "waivers", "trade_lab", "full_report")
+# `battle` is Position Battle (Andrew, 2026-10-05): two men, one spot, the tale of the tape.
+# In both passes because EVERYTHING is every feature; the retired a-la-carte passes never
+# had it and do not get it.
+FEATURES = ("my_team", "waivers", "trade_lab", "full_report", "battle")
 EVERYTHING = list(FEATURES)
 
 # Every account keeps up to this many leagues on file, paid or not (Andrew, 2026-09-24:
