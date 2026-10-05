@@ -281,6 +281,15 @@ class Store:
             return None
         return row[0]
 
+    def extend_session(self, token_hash: str, expires: float, slack: float = 0.0, now: float | None = None) -> bool:
+        """Slide a live session out to `expires`. Only a live one (a dead token stays dead),
+        only forward, and only when that gains more than `slack` seconds, so a session in
+        constant use costs one write a day. True when it moved."""
+        cur = self.db.execute("UPDATE sessions SET expires=? WHERE token_hash=? AND expires IS NOT NULL "
+                              "AND expires>=? AND expires<?", (expires, token_hash, now or time.time(), expires - slack))
+        self.db.commit()
+        return cur.rowcount == 1
+
     def delete_session(self, token_hash: str) -> None:
         self.db.execute("DELETE FROM sessions WHERE token_hash=?", (token_hash,))
         self.db.commit()
