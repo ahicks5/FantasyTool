@@ -10,8 +10,8 @@ The contract is `docs/API.md` "Accounts"; the web wiring is `docs/WEB.md` "The a
 door (`/login`, `/register`, the sign-in sheet) opens on the phone number; "No mobile? Use
 email instead" is the one link to email and password, and the email form leads with the way
 back to the phone. The door shows nothing until `/api/me` says whether texting is on, so a
-phone visitor never sees the email form flash first. `/account` lists the phone above the email
-and nudges an account without one to add it. With texting off (no Twilio), the door is email
+phone visitor never sees the email form flash first. `/account` lists the phone above the email.
+An email-only account is a full account: nothing prompts it to add a phone (Andrew, 2026-10-05). With texting off (no Twilio), the door is email
 only, because there is no other way in.
 
 | Flow | Page | API | What is checked |

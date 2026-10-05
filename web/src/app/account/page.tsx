@@ -129,9 +129,6 @@ function Contact() {
             </Button>
           )}
         </div>
-        {!account.phone && session.me?.phone_sign_in && open !== "phone" && (
-          <p className="text-[12px] leading-snug text-muted" data-testid="phone-nudge">{ACCOUNT.phone.nudge}</p>
-        )}
         {account.phone && <SmsOptIn on={account.sms_opt_in === true} onSaved={session.refresh} />}
         {open === "phone" && (
           <form

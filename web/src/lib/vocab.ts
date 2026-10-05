@@ -991,8 +991,6 @@ export const ACCOUNT = {
     add: "Add a phone",
     replace: "Change phone",
     added: "Phone saved. You can sign in with it now.",
-    /** An account without a phone, on its account page: phone is how everyone signs in. */
-    nudge: "Add your mobile: it\u2019s how you sign in, no password to remember.",
   },
   /** Adding or changing the email on file. */
   emailOnFile: {

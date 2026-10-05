@@ -314,7 +314,7 @@ the store contract on both backends, `web/e2e/account.spec.ts`).
 - [x] **AC-16** Phone first everywhere (Andrew, 2026-10-05: "phone number first; email only as a
       last resort"). The door waits for `/api/me` instead of flashing email; email link reads
       "No mobile? Use email instead"; the email form leads with "Use your phone number"; `/account`
-      lists the phone first and nudges an account without one; the account label shows the phone
+      lists the phone first, with no prompt to add one (email-only is a full account); the account label shows the phone
       before the email; the demo opens on the phone. Branch `claude/phone-first-auth`.
       **Still needs Twilio on Render to be phone-first in production.**
       Stripe grants now follow the account key in the metadata, not the address typed at checkout.
