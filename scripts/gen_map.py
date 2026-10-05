@@ -121,7 +121,7 @@ def covered_by(module: str, index: dict[str, list[str]]) -> list[str]:
 def python_rows() -> list[tuple[str, str, str, str]]:
     index = test_index()
     rows = []
-    for path in sorted((ROOT / "edge").rglob("*.py")):
+    for path in sorted((ROOT / "edge").rglob("*.py"), key=Path.as_posix):
         if path.name == "__init__.py" and not path.read_text(encoding="utf-8").strip():
             continue
         rel = path.relative_to(ROOT).as_posix()
@@ -135,7 +135,7 @@ def python_rows() -> list[tuple[str, str, str, str]]:
 
 def web_rows() -> list[tuple[str, str, str]]:
     rows = []
-    for path in sorted((ROOT / "web" / "src").rglob("*.ts*")):
+    for path in sorted((ROOT / "web" / "src").rglob("*.ts*"), key=Path.as_posix):
         if path.name.endswith((".test.ts", ".test.tsx", ".d.ts")):
             continue
         rel = path.relative_to(ROOT).as_posix()
@@ -146,7 +146,7 @@ def web_rows() -> list[tuple[str, str, str]]:
 def mobile_rows() -> list[tuple[str, str, str]]:
     """The iPhone app (docs/IOS.md): its entry points and `src/`, without the tests."""
     root = ROOT / "mobile"
-    paths = [root / "App.tsx", root / "index.ts", *sorted((root / "src").rglob("*.ts*"))]
+    paths = [root / "App.tsx", root / "index.ts", *sorted((root / "src").rglob("*.ts*"), key=Path.as_posix)]
     rows = []
     for path in paths:
         if not path.exists() or path.name.endswith((".test.ts", ".test.tsx", ".d.ts")):

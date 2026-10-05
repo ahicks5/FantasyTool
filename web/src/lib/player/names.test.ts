@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { posix } from "node:path";
 
 /**
  * Every player's name in the app is a door into his page.
@@ -98,7 +98,7 @@ const ALLOWED: Record<string, string> = {
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
-    const path = join(dir, entry);
+    const path = posix.join(dir, entry);
     if (statSync(path).isDirectory()) walk(path, out);
     else if (path.endsWith(".tsx")) out.push(path);
   }

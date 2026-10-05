@@ -48,7 +48,7 @@ def test_news_updated_is_epoch_milliseconds_in_the_recorded_feed(projections):
     assert max(as_ms) <= RECORDED_ON + datetime.timedelta(days=1)
     assert min(as_ms) >= RECORDED_ON - datetime.timedelta(days=14)
     # The same numbers read as SECONDS are not a date at all: year 58,655.
-    with pytest.raises(ValueError):
+    with pytest.raises((ValueError, OSError)):  # OSError on Windows
         datetime.datetime.fromtimestamp(min(stamps), datetime.timezone.utc)
 
 
