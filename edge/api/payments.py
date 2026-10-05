@@ -38,9 +38,11 @@ def checkout_name(sku: str, season: int) -> str:
 
 
 def create_checkout(email: str, sku: str, season: int, success_url: str | None, cancel_url: str | None,
-                    price_cents: int | None = None, attribution: dict | None = None) -> str:
+                    price_cents: int | None = None, attribution: dict | None = None,
+                    promo: str | None = None) -> str:
     """A Checkout session for one sku. `price_cents` overrides the catalog price; the API sets
-    it (never the client) for the week-pass holder's season upgrade. `attribution` is the
+    it (never the client) for the week-pass holder's season upgrade or a promo code the API
+    has already checked. `promo` rides in the metadata so a sale can be traced to it. `attribution` is the
     account's first touch (edge/api/telemetry.py), copied into the metadata so Stripe's own
     dashboard can split revenue by channel too."""
     import stripe
@@ -61,8 +63,10 @@ def create_checkout(email: str, sku: str, season: int, success_url: str | None, 
     for k in ("utm_source", "utm_campaign", "utm_content"):
         if (attribution or {}).get(k):
             metadata[k] = str(attribution[k])[:120]
+    if promo:
+        metadata["promo"] = promo
     amount = p["price_cents"] if price_cents is None else price_cents
-    if sku == products.SEASON_SKU and amount < p["price_cents"]:
+    if sku == products.SEASON_SKU and amount < p["price_cents"] and not promo:
         # The season bought from a live week: the webhook ends the weekly billing when it lands.
         metadata["upgrade_from"] = products.WEEK_SKU
     price_data = {"currency": "usd", "unit_amount": amount,
@@ -78,8 +82,9 @@ def create_checkout(email: str, sku: str, season: int, success_url: str | None, 
         **mode,
         **contact,
         line_items=[{"quantity": 1, "price_data": price_data}],
-        # Andrew makes promo codes in the Stripe dashboard; Checkout shows the field.
-        allow_promotion_codes=True,
+        # Andrew makes promo codes in the Stripe dashboard; Checkout shows the field. Not when
+        # one of our own codes already priced this: discounts never stack.
+        allow_promotion_codes=not promo,
         metadata=metadata,
         success_url=success_url or f"{base}/team?paid={sku}",
         cancel_url=cancel_url or f"{base}/?canceled=1",
@@ -171,7 +176,7 @@ def parse_webhook(payload: bytes, sig_header: str) -> dict | None:
         return {"action": "grant", "email": email.lower(), "sku": md["sku"],
                 "season": int(md.get("season", 0)), "ref": obj.get("id", ""),
                 "payment_ref": _payment_ref(obj), "amount_cents": obj.get("amount_total"),
-                "upgrade": md.get("upgrade_from") == products.WEEK_SKU}
+                "upgrade": md.get("upgrade_from") == products.WEEK_SKU, "promo": md.get("promo") or None}
 
     if kind == "checkout.session.expired":
         md = obj.get("metadata") or {}

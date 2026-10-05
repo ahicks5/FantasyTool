@@ -2,6 +2,19 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Promo code STHTIKTOK (2026-10-05)
+
+- [x] `PROMO_CODES` in `edge/products.py`: `STHTIKTOK` = half off the season pass ($24.99 → $12.49). The
+  server prices it; the client only sends the code. Lower of promo vs. the $19.99 week upgrade, never both.
+- [x] `POST /api/promo` to check a code; `promo` on `/api/account/upgrade` and `/api/checkout`; the code is
+  in Stripe metadata and telemetry props so TikTok sales can be counted. Stripe's own code field is off when
+  ours applied (no stacking). Tests: `tests/test_api.py -k promo`, `e2e/account.spec.ts`.
+- [x] "Have a code?" under the season offer on the pass sheet (every upgrade path uses that sheet).
+- [ ] Decide (Andrew): end date or redemption cap for STHTIKTOK? Today it never expires.
+- [ ] Maybe: `?promo=STHTIKTOK` on a link pre-fills the field, for a TikTok bio link.
+- Note: `test_the_lineup_splits_required_changes_from_decisions_and_prices_every_swap` fails on the base
+  branch too, before this change.
+
 ## ESPN shows ESPN's number (2026-09-29)
 
 Andrew, with four screenshots (ESPN 175.5 for his starters, Penthouse 168.9): "I just want

@@ -27,6 +27,13 @@ BOARD_FEATURE = "waivers"
 # weeks stacked before it, so it is one fixed price rather than a running credit.
 SEASON_UPGRADE_CENTS = 1999
 
+# Promo codes typed on our own pass sheet. The server prices them; the client only sends the
+# code. Each one names the sku it discounts and how much comes off the catalog price.
+# Andrew, 2026-10-05: "STHTIKTOK" is half off the season pass.
+PROMO_CODES = {
+    "STHTIKTOK": {"sku": SEASON_SKU, "percent_off": 50},
+}
+
 # Andrew, 2026-09-27: the week pass is $4.99 and renews weekly (a Stripe subscription, cancel
 # anytime); the season is $24.99 and the league slot $2.99, each one payment. Nothing is sold
 # à la carte any more.
@@ -90,10 +97,33 @@ def live_until(sku: str, created: list[float]) -> float | None:
     return max(created) + dur
 
 
-def season_price_cents(week_live: bool, has_season: bool = False) -> int:
-    """What the season pass costs this account: the upgrade price while a paid week is live."""
+def promo(code: str | None, sku: str | None = None) -> dict | None:
+    """The promo a typed code names, or None. Case and stray spaces do not matter; a code
+    for another sku does not count when `sku` is given."""
+    key = (code or "").strip().upper()
+    found = PROMO_CODES.get(key)
+    if not found or (sku and found["sku"] != sku):
+        return None
+    return {"code": key, **found}
+
+
+def promo_price_cents(sku: str, code: str | None) -> int | None:
+    """The catalog price with the code taken off, rounded down to the cent; None if it does not apply."""
+    p = promo(code, sku)
+    if not p:
+        return None
+    return BY_SKU[sku]["price_cents"] * (100 - p["percent_off"]) // 100
+
+
+def season_price_cents(week_live: bool, has_season: bool = False, code: str | None = None) -> int:
+    """What the season pass costs this account: the upgrade price while a paid week is live,
+    or a promo's price, whichever is lower. Discounts never stack."""
     full = BY_SKU[SEASON_SKU]["price_cents"]
-    return SEASON_UPGRADE_CENTS if week_live and not has_season else full
+    prices = [SEASON_UPGRADE_CENTS if week_live and not has_season else full]
+    off = promo_price_cents(SEASON_SKU, code)
+    if off is not None:
+        prices.append(off)
+    return min(prices)
 
 
 def features_for(skus: list[str] | set[str]) -> set[str]:

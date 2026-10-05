@@ -18,6 +18,7 @@ import type {
   TradeFinderResponse,
   WaiverPlanResponse,
   CheckoutResponse,
+  PromoResponse,
   FeedbackRequest,
   PaywallDetail,
   Roster,
@@ -407,7 +408,16 @@ export async function logoutOthers(): Promise<number> {
  * Upgrade: a checkout when Stripe is wired (the reply carries its `url`), a direct grant
  * when it is not (`granted`). `returnTo` is where a checkout should bring the buyer back.
  */
-export async function upgrade(sku: Sku, returnTo?: string): Promise<UpgradeResponse> {
+/**
+ * Check a promo code and get the price it makes for this account. The checkout prices the
+ * code again on the server; this number is only what the sheet shows.
+ */
+export async function checkPromo(code: string, sku: Sku = "full_report"): Promise<PromoResponse> {
+  if (USE_MOCKS) return mocks.mockPromo(code, sku);
+  return request<PromoResponse>("/promo", { method: "POST", body: JSON.stringify({ code, sku }) });
+}
+
+export async function upgrade(sku: Sku, returnTo?: string, promo?: string): Promise<UpgradeResponse> {
   if (USE_MOCKS) {
     const product = mocks.PRODUCTS.find((p) => p.sku === sku);
     try {
@@ -418,13 +428,14 @@ export async function upgrade(sku: Sku, returnTo?: string): Promise<UpgradeRespo
     }
     return { url: null, granted: true, me: mockMe() };
   }
-  const body: { sku: Sku; success_url?: string; cancel_url?: string } = { sku };
+  const body: { sku: Sku; success_url?: string; cancel_url?: string; promo?: string } = { sku };
   if (returnTo && typeof window !== "undefined") {
     const origin = window.location.origin;
     const sep = returnTo.includes("?") ? "&" : "?";
     body.success_url = `${origin}${returnTo}${sep}paid=${encodeURIComponent(sku)}`;
     body.cancel_url = `${origin}${returnTo}${sep}canceled=1`;
   }
+  if (promo) body.promo = promo;
   const out = await request<UpgradeResponse>("/account/upgrade", { method: "POST", body: JSON.stringify(body) });
   if (out.url) pixel("checkout", { sku });
   return out;

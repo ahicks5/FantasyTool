@@ -4,6 +4,7 @@ import { ADMIN_METRICS_FIXTURE } from "./adminMetrics.mock";
 import { withArticle } from "./format";
 import type {
   AdminUsersResponse,
+  PromoResponse,
   FilmSeason,
   LeagueFilm,
   Desk,
@@ -33,6 +34,7 @@ import type {
   Player,
   PositionGrade,
   Product,
+  Sku,
   Report,
   SharedPlayer,
   SharedVerdict,
@@ -73,6 +75,14 @@ export const PRODUCTS: Product[] = [
   },
   { sku: "league_slot", name: "League slot", price_cents: 299, features: [], leagues: 1, kind: "add_on", for_sale: true, blurb: "One more league on your account. Rest of season." },
 ];
+
+/** The demo's copy of the one live code (edge/products.py PROMO_CODES): half off the season. */
+export function mockPromo(code: string, sku: Sku): PromoResponse {
+  const key = code.trim().toUpperCase();
+  const season = PRODUCTS.find((p) => p.sku === "full_report");
+  if (key !== "STHTIKTOK" || sku !== "full_report" || !season) return { ok: false, code: null, sku, percent_off: 0, price_cents: null };
+  return { ok: true, code: key, sku, percent_off: 50, price_cents: Math.floor(season.price_cents / 2) };
+}
 
 /** The demo pretends the register is open, so the pricing card shows the price and not the launch-week grant. */
 export const HEALTH: Health = { ok: true, stripe: true };

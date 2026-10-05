@@ -172,6 +172,15 @@ test("a stranger's door is the account: register, land on it, then link a league
   const up = page.getByTestId("upgrade-sheet");
   await expect(up).toBeVisible();
   await expect(up.getByText(ACCOUNT.upgrade.comp)).toBeVisible();
+  // The TikTok code: a wrong one says so, the right one halves the season, and the API takes it.
+  await up.getByTestId("promo-open").click();
+  const promo = up.getByLabel(ACCOUNT.upgrade.promo.label);
+  await promo.fill("nope");
+  await up.getByRole("button", { name: ACCOUNT.upgrade.promo.apply }).click();
+  await expect(up.getByText(ACCOUNT.upgrade.promo.bad)).toBeVisible();
+  await promo.fill("sthtiktok");
+  await up.getByRole("button", { name: ACCOUNT.upgrade.promo.apply }).click();
+  await expect(up.getByTestId("season-price")).toHaveText("$12.49");
   await up.getByRole("button", { name: ACCOUNT.upgrade.takeSeason }).click();
   await expect(up.getByText(ACCOUNT.upgrade.done)).toBeVisible();
   await up.getByRole("button", { name: ACCOUNT.upgrade.close }).last().click();

@@ -895,6 +895,18 @@ export const ACCOUNT = {
     /** A week-pass holder taking the season: the week in hand counts toward it (Andrew, 2026-09-28). */
     weekCounts: "Your week counts",
     weekCountsLine: "The week you already paid for comes off the season. Your weekly billing stops when it lands.",
+    /** The promo-code field under the season offer. */
+    promo: {
+      open: "Have a code?",
+      label: "Promo code",
+      placeholder: "Enter code",
+      apply: "Apply",
+      checking: "Checking\u2026",
+      bad: "That code doesn\u2019t work on the season pass.",
+      badge: (code: string) => code,
+      line: (code: string, saved: string) => `${code} takes ${saved} off the season pass.`,
+      remove: "Remove",
+    },
     /** Shown while the API has no Stripe key: the grant is written on the spot. */
     comp: "Launch week: no card, no charge. Tap it and the floor is yours.",
     get: (name: string) => `Get ${name}`,

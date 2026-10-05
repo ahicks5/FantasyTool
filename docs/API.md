@@ -80,10 +80,17 @@ change password) answers 429 until the window passes or a reset lands; 3 reset e
 past which `/forgot` still answers `ok` and sends nothing. An unknown address costs the same scrypt as a
 known one, so sign-in timing does not reveal who has an account. Rules and runbook: `docs/ACCOUNTS.md`.
 
-`POST /api/account/upgrade {"sku","success_url"?,"cancel_url"?}` (signed in) →
+`POST /api/account/upgrade {"sku","success_url"?,"cancel_url"?,"promo"?}` (signed in) →
 - Stripe configured: `{"url":"https://checkout.stripe.com/...","granted":false,"me":null}`; the webhook grants.
 - Stripe not configured: `{"url":null,"granted":true,"me":{...}}`; the grant is written now, `source:"complimentary"`.
-400 on a free, unknown or retired (`waivers`, `trade_lab`) sku. Checkout carries `allow_promotion_codes`.
+400 on a free, unknown or retired (`waivers`, `trade_lab`) sku, or a `promo` that does not apply to the sku.
+Checkout carries `allow_promotion_codes` (Stripe-dashboard codes) unless one of our own codes priced it; a
+promo's code rides in the session metadata and on the `checkout_start` / `purchase` telemetry rows.
+`POST /api/checkout` takes the same `promo`.
+
+`POST /api/promo {"code","sku"?="full_report"}` (sign-in optional) → `{"ok","code","sku","percent_off","price_cents"}`.
+Display only: the price this account would pay with the code (the lower of the code and any live-week upgrade
+price; they never stack). Codes live in `PROMO_CODES` in `edge/products.py`; today `STHTIKTOK`, half off the season.
 
 `POST /api/leagues/{platform}/{league_id}/use` (signed in) → marks the league last opened, so the next sign-in on any device lands on it.
 `DELETE /api/leagues/{platform}/{league_id}` (signed in) → `{"ok":true,"leagues":[...]}`. Does not free the slot: a forgotten league counts against this season's cap, and linking it again takes no second slot.
