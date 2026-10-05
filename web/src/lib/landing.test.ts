@@ -59,3 +59,33 @@ test("the front page carries no pricing table and no theme switch", () => {
   // Andrew, 2026-09-27: the price is met at the upgrade, and dark is the room.
   assert.doesNotMatch(PAGE, /<Pricing|ThemeToggle|#pricing/);
 });
+
+test("the things a reader taps are doors: the example sheet and every desk card", () => {
+  // The sheet is the biggest thing on the first screen; a tap on it used to do nothing.
+  assert.match(PAGE, /<Link href=\{WAY_IN\} className="hero callsheet/);
+  assert.match(PAGE, /LANDING\.sheetCta/);
+  // DeskCard renders a Link, so all four answers open the register page.
+  assert.match(PAGE, /function DeskCard[\s\S]*?<Link href=\{WAY_IN\}/);
+});
+
+test("how quick it is comes straight after the hero, and ends on a button", () => {
+  const steps = PAGE.indexOf("LANDING.steps.title");
+  const desk = PAGE.indexOf("DESK.title");
+  assert.ok(steps > 0 && desk > 0 && steps < desk, "the steps sit before the desk");
+  assert.match(PAGE, /\{LANDING\.steps\.cta\}/);
+});
+
+test("the effort sits under the first and last buttons, and the door is warmed before the click", () => {
+  assert.equal((PAGE.match(/\{LANDING\.effort\}/g) ?? []).length, 2);
+  // The register form picks phone or email from `me`; asking on the landing means it
+  // mounts knowing, rather than flashing the password form first.
+  assert.match(PAGE, /<WarmDoor \/>/);
+  const warm = readFileSync(join(import.meta.dirname, "../components/WarmDoor.tsx"), "utf8");
+  assert.match(warm, /currentMe\(\)/);
+});
+
+test("the bar says how quick the door is days out, and the clock near kickoff", () => {
+  assert.match(BAR, /band === "open" \?/);
+  assert.match(BAR, /LANDING\.bar\.effort/);
+  assert.match(BAR, /<Countdown/);
+});

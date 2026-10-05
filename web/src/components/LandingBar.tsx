@@ -1,8 +1,8 @@
 "use client";
-/** The landing page's follow-along bar: the clock and the one door, once the first button has scrolled away. */
+/** The landing page's follow-along bar: how quick the door is (or the clock, near kickoff) and the one door, once the first button has scrolled away. */
 
 import { useEffect, useState } from "react";
-import { Countdown, LinkButton } from "./ui";
+import { Countdown, LinkButton, useKickoffBand } from "./ui";
 import { LANDING } from "@/lib/vocab";
 
 /**
@@ -36,13 +36,21 @@ export function LandingBar({ heroId, closeId, href }: { heroId: string; closeId:
   }, [heroId, closeId]);
 
   const show = !heroSeen && !closeSeen;
+  // Days out, a clock reads as decoration rather than urgency, and what stops a thumb is
+  // the effort; so the bar says how quick the door is until kickoff is close enough to
+  // be the better reason ("soon" is inside a day, `kickoffUrgency`).
+  const band = useKickoffBand();
   return (
     // `inert` keeps the door out of the tab order while the bar is below the fold, so a
     // keyboard cannot focus a button it cannot see.
     <div className={`landing-bar ${show ? "landing-bar-on" : ""}`} aria-hidden={!show} inert={!show} data-testid="landing-bar">
       <div className="landing-bar-inner">
         {/* The clock carries its own word (Kickoff, Soon, Last call), so nothing is printed over it. */}
-        <Countdown className="min-w-0" />
+        {band === "open" ? (
+          <span className="min-w-0 text-[13px] font-bold text-ink-2">{LANDING.bar.effort}</span>
+        ) : (
+          <Countdown className="min-w-0" />
+        )}
         <LinkButton href={href} variant="start" size="sm" className="shrink-0">
           {LANDING.bar.cta}
         </LinkButton>

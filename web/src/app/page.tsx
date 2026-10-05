@@ -1,7 +1,8 @@
-/** The landing page: the front office you walk into, the answers on your desk, the staff, the film, how quick it is, and the door. Indexable. */
+/** The landing page: the front office you walk into, how quick it is, the answers on your desk, the staff, the film, and the door. Indexable. */
 import Link from "next/link";
 import { LandingBar } from "@/components/LandingBar";
 import { Reveal } from "@/components/Reveal";
+import { WarmDoor } from "@/components/WarmDoor";
 import { IconCheck, IconChevron, IconFilm, IconTeam, IconTrade, IconWire, IconX } from "@/components/icons";
 import { Countdown, Eyebrow, LinkButton, OnAir, Wordmark } from "@/components/ui";
 import { LANDING, LINES } from "@/lib/vocab";
@@ -105,14 +106,25 @@ function gradeTone(grade: string): string {
   return "text-sit";
 }
 
-/** One question on the desk: who on the staff answers it, the question, and the answer. */
+/**
+ * One question on the desk: who on the staff answers it, the question, and the answer.
+ * Every card is a door, because a reader who has just read "Who do I start?" with a
+ * worked answer under it is at the moment they most want their own, and a card that does
+ * nothing when tapped is a dead end at the peak of the page.
+ */
 function DeskCard({ from, q, children, className = "" }: { from: string; q: string; children: React.ReactNode; className?: string }) {
   return (
-    <article className={`hero flex flex-col p-5 ${className}`}>
-      <div className="eyebrow">{from}</div>
-      <h3 className="display mt-1 text-[21px] leading-tight">{q}</h3>
-      <div className="mt-4 flex flex-1 flex-col border-t border-white/10 pt-4">{children}</div>
-    </article>
+    <Link href={WAY_IN} className={`hero group flex flex-col p-5 hover:opacity-95 ${className}`}>
+      <article className="flex flex-1 flex-col">
+        <div className="eyebrow">{from}</div>
+        <h3 className="display mt-1 text-[21px] leading-tight">{q}</h3>
+        <div className="mt-4 flex flex-1 flex-col border-t border-white/10 pt-4">{children}</div>
+        <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-bold text-white/80 group-hover:text-white">
+          {LANDING.deskCta}
+          <IconChevron size={13} strokeWidth={2.8} />
+        </span>
+      </article>
+    </Link>
   );
 }
 
@@ -124,7 +136,9 @@ export default function Landing() {
           Log in is always visible; the loud door hides below 480px, where the hero's
           button is one thumb away and the wordmark needs the width. */}
       <header className="flex h-16 items-center justify-between gap-2">
-        <Wordmark className="text-[24px]" />
+        {/* 20px below 480: at 24px "OWNER'S SUITE" wrapped to two lines beside the log-in
+            pill on a 375px phone, which doubled the header and pushed the door down. */}
+        <Wordmark className="whitespace-nowrap text-[20px] min-[480px]:text-[24px]" />
         <nav className="flex shrink-0 items-center gap-2" aria-label="Account">
           <Link
             href={LOGIN}
@@ -163,11 +177,13 @@ export default function Landing() {
             <h1 className="display mt-3 text-[43px] leading-[0.98] rise rise-2 sm:text-[56px] lg:text-[64px]">{LANDING.headline}</h1>
             <p className="display mt-4 max-w-[34rem] text-[18px] leading-snug text-ink rise rise-3 sm:mt-5 sm:text-[21px]">{LANDING.avatar}</p>
             <p className="mt-3 hidden max-w-[32rem] text-[16px] leading-relaxed text-ink-2 rise rise-3 sm:block">{LANDING.staff}</p>
+            <p className="mt-2.5 text-[15px] leading-snug text-ink-2 rise rise-3 sm:hidden">{LANDING.staffShort}</p>
             <div className="mt-6 grid max-w-[26rem] gap-3 rise rise-4 sm:mt-7">
               <div id={HERO_CTA_ID}>
                 <LinkButton href={WAY_IN} variant="start" className="w-full">
                   {LANDING.cta}
                 </LinkButton>
+                <p className="mt-2 text-center text-[13px] font-bold text-ink-2">{LANDING.effort}</p>
               </div>
               <p className="text-center text-[13px] text-muted">
                 {LANDING.loginLead}{" "}
@@ -189,7 +205,10 @@ export default function Landing() {
             </ul>
           </div>
 
-          <div className="hero callsheet sweep callsheet-live rise rise-4" aria-label="Example call sheet">
+          {/* The example sheet is the biggest thing on the first screen and the thing people
+              tap, so it is a door: the whole sheet opens the register page, and its last
+              row says so on every width. */}
+          <Link href={WAY_IN} className="hero callsheet sweep callsheet-live group block rise rise-4 hover:opacity-95" aria-label={`Example call sheet. ${LANDING.sheetCta}`}>
             <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
               <OnAir className="text-white/70" />
               <Countdown onHero />
@@ -222,7 +241,61 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-            <p className="hidden border-t border-white/10 px-5 py-3.5 text-center text-[13px] text-white/55 sm:block">{DESK.foot}</p>
+            <p className="hidden border-t border-white/10 px-5 pt-3.5 text-center text-[13px] text-white/55 sm:block">{DESK.foot}</p>
+            <span className="flex items-center justify-center gap-1 border-t border-white/10 px-4 py-3.5 text-[14px] font-black text-white group-hover:underline sm:mt-3.5 sm:px-5">
+              {LANDING.sheetCta}
+              <IconChevron size={14} strokeWidth={2.8} />
+            </span>
+          </Link>
+        </section>
+
+        {/* ----------------------------------------------------------------- steps ---
+            Quick is the point: three boxes on a rail, each with the time it takes. It sits
+            straight after the hero because "how much work is this?" is the question
+            between reading the pitch and pressing the button, and it ends on a button
+            while the answer ("two minutes") is still on screen. */}
+        <section className="mt-12 sm:mt-16 lg:mt-24">
+          <Reveal>
+            <Eyebrow>{LANDING.steps.head}</Eyebrow>
+            <h2 className="display mt-2 text-[28px] leading-[1.05] sm:text-[38px]">{LANDING.steps.title}</h2>
+          </Reveal>
+          {/* On a phone each step is one row: the number, the step, how long. The sentence
+              under it is for md and up, where the three sit side by side. */}
+          <ol className="relative mt-5 grid gap-3 sm:mt-6 md:grid-cols-3 lg:gap-4">
+            {LANDING.steps.items.map((s, i) => (
+              <li key={s.title} className="relative flex">
+                <Reveal className="flex w-full" delay={i * 140}>
+                <div className="card flex w-full items-center gap-4 p-4 md:flex-col md:items-stretch md:p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="display flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-start-fill text-[18px] text-white">
+                    {i + 1}
+                  </span>
+                  <span className="hidden rounded-full bg-start-soft px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-start md:inline">
+                    {s.when}
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="display text-[18px] leading-tight md:mt-5 md:text-[20px]">{s.title}</div>
+                  <p className="mt-0.5 text-[12px] font-black uppercase tracking-[0.12em] text-start md:hidden">{s.when}</p>
+                  <p className="mt-1.5 hidden text-[14px] leading-relaxed text-muted md:block">{s.body}</p>
+                </div>
+                </div>
+                </Reveal>
+                {i < LANDING.steps.items.length - 1 && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-[14px] top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-line-2 bg-plane text-muted md:flex lg:-right-[18px]"
+                  >
+                    <IconChevron size={14} strokeWidth={2.8} />
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+          <div className="mx-auto mt-5 max-w-[26rem] sm:mt-6">
+            <LinkButton href={WAY_IN} variant="start" className="w-full">
+              {LANDING.steps.cta}
+            </LinkButton>
           </div>
         </section>
 
@@ -397,48 +470,6 @@ export default function Landing() {
           </Reveal>
         </section>
 
-        {/* ----------------------------------------------------------------- steps ---
-            Quick is the point: three boxes on a rail, each with the time it takes. */}
-        <section className="mt-12 sm:mt-16 lg:mt-24">
-          <Reveal>
-            <Eyebrow>{LANDING.steps.head}</Eyebrow>
-            <h2 className="display mt-2 text-[28px] leading-[1.05] sm:text-[38px]">{LANDING.steps.title}</h2>
-          </Reveal>
-          {/* On a phone each step is one row: the number, the step, how long. The sentence
-              under it is for md and up, where the three sit side by side. */}
-          <ol className="relative mt-5 grid gap-3 sm:mt-6 md:grid-cols-3 lg:gap-4">
-            {LANDING.steps.items.map((s, i) => (
-              <li key={s.title} className="relative flex">
-                <Reveal className="flex w-full" delay={i * 140}>
-                <div className="card flex w-full items-center gap-4 p-4 md:flex-col md:items-stretch md:p-6">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="display flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-start-fill text-[18px] text-white">
-                    {i + 1}
-                  </span>
-                  <span className="hidden rounded-full bg-start-soft px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-start md:inline">
-                    {s.when}
-                  </span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="display text-[18px] leading-tight md:mt-5 md:text-[20px]">{s.title}</div>
-                  <p className="mt-0.5 text-[12px] font-black uppercase tracking-[0.12em] text-start md:hidden">{s.when}</p>
-                  <p className="mt-1.5 hidden text-[14px] leading-relaxed text-muted md:block">{s.body}</p>
-                </div>
-                </div>
-                </Reveal>
-                {i < LANDING.steps.items.length - 1 && (
-                  <span
-                    aria-hidden
-                    className="absolute -right-[14px] top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-line-2 bg-plane text-muted md:flex lg:-right-[18px]"
-                  >
-                    <IconChevron size={14} strokeWidth={2.8} />
-                  </span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </section>
-
         {/* ------------------------------------------------------------------- faq ---
             Native disclosure elements, so it works with no script and every answer is on
             the page for a crawler. */}
@@ -471,6 +502,7 @@ export default function Landing() {
             <LinkButton href={WAY_IN} variant="start" className="w-full">
               {LANDING.close.cta}
             </LinkButton>
+            <p className="mt-2 text-[13px] font-bold text-white/75">{LANDING.effort}</p>
           </div>
           <p className="mt-3 text-[13px] text-white/60">
             {LANDING.loginLead}{" "}
@@ -504,6 +536,7 @@ export default function Landing() {
       </footer>
 
       <LandingBar heroId={HERO_CTA_ID} closeId={CLOSE_CTA_ID} href={WAY_IN} />
+      <WarmDoor />
     </div>
   );
 }
