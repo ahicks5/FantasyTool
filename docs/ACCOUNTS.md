@@ -6,6 +6,14 @@ The contract is `docs/API.md` "Accounts"; the web wiring is `docs/WEB.md` "The a
 
 ## The flows
 
+**Phone first, email as the fallback** (Andrew, 2026-10-05). With texting switched on, every
+door (`/login`, `/register`, the sign-in sheet) opens on the phone number; "No mobile? Use
+email instead" is the one link to email and password, and the email form leads with the way
+back to the phone. The door shows nothing until `/api/me` says whether texting is on, so a
+phone visitor never sees the email form flash first. `/account` lists the phone above the email
+and nudges an account without one to add it. With texting off (no Twilio), the door is email
+only, because there is no other way in.
+
 | Flow | Page | API | What is checked |
 |---|---|---|---|
 | Sign up / sign in with a phone | `/register`, `/login`, the sheet (the default when `phone_sign_in`) | `POST /api/auth/phone/start`, `/verify`, `/complete` | a textable number (US/CA); code from Twilio Verify, 10 minutes, 5 tries; 3 texts per number per 10 min and 10 per caller per hour. A number on file signs straight in; a new one gets a 30-minute one-shot ticket, then name and optional email (409 if taken). |
@@ -33,8 +41,8 @@ when it is set, and the owner issues the link by hand: `/admin` → the account 
 then send it from the support mailbox **to the address on the account, never to another one**.
 Handing a link to whoever asks is handing them the account.
 
-**Forgot username.** There is no username: the sign-in is the email address. The forgot screen
-says so. Someone unsure which address they used tries each on the forgot form (it never says
+**Forgot username.** There is no username: the sign-in is the phone number, or for an email
+account the address. The forgot screen says so, and points phone accounts back to their number. Someone unsure which address they used tries each on the forgot form (it never says
 which one has an account). If they still cannot find it, they write to support; the owner can
 look them up on `/admin` by name or by a league on file, and replies **to the address on the
 account** — never tells the asker which address it is.

@@ -311,6 +311,12 @@ the store contract on both backends, `web/e2e/account.spec.ts`).
       `phone_tickets` on both stores; the door opens on the phone when `phone_sign_in`, email and
       password one tap away; `/account` adds a phone or an email. `tests/test_phone.py`,
       `web/e2e/account.spec.ts`. **Off in production until Twilio is set** (`docs/DEPLOY.md`).
+- [x] **AC-16** Phone first everywhere (Andrew, 2026-10-05: "phone number first; email only as a
+      last resort"). The door waits for `/api/me` instead of flashing email; email link reads
+      "No mobile? Use email instead"; the email form leads with "Use your phone number"; `/account`
+      lists the phone first and nudges an account without one; the account label shows the phone
+      before the email; the demo opens on the phone. Branch `claude/phone-first-auth`.
+      **Still needs Twilio on Render to be phone-first in production.**
       Stripe grants now follow the account key in the metadata, not the address typed at checkout.
 
 ## Round 5: the grid, the shortlist, the office rows (2026-09-23, night)

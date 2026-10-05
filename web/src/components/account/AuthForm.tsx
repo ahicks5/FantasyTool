@@ -33,8 +33,11 @@ export function AuthForm({
 }) {
   const session = useSession();
   const [emailChosen, setEmailChosen] = useState(false);
-  // With a text provider on the API, signing in and signing up both start with a phone
-  // number; email and password stay one tap away for the accounts that have them.
+  // Phone first (Andrew, 2026-10-05): with a text provider on the API, signing in and
+  // signing up both start with a phone number. Email and password are the fallback for
+  // someone without a mobile, one tap away. Until the API has said whether texting is on,
+  // show nothing rather than flash the email form at a phone visitor.
+  if (session.loading) return <div className="min-h-[188px]" data-auth="loading" aria-busy />;
   if (session.me?.phone_sign_in && !emailChosen && (mode === "signin" || mode === "register")) {
     return <PhoneFlow onDone={onDone} onEmail={() => setEmailChosen(true)} autoFocus={autoFocus} />;
   }
@@ -110,6 +113,14 @@ function EmailForm({
 
   return (
     <form onSubmit={submit} className="grid gap-3" data-auth={mode} aria-busy={busy || undefined}>
+      {onPhone && (
+        <>
+          <Button type="button" variant="secondary" className="w-full" onClick={onPhone} data-testid="use-phone">
+            {ACCOUNT.phone.usePhone}
+          </Button>
+          <p className="text-[12px] leading-relaxed text-muted">{ACCOUNT.phone.emailFallback}</p>
+        </>
+      )}
       {mode === "register" && (
         <label className="grid gap-1.5">
           <span className="eyebrow">{ACCOUNT.name}</span>
@@ -194,11 +205,6 @@ function EmailForm({
             {ACCOUNT.reset.back}
           </button>
         )}
-        {onPhone && (
-          <button type="button" onClick={onPhone} className="min-h-11 basis-full text-left font-bold text-ink underline underline-offset-4">
-            {ACCOUNT.phone.usePhone}
-          </button>
-        )}
       </div>
     </form>
   );
@@ -278,6 +284,7 @@ function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: 
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
           />
+          <span className="text-[12px] text-muted">{ACCOUNT.phone.emailOptionalHint}</span>
         </label>
         <label className="flex min-h-11 cursor-pointer items-start gap-3" data-auth="sms-opt-in">
           <input type="checkbox" className="peer sr-only" checked={sms} onChange={(e) => setSms(e.target.checked)} />

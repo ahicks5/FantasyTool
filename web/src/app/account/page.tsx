@@ -117,6 +117,62 @@ function Contact() {
   return (
     <section className="mt-3" data-testid="contact">
       <div className="grid gap-2">
+        {/* Phone first: it is the way in. Email is the backup and the receipts. */}
+        <div className="card flex items-center gap-3 p-4">
+          <span className="min-w-0 flex-1">
+            <span className="eyebrow block">{ACCOUNT.phone.onFile}</span>
+            <span className="mt-0.5 block truncate text-[15px] font-bold tnum">{displayPhone(account.phone) || ACCOUNT.phone.none}</span>
+          </span>
+          {session.me?.phone_sign_in && open !== "phone" && (
+            <Button size="sm" variant="secondary" onClick={() => reset("phone")}>
+              {account.phone ? ACCOUNT.phone.replace : ACCOUNT.phone.add}
+            </Button>
+          )}
+        </div>
+        {!account.phone && session.me?.phone_sign_in && open !== "phone" && (
+          <p className="text-[12px] leading-snug text-muted" data-testid="phone-nudge">{ACCOUNT.phone.nudge}</p>
+        )}
+        {account.phone && <SmsOptIn on={account.sms_opt_in === true} onSaved={session.refresh} />}
+        {open === "phone" && (
+          <form
+            className="card grid gap-3 p-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run(async () => {
+                if (!sent) {
+                  const out = await phoneStart(number.trim());
+                  setSent({ phone: out.phone, display: out.display, devCode: out.dev_code });
+                  return;
+                }
+                await addPhone(sent.phone, code.trim());
+                session.refresh();
+                reset(null);
+                setNote(ACCOUNT.phone.added);
+              });
+            }}
+          >
+            {!sent ? (
+              <label className="grid gap-1.5">
+                <span className="eyebrow">{ACCOUNT.phone.label}</span>
+                <input className={FIELD} type="tel" required autoComplete="tel" inputMode="tel" value={number} onChange={(e) => setNumber(e.target.value)} placeholder="(555) 234-5678" autoFocus />
+              </label>
+            ) : (
+              <label className="grid gap-1.5">
+                <span className="text-[13px] leading-snug text-ink">{ACCOUNT.phone.codeLead(sent.display)}</span>
+                <span className="eyebrow">{ACCOUNT.phone.codeLabel}</span>
+                <input className={`${FIELD} tnum tracking-[0.3em]`} inputMode="numeric" autoComplete="one-time-code" maxLength={6} required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} autoFocus />
+                {sent.devCode && <span className="text-[12px] text-muted" data-testid="dev-code">{ACCOUNT.phone.devCode(sent.devCode)}</span>}
+              </label>
+            )}
+            <Button type="submit" variant="start" className="w-full" busy={busy} disabled={sent ? code.length < 4 : !number.trim()}>
+              {sent ? ACCOUNT.phone.verify : ACCOUNT.phone.send}
+            </Button>
+            <Button type="button" variant="ghost" className="w-full" onClick={() => reset(null)}>
+              {ACCOUNT.security.cancel}
+            </Button>
+          </form>
+        )}
+
         <div className="card flex items-center gap-3 p-4">
           <span className="min-w-0 flex-1">
             <span className="eyebrow block">{ACCOUNT.emailOnFile.label}</span>
@@ -154,58 +210,6 @@ function Contact() {
             )}
             <Button type="submit" variant="start" className="w-full" busy={busy} disabled={!email.trim() || (hasPassword && !password)}>
               {ACCOUNT.emailOnFile.save}
-            </Button>
-            <Button type="button" variant="ghost" className="w-full" onClick={() => reset(null)}>
-              {ACCOUNT.security.cancel}
-            </Button>
-          </form>
-        )}
-
-        <div className="card flex items-center gap-3 p-4">
-          <span className="min-w-0 flex-1">
-            <span className="eyebrow block">{ACCOUNT.phone.onFile}</span>
-            <span className="mt-0.5 block truncate text-[15px] font-bold tnum">{displayPhone(account.phone) || ACCOUNT.phone.none}</span>
-          </span>
-          {session.me?.phone_sign_in && open !== "phone" && (
-            <Button size="sm" variant="secondary" onClick={() => reset("phone")}>
-              {account.phone ? ACCOUNT.phone.replace : ACCOUNT.phone.add}
-            </Button>
-          )}
-        </div>
-        {account.phone && <SmsOptIn on={account.sms_opt_in === true} onSaved={session.refresh} />}
-        {open === "phone" && (
-          <form
-            className="card grid gap-3 p-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void run(async () => {
-                if (!sent) {
-                  const out = await phoneStart(number.trim());
-                  setSent({ phone: out.phone, display: out.display, devCode: out.dev_code });
-                  return;
-                }
-                await addPhone(sent.phone, code.trim());
-                session.refresh();
-                reset(null);
-                setNote(ACCOUNT.phone.added);
-              });
-            }}
-          >
-            {!sent ? (
-              <label className="grid gap-1.5">
-                <span className="eyebrow">{ACCOUNT.phone.label}</span>
-                <input className={FIELD} type="tel" required autoComplete="tel" inputMode="tel" value={number} onChange={(e) => setNumber(e.target.value)} placeholder="(555) 234-5678" autoFocus />
-              </label>
-            ) : (
-              <label className="grid gap-1.5">
-                <span className="text-[13px] leading-snug text-ink">{ACCOUNT.phone.codeLead(sent.display)}</span>
-                <span className="eyebrow">{ACCOUNT.phone.codeLabel}</span>
-                <input className={`${FIELD} tnum tracking-[0.3em]`} inputMode="numeric" autoComplete="one-time-code" maxLength={6} required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} autoFocus />
-                {sent.devCode && <span className="text-[12px] text-muted" data-testid="dev-code">{ACCOUNT.phone.devCode(sent.devCode)}</span>}
-              </label>
-            )}
-            <Button type="submit" variant="start" className="w-full" busy={busy} disabled={sent ? code.length < 4 : !number.trim()}>
-              {sent ? ACCOUNT.phone.verify : ACCOUNT.phone.send}
             </Button>
             <Button type="button" variant="ghost" className="w-full" onClick={() => reset(null)}>
               {ACCOUNT.security.cancel}
