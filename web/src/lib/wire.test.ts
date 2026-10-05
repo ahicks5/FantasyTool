@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CLAIM_FIT, MUST_FIT, STASH_FIT, TOP_N, findPick, pickupHref, splitPicks, urgency } from "./wire.ts";
+import { CLAIM_FIT, MUST_FIT, STASH_FIT, TABLET_TOP_N, TOP_N, findPick, pickupHref, splitPicks, tabletPicks, urgency } from "./wire.ts";
 import type { WaiverPick } from "./types";
 
 const pick = (id: string, fit: number) => ({ player: { id }, fit_score: fit }) as unknown as WaiverPick;
@@ -29,4 +29,16 @@ test("a pickup's page finds him and his place, or says the wire moved", () => {
   assert.equal(findPick(picks, "z"), null);
   assert.equal(findPick(picks, null), null);
   assert.equal(pickupHref("12 34"), "/waivers/pickup?id=12%2034");
+});
+
+test("on a tablet the row holds five, and See more counts only what is left", () => {
+  const ids = "abcdefghijkl".split("");
+  const { extra, moreAfter } = tabletPicks(ids.map((id) => pick(id, 1)));
+  assert.equal(TABLET_TOP_N, 5);
+  assert.deepEqual(extra.map((p) => p.player.id), ["d", "e"]);
+  assert.equal(moreAfter, 5, "ten on the wire in all, five of them in the row");
+  // A thin wire: four picks fill four panels and leave nothing behind See more.
+  const thin = tabletPicks(ids.slice(0, 4).map((id) => pick(id, 1)));
+  assert.deepEqual(thin.extra.map((p) => p.player.id), ["d"]);
+  assert.equal(thin.moreAfter, 0);
 });

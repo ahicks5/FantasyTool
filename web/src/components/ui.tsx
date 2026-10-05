@@ -866,10 +866,12 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label={title}>
+    // A bottom sheet on a phone; from tablet width up a centred card, like the account
+    // popup, because a sheet rising from the bottom edge of an iPad is a long reach.
+    <div className="fixed inset-0 z-40 flex items-end justify-center tablet:items-center tablet:p-6" role="dialog" aria-modal="true" aria-label={title}>
       <button aria-label="Close" onClick={onClose} className="absolute inset-0 min-h-0 bg-black/50 backdrop-blur-[2px]" />
-      <div className="absolute inset-x-0 bottom-0 mx-auto max-h-[86vh] w-full max-w-lg overflow-hidden rounded-t-[28px] bg-paper shadow-[var(--shadow-lift)] rise">
-        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-line-2" />
+      <div className="relative max-h-[86vh] w-full max-w-lg overflow-hidden rounded-t-[28px] bg-paper shadow-[var(--shadow-lift)] rise tablet:rounded-[28px] tablet:pt-2">
+        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-line-2 tablet:hidden" />
         <div className="flex items-center justify-between px-5 pb-2 pt-3">
           <h2 className="display text-[19px]">{title}</h2>
           <button onClick={onClose} className="min-h-0 rounded-full px-3 py-1.5 text-sm font-bold text-lean hover:bg-soft">

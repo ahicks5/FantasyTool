@@ -82,6 +82,29 @@ then said it could not reach the server. Branch `claude/memory-and-fast-load`, *
       the players file, projections and schedule (the 44 s cold load).
 - [ ] **Andrew:** merge to production once it has been clicked through on a preview.
 
+## iPad, tablet and desktop (2026-10-05, branch `claude/responsive-tablet-desktop`)
+Andrew: perfect on an iPhone, odd elsewhere; the ticker "sits weirdly" on a friend's iPad.
+Cause: the whole app was the phone's 512px column at every size, with the ticker and tabs
+pinned to the bottom of the screen a hand's width below the last card. Phones unchanged.
+- [x] Ticker never half-empty on a wide screen: each loop copy fills the strip, and the
+      pace is per pixel of strip, not just per character (`lib/ticker.ts`, tested).
+- [x] Tablet shell at 704px+ (`tablet:` breakpoint; iPad mini upright counts): tabs in the
+      top bar, ticker under it, no bottom block, content column 512 → 768px. e2e test at 744.
+- [ ] Not merged to production. Andrew to look on an iPad / laptop first — **Andrew**
+- [x] Sheets: generic sheet is a centred card from tablet up; the player page is a
+      right-hand side panel (no swipe there, an X instead). e2e at 820px.
+- [x] Two columns from 1024px: desk, lineup, GM's Office (`AppShell wide`). e2e at 1180px.
+- [x] Scouting shows all five top pickups from tablet up; "See more" counts what is left.
+- [x] Focus ring on every control, hover on decision rows and top tabs; the ticker no
+      longer freezes after a tap on an iPad.
+- [x] Phone held sideways: header scrolls away under 500px tall. Fixed on the way: the
+      trade page's Grade button floated 96px up on tablets; anchor jumps hid under the
+      taller header.
+- [ ] Scouting's board stays full width at 1024px+; a filter rail beside it is the next
+      step if the wide board reads sparse.
+- [ ] `test_the_lineup_splits_required_changes_from_decisions_and_prices_every_swap` fails
+      on production too (a role with an empty `reason`); not from this branch.
+
 ## Owner's Suite — rename (2026-10-05)
 Andrew's call: the name is **Owner's Suite**, replacing Penthouse. A rename, nothing else:
 same mark, same chrome, same rooms, same passes. Everything a user reads, every docstring,

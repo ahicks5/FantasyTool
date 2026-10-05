@@ -289,8 +289,9 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
       {/* The office, top down (Andrew, 2026-09-23): the three deals worth a call, every
           GM in one line each, and the table for your own idea at the bottom. */}
+      {/* Side by side from 1024px up: the three calls on the left, every GM on the right. */}
       {found ? (
-        <>
+        <div className="grid min-w-0 gap-7 lg:grid-cols-2 lg:items-start lg:gap-8">
           <TopDeals
             board={found}
             preview={preview}
@@ -301,7 +302,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
             }}
           />
           <PartnerList board={found} preview={preview} />
-        </>
+        </div>
       ) : (
         <TradeFinderWait />
       )}
@@ -322,7 +323,8 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
       {/* Free, there is no builder to offer: grading an offer is the thing being sold. */}
       {!preview && (
-      <section id="build" className="office-build grid scroll-mt-20 gap-4">
+      // The trade table stays the reading width it was drawn at, centred, however wide the room.
+      <section id="build" className="office-build grid scroll-mt-20 tablet:scroll-mt-28 gap-4 lg:mx-auto lg:w-full lg:max-w-3xl">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="display text-[20px] leading-tight">{OFFICE.build}</h2>
@@ -399,7 +401,8 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       <PickerSheet open={sheet === "give"} onClose={() => setSheet(null)} title="Your roster" players={mine} selected={give} onToggle={(id) => toggle(give, setGive, id)} tone="sit" />
       <PickerSheet open={sheet === "get"} onClose={() => setSheet(null)} title={`${theirTeam?.name ?? "Their"} roster`} players={theirs} selected={get} onToggle={(id) => toggle(get, setGet, id)} tone="start" />
 
-      <div className="sticky bottom-24 z-[5]">
+      {/* Clears the phone's tab bar; from tablet up there is none, so it sits at the edge. */}
+      <div className="sticky bottom-24 z-[5] tablet:bottom-6">
         <Button variant="start" className="w-full shadow-[var(--shadow-float)]" onClick={submit} busy={busy} disabled={give.length === 0 || get.length === 0}>
           {busy ? "Grading it…" : `Grade ${give.length}-for-${get.length}`}
         </Button>
@@ -407,7 +410,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       {error && <ErrorBox error={error} />}
 
       {result && (
-        <div id="verdict" className="grid gap-4 scroll-mt-16">
+        <div id="verdict" className="grid gap-4 scroll-mt-16 tablet:scroll-mt-28">
           <Card className="overflow-hidden p-0 rise">
             {/* The moment. Same device as the share card: the call is stamped, not typeset.
                 The hero is dark in both themes, where the status inks vanish in light mode,
@@ -593,7 +596,7 @@ function TradeBodyKeyed({ c, refresh, signedIn }: { c: Connection; refresh: () =
  */
 export default function TradePage() {
   return (
-    <AppShell section="trade" needsMe>
+    <AppShell section="trade" needsMe wide>
       {(s) => (
         <Suspense fallback={<SkeletonList rows={3} />}>
           <TradeBodyKeyed c={s.connection!} refresh={s.refresh} signedIn={s.signedIn} />

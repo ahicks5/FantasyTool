@@ -1,6 +1,7 @@
 "use client";
 /** The ticker: the desk's news running along the bottom of every screen, over the tab bar. */
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { getDesk } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import type { Connection } from "@/lib/storage";
@@ -17,7 +18,11 @@ import { SECTIONS, TICKER } from "@/lib/vocab";
    The track is rendered twice and slid by half its width, which is the whole trick of
    a seamless loop; the pace comes from the text's length (`lib/ticker.ts`) so eight
    headlines do not run eight times faster than one. Under reduced motion nothing
-   moves and the strip shows the first headline, which is the most serious one.       */
+   moves and the strip shows the first headline, which is the most serious one.
+
+   Each copy is at least as wide as the strip (`.ticker-track { min-width: 100% }`), so on
+   an iPad or a desktop a light news day still fills the line instead of running half of
+   it and leaving the rest black. The strip measures itself so the pace stays per pixel. */
 
 const DOT: Record<NewsLevel, string> = {
   critical: "bg-sit",
@@ -33,18 +38,27 @@ export function Ticker({ c }: { c: Connection }) {
   const entries = tickerEntries(data?.news.items ?? [], data?.scoreboard);
   const lines = entries.map((e) => e.line);
   const quiet = data !== null && lines.length === 0;
+  const win = useRef<HTMLSpanElement>(null);
+  const [windowPx, setWindowPx] = useState(0);
+  useEffect(() => {
+    const el = win.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(([e]) => setWindowPx(Math.round(e.contentRect.width)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   return (
     <Link
       href={SECTIONS.home.href}
       className={`ticker rail ${quiet || !data ? "ticker-still" : ""}`}
       aria-label={TICKER.aria}
-      style={{ "--ticker-ms": `${tickerDurationMs(lines)}ms` } as React.CSSProperties}
+      style={{ "--ticker-ms": `${tickerDurationMs(lines, windowPx)}ms` } as React.CSSProperties}
     >
       <span className="ticker-plate">
         <span className="lamp" aria-hidden />
         {TICKER.plate}
       </span>
-      <span className="ticker-window" aria-live="off">
+      <span ref={win} className="ticker-window" aria-live="off">
         {!data ? (
           <span className="ticker-track ticker-quiet">{TICKER.loading}</span>
         ) : quiet ? (

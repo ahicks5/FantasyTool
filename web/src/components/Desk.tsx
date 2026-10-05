@@ -380,12 +380,18 @@ export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; anim
         </dl>
       )}
 
+      {/* From 1024px up the desk is two halves: what landed and the game on the left, the
+          staff's notebooks on the right. One column below that, in the order it reads. */}
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-4">
+      <div className="min-w-0">
       <NewsPaper desk={desk} animate={animate} />
 
       <div className="mt-3">
         <MatchupPaper m={desk.matchup} week={desk.week} standing={desk.standing} animate={animate} />
       </div>
+      </div>
 
+      <div className="min-w-0">
       {/* A thin rule with the eyebrow in it: whose work the four notebooks are. */}
       <div className={`desk-office-head ${animate ? "rise rise-2" : ""}`} aria-hidden>
         <span>{DESK.notebooks.eyebrow}</span>
@@ -418,6 +424,8 @@ export function DeskView({ desk, c, animate }: { desk: Desk; c: Connection; anim
           />
         </li>
       </ul>
+      </div>
+      </div>
     </section>
   );
 }

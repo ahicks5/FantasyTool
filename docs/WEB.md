@@ -156,7 +156,11 @@ opened cold it makes the one desk request itself. The track is rendered twice an
 its own width for a seamless loop; the pace comes from the text's length (`lib/ticker.ts`,
 tested) so eight headlines do not run eight times faster than one. Hover pauses it; under
 reduced motion it holds still on the first, most serious, headline and hides the second
-copy. It is a link to the desk. Its height is part of what `main` reserves (`pb-40`). It
+copy. It is a link to the desk. Its height is part of what `main` reserves (`pb-28`).
+Each copy of the track is at least the strip's width (`min-width: 100%`) and the strip
+measures itself for the pace, so a light news day on a wide screen neither leaves half
+the line black nor races. From tablet width up it runs under the top bar instead (next
+section's **Tablet and desktop**). It
 cost the fixture server its rate cap: a fresh browser context per test now makes two
 league reads per page load, which crossed the 60-a-minute line mid-suite, so
 `serve_fixtures.py` runs with `EDGE_RATE_LIMIT=0`; production keeps the cap.
@@ -461,6 +465,44 @@ stamps itself clean.
 **Every tab renders a title, in a fixed-height band.** The call sheet used to hide its `h1`,
 so moving to or from it shifted the page by the height of a heading.
 
+**Tablet and desktop: the room widens and the tabs go up top** (`tablet:`, 704px, set in
+`globals.css`'s `@theme`). Below it nothing changes: the phone's column, the bottom block.
+At and above it the tabs ride in the top bar (`TopTabs`, labelled `TABS_ARIA`), the ticker
+runs directly under the top bar, the bottom block is hidden, and `main` widens to
+`max-w-3xl`. The bottom block on an iPad floated a hand's width below the last card and
+read as a phone app stretched to fit; that is where iPadOS and every desktop app keep tabs
+anyway. 704px, not `md`, so an iPad mini held upright (744px) gets it. Both ticker copies
+are mounted and one is `display: none`, so a test that reads the ticker's words with
+`getByText(...).first()` can hit the hidden one: scope it to `main`. Check new screens at
+744 and 1180 as well as 320 and 390.
+
+What else changes at width (2026-10-05, round two):
+
+- **Sheets.** `Sheet` (ui.tsx) is a centred card from `tablet:` up, like the account
+  `Popup` already was from `sm:`. The player sheet is a **side panel** docked right, full
+  height, 30rem wide, sliding in from the right; its grip becomes an X, and the swipe-down
+  is switched off there (`isTabletUp()` in `lib/viewport.ts`, whose test pins it to the CSS
+  breakpoint). On a phone both are the bottom sheets they always were.
+- **Two columns from `lg:` (1024px).** `AppShell wide` widens the room to `max-w-6xl` for
+  the desk, lineup, scouting and the GM's office. The desk splits news + matchup | the
+  notebooks; the lineup splits required + decisions | field + bench (never in the
+  report's compact embed); the office splits calls to return | every GM, and the trade
+  table stays centred at `max-w-3xl`. Scouting stays one column: the five pickups across
+  the top, the board under them. The film keeps the 768px room.
+- **Five pickups from `tablet:` up** (`tabletPicks`, `lib/wire.ts`). All five panels are
+  rendered and two are `hidden tablet:block`; the phone shows those two as the first rows
+  of "See more", which are `tablet:hidden`. So a test that counts `a.pickup` must count
+  `a.pickup:visible`.
+- **Things pinned to the phone's tab bar.** The trade page's sticky Grade button sits at
+  `bottom-24` to clear it and `tablet:bottom-6` where there is none. Anchor targets carry
+  `tablet:scroll-mt-28`, because the sticky header is 85px with the ticker in it.
+- **Short screens** (under 500px tall, a phone held sideways): the header is not sticky.
+- **Mouse and keyboard.** One zero-specificity focus ring (`:where(...):focus-visible`,
+  the lean blue) on every control, drawn inset on rows inside clipped cards; hover on
+  decision rows and the top tabs. The ticker pauses on hover only under a real pointer
+  (`@media (hover: hover)`): iPad Safari keeps `:hover` on the last thing tapped, which
+  could hold the strip still.
+
 **Section names live in `web/src/lib/vocab.ts`** — one file, so a rename cannot land
 half-applied. Every line the brand says lives there too (`LINES`). Never inline a section
 name, a tagline or a piece of voice copy in a component.
@@ -563,5 +605,6 @@ written down.
 cd web && npm test && npm run build
 ```
 
-And look at the screen in **both** themes, at 320px and at 390px. Most of the layout bugs
+And look at the screen in **both** themes, at 320px and at 390px, and once at a tablet
+width (744px or 1180px). Most of the layout bugs
 recorded in `docs/SPEC-CALLSHEET-V2.md` were only visible at one of those widths.

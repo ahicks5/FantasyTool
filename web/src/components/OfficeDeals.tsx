@@ -171,7 +171,7 @@ export function TopDeals({ board, preview, onJump }: { board: OfficeBoard; previ
 export function PartnerList({ board, preview }: { board: OfficeBoard; preview: boolean }) {
   if (!board.partners.length) return null;
   return (
-    <section id="every-gm" className="min-w-0 scroll-mt-20">
+    <section id="every-gm" className="min-w-0 scroll-mt-20 tablet:scroll-mt-28">
       <h2 className="display text-[22px] leading-none">{OFFICE.partners}</h2>
       <p className="mt-1.5 text-[12px] text-muted">{OFFICE.partnersHint}</p>
       <ol className="office-list mt-2.5">

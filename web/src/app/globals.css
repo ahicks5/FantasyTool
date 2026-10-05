@@ -42,6 +42,10 @@
 --------------------------------------------------------------------------- */
 
 @theme {
+  /* Tablet and up: an iPad mini held upright (744px) counts, a phone held upright never
+     does. Above it the tabs ride in the top bar, the ticker runs under it, and the room
+     widens. Phones (and everything under 704px) keep the bottom block. docs/WEB.md. */
+  --breakpoint-tablet: 44rem;
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-display: var(--font-archivo), var(--font-inter), system-ui, sans-serif;
 
@@ -1699,6 +1703,9 @@ html.ride-boot::before {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
+  /* At least the strip's width, so the second copy never trails into an empty half on a
+     wide screen. The loop still slides by the copy's own width, so it stays seamless. */
+  min-width: 100%;
   white-space: nowrap;
   padding-left: 14px;
   font-size: 11px;
@@ -1706,7 +1713,10 @@ html.ride-boot::before {
   letter-spacing: 0.01em;
   animation: ticker-run var(--ticker-ms, 20000ms) linear infinite;
 }
-.ticker:hover .ticker-track { animation-play-state: paused; }
+/* Paused under a real pointer, or while it holds keyboard focus. Not on a touch screen:
+   an iPad keeps :hover on whatever was last tapped, which stopped the strip dead. */
+@media (hover: hover) { .ticker:hover .ticker-track { animation-play-state: paused; } }
+.ticker:focus-visible .ticker-track { animation-play-state: paused; }
 .ticker-item { display: inline-flex; align-items: center; gap: 7px; padding-right: 34px; }
 .ticker-dot { width: 6px; height: 6px; border-radius: 99px; flex-shrink: 0; }
 .ticker-quiet { animation: none; color: #8b929d; }
@@ -3542,4 +3552,33 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
   .battle-door::after,
   .fighter-empty,
   .clash, .clash *, .clash-word { animation: none !important; transition: none !important; }
+}
+
+/* From tablet width up the player sheet is a side panel, so it arrives from the side it
+   lives on rather than rising. Reduced motion keeps `.rise`'s own "nothing moves". */
+@media (min-width: 44rem) and (prefers-reduced-motion: no-preference) {
+  .sheet-panel.rise { animation-name: sheet-slide; }
+}
+@keyframes sheet-slide { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+
+/* The desk's two halves start level: the notebooks' rule loses the gap it keeps under
+   the matchup paper in one column. */
+@media (min-width: 64rem) {
+  .desk-office-head { margin-top: 0; }
+}
+
+/* ------------------------------------------------------- mouse and keyboard ---
+   The app was drawn for a thumb. A laptop needs two more things: something under the
+   pointer that answers, and a ring that says where the Tab key is. Zero specificity
+   (`:where`), so any surface that draws its own focus (the board's rows) keeps it. */
+:where(a, button, select, input, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--color-lean);
+  outline-offset: 2px;
+}
+/* Rows inside a clipped card draw the ring inside themselves, or the card cuts it off. */
+:where(.role-row-link, .office-row, .deal-row, .roster-row a, .desk-news-row a):focus-visible { outline-offset: -2px; }
+@media (hover: hover) {
+  .role-row-link { transition: background-color 0.15s; }
+  .role-row-link:hover { background: var(--color-soft); }
+  .ticker:hover .ticker-plate { color: #fff; }
 }

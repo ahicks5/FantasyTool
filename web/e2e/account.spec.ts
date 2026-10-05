@@ -312,7 +312,7 @@ test("a locked room's button opens the sign-in sheet, then the upgrade, and the 
   await expect(up.getByText(ACCOUNT.upgrade.done)).toBeVisible();
   await up.getByRole("button", { name: ACCOUNT.upgrade.close }).last().click();
   await expect(page.getByRole("heading", { name: WIRE.title })).toBeVisible();
-  await expect(page.locator("a.pickup")).toHaveCount(3, { timeout: 20_000 });
+  await expect(page.locator("a.pickup:visible")).toHaveCount(3, { timeout: 20_000 });
 });
 
 test("the owner's front office lists every account and the levers work", async ({ context, page }) => {

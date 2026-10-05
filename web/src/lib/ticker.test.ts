@@ -52,6 +52,15 @@ test("the loop is paced to the text and never whips by", () => {
   assert.ok(tickerDurationMs(long) > MIN_MS);
 });
 
+test("a short news day on a wide screen keeps the phone's pace instead of racing", () => {
+  // One headline on a 1,200px strip travels the strip's width, not the headline's.
+  const one = ["Jayden Daniels Out (elbow) → Terry McLaurin"];
+  assert.equal(tickerDurationMs(one, 1200), Math.round((1200 / PX_PER_SECOND) * 1000));
+  // Long news is still timed off the text, whatever the screen.
+  const long = Array.from({ length: 8 }, () => one[0]);
+  assert.equal(tickerDurationMs(long, 390), tickerDurationMs(long));
+});
+
 test("the scores run after the news: projections flagged before kickoff, the platform's points once a game is on", () => {
   const games = [
     { matchup_id: 2, teams: [{ id: "1", name: "Gaainzzz", proj: 131.04, points: null }, { id: "8", name: "Eppsy13", proj: 118.3, points: null }] },

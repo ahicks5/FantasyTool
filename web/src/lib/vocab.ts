@@ -108,6 +108,9 @@ export const TAB_ORDER = ["home", "team", "waivers", "trade", "report"] as const
 
 export type TabKey = (typeof TAB_ORDER)[number];
 
+/** The tab row's name for a screen reader, on the top bar at tablet width and up. */
+export const TABS_ARIA = "Sections";
+
 /**
  * The lines the brand says out loud, in one place for the same reason the section
  * names are: a copy change that lands on three of four surfaces is worse than one

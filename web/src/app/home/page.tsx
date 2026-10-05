@@ -28,5 +28,5 @@ function DeskBody({ c }: { c: Connection }) {
 }
 
 export default function HomePage() {
-  return <AppShell section="home">{(s) => <DeskBody c={s.connection!} />}</AppShell>;
+  return <AppShell section="home" wide>{(s) => <DeskBody c={s.connection!} />}</AppShell>;
 }
