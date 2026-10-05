@@ -10,6 +10,7 @@
  */
 import { useState } from "react";
 import { createShare } from "@/lib/api";
+import { shareInApp } from "@/lib/native";
 import type { FilmShare } from "@/lib/types";
 import { FILM } from "@/lib/vocab";
 import { Button, ErrorBox } from "../ui";
@@ -34,6 +35,8 @@ export function ShareFilm({ film, leagueName, week }: { film: FilmShare; leagueN
   }
 
   async function copy() {
+    // In the iPhone app the link goes to the share sheet, which has Copy on it too.
+    if (shareInApp(url)) return;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

@@ -13,6 +13,12 @@ them up automatically (see node_modules/next/dist/docs/.../app-icons.md):
   apple-icon.png     180x180 home-screen icon
   opengraph-image.png 1200x630 unfurl card
 
+and, under `mobile/assets/`, the iPhone app's (docs/IOS.md):
+
+  icon.png           1024x1024, square and opaque: iOS cuts its own corners, so the
+                     plate's rounding and hairline are taken off rather than doubled
+  splash-icon.png    512x512 mark on transparent, centred on the plate colour at launch
+
 Chromium does the rasterising, the same way `edge/graphics.py` renders share
 cards — no image library, nothing new in the dependency list.
 """
@@ -27,6 +33,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 APP = ROOT / "web" / "src" / "app"
 ICON_SVG = APP / "icon.svg"
+MOBILE = ROOT / "mobile" / "assets"
 
 TAGLINE = "Own the week."
 
@@ -126,6 +133,15 @@ def main() -> None:
   <div style="font-size:26px;font-weight:600;letter-spacing:.06em;color:#6b7078">Fantasy football call sheet</div>
 </div>""")
         _shot(page, og, 1200, 630, APP / "opengraph-image.png")
+
+        # The iPhone app icon. App Store Connect rejects an icon with an alpha channel
+        # or rounded corners of its own, so the plate goes full bleed and square.
+        square = svg.replace('rx="14" ', 'rx="0" ', 1)
+        square = "\n".join(l for l in square.splitlines() if 'stroke-opacity="0.10"' not in l)
+        sq = square.replace("<svg", '<svg width="1024" height="1024"', 1)
+        _shot(page, _page_html(f'<div style="width:1024px;height:1024px;line-height:0">{sq}</div>'),
+              1024, 1024, MOBILE / "icon.png")
+        _shot(page, mark(512, bg="transparent"), 512, 512, MOBILE / "splash-icon.png", alpha=True)
 
         browser.close()
     print("Done.")

@@ -136,3 +136,33 @@ jobs:
           name: playwright-traces
           path: web/test-results/
           retention-days: 7
+
+  mobile:
+    name: iPhone app (typecheck, unit, bundle)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        # Includes the contracts with the web: the ESPN hand-off is read back through
+        # web/src/lib/espnKey.ts, and the share message through web/src/lib/native.ts.
+        run: npm test
+
+      - name: iOS bundle
+        # The app imports web/src/lib (the words, the ESPN key, the kickoff clock). Only a
+        # real Metro bundle proves those resolve; Xcode is not needed for the JS half.
+        run: npm run bundle:check

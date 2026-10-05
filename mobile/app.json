@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Owner's Suite",
+    "slug": "owners-suite",
+    "scheme": "ownerssuite",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#08090b",
+    "ios": {
+      "bundleIdentifier": "com.ownerssuite.app",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "Owner's Suite"
+      }
+    },
+    "android": {
+      "package": "com.ownerssuite.app"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#08090b"
+        }
+      ],
+      "expo-notifications",
+      "expo-web-browser"
+    ]
+  }
+}

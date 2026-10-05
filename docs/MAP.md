@@ -67,6 +67,7 @@ the value is visible and the names are not.
 | Colour, type, elevation, motion | `web/src/app/globals.css` (the tokens) | docs/BRAND.md; check light **and** dark |
 | The mark | all **four** copies in one commit: `web/src/app/icon.svg`, `IconMark` in `web/src/components/icons.tsx`, `MARK_PATH` in `edge/graphics.py`, and the inlined path in `web/src/components/ShareCard.tsx` (a still image in a feed cannot fetch an icon) | `uv run python scripts/render_brand_assets.py` |
 | Anything about hosting, env vars or shipping | nothing in code — `docs/DEPLOY.md` | |
+| The iPhone app: its frame, links, ESPN sign-in, reminders | `mobile/App.tsx`, `mobile/src/` (pure logic in `policy.ts`, `bridge.ts`, `espn.ts`, `reminders.ts`); words in `NATIVE` in `vocab.ts`; the page's side in `web/src/lib/native.ts` | `cd mobile && npm run typecheck && npm test && npm run bundle:check`; read `docs/IOS.md` first |
 
 ## Which doc answers what
 
@@ -87,6 +88,7 @@ the value is visible and the names are not.
 | How does a new owner sign up, link a league and put a card on file for the free week, and what is decided? | `docs/SPEC-ONBOARDING.md` |
 | Which player-page step is next, and which files may it touch? | `docs/PLAYER-PAGE-STEPS.md` |
 | What are real leagues actually like? | `docs/LEAGUE_SURVEY.md` |
+| How does the iPhone app work, and how does it get to TestFlight? | `docs/IOS.md` |
 
 ## Commands
 
@@ -224,7 +226,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | File | What it is | Lines |
 |---|---|---|
 | `web/src/components/Alarm.tsx` | The one line that interrupts the call sheet: a starter who will not play. | 59 |
-| `web/src/components/Analytics.tsx` | The third-party measurement, and the arrival the server counts (docs/SPEC-ADMIN-METRICS.md). | 95 |
+| `web/src/components/Analytics.tsx` | The third-party measurement, and the arrival the server counts (docs/SPEC-ADMIN-METRICS.md). | 106 |
 | `web/src/components/Avatar.tsx` | A player headshot. Initials are painted underneath rather than swapped in on error, so a | 66 |
 | `web/src/components/CallOpening.tsx` | The call: the first time the GM's Office opens, your phone rings. | 183 |
 | `web/src/components/Compare.tsx` | Two scorecards, side by side. Not a verdict, so it borrows the scorecard's | 220 |
@@ -277,7 +279,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/film/League.tsx` | The film's league half (SPEC-FILM F-5 to F-7): everyone, compared. | 305 |
 | `web/src/components/film/Projector.tsx` | The projector: the film's opening (SPEC-FILM F-9). | 109 |
 | `web/src/components/film/Replay.tsx` | The replay: one finished week told as a story, card by card (SPEC-FILM F-4). | 346 |
-| `web/src/components/film/ShareFilm.tsx` | Turns last week's replay cover into a public link. Free, no account, like a Lock card: | 63 |
+| `web/src/components/film/ShareFilm.tsx` | Turns last week's replay cover into a public link. Free, no account, like a Lock card: | 66 |
 | `web/src/components/icons.tsx` | Line icons at a common 24px grid. Emoji read as placeholder art in a paid product. | 172 |
 | `web/src/components/onboard/Frame.tsx` | The walk's chrome: the small wordmark, the way back, the bar, and one screen at a time sliding in. | 118 |
 | `web/src/components/onboard/Onboarding.tsx` | The sign-up walk (docs/SPEC-ONBOARDING.md): phone first, one question a screen, a league | 1190 |
@@ -342,5 +344,21 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 168 |
 | `web/src/lib/wire.ts` | The top of Scouting, minus React: how hard to go after each pickup, and which ones lead. | 69 |
 | `web/src/lib/yahooAuth.ts` | Yahoo sign-in, held on this device. | 121 |
+
+### `mobile/` — the iPhone app (11 files)
+
+| File | What it is | Lines |
+|---|---|---|
+| `mobile/App.tsx` | Owner's Suite for iPhone: the live site in a native frame, plus what only a phone can do. | 232 |
+| `mobile/index.ts` | The app's entry: registers App as the root component, in Expo Go and in a native build alike. | 6 |
+| `mobile/src/EspnSheet.tsx` | ESPN's own sign-in in a sheet over the app, in place of the bookmark walk. | 109 |
+| `mobile/src/Offline.tsx` | The screen the frame draws itself when our site cannot be reached. | 31 |
+| `mobile/src/bridge.ts` | The bridge between the page and the frame: the script injected first, and the messages back. | 122 |
+| `mobile/src/config.ts` | What the build points at: the site, the inspector switch, the version. | 29 |
+| `mobile/src/espn.ts` | A private ESPN league, linked from the app: the key read off ESPN's page, handed to ours. | 99 |
+| `mobile/src/notify.ts` | Kickoff reminders, on the phone: ask once, then keep the next four weeks scheduled. | 65 |
+| `mobile/src/policy.ts` | Where a link goes: the app's WebView, a Safari sheet over the app, or iOS itself. | 69 |
+| `mobile/src/reminders.ts` | Kickoff reminders: the two moments a week a lineup is about to lock, worked out. | 59 |
+| `mobile/src/theme.ts` | The frame's colours: the page colour of each theme, and ink for the frame's own screens. | 18 |
 
 <!-- END GENERATED -->

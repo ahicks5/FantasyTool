@@ -2436,3 +2436,33 @@ export const BATTLE = {
   sharedPitch: "Two men, one spot. Every number that separates them.",
   sharedCta: "Run your own battle",
 } as const;
+
+/**
+ * The iPhone app's own words (`mobile/`, docs/IOS.md). The app is the same rooms in a native
+ * frame, so it only ever says what the frame itself has to: the screen when the feed drops,
+ * the ESPN sign-in it opens in place of the bookmark walk, the kickoff reminders, and the
+ * share sheet's subject line. The app imports this object from here, so the rule that every
+ * word a user reads lives in this file holds on the phone too.
+ */
+export const NATIVE = {
+  offline: {
+    title: "Lost the feed.",
+    body: "Owner's Suite needs a connection. Check yours, then try again.",
+    retry: "Try again",
+  },
+  espn: {
+    title: "Link from ESPN",
+    lead: "Log in to ESPN and open your team. We take it from there.",
+    cancel: "Cancel",
+    found: "Got it. Loading your league.",
+    /** Logged in, but the key never showed: the paste fields on /connect are the way through. */
+    noKey: "ESPN kept the key from us. Cancel, then use Paste the two values instead.",
+    privacy: "Your info stays on this phone. Our server never sees it.",
+  },
+  /** Local notifications, scheduled on the phone. Never a number, never a name. */
+  reminders: {
+    sunday: { title: "One hour to kickoff.", body: "The 1:00 slate locks at 1:00 ET. Make your calls." },
+    thursday: { title: "Thursday night locks soon.", body: "Starting anyone tonight? Check them before 8:15 ET." },
+  },
+  share: { subject: "A call from Owner's Suite" },
+} as const;
