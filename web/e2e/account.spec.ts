@@ -221,6 +221,9 @@ test("a returning account lands on its league without entering it again", async 
   const stored = JSON.parse((await page.evaluate(() => localStorage.getItem("booth.connection"))) ?? "null");
   expect(stored?.league_id).toBe(CONNECTION.league_id);
   expect(stored?.team_id).toBe(CONNECTION.team_id);
+  // Signed in, the wordmark is the way back to the call sheet, never the landing page.
+  await page.goto("/team");
+  await expect(page.getByRole("link", { name: "Owner's Suite home" })).toHaveAttribute("href", "/home");
 });
 
 test("a wrong password says one thing and signs nobody in", async ({ context, page }) => {

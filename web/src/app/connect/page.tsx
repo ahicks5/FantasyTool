@@ -327,7 +327,7 @@ export default function ConnectPage() {
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href="/" aria-label="Owner's Suite home" className="flex min-h-11 items-center">
+        <Link href={session.signedIn ? "/home" : "/"} aria-label="Owner's Suite home" className="flex min-h-11 items-center">
           <Wordmark className="text-[26px]" short={session.signedIn} />
         </Link>
         {/* The way back out, for an owner who came here from their account (Andrew, 2026-09-28). */}

@@ -37,7 +37,7 @@ export function TopBar({ session }: { session: Session }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4">
-        <Link href="/" aria-label="Owner's Suite home" className="min-w-0 flex-1">
+        <Link href={account ? "/home" : "/"} aria-label="Owner's Suite home" className="min-w-0 flex-1">
           <Wordmark className="text-[20px]" short={!!account} />
         </Link>
         {/* The account: an initial once signed in (ringed in the start colour on a premium
