@@ -2,7 +2,8 @@
 
 export type Platform = "sleeper" | "espn" | "yahoo";
 
-export type Feature = "my_team" | "waivers" | "trade_lab" | "full_report";
+/** `battle` is Position Battle (2026-10-05), in both passes. */
+export type Feature = "my_team" | "waivers" | "trade_lab" | "full_report" | "battle";
 
 /** `week_pass` and `full_report` (the season) are on sale; `waivers` and `trade_lab` were
  *  retired 2026-09-27 and only ever appear on an account that already holds one. */
@@ -940,7 +941,7 @@ export interface SharedPlayer {
   team_logo: string | null;
 }
 
-export type ShareKind = "trade" | "lock" | "film";
+export type ShareKind = "trade" | "lock" | "film" | "battle";
 
 /** What the Lock share button sends. Display fields only; the API strips ids again anyway. */
 export interface LockCall {
@@ -994,8 +995,25 @@ export interface SharedFilm extends FilmShare {
   week: number;
 }
 
+/** The public snapshot behind /s/{id} for a Position Battle. Display fields only. */
+export interface SharedBattle {
+  kind: "battle";
+  league_name: string;
+  week: number;
+  spot: string;
+  a: SharedPlayer & { where: BattleWhere["kind"] | null };
+  b: SharedPlayer & { where: BattleWhere["kind"] | null };
+  horizons: Pick<BattleHorizon, "key" | "first" | "last" | "a" | "b" | "winner" | "strength" | "p">[];
+  headline: Pick<BattleHeadline, "kind" | "winner" | "a" | "b">;
+  tally: { a: number; b: number; rows: number };
+}
+
 /** Any kind of snapshot. Shares written before Lock sharing existed carry no `kind`. */
-export type SharedSnapshot = SharedVerdict | SharedLock | SharedFilm;
+export type SharedSnapshot = SharedVerdict | SharedLock | SharedFilm | SharedBattle;
+
+export function isSharedBattle(s: SharedSnapshot): s is SharedBattle {
+  return s.kind === "battle";
+}
 
 export function isSharedFilm(s: SharedSnapshot): s is SharedFilm {
   return s.kind === "film";
@@ -1825,3 +1843,147 @@ export interface AdminEvent {
   amount_cents: number | null;
   props: Record<string, string | number | boolean | null>;
 }
+
+/* ------------------------------------------------------------ Position Battle --- */
+// docs/API.md "Position Battle"; edge/engine/battle.py.
+
+/** Which corner: `a` holds the spot, `b` is the challenger. */
+export type BattleSide = "a" | "b";
+
+/** Where a man stands relative to the reader. `trade` names the team that holds him. */
+export interface BattleWhere {
+  kind: "starter" | "bench" | "wire" | "trade";
+  slot: string | null;
+  /** "WR2", "Bench", "Free agent", or the other team's name. */
+  label: string;
+  team_name: string | null;
+}
+
+/** A man in the corner list: who, where, and the two numbers a picker scans. */
+export interface BattleBrief {
+  /** Sleeper id, the same id the player page speaks. */
+  id: string;
+  name: string;
+  position: string;
+  nfl_team: string | null;
+  photo: string | null;
+  team_logo: string | null;
+  injury_status: string | null;
+  /** This week, in this league's scoring; 0 for a man who will not play. */
+  projected: number;
+  ros: number;
+  where: BattleWhere;
+}
+
+/** `GET .../team/{team_id}/battle/options?player=` -- free. */
+export interface BattleOptions {
+  player: BattleBrief;
+  /** The positions that can fight him for this spot, his own first. */
+  positions: string[];
+  roster: BattleBrief[];
+  wire: BattleBrief[];
+  trade: BattleBrief[];
+  week: number;
+}
+
+/** One week of a man's road to week 17. `rank` 1 is the toughest defence against his position. */
+export interface BattleWeek {
+  week: number;
+  opp: string | null;
+  home: boolean | null;
+  bye: boolean;
+  rank: number | null;
+  of: number | null;
+}
+
+export interface BattleFighter extends BattleBrief {
+  injury_body_part: string | null;
+  bye_week: number | null;
+  slate: BattleWeek[];
+  /** "vs DAL", "@ DAL", "Bye"; null without a schedule. */
+  opp: string | null;
+}
+
+export type BattleHorizonKey = "week" | "next5" | "ros" | "playoffs";
+
+/** This week's strength is the calibrated tag; a longer window's is the size of the gap. */
+export type BattleStrength = Confidence | "clear" | "edge" | "even";
+
+export interface BattleHorizon {
+  key: BattleHorizonKey;
+  first: number;
+  last: number;
+  /** Projected points over the window, each side, this league's scoring. */
+  a: number;
+  b: number;
+  a_games: number | null;
+  b_games: number | null;
+  winner: BattleSide | null;
+  strength: BattleStrength;
+  /** This week only: the winner's chance to outscore the other (`calibration.p_beats`). */
+  p: number | null;
+  /** The reads (this week) or the schedule (later) moved it off the projection's lean. */
+  tipped: boolean;
+  /** Too close to move: the man in the spot keeps it. */
+  held: boolean;
+  /** This week only: the start/sit reads, pointed at `a` ("start" backs a, "sit" backs b). */
+  factors?: DecisionFactor[];
+  tilt?: number;
+  sos_a?: number | null;
+  sos_b?: number | null;
+  /** Playoffs only: the league never said when they start, so weeks 15-17 were used. */
+  assumed?: boolean;
+}
+
+export interface BattleCell {
+  v: number | null;
+  text: string;
+  sub: string | null;
+  /** The depth-chart rows name a man; these say who and who holds him here. */
+  id?: string;
+  owned?: "mine" | "wire" | "team" | "none";
+}
+
+export type BattleFamily = "outlook" | "season" | "usage" | "risk" | "schedule" | "situation" | "depth";
+
+export interface BattleRow {
+  key: string;
+  family: BattleFamily;
+  a: BattleCell;
+  b: BattleCell;
+  /** Which man this row favours, or neither. A row is a count, never a weight. */
+  edge: BattleSide | null;
+}
+
+export interface BattleHeadline {
+  kind: "sweep" | "split" | "draw";
+  winner: BattleSide | null;
+  /** Horizons each side took. */
+  a: number;
+  b: number;
+  now: BattleSide | null;
+  later: BattleSide | null;
+}
+
+export interface BattleTally {
+  total: { a: number; b: number; rows: number };
+  families: Partial<Record<BattleFamily, { a: number; b: number; rows: number }>>;
+}
+
+/** `GET .../team/{team_id}/battle?a=&b=` -- paid (`battle`). */
+export interface Battle {
+  week: number;
+  /** "WR2" when the man in the spot starts for you; his position otherwise. */
+  spot: string;
+  a: BattleFighter;
+  b: BattleFighter;
+  horizons: BattleHorizon[];
+  headline: BattleHeadline;
+  tape: BattleRow[];
+  tally: BattleTally;
+  playoffs: { first: number; last: number; assumed: boolean } | null;
+  algo_version: string;
+}
+
+/** What the web gets back: the fight, or the haze and the engine's name-free sentence. */
+export type BattleResult = { locked: false; battle: Battle } | { locked: true; teaser: string | null };

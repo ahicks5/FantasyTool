@@ -36,6 +36,33 @@ the season. Built the same day ("build it all now"); defaults taken for D4–D8 
 - [ ] Decide: require a confirmed email before an email-only account's first purchase, once mail sends — **Andrew**
 - [ ] Confirm the defaults: week preselected, the skip's words, $25.00 credit — **Andrew**
 
+## Position Battle (2026-10-05)
+Andrew's brief: a red button on every player page; the man in his spot on the left, one
+challenger (bench, wire, or a trade) on the right; a clash with lead-up; then an exhaustive
+tale of the tape and who wins this week, mid-term, rest of season and the playoffs. Elite,
+shareable, a reason to buy. Branch `claude/position-battle-feature-56ttvk`.
+- [x] Engine `edge/engine/battle.py`: 4 horizons from the projection the app already owns
+      (calibrated chance this week; ROS cut by the schedule after), ~36 tape rows in 7 families
+      (projection, season, usage, floor/ceiling/health, schedule incl. playoffs SOS, situation:
+      offence, QB, sacks, yards a carry, linemen hurt, injuries around him; depth: handcuff).
+      `tests/test_battle.py` (20).
+- [x] API: `/battle/options` free, `/battle` paid (`battle` in both passes) with a name-free
+      teaser; share kind `battle` + 1080 card. docs/API.md "Position Battle".
+- [x] Web: red `BattleDoor` in the player sheet footer and on `/waivers/<id>`; `/team/battle`
+      corner picker (roster / wire / trade, position chips, search), the clash (walk-outs,
+      wind-up held until the verdict lands, hit, slam; skippable; off under reduced motion),
+      horizon tiles, tale of the tape, the road to week 17, share. `lib/battle.test.ts`, 2 e2e.
+- [ ] **Andrew:** look at it on screen, both themes, and sign off the corner colours (blue for
+      the man in the spot, red for the challenger) and the clash's length (~3.4s, skippable).
+- [ ] **Andrew:** paid or a teaser? Today the corner and the clash are free and the verdict is
+      hazed. Alternative: one free battle a week.
+- [ ] Not read, because there is no data source: coaching changes / scheme, offensive-line
+      grades, a medical "injury prone" label. Availability, sacks allowed and yards a carry
+      stand in and say so. Needs a source Andrew names.
+- [ ] A Lock-style story-shape (1080x1920) battle card; today it is square only.
+- [ ] Pre-existing, not this branch: `tests/test_api.py::test_the_lineup_splits_required_changes_from_decisions_and_prices_every_swap`
+      fails on the base branch too (an empty `reason` on a Lean role).
+
 ## Owner's Suite — rename (2026-10-05)
 Andrew's call: the name is **Owner's Suite**, replacing Penthouse. A rename, nothing else:
 same mark, same chrome, same rooms, same passes. Everything a user reads, every docstring,
@@ -1391,8 +1418,8 @@ Supersedes **S-5**.
 - [ ] **PP-6** GM's Office from the footer: `/trade?player=<id>` opens the right partner card.
 - [ ] **PP-7** The Owner's Suite Composite: `CompositeProvider` averaging raw stat lines across
       Sleeper, ESPN (already fetched), props (vendor + terms check), Yahoo last.
-- [ ] **PP-8** Position Battle: placeholder button only. Defined as him vs his own NFL
-      teammates at his position (snaps, targets, carries, week by week).
+- [x] **PP-8** Position Battle: built 2026-10-05 as Andrew redefined it (one challenger for
+      the spot, four horizons). See "Position Battle" at the top of this file.
 
 ## Player page (docs/PLAYER-PAGE-STEPS.md)
 

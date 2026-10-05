@@ -1,6 +1,9 @@
 // API client for docs/API.md. With NEXT_PUBLIC_API_URL unset, every call is
 // served from src/lib/mocks.ts; when set, it fetches `${NEXT_PUBLIC_API_URL}/api/...`.
 import type {
+  Battle,
+  BattleOptions,
+  BattleResult,
   MeLeague as AccountLeague,
   ActionFeed,
   AdminUsersResponse,
@@ -184,7 +187,7 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
   return body;
 }
 
-const ALL_FEATURES: Feature[] = ["my_team", "waivers", "trade_lab", "full_report"];
+const ALL_FEATURES: Feature[] = ["my_team", "waivers", "trade_lab", "full_report", "battle"];
 
 /**
  * What the demo build pretends you have bought.
@@ -793,6 +796,7 @@ export async function createShare(body: {
   get_players?: unknown[];
   call?: unknown;
   film?: unknown;
+  battle?: unknown;
 }): Promise<ShareResponse> {
   if (USE_MOCKS) return { id: "demo1234", url: `${window.location.origin}/s/demo1234` };
   return request<ShareResponse>("/share", { method: "POST", body: JSON.stringify(body) });
@@ -870,6 +874,36 @@ export async function getPlayerProfile(platform: Platform, leagueId: string, pla
   return request<PlayerProfile>(
     `/league/${platform}/${encodeURIComponent(leagueId)}/player/${encodeURIComponent(playerId)}${q}`,
   );
+}
+
+/** Position Battle's corner: the man in the spot and everyone who could fight him for it. Free. */
+export async function getBattleOptions(platform: Platform, leagueId: string, teamId: string, playerId: string): Promise<BattleOptions> {
+  if (USE_MOCKS) return mocks.battleOptionsFor(playerId);
+  return request<BattleOptions>(
+    `/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/battle/options?player=${encodeURIComponent(playerId)}`,
+  );
+}
+
+/**
+ * The fight itself. Paid: a free reader's 402 comes back as `{locked: true}` with the
+ * engine's name-free teaser, so the page can play the clash and put the haze on the verdict
+ * rather than throwing.
+ */
+export async function getBattle(platform: Platform, leagueId: string, teamId: string, a: string, b: string): Promise<BattleResult> {
+  if (USE_MOCKS) {
+    if (!mockExtraEntitlements().includes("battle")) return { locked: true, teaser: mocks.BATTLE_TEASER };
+    return { locked: false, battle: mocks.battleFor(a, b) };
+  }
+  const q = new URLSearchParams({ a, b });
+  try {
+    const battle = await request<Battle>(
+      `/league/${platform}/${encodeURIComponent(leagueId)}/team/${encodeURIComponent(teamId)}/battle?${q.toString()}`,
+    );
+    return { locked: false, battle };
+  } catch (e) {
+    if (e instanceof PaywallError && e.feature === "battle") return { locked: true, teaser: e.teaser ?? null };
+    throw e;
+  }
 }
 
 /** The table: every team in the league. Free — no entitlement, so no PaywallError branch. */

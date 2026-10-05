@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { DEV_USER } from "../playwright.config";
-import { DESK, LINEUP, PLAN, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
+import { BATTLE, DESK, LINEUP, PLAN, RIDE, SECTIONS, TICKER } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 import { RECAP_COPY, STANDINGS_COPY } from "../src/lib/recap";
 import { CALL, ESPN_KEY, FILM, OFFICE, SCOUT, SCOUT_OPEN, WIRE } from "../src/lib/vocab";
@@ -916,4 +916,62 @@ test("the replay's cover is shared as a free link", async ({ page }) => {
   await visit(page, "/report");
   await page.getByRole("button", { name: FILM.share.button }).click();
   await expect(page.locator("code").filter({ hasText: "/s/" })).toBeVisible();
+});
+
+
+/** From the depth chart, open a man's page and press the red button on it. */
+async function intoTheRing(page: Page) {
+  await visit(page, "/team");
+  await dismissBoom(page);
+  await page.locator("main").getByRole("button", { name: /^[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/ }).first().click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet).toBeVisible();
+  const door = sheet.getByTestId("battle-door");
+  await expect(door).toBeVisible();
+  await door.click();
+  await expect(page).toHaveURL(/\/team\/battle\?a=/);
+  // The sheet closed itself on the way out: the path changed and took `?player=` with it.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText(BATTLE.pickHead)).toBeVisible();
+}
+
+test("Position Battle: the red button, a challenger, the clash, then four verdicts and the tape", async ({ page }) => {
+  await intoTheRing(page);
+  await assertNoHorizontalOverflow(page);
+  const corner = page.getByTestId("battle-corner");
+  await expect(corner.getByRole("button").first()).toBeVisible();
+  await corner.getByRole("button").first().click();
+  await expect(page).toHaveURL(/&b=/);
+
+  // The clash plays over the page; a tap skips it.
+  const clash = page.locator(".clash");
+  await expect(clash).toBeVisible();
+  await clash.getByRole("button", { name: BATTLE.clash.skip }).click();
+  await expect(clash).toHaveCount(0);
+
+  for (const h of Object.values(BATTLE.horizons).slice(0, 3)) await expect(page.getByText(h, { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: BATTLE.tape })).toBeVisible();
+  expect(await page.locator(".tape-row").count(), "the tape is long, as asked").toBeGreaterThan(20);
+  await expect(page.getByRole("button", { name: BATTLE.share })).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+
+  // A new challenger takes the red corner back out of the ring.
+  await page.getByRole("button", { name: BATTLE.rematch }).click();
+  await expect(page).not.toHaveURL(/&b=/);
+  await expect(page.getByText(BATTLE.pickHead)).toBeVisible();
+});
+
+test("a free reader gets the whole clash, then the haze on the verdict and none of the tape", async ({ context, page }) => {
+  await context.route("**/api/**", (route) => {
+    const headers = { ...route.request().headers(), "x-edge-user": "free@example.com" };
+    route.continue({ headers });
+  });
+  await intoTheRing(page);
+  await page.getByTestId("battle-corner").getByRole("button").first().click();
+  const clash = page.locator(".clash");
+  await expect(clash).toBeVisible();
+  await expect(clash.getByText(BATTLE.clash.sealed)).toBeVisible({ timeout: 15_000 });
+  await clash.click();
+  await expect(page.locator('[data-locked="battle"]')).toBeVisible();
+  await expect(page.locator(".tape-row")).toHaveCount(0);
 });

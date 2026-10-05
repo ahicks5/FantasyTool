@@ -5,7 +5,7 @@ into a league chat, a subreddit or a Discord brings the next user in. The snapsh
 data only: names, the call and the numbers already printed on the card. No email, no league
 id, no roster beyond the players in the deal.
 
-Three kinds:
+Four kinds:
   trade  a Trade Lab verdict — paid, low volume, high drama.
   lock   a start/sit call — FREE, and therefore the one that actually runs the loop. Every
          user has one or three of these every week whether or not they ever pay us; gating
@@ -13,6 +13,9 @@ Three kinds:
   film   last week's replay cover — FREE for the same reason (SPEC-FILM D2: the cover and
          the share card stay free). The result, the score, the opponent's team name, the
          cover line and at most one player who carried the week. Nothing else of the story.
+  battle a Position Battle -- PAID to make (it is the verdict people pay for), public to
+         read. Two faces, the spot, who took each of the four horizons and by how much,
+         and the tally. No roster, no league id, no owner beyond the word "trade".
 """
 from __future__ import annotations
 
@@ -21,9 +24,9 @@ import secrets
 from edge import graphics
 
 ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"   # no i/l/o/0/1: a link should survive being read aloud
-KINDS = ("trade", "lock", "film")
+KINDS = ("trade", "lock", "film", "battle")
 # The feature each kind needs. `my_team` is in the free tier, so a Lock share needs no account.
-KIND_FEATURE = {"trade": "trade_lab", "lock": "my_team", "film": "my_team"}
+KIND_FEATURE = {"trade": "trade_lab", "lock": "my_team", "film": "my_team", "battle": "battle"}
 FILM_FIELDS = ("result", "my_points", "their_points", "opponent", "line", "team")
 
 PUBLIC_FIELDS = ("verdict", "give", "get", "my_delta_ros", "their_delta_ros", "fairness", "style")
@@ -72,6 +75,29 @@ def film_snapshot(film: dict, league_name: str, week: int) -> dict:
     out["star"] = ({**_player(star), "went": star.get("went")} if star and star.get("name") else None)
     out["league_name"] = league_name
     out["week"] = week
+    return out
+
+
+BATTLE_HORIZONS = ("week", "next5", "ros", "playoffs")
+HORIZON_FIELDS = ("key", "first", "last", "a", "b", "winner", "strength", "p")
+
+
+def battle_snapshot(battle: dict, league_name: str, week: int) -> dict:
+    """Strip a Position Battle down to the card: two faces, the spot, the four horizons
+    (who took each, the points either side, how sure) and the tally. Where each man sits
+    travels only as a kind -- "bench", "wire", "trade" -- never another manager's team."""
+    out: dict = {"kind": "battle", "league_name": league_name, "week": week,
+                 "spot": str(battle.get("spot") or "")[:12]}
+    for side in ("a", "b"):
+        p = battle.get(side) or {}
+        where = (p.get("where") or {}).get("kind")
+        out[side] = {**_player(p), "where": where if where in ("starter", "bench", "wire", "trade") else None}
+    out["horizons"] = [{k: h.get(k) for k in HORIZON_FIELDS} for h in (battle.get("horizons") or [])
+                       if h.get("key") in BATTLE_HORIZONS]
+    head = battle.get("headline") or {}
+    out["headline"] = {k: head.get(k) for k in ("kind", "winner", "a", "b")}
+    total = ((battle.get("tally") or {}).get("total")) or {}
+    out["tally"] = {k: int(total.get(k) or 0) for k in ("a", "b", "rows")}
     return out
 
 

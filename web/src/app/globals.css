@@ -74,6 +74,14 @@
   /* Brand only. See the note above: chrome, never status. */
   --color-signal: #ff4d3a;
 
+  /* Position Battle's two corners. Boxing's: the man in the spot is blue, the challenger
+     red. Never a status colour (a red corner is not a "sit"), always beside a name, and
+     only on the battle's own surfaces and its red button. White text on `clash` is 4.6:1. */
+  --color-clash: #e5232f;
+  --color-clash-soft: #2e1013;
+  --color-corner: #5b8def;
+  --color-corner-soft: #121c33;
+
   /* Polished chrome. `metal` is the flat fallback for anything too small for a
      gradient to read, and for email, where gradients do not render at all. */
   --color-metal: #cdd2d9;
@@ -137,6 +145,11 @@
   --color-flip-soft: #fdf1d8;
 
   --color-signal: #e02d1b;
+
+  --color-clash: #d11a26;
+  --color-clash-soft: #fbe7e8;
+  --color-corner: #1e4fd8;
+  --color-corner-soft: #e6ecfc;
 
   --color-metal: #6e757f;
   --color-metal-2: #9aa1ab;
@@ -3119,4 +3132,414 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
 @media (prefers-reduced-motion: reduce) {
   .walk-fwd, .walk-back { animation: walk-fade 0.2s ease both; }
   .walk-bar-fill { transition: none; }
+}
+
+/* ===================================================================== Position Battle ===
+   Two men, one spot (`components/battle/*`, `lib/battle.ts`). The arena is dark in both
+   themes, like the hero it is built from; the tape under it follows the theme. The clash
+   is the one showpiece animation outside the ride, and like the ride it is skipped
+   entirely under reduced motion (the component never mounts it) -- the keyframes below
+   are also collapsed there, belt and braces.                                            */
+
+/* The red button on every player page. */
+.battle-door {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, #ff3a45 0%, var(--color-clash) 55%, #a8101a 100%);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 6px 18px -8px rgb(229 35 47 / 0.75);
+}
+.battle-door::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.32) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: battle-glint 3.6s ease-in-out 1.2s infinite;
+}
+@keyframes battle-glint {
+  0%, 70% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+/* ------------------------------------------------------------------------- the arena */
+.arena {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background:
+    radial-gradient(90% 70% at 0% 0%, rgb(91 141 239 / 0.28), transparent 60%),
+    radial-gradient(90% 70% at 100% 0%, rgb(229 35 47 / 0.32), transparent 60%),
+    linear-gradient(180deg, #1a1d23 0%, #0b0c0f 100%);
+  color: #f7f6f3;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07), var(--shadow-hero);
+}
+/* The slash between the corners: drawn on the corners' row only, so it never runs
+   through the headline under them. */
+.arena-ring { position: relative; }
+.arena-ring::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  bottom: -14px;
+  left: 50%;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, var(--color-clash) 20%, #ff8a90 50%, var(--color-clash) 80%, transparent);
+  transform: translateX(-50%) rotate(12deg);
+  box-shadow: 0 0 18px 2px rgb(229 35 47 / 0.55);
+  opacity: 0.85;
+}
+.arena .eyebrow { color: rgb(247 246 243 / 0.6); }
+.arena-vs {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: #fff;
+  text-shadow: 0 0 18px rgb(229 35 47 / 0.9), 0 2px 0 #7a0a12;
+}
+.fighter-face {
+  position: relative;
+  display: block;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.08);
+}
+.fighter-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.fighter-face-a { box-shadow: 0 0 0 3px var(--color-corner), 0 0 28px -4px rgb(91 141 239 / 0.8); }
+.fighter-face-b { box-shadow: 0 0 0 3px var(--color-clash), 0 0 28px -4px rgb(229 35 47 / 0.85); }
+.fighter-empty {
+  border: 2px dashed rgb(255 255 255 / 0.3);
+  background: rgb(255 255 255 / 0.04);
+  animation: corner-pulse 1.6s ease-in-out infinite;
+}
+@keyframes corner-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(229 35 47 / 0); }
+  50% { box-shadow: 0 0 0 6px rgb(229 35 47 / 0.22); }
+}
+
+/* ---------------------------------------------------------------- the horizon tiles */
+.horizon {
+  position: relative;
+  border-radius: 16px;
+  padding: 12px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-line);
+  box-shadow: var(--bevel), var(--shadow-card);
+  overflow: hidden;
+}
+.horizon[data-winner="a"] { border-color: color-mix(in srgb, var(--color-corner) 55%, var(--color-line)); }
+.horizon[data-winner="b"] { border-color: color-mix(in srgb, var(--color-clash) 55%, var(--color-line)); }
+.horizon[data-winner="a"]::before,
+.horizon[data-winner="b"]::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+}
+.horizon[data-winner="a"]::before { background: var(--color-corner); }
+.horizon[data-winner="b"]::before { background: var(--color-clash); }
+.split-bar {
+  display: flex;
+  height: 6px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--color-soft);
+}
+.split-bar > i { display: block; height: 100%; }
+.split-a { background: var(--color-corner); }
+.split-b { background: var(--color-clash); }
+.split-bar > i + i { margin-left: 2px; }
+
+/* --------------------------------------------------------------------------- the tape */
+.tape-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 9px 0;
+  border-top: 1px solid var(--color-line);
+}
+.tape-cell { min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
+.tape-cell-a { align-items: flex-start; text-align: left; }
+.tape-cell-b { align-items: flex-end; text-align: right; }
+.tape-text { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tape-sub { margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--color-muted); overflow-wrap: anywhere; }
+.tape-cell[data-won] .tape-text { padding: 1px 7px; margin: -1px -7px; border-radius: 7px; }
+.tape-cell-a[data-won] .tape-text { color: var(--color-corner); background: var(--color-corner-soft); }
+.tape-cell-b[data-won] .tape-text { color: var(--color-clash); background: var(--color-clash-soft); }
+.tape-label {
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+  line-height: 1.25;
+}
+.tape-tug { display: flex; height: 4px; margin-top: 6px; border-radius: 99px; overflow: hidden; background: var(--color-soft); }
+.tape-tug > i { display: block; height: 100%; opacity: 0.35; }
+.tape-tug > i.lead { opacity: 1; }
+.tape-tug > i + i { margin-left: 2px; }
+.tape-head {
+  position: sticky;
+  top: 56px;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin: 0 -10px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-plane) 90%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+/* ------------------------------------------------------------------- the road strip */
+.road { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(34px, 1fr); gap: 3px; }
+.road-week {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  border-radius: 7px;
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1.1;
+  background: var(--color-soft);
+  color: var(--color-ink-2);
+  border: 1px solid transparent;
+}
+.road-week b { font-size: 8.5px; font-weight: 700; color: var(--color-muted); }
+.road-week[data-tone="soft"] { background: var(--color-start-soft); color: var(--color-start); }
+.road-week[data-tone="tough"] { background: var(--color-sit-soft); color: var(--color-sit); }
+.road-week[data-tone="bye"] { background: transparent; border: 1px dashed var(--color-line-2); color: var(--color-muted); }
+.road-week[data-playoff] { border-color: var(--color-flip); }
+
+/* ------------------------------------------------------------------------- the clash */
+.clash {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+  background:
+    radial-gradient(70% 50% at 50% 50%, rgb(40 10 14 / 0.6), transparent 70%),
+    #050506;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.clash[data-phase="out"] { animation: clash-out 0.38s ease-in both; }
+@keyframes clash-out { to { opacity: 0; transform: scale(1.04); } }
+.clash-stage { position: relative; width: min(100vw, 520px); height: 100%; }
+.clash-light {
+  position: absolute;
+  top: -20%;
+  width: 70%;
+  height: 120%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  filter: blur(6px);
+}
+.clash-light-a { left: -10%; background: radial-gradient(50% 60% at 50% 35%, rgb(91 141 239 / 0.45), transparent 70%); }
+.clash-light-b { right: -10%; background: radial-gradient(50% 60% at 50% 35%, rgb(229 35 47 / 0.5), transparent 70%); }
+.clash[data-phase] .clash-light-a { opacity: 1; }
+.clash:not([data-phase="blue"]) .clash-light-b { opacity: 1; }
+
+.clash-fighter {
+  position: absolute;
+  top: 50%;
+  width: 46%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  transform: translateY(-50%);
+}
+.clash-fighter-a { left: 2%; }
+.clash-fighter-b { right: 2%; }
+.clash-fighter .fighter-face { width: clamp(108px, 34vw, 168px); height: clamp(108px, 34vw, 168px); }
+.clash-name { font-family: var(--font-display); font-weight: 900; font-size: clamp(18px, 5.4vw, 26px); line-height: 1.05; letter-spacing: -0.02em; }
+.clash-tag { font-size: 10px; font-weight: 900; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7; }
+
+/* Walk-outs: the blue corner from the left, the red from the right. */
+.clash-fighter-a { animation: walk-a 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
+.clash-fighter-b { animation: walk-b 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.65s both; }
+@keyframes walk-a { from { opacity: 0; transform: translate(-90%, -50%) scale(0.9); } to { opacity: 1; transform: translate(0, -50%); } }
+@keyframes walk-b { from { opacity: 0; transform: translate(90%, -50%) scale(0.9); } to { opacity: 1; transform: translate(0, -50%); } }
+
+/* The wind-up: both lean back and shudder, the charge builds between them. */
+.clash[data-phase="wind"] .clash-fighter-a { animation: wind-a 0.7s ease-in-out infinite alternate; }
+.clash[data-phase="wind"] .clash-fighter-b { animation: wind-b 0.7s ease-in-out infinite alternate; }
+@keyframes wind-a {
+  0% { transform: translate(0, -50%); }
+  80% { transform: translate(-14%, -50%) rotate(-3deg); }
+  85% { transform: translate(-13%, -51%) rotate(-2deg); }
+  90% { transform: translate(-15%, -49%) rotate(-4deg); }
+  100% { transform: translate(-14%, -50%) rotate(-3deg); }
+}
+@keyframes wind-b {
+  0% { transform: translate(0, -50%); }
+  80% { transform: translate(14%, -50%) rotate(3deg); }
+  85% { transform: translate(13%, -49%) rotate(2deg); }
+  90% { transform: translate(15%, -51%) rotate(4deg); }
+  100% { transform: translate(14%, -50%) rotate(3deg); }
+}
+.clash-charge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 4px;
+  transform: translate(-50%, -50%);
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--color-corner), #fff, var(--color-clash));
+  box-shadow: 0 0 16px 4px rgb(255 255 255 / 0.35);
+  opacity: 0;
+}
+.clash[data-phase="wind"] .clash-charge { animation: charge 0.7s ease-in forwards; }
+@keyframes charge { to { width: 32%; opacity: 1; } }
+
+/* The hit: both drive into the middle, the flash, the ring, the sparks, the shake. */
+.clash[data-phase="hit"] .clash-fighter-a,
+.clash[data-phase="verdict"] .clash-fighter-a,
+.clash[data-phase="out"] .clash-fighter-a { animation: hit-a 0.52s cubic-bezier(0.6, 0, 0.2, 1) both; }
+.clash[data-phase="hit"] .clash-fighter-b,
+.clash[data-phase="verdict"] .clash-fighter-b,
+.clash[data-phase="out"] .clash-fighter-b { animation: hit-b 0.52s cubic-bezier(0.6, 0, 0.2, 1) both; }
+@keyframes hit-a {
+  0% { transform: translate(-14%, -50%) rotate(-3deg); }
+  32% { transform: translate(34%, -50%) rotate(6deg) scale(1.06); }
+  55% { transform: translate(18%, -50%) rotate(-2deg); }
+  100% { transform: translate(-6%, -50%) scale(0.86); opacity: 0.55; }
+}
+@keyframes hit-b {
+  0% { transform: translate(14%, -50%) rotate(3deg); }
+  32% { transform: translate(-34%, -50%) rotate(-6deg) scale(1.06); }
+  55% { transform: translate(-18%, -50%) rotate(2deg); }
+  100% { transform: translate(6%, -50%) scale(0.86); opacity: 0.55; }
+}
+.clash[data-phase="hit"] .clash-stage { animation: shake 0.42s linear 0.16s both; }
+@keyframes shake {
+  0%, 100% { transform: none; }
+  15% { transform: translate(-9px, 4px) rotate(-0.6deg); }
+  30% { transform: translate(8px, -6px) rotate(0.5deg); }
+  45% { transform: translate(-6px, 5px); }
+  60% { transform: translate(5px, -3px); }
+  80% { transform: translate(-2px, 2px); }
+}
+.clash-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, #fff 0%, rgb(255 230 230 / 0.9) 18%, rgb(229 35 47 / 0.35) 45%, transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+}
+.clash[data-phase="hit"] .clash-flash { animation: flash 0.5s ease-out 0.15s both; }
+@keyframes flash { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
+.clash-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-radius: 999px;
+  border: 4px solid #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+.clash[data-phase="hit"] .clash-ring { animation: ring 0.7s cubic-bezier(0.1, 0.6, 0.3, 1) 0.17s both; }
+.clash[data-phase="hit"] .clash-ring-2 { animation-delay: 0.27s; border-color: var(--color-clash); }
+@keyframes ring { 0% { opacity: 1; transform: scale(0.3); } 100% { opacity: 0; transform: scale(14); } }
+.clash-spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 18px;
+  margin: -9px 0 0 -1.5px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #fff, #ffd2a8 50%, var(--color-clash));
+  opacity: 0;
+  transform: rotate(var(--a)) translateY(0);
+  pointer-events: none;
+}
+.clash[data-phase="hit"] .clash-spark { animation: spark 0.6s cubic-bezier(0.1, 0.7, 0.3, 1) 0.17s both; }
+@keyframes spark {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scaleY(1.4); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(-1 * var(--d))) scaleY(0.4); }
+}
+
+/* The verdict: the word slams over the middle of the stage. */
+.clash-verdict {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  pointer-events: none;
+}
+.clash-word {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  font-size: clamp(34px, 11vw, 64px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-shadow: 0 0 30px rgb(229 35 47 / 0.9), 0 4px 0 #7a0a12;
+  animation: slam 0.46s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+.clash-vs-mid {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(40px, 13vw, 72px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.clash[data-phase="red"] .clash-vs-mid,
+.clash[data-phase="wind"] .clash-vs-mid { opacity: 1; }
+.clash-skip {
+  position: absolute;
+  right: 14px;
+  top: calc(env(safe-area-inset-top) + 12px);
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.75);
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.14);
+}
+.clash-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom) + 48px);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-door::after,
+  .fighter-empty,
+  .clash, .clash *, .clash-word { animation: none !important; transition: none !important; }
 }

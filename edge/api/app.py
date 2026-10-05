@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from edge import products
-from edge.api import desk, directory as directory_mod, lenses as lenses_mod, scout as scout_mod, service, share as share_mod
+from edge.api import battle as battle_api, desk, directory as directory_mod, lenses as lenses_mod, scout as scout_mod, service, share as share_mod
 from edge.api import accounts, auth, telemetry
 from edge.api import phone as phone_mod
 from edge.api.auth import current_user, optional_user
@@ -18,7 +18,7 @@ from edge.api.limits import PRODUCTION_WEB_ORIGIN, RateLimitMiddleware, client_i
 from edge.api.store import open_store
 from edge.connectors import sleeper
 from edge.data import nfl_stats, schedule
-from edge.engine import decisions, grades
+from edge.engine import battle as battle_mod, decisions, grades
 from edge.engine import lineup as lineup_mod
 from edge.engine import live as live_mod
 from edge.engine import actions as actions_mod
@@ -1707,6 +1707,48 @@ class FeedbackIn(BaseModel):
     week: int | None = None
 
 
+@app.get("/api/league/{platform}/{league_id}/team/{team_id}/battle/options")
+def battle_options(platform: str, league_id: str, team_id: str, player: str, auth=Depends(espn_auth)):
+    """Position Battle's corner: the man in the spot and everyone who could fight him for it.
+
+    **Free, and it opens nothing.** Every row is a name, a position, this week's projection
+    and the rest-of-season value -- the same columns the free board already shows. The
+    battle itself, the four verdicts and the tape, is the paid half (`/battle`), so a free
+    reader can set the fight up, watch the clash, and meet the paywall at the verdict.
+    """
+    validate_id(player, "player id")
+    b = _bundle(platform, league_id, auth)
+    _team(b, team_id)
+    got = battle_api.options(b, team_id, player)
+    if got is None:
+        raise HTTPException(404, "that player is not in this league's player pool")
+    return got
+
+
+@app.get("/api/league/{platform}/{league_id}/team/{team_id}/battle")
+def position_battle(platform: str, league_id: str, team_id: str, a: str, b: str,
+                    email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
+    """Position Battle: two men, one spot, four verdicts and the tale of the tape.
+
+    Paid (`battle`, in both passes). A free reader's 402 carries a name-free teaser
+    computed from the real fight ("A split decision: the man in the spot wins this week,
+    the challenger wins the stretch run."), so the haze says what the verdict *found*
+    without saying who. Logged as a run like every other call, so it can be graded.
+    """
+    validate_id(a, "player id")
+    validate_id(b, "player id")
+    bundle = _bundle(platform, league_id, auth)
+    _team(bundle, team_id)
+    out = battle_api.fight(bundle, team_id, a, b)
+    if out is None:
+        raise HTTPException(404, "both players must be in this league's player pool, and different")
+    if not products.can(_skus(email), "battle"):
+        _require(email, "battle", teaser=battle_mod.teaser(out))
+    store.log_run(email, platform, league_id, team_id, bundle.league.week, "battle",
+                  battle_mod.ALGO_VERSION, out)
+    return out
+
+
 @app.post("/api/feedback")
 def feedback(body: FeedbackIn, email: str | None = Depends(optional_user)):
     if body.verdict not in ("helpful", "wrong"):
@@ -1974,6 +2016,8 @@ class ShareIn(BaseModel):
     call: dict | None = None
     # kind="film": last week's replay cover
     film: dict | None = None
+    # kind="battle": a Position Battle's result
+    battle: dict | None = None
 
 
 @app.post("/api/share")
@@ -1991,7 +2035,12 @@ def create_share(body: ShareIn, email: str | None = Depends(optional_user)):
     if not products.can(_skus(email), feature):
         raise HTTPException(402, detail={"error": f"{feature} requires a purchase", "feature": feature,
                                          "teaser": None, "upsell": products.upsell(_skus(email), feature)})
-    if kind == "film":
+    if kind == "battle":
+        bt = body.battle or {}
+        if not ((bt.get("a") or {}).get("name") and (bt.get("b") or {}).get("name")):
+            raise HTTPException(422, "a battle share needs both players")
+        snap = share_mod.battle_snapshot(bt, body.league_name, body.week or 0)
+    elif kind == "film":
         f = body.film or {}
         if f.get("my_points") is None:
             raise HTTPException(422, "a film share needs the week's score")

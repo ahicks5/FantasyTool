@@ -5,8 +5,9 @@ import { notFound } from "next/navigation";
 import { IconArrowUp, IconCheck } from "@/components/icons";
 import { ConfidencePill, Eyebrow, LinkButton, OnAir, Stamp, Stat, StatusMeter, Wordmark } from "@/components/ui";
 import { signed, verdictBlurb } from "@/lib/format";
-import { isSharedFilm, isSharedLock, type SharedFilm, type SharedLock, type SharedSnapshot, type SharedVerdict } from "@/lib/types";
-import { FILM } from "@/lib/vocab";
+import { isSharedBattle, isSharedFilm, isSharedLock, type SharedBattle, type SharedFilm, type SharedLock, type SharedSnapshot, type SharedVerdict } from "@/lib/types";
+import { BATTLE, FILM } from "@/lib/vocab";
+import { shortName } from "@/lib/battle";
 import { LINES } from "@/lib/vocab";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -43,12 +44,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   // is the app's separator.
   if (!v) return { title: "Owner's Suite · a call worth sharing" };
   const image = `${API}/api/share/${encodeURIComponent(id)}/card.png`;
-  const title = isSharedFilm(v)
+  const title = isSharedBattle(v)
+    ? `${BATTLE.title}: ${v.a.name} ${BATTLE.vs} ${v.b.name}`
+    : isSharedFilm(v)
     ? FILM.share.title(v.team, v.result ? FILM.result[v.result] : "", FILM.score(v.my_points, v.their_points))
     : isSharedLock(v)
       ? `${v.confidence}: start ${v.start.name}${v.bench ? ` over ${v.bench.name}` : ""}`
       : `${v.verdict}: ${v.give.join(" + ")} for ${v.get.join(" + ")}`;
-  const description = isSharedFilm(v)
+  const description = isSharedBattle(v)
+    ? `${battleTitle(v)}. ${BATTLE.headline.tally(v.tally.a, v.tally.b, v.tally.rows)}.`
+    : isSharedFilm(v)
     ? v.line || FILM.share.pitch
     : isSharedLock(v)
       ? v.note || `Worth ${signed(v.gain, 1)} projected points in that league's scoring.`
@@ -340,6 +345,74 @@ function TradeBody({ v }: { v: SharedVerdict }) {
   );
 }
 
+/** "Shakir sweeps", "Split decision", "Dead even": the battle's headline, from the snapshot. */
+function battleTitle(v: SharedBattle): string {
+  const h = v.headline;
+  if (h.kind === "sweep" && (h.winner === "a" || h.winner === "b")) return BATTLE.headline.sweep(shortName(v[h.winner].name));
+  return h.kind === "split" ? BATTLE.headline.split : BATTLE.headline.draw;
+}
+
+/**
+ * A Position Battle, public: the two corners, the headline, and who took each horizon.
+ * Display fields only (`share.battle_snapshot`); the tape stays in the app, behind the pass.
+ */
+function BattleShareBody({ v }: { v: SharedBattle }) {
+  const corner = (side: "a" | "b") => {
+    const p = v[side];
+    return (
+      <div className="flex min-w-0 flex-col items-center gap-2 text-center">
+        <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${side === "a" ? "text-[#9dbcff]" : "text-[#ff9aa0]"}`}>
+          {BATTLE.corners[side]}
+        </span>
+        <span className={`fighter-face fighter-face-${side} h-[92px] w-[92px]`}>
+          {p.photo && <span aria-hidden className="absolute inset-0 bg-cover bg-top" style={{ backgroundImage: `url("${p.photo}")` }} />}
+        </span>
+        <span className="display line-clamp-2 text-[17px] leading-tight">{p.name}</span>
+        <span className="text-[11px] font-bold uppercase tracking-wide text-white/60">{[p.position, p.nfl_team].filter(Boolean).join(" · ")}</span>
+      </div>
+    );
+  };
+  return (
+    <>
+      <article className="arena px-4 pb-6 pt-4 rise">
+        <p className="eyebrow relative text-center text-[#ff8a90]">{BATTLE.eyebrow(v.spot || v.a.position)}</p>
+        <div className="arena-ring mt-3 grid grid-cols-[1fr_auto_1fr] items-start gap-1">
+          {corner("a")}
+          <span className="arena-vs mt-9 text-[32px]" aria-hidden>
+            {BATTLE.vs}
+          </span>
+          {corner("b")}
+        </div>
+        <p className="display relative mt-5 text-center text-[34px] leading-none">{battleTitle(v)}</p>
+        <p className="relative mt-2 text-center text-[12px] font-bold uppercase tracking-wide text-white/55">
+          {BATTLE.headline.tally(v.tally.a, v.tally.b, v.tally.rows)}
+        </p>
+      </article>
+      <section className="mt-3 grid grid-cols-2 gap-2.5 rise rise-1">
+        {v.horizons.map((h) => {
+          const w = h.winner === "a" || h.winner === "b" ? h.winner : null;
+          return (
+            <div key={h.key} className="horizon" data-winner={w ?? undefined}>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[11px] font-black uppercase tracking-[0.12em] text-ink-2">{BATTLE.horizons[h.key]}</span>
+                <span className="text-[10.5px] font-bold text-muted tnum">{BATTLE.span(h.first, h.last)}</span>
+              </div>
+              <div className={`display mt-2 truncate text-[19px] ${w === "a" ? "text-corner" : w === "b" ? "text-clash" : "text-muted"}`}>
+                {w ? shortName(v[w].name) : BATTLE.noWinner}
+              </div>
+              <div className="mt-1 flex justify-between text-[13px] font-black tnum text-ink-2">
+                <span>{BATTLE.pts(h.a)}</span>
+                <span>{BATTLE.pts(h.b)}</span>
+              </div>
+            </div>
+          );
+        })}
+      </section>
+      <p className="mt-3 text-center text-[13px] leading-relaxed text-ink-2">{BATTLE.sharedPitch}</p>
+    </>
+  );
+}
+
 export default async function SharePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const v = await load(id);
@@ -362,7 +435,15 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
         </span>
       </header>
 
-      {isSharedFilm(v) ? <FilmShareBody v={v} /> : isSharedLock(v) ? <LockBody v={v} /> : <TradeBody v={v} />}
+      {isSharedBattle(v) ? (
+        <BattleShareBody v={v} />
+      ) : isSharedFilm(v) ? (
+        <FilmShareBody v={v} />
+      ) : isSharedLock(v) ? (
+        <LockBody v={v} />
+      ) : (
+        <TradeBody v={v} />
+      )}
 
       {/* The way in. Paper, not hero: the card above is this screen's one dark surface. */}
       <section className="card mt-3 p-6 text-center rise rise-2">

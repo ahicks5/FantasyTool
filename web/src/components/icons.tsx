@@ -170,3 +170,12 @@ export const IconAlert = (p: P) => (
     <path d="M12 9.5v4.5M12 16.8v.2" strokeWidth={2.6} />
   </Svg>
 );
+/** Position Battle: two blades crossed, a spark where they meet. */
+export const IconClash = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 4l9.5 9.5M20 4l-9.5 9.5" />
+    <path d="M6.5 16.5 4 19M17.5 16.5 20 19" />
+    <path d="M8.5 13.5l2 2M15.5 13.5l-2 2" />
+    <path d="M12 2.5v2M9.5 3.5l.8 1.6M14.5 3.5l-.8 1.6" strokeWidth={1.6} />
+  </Svg>
+);

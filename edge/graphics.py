@@ -433,6 +433,80 @@ def film_card_html(snap: dict, league_name: str = "", week: int | None = None) -
 </div></body></html>"""
 
 
+BATTLE_RED = "#e5232f"   # Position Battle's own red: the clash, never a status colour
+BATTLE_HORIZON_LABELS = {"week": "This week", "next5": "Next 5", "ros": "Rest of season", "playoffs": "Playoffs"}
+
+
+def battle_card_html(snap: dict, league_name: str = "", week: int | None = None) -> str:
+    """A Position Battle, 1080x1080: two faces split by the clash, the spot, who took each of
+    the four horizons, and the tally. Display fields only (`share.battle_snapshot`)."""
+    e = html.escape
+    a, b = snap.get("a") or {}, snap.get("b") or {}
+    sub = f"{e(league_name)} · Week {week}" if league_name and week else e(league_name)
+    head = snap.get("headline") or {}
+    tally = snap.get("tally") or {}
+
+    def last(p: dict) -> str:
+        parts = (p.get("name") or "").split()
+        return parts[-1] if parts else ""
+
+    names = {"a": last(a), "b": last(b)}
+    if head.get("kind") == "sweep" and head.get("winner") in names:
+        title = f"{e(names[head['winner']])} sweeps"
+    elif head.get("kind") == "split":
+        title = "Split decision"
+    else:
+        title = "Dead even"
+    rows = ""
+    for h in snap.get("horizons") or []:
+        w = h.get("winner")
+        who = e(names.get(w, "Even")) if w else "Even"
+        pa, pb = h.get("a"), h.get("b")
+        nums = f"{pa:.1f} &ndash; {pb:.1f}" if isinstance(pa, (int, float)) and isinstance(pb, (int, float)) else ""
+        colour = BATTLE_RED if w == "b" else "#f7f6f3"
+        rows += f"""<div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;
+          padding:16px 0;border-top:1px solid rgba(255,255,255,.1)">
+          <span style="font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:{PAPER}.5);font-weight:700;width:300px">{e(BATTLE_HORIZON_LABELS.get(h.get("key"), ""))}</span>
+          <span style="font-size:44px;font-weight:900;color:{colour};flex:1">{who}</span>
+          <span style="font-size:28px;font-weight:700;color:{PAPER}.55)">{nums}</span>
+        </div>"""
+    return f"""<!doctype html><html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  html,body{{margin:0;background:{INK};color:#f7f6f3;
+    font-family:Archivo,-apple-system,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;
+    font-variant-numeric:tabular-nums}}
+  .card{{width:1080px;height:1080px;box-sizing:border-box;padding:64px 72px;display:flex;
+    flex-direction:column;background:{PLATE};position:relative;overflow:hidden}}
+</style></head><body><div class="card">
+  <div style="position:absolute;inset:0;background:linear-gradient(115deg,transparent 49.6%,{BATTLE_RED} 49.6%,{BATTLE_RED} 50.4%,transparent 50.4%);opacity:.55"></div>
+  <div style="position:absolute;right:-120px;top:-60px;width:600px;height:600px;border-radius:999px;background:radial-gradient(circle,{BATTLE_RED}55,transparent 70%)"></div>
+  <div style="position:relative;display:flex;align-items:center;justify-content:space-between;font-size:27px">
+    <span style="font-size:26px;font-weight:900;letter-spacing:.2em;color:{BATTLE_RED}">POSITION BATTLE{f" &middot; {e(snap.get('spot') or '')}" if snap.get("spot") else ""}</span>
+    <span style="color:{PAPER}.55);font-weight:700;max-width:480px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{sub}</span>
+  </div>
+  <div style="position:relative;display:flex;align-items:center;justify-content:space-between;margin-top:40px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;width:360px">
+      {_face_or_initials(a, 190)}
+      <span style="font-size:40px;font-weight:900;text-align:center;line-height:1.05">{e(a.get("name", ""))}</span>
+    </div>
+    <span style="font-size:110px;font-weight:900;font-style:italic;color:{BATTLE_RED};letter-spacing:-.04em">VS</span>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;width:360px">
+      {_face_or_initials(b, 190)}
+      <span style="font-size:40px;font-weight:900;text-align:center;line-height:1.05">{e(b.get("name", ""))}</span>
+    </div>
+  </div>
+  <div style="position:relative;margin-top:34px;font-size:72px;font-weight:900;letter-spacing:-.03em;text-align:center">{title}</div>
+  <div style="position:relative;margin-top:22px">{rows}</div>
+  <div style="position:relative;margin-top:auto;padding-top:22px;border-top:1px solid rgba(255,255,255,.12);
+    display:flex;align-items:center;justify-content:space-between">
+    {_nameplate(30)}
+    <span style="font-size:24px;font-weight:700;letter-spacing:.1em;color:{PAPER}.55)">TAPE {int(tally.get("a") or 0)}&ndash;{int(tally.get("b") or 0)} &middot; {TAGLINE.upper()}</span>
+  </div>
+</div></body></html>"""
+
+
 def card_html(snap: dict, shape: str = "square") -> str:
     """Render whichever card this snapshot is. One door, so the API never branches on kind.
 
@@ -443,6 +517,8 @@ def card_html(snap: dict, shape: str = "square") -> str:
         return lock_card_html(snap, snap.get("league_name", ""), snap.get("week") or None)
     if snap.get("kind") == "film":
         return film_card_html(snap, snap.get("league_name", ""), snap.get("week") or None)
+    if snap.get("kind") == "battle":
+        return battle_card_html(snap, snap.get("league_name", ""), snap.get("week") or None)
     return verdict_card_html(snap, snap.get("explanation", ""), snap.get("league_name", ""),
                              snap.get("week") or None, shape=shape)
 
@@ -450,7 +526,7 @@ def card_html(snap: dict, shape: str = "square") -> str:
 def card_shape(snap: dict, shape: str) -> str:
     """The shape a snapshot will actually render at, so the caller sizes the viewport to
     match what `card_html` returns rather than to what it asked for."""
-    return "square" if snap.get("kind") in ("lock", "film") else shape
+    return "square" if snap.get("kind") in ("lock", "film", "battle") else shape
 
 
 def render_png(html_str: str, out: str | Path, width: int = 1080, height: int = 1080) -> Path:

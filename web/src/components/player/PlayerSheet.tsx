@@ -28,6 +28,7 @@ import type { Connection } from "@/lib/storage";
 import type { PlayerProfile } from "@/lib/types";
 import { PLAYER, SCOUT } from "@/lib/vocab";
 import { Avatar } from "../Avatar";
+import { BattleDoor } from "../battle/BattleDoor";
 import { ErrorBox, H2, InjuryTag, Opening } from "../ui";
 import { Report } from "./Report";
 import { VibesView } from "./VibesView";
@@ -198,7 +199,7 @@ export function PlayerSheet({
         <div ref={middle} className="min-h-0 overflow-y-auto overscroll-contain px-5 py-5">
           <Middle mode={mode} profile={data} view={view} notFound={notFound} error={error} reload={reload} onClose={onClose} />
         </div>
-        <Footer playerId={playerId} />
+        <Footer playerId={playerId} name={name} />
       </div>
     </div>
   );
@@ -340,17 +341,18 @@ function Middle({
 /**
  * Three doors, frozen, and the bar never changes height.
  *
- * Two of them are shut in phase A. A disabled button that says "Soon" is better than a
+ * Position Battle leads, in its own red (Andrew, 2026-10-05): it is the one door on the
+ * page that is always open and always loud. Chat is still shut. A disabled button that says "Soon" is better than a
  * bar that grows a third door later: the reader learns the shape of the page once, and
  * the footer is the one element that must not move while the middle scrolls.
  *
  * Mixed case, not the uppercase the rest of the app's chips use -- "POSITION BATTLE" does
  * not fit a third of a 320px bar, and a label that wraps takes the footer with it.
  */
-function Footer({ playerId }: { playerId: string }) {
+function Footer({ playerId, name }: { playerId: string; name: string }) {
   return (
     <div className="mode-chrome grid grid-cols-3 gap-1 border-t border-line px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2">
-      <Door label={PLAYER.footer.battle} />
+      <BattleDoor playerId={playerId} name={name} />
       <Door label={PLAYER.footer.office} href={`/trade?player=${encodeURIComponent(playerId)}`} />
       <Door label={PLAYER.footer.chat} />
     </div>

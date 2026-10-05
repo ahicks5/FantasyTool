@@ -19,8 +19,8 @@ requires (Sleeper's docs ask for it on trending data). The UI must render it.
 {"attribution":"Projections and trending data from Sleeper",
  "products":[
   {"sku":"free","name":"Free","price_cents":0,"features":["my_team"],"leagues":3,"kind":"free","blurb":"Start/sit calls for up to three leagues, every week."},
-  {"sku":"week_pass","name":"Week pass","price_cents":499,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"pass","for_sale":true,"recurring":"week","duration_days":7,"grace_days":1,"blurb":"..."},
-  {"sku":"full_report","name":"The Owner's Suite","price_cents":2999,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","for_sale":true,"through":"2027-01-04","blurb":"..."},
+  {"sku":"week_pass","name":"Week pass","price_cents":499,"features":["my_team","waivers","trade_lab","full_report","battle"],"leagues":5,"kind":"pass","for_sale":true,"recurring":"week","duration_days":7,"grace_days":1,"blurb":"..."},
+  {"sku":"full_report","name":"The Owner's Suite","price_cents":2999,"features":["my_team","waivers","trade_lab","full_report","battle"],"leagues":5,"kind":"bundle","for_sale":true,"through":"2027-01-04","blurb":"..."},
   {"sku":"league_slot","name":"League slot","price_cents":299,"features":[],"leagues":1,"kind":"add_on","for_sale":true,"blurb":"One more league on your account. Rest of season."}
 ]}
 ```
@@ -32,7 +32,7 @@ hold them. `league_slot` is an add-on: it unlocks nothing and stacks, one more l
 
 `GET /api/me` →
 ```json
-{"email":"...","signed_in":true,"skus":["week_pass"],"entitlements":["my_team","waivers","trade_lab","full_report"],"leagues_allowed":5,
+{"email":"...","signed_in":true,"skus":["week_pass"],"entitlements":["my_team","waivers","trade_lab","full_report","battle"],"leagues_allowed":5,
  "leagues":[{"platform":"sleeper","league_id":"...","name":"...","team_id":"3","team_name":"HusH","last_used":1790000000.0}],
  "email_opt_in":false,"checkout":false,"billing_portal_url":null,
  "account":{"email":"...","name":"Andrew","role":"user","is_admin":false,"created":1789000000.0,"last_login":1790000000.0,
@@ -563,6 +563,59 @@ adding an entitlement check in the endpoint — one line, and the only line.
 There is **no route-participation data** in any feed we have. Snap share (`off_snp / tm_off_snp`)
 is the closest honest measure of how much a player is on the field, and it is what `snap_pct` is.
 Nothing here approximates a route count.
+
+## Position Battle (corner free, verdict: battle)
+
+Two men, one spot (`edge/engine/battle.py`, wiring `edge/api/battle.py`). Ids are **Sleeper ids**,
+the ones the player page speaks, on every platform. `battle` is a feature of both passes.
+
+`GET /api/league/{platform}/{league_id}/team/{team_id}/battle/options?player={id}` → free.
+```json
+{"player":{"id":"11632","name":"Malik Nabers","position":"WR","nfl_team":"NYG","photo":"...","team_logo":"...",
+           "injury_status":null,"projected":11.2,"ros":171.2,
+           "where":{"kind":"starter","slot":"WR","label":"WR2","team_name":null}},
+ "positions":["WR","RB","TE"],
+ "roster":[BattleBrief...], "wire":[BattleBrief... (40 max)], "trade":[BattleBrief... (80 max)], "week":2}
+```
+`where.kind` is `starter` (in the lineup as set; `label` is the role, numbered the lineup page's way),
+`bench`, `wire`, or `trade` (`team_name` is the rival). `positions` is who may fight for the spot: a
+FLEX holder's slot's positions, else his own first, then any position a flex slot in this league
+shares with him. Each list is ordered by `ros`. 404 when the player is not in the league's pool.
+
+`GET /api/league/{platform}/{league_id}/team/{team_id}/battle?a={id}&b={id}` → paid (`battle`).
+A free reader's 402 carries a **name-free** `teaser` computed from the real fight. 404 when either man
+is outside the pool or they are the same man. Logged to `runs` as kind `battle`.
+```json
+{"week":2,"spot":"WR2",
+ "a":{BattleBrief..., "injury_body_part":null,"bye_week":14,"opp":"@ LAR",
+      "slate":[{"week":2,"opp":"LAR","home":false,"bye":false,"rank":24,"of":32}, ... to week 17]},
+ "b":{...},
+ "horizons":[
+   {"key":"week","first":2,"last":2,"a":11.2,"b":16.2,"a_games":null,"b_games":null,"winner":"b",
+    "strength":"Lean","p":0.68,"tipped":false,"held":false,"factors":[DecisionFactor...],"tilt":0},
+   {"key":"next5","first":2,"last":6,"a":57.1,"b":69.3,"a_games":5,"b_games":5,"winner":"b",
+    "strength":"clear","p":null,"tipped":false,"held":false,"sos_a":18.2,"sos_b":14.0,"assumed":false},
+   {"key":"ros",...}, {"key":"playoffs",...,"assumed":true}],
+ "headline":{"kind":"sweep","winner":"b","a":0,"b":4,"now":"b","later":"b"},
+ "tape":[{"key":"snap","family":"usage","a":{"v":0.94,"text":"94%","sub":null},
+          "b":{"v":0.74,"text":"74%","sub":null},"edge":"a"}, ...],
+ "tally":{"total":{"a":4,"b":22,"rows":36},"families":{"usage":{"a":2,"b":2,"rows":7}, ...}},
+ "playoffs":{"first":15,"last":17,"assumed":true},"algo_version":"battle.v1"}
+```
+- **This week** is `Player.projected` and `calibration.p_beats`; `strength` is Lock/Lean/Coin flip and
+  `p` the winner's chance. A coin flip is tipped by two net reads (`decisions.read`, `tipped`), and
+  otherwise the man in the spot keeps it if he is yours (`held`).
+- **next5 / ros / playoffs** are the ROS value spread back over the schedule as a per-game rate (byes
+  and injury-tag games off the front), so they add up. `strength` is `clear` (≥12% gap), `edge` (≥4%)
+  or `even`; an even window goes to the softer schedule (`sos_*`, average defence rank, higher is
+  softer) when they differ by 4 places, else the man in the spot keeps it.
+- `playoffs` is the league's `playoff_week_start` through 17; `assumed:true` when the league left it
+  unset and weeks 15–17 were used. Absent once the regular season is over.
+- `tape[].family` ∈ outlook, season, usage, risk, schedule, situation, depth. `edge` is a count, not a
+  weight. Row keys and their labels: `web/src/lib/vocab.ts` `BATTLE.rows`.
+- Share it: `POST /api/share {"kind":"battle","league_name","week","battle":{spot,a,b,horizons,headline,tally}}`
+  — needs `battle`. The snapshot keeps the two faces, where each stood as a kind only, the four
+  horizons and the tally: no tape, no ids, no rival team name. `card.png` renders a 1080 battle card.
 
 ## Trade Finder (free preview, full board: trade_lab)
 
