@@ -241,10 +241,12 @@ function Walk() {
         {step === "reveal" && (
           <RevealScreen
             dir={dir}
-            onNext={() => {
-              void setOnboarding({ step: "reveal" }).catch(() => undefined);
+            onNext={async () => {
+              // Awaited: the offer screen records itself the moment it shows, and the API's
+              // read-modify-write of the walk's state would let that write drop this one.
+              const m = await setOnboarding({ step: "reveal" }).catch(() => null);
               setLocal((l) => ({ ...l, revealSeen: true }));
-              go(null);
+              landed(m);
             }}
           />
         )}
