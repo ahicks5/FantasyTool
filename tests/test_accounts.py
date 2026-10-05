@@ -26,6 +26,7 @@ def client(monkeypatch):
     # The per-account throttles live in the process; every test starts with a clean slate.
     accounts.LOGIN_FAILURES.clear()
     accounts.RESET_REQUESTS.clear()
+    accounts.RENEWALS.clear()
     return TestClient(app_mod.app)
 
 
@@ -351,3 +352,38 @@ def test_export_carries_the_account_but_never_a_hash_and_delete_takes_it_all(cli
     assert r.status_code == 200 and r.json()["deleted"]["users"] == 1 and r.json()["deleted"]["sessions"] == 1
     assert client.get("/api/me", headers=bearer(token)).json()["signed_in"] is False
     assert client.post("/api/auth/login", json={"email": EMAIL, "password": PW}).status_code == 401
+
+
+def test_a_session_in_use_slides_forward_and_an_idle_one_still_ends(client):
+    token = register(client)["token"]
+    hashed = accounts.token_hash(token)
+    store = app_mod.store
+    # Pretend the token was issued 29 days ago: one day left.
+    store.db.execute("UPDATE sessions SET expires=? WHERE token_hash=?", (time.time() + 86400, hashed))
+    store.db.commit()
+    accounts.RENEWALS.clear()
+    assert client.get("/api/me", headers=bearer(token)).json()["signed_in"] is True
+    expires = store.db.execute("SELECT expires FROM sessions WHERE token_hash=?", (hashed,)).fetchone()[0]
+    assert expires > time.time() + (accounts.SESSION_DAYS - 1) * 86400, "using it pushed it back out to 30 days"
+    # A token that has already died is not brought back by asking with it.
+    store.db.execute("UPDATE sessions SET expires=? WHERE token_hash=?", (time.time() - 1, hashed))
+    store.db.commit()
+    accounts.RENEWALS.clear()
+    r = client.get("/api/me", headers=bearer(token))
+    assert r.json()["signed_in"] is False
+    assert client.post("/api/auth/logout-others", headers=bearer(token)).status_code == 401
+
+
+def test_renewals_ask_the_store_once_per_window_per_token():
+    r = accounts.Renewals(every=600)
+    assert r.due("h", now=0) is True
+    assert r.due("h", now=599) is False
+    assert r.due("other", now=1) is True
+    assert r.due("h", now=600) is True
+
+
+def test_a_signed_in_answer_is_never_cached(client):
+    token = register(client)["token"]
+    assert client.get("/api/me", headers=bearer(token)).headers["cache-control"] == "private, no-store"
+    # The public share card keeps its own long cache; a stranger's answer is left alone.
+    assert "no-store" not in client.get("/api/me").headers.get("cache-control", "")

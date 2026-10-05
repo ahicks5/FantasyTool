@@ -519,10 +519,8 @@ function AccountBody() {
           variant="ghost"
           className="w-full"
           onClick={() =>
-            logout().then(() => {
-              clearConnection();
-              router.push("/");
-            })
+            // logout() forgets the league on this device too.
+            logout().then(() => router.push("/"))
           }
         >
           {ACCOUNT.signOut}

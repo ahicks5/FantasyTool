@@ -12,6 +12,7 @@ import { offersFor } from "@/lib/account";
 import { offerStack, priceLabel, productName } from "@/lib/offer";
 import { formatCents } from "@/lib/format";
 import { currentMe, useSession } from "@/lib/session";
+import { onAuthChange } from "@/lib/auth";
 import type { Me, Product, Sku } from "@/lib/types";
 import { PRODUCTS as FALLBACK } from "@/lib/mocks";
 import { IconCheck, IconLock, IconX } from "@/components/icons";
@@ -100,6 +101,24 @@ export function AccountGateProvider({ children }: { children: React.ReactNode })
     },
     [signIn, open],
   );
+
+  // Signed in from another tab while this one had the sheet up: the sheet has done its job.
+  const asking = state?.kind === "signin";
+  useEffect(() => {
+    if (!asking) return;
+    // Cancelled once this sheet closes, so a late answer can never shut the sheet after it
+    // (the sheet's own sign-in closes it first and may open the upgrade straight away).
+    let live = true;
+    const off = onAuthChange(() => {
+      void currentMe().then((me) => {
+        if (live && me?.signed_in) close(true);
+      });
+    });
+    return () => {
+      live = false;
+      off();
+    };
+  }, [asking, close]);
 
   const api = useMemo(() => ({ signIn, upgrade }), [signIn, upgrade]);
 

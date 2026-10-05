@@ -284,6 +284,11 @@ class PostgresStore:
             return None
         return row[0]
 
+    def extend_session(self, token_hash: str, expires: float, slack: float = 0.0, now: float | None = None) -> bool:
+        cur = self._exec("UPDATE sessions SET expires=%s WHERE token_hash=%s AND expires IS NOT NULL "
+                         "AND expires>=%s AND expires<%s", (expires, token_hash, now or time.time(), expires - slack))
+        return cur.rowcount == 1
+
     def delete_session(self, token_hash: str) -> None:
         self._exec("DELETE FROM sessions WHERE token_hash=%s", (token_hash,))
 

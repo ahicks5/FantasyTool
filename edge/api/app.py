@@ -32,8 +32,28 @@ app.add_middleware(CORSMiddleware, allow_origins=cors_origins(),
 # Outermost, so a refused request costs a dict lookup rather than an upstream fetch.
 app.add_middleware(RateLimitMiddleware)
 store = open_store()
-# Bearer tokens are looked up in whichever store the app holds *now*: the tests swap it.
-auth.session_lookup = lambda hashed: store.session_email(hashed)
+
+
+def _session_lookup(hashed: str) -> str | None:
+    """A bearer token's account, in whichever store the app holds *now* (the tests swap it).
+    A live one slides forward while it is used (`accounts.RENEW_SLACK`)."""
+    email = store.session_email(hashed)
+    if email and accounts.RENEWALS.due(hashed):
+        store.extend_session(hashed, accounts.session_expiry(), slack=accounts.RENEW_SLACK)
+    return email
+
+
+auth.session_lookup = _session_lookup
+
+
+@app.middleware("http")
+async def _private_answers(request, call_next):
+    """Anything answered to a signed-in caller is theirs alone: no browser, proxy or CDN keeps
+    a copy, so a back button or a shared machine never shows yesterday's account."""
+    response = await call_next(request)
+    if request.headers.get("authorization") and "cache-control" not in response.headers:
+        response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 def _season() -> int:

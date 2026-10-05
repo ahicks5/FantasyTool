@@ -45,7 +45,8 @@ grace included), else null. `billing_portal_url` is `EDGE_BILLING_PORTAL_URL` (S
 
 ## Accounts
 First-party. Email and password; the reply's `token` goes in `Authorization: Bearer` on every later call. The
-API keeps only its hash. Sessions last 30 days. The sign-in routes share the league routes' tighter rate cap.
+API keeps only its hash. Sessions last 30 days from last use (a live one slides forward at most once a day). Every
+answer to a request carrying `Authorization` is `Cache-Control: private, no-store`. The sign-in routes share the league routes' tighter rate cap.
 
 `POST /api/auth/register {"email","password","name"?}` → `{"token":"...","me":{...}}`. 400 on a bad address or a
 password under 8 characters; 409 when the address already has an account.

@@ -328,6 +328,20 @@ def test_a_session_lives_until_it_expires_or_is_dropped(store):
     assert store.session_email("t2") is None
 
 
+def test_a_session_in_use_slides_forward_but_a_dead_one_stays_dead(store):
+    now = time.time()
+    store.create_session("a@b.c", "live", expires=now + 60)
+    store.create_session("a@b.c", "dead", expires=now - 1)
+    assert store.extend_session("live", now + 1000, slack=100) is True
+    assert store.session_email("live", now=now + 900) == "a@b.c", "moved out to the new expiry"
+    assert store.extend_session("live", now + 1050, slack=100) is False, "gains less than the slack: no write"
+    assert store.extend_session("live", now + 500) is False, "never backwards"
+    assert store.session_email("live", now=now + 900) == "a@b.c"
+    assert store.extend_session("dead", now + 1000) is False
+    assert store.session_email("dead") is None, "a signed-out or expired token is not revived"
+    assert store.extend_session("nope", now + 1000) is False
+
+
 def test_a_reset_token_is_spent_once_and_dies_on_time(store):
     store.create_user("a@b.c", "h")
     store.create_reset("a@b.c", "r1", expires=time.time() + 60)

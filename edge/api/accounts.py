@@ -15,6 +15,13 @@ import time
 from collections import deque
 
 SESSION_DAYS = 30
+#: A session in use slides forward: once a day at most, a live token is pushed back out to
+#: SESSION_DAYS from now, so someone who opens the app every week is never signed out on
+#: day 30. An idle token still dies 30 days after it was last used.
+RENEW_SLACK = 86400
+#: How often one process re-asks the store about the same token. The store's own check
+#: (`RENEW_SLACK`) is the rule; this only keeps every request from costing a write query.
+RENEW_CHECK_EVERY = 600
 RESET_HOURS = 2
 MIN_PASSWORD = 8
 _EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -136,6 +143,31 @@ def token_hash(token: str) -> str:
 
 def session_expiry(now: float | None = None) -> float:
     return (now or time.time()) + SESSION_DAYS * 86400
+
+
+class Renewals:
+    """Which tokens this process has offered to slide forward lately, so a busy session costs
+    one `extend_session` per `RENEW_CHECK_EVERY` rather than one per request. Hashes only."""
+
+    def __init__(self, every: float = RENEW_CHECK_EVERY):
+        self.every = every
+        self._seen: dict[str, float] = {}
+
+    def due(self, hashed: str, now: float | None = None) -> bool:
+        now = now if now is not None else time.monotonic()
+        last = self._seen.get(hashed)
+        if last is not None and now - last < self.every:
+            return False
+        if len(self._seen) > 10_000:  # an idle process must not grow forever
+            self._seen = {k: v for k, v in self._seen.items() if now - v < self.every}
+        self._seen[hashed] = now
+        return True
+
+    def clear(self) -> None:
+        self._seen.clear()
+
+
+RENEWALS = Renewals()
 
 
 def reset_expiry(now: float | None = None) -> float:

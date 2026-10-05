@@ -386,3 +386,41 @@ test("a phone-only account adds an email later, and an email account adds a phon
   await expect(contact.getByRole("status")).toHaveText(ACCOUNT.phone.added);
   await expect(contact.getByText(second)).toBeVisible();
 });
+
+test("signing in or out in one tab reaches the others without a reload", async ({ context, page }) => {
+  await beAStranger(context);
+  const email = freshEmail("tabs");
+  await registerViaApi(page, email);
+  const other = await context.newPage();
+  other.setDefaultTimeout(15_000);
+  await page.goto("/login");
+  await other.goto("/login");
+  await expect(other.getByRole("heading", { level: 1, name: ACCOUNT.signIn })).toBeVisible();
+
+  // Sign in here; the other tab, untouched, turns into the signed-in door.
+  await useEmail(page);
+  await page.getByLabel(ACCOUNT.email).fill(email);
+  await page.getByLabel(ACCOUNT.password).fill(PASSWORD);
+  await page.getByRole("button", { name: ACCOUNT.signIn, exact: true }).click();
+  await page.waitForURL("**/home");
+  await expect(page.getByRole("link", { name: ACCOUNT.topbar.account("E2E") })).toBeVisible();
+  await expect(other.getByRole("heading", { level: 1, name: "Signed in" })).toBeVisible();
+
+  // Sign out over there; this tab reads signed out and forgets the account.
+  await other.getByRole("button", { name: ACCOUNT.signOut, exact: true }).click();
+  await expect(page.getByRole("link", { name: ACCOUNT.topbar.signIn })).toBeVisible();
+  await expect(page.getByRole("link", { name: ACCOUNT.topbar.account("E2E") })).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem("booth.session"))).toBeNull();
+});
+
+test("a token the API has ended is dropped, and the door asks to sign in", async ({ context, page }) => {
+  await beAStranger(context);
+  const token = await registerViaApi(page, freshEmail("dead"));
+  const ended = await page.request.post(`${API_URL}/api/auth/logout`, { headers: { Authorization: `Bearer ${token}` } });
+  expect(ended.ok()).toBe(true);
+  await page.goto("/login");
+  await page.evaluate((t) => localStorage.setItem("booth.session", t), token);
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.signIn })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("booth.session"))).toBeNull();
+});
