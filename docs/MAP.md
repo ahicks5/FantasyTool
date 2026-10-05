@@ -117,12 +117,12 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (61 modules, 18,259 lines)
+### `edge/` — the Python engine and API (63 modules, 20,411 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
-| `edge/api/accounts.py` | Accounts: password hashing, session and reset tokens, roles. Stdlib only; the store holds the rows. | accounts, phone +1 | 228 |
-| `edge/api/app.py` | Owner's Suite API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload | accounts, api +15 | 1862 |
+| `edge/api/accounts.py` | Accounts: password hashing, session and reset tokens, roles. Stdlib only; the store holds the rows. | accounts, onboarding +2 | 237 |
+| `edge/api/app.py` | Owner's Suite API. See docs/API.md. Run: uv run uvicorn edge.api.app:app --reload | accounts, api +18 | 2182 |
 | `edge/api/auth.py` | Who is calling? An Owner's Suite session token first, a Supabase JWT (HS256) second, X-Edge-User in dev. Stdlib only. | api | 76 |
 | `edge/api/battle.py` | Position Battle's wiring: gather the feeds once, hand them to `engine/battle.py`. | — | 61 |
 | `edge/api/desk.py` | The owner's desk: the front page, assembled. What landed, who is next, and the binders. | desk_api, plan | 154 |
@@ -132,14 +132,14 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/api/payments.py` | Stripe Checkout + webhook. Prices are created inline from products.py, so there's nothing to set | accounts, api +3 | 372 |
 | `edge/api/phone.py` | Phone sign-in: tidying a number, and sending and checking the text-message code. Stdlib only. | phone | 188 |
 | `edge/api/scout.py` | Assemble a player's scouting report: search the league, then read one player. | scout_api | 185 |
-| `edge/api/service.py` | Loads a league with everything the engine needs (ROS values, byes, bid history, tendencies), | service, api +15 | 638 |
-| `edge/api/share.py` | Public share snapshots — the organic loop. | share, compliance | 85 |
-| `edge/api/store.py` | Tiny persistence: accounts, sessions, purchases and connected leagues. SQLite (stdlib) — zero cost, zero setup. | store_contract, accounts +16 | 615 |
-| `edge/api/store_pg.py` | The same store, on Postgres. Selected by DATABASE_URL; see store.open_store(). | store_contract | 505 |
-| `edge/api/telemetry.py` | What we log about how people move through the product, and what we refuse to log. | telemetry | 112 |
+| `edge/api/service.py` | Loads a league with everything the engine needs (ROS values, byes, bid history, tendencies), | service, api +16 | 638 |
+| `edge/api/share.py` | Public share snapshots — the organic loop. | share, compliance | 111 |
+| `edge/api/store.py` | Tiny persistence: accounts, sessions, purchases and connected leagues. SQLite (stdlib) — zero cost, zero setup. | store_contract, accounts +18 | 683 |
+| `edge/api/store_pg.py` | The same store, on Postgres. Selected by DATABASE_URL; see store.open_store(). | store_contract | 546 |
+| `edge/api/telemetry.py` | What we log about how people move through the product, and what we refuse to log. | telemetry | 133 |
 | `edge/business/economics.py` | Unit economics: what a sale is actually worth after everyone else takes their cut. | economics | 301 |
-| `edge/business/metrics.py` | The admin's numbers, computed from the telemetry log (docs/SPEC-ADMIN-METRICS.md). | metrics | 379 |
-| `edge/calibration.py` | How sure are we, really? Confidence from measured projection error, not from raw margin. | calibration, decisions +3 | 222 |
+| `edge/business/metrics.py` | The admin's numbers, computed from the telemetry log (docs/SPEC-ADMIN-METRICS.md). | metrics | 416 |
+| `edge/calibration.py` | How sure are we, really? Confidence from measured projection error, not from raw margin. | calibration, battle +4 | 222 |
 | `edge/cli.py` | Demo commands. Live network. Usage: | espn_connector, send | 281 |
 | `edge/connectors/espn.py` | ESPN (public league) -> normalized League. `build_league` is pure so tests run offline. | espn_connector, espn_corpus +8 | 671 |
 | `edge/connectors/sleeper.py` | Sleeper -> normalized League. Pure mapping functions take raw JSON so tests run offline. | sleeper_connector, deadlines +10 | 391 |
@@ -153,7 +153,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/data/providers.py` | Projection providers — the engine's only door to projection data. | providers, compliance +2 | 272 |
 | `edge/data/schedule.py` | NFL schedule / bye weeks from ESPN's free scoreboard endpoint. Cached per season. | actions, api +27 | 160 |
 | `edge/data/scoring.py` | Score a raw stat line against a league's scoring settings (Sleeper stat vocabulary). | scoring, espn_connector +8 | 16 |
-| `edge/data/sleeper_api.py` | Thin HTTP layer for Sleeper. Everything public, no auth. Cached players file on disk. | battle, directory +8 | 106 |
+| `edge/data/sleeper_api.py` | Thin HTTP layer for Sleeper. Everything public, no auth. Cached players file on disk. | battle, bundle_cache +9 | 138 |
 | `edge/data/yahoo_api.py` | Thin HTTP layer for Yahoo Fantasy Sports (v2), plus the OAuth 2.0 sign-in it requires. | yahoo_api, yahoo_connector | 205 |
 | `edge/delivery/send.py` | Actually putting the weekly email in someone's inbox. | send | 169 |
 | `edge/delivery/weekly_email.py` | The weekly email: the call sheet, delivered before the user thinks to open the app. | weekly_email, send | 387 |
@@ -181,15 +181,15 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/engine/waivers.py` | Waiver ranker: free agents scored by how much they improve THIS roster, with FAAB bids. | waivers_values, espn_live_fixture +1 | 156 |
 | `edge/evaluate.py` | Did the advice work? Replays a finished week and scores Edge against the managers. | evaluate, frozen +2 | 208 |
 | `edge/evaluate_moves.py` | Did the *waiver and trade* advice make anyone money? | evaluate_moves | 358 |
-| `edge/graphics.py` | Shareable trade-verdict card (1080x1080). HTML in, PNG out via headless Chromium (Playwright). | graphics, compliance +1 | 475 |
-| `edge/models.py` | Platform-agnostic models. Every connector (Sleeper, ESPN, ...) maps into these. | copy, decisions +18 | 215 |
-| `edge/products.py` | Product catalog: free tier, the week pass, the season pass (The Owner's Suite) and the league-slot add-on. Prices in cents. | tendencies_products, api +2 | 229 |
+| `edge/graphics.py` | Shareable trade-verdict card (1080x1080). HTML in, PNG out via headless Chromium (Playwright). | graphics, battle +2 | 551 |
+| `edge/models.py` | Platform-agnostic models. Every connector (Sleeper, ESPN, ...) maps into these. | battle, bundle_cache +20 | 215 |
+| `edge/products.py` | Product catalog: free tier, the week pass, the season pass (The Owner's Suite) and the league-slot add-on. Prices in cents. | tendencies_products, api +2 | 232 |
 
-### `web/src/app/` — routes (30 files)
+### `web/src/app/` — routes (31 files)
 
 | File | What it is | Lines |
 |---|---|---|
-| `web/src/app/account/page.tsx` | Your account: the plan flag, the leagues on file, the upgrades, the Thursday email, and your data. Signed in only. | 590 |
+| `web/src/app/account/page.tsx` | Your account: the plan flag, the leagues on file, the upgrades, the Thursday email, and your data. Signed in only. | 641 |
 | `web/src/app/admin/page.tsx` | The front office: every account, its plan and its leagues, and the owner's levers. Admin only. | 300 |
 | `web/src/app/connect/espn/page.tsx` | The ESPN link, walked in four steps: make a placeholder bookmark, prime it with our code, log in to ESPN and tap it, come back and paste what it copied. | 310 |
 | `web/src/app/connect/page.tsx` | Connect a league: pick a platform, then one box. Sleeper takes a username or an id; ESPN takes an id plus, if the league is private, the key from /connect/espn; Yahoo takes a sign-in, then a pick from your own leagues. | 8 |
@@ -202,7 +202,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/layout.tsx` | The root layout: the two type families, every metadata tag, and the theme boot script. | 100 |
 | `web/src/app/login/page.tsx` | Sign in: a phone number and a texted code first, email and password as the fallback. Signed in already, it is the door to the account. | 7 |
 | `web/src/app/not-found.tsx` | The 404 page, deliberately not indexed. | 30 |
-| `web/src/app/page.tsx` | The landing page: the front office you walk into, the answers on your desk, the staff, the film, how quick it is, and the door. Indexable. | 509 |
+| `web/src/app/page.tsx` | The landing page: the front office you walk into, how quick it is, the answers on your desk, the staff, the film, and the door. Indexable. | 551 |
 | `web/src/app/privacy/page.tsx` | The privacy policy. docs/DATA_INVENTORY.md is the source of truth; if they disagree this page is stale. | 185 |
 | `web/src/app/register/page.tsx` | Create an account: the sign-up walk, one question a screen, from the phone to a linked league and the free week (docs/SPEC-ONBOARDING.md). | 7 |
 | `web/src/app/report/page.tsx` | The film: the replay of your week first, then the standings for everyone, then the season week by week. | 210 |
@@ -215,13 +215,13 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/team/page.tsx` | Lineup: is my starting lineup right for this week? The required changes, the decisions, then the board. Free tier. | 25 |
 | `web/src/app/terms/page.tsx` | The terms of service. The facts it cannot work out for itself live in lib/legal.ts. | 132 |
 | `web/src/app/trade/deal/page.tsx` | One GM, read in full: the arrow on each of the office's panels and rows lands here. | 140 |
-| `web/src/app/trade/page.tsx` | GM's Office: the three deals worth a call, every GM in one line each, and the table for | 604 |
+| `web/src/app/trade/page.tsx` | GM's Office: the three deals worth a call, every GM in one line each, and the table for | 610 |
 | `web/src/app/verify/page.tsx` | Confirm an email address from the link we mailed (`?token=`), then carry on signed in. | 66 |
 | `web/src/app/waivers/[player]/page.tsx` | One player's scout report, inside Scouting. | 46 |
 | `web/src/app/waivers/page.tsx` | Scouting, in the order a manager reads it: the three worth adding, then who is out there. | 77 |
 | `web/src/app/waivers/pickup/page.tsx` | One pickup, read in full: the arrow on each of Scouting's top panels lands here. | 189 |
 
-### `web/src/components/` — the view (56 files)
+### `web/src/components/` — the view (64 files)
 
 | File | What it is | Lines |
 |---|---|---|
@@ -231,7 +231,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/CallOpening.tsx` | The call: the first time the GM's Office opens, your phone rings. | 183 |
 | `web/src/components/Compare.tsx` | Two scorecards, side by side. Not a verdict, so it borrows the scorecard's | 220 |
 | `web/src/components/DecisionView.tsx` | One role, the whole question: who is the best man for TE this week? | 327 |
-| `web/src/components/Desk.tsx` | The owner's desk: the front page. Three stories, this week's matchup, and the staff's notebooks. | 423 |
+| `web/src/components/Desk.tsx` | The owner's desk: the front page. Three stories, this week's matchup, and the staff's notebooks. | 431 |
 | `web/src/components/DoorClicks.tsx` | Counts which of the landing page's sign-up buttons was pressed: one `cta_click` per press, named by the `data-door` around it. | 24 |
 | `web/src/components/Elevator.tsx` | The ride up: the opening, played as an elevator to the office and a walk to the desk. Tap to skip. | 320 |
 | `web/src/components/EmailOptIn.tsx` | The weekly-email opt-in: one checkbox, on /login, under the signed-in block. | 104 |
@@ -239,7 +239,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Film.tsx` | The film: the season looked back on, the record read against the scoring, week by week. | 136 |
 | `web/src/components/FilmWeek.tsx` | One week of the film: the final, then every call and what happened, stated flat. | 179 |
 | `web/src/components/Freshness.tsx` | The age line under the title band: how old the numbers on screen are, and a Refresh. | 52 |
-| `web/src/components/LandingBar.tsx` | The landing page's follow-along bar: the clock and the one door, once the first button has scrolled away. | 52 |
+| `web/src/components/LandingBar.tsx` | The landing page's follow-along bar: how quick the door is (or the clock, near kickoff) and the one door, once the first button has scrolled away. | 60 |
 | `web/src/components/LeagueLinker.tsx` | The league link itself, shared by /connect and the sign-up walk: pick a platform, find the league, pick the team, save it to the account. | 726 |
 | `web/src/components/LegalPage.tsx` | Shared chrome and typography for /terms and /privacy. Plain, readable, no app shell. | 66 |
 | `web/src/components/LineupView.tsx` | Lineup: is my starting lineup right for this week? Two piles, then the roster. | 523 |
@@ -257,8 +257,8 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/ScoutOpening.tsx` | The scout takes his seat: the first time Scouting opens, you are in the stands. | 233 |
 | `web/src/components/SeasonLine.tsx` | The season's scoring as one line: a point per week, inline SVG, no library. | 81 |
 | `web/src/components/ShareCard.tsx` | The marketing asset: a 1080x1080 card rendered at full size and scaled to fit. It is | 175 |
-| `web/src/components/ShareLock.tsx` | Turns a start/sit call into a public link — free, no account, no purchase. | 65 |
-| `web/src/components/Shell.tsx` | The room itself: top bar, title band with the nameplate, ticker, tab bar, and the shell every page mounts. | 232 |
+| `web/src/components/ShareLock.tsx` | Turns a start/sit call into a public link — free, no account, no purchase. | 68 |
+| `web/src/components/Shell.tsx` | The room itself: top bar, title band with the nameplate, ticker, tab bar, and the shell every page mounts. | 293 |
 | `web/src/components/Standing.tsx` | Where you stand, in one line under the call sheet's hero: grade, rank, record. | 92 |
 | `web/src/components/Standings.tsx` | The table: every team in the league, by record, and what the rosters are worth from here. | 90 |
 | `web/src/components/Ticker.tsx` | The ticker: the desk's news running along the bottom of every screen, over the tab bar. | 88 |
@@ -267,10 +267,11 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Unlocking.tsx` | The gap between a cleared card and a written entitlement, made visible instead of confusing. | 138 |
 | `web/src/components/WaiverPlanView.tsx` | The waiver plan: the claim we are asking for, its bid, and the backup claims under it. | 210 |
 | `web/src/components/WaiversView.tsx` | The board: every free agent worth a claim, ranked. This is a long scannable | 93 |
-| `web/src/components/account/AccountGate.tsx` | The two popups every room can raise: sign in, and upgrade. One provider in the root | 403 |
+| `web/src/components/WarmDoor.tsx` | The landing page asks the API who is here before the reader reaches the door, so /register opens on the right form at once. | 23 |
+| `web/src/components/account/AccountGate.tsx` | The two popups every room can raise: sign in, and upgrade. One provider in the root | 428 |
 | `web/src/components/account/AuthForm.tsx` | The one sign-in form: sign in, create an account, or ask for a reset. The popup and the | 380 |
-| `web/src/components/account/Door.tsx` | The door: the frame, the signed-in card, and the sign-in page body that /login, /register and /reset share. | 114 |
-| `web/src/components/admin/Dashboard.tsx` | The owner's numbers: six tabs over GET /api/admin/metrics (docs/SPEC-ADMIN-METRICS.md). | 497 |
+| `web/src/components/account/Door.tsx` | The door: the frame, the signed-in card, and the sign-in page body that /login, /register and /reset share. | 116 |
+| `web/src/components/admin/Dashboard.tsx` | The owner's numbers: six tabs over GET /api/admin/metrics (docs/SPEC-ADMIN-METRICS.md). | 567 |
 | `web/src/components/battle/BattleDoor.tsx` | The red button: Position Battle, on every player page (Andrew, 2026-10-05: "always | 39 |
 | `web/src/components/battle/BattleView.tsx` | Position Battle: the man in the spot, a challenger, the clash, and the tale of the tape. | 339 |
 | `web/src/components/battle/Clash.tsx` | The clash: the moment a challenger is picked, the two men meet in the middle of the screen. | 134 |
@@ -280,23 +281,23 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/film/Projector.tsx` | The projector: the film's opening (SPEC-FILM F-9). | 109 |
 | `web/src/components/film/Replay.tsx` | The replay: one finished week told as a story, card by card (SPEC-FILM F-4). | 346 |
 | `web/src/components/film/ShareFilm.tsx` | Turns last week's replay cover into a public link. Free, no account, like a Lock card: | 66 |
-| `web/src/components/icons.tsx` | Line icons at a common 24px grid. Emoji read as placeholder art in a paid product. | 172 |
+| `web/src/components/icons.tsx` | Line icons at a common 24px grid. Emoji read as placeholder art in a paid product. | 181 |
 | `web/src/components/onboard/Frame.tsx` | The walk's chrome: the small wordmark, the way back, the bar, and one screen at a time sliding in. | 118 |
 | `web/src/components/onboard/Onboarding.tsx` | The sign-up walk (docs/SPEC-ONBOARDING.md): phone first, one question a screen, a league | 1190 |
-| `web/src/components/player/PlayerSheet.tsx` | The player page: a full-height sheet that rises over whatever you were reading. | 381 |
+| `web/src/components/player/PlayerSheet.tsx` | The player page: a full-height sheet that rises over whatever you were reading. | 393 |
 | `web/src/components/player/PlayerSheetProvider.tsx` | Who the player sheet is open on, and the URL that says so. | 132 |
 | `web/src/components/player/Report.tsx` | The scout report body: who he is, what the counts say, and every week he has on record. | 225 |
 | `web/src/components/player/VibesView.tsx` | Vibes: the player in words, and **not one digit**. | 99 |
 | `web/src/components/ui.tsx` | The kit: the shared devices every screen is built from — cards, stamps, meters, waits, the wordmark. | 885 |
 
-### `web/src/lib/` — client logic (47 files)
+### `web/src/lib/` — client logic (53 files)
 
 | File | What it is | Lines |
 |---|---|---|
 | `web/src/lib/account.ts` | The account, minus React: which league to open on a fresh sign-in, how the plan reads, | 110 |
-| `web/src/lib/adminMetrics.mock.ts` | Generated by scripts/gen_admin_mock.py from tests/test_metrics.py. Do not edit by hand. | 340 |
+| `web/src/lib/adminMetrics.mock.ts` | Generated by scripts/gen_admin_mock.py from tests/test_metrics.py. Do not edit by hand. | 405 |
 | `web/src/lib/adminMetrics.ts` | The admin dashboard's small pure helpers: money, rates, deltas and date presets. | 82 |
-| `web/src/lib/api.ts` | API client for docs/API.md. With NEXT_PUBLIC_API_URL unset, every call is | 878 |
+| `web/src/lib/api.ts` | API client for docs/API.md. With NEXT_PUBLIC_API_URL unset, every call is | 952 |
 | `web/src/lib/auth.ts` | The session token: where the browser keeps it, and who is told when it changes. | 71 |
 | `web/src/lib/authError.ts` | What a sign-in, register, reset or change-password form says when the API refuses it. | 30 |
 | `web/src/lib/battle.mock.ts` | Generated by scripts/gen_battle_mock.py from the recorded fixtures. Do not edit by hand. | 1003 |
@@ -320,7 +321,8 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/leagueInput.ts` | One box for Sleeper, because asking someone to know whether they have a "username" or a | 100 |
 | `web/src/lib/legal.ts` | The handful of facts the Terms and Privacy pages cannot work out for themselves. | 51 |
 | `web/src/lib/matchup.ts` | The week's head-to-head, worked out slot by slot. | 131 |
-| `web/src/lib/mocks.ts` | Mock data matching docs/API.md exactly. Player names, rosters and week-2 | 1733 |
+| `web/src/lib/mocks.ts` | Mock data matching docs/API.md exactly. Player names, rosters and week-2 | 1814 |
+| `web/src/lib/native.ts` | The iPhone app's frame, seen from the page (`mobile/`, docs/IOS.md). | 50 |
 | `web/src/lib/offer.ts` | The offer: the week pass against the season pass, worked out from the catalog rather than typed. | 58 |
 | `web/src/lib/office.ts` | The GM's Office, minus React: which deals lead, how hot each one is, and your roster's | 134 |
 | `web/src/lib/onboarding.ts` | The sign-up walk, minus React (docs/SPEC-ONBOARDING.md): which screen comes next, how far | 184 |
@@ -337,10 +339,11 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/storage.ts` | What the browser remembers: the connected league, and the calls already ticked off. | 293 |
 | `web/src/lib/teaser.ts` | Which sentence goes in a paywall. | 21 |
 | `web/src/lib/ticker.ts` | The ticker: the desk's news as one line running along the bottom of every screen. Pure. | 132 |
-| `web/src/lib/track.ts` | Telemetry in the browser (docs/SPEC-ADMIN-METRICS.md). | 165 |
-| `web/src/lib/types.ts` | Mirrors docs/API.md (Owner's Suite API contract v1). | 1816 |
+| `web/src/lib/track.ts` | Telemetry in the browser (docs/SPEC-ADMIN-METRICS.md). | 181 |
+| `web/src/lib/types.ts` | Mirrors docs/API.md (Owner's Suite API contract v1). | 1989 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 2024 |
+| `web/src/lib/viewport.ts` | The tablet breakpoint, for the few places script has to know it. Pure. | 15 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 2468 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 168 |
 | `web/src/lib/wire.ts` | The top of Scouting, minus React: how hard to go after each pickup, and which ones lead. | 69 |
 | `web/src/lib/yahooAuth.ts` | Yahoo sign-in, held on this device. | 121 |
@@ -349,7 +352,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 
 | File | What it is | Lines |
 |---|---|---|
-| `mobile/App.tsx` | Owner's Suite for iPhone: the live site in a native frame, plus what only a phone can do. | 232 |
+| `mobile/App.tsx` | Owner's Suite for iPhone: the live site in a native frame, plus what only a phone can do. | 235 |
 | `mobile/index.ts` | The app's entry: registers App as the root component, in Expo Go and in a native build alike. | 6 |
 | `mobile/src/EspnSheet.tsx` | ESPN's own sign-in in a sheet over the app, in place of the bookmark walk. | 109 |
 | `mobile/src/Offline.tsx` | The screen the frame draws itself when our site cannot be reached. | 31 |

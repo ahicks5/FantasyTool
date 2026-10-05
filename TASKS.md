@@ -2,6 +2,20 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Integration branch: every 2026-10-05 chat merged for testing (`claude/integration-1005`)
+Production plus nine branches, merged in this order: phone-first-auth, password-reset-guide,
+signin-session-sync, onboarding-experience-plan, landing-signup-push, position-battle-feature,
+memory-and-fast-load, responsive-tablet-desktop, ios-app. Not on production yet.
+- [x] Conflicts resolved: `/connect` is onboarding's `LeagueLinker` with the signed-in wordmark fix
+      carried into it (and into the responsive `Shell.tsx`); `/account` keeps phone-first order plus
+      the email-confirm line; admin metrics keep both the walk and the landing doors; Position Battle's
+      `battle` feature rides on the $29.99 season.
+- [x] Gates on the merged tree: pytest (1 known base failure, below), lint, `npm test`, build,
+      demo + demo:pack, e2e 52/52.
+- [ ] Store contract against Postgres not run on the merged tree (no `TEST_DATABASE_URL` here).
+- [ ] Andrew: test the Vercel preview of this branch, then ship it to production.
+- [ ] Docs still on $24.99: `docs/UNIT_ECONOMICS.md` (margins need recomputing), `launch/*.html`.
+
 ## Sign-in that stays put across tabs and the back button (2026-10-05)
 Andrew: "finicky whether it knows I'm signed in". Branch `claude/signin-session-sync`.
 - [x] A sign-in or sign-out in one tab reaches every other tab (`storage` event, `lib/auth.ts`).
@@ -33,8 +47,8 @@ the season. Built the same day ("build it all now"); defaults taken for D4–D8 
 - [ ] One test-mode Checkout with `FREEWEEK` on each pass against real Stripe before launch: the
       $0 invoice, the day-8 charge (Stripe's test clock), the season's subscription ending itself.
 - [ ] Twilio Verify template ending `@penthousefantasy.com #<code>` for Android code autofill — **Andrew**
-- [ ] Decide: require a confirmed email before an email-only account's first purchase, once mail sends — **Andrew**
-- [ ] Confirm the defaults: week preselected, the skip's words, $25.00 credit — **Andrew**
+- [x] Decided (Andrew, 2026-10-05): phone is the primary way in, email-only accounts are fine; no confirmed email required before a purchase.
+- [x] Defaults confirmed (Andrew, 2026-10-05): season $29.99, free week (`FREEWEEK`) yes, week preselected, the skip's words, $25.00 credit.
 
 ## Position Battle (2026-10-05)
 Andrew's brief: a red button on every player page; the man in his spot on the left, one
