@@ -12,6 +12,7 @@ import { Avatar } from "@/components/Avatar";
 import { PlayerLine } from "@/components/Players";
 import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, Stamp, StatusMeter, Why } from "@/components/ui";
 import { createShare, evaluateTrade, findTrades, getLeague, getRoster, getTeamGrades, PaywallError } from "@/lib/api";
+import { shareInApp } from "@/lib/native";
 import { once } from "@/lib/cache";
 import { TradeFinderWait } from "@/components/TradeFinderView";
 import { CallOpening } from "@/components/CallOpening";
@@ -531,6 +532,8 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
   }
 
   async function copy() {
+    // In the iPhone app the link goes to the share sheet, which has Copy on it too.
+    if (shareInApp(url)) return;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

@@ -24,7 +24,7 @@ import {
   SCOUT_OPEN,
   WIRE,
   OFFICE,
-  CALL, FILM, ACCOUNT, PRICING, ESPN_KEY, YAHOO } from "./vocab.ts";
+  CALL, FILM, ACCOUNT, PRICING, ESPN_KEY, YAHOO, NATIVE } from "./vocab.ts";
 
 /**
  * The vocabulary is the one file that is allowed to say a section's name, so it is also
@@ -39,6 +39,9 @@ const ALL_COPY: string[] = [
   ...Object.values(LINES).map((l) => (typeof l === "function" ? l("$4.99/week") : l)),
   ...Object.values(RIDE),
   ...Object.values(YAHOO),
+  // The iPhone app's frame: every string it can show.
+  ...Object.values(NATIVE.offline), ...Object.values(NATIVE.espn), NATIVE.share.subject,
+  ...Object.values(NATIVE.reminders).flatMap((r) => [r.title, r.body]),
   // The desk's words: the strings, plus every templated line rendered once.
   DESK.aria, DESK.owner, DESK.letterhead, DESK.news.eyebrow, DESK.news.quiet, DESK.news.window(72), DESK.news.also(2),
   DESK.news.more(3), DESK.news.less, ...DESK.news.severity, DESK.news.plan, DESK.news.planAria("Saquon Barkley"), DESK.news.tag.own("RB", true),

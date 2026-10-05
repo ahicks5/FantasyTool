@@ -12,6 +12,7 @@
 
 import { useState } from "react";
 import { createShare } from "@/lib/api";
+import { shareInApp } from "@/lib/native";
 import type { LockCall } from "@/lib/types";
 import { Button, ErrorBox } from "./ui";
 
@@ -35,6 +36,8 @@ export function ShareLock({ call, leagueName, week }: { call: LockCall; leagueNa
   }
 
   async function copy() {
+    // In the iPhone app the link goes to the share sheet, which has Copy on it too.
+    if (shareInApp(url)) return;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

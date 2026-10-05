@@ -18,6 +18,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { logArrival } from "@/lib/api";
 import { captureArrival, pixel } from "@/lib/track";
+import { APP_UA_TOKEN } from "@/lib/native";
 
 /** An id pasted into an inline script: nothing but the characters ids are made of. */
 function safeId(raw: string | undefined): string {
@@ -29,6 +30,17 @@ const POSTHOG_HOST = (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.post
 const META_ID = safeId(process.env.NEXT_PUBLIC_META_PIXEL_ID);
 const REDDIT_ID = safeId(process.env.NEXT_PUBLIC_REDDIT_PIXEL_ID);
 const GOOGLE_ID = safeId(process.env.NEXT_PUBLIC_GOOGLE_ADS_ID);
+
+/**
+ * The ad pixels never load inside the iPhone app (`lib/native.ts`). Tracking across other
+ * companies' apps and sites needs Apple's tracking prompt, and the app does not ask it, so
+ * the app gets PostHog and the first-party log and nothing else. Decided in the snippet
+ * itself, off the user agent the app sets before any page script runs, so the server
+ * render and the browser agree.
+ */
+function outsideTheApp(js: string): string {
+  return `if(navigator.userAgent.indexOf(${JSON.stringify(APP_UA_TOKEN)})<0){${js}}`;
+}
 
 /** A path with every run of five or more digits masked: league and team ids stay home. */
 export function maskedPath(path: string): string {
@@ -72,21 +84,20 @@ posthog.init('${POSTHOG_KEY}',{api_host:'${POSTHOG_HOST}',person_profiles:'ident
       )}
       {META_ID && (
         <Script id="meta-pixel" strategy="afterInteractive">
-          {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-fbq('init','${META_ID}');fbq('track','PageView');`}
+          {outsideTheApp(`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','${META_ID}');fbq('track','PageView');`)}
         </Script>
       )}
       {REDDIT_ID && (
         <Script id="reddit-pixel" strategy="afterInteractive">
-          {`!function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];var t=d.createElement("script");t.src="https://www.redditstatic.com/ads/pixel.js",t.async=!0;var s=d.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}}(window,document);
-rdt('init','${REDDIT_ID}');rdt('track','PageVisit');`}
+          {outsideTheApp(`!function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];var t=d.createElement("script");t.src="https://www.redditstatic.com/ads/pixel.js",t.async=!0;var s=d.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}}(window,document);
+rdt('init','${REDDIT_ID}');rdt('track','PageVisit');`)}
         </Script>
       )}
       {GOOGLE_ID && (
         <>
-          <Script src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ID}`} strategy="afterInteractive" />
           <Script id="google-ads" strategy="afterInteractive">
-            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${GOOGLE_ID}');`}
+            {outsideTheApp(`var g=document.createElement('script');g.async=true;g.src='https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ID}';document.head.appendChild(g);window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${GOOGLE_ID}');`)}
           </Script>
         </>
       )}
