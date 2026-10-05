@@ -156,9 +156,9 @@ Built on its own branch; production is untouched.
       the app, `NATIVE` words in `vocab.ts`. All inert in a browser.
 - [x] App icon and splash from `icon.svg` via `scripts/render_brand_assets.py`; `mobile/` in
       `docs/MAP.md`; a `mobile` job in CI.
-- [ ] IOS-1 Andrew: decisions D-1..D-6 in `docs/IOS.md` (bundle id, US-only link-out, the
-      store name, reviewer account, shipping the web half). — **Andrew**
-- [ ] IOS-2 Andrew: Expo Go on his phone (`npx expo start`), then `eas init`, first build,
+- [x] IOS-1 Andrew: decisions D-1..D-6 in `docs/IOS.md` (bundle id, US-only link-out, the
+      store name, reviewer account, shipping the web half). All as recommended, 2026-10-05.
+- [~] IOS-2 Andrew (branch `claude/ios-testflight`): Expo Go on his phone (`npx expo start`), then `eas init`, first build,
       submit, internal TestFlight (`docs/IOS.md` steps 2-6). — **Andrew**
 - [ ] IOS-3 Ship this branch's `web/` commits to production (inert for web visitors) before
       external testers, so they get the share sheet and the Google Ads tag stays off in the app.
