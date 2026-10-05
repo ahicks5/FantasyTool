@@ -66,10 +66,9 @@ shareable, a reason to buy. Branch `claude/position-battle-feature-56ttvk`.
       corner picker (roster / wire / trade, position chips, search), the clash (walk-outs,
       wind-up held until the verdict lands, hit, slam; skippable; off under reduced motion),
       horizon tiles, tale of the tape, the road to week 17, share. `lib/battle.test.ts`, 2 e2e.
-- [ ] **Andrew:** look at it on screen, both themes, and sign off the corner colours (blue for
-      the man in the spot, red for the challenger) and the clash's length (~3.4s, skippable).
-- [ ] **Andrew:** paid or a teaser? Today the corner and the clash are free and the verdict is
-      hazed. Alternative: one free battle a week.
+- [x] Andrew, 2026-10-05: corner colours (blue for the man in the spot, red for the challenger)
+      and the clash's length (~3.4s, skippable) approved; the old Position Battle definition is superseded.
+- [x] Andrew, 2026-10-05: keep it as built: the corner and the clash are free, the verdict is hazed.
 - [ ] Not read, because there is no data source: coaching changes / scheme, offensive-line
       grades, a medical "injury prone" label. Availability, sacks allowed and yards a carry
       stand in and say so. Needs a source Andrew names.
