@@ -117,8 +117,16 @@ export const GAP_CHARS = 6;
 /** Never faster than this, however short the news: a strip that whips by reads as broken. */
 export const MIN_MS = 12_000;
 
-/** How long one pass of the loop takes, from the text that has to travel. */
-export function tickerDurationMs(lines: string[]): number {
+/**
+ * How long one pass of the loop takes, from the distance that has to travel.
+ *
+ * `windowPx` is the strip's own width. Each copy of the track is at least that wide (so a
+ * short news day on an iPad or a desktop never leaves half the strip empty), which means a
+ * pass travels the wider of the two; timing it off the text alone ran short news across a
+ * 1,200px strip three times faster than across a phone.
+ */
+export function tickerDurationMs(lines: string[], windowPx = 0): number {
   const chars = lines.reduce((n, l) => n + l.length + GAP_CHARS, 0);
-  return Math.max(MIN_MS, Math.round(((chars * PX_PER_CHAR) / PX_PER_SECOND) * 1000));
+  const px = Math.max(chars * PX_PER_CHAR, windowPx);
+  return Math.max(MIN_MS, Math.round((px / PX_PER_SECOND) * 1000));
 }

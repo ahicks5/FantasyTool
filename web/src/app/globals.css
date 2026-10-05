@@ -42,6 +42,10 @@
 --------------------------------------------------------------------------- */
 
 @theme {
+  /* Tablet and up: an iPad mini held upright (744px) counts, a phone held upright never
+     does. Above it the tabs ride in the top bar, the ticker runs under it, and the room
+     widens. Phones (and everything under 704px) keep the bottom block. docs/WEB.md. */
+  --breakpoint-tablet: 44rem;
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-display: var(--font-archivo), var(--font-inter), system-ui, sans-serif;
 
@@ -1686,6 +1690,9 @@ html.ride-boot::before {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
+  /* At least the strip's width, so the second copy never trails into an empty half on a
+     wide screen. The loop still slides by the copy's own width, so it stays seamless. */
+  min-width: 100%;
   white-space: nowrap;
   padding-left: 14px;
   font-size: 11px;
