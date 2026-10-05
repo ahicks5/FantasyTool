@@ -20,7 +20,7 @@ requires (Sleeper's docs ask for it on trending data). The UI must render it.
  "products":[
   {"sku":"free","name":"Free","price_cents":0,"features":["my_team"],"leagues":3,"kind":"free","blurb":"Start/sit calls for up to three leagues, every week."},
   {"sku":"week_pass","name":"Week pass","price_cents":499,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"pass","for_sale":true,"recurring":"week","duration_days":7,"grace_days":1,"blurb":"..."},
-  {"sku":"full_report","name":"The Owner's Suite","price_cents":2499,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","for_sale":true,"through":"2027-01-04","blurb":"..."},
+  {"sku":"full_report","name":"The Owner's Suite","price_cents":2999,"features":["my_team","waivers","trade_lab","full_report"],"leagues":5,"kind":"bundle","for_sale":true,"through":"2027-01-04","blurb":"..."},
   {"sku":"league_slot","name":"League slot","price_cents":299,"features":[],"leagues":1,"kind":"add_on","for_sale":true,"blurb":"One more league on your account. Rest of season."}
 ]}
 ```
@@ -28,7 +28,7 @@ The free tier, then only what is on sale. `week_pass` is a weekly Stripe subscri
 `duration_days + grace_days`. `full_report` is the season pass (one payment; `through` is display-only). The
 retired `waivers` (Wire Pass) and `trade_lab` (Trade Lab) never appear here but still resolve for accounts that
 hold them. `league_slot` is an add-on: it unlocks nothing and stacks, one more league per purchase.
-`leagues_allowed` is the highest tier cap held (3 free, 5 with either pass) plus one per slot. `leagues_used` is the slots taken this season: the leagues on file plus any forgotten this season. `season_price_cents` is what the season pass costs this account now: 1999 while a paid week is live, else 2499. Checkout charges the server's number, never the client's, and a season grant cancels any active week-pass subscription on the account.
+`leagues_allowed` is the highest tier cap held (3 free, 5 with either pass) plus one per slot. `leagues_used` is the slots taken this season: the leagues on file plus any forgotten this season. `season_price_cents` is what the season pass costs this account now: 2500 while a *paid* week is live (the free week does not count), else 2999. Checkout charges the server's number, never the client's, and a season grant cancels any active week-pass subscription on the account.
 
 `GET /api/me` →
 ```json
@@ -42,6 +42,19 @@ Signed out: `signed_in:false`, `account:null`, the free tier, no leagues. `accou
 views check (`free` | `premium`); `plan.name` is what the user reads. `checkout` is whether Stripe is configured,
 which decides what an upgrade does (below). `account.pass_until` is when a live week pass runs out (epoch seconds,
 grace included), else null. `billing_portal_url` is `EDGE_BILLING_PORTAL_URL` (Stripe's customer portal), or null.
+
+The sign-up walk (docs/SPEC-ONBOARDING.md) adds, signed in:
+```json
+{"trial":{"sku":"week_pass","started":1791000000.0,"until":1791691200.0,"active":true,"converted":false,
+          "cancelled":false,"next_charge_at":1791604800.0,"next_charge_cents":499},
+ "trial_eligible":false,"trial_days":7,"email_sending":false,
+ "onboarding":{"reached":{"named":1791000000.0,"league":1791000060.0},"skipped":{"email":1791000030.0}},
+ "account":{"email_verified":false}}
+```
+`trial` is the account's one free week, or null: `sku` is the pass it bills when it ends (`week_pass` or
+`full_report`), `next_charge_*` are null once it is cancelled, paid or revoked. `trial_eligible` is false once a
+free week has ever been taken or while a pass is running. `email_sending` says whether a confirm-your-address mail
+would really go out. `onboarding` is what the walk remembers (screens reached, skips), unix seconds.
 
 ## Accounts
 First-party. Email and password; the reply's `token` goes in `Authorization: Bearer` on every later call. The
@@ -73,7 +86,19 @@ account is filed under an internal key and `account.email` is `""`.
 (code from `/api/auth/phone/start`). 409 when another account has it.
 `POST /api/account/email {"email","password"?}` (signed in) → `{"ok","me"}`; adds or changes the email, moving
 everything the account owns. `password` required when the account has one. 409 when the address is taken.
-`account` on `/api/me` carries `phone` (E.164 or null) and `has_password`.
+`account` on `/api/me` carries `phone` (E.164 or null), `has_password` and `email_verified`.
+
+**Confirm your address** (built, switched off until `EDGE_EMAIL_PROVIDER` is set):
+`POST /api/auth/email/verify/start` (signed in) → `{"ok","sent","verified"}`. Mails a link to `/verify?token=` that
+lasts 48 hours; `sent` is false with no provider (a dev API adds `dev_link`). 400 for a phone-only account, 429
+past 3 per address per hour, `verified:true` and nothing sent when already confirmed.
+`POST /api/auth/email/verify {"token"}` → `{"token","me"}`. Spent once; proves the address and signs in here.
+Changing the address (`/api/account/email`) clears `email_verified` and kills unspent links.
+
+**The walk** (signed in): `PUT /api/me/onboarding {"step"?,"skip"?,"name"?}` → `{"ok","me"}`. `step` is one of
+`named, email, league, reveal, offer, done` (each logged once per account: `onboard_step`, or `offer_view` for
+the offer); `skip` is one of `name, email, offer` (`offer` logs `offer_skip`); `name` sets the nameplate. 400 on
+anything else.
 
 Per-account throttles, on top of the IP cap: 10 wrong passwords per address per 15 minutes and sign-in (and
 change password) answers 429 until the window passes or a reset lands; 3 reset emails per address per hour,
@@ -83,14 +108,21 @@ known one, so sign-in timing does not reveal who has an account. Rules and runbo
 `POST /api/account/upgrade {"sku","success_url"?,"cancel_url"?,"promo"?}` (signed in) →
 - Stripe configured: `{"url":"https://checkout.stripe.com/...","granted":false,"me":null}`; the webhook grants.
 - Stripe not configured: `{"url":null,"granted":true,"me":{...}}`; the grant is written now, `source:"complimentary"`.
+- With `"promo":"FREEWEEK"` (either pass): the free first week. With Stripe, a subscription Checkout with
+  `trial_period_days=7` and the card required; the $0 first invoice opens the week (a `week_pass` row with
+  `source:"trial:<sku>"`) and day eight bills the pass. The season on a trial is a yearly-interval subscription
+  the webhook ends the moment its one payment lands. Without Stripe the same row is written now. 400
+  "your free week has been used" for an account that is not `trial_eligible`.
 400 on a free, unknown or retired (`waivers`, `trade_lab`) sku, or a `promo` that does not apply to the sku.
 Checkout carries `allow_promotion_codes` (Stripe-dashboard codes) unless one of our own codes priced it; a
 promo's code rides in the session metadata and on the `checkout_start` / `purchase` telemetry rows.
 `POST /api/checkout` takes the same `promo`.
 
-`POST /api/promo {"code","sku"?="full_report"}` (sign-in optional) → `{"ok","code","sku","percent_off","price_cents"}`.
+`POST /api/promo {"code","sku"?="full_report"}` (sign-in optional) → `{"ok","code","sku","percent_off","trial_days","price_cents"}`.
 Display only: the price this account would pay with the code (the lower of the code and any live-week upgrade
-price; they never stack). Codes live in `PROMO_CODES` in `edge/products.py`; today `STHTIKTOK`, half off the season.
+price; they never stack). Codes live in `PROMO_CODES` in `edge/products.py`: `STHTIKTOK`, half off the season
+($14.99), and `FREEWEEK`, seven free days on either pass (`trial_days:7`, `percent_off:0`, `price_cents` is what
+day eight bills, plus `eligible` for a signed-in caller).
 
 `POST /api/leagues/{platform}/{league_id}/use` (signed in) → marks the league last opened, so the next sign-in on any device lands on it.
 `DELETE /api/leagues/{platform}/{league_id}` (signed in) → `{"ok":true,"leagues":[...]}`. Does not free the slot: a forgotten league counts against this season's cap, and linking it again takes no second slot.
@@ -107,7 +139,9 @@ Signed in as an admin: `role = admin` in the store or an address in `EDGE_ADMINS
 Each user in `GET /api/admin/users` also carries `attr` (first touch), `source`, `revenue_cents`, `last_active`, `sms_opt_in`.
 
 ### The admin's numbers (docs/SPEC-ADMIN-METRICS.md)
-`GET /api/admin/metrics[?frm=YYYY-MM-DD&to=YYYY-MM-DD]` → `{range, today, funnel, channels, revenue, retention, loop, thresholds}`.
+`GET /api/admin/metrics[?frm=YYYY-MM-DD&to=YYYY-MM-DD]` → `{range, today, funnel, walk, channels, revenue, retention, loop, thresholds}`.
+`walk` is the sign-up walk for this range's sign-ups: `{cohort, offer_skipped, steps:[{key,label,num,of_signups,of_previous}]}`,
+signed up → named → league → saw the first call → saw the free week → card on file → paid after the week.
 Default range is the current NFL week, Tuesday to Monday, Eastern. Computed by `edge/business/metrics.py`
 from the `events` table; the shape is pinned by `tests/test_metrics.py`. 400 on a malformed date.
 `POST /api/admin/spend {"day","channel","dollars","campaign"?,"clicks"?,"note"?}` → `{"ok":true,"id"}`. The channel is

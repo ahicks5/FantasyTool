@@ -288,8 +288,14 @@ once the API has signed the visitor in; `upgrade(sku, {what, returnTo})` signs i
 has to, then opens the upgrade sheet, which either grants on the spot (no Stripe key on the
 API: the sheet says "no card, no charge") or leaves for Checkout. `Locked` calls `upgrade`.
 **The account comes first** (Andrew, 2026-09-24): every door on the landing page, the pricing
-table and the share page is `/register`; a new account lands on `/account`, which opens as a
-welcome ("You're in, Andrew.") with one thing left, the league; `/connect` for a visitor with
+table and the share page is `/register`, which is **the sign-up walk** (`components/onboard/`,
+docs/SPEC-ONBOARDING.md): one question a screen sliding in, phone first, then the league (the same
+`LeagueLinker` `/connect` mounts, in its `walk` variant), the first call, and the free week. Which
+screen shows is derived from `/api/me` by `lib/onboarding.firstStep`, so Stripe's return
+(`/register?paid=`), the ESPN key and Yahoo's sign-in (both come back to `/register` for an hour
+while the walk waits on a league) all land on the right screen. "Create account" on `/login` and
+the sheet open the walk. An account that still has no league sees `/account` open as a welcome
+whose button resumes the walk; `/connect` for a visitor with
 no account shows the door to one in place of the league form, with `?next=/connect` on both
 buttons, and calls `signIn` only at the save as a safety net, plus `upgrade("league_slot")` on
 a 402 over the cap. The empty room on every tab sends a stranger to `/register` and an

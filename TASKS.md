@@ -6,16 +6,21 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 Andrew's brief: the sign-up is the most important screen in the building. One question per
 screen, phone first (email as the side door), name as the nameplate, a league linked on the
 walk, then a card on file for a free first week (`FREEWEEK`) at $4.99/week or **$29.99** for
-the season. Planned only; nothing built yet. Sections O-1..O-7 in the spec, each with its
-evidence, acceptance and tests.
-- [ ] O-1 Prices: season $24.99 → $29.99, `FREEWEEK` as a trial code, one free week per account
-- [ ] O-2 Stripe trial (card up front, $0 today), webhook learns `trial_start` / `trial_convert`
-- [ ] O-3 The wizard frame and the identity screens; `/register` becomes the walk
-- [ ] O-4 The league screen, with `/connect` sharing one `useLeagueLink` hook
-- [ ] O-5 The reveal (first real call), the offer (card), done (the elevator)
-- [ ] O-6 Email verification placeholder (table, routes, page; sends only with a provider)
-- [ ] O-7 The funnel tiles on `/admin`
-- [ ] Decisions D4–D8 and the Stripe dashboard switches — **Andrew** (spec §3, §8, §10)
+the season. Built the same day ("build it all now"); defaults taken for D4–D8 (spec, Status).
+- [x] O-1 Prices: season $24.99 → $29.99, upgrade credit $25.00, STHTIKTOK $14.99, `FREEWEEK` trial code
+- [x] O-2 Stripe trial (card up front, $0 today), webhook: `trial_start`, `trial_convert`, `trial_ending`
+- [x] O-3 The walk's frame and identity screens; `/register` is the walk; resume from `/api/me`
+- [x] O-4 The league screen: `LeagueLinker` shared with `/connect`; ESPN and Yahoo return to the walk
+- [x] O-5 The reveal (first real call), the offer (card), done (the elevator); the pass sheet learns the free week
+- [x] O-6 Email verification placeholder: table on both stores, routes, `/verify`, the flag, the account control
+- [x] O-7 The walk on `/admin` → Funnel
+- [ ] Stripe dashboard: trial-ending reminder email on, customer portal on, add the
+      `customer.subscription.trial_will_end` event to the webhook — **Andrew** (docs/DEPLOY.md)
+- [ ] One test-mode Checkout with `FREEWEEK` on each pass against real Stripe before launch: the
+      $0 invoice, the day-8 charge (Stripe's test clock), the season's subscription ending itself.
+- [ ] Twilio Verify template ending `@penthousefantasy.com #<code>` for Android code autofill — **Andrew**
+- [ ] Decide: require a confirmed email before an email-only account's first purchase, once mail sends — **Andrew**
+- [ ] Confirm the defaults: week preselected, the skip's words, $25.00 credit — **Andrew**
 
 ## Owner's Suite — rename (2026-10-05)
 Andrew's call: the name is **Owner's Suite**, replacing Penthouse. A rename, nothing else:

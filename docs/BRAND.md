@@ -338,6 +338,7 @@ which slows rather than stops, because a frozen ring says "stalled".
 | `lamp` | pulses | ON AIR |
 | `sweep` | sheen crosses metal | a plan loading |
 | `ride` | the elevator, then the office: doors, floors, ding, the walk to the desk, the papers | the first open of the day, once a team is known |
+| `walk-fwd` / `walk-back` | slides in from the side it is heading (fades under reduced motion) | a screen of the sign-up walk |
 
 The kit has no motion. It should list these — they are brand, and no competitor has a
 stamp that slams.

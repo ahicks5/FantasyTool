@@ -1,8 +1,40 @@
 # SPEC — Onboarding: the walk from "sign up" to a card on file
 
 Written 2026-10-05 from Andrew's brief, grounded in the code on `claude/edge-fantasy-app-launch-alo0rr`
-at `8c96cf8`. A plan, not code: nothing in the product changes until a section below is built.
-Branch for the build: `claude/onboarding-experience-plan-sz7088`.
+at `8c96cf8`. Branch for the build: `claude/onboarding-experience-plan-sz7088`.
+
+## Status: built, 2026-10-05
+
+Andrew: "Build it all now." Every section O-1 to O-7 is built and tested on the branch, with the
+proposed defaults taken for the open decisions (each is one constant or one string to change):
+
+| Decision | Taken |
+|---|---|
+| D4 which pass is preselected | the week (`useState("week_pass")` in `components/onboard/Onboarding.tsx`) |
+| D5 the season on a free week | A: a yearly-interval subscription the webhook ends after its one payment |
+| D6 the week-to-season credit | $25.00 (`SEASON_UPGRADE_CENTS = 2500`); a free week earns no credit |
+| D7 `STHTIKTOK` | $14.99, half of $29.99, mechanically |
+| D8 the skip | "Not now. Keep the free lineup calls." (`ONBOARD.offer.skip`) |
+
+Where the build differs from the plan below, and why:
+
+- **The league is one screen, not four.** The walk mounts the same `LeagueLinker` `/connect` does
+  (`variant="walk"`), which already reveals platform, box, league and team in place. A shared
+  component rather than a hook kept `/connect` byte-for-byte in behaviour; its tests pass unchanged.
+- **The ESPN key and Yahoo come back to the walk by a flag**, not a query parameter: the bookmark's
+  trip leaves the site, so `lib/onboarding.markWalkReturn` leaves an hour-long note in
+  `localStorage` while the league screen is open, and `/connect/espn` and `/connect/yahoo` read it.
+  The ESPN page's own "back" link still says `/connect`.
+- **Without Stripe the free week is still a free week**: the same `trial:<sku>` row Stripe's $0
+  invoice writes, so the walk, the account page and the funnel can be driven end to end before
+  the key is set. Nothing bills on day eight in that mode, and every screen says no card was taken.
+- **The pass sheet a free owner meets later** (`AccountGate.tsx`) applies `FREEWEEK` too while
+  `trial_eligible`, and gives way to a discount code.
+
+Not done, and why: Android's WebOTP autofill needs Twilio Verify's message template to end with
+`@penthousefantasy.com #<code>` (a Twilio console setting, not code). Requiring a confirmed email
+before an email-only account's first purchase waits on mail being switched on (Andrew's call).
+The two Stripe dashboard switches in §8 are Andrew's.
 
 **How to use this:** hand a chat this whole file, or one `## O-n` section. Each section has
 Problem → Evidence (real file:line) → Build → Acceptance → Tests. Read **§3, the decisions**

@@ -235,7 +235,16 @@ the season; `/admin` can revoke them per account.
 Prices are created inline from `edge/products.py`, so there is nothing to make in the Stripe
 dashboard except the webhook endpoint, the customer portal and any promo codes (Checkout shows the
 promo-code field on every session). The week pass ($4.99) is `mode=subscription`, renewing weekly;
-the season pass ($24.99) and a league slot ($2.99) are one payment each.
+the season pass ($29.99) and a league slot ($2.99) are one payment each.
+
+**The free first week** (`FREEWEEK`, docs/SPEC-ONBOARDING.md) is a Stripe trial: Checkout in
+subscription mode with `trial_period_days=7` and `payment_method_collection=always`, so the card
+goes on file and nothing is charged today. The season on a trial is a subscription on a yearly
+interval that the webhook cancels the moment its one payment lands; its line on Stripe's page says
+"Nothing renews". Two dashboard switches make it honest and are **Andrew's to flip**:
+Settings → Billing → Subscriptions and emails → **"Send a reminder email before a free trial ends"**
+(the offer screen promises it), and the **customer portal** (`EDGE_BILLING_PORTAL_URL`), where a
+free week is cancelled in two taps.
 
 The webhook endpoint is `https://edge-api-gi8d.onrender.com/api/stripe/webhook` and it needs
 exactly these events:
@@ -252,6 +261,10 @@ exactly these events:
   `checkout.session.expired` (an abandoned checkout), `customer.subscription.deleted` and
   `customer.subscription.updated` (a week pass cancelled, now or at the period's end). Without
   them the admin's churn and abandonment numbers read zero.
+- **Add one more (2026-10-05, telemetry only):** `customer.subscription.trial_will_end`, Stripe's
+  three-day warning on a free week, logged as `trial_ending`. A `$0` `invoice.paid` carrying the
+  trial's metadata opens the free week rather than a paid one; the first real invoice after it is
+  logged as `trial_convert`.
 
 A bad signature answers 400 and grants nothing.
 
