@@ -186,7 +186,7 @@ not touch this table: there is nothing in it belonging to anyone.
 
 **The Claude API request is worth being precise about**, because it is the one users will ask
 about. `edge/engine/explain.py:verdict_payload` sends the verdict, both sides' value and lineup
-deltas, the fairness score, the other manager's tendency summary, the counteroffer, and player
+deltas, the "will they say yes" read, the other manager's tendency summary, the counteroffer, and player
 names. It does **not** send an email address, a league id, a team id, or a full roster. The
 privacy page says exactly this, and it is checkable against the code.
 

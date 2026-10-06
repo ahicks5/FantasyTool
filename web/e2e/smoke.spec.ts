@@ -624,7 +624,28 @@ test("the office leads with your roster and three deal rows, and skips to the tr
   expect(await deals.count()).toBeLessThanOrEqual(3);
   await expect(deals.first().getByText(OFFICE.youGive)).toBeVisible();
   await page.getByRole("button", { name: OFFICE.jump }).click();
-  await expect(page.getByRole("button", { name: OFFICE.buildClose })).toBeVisible();
+  // The trade room's two doors (W-037), both closed: nothing loads until one is opened.
+  await expect(page.getByRole("button", { name: new RegExp(OFFICE.doors.compare) })).toBeVisible();
+  await expect(page.getByRole("button", { name: new RegExp(OFFICE.doors.build) })).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+});
+
+test("the trade room opens empty: pick a manager, compare, then build, and no grade until both sides have a player", async ({ page }) => {
+  const { status } = await visit(page, "/trade");
+  expect(status).toBe(200);
+  const compare = page.getByRole("button", { name: new RegExp(OFFICE.doors.compare) });
+  await compare.click();
+  await expect(compare).toHaveAttribute("aria-pressed", "true");
+  // No default opponent: the picker sits on "Pick a manager" and no roster has loaded.
+  await expect(page.locator("#their-team")).toHaveValue("");
+  await expect(page.getByText(OFFICE.doors.pickFirst)).toBeVisible();
+  await page.locator("#their-team").selectOption({ index: 1 });
+  const toBuild = page.getByRole("button", { name: /^Build a trade with / });
+  await expect(toBuild).toBeVisible({ timeout: 10_000 });
+  await toBuild.click();
+  await expect(page.getByRole("button", { name: OFFICE.doors.toCompare })).toBeVisible();
+  // Nothing on the table, so there is no grade button at all, not a "Grade 0-for-0".
+  await expect(page.getByRole("button", { name: /^Grade \d+-for-\d+$/ })).toHaveCount(0);
   await assertNoHorizontalOverflow(page);
 });
 
@@ -892,7 +913,8 @@ test("a laptop gets two columns: the lineup's calls beside its field, five picku
   await assertNoHorizontalOverflow(page);
 
   await visit(page, SECTIONS.trade.href);
-  await page.getByRole("button", { name: OFFICE.buildOpen }).click();
+  await page.getByRole("button", { name: new RegExp(OFFICE.doors.build) }).click();
+  await page.locator("#their-team").selectOption({ index: 1 });
   await page.getByRole("button", { name: /\+ Add/ }).first().click();
   const picker = page.locator('div[role=dialog][aria-label="Your roster"] > div.relative');
   await expect(picker).toBeVisible();

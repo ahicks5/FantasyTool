@@ -906,7 +906,10 @@ export interface FinderOffer {
   my_gain_ros: number;
   their_gain_ros: number;
   my_gain_week: number;
+  /** Asset-value balance, min/max. An engine filter now, never shown (W-033). */
   fairness: number;
+  /** Will they say yes? The same read the verdict prints. Optional: an older API omits it. */
+  acceptance?: Acceptance;
   verdict: Verdict;
   score: number;
   why: string;
@@ -968,7 +971,8 @@ export interface SharedVerdict {
   get: string[];
   my_delta_ros: number;
   their_delta_ros: number;
-  fairness: number;
+  /** Absent on a share made before the acceptance read existed (those carry `fairness`). */
+  acceptance?: Acceptance;
   style: string | null;
   explanation: string;
   league_name: string;
@@ -1037,11 +1041,21 @@ export interface TradeRequest {
 
 export type Verdict = "Accept" | "Reject" | "Counter" | "Fair";
 
+/** "Will they say yes?" (W-033): a three-step read off their lineup and their history. */
+export type Acceptance = "Likely" | "Maybe" | "Unlikely";
+
+/**
+ * One side of a graded trade, every figure as printed: the engine rounds once
+ * (`Side.to_dict`), ROS figures in whole points and this week to one decimal, and every
+ * surface quotes these numbers rather than rounding again (W-032).
+ */
 export interface TradeSide {
   team_id?: string;
   team_name?: string;
   value_out: number;
   value_in: number;
+  /** value_in - value_out of the printed values. Optional: an older API omits it. */
+  value_net?: number;
   lineup_delta_week: number;
   lineup_delta_ros: number;
 }
@@ -1075,8 +1089,9 @@ export interface TradeGraphic {
   give: string[];
   get: string[];
   my_delta_ros: number;
+  /** Their OWN lineup change, never ours with the sign flipped. */
   their_delta_ros: number;
-  fairness: number;
+  acceptance: Acceptance;
   style: string | null;
 }
 
@@ -1084,7 +1099,7 @@ export interface TradeResult {
   verdict: Verdict;
   me: TradeSide;
   them: TradeSide;
-  fairness: number;
+  acceptance: Acceptance;
   their_tendencies: Tendencies;
   counter: Counter | null;
   notes: string[];

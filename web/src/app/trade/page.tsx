@@ -1,7 +1,8 @@
 "use client";
 /**
- * GM's Office: the three deals worth a call, every GM in one line each, and the table for
- * grading an offer of your own. The first open rings (`CallOpening`).
+ * GM's Office: the three deals worth a call, every GM in one line each, and the trade room
+ * with its two doors, Compare teams and Build a trade (W-037). The first open rings
+ * (`CallOpening`).
  */
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -10,7 +11,7 @@ import { GhostRows, Locked } from "@/components/Locked";
 import { ShareCard } from "@/components/ShareCard";
 import { Avatar } from "@/components/Avatar";
 import { PlayerLine } from "@/components/Players";
-import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, Stamp, StatusMeter, Why } from "@/components/ui";
+import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, Stamp, Why } from "@/components/ui";
 import { createShare, evaluateTrade, findTrades, getLeague, getRoster, getTeamGrades, PaywallError } from "@/lib/api";
 import { shareInApp } from "@/lib/native";
 import { once } from "@/lib/cache";
@@ -22,7 +23,7 @@ import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { Grades, LeagueSummary, Player, TeamGrades, TradeFinderResponse, TradeResult } from "@/lib/types";
 import { OFFICE } from "@/lib/vocab";
-import { officeKey } from "@/lib/office";
+import { ACCEPT_INK, canGrade, officeKey } from "@/lib/office";
 
 function sortRoster(players: Player[]): Player[] {
   return [...players].sort((a, b) => (b.ros ?? b.projected ?? 0) - (a.ros ?? a.projected ?? 0));
@@ -111,7 +112,7 @@ function TableSide({
           onClick={onAdd}
           className="min-h-0 shrink-0 rounded-full border border-line-2 bg-soft px-3 py-1.5 text-[13px] font-bold hover:bg-line"
         >
-          + Add
+          {OFFICE.table.add}
         </button>
       </div>
       <div className="mt-2.5">
@@ -122,21 +123,21 @@ function TableSide({
 }
 
 /**
- * The bar between the two halves: what each side is worth and which way it leans.
+ * The bar between the two halves: name value on each side.
  *
- * Deliberately not a verdict. Asset value alone says nothing about whether a trade
- * helps your lineup — that needs both rosters scored, which is what the Grade button
- * is for — so this labels itself "value" and stays quiet until both sides have a
- * player on them.
+ * Deliberately not a verdict, and deliberately not red. It used to read "ROS VALUE · -19
+ * TO YOU" in the loss colour over an Accept, because name value and what the trade does to
+ * your lineup are different questions (W-033). The lineup is what the Grade button reads;
+ * this only weighs the names, and says so.
  */
 function TableBalance({ out, in: inValue, live }: { out: number; in: number; live: boolean }) {
-  const net = inValue - out;
+  const net = whole(inValue) - whole(out);
   const total = out + inValue;
   const left = total > 0 ? Math.max(6, Math.min(94, Math.round((out / total) * 100))) : 50;
   return (
     <div className="border-y border-line bg-soft px-4 py-2.5">
       <div className="flex items-center gap-3">
-        <span className={`tnum shrink-0 text-[13px] font-black ${out > 0 ? "text-sit" : "text-muted"}`}>{out.toFixed(0)}</span>
+        <span className={`tnum shrink-0 text-[13px] font-black ${out > 0 ? "text-sit" : "text-muted"}`}>{whole(out)}</span>
         {/* Grey until there is something to weigh: a red and green bar over two zeroes
             looks like a reading, and there is nothing to read yet. */}
         <span aria-hidden className="flex h-[3px] min-w-0 flex-1 overflow-hidden rounded-full">
@@ -144,20 +145,44 @@ function TableBalance({ out, in: inValue, live }: { out: number; in: number; liv
           <span className="h-full w-[2px] shrink-0 bg-soft" />
           <span className={`h-full flex-1 rounded-r-full ${total > 0 ? "bg-start" : "bg-line-2"}`} />
         </span>
-        <span className={`tnum shrink-0 text-[13px] font-black ${inValue > 0 ? "text-start" : "text-muted"}`}>{inValue.toFixed(0)}</span>
+        <span className={`tnum shrink-0 text-[13px] font-black ${inValue > 0 ? "text-start" : "text-muted"}`}>{whole(inValue)}</span>
       </div>
       <p className="mt-1.5 truncate text-center text-[11px] font-bold uppercase tracking-[0.1em] text-muted">
-        {live ? `ROS value · ${signed(net, 0)} to you` : "ROS value on the table"}
+        {live ? OFFICE.table.valueLive(signed(net, 0)) : OFFICE.table.value}
       </p>
     </div>
   );
 }
+
+/** Half away from zero: the rule `edge/engine/trade.whole` sets for every trade figure. */
+function whole(x: number): number {
+  return x >= 0 ? Math.floor(x + 0.5) : -Math.floor(-x + 0.5);
+}
+
+/** One of the two doors into the trade room (W-037). Pressed is open. */
+function DoorButton({ active, onClick, label, hint }: { active: boolean; onClick: () => void; label: string; hint: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`min-h-0 min-w-0 rounded-2xl border px-3.5 py-3 text-left transition-colors ${active ? "border-ink bg-ink text-paper" : "border-line-2 bg-soft hover:bg-line"}`}
+    >
+      <span className="block truncate text-[14px] font-black">{label}</span>
+      <span className={`mt-0.5 block text-[11.5px] leading-snug ${active ? "text-paper/70" : "text-muted"}`}>{hint}</span>
+    </button>
+  );
+}
+
+type Door = "compare" | "build" | null;
 
 function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => void; signedIn: boolean }) {
   const params = useSearchParams();
   const [league, setLeague] = useState<LeagueSummary | null>(null);
   const [mine, setMine] = useState<Player[]>([]);
   const [theirs, setTheirs] = useState<Player[]>([]);
+  // No default opponent (W-037): nothing loads until a manager is picked, unless a link
+  // from the finder or a partner's page already named one.
   const [theirId, setTheirId] = useState(params.get("their") ?? "");
   const [give, setGive] = useState<string[]>(params.get("give")?.split(",").filter(Boolean) ?? []);
   const [get, setGet] = useState<string[]>(params.get("get")?.split(",").filter(Boolean) ?? []);
@@ -170,7 +195,10 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   // gets `{preview: true, ...}` from /trades/find — the same board with the offers taken
   // out — rather than a 402. See `edge/engine/trade_finder.preview`.
   const [found, setFound] = useState<(TradeFinderResponse & { preview?: boolean }) | null>(null);
-  const [build, setBuild] = useState(params.get("build") === "1");
+  const prefilled = params.get("give") && params.get("get");
+  const [door, setDoor] = useState<Door>(
+    params.get("compare") === "1" ? "compare" : params.get("build") === "1" || prefilled || params.get("their") ? "build" : null,
+  );
 
   useEffect(() => {
     Promise.all([
@@ -180,7 +208,6 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       .then(([l, roster]) => {
         setLeague(l);
         setMine(sortRoster(roster.players));
-        setTheirId((cur) => cur || l.teams.find((t) => t.id !== c.team_id)?.id || "");
       })
       .catch((e: unknown) => setError(e));
   }, [c.platform, c.league_id, c.team_id]);
@@ -196,7 +223,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   }, [c.platform, c.league_id, c.team_id]);
 
   useEffect(() => {
-    if (!theirId) return;
+    if (!theirId || door !== "build") return;
     let alive = true;
     once(`roster:${c.platform}:${c.league_id}:${theirId}`, () => getRoster(c.platform, c.league_id, theirId))
       .then((r) => alive && setTheirs(sortRoster(r.players)))
@@ -204,24 +231,22 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
     return () => {
       alive = false;
     };
-  }, [c.platform, c.league_id, theirId]);
+  }, [c.platform, c.league_id, theirId, door]);
 
-  // Two scorecards for the head-to-head, on the same `theirId` the picker already drives.
+  // Two scorecards for Compare teams, on the same `theirId` the picker drives.
   //
   // Both sides go through `getTeamGrades` rather than lifting mine out of the depth
   // chart's payload: one endpoint means both columns are computed the same way on the
   // same bundle, and two roads to the same number is how a comparison ends up right on
   // your side and quietly wrong on theirs.
   //
-  // Failures are swallowed. This is a free read sitting above a paid product, and a
+  // Failures are swallowed. This is a free read sitting beside a paid product, and a
   // scorecard that will not load must cost its own block, never the trade builder.
-  // Tagged with the team it describes rather than cleared on the way in. Clearing meant a
-  // `setCards(null)` in the effect body, which is a synchronous setState inside an effect
-  // -- a cascading render, and the lint rule that says so is right. Rendering only when the
-  // tag matches the current pick closes the same stale-card window without the extra pass.
+  // Tagged with the team it describes rather than cleared on the way in, so a stale card
+  // never renders under a new pick without a synchronous setState in the effect.
   const [cards, setCards] = useState<{ id: string; mine: Grades; theirs: TeamGrades } | null>(null);
   useEffect(() => {
-    if (!theirId) return;
+    if (!theirId || door !== "compare") return;
     let alive = true;
     Promise.all([
       once(`grades:${c.platform}:${c.league_id}:${c.team_id}`, () => getTeamGrades(c.platform, c.league_id, c.team_id)),
@@ -232,10 +257,11 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
     return () => {
       alive = false;
     };
-  }, [c.platform, c.league_id, c.team_id, theirId]);
+  }, [c.platform, c.league_id, c.team_id, theirId, door]);
 
   const others = useMemo(() => league?.teams.filter((t) => t.id !== c.team_id) ?? [], [league, c.team_id]);
   const theirTeam = others.find((t) => t.id === theirId);
+  const theirName = theirTeam?.name ?? OFFICE.verdict.them;
   const givePlayers = give.map((id) => mine.find((p) => p.id === id)).filter((p): p is Player => !!p);
   const getPlayers = get.map((id) => theirs.find((p) => p.id === id)).filter((p): p is Player => !!p);
 
@@ -243,6 +269,19 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
     setList(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
     setResult(null);
   }, []);
+
+  /** Open a door (or close the open one), and bring the room into view. */
+  function openDoor(d: Exclude<Door, null>, toggleOff = true) {
+    setDoor((cur) => (toggleOff && cur === d ? null : d));
+    requestAnimationFrame(() => document.getElementById("build")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
+  function pickManager(id: string) {
+    setTheirId(id);
+    setTheirs([]);
+    setGet([]);
+    setResult(null);
+  }
 
   async function submit() {
     setBusy(true);
@@ -260,7 +299,6 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   }
 
   // Auto-run when arriving from an Action card with a prefilled offer.
-  const prefilled = params.get("give") && params.get("get");
   const [autoRan, setAutoRan] = useState(false);
   // Waits for the board before firing: on the free tier there is no grading to auto-run,
   // and running it anyway traded a readable preview for a bare paywall.
@@ -281,26 +319,20 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   if (error && !league) return <ErrorBox error={error} />;
   if (!league) return <SkeletonList rows={3} />;
 
-  const building = build || !!prefilled || !!params.get("their");
-
   return (
     <div className="grid gap-7">
       {/* The first time: the phone rings. Once per browser (`lib/call.ts`). */}
       <CallOpening c={c} />
 
       {/* The office, top down (Andrew, 2026-09-23): the three deals worth a call, every
-          GM in one line each, and the table for your own idea at the bottom. */}
+          GM in one line each, and the trade room for your own idea at the bottom. */}
       {/* Side by side from 1024px up: the three calls on the left, every GM on the right. */}
       {found ? (
         <div className="grid min-w-0 gap-7 lg:grid-cols-2 lg:items-start lg:gap-8">
           <TopDeals
             board={found}
             preview={preview}
-            onJump={() => {
-              setBuild(true);
-              // After the open lands, so the scroll finds the room at its full height.
-              requestAnimationFrame(() => document.getElementById("build")?.scrollIntoView({ behavior: "smooth", block: "start" }));
-            }}
+            onJump={() => document.getElementById("build")?.scrollIntoView({ behavior: "smooth", block: "start" })}
           />
           <PartnerList board={found} preview={preview} />
         </div>
@@ -324,187 +356,228 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
       {/* Free, there is no builder to offer: grading an offer is the thing being sold. */}
       {!preview && (
-      // The trade table stays the reading width it was drawn at, centred, however wide the room.
-      <section id="build" className="office-build grid scroll-mt-20 tablet:scroll-mt-28 gap-4 lg:mx-auto lg:w-full lg:max-w-3xl">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="display text-[20px] leading-tight">{OFFICE.build}</h2>
-            <p className="mt-1 text-[12px] leading-snug text-muted">{OFFICE.buildHint}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setBuild((b) => !b)}
-            aria-expanded={building}
-            className="min-h-0 shrink-0 rounded-full bg-ink px-3.5 py-2 text-[12px] font-black text-paper"
-          >
-            {building ? OFFICE.buildClose : OFFICE.buildOpen}
-          </button>
+      // From 1024px up the room sits in the left column of the grid above, the same width
+      // as the roster tiles and the calls (W-036), rather than centred and wider.
+      <section id="build" className="office-build grid min-w-0 scroll-mt-20 tablet:scroll-mt-28 gap-4 lg:w-[calc(50%-1rem)]">
+        <div className="min-w-0">
+          <h2 className="display text-[20px] leading-tight">{OFFICE.build}</h2>
+          <p className="mt-1 text-[12px] leading-snug text-muted">{OFFICE.buildHint}</p>
         </div>
-      {building && (
+
+        {/* Two doors (W-037): size up a roster, or put an offer on the table. Each opens
+            empty on a "Pick a manager" control, and each has a way into the other. */}
+        <div className="grid grid-cols-2 gap-2">
+          <DoorButton active={door === "compare"} onClick={() => openDoor("compare")} label={OFFICE.doors.compare} hint={OFFICE.doors.compareHint} />
+          <DoorButton active={door === "build"} onClick={() => openDoor("build")} label={OFFICE.doors.build} hint={OFFICE.doors.buildHint} />
+        </div>
+
+        {door && (
+          <section className="card p-4">
+            <label htmlFor="their-team" className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+              {OFFICE.doors.pickLabel}
+            </label>
+            <select
+              id="their-team"
+              className="mt-1.5 w-full rounded-xl border border-line-2 bg-paper px-4 py-3 text-[15px] font-bold"
+              value={theirId}
+              onChange={(e) => pickManager(e.target.value)}
+            >
+              <option value="" disabled>
+                {OFFICE.doors.pick}
+              </option>
+              {others.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.record})
+                </option>
+              ))}
+            </select>
+            {!theirId && <p className="mt-2 text-[12px] text-muted">{OFFICE.doors.pickFirst}</p>}
+          </section>
+        )}
+
+        {/* Compare teams: both rosters side by side by position. Free on purpose: the
+            rosters are public inside the league and the letters are our arithmetic on them,
+            while what Trade Lab sells, the verdict on an actual offer and a counter tuned to
+            this manager, is behind the other door. Nothing here names a target. */}
+        {door === "compare" && theirId && (
+          cards?.id === theirId ? (
+            <Compare
+              mine={cards.mine}
+              theirs={cards.theirs}
+              footer={
+                <Button variant="start" className="w-full" onClick={() => openDoor("build", false)}>
+                  {OFFICE.doors.toBuild(theirName)}
+                </Button>
+              }
+            />
+          ) : (
+            <SkeletonList rows={2} />
+          )
+        )}
+
+      {door === "build" && theirId && (
       <>
-      <section className="card p-4">
-        <label htmlFor="their-team" className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
-          Across the table
-        </label>
-        <select
-          id="their-team"
-          className="mt-1.5 w-full rounded-xl border border-line-2 bg-paper px-4 py-3 text-[15px] font-bold"
-          value={theirId}
-          onChange={(e) => {
-            setTheirId(e.target.value);
-            setTheirs([]);
-            setGet([]);
-            setResult(null);
-          }}
-        >
-          {others.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name} ({t.record})
-            </option>
-          ))}
-        </select>
-      </section>
-
-      {/* Who they are, before what you might send them. Free on purpose: the rosters are
-          public inside the league and the letters are our arithmetic on them, while what
-          Trade Lab sells -- the verdict on an actual offer and a counter tuned to this
-          manager -- sits further down this same page. Nothing here names a target. */}
-      {cards?.id === theirId && <Compare mine={cards.mine} theirs={cards.theirs} className="mt-3.5" />}
-
       {/* One table rather than two cards. The two sides of a trade are one object, and
           splitting them into separate panels meant nothing on screen ever showed the
-          offer as a whole — you built each half blind and only learned what it was worth
-          after a round trip to the API. The tally between them is rest-of-season value
-          off the roster you already have in memory, so it moves the instant you add a
-          player: not a verdict, which is the engine's job, but enough to stop you
-          sending a ticket you did not mean to. */}
+          offer as a whole. The tally between them is name value off the rosters already in
+          memory, so it moves the instant you add a player: not a verdict, which is the
+          engine's job, but enough to stop you sending a ticket you did not mean to. */}
       <section className="card overflow-hidden p-0">
         <TableSide
-          label="You send"
+          label={OFFICE.table.send}
           tone="sit"
           players={givePlayers}
           onAdd={() => setSheet("give")}
           onRemove={(id) => toggle(give, setGive, id)}
-          empty="Tap Add to put someone on the table."
+          empty={OFFICE.table.sendEmpty}
         />
-        <TableBalance out={rosOf(givePlayers)} in={rosOf(getPlayers)} live={give.length > 0 && get.length > 0} />
+        <TableBalance out={rosOf(givePlayers)} in={rosOf(getPlayers)} live={canGrade(give, get)} />
 
         <TableSide
-          label={`You get from ${theirTeam?.name ?? "them"}`}
+          label={OFFICE.table.get(theirName)}
           tone="start"
           players={getPlayers}
           onAdd={() => setSheet("get")}
           onRemove={(id) => toggle(get, setGet, id)}
-          empty="Tap Add to name what you want back."
+          empty={theirs.length ? OFFICE.table.getEmpty : OFFICE.doors.loading}
         />
       </section>
 
+      <button type="button" onClick={() => openDoor("compare", false)} className="min-h-0 justify-self-start text-[13px] font-bold underline underline-offset-4">
+        {OFFICE.doors.toCompare}
+      </button>
+
       <PickerSheet open={sheet === "give"} onClose={() => setSheet(null)} title="Your roster" players={mine} selected={give} onToggle={(id) => toggle(give, setGive, id)} tone="sit" />
-      <PickerSheet open={sheet === "get"} onClose={() => setSheet(null)} title={`${theirTeam?.name ?? "Their"} roster`} players={theirs} selected={get} onToggle={(id) => toggle(get, setGet, id)} tone="start" />
+      <PickerSheet open={sheet === "get"} onClose={() => setSheet(null)} title={`${theirName} roster`} players={theirs} selected={get} onToggle={(id) => toggle(get, setGet, id)} tone="start" />
 
-      {/* Clears the phone's tab bar; from tablet up there is none, so it sits at the edge. */}
-      <div className="sticky bottom-24 z-[5] tablet:bottom-6">
-        <Button variant="start" className="w-full shadow-[var(--shadow-float)]" onClick={submit} busy={busy} disabled={give.length === 0 || get.length === 0}>
-          {busy ? "Grading it…" : `Grade ${give.length}-for-${get.length}`}
-        </Button>
-      </div>
-      {error && <ErrorBox error={error} />}
-
-      {result && (
-        <div id="verdict" className="grid gap-4 scroll-mt-16 tablet:scroll-mt-28">
-          <Card className="overflow-hidden p-0 rise">
-            {/* The moment. Same device as the share card: the call is stamped, not typeset.
-                The hero is dark in both themes, where the status inks vanish in light mode,
-                so the stamp goes white here and the verdict colour carries the line below. */}
-            <div className="hero callsheet rounded-none px-5 pb-6 pt-5">
-              <Eyebrow>The verdict</Eyebrow>
-              <div className="mt-3.5 pl-1">
-                <Stamp size="xl" slam ink="text-white" className="text-[34px]">
-                  {result.verdict}
-                </Stamp>
-              </div>
-              <p className="mt-4 text-[13px] leading-snug text-white/60">
-                Your {give.length}-for-{get.length} with {theirTeam?.name ?? "them"}, scored on both rosters.
-              </p>
-            </div>
-            <div className="p-5">
-              <p className={`display text-[19px] leading-snug ${verdictClass(result.verdict)}`}>{verdictBlurb(result.verdict)}</p>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <SideBox label="You" side={result.me} />
-                <SideBox label={theirTeam?.name ?? "Them"} side={result.them} />
-              </div>
-              <div className="mt-4">
-                <StatusMeter value={result.fairness} label="Fairness" />
-              </div>
-              <p className="mt-4 text-[15px] leading-relaxed text-ink-2">{result.explanation}</p>
-              {result.notes?.map((n) => (
-                <p key={n} className="mt-2.5 rounded-xl bg-flip-soft px-3 py-2 text-[13px] leading-snug text-flip">
-                  {n}
-                </p>
-              ))}
-              <Why
-                lines={[
-                  `Value is rest-of-season projected points, rescored to this league's settings. You send ${result.me.value_out.toFixed(0)} and receive ${result.me.value_in.toFixed(0)}.`,
-                  "Lineup impact is measured with free agents available, so an emptied slot costs the gap to the best waiver option rather than the whole player.",
-                  "Fairness is the smaller side divided by the larger side of asset value.",
-                ]}
-                label="How is this scored?"
-              />
-            </div>
-          </Card>
-
-          <Card className="rise rise-1">
-            <Eyebrow>The read on {theirTeam?.name ?? "them"}</Eyebrow>
-            <p className="mt-1 text-[13px] leading-snug text-muted">How this manager has actually traded and bid this season.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(result.their_tendencies.style
-                ? [
-                    result.their_tendencies.style,
-                    `${result.their_tendencies.trades ?? 0} trades`,
-                    `${result.their_tendencies.waiver_claims ?? 0} claims`,
-                    `avg bid $${result.their_tendencies.avg_bid ?? 0}`,
-                    ...(result.their_tendencies.favorite_positions ?? []).map((p) => `acquires ${p}s`),
-                    ...(result.their_tendencies.hoards ?? []).map((p) => `hoards ${p}s`),
-                  ]
-                : ["No moves on record yet"]
-              ).map((t) => (
-                <span key={t} className="rounded-full border border-line bg-soft px-2.5 py-1 text-[12px] font-bold">
-                  {t}
-                </span>
-              ))}
-            </div>
-          </Card>
-
-          {result.counter && (
-            <Card className="border-flip/40 bg-flip-soft rise rise-2">
-              <Eyebrow className="text-flip">What we&rsquo;d send back</Eyebrow>
-              <div className="mt-1.5 text-base">
-                <span className="font-bold text-sit">Send</span> {result.counter.give_names.join(" + ") || "nothing"}
-                <br />
-                <span className="font-bold text-start">Ask for</span> {result.counter.get_names.join(" + ") || "nothing"}
-              </div>
-              <p className="mt-2 text-sm">{result.counter.why}</p>
-            </Card>
-          )}
-
-          <section className="rise rise-3">
-            <H2>Send it to the league</H2>
-            <p className="mb-2 text-sm text-muted">
-              A public link anyone can open, with no account. Long-press the card to save the image.
-            </p>
-            <ShareLink result={result} give={givePlayers} get={getPlayers} c={c} />
-            <div className="mt-3">
-              <ShareCard result={result} give={givePlayers} get={getPlayers} leagueName={c.league_name} />
-            </div>
-          </section>
+      {/* No grade button until both sides have a player (W-037): "Grade 0-for-0" floated
+          over an empty table and read as a control that did something. Clears the phone's
+          tab bar; from tablet up there is none, so it sits at the edge. */}
+      {canGrade(give, get) && (
+        <div className="sticky bottom-24 z-[5] tablet:bottom-6">
+          <Button variant="start" className="w-full shadow-[var(--shadow-float)]" onClick={submit} busy={busy}>
+            {busy ? OFFICE.table.grading : OFFICE.table.grade(give.length, get.length)}
+          </Button>
         </div>
       )}
+      {error && <ErrorBox error={error} />}
+
+      {result && <VerdictView result={result} give={givePlayers} get={getPlayers} theirName={theirName} c={c} />}
       </>
       )}
       </section>
       )}
     </div>
   );
+}
+
+/**
+ * The verdict (W-033), top down: the stamp, then the one number it is based on (what the
+ * trade does to your starting lineup rest of season), name value as a line under it that
+ * cannot read as a loss, then "Will they say yes?" off their own lineup change. Every
+ * figure is the API's printed number (W-032): nothing here rounds or recomputes one.
+ */
+function VerdictView({ result, give, get, theirName, c }: { result: TradeResult; give: Player[]; get: Player[]; theirName: string; c: Connection }) {
+  const V = OFFICE.verdict;
+  const lead = result.me.lineup_delta_ros;
+  return (
+    <div id="verdict" className="grid gap-4 scroll-mt-16 tablet:scroll-mt-28">
+      <Card className="overflow-hidden p-0 rise">
+        {/* The moment. Same device as the share card: the call is stamped, not typeset.
+            The hero is dark in both themes, where the status inks vanish in light mode,
+            so the stamp goes white here and the verdict colour carries the line below. */}
+        <div className="hero callsheet rounded-none px-5 pb-6 pt-5">
+          <Eyebrow>{V.eyebrow}</Eyebrow>
+          <div className="mt-3.5 pl-1">
+            <Stamp size="xl" slam ink="text-white" className="text-[34px]">
+              {result.verdict}
+            </Stamp>
+          </div>
+          <p className="mt-4 text-[13px] leading-snug text-white/60">{V.scored(give.length, get.length, theirName)}</p>
+        </div>
+        <div className="p-5">
+          <p className={`display text-[19px] leading-snug ${verdictClass(result.verdict)}`}>{verdictBlurb(result.verdict)}</p>
+
+          {/* The lead: one number, and it is the one the call is made on. */}
+          <div className="mt-4 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+            <span className="text-[11px] font-black uppercase tracking-[0.1em] text-muted">{V.lead}</span>
+            <span className={`display tnum text-[40px] leading-none ${lead >= 0 ? "text-start" : "text-sit"}`}>{signed(lead, 0)}</span>
+            <span className="text-[13px] font-bold text-muted">{V.leadUnit}</span>
+          </div>
+          <p className="mt-1.5 text-[13px] leading-snug text-muted">{V.nameValue(lead, netOf(result.me))}</p>
+
+          {/* "Will they say yes?" where "Fairness 90%" used to sit. */}
+          <div className="mt-4 rounded-2xl bg-soft p-3.5">
+            <div className="text-[10px] font-black uppercase tracking-[0.1em] text-muted">{V.willThey}</div>
+            <div className={`display mt-1 text-[22px] leading-none ${ACCEPT_INK[result.acceptance] ?? "text-ink"}`}>{V.will[result.acceptance] ?? result.acceptance}</div>
+            <p className="mt-1.5 text-[13px] leading-snug text-ink-2">{V.theirLine(result.them.lineup_delta_ros)}</p>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <SideBox label={V.you} side={result.me} />
+            <SideBox label={theirName} side={result.them} />
+          </div>
+          <p className="mt-4 text-[15px] leading-relaxed text-ink-2">{result.explanation}</p>
+          {result.notes?.map((n) => (
+            <p key={n} className="mt-2.5 rounded-xl bg-flip-soft px-3 py-2 text-[13px] leading-snug text-flip">
+              {n}
+            </p>
+          ))}
+          <Why lines={V.howLines(result.me.value_out, result.me.value_in)} label={V.how} />
+        </div>
+      </Card>
+
+      <Card className="rise rise-1">
+        <Eyebrow>The read on {theirName}</Eyebrow>
+        <p className="mt-1 text-[13px] leading-snug text-muted">How this manager has actually traded and bid this season.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(result.their_tendencies.style
+            ? [
+                result.their_tendencies.style,
+                `${result.their_tendencies.trades ?? 0} trades`,
+                `${result.their_tendencies.waiver_claims ?? 0} claims`,
+                `avg bid $${result.their_tendencies.avg_bid ?? 0}`,
+                ...(result.their_tendencies.favorite_positions ?? []).map((p) => `acquires ${p}s`),
+                ...(result.their_tendencies.hoards ?? []).map((p) => `hoards ${p}s`),
+              ]
+            : ["No moves on record yet"]
+          ).map((t) => (
+            <span key={t} className="rounded-full border border-line bg-soft px-2.5 py-1 text-[12px] font-bold">
+              {t}
+            </span>
+          ))}
+        </div>
+      </Card>
+
+      {result.counter && (
+        <Card className="border-flip/40 bg-flip-soft rise rise-2">
+          <Eyebrow className="text-flip">What we&rsquo;d send back</Eyebrow>
+          <div className="mt-1.5 text-base">
+            <span className="font-bold text-sit">Send</span> {result.counter.give_names.join(" + ") || "nothing"}
+            <br />
+            <span className="font-bold text-start">Ask for</span> {result.counter.get_names.join(" + ") || "nothing"}
+          </div>
+          <p className="mt-2 text-sm">{result.counter.why}</p>
+        </Card>
+      )}
+
+      <section className="rise rise-3">
+        <H2>Send it to the league</H2>
+        <p className="mb-2 text-sm text-muted">
+          A public link anyone can open, with no account. Long-press the card to save the image.
+        </p>
+        <ShareLink result={result} give={give} get={get} c={c} />
+        <div className="mt-3">
+          <ShareCard result={result} give={give} get={get} leagueName={c.league_name} />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/** Name value in minus out, as printed. An older API sends no `value_net`. */
+function netOf(side: TradeResult["me"]): number {
+  return side.value_net ?? side.value_in - side.value_out;
 }
 
 /** Turns the verdict into a public URL and offers it for copying. */
@@ -566,17 +639,20 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
   );
 }
 
+/** One side's numbers, secondary to the lead: the lineup first, then this week, then name value. */
 function SideBox({ label, side }: { label: string; side: TradeResult["me"] }) {
-  const net = side.value_in - side.value_out;
+  const V = OFFICE.verdict;
   return (
     <div className="min-w-0 rounded-2xl bg-soft p-3.5">
       <div className="truncate text-[10px] font-black uppercase tracking-[0.1em] text-muted">{label}</div>
-      <div className={`display tnum mt-1 text-[26px] leading-none ${net >= 0 ? "text-start" : "text-sit"}`}>{signed(net, 0)}</div>
+      <div className={`display tnum mt-1 text-[26px] leading-none ${side.lineup_delta_ros >= 0 ? "text-start" : "text-sit"}`}>
+        {signed(side.lineup_delta_ros, 0)} <span className="text-[11px] font-bold text-muted">{OFFICE.ros}</span>
+      </div>
       <div className="tnum mt-1.5 text-[11px] text-muted">
-        <span className="text-sit">out {side.value_out.toFixed(0)}</span> · <span className="text-start">in {side.value_in.toFixed(0)}</span>
+        {V.weekLabel} {signed(side.lineup_delta_week)}
       </div>
       <div className="tnum mt-0.5 text-[11px] text-muted">
-        lineup wk {signed(side.lineup_delta_week)} · ROS {signed(side.lineup_delta_ros, 0)}
+        {V.valueLabel} {V.out} {side.value_out} · {V.in} {side.value_in}
       </div>
     </div>
   );

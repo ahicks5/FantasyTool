@@ -127,10 +127,10 @@ const ALL_COPY: string[] = [
   WIRE.page.how, ...WIRE.page.howLines, WIRE.page.gone, WIRE.page.others,
   ...Object.values(SCOUT_OPEN).map((v) => (typeof v === "function" ? v(2) : v)),
   // The GM's Office and its call.
-  OFFICE.title, OFFICE.seeAll(11), ...Object.values(OFFICE.heat), OFFICE.youGet, OFFICE.forWord, OFFICE.ros, OFFICE.fair,
+  OFFICE.title, OFFICE.seeAll(11), ...Object.values(OFFICE.heat), OFFICE.youGet, OFFICE.forWord, OFFICE.ros, OFFICE.yes,
   OFFICE.shape, ...Object.values(OFFICE.shapeWord), OFFICE.shapeHint, OFFICE.shapeAria("WR", "Spare"), OFFICE.jump, OFFICE.youGive, OFFICE.youGetShort, OFFICE.none, OFFICE.locked, OFFICE.lockedLine, OFFICE.hiddenLine(1), OFFICE.hiddenLine(4), OFFICE.hiddenNone, FILM.moreLine,
   OFFICE.partners, OFFICE.partnersHint, OFFICE.has, OFFICE.needs, OFFICE.offers(2), OFFICE.build, OFFICE.buildHint,
-  OFFICE.buildOpen, OFFICE.buildClose, OFFICE.deal.back, OFFICE.deal.rank(1), OFFICE.deal.offers, OFFICE.deal.theirShape,
+  ...allStrings(OFFICE.doors), ...allStrings(OFFICE.table), ...allStrings(OFFICE.verdict), ...allStrings(OFFICE.card), OFFICE.deal.back, OFFICE.deal.rank(1), OFFICE.deal.offers, OFFICE.deal.theirShape,
   OFFICE.deal.gone, OFFICE.deal.grade, OFFICE.deal.why,
   OFFICE.goAria("FxxxKroenke"), OFFICE.offers(1), OFFICE.deal.build("FxxxKroenke"),
   // The film, as the replay.

@@ -2,10 +2,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { IconArrowUp, IconCheck } from "@/components/icons";
-import { ConfidencePill, Eyebrow, LinkButton, OnAir, Stamp, Stat, StatusMeter, Wordmark } from "@/components/ui";
+import { ConfidencePill, Eyebrow, LinkButton, OnAir, Stamp, Stat, Wordmark } from "@/components/ui";
 import { signed, verdictBlurb } from "@/lib/format";
 import { isSharedBattle, isSharedFilm, isSharedLock, type SharedBattle, type SharedFilm, type SharedLock, type SharedSnapshot, type SharedVerdict } from "@/lib/types";
-import { BATTLE, FILM } from "@/lib/vocab";
+import { BATTLE, FILM, OFFICE } from "@/lib/vocab";
+import { ACCEPT_INK } from "@/lib/office";
 import { shortName } from "@/lib/battle";
 import { LINES } from "@/lib/vocab";
 
@@ -310,9 +311,15 @@ function TradeBody({ v }: { v: SharedVerdict }) {
             <Side label="You get" names={v.get} players={v.get_players} accent="bg-start" />
           </div>
 
-          <div className="mt-6">
-            <StatusMeter value={v.fairness ?? 0} label="Fairness" />
-          </div>
+          {/* "Will they say yes?" replaced the fairness meter (W-033). A share made before
+              it existed has no read, and then the line is simply not there. */}
+          {v.acceptance && (
+            <p className="mt-6 text-[15px] font-bold">
+              {OFFICE.verdict.willThey}{" "}
+              <span className={ACCEPT_INK[v.acceptance]}>{OFFICE.verdict.will[v.acceptance]}</span>
+              <span className="ml-1.5 font-normal text-muted">{OFFICE.verdict.theirLine(v.their_delta_ros)}</span>
+            </p>
+          )}
 
           <div className="mt-6 grid grid-cols-2 gap-4 border-t border-line pt-5">
             {/* These are the change to each starting lineup over the rest of the season, not

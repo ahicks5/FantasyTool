@@ -18,7 +18,7 @@ PLAYERS = [{"name": "Jaylen Warren", "position": "RB", "nfl_team": "PIT",
             "photo": "https://sleepercdn.com/content/nfl/players/thumb/8408.jpg",
             "team_logo": "https://sleepercdn.com/images/team_logos/nfl/pit.png"}]
 GRAPHIC = {"verdict": "Counter", "give": ["Jaylen Warren"], "get": ["Jakobi Meyers"],
-           "my_delta_ros": -4.0, "their_delta_ros": 50.0, "fairness": 0.81, "style": "rare trader",
+           "my_delta_ros": -4.0, "their_delta_ros": 50.0, "acceptance": "Maybe", "style": "rare trader",
            "give_players": PLAYERS, "get_players": []}
 
 

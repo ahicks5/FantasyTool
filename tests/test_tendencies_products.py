@@ -97,7 +97,7 @@ def test_opening_the_free_trade_board_does_not_open_trade_lab():
                           "complement": 1.84, "headline": "They need RB.",
                           "positions": {"surplus": {"WR": 30.0}, "need": {"RB": 20.0}},
                           "offers": [{"give_names": ["A Player"], "get_names": ["B Player"],
-                                      "fairness": 0.95, "my_gain_ros": 21.0}]}],
+                                      "acceptance": "Maybe", "my_gain_ros": 21.0}]}],
             "blockers": [], "algo_version": trade_finder.ALGO_VERSION}
     free = trade_finder.preview(paid)
     assert free["partners"][0]["fit"] == trade_finder.BEST_FIT

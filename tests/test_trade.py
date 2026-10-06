@@ -33,7 +33,9 @@ def test_lopsided_trade_is_rejected_and_reverse_is_accepted(league, ros):
     v2 = trade.evaluate(league, me, them, [my_worst.id], [their_best.id], ros)
     assert v2.verdict == trade.ACCEPT
     assert v2.me.lineup_delta_ros > 0
-    assert any("unlikely to accept" in n for n in v2.notes)
+    # Lopsided for us: their lineup takes the hit, so the read is a no, said in a word.
+    assert v2.acceptance == trade.UNLIKELY
+    assert not any("—" in n for n in v2.notes)
 
 
 def test_counter_improves_me_without_gutting_them(league, ros):
@@ -90,3 +92,106 @@ def test_trading_only_qb_costs_gap_to_replacement_not_whole_player(league, ros):
     best_fa_qb = max((ros[p.id] for p in league.free_agents if p.position == "QB"), default=0)
     assert best_fa_qb > 0
     assert v.them.lineup_delta_ros > -(ros[qb.id] - best_fa_qb) - 5   # bounded by the replacement gap
+
+
+# ------------------------------------------------- W-032 / W-033: one number per fact ---
+
+def _lopsided(league, ros):
+    me, them = league.teams[0], league.teams[1]
+    _, my_worst = _best_worst(me, ros)
+    their_best, _ = _best_worst(them, ros)
+    return trade.evaluate(league, me, them, [my_worst.id], [their_best.id], ros)
+
+
+def test_whole_rounds_half_away_from_zero_like_the_web():
+    """Python's round() and format() go half-to-even (-40.5 -> -40); the web's toFixed goes
+    away from zero (-41). That split is how one trade read -40 and -41 at once."""
+    assert trade.whole(-40.5) == -41 and trade.whole(40.5) == 41
+    assert trade.whole(-40.4) == -40 and trade.whole(0.49) == 0 and trade.whole(-0.5) == -1
+
+
+def test_verdict_box_sentence_and_card_carry_the_same_figures(league, ros, monkeypatch):
+    from edge.engine.explain import graphic, verdict_payload
+    from edge.graphics import verdict_card_html
+
+    monkeypatch.delenv("EDGE_USE_CLAUDE", raising=False)
+    v = _lopsided(league, ros)
+    # A half-point that the two rounding rules split, to prove one rule wins everywhere.
+    v.them.lineup_delta_ros = -40.5
+    p = verdict_payload(v)
+    g = graphic(v)
+    mine, theirs = p["me"]["lineup_delta_ros"], p["them"]["lineup_delta_ros"]
+    assert theirs == -41 and isinstance(theirs, int) and isinstance(mine, int)
+    # The card carries each side's OWN figure, never ours negated.
+    assert g["my_delta_ros"] == mine and g["their_delta_ros"] == theirs
+    assert g["their_delta_ros"] != -mine or mine == -theirs
+    text = template(v)
+    assert "Their lineup drops 41." in text and "-40" not in text
+    assert f"{mine:+d}" in text
+    for shape in ("square", "story"):
+        h = verdict_card_html(g, text, "L", 4, shape=shape)
+        assert f"Your lineup {mine:+d} ROS" in h and f"Theirs {theirs:+d}" in h
+        assert "Will they say yes?" in h and "Fairness" not in h
+
+
+def test_acceptance_replaces_fairness_and_reads_their_lineup(league, ros):
+    v = _lopsided(league, ros)
+    assert not hasattr(v, "fairness")
+    assert v.acceptance in (trade.LIKELY, trade.MAYBE, trade.UNLIKELY)
+    side = v.them
+    side.value_in, side.value_out = 100.0, 100.0
+    side.lineup_delta_ros = 5.0
+    assert trade.acceptance(side) == trade.LIKELY
+    assert trade.acceptance(side, Profile("x", trades=0)) == trade.MAYBE      # never traded
+    side.lineup_delta_ros = -2.0
+    assert trade.acceptance(side) == trade.MAYBE
+    side.lineup_delta_ros = 0.0
+    assert trade.acceptance(side, Profile("x", trades=4)) == trade.LIKELY     # active dealer
+    side.lineup_delta_ros = -41.0
+    assert trade.acceptance(side) == trade.UNLIKELY
+    side.lineup_delta_ros = 5.0
+    side.value_in = 60.0                                                      # name-value insult
+    assert trade.acceptance(side) == trade.UNLIKELY
+
+
+def test_the_lead_is_your_lineup_and_name_value_never_reads_as_a_loss(league, ros, monkeypatch):
+    from edge.engine.explain import name_value_line
+
+    assert name_value_line(28, -19) == "You give up more name value (-19), but your lineup gets better."
+    assert name_value_line(-5, -19) == "You give up more name value (-19)."
+    assert name_value_line(3, 0) is None
+    v = _lopsided(league, ros)
+    text = template(v)
+    assert text.startswith(v.verdict if v.verdict != trade.COUNTER else "Not as offered")
+    assert "Will they say yes?" in text and "—" not in text and "%" not in text
+
+
+def test_an_unlikely_deal_gets_a_counter_that_names_what_changes(league, ros):
+    """Lopsided for us: the counter says what to add or drop to get it done."""
+    found = False
+    for i, me in enumerate(league.teams[:4]):
+        them = league.teams[i + 1]
+        _, my_worst = _best_worst(me, ros)
+        their_best, _ = _best_worst(them, ros)
+        v = trade.evaluate(league, me, them, [my_worst.id], [their_best.id], ros)
+        if v.acceptance == trade.UNLIKELY and v.counter:
+            found = True
+            why = v.counter["why"]
+            assert any(w in why for w in ("Add ", "Send ", "Ask for ", "off the ask")), why
+            assert f"Your lineup {v.counter['me']['lineup_delta_ros']:+d} ROS" in why
+            assert "—" not in why
+    assert found, "no fixture trade produced an unlikely deal with a counter"
+
+
+def test_the_claude_prompt_quotes_the_printed_figures_and_carries_no_ids(league, ros):
+    import json as _json
+
+    from edge.engine.explain import SYSTEM, prompt_payload, verdict_payload
+
+    v = _lopsided(league, ros)
+    p = prompt_payload(v)
+    assert p["me"]["lineup_delta_ros"] == verdict_payload(v)["me"]["lineup_delta_ros"]
+    assert p["acceptance"] == v.acceptance and "fairness" not in p
+    blob = _json.dumps(p)
+    assert '"team_id"' not in blob
+    assert "exactly as it appears" in SYSTEM and "em dash" in SYSTEM

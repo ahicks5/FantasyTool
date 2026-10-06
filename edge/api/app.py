@@ -25,7 +25,8 @@ from edge.engine import live as live_mod
 from edge.engine import actions as actions_mod
 from edge.engine import recap as recap_mod
 from edge.engine import plan, report, trade, trade_finder, waiver_plan, waivers
-from edge.engine.explain import explain
+from edge.engine.explain import explain, verdict_payload
+from edge.engine.explain import graphic as trade_graphic
 
 app = FastAPI(title="Owner's Suite API", version="0.1")
 
@@ -1621,17 +1622,11 @@ def trade_lab(platform: str, league_id: str, body: TradeIn, email: str | None = 
     except ValueError as e:
         raise HTTPException(400, str(e))
     text, source = explain(v)
-    return {
-        "verdict": v.verdict, "me": v.me.to_dict(), "them": v.them.to_dict(), "fairness": v.fairness,
-        "their_tendencies": v.their_tendencies, "counter": v.counter, "notes": v.notes,
-        "explanation": text, "explanation_source": source,
-        "graphic": {
-            "title": f"{v.verdict}: {', '.join(p.name for p in v.me.give)} for {', '.join(p.name for p in v.me.get)}",
-            "give": [p.name for p in v.me.give], "get": [p.name for p in v.me.get],
-            "my_delta_ros": v.me.lineup_delta_ros, "their_delta_ros": v.them.lineup_delta_ros,
-            "fairness": v.fairness, "style": v.their_tendencies.get("style"),
-        },
-    }
+    # One payload, one set of printed figures: the verdict box, the sentence and the card
+    # all read the numbers `verdict_payload` carries (W-032).
+    out = verdict_payload(v)
+    out["me"] = {k: x for k, x in out["me"].items() if k not in ("give", "get")}
+    return out | {"explanation": text, "explanation_source": source, "graphic": trade_graphic(v)}
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/actions")

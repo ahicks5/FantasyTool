@@ -7,7 +7,25 @@
  * a number the engine already computed. Same split as `lib/wire.ts` for Scouting.
  */
 
-import type { FinderOffer } from "./types";
+import type { Acceptance, FinderOffer } from "./types";
+
+/**
+ * The ink for "Will they say yes?" (W-033). Never the only signal: the word (Likely, Maybe,
+ * Unlikely as is) is always printed beside it.
+ */
+export const ACCEPT_INK: Record<Acceptance, string> = {
+  Likely: "text-start",
+  Maybe: "text-flip",
+  Unlikely: "text-sit",
+};
+
+/**
+ * Whether the Build a trade table may be graded (W-037): one player on each side at least.
+ * Until then there is no grade button at all, not a disabled "Grade 0-for-0".
+ */
+export function canGrade(give: readonly string[], get: readonly string[]): boolean {
+  return give.length > 0 && get.length > 0;
+}
 
 /** The two shapes the board arrives in, paid and preview, as far as this file cares. */
 export interface OfficePartner {
@@ -87,8 +105,22 @@ export function dealCount(board: OfficeBoard | undefined): { top: number; total:
 export type Shape = "spare" | "short" | "set" | "mixed";
 
 /** The positions every roster is read at, in roster order; anything else follows. */
-const SHAPE_ORDER = ["QB", "RB", "WR", "TE", "K", "DEF"];
+const SHAPE_ORDER = ["QB", "RB", "WR", "TE"];
 const ALWAYS = ["QB", "RB", "WR", "TE"];
+/**
+ * Nobody trades for a kicker or a defense (Andrew, W-035). The engine stopped pricing them
+ * (`trade_finder.NOT_TRADED`); this drops them from a payload cached before that, too.
+ */
+export const NOT_TRADED = new Set(["K", "DEF", "DST", "D/ST"]);
+/**
+ * Under this share of its own larger side, a position with both a spare bench and a short
+ * starter is "mixed", not spare: RB read SPARE over an all but empty bar because the word
+ * came from which side was bigger and the bar from by how much (W-035). Now both come from
+ * the same net figure, and a net too small to draw is too small to name.
+ */
+export const MIXED_SHARE = 0.25;
+/** The least a tile that says spare or short ever draws, so the word never sits on an empty bar. */
+export const MIN_BAR = 0.12;
 
 /**
  * Your roster, one tile per position: spare, short, or set.
@@ -106,16 +138,26 @@ export function rosterShape(board: Pick<OfficeBoard, "my_positions">): { pos: st
     Array.isArray(v) ? (v.includes(pos) ? 1 : 0) : Math.max(0, v[pos] ?? 0);
   const { surplus, need } = board.my_positions;
   const listed = Array.isArray(surplus) || Array.isArray(need);
-  const keys = new Set([...ALWAYS, ...posList(surplus, 99), ...posList(need, 99)]);
+  const keys = new Set([...ALWAYS, ...posList(surplus, 99), ...posList(need, 99)].filter((p) => !NOT_TRADED.has(p)));
   const order = [...SHAPE_ORDER.filter((p) => keys.has(p)), ...[...keys].filter((p) => !SHAPE_ORDER.includes(p))];
   const rows = order.map((pos) => {
     const s = val(surplus, pos);
     const n = val(need, pos);
-    const shape: Shape = s > 0 && n > 0 ? (listed || s === n ? "mixed" : s > n ? "spare" : "short") : s > 0 ? "spare" : n > 0 ? "short" : "set";
-    return { pos, shape, amount: shape === "spare" ? s - (listed ? 0 : n) : shape === "short" ? n - (listed ? 0 : s) : 0 };
+    // One measure for the word and the bar: the net of the two sides, by value.
+    const net = listed ? 0 : s - n;
+    const shape: Shape =
+      s > 0 && n > 0
+        ? listed || Math.abs(net) < MIXED_SHARE * Math.max(s, n) ? "mixed" : net > 0 ? "spare" : "short"
+        : s > 0 ? "spare" : n > 0 ? "short" : "set";
+    const amount = shape === "spare" ? (listed ? s : s - n) : shape === "short" ? (listed ? n : n - s) : 0;
+    return { pos, shape, amount };
   });
   const top = Math.max(...rows.map((r) => r.amount), 0);
-  return rows.map(({ pos, shape, amount }) => ({ pos, shape, weight: top > 0 ? amount / top : shape === "set" ? 0 : 1 }));
+  return rows.map(({ pos, shape, amount }) => ({
+    pos,
+    shape,
+    weight: shape === "set" || shape === "mixed" ? 0 : top > 0 ? Math.max(MIN_BAR, amount / top) : 1,
+  }));
 }
 
 /** A last name, which is all a 110px panel has room for. */

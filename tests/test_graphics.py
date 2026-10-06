@@ -3,16 +3,16 @@ from edge.graphics import CONFIDENCE_COLORS, COLORS, card_html, lock_card_html, 
 
 def test_card_html_contains_verdict_players_and_colors():
     g = {"verdict": "Counter", "title": "Counter: A for B", "give": ["Terry McLaurin"], "get": ["Kyle Monangai"],
-         "my_delta_ros": -10.8, "their_delta_ros": 12.0, "fairness": 0.9, "style": "occasional trader"}
+         "my_delta_ros": -10.8, "their_delta_ros": 12.0, "acceptance": "Maybe", "style": "occasional trader"}
     h = verdict_card_html(g, "Not as offered. <script>", "The Megalabowl", 2)
     assert "COUNTER" in h and "Terry McLaurin" in h and "Kyle Monangai" in h
     assert COLORS["Counter"] in h               # the verdict carries its own colour
     assert "&lt;script&gt;" in h                # escaped
-    assert "Week 2" in h and "Fairness 90%" in h
+    assert "Week 2" in h and "Will they say yes?" in h and "Maybe" in h and "Fairness" not in h
 
 
 def test_card_names_every_player_with_his_position_and_team():
-    g = {"verdict": "Accept", "give": ["A"], "get": ["B"], "my_delta_ros": 12.0, "fairness": 0.95,
+    g = {"verdict": "Accept", "give": ["A"], "get": ["B"], "my_delta_ros": 12.0, "acceptance": "Maybe",
          "give_players": [{"name": "Alpha Back", "position": "WR", "nfl_team": "BUF", "photo": None}],
          "get_players": [{"name": "Beta Rush", "position": "RB", "nfl_team": "SF", "photo": None}]}
     h = verdict_card_html(g, "Take it.", "League", 3)
@@ -22,7 +22,7 @@ def test_card_names_every_player_with_his_position_and_team():
 
 def test_both_lineup_deltas_appear_once_each(graphic=None):
     g = {"verdict": "Accept", "give": ["A"], "get": ["B"], "my_delta_ros": 12.0,
-         "their_delta_ros": -3.0, "fairness": 0.9}
+         "their_delta_ros": -3.0, "acceptance": "Maybe"}
     h = verdict_card_html(g, "", "", None)
     assert "Your lineup +12 ROS" in h and "Theirs -3" in h
     assert h.count("Your lineup") == 1, "one delta row, not one per side"
@@ -31,7 +31,7 @@ def test_both_lineup_deltas_appear_once_each(graphic=None):
 def test_a_long_explanation_is_cut_on_a_sentence_boundary():
     """The card is a glance. An overflowing paragraph pushes the fairness bar off the image."""
     long = ("Not as offered. " * 3) + "Counter: give A for B. " + ("Extra detail. " * 8)
-    g = {"verdict": "Counter", "give": ["A"], "get": ["B"], "my_delta_ros": -4.0, "fairness": 0.8}
+    g = {"verdict": "Counter", "give": ["A"], "get": ["B"], "my_delta_ros": -4.0, "acceptance": "Maybe"}
     h = verdict_card_html(g, long, "", None)
     from edge.graphics import _first_sentences
     kept = _first_sentences(long)
@@ -60,7 +60,7 @@ def test_headshots_are_inlined_so_the_card_never_renders_a_broken_image(tmp_path
 
     monkeypatch.setattr(g.requests, "get", lambda url, timeout=0: (calls.append(url), FakeResp())[1])
     g_html = g.verdict_card_html(
-        {"verdict": "Accept", "give": ["A"], "get": ["B"], "my_delta_ros": 5.0, "fairness": 0.9,
+        {"verdict": "Accept", "give": ["A"], "get": ["B"], "my_delta_ros": 5.0, "acceptance": "Maybe",
          "give_players": [{"name": "A", "position": "WR", "nfl_team": "BUF", "photo": "https://cdn/a.png"}],
          "get_players": []},
         "Take it.", "League", 2)
@@ -68,7 +68,7 @@ def test_headshots_are_inlined_so_the_card_never_renders_a_broken_image(tmp_path
     assert "https://cdn/a.png" not in g_html, "the remote URL must not survive into the card"
     assert len(calls) == 1
     # a second render uses the disk cache rather than the network
-    g.verdict_card_html({"verdict": "Accept", "give": [], "get": [], "my_delta_ros": 0, "fairness": 1,
+    g.verdict_card_html({"verdict": "Accept", "give": [], "get": [], "my_delta_ros": 0, "acceptance": "Maybe",
                          "give_players": [{"name": "A", "photo": "https://cdn/a.png"}], "get_players": []},
                         "", "", None)
     assert len(calls) == 1
@@ -83,7 +83,7 @@ def test_a_face_that_will_not_load_is_simply_left_out(tmp_path, monkeypatch):
 
     monkeypatch.setattr(g.requests, "get", boom)
     h = g.verdict_card_html(
-        {"verdict": "Fair", "give": ["A"], "get": [], "my_delta_ros": 0, "fairness": 1,
+        {"verdict": "Fair", "give": ["A"], "get": [], "my_delta_ros": 0, "acceptance": "Maybe",
          "give_players": [{"name": "A", "position": "WR", "nfl_team": "BUF", "photo": "https://cdn/x.png"}],
          "get_players": []},
         "", "", None)
@@ -128,14 +128,14 @@ def test_a_lock_card_without_a_photo_still_shows_a_face():
 def test_card_html_sends_each_snapshot_to_its_own_card():
     lock = card_html({**LOCK, "kind": "lock", "league_name": "L", "week": 2})
     trade = card_html({"kind": "trade", "verdict": "Accept", "give": ["A"], "get": ["B"],
-                       "fairness": 0.9, "explanation": "Take it.", "league_name": "L", "week": 2})
+                       "acceptance": "Maybe", "explanation": "Take it.", "league_name": "L", "week": 2})
     assert "Start / sit" in lock and "ACCEPT" not in lock
     assert "ACCEPT" in trade and "Start / sit" not in trade
 
 def test_the_verdict_is_the_largest_thing_and_the_logo_is_a_signature():
     """The card is rebuilt around the call, not the brand. The old one opened with a 44px
     wordmark, which made the most-shared thing we own an advert for ourselves."""
-    g = {"verdict": "Accept", "give": ["A"], "get": ["B"], "my_delta_ros": 9.0, "fairness": 0.95}
+    g = {"verdict": "Accept", "give": ["A"], "get": ["B"], "my_delta_ros": 9.0, "acceptance": "Maybe"}
     h = verdict_card_html(g, "Take it.", "League", 4)
     stamp = h.index("ACCEPT")
     plate = h.index("OWNER&rsquo;S SUITE<")          # the nameplate span, not the eyebrow
@@ -157,7 +157,7 @@ def test_the_stamp_is_sized_so_a_long_verdict_cannot_run_off_the_card():
         width = SHAPES[shape][0]
         pad = 76 if shape == "story" else 68
         for verdict in ("Fair", "Accept", "Reject", "Counter", "Counteroffer"):
-            g = {"verdict": verdict, "give": [], "get": [], "my_delta_ros": 0, "fairness": 0.5}
+            g = {"verdict": verdict, "give": [], "get": [], "my_delta_ros": 0, "acceptance": "Maybe"}
             size = stamp_px(verdict_card_html(g, "", "", 1, shape=shape))
             drawn = 0.718 * len(verdict) * size + 0.061 * size + 95
             assert drawn <= width - 2 * pad, f"{verdict} overflows the {shape} card"
@@ -170,11 +170,21 @@ def test_the_story_shape_stacks_the_deal_and_keeps_every_number():
 
     assert SHAPES["story"] == (1080, 1920) and SHAPES["square"] == (1080, 1080)
     g = {"verdict": "Reject", "give": ["A"], "get": ["B"], "my_delta_ros": -6.0,
-         "their_delta_ros": 6.0, "fairness": 0.4, "style": "hoarder"}
+         "their_delta_ros": 6.0, "acceptance": "Maybe", "style": "hoarder"}
     tall = verdict_card_html(g, "No.", "League", 5, shape="story")
     assert "grid-template-columns:1fr;" in tall, "the two sides stack on a story"
     assert "1080px" in tall and "1920px" in tall
-    for fragment in ("REJECT", "Your lineup -6 ROS", "Theirs +6", "Fairness 40%", "Week 5", "ON AIR"):
+    for fragment in ("REJECT", "Your lineup -6 ROS", "Theirs +6", "Will they say yes?", "Week 5", "ON AIR"):
         assert fragment in tall, fragment
     wide = verdict_card_html(g, "No.", "League", 5)
     assert "grid-template-columns:1fr 1fr;" in wide, "the square card sets them side by side"
+
+
+def test_the_card_reads_will_they_say_yes_in_three_steps_never_a_percentage():
+    for will, word in (("Likely", "Likely"), ("Maybe", "Maybe"), ("Unlikely", "Unlikely as is")):
+        for shape in ("square", "story"):
+            g = {"verdict": "Accept", "give": ["A"], "get": ["B"], "my_delta_ros": 28,
+                 "their_delta_ros": -41, "acceptance": will}
+            h = verdict_card_html(g, "", "", None, shape=shape)
+            assert f"Will they say yes? " in h and word in h
+            assert "Fairness" not in h and "%" not in h.split("Will they say yes?")[1].split("</div>")[0]
