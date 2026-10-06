@@ -15,8 +15,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { WaiverPick, Waivers } from "@/lib/types";
-import { signed } from "@/lib/format";
-import { pickupHref, splitPicks, tabletPicks, urgency, type Urgency } from "@/lib/wire";
+import { pickupHref, rolledLine, splitPicks, tabletPicks, urgency, weeklyLabel, type Urgency } from "@/lib/wire";
 import { WIRE } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { IconChevron, IconLock } from "./icons";
@@ -48,8 +47,9 @@ function lastName(name: string): string {
  * Band, face, name, the week's gain (and the bid, when this league bids money), then the
  * cut on its own line so the name is never clipped.
  */
-function Panel({ p, i, wideOnly = false }: { p: WaiverPick; i: number; wideOnly?: boolean }) {
+function Panel({ p, i, w, wideOnly = false }: { p: WaiverPick; i: number; w: Waivers; wideOnly?: boolean }) {
   const u = urgency(p, i + 1);
+  const wk = weeklyLabel(p, w);
   return (
     <li className={`min-w-0 rise rise-${i + 1} ${wideOnly ? "hidden tablet:block" : ""}`}>
       <Link href={pickupHref(p.player.id)} aria-label={WIRE.goAria(p.player.name)} className={`pickup ${FRAME[u]}`}>
@@ -65,9 +65,9 @@ function Panel({ p, i, wideOnly = false }: { p: WaiverPick; i: number; wideOnly?
           {p.player.position} · {p.player.nfl_team ?? "FA"}
         </span>
         <span className="tnum mt-1 flex items-baseline justify-center gap-1.5 text-[14px] font-black">
-          <span className={p.weekly_gain > 0 ? "text-start" : "text-muted"}>
-            {signed(p.weekly_gain)}
-            <span className="ml-0.5 text-[10px] font-bold">{WIRE.week}</span>
+          <span className={wk.tone === "start" ? "text-start" : "text-muted"} data-played={wk.played || undefined}>
+            {wk.value}
+            {wk.unit && <span className="ml-0.5 text-[10px] font-bold">{wk.unit}</span>}
           </span>
           {p.bid.amount !== null && <span className="text-ink">${p.bid.amount}</span>}
         </span>
@@ -89,8 +89,9 @@ function Panel({ p, i, wideOnly = false }: { p: WaiverPick; i: number; wideOnly?
 }
 
 /** One of the next seven: a single line, the same door. */
-function MoreRow({ p, n, phoneOnly = false }: { p: WaiverPick; n: number; phoneOnly?: boolean }) {
+function MoreRow({ p, n, w, phoneOnly = false }: { p: WaiverPick; n: number; w: Waivers; phoneOnly?: boolean }) {
   const u = urgency(p, n);
+  const wk = weeklyLabel(p, w);
   return (
     <li className={phoneOnly ? "tablet:hidden" : undefined}>
       <Link href={pickupHref(p.player.id)} aria-label={WIRE.goAria(p.player.name)} className="flex min-h-12 min-w-0 items-center gap-2.5 rounded-xl border border-line px-3 py-2 transition-colors hover:bg-soft">
@@ -102,7 +103,7 @@ function MoreRow({ p, n, phoneOnly = false }: { p: WaiverPick; n: number; phoneO
             {p.player.position} · {p.player.nfl_team ?? "FA"} · {WIRE.urgency[u]}
           </span>
         </span>
-        <span className={`tnum shrink-0 text-[13px] font-black ${p.weekly_gain > 0 ? "text-start" : "text-muted"}`}>{signed(p.weekly_gain)}</span>
+        <span className={`tnum shrink-0 text-[13px] font-black ${wk.tone === "start" ? "text-start" : "text-muted"}`}>{wk.value}</span>
         <span className="display tnum w-10 shrink-0 text-right text-[15px] leading-none">{bidText(p)}</span>
         <IconChevron size={14} className="shrink-0 text-muted" />
       </Link>
@@ -141,19 +142,25 @@ export function TopPickups({ waivers }: { waivers: Waivers }) {
   return (
     <section className="grid min-w-0 gap-2.5">
       <Header more={more.length} moreWide={moreAfter} open={open} toggle={() => setOpen((o) => !o)} />
+      {rolledLine(waivers) && (
+        // The week is decided: these claims land next week, and the line says why (W-027).
+        <p className="-mt-1 text-[12.5px] font-semibold text-muted" data-testid="scouting-rolled">
+          {rolledLine(waivers)}
+        </p>
+      )}
       {top.length === 0 ? (
         <p className="card p-5 text-center text-[14px] text-ink-2">{WIRE.none}</p>
       ) : (
         <ol className="grid min-w-0 grid-cols-3 gap-2 tablet:grid-cols-5">
           {[...top, ...extra].map((p, i) => (
-            <Panel key={p.player.id} p={p} i={i} wideOnly={i >= top.length} />
+            <Panel key={p.player.id} p={p} i={i} w={waivers} wideOnly={i >= top.length} />
           ))}
         </ol>
       )}
       {open && more.length > 0 && (
         <ol className="grid min-w-0 gap-1.5">
           {more.map((p, i) => (
-            <MoreRow key={p.player.id} p={p} n={i + 4} phoneOnly={i < extra.length} />
+            <MoreRow key={p.player.id} p={p} n={i + 4} w={waivers} phoneOnly={i < extra.length} />
           ))}
         </ol>
       )}

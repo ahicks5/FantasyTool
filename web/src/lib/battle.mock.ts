@@ -340,7 +340,12 @@ export const BATTLE_FIXTURE: Battle = {
           "line": "DJ Moore is Out ahead of Khalil Shakir: the targets open up"
         }
       ],
-      "tilt": -2
+      "tilt": -2,
+      "state": "pre",
+      "a_state": "pre",
+      "b_state": "pre",
+      "a_points": null,
+      "b_points": null
     },
     {
       "key": "next5",

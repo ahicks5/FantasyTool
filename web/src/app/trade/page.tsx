@@ -22,6 +22,7 @@ import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { Grades, LeagueSummary, Player, TeamGrades, TradeFinderResponse, TradeResult } from "@/lib/types";
 import { OFFICE } from "@/lib/vocab";
+import { WEEK } from "@/lib/vocab";
 import { officeKey } from "@/lib/office";
 
 function sortRoster(players: Player[]): Player[] {
@@ -430,8 +431,8 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
             <div className="p-5">
               <p className={`display text-[19px] leading-snug ${verdictClass(result.verdict)}`}>{verdictBlurb(result.verdict)}</p>
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <SideBox label="You" side={result.me} />
-                <SideBox label={theirTeam?.name ?? "Them"} side={result.them} />
+                <SideBox label="You" side={result.me} week={result.week} />
+                <SideBox label={theirTeam?.name ?? "Them"} side={result.them} week={result.week} />
               </div>
               <div className="mt-4">
                 <StatusMeter value={result.fairness} label="Fairness" />
@@ -462,7 +463,8 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
                     result.their_tendencies.style,
                     `${result.their_tendencies.trades ?? 0} trades`,
                     `${result.their_tendencies.waiver_claims ?? 0} claims`,
-                    `avg bid $${result.their_tendencies.avg_bid ?? 0}`,
+                    // No FAAB in this league: the API sends no average bid, and none is shown (W-034).
+                    ...(result.their_tendencies.avg_bid != null ? [`avg bid $${result.their_tendencies.avg_bid}`] : []),
                     ...(result.their_tendencies.favorite_positions ?? []).map((p) => `acquires ${p}s`),
                     ...(result.their_tendencies.hoards ?? []).map((p) => `hoards ${p}s`),
                   ]
@@ -566,7 +568,7 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
   );
 }
 
-function SideBox({ label, side }: { label: string; side: TradeResult["me"] }) {
+function SideBox({ label, side, week }: { label: string; side: TradeResult["me"]; week?: number }) {
   const net = side.value_in - side.value_out;
   return (
     <div className="min-w-0 rounded-2xl bg-soft p-3.5">
@@ -576,7 +578,8 @@ function SideBox({ label, side }: { label: string; side: TradeResult["me"] }) {
         <span className="text-sit">out {side.value_out.toFixed(0)}</span> · <span className="text-start">in {side.value_in.toFixed(0)}</span>
       </div>
       <div className="tnum mt-0.5 text-[11px] text-muted">
-        lineup wk {signed(side.lineup_delta_week)} · ROS {signed(side.lineup_delta_ros, 0)}
+        {/* The week the trade lands in: "wk 5" once week 4 is decided (W-034). */}
+        lineup {week != null ? WEEK.scouting.wk(week) : "wk"} {signed(side.lineup_delta_week)} · ROS {signed(side.lineup_delta_ros, 0)}
       </div>
     </div>
   );

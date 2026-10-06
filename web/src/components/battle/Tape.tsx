@@ -13,7 +13,7 @@
  */
 import { chancePct, families, familyLead, horizonSplit, shortName, tug, weekTone } from "@/lib/battle";
 import type { Battle, BattleFighter, BattleHorizon, BattleRow, BattleSide } from "@/lib/types";
-import { BATTLE, CONFIDENCE_LABEL, LINEUP } from "@/lib/vocab";
+import { BATTLE, CONFIDENCE_LABEL, LINEUP, WEEK } from "@/lib/vocab";
 import type { Confidence } from "@/lib/types";
 import { FighterFace } from "./Fighter";
 
@@ -47,6 +47,9 @@ export function Headline({ battle }: { battle: Battle }) {
 /* ------------------------------------------------------------------ the tiles --- */
 
 function strengthWord(h: BattleHorizon): string {
+  // A played week is a result, not a chance (W-023): "Final", or "Live · still to play".
+  if (h.key === "week" && h.state === "final") return WEEK.battle.final;
+  if (h.key === "week" && h.state === "live") return WEEK.battle.live;
   if (h.key === "week") {
     const pct = chancePct(h);
     const label = CONFIDENCE_LABEL[h.strength as Confidence] ?? h.strength;
