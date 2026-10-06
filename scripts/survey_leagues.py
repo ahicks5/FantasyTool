@@ -143,7 +143,7 @@ def survey_team(league, team, ros, byes) -> dict:
         if their_team:
             try:
                 v = trade.evaluate(league, team, their_team, best["give"], best["get"], ros)
-                check = {"verdict": v.verdict, "fairness": round(v.fairness, 3),
+                check = {"verdict": v.verdict, "acceptance": v.acceptance,
                          "my_gain_ros": round(v.me.lineup_delta_ros, 2),
                          "their_gain_ros": round(v.them.lineup_delta_ros, 2),
                          "give": best["give_names"], "get": best["get_names"],
@@ -355,7 +355,7 @@ def markdown(rows: list[dict]) -> str:
         c = best["trade"]["evaluator_check"]
         L.append(f"- `{r['settings']['league_id']}` {best['team_name']} -> {c['their_team']}: "
                  f"give {', '.join(c['give'])} for {', '.join(c['get'])} — **{c['verdict']}**, "
-                 f"fairness {c['fairness']}, me {c['my_gain_ros']:+} / them {c['their_gain_ros']:+} ROS pts.")
+                 f"they say yes: {c.get('acceptance', '?')}, me {c['my_gain_ros']:+} / them {c['their_gain_ros']:+} ROS pts.")
     return "\n".join(L) + "\n"
 
 

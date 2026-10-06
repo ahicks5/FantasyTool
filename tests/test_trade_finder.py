@@ -137,7 +137,8 @@ def test_numbers_in_prose_match_the_numbers_in_the_payload(league, ros, profiles
             for o in partner["offers"]:
                 assert f"You gain {trade_finder._r0(o['my_gain_ros'])} " in o["why"]
                 assert f"they gain {trade_finder._r0(o['their_gain_ros'])}." in o["why"]
-                assert f"{round(o['fairness'] * 100)}% balanced" in o["why"]
+                assert trade_finder.WILL_LINE[o["acceptance"]] in o["why"]
+                assert "%" not in o["why"] and "—" not in o["why"]
 
 
 def test_headline_is_specific_not_filler(league, ros, profiles):
@@ -196,7 +197,7 @@ def test_an_offer_that_does_nothing_for_them_says_so_in_words(league, ros):
             for o in partner["offers"] if "neutral_for_them" in o["reason_codes"]]
     assert flat, "fixture no longer exercises the neutral case; pick another league"
     for o in flat:
-        assert "expect to add a sweetener or hear no" in o["why"]
+        assert "Expect to add a sweetener or hear no." in o["why"]
     for team in league.teams:
         for partner in trade_finder.find(league, team, ros)["partners"]:
             for o in partner["offers"]:
@@ -304,3 +305,18 @@ def test_preview_survives_an_empty_board():
     assert prev["partners"] == [] and prev["summary"] == trade_finder.NO_DEAL
     assert prev["my_positions"] == {"surplus": [], "need": []}
     assert trade_finder.preview({})["algo_version"] == trade_finder.ALGO_VERSION
+
+
+def test_kickers_and_defenses_are_never_a_need_or_a_surplus(league, ros, profiles):
+    """W-035: a roster short only at K and DEF read "Quiet week", because the finder went
+    looking for kickers nobody trades. Neither position is priced, so it chases a real one."""
+    baseline = trade_finder.league_baseline(league, ros)
+    for t in league.teams:
+        prof = trade_finder.position_profile(league, t, ros, baseline)
+        assert not (set(prof.need) | set(prof.surplus) | set(prof.starters_required)) & {"K", "DEF"}
+        found = trade_finder.find(league, t, ros, profiles)
+        assert not (set(found["my_positions"]["need"]) | set(found["my_positions"]["surplus"])) & {"K", "DEF"}
+        for partner in found["partners"]:
+            for o in partner["offers"]:
+                assert {p["position"] for p in o["give_players"] + o["get_players"]}.isdisjoint({"K", "DEF"})
+                assert o["acceptance"] in ("Likely", "Maybe", "Unlikely")

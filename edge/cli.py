@@ -121,10 +121,11 @@ def cmd_card(args):
     # rendered without faces would look worse than what a user posts from the app.
     from edge.engine.report import player_dict
 
-    g = {"verdict": v.verdict, "title": v.verdict, "give": [p.name for p in v.me.give], "get": [p.name for p in v.me.get],
-         "give_players": [player_dict(p) for p in v.me.give], "get_players": [player_dict(p) for p in v.me.get],
-         "my_delta_ros": v.me.lineup_delta_ros, "their_delta_ros": v.them.lineup_delta_ros,
-         "fairness": v.fairness, "style": v.their_tendencies.get("style")}
+    from edge.engine.explain import graphic
+
+    g = graphic(v) | {"title": v.verdict,
+                      "give_players": [player_dict(p) for p in v.me.give],
+                      "get_players": [player_dict(p) for p in v.me.get]}
     html_str = verdict_card_html(g, text, b.league.name, b.league.week, shape=args.shape)
     Path(args.out).mkdir(parents=True, exist_ok=True)
     suffix = "" if args.shape == "square" else f".{args.shape}"

@@ -9,6 +9,15 @@ from edge.engine.tendencies import Profile
 from edge.models import League, Player, Team
 
 ACCEPT, REJECT, COUNTER, FAIR = "Accept", "Reject", "Counter", "Fair"
+# "Will they say yes?" -- a three-step read, never a percentage (W-033).
+LIKELY, MAYBE, UNLIKELY = "Likely", "Maybe", "Unlikely"
+
+
+def whole(x: float) -> int:
+    """The one rounding rule for a trade figure a reader sees: whole points, half away from
+    zero. Every surface (verdict box, sentence, share card, Claude's prompt) prints the
+    number this returns, so -40.5 cannot read -40 in one place and -41 in another (W-032)."""
+    return int(x + 0.5) if x >= 0 else -int(-x + 0.5)
 
 
 @dataclass
@@ -36,10 +45,15 @@ class Side:
         return self._week
 
     def to_dict(self) -> dict:
+        """The figures as printed. Rounded here, once, so nothing downstream rounds again:
+        ROS figures in whole points, this week's to one decimal. `value_net` is the
+        difference of the two printed values, so it always matches "out 190 · in 171"."""
+        out, inn = whole(self.value_out), whole(self.value_in)
         return {
             "team_id": self.team.id, "team_name": self.team.name,
-            "value_out": self.value_out, "value_in": self.value_in,
-            "lineup_delta_week": self.lineup_delta_week, "lineup_delta_ros": self.lineup_delta_ros,
+            "value_out": out, "value_in": inn, "value_net": inn - out,
+            "lineup_delta_week": round(self.lineup_delta_week, 1),
+            "lineup_delta_ros": whole(self.lineup_delta_ros),
         }
 
 
@@ -48,7 +62,7 @@ class Verdict:
     verdict: str
     me: Side
     them: Side
-    fairness: float
+    acceptance: str          # LIKELY / MAYBE / UNLIKELY: will the other manager say yes?
     their_tendencies: dict
     counter: dict | None = None
     notes: list[str] = field(default_factory=list)
@@ -127,6 +141,27 @@ def _fairness(a: Side) -> float:
     return round(min(a.value_in, a.value_out) / hi, 2)
 
 
+def acceptance(them: Side, profile: Profile | None = None) -> str:
+    """Will they say yes? Read off what the trade does to THEIR starting lineup, nudged by
+    how this manager has actually traded. Replaces the old "Fairness %" (min/max of asset
+    value), which said 90% fair beside "they are unlikely to accept" (W-033).
+
+    Their lineup is read at the printed whole number, so the word and the figure beside it
+    ("Unlikely. Their lineup drops 41.") can never disagree. A name-value haircut below 70%
+    still reads as an insult whatever the lineup says: managers see names before lineups.
+    """
+    d = whole(them.lineup_delta_ros)
+    if d <= -8 or them.value_in < 0.7 * them.value_out:
+        return UNLIKELY
+    read = LIKELY if d >= 1 else MAYBE if d >= -4 else UNLIKELY
+    if profile is not None:
+        if profile.trades == 0 and read == LIKELY:
+            read = MAYBE                 # has never made a trade: a yes is never likely
+        elif profile.trades >= 3 and read == MAYBE and d >= 0:
+            read = LIKELY                # an active dealer takes a deal that costs him nothing
+    return read
+
+
 def evaluate(league: League, my_team: Team, their_team: Team, give_ids: list[str], get_ids: list[str],
              ros: dict[str, float], their_profile: Profile | None = None,
              hoarded: list[str] | None = None) -> Verdict:
@@ -137,7 +172,7 @@ def evaluate(league: League, my_team: Team, their_team: Team, give_ids: list[str
     ctx = Context(league, ros)
     me = _side(league, my_team, give, get, ros, ctx)
     them = _side(league, their_team, get, give, ros, ctx)
-    fairness = _fairness(me)
+    will = acceptance(them, their_profile)
     notes: list[str] = []
 
     # Verdict is from MY point of view: does my starting lineup get better, at a fair price?
@@ -147,8 +182,6 @@ def evaluate(league: League, my_team: Team, their_team: Team, give_ids: list[str
         verdict = REJECT
     else:
         verdict = FAIR
-    if them.lineup_delta_ros <= -8 or them.value_in < 0.7 * them.value_out:
-        notes.append("Lopsided in your favor — they are unlikely to accept as-is.")
     if them.lineup_delta_ros < 0 and me.lineup_delta_ros < 0:
         notes.append("Both lineups get worse this season. This is a depth-for-depth shuffle.")
 
@@ -158,11 +191,12 @@ def evaluate(league: League, my_team: Team, their_team: Team, give_ids: list[str
         tend["hoards"] = hoarded
 
     counter = None
-    if verdict in (REJECT, FAIR) or them.lineup_delta_ros <= -8:
+    # Lopsided for us is a deal that will not happen: find the version they can say yes to.
+    if verdict in (REJECT, FAIR) or will == UNLIKELY:
         counter = _counter(league, my_team, their_team, give, get, ros, their_profile, hoarded, ctx)
         if counter and verdict == REJECT:
             verdict = COUNTER
-    return Verdict(verdict, me, them, fairness, tend, counter, notes)
+    return Verdict(verdict, me, them, will, tend, counter, notes)
 
 
 def _counter(league: League, my_team: Team, their_team: Team, give: list[Player], get: list[Player],
@@ -197,8 +231,8 @@ def _counter(league: League, my_team: Team, their_team: Team, give: list[Player]
     for c_give, c_get in candidates:
         me = _side(league, my_team, c_give, c_get, ros, ctx)
         them = _side(league, their_team, c_get, c_give, ros, ctx)
-        if me.lineup_delta_ros <= 0:
-            continue
+        if whole(me.lineup_delta_ros) < 1:
+            continue                     # a counter that prints "+0" for you is not one
         if them.lineup_delta_ros < -2 or _fairness(them) < 0.85:
             continue
         score = me.lineup_delta_ros + 0.5 * them.lineup_delta_ros
@@ -215,16 +249,39 @@ def _counter(league: League, my_team: Team, their_team: Team, give: list[Player]
             "me": me.to_dict(), "them": them.to_dict(), "why": why}
 
 
+def _names(ps: list[Player]) -> str:
+    return " and ".join(p.name for p in ps)
+
+
 def _counter_why(c_give, c_get, give, get, me: Side, them: Side, fav: set[str]) -> str:
-    """Why this counter works — the give/get lists are shown separately, so don't restate them."""
-    s = f"Your lineup {me.lineup_delta_ros:+.0f} ROS, theirs {them.lineup_delta_ros:+.0f} — they stay whole, so it is askable."
+    """Why this counter works, leading with what changed: what to add, what to drop.
+
+    The give/get lists are shown beside it, so this names only the difference, and quotes
+    the same printed figures as the counter's own `me`/`them` (W-032: never round twice)."""
+    give_ids, get_ids = {p.id for p in give}, {p.id for p in get}
+    c_give_ids, c_get_ids = {p.id for p in c_give}, {p.id for p in c_get}
+    added = [p for p in c_give if p.id not in give_ids]
+    pulled = [p for p in give if p.id not in c_give_ids]
+    asked = [p for p in c_get if p.id not in get_ids]
+    dropped = [p for p in get if p.id not in c_get_ids]
+    parts: list[str] = []
+    if added and pulled:
+        parts.append(f"Send {_names(added)} instead of {_names(pulled)}.")
+    elif added:
+        parts.append(f"Add {_names(added)} to get it done.")
+    if asked and dropped:
+        parts.append(f"Ask for {_names(asked)} instead of {_names(dropped)}.")
+    elif dropped:
+        parts.append(f"Take {_names(dropped)} off the ask. That was the sticking point.")
+    elif asked:
+        parts.append(f"Ask for {_names(asked)} too.")
+    m, t = whole(me.lineup_delta_ros), whole(them.lineup_delta_ros)
+    parts.append(f"Your lineup {m:+d} ROS, theirs {t:+d}. "
+                 + ("They stay whole, so they can say yes." if t >= 0 else "They lose little, so they can say yes."))
     given_fav = [p.position for p in c_give if p.position in fav]
     if given_fav:
-        s += f" They chase {given_fav[0]}s; this feeds that."
-    removed_get = [p for p in get if p.id not in {x.id for x in c_get}]
-    if removed_get:
-        s += f" Asking for {', '.join(p.name for p in removed_get)} was the sticking point."
-    return s
+        parts.append(f"They chase {given_fav[0]}s; this feeds that.")
+    return " ".join(parts)
 
 
 def trade_targets(league: League, my_team: Team, ros: dict[str, float], limit: int = 3) -> list[dict]:
@@ -252,9 +309,9 @@ def trade_targets(league: League, my_team: Team, ros: dict[str, float], limit: i
                             "give": [g.id], "get": [t.id], "give_names": [g.name], "get_names": [t.name],
                             "my_gain_ros": me.lineup_delta_ros, "their_gain_ros": them.lineup_delta_ros,
                             "verdict": FAIR,
-                            "why": (f"You gain {me.lineup_delta_ros:.0f} ROS lineup points, they gain {them.lineup_delta_ros:.0f}. Both start the player they get."
+                            "why": (f"You gain {whole(me.lineup_delta_ros)} ROS lineup points, they gain {whole(them.lineup_delta_ros)}. Both start the player they get."
                                     if them.lineup_delta_ros >= 1 else
-                                    f"You gain {me.lineup_delta_ros:.0f} ROS lineup points. Even value for them ({_fairness(them):.0%} fair), so it is askable but not a slam dunk.")})
+                                    f"You gain {whole(me.lineup_delta_ros)} ROS lineup points. Even name value for them, so it is askable but not a slam dunk.")})
     out.sort(key=lambda d: -(d["my_gain_ros"] + 0.5 * d["their_gain_ros"]))
     seen = set()
     uniq = []

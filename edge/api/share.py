@@ -29,7 +29,7 @@ KINDS = ("trade", "lock", "film", "battle")
 KIND_FEATURE = {"trade": "trade_lab", "lock": "my_team", "film": "my_team", "battle": "battle"}
 FILM_FIELDS = ("result", "my_points", "their_points", "opponent", "line", "team")
 
-PUBLIC_FIELDS = ("verdict", "give", "get", "my_delta_ros", "their_delta_ros", "fairness", "style")
+PUBLIC_FIELDS = ("verdict", "give", "get", "my_delta_ros", "their_delta_ros", "acceptance", "style")
 CALL_FIELDS = ("gain", "confidence", "slot", "note")
 
 

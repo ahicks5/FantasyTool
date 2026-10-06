@@ -18,7 +18,7 @@ def test_ids_are_short_unguessable_and_unambiguous():
 
 def test_snapshot_carries_the_card_and_nothing_private():
     graphic = {"verdict": "Accept", "give": ["A"], "get": ["B"], "my_delta_ros": 12.0,
-               "their_delta_ros": 3.0, "fairness": 0.91, "style": "active dealer",
+               "their_delta_ros": 3.0, "acceptance": "Maybe", "style": "active dealer",
                "secret_league_id": "1403186749361901568"}
     snap = share_mod.snapshot(graphic, "Take it.", "The Megalabowl", 2,
                               give_players=[{"name": "A", "position": "WR", "nfl_team": "BUF",
@@ -41,7 +41,7 @@ def client(monkeypatch):
 
 
 BODY = {"graphic": {"verdict": "Counter", "give": ["A"], "get": ["B"], "my_delta_ros": -4.0,
-                    "their_delta_ros": 9.0, "fairness": 0.8, "style": "rare trader"},
+                    "their_delta_ros": 9.0, "acceptance": "Maybe", "style": "rare trader"},
         "explanation": "Not as offered.", "league_name": "Test League", "week": 2}
 H = {"X-Edge-User": "andrew@example.com"}
 
@@ -248,3 +248,29 @@ def test_a_film_share_renders_the_film_card(client, tmp_path, monkeypatch):
     assert "130.1" in html_ and "WIN" in html_ and "Your best score of the season" in html_
     assert "Own the week" in html_
     assert kw.get("height") == 1080, "no story layout yet: the square, not a letterbox"
+
+
+def test_a_shared_trade_card_prints_the_verdicts_own_figures_in_both_shapes():
+    """W-032: the shared card read "Their lineup -28" when the verdict said -41, because it
+    printed our +28 with the sign flipped. The snapshot keeps each side's own figure and the
+    acceptance read, and both card shapes print exactly those."""
+    from edge.graphics import verdict_card_html
+
+    graphic = {"verdict": "Accept", "give": ["C.J. Stroud"], "get": ["B"], "my_delta_ros": 28,
+               "their_delta_ros": -41, "acceptance": "Unlikely", "style": "rare trader"}
+    snap = share_mod.snapshot(graphic, "Accept.", "L", 4)
+    assert snap["their_delta_ros"] == -41 and snap["acceptance"] == "Unlikely"
+    assert "fairness" not in snap
+    for shape in ("square", "story"):
+        h = verdict_card_html(snap, snap["explanation"], "L", 4, shape=shape)
+        assert "Your lineup +28 ROS" in h and "Theirs -41" in h and "-28" not in h
+        assert "Will they say yes?" in h and "Unlikely as is" in h
+
+
+def test_a_snapshot_from_before_the_acceptance_read_still_renders():
+    from edge.graphics import verdict_card_html
+
+    old = {"verdict": "Fair", "give": ["A"], "get": ["B"], "my_delta_ros": 2.5,
+           "their_delta_ros": -0.5, "fairness": 0.9, "style": "quiet"}
+    h = verdict_card_html(old, "", "", None)
+    assert "Your lineup +3 ROS" in h and "Theirs -1" in h and "Will they say yes?" not in h

@@ -164,7 +164,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
                 "why": [partner["headline"],
                         f"Your lineup gains {trade_finder._r0(o['my_gain_ros'])} rest-of-season points; "
                         f"theirs gains {trade_finder._r0(o['their_gain_ros'])}.",
-                        f"Asset value is {round(o['fairness'] * 100)}% balanced, so it is not an insult."],
+                        trade_finder.WILL_LINE.get(o.get("acceptance") or "", "Scored on both lineups, not just yours.")],
                 "players": o["give_players"][:1] + o["get_players"][:1],
                 "cta": {"label": "Trade Lab",
                         "href": f"/trade?their={partner['team_id']}&give={','.join(o['give'])}&get={','.join(o['get'])}"},

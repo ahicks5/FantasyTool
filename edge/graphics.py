@@ -170,6 +170,35 @@ def _on_air(size: int) -> str:
     )
 
 
+# "Will they say yes?" replaced "Fairness %" (W-033): three steps, not a percentage.
+WILL_STEPS = {"Likely": 3, "Maybe": 2, "Unlikely": 1}
+WILL_COLORS = {"Likely": COLORS["Accept"], "Maybe": COLORS["Counter"], "Unlikely": COLORS["Reject"]}
+WILL_WORD = {"Likely": "Likely", "Maybe": "Maybe", "Unlikely": "Unlikely as is"}
+
+
+def _whole(x: float) -> int:
+    """Half away from zero, the rule `edge.engine.trade.whole` sets for every trade figure."""
+    return int(x + 0.5) if x >= 0 else -int(-x + 0.5)
+
+
+def _will_they(will: str | None, style: str) -> str:
+    """The foot of the trade card: will the other manager say yes, and his style. A snapshot
+    shared before the acceptance read existed has none, and then only the style shows."""
+    e = html.escape
+    colour = WILL_COLORS.get(will or "", COLORS["Fair"])
+    head = (f'<span>Will they say yes? <span style="color:{colour}">{e(WILL_WORD.get(will, will))}</span></span>'
+            if will else "<span></span>")
+    row = (f'<div style="display:flex;align-items:baseline;justify-content:space-between;font-size:30px;font-weight:700">'
+           f'{head}<span style="color:{PAPER}.5);font-weight:500">{e(style)}</span></div>')
+    if not will:
+        return row
+    on = WILL_STEPS.get(will, 0)
+    steps = "".join(
+        f'<span style="flex:1;height:18px;border-radius:99px;background:{colour if i < on else "rgba(255,255,255,.14)"}"></span>'
+        for i in range(3))
+    return row + f'<div style="margin-top:14px;display:flex;gap:10px">{steps}</div>'
+
+
 def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", week: int | None = None,
                       shape: str = "square") -> str:
     """The share card, built around the verdict rather than around the logo.
@@ -188,10 +217,11 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
     tall = shape == "story"
     verdict = graphic.get("verdict") or str(graphic.get("title", "")).split(":")[0]
     colour = COLORS.get(verdict, "#ffffff")
-    fair = int(round((graphic.get("fairness") or 0) * 100))
-    bar = COLORS["Accept"] if fair >= 90 else COLORS["Counter"] if fair >= 75 else COLORS["Reject"]
-    mine = graphic.get("my_delta_ros") or 0
-    theirs = graphic.get("their_delta_ros") or 0
+    # Each side's OWN printed delta, never ours with the sign flipped (W-032). The figures
+    # arrive already whole (`Side.to_dict`); `_whole` only guards a snapshot from before.
+    mine = _whole(graphic.get("my_delta_ros") or 0)
+    theirs = _whole(graphic.get("their_delta_ros") or 0)
+    will = graphic.get("acceptance")
     mine_colour = COLORS["Accept"] if mine >= 0 else COLORS["Reject"]
     # A share card is a glance, not a page. Keep the verdict's first sentences and stop.
     blurb = _first_sentences(explanation, limit=250 if tall else 190)
@@ -247,20 +277,15 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
   </div>
 
   <div style="display:flex;gap:40px;margin-top:28px;font-size:30px;font-weight:900">
-    <span style="color:{mine_colour}">Your lineup {mine:+.0f} ROS</span>
-    <span style="color:{PAPER}.55)">Theirs {theirs:+.0f}</span>
+    <span style="color:{mine_colour}">Your lineup {mine:+d} ROS</span>
+    <span style="color:{PAPER}.55)">Theirs {theirs:+d}</span>
   </div>
 
   <div style="margin-top:26px;font-size:{31 if tall else 29}px;line-height:1.38;color:{PAPER}.82)">{e(blurb)}</div>
   </div>
 
   <div style="{'' if tall else 'margin-top:auto'}">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;font-size:30px;font-weight:700">
-      <span>Fairness {fair}%</span><span style="color:{PAPER}.5);font-weight:500">{e(graphic.get('style') or '')}</span>
-    </div>
-    <div style="margin-top:14px;height:18px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden">
-      <div style="width:{fair}%;height:100%;border-radius:99px;background:{bar}"></div>
-    </div>
+    {_will_they(will, graphic.get('style') or '')}
     <!-- The signature. Small, in the corner, where a maker's plate goes. -->
     <div style="margin-top:{40 if tall else 34}px;padding-top:{28 if tall else 24}px;
       border-top:1px solid rgba(255,255,255,.12);display:flex;align-items:center;

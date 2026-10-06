@@ -18,7 +18,7 @@ from itertools import combinations
 
 from edge.engine.lineup import optimize
 from edge.engine.tendencies import Profile
-from edge.engine.trade import FAIR, Context, Side, _fairness, _side
+from edge.engine.trade import FAIR, Context, Side, _fairness, _side, acceptance
 from edge.models import FLEX_SLOTS, League, Team, Player, slot_accepts
 
 ALGO_VERSION = "trade_finder.v1"
@@ -38,6 +38,14 @@ MIN_THEIR_GAIN = 0.0     # they must not be worse off, or they will not accept
 MEANINGFUL_THEIR_GAIN = 2.0
 MIN_FAIRNESS = 0.75      # asset value balance below which the offer reads as an insult
 SIMPLICITY_BONUS = 1.5   # a 1-for-1 is far more likely to get accepted than a 2-for-1
+# Nobody trades for a kicker or a defense (W-035). A roster short only at K and DEF read
+# "Quiet week" because the finder went looking for kickers; these positions are left out
+# of every roster's surplus and need, so the finder chases the weakest position people trade.
+NOT_TRADED = frozenset({"K", "DEF"})
+
+# "Will they say yes?", in the offer's sentence. The same three words the verdict uses.
+WILL_LINE = {"Likely": "They should say yes.", "Maybe": "They might say yes.",
+             "Unlikely": "Expect a no as is."}
 
 NO_DEAL = "No trade in this league helps both sides right now. Hold."
 # What a partner is called on the free board. A word, not the raw complement score: `fit 0.50`
@@ -71,6 +79,7 @@ class Offer:
     score: float
     why: str
     reason_codes: list[str] = field(default_factory=list)
+    acceptance: str = ""      # "Will they say yes?" -- trade.acceptance, the verdict's own read
 
     def to_dict(self) -> dict:
         from edge.engine.report import player_dict
@@ -82,7 +91,7 @@ class Offer:
             "get_players": [player_dict(p) for p in self.get],
             "my_gain_ros": self.me.lineup_delta_ros, "their_gain_ros": self.them.lineup_delta_ros,
             "my_gain_week": self.me.lineup_delta_week,
-            "fairness": self.fairness, "verdict": FAIR, "score": self.score,
+            "fairness": self.fairness, "acceptance": self.acceptance, "verdict": FAIR, "score": self.score,
             "why": self.why, "reason_codes": self.reason_codes,
         }
 
@@ -116,7 +125,8 @@ def position_profile(league: League, team: Team, ros: dict[str, float],
                      baseline: dict[str, list[float]]) -> PositionProfile:
     """Surplus = value your bench holds above the starter line. Need = how far your starters
     fall below what the rest of the league starts at that position."""
-    req = starters_required(league.starting_slots)
+    # Only the positions people trade: the grades read every slot, the finder does not.
+    req = {pos: n for pos, n in starters_required(league.starting_slots).items() if pos not in NOT_TRADED}
     prof = PositionProfile(starters_required=req)
     for pos, n in req.items():
         mine = sorted((ros.get(p.id, 0.0) for p in team.players if p.position == pos), reverse=True)
@@ -249,6 +259,7 @@ def find(league: League, my_team: Team, ros: dict[str, float],
             fair = _fairness(them_side)
             if fair < MIN_FAIRNESS:
                 continue
+            will = acceptance(them_side, profiles.get(other.id))
             mutual = them_side.lineup_delta_ros >= MEANINGFUL_THEIR_GAIN
             codes = ["both_sides_improve"] if mutual else ["neutral_for_them"]
             fit, fit_note = _behavioral_fit(give, get, profiles.get(other.id))
@@ -260,15 +271,15 @@ def find(league: League, my_team: Team, ros: dict[str, float],
             score = round(me_side.lineup_delta_ros + 0.5 * them_side.lineup_delta_ros
                           + 4 * fair + fit + simplicity, 2)
             why = (f"You gain {_r0(me_side.lineup_delta_ros)} rest-of-season lineup points, they gain "
-                   f"{_r0(them_side.lineup_delta_ros)}. Value is {round(fair * 100)}% balanced.")
+                   f"{_r0(them_side.lineup_delta_ros)}. {WILL_LINE[will]}")
             if not mutual:
                 # Say the quiet part: they have no lineup reason to accept. The user should
                 # walk in expecting to sweeten it, not expecting a yes.
-                why += (" Their starting lineup barely moves, so this is you buying their depth"
-                        " — expect to add a sweetener or hear no.")
+                why += (" Their starting lineup barely moves, so this is you buying their depth."
+                        " Expect to add a sweetener or hear no.")
             if fit_note:
                 why += f" This manager {fit_note}."
-            offers.append(Offer(other.id, other.name, give, get, me_side, them_side, fair, score, why, codes))
+            offers.append(Offer(other.id, other.name, give, get, me_side, them_side, fair, score, why, codes, will))
         if not offers:
             continue
         offers.sort(key=lambda o: -o.score)
@@ -334,7 +345,7 @@ def _blockers(league: League, my_team: Team, mine: PositionProfile, ros: dict[st
                 reason = (f"He starts for them, and the best piece you can offer ({give.name}) "
                           f"leaves their lineup {_r0(them_side.lineup_delta_ros)} worse.")
             else:
-                reason = f"The value is too lopsided ({round(_fairness(them_side) * 100)}% balanced) to send."
+                reason = "The name value is too lopsided for them to say yes."
             out.append({
                 "their_team_id": other.id, "their_team_name": other.name,
                 "target": target.name, "target_position": target.position,
