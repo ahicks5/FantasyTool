@@ -4,7 +4,9 @@ import type { WaiverClaim, WaiverPlanResponse } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { PlayerName } from "./Players";
-import { Countdown, Eyebrow, InjuryTag, Stamp, Why } from "./ui";
+import { Eyebrow, InjuryTag, Stamp, Why } from "./ui";
+import { WeekClock } from "./WeekClock";
+import { weeklyLabel } from "@/lib/wire";
 
 /**
  * One signing, printed as one: who comes in at the top, who gets cut and what we
@@ -12,7 +14,8 @@ import { Countdown, Eyebrow, InjuryTag, Stamp, Why } from "./ui";
  * it gets the band and the stamp; the rest are the backup plan and stay quiet —
  * stamping every card would turn the plan into confetti.
  */
-function ClaimCard({ c }: { c: WaiverClaim }) {
+function ClaimCard({ c, plan }: { c: WaiverClaim; plan: WaiverPlanResponse }) {
+  const wk = weeklyLabel(c, plan);
   return (
     <li className="card min-w-0 overflow-hidden p-0 print print-1 ring-2 ring-lean">
       <div className="flex items-center justify-between gap-3 bg-lean px-3.5 py-2 text-white">
@@ -37,7 +40,11 @@ function ClaimCard({ c }: { c: WaiverClaim }) {
             <span className="truncate font-semibold uppercase tracking-wide text-muted">
               {c.add.position} · {c.add.nfl_team ?? "FA"}
             </span>
-            {c.weekly_gain > 0 && <span className="text-[13px] font-black text-start">{signed(c.weekly_gain)} wk</span>}
+            {wk.played ? (
+              <span className="text-[13px] font-black text-muted">{wk.value}</span>
+            ) : (
+              c.weekly_gain > 0 && <span className="text-[13px] font-black text-start">{wk.value} {wk.unit}</span>
+            )}
             {c.ros_gain >= 1 && <span className="text-[13px] font-bold text-start">{signed(c.ros_gain, 0)} ROS</span>}
             <span className="font-bold text-muted">{c.net.toFixed(2)}/wk net</span>
           </div>
@@ -173,7 +180,7 @@ export function WaiverPlanView({ plan, compact = false }: { plan: WaiverPlanResp
             </span>
           )}
         </div>
-        {!compact && <Countdown onHero />}
+        {!compact && <WeekClock clock={plan.clock} onHero />}
       </section>
 
       {plan.hold_reason && (
@@ -191,7 +198,7 @@ export function WaiverPlanView({ plan, compact = false }: { plan: WaiverPlanResp
         </div>
       )}
 
-      {primary && <ol className="grid min-w-0"><ClaimCard c={primary} /></ol>}
+      {primary && <ol className="grid min-w-0"><ClaimCard c={primary} plan={plan} /></ol>}
 
       {backups.length > 0 && (
         <section className="min-w-0">

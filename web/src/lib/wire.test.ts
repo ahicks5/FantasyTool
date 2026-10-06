@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CLAIM_FIT, MUST_FIT, STASH_FIT, TABLET_TOP_N, TOP_N, findPick, pickupHref, splitPicks, tabletPicks, urgency } from "./wire.ts";
+import { CLAIM_FIT, MUST_FIT, STASH_FIT, TABLET_TOP_N, TOP_N, findPick, pickupHref, rolledLine, splitPicks, tabletPicks, urgency, weeklyLabel } from "./wire.ts";
 import type { WaiverPick } from "./types";
 
 const pick = (id: string, fit: number) => ({ player: { id }, fit_score: fit }) as unknown as WaiverPick;
@@ -41,4 +41,14 @@ test("on a tablet the row holds five, and See more counts only what is left", ()
   const thin = tabletPicks(ids.slice(0, 4).map((id) => pick(id, 1)));
   assert.deepEqual(thin.extra.map((p) => p.player.id), ["d"]);
   assert.equal(thin.moreAfter, 0);
+});
+
+test("a played pickup reads Played, never 0.0 wk, and a rolled week names itself (W-027)", () => {
+  const thisWeek = { week: 4 };
+  assert.deepEqual(weeklyLabel({ weekly_gain: 0, played: true }, thisWeek), { played: true, value: "Played", unit: "", tone: "muted" });
+  assert.deepEqual(weeklyLabel({ weekly_gain: 0.8 }, thisWeek), { played: false, value: "+0.8", unit: "wk", tone: "start" });
+  const rolled = { week: 5, rolled_from: 4 };
+  assert.deepEqual(weeklyLabel({ weekly_gain: 2.4 }, rolled), { played: false, value: "+2.4", unit: "wk 5", tone: "start" });
+  assert.equal(rolledLine(rolled), "Week 4 is played. These are your week 5 claims.");
+  assert.equal(rolledLine(thisWeek), null);
 });

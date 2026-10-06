@@ -200,8 +200,9 @@ def test_player_dict_emits_exactly_the_contract_keys(league):
     assert set(player_dict(p)) == {
         "id", "name", "position", "nfl_team", "injury_status", "injury_body_part",
         "news_updated", "bye_week", "projected", "photo", "team_logo",
-        # The week in progress (`engine/live.py`): both null until his game has kicked off.
-        "game", "points"}
+        # The week in progress (`engine/live.py`): null until his game has kicked off, and his
+        # kickoff (null for a man with no game, or before the scoreboard is read).
+        "game", "points", "kickoff"}
     assert player_dict(None) is None
 
 

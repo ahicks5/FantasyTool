@@ -133,3 +133,63 @@ def test_refresh_fails_to_nothing_live(monkeypatch):
     week = live.refresh(lg, now=SUNDAY_NIGHT)
     assert week and week.live and lg.teams[0].players[0].locked and lg.teams[0].players[0].points == 0.0
     assert lineup.live_tally([lg.teams[0].players[0]]) == {"played": 1, "on": 0, "to_play": 0, "scored": 0.0, "live_total": 0.0}
+
+
+# ------------------------------------------------- the week as it stands (gameday)
+
+def _duel(mine, theirs, slots=("QB", "RB")):
+    lg = league_for(mine, [p.id for p in mine], slots=slots)
+    lg.teams[1].players, lg.teams[1].starters = theirs, [p.id for p in theirs]
+    return lg
+
+
+def test_the_matchup_is_pregame_until_a_starter_kicks_off():
+    lg = _duel([P(1, "QB", 20, "BUF"), P(2, "RB", 12, "KC")], [P(8, "QB", 18, "PHI"), P(9, "RB", 10, "DAL")])
+    rows = [{"roster_id": 1, "matchup_id": 1, "points": 0.0}, {"roster_id": 2, "matchup_id": 1, "points": 0.0}]
+    m = report.matchup(lg, lg.teams[0], rows)
+    assert m["state"] == "pre" and m["win_prob"] == report.win_probability(32.0, 28.0)
+    assert m["my_live"] is None and m["their_live"] is None
+
+
+def test_the_matchup_goes_live_on_score_plus_what_is_left_and_shrinks_the_spread():
+    lg = _duel([P(1, "QB", 20, "BUF"), P(2, "RB", 12, "PHI")], [P(8, "QB", 18, "KC"), P(9, "RB", 10, "DAL")])
+    live.annotate(lg, live.game_states(GAMES, now=SUNDAY_NIGHT), {"1": {"pass_yd": 100}, "8": {"pass_yd": 300, "pass_td": 3}})
+    rows = [{"roster_id": 1, "matchup_id": 1, "points": 4.0}, {"roster_id": 2, "matchup_id": 1, "points": 24.0}]
+    m = report.matchup(lg, lg.teams[0], rows)
+    # Mine: QB final 4.0, RB (PHI, Monday) 12 to come. Theirs: QB in with 24.0 (past his 18), RB 10 to come.
+    assert m["state"] == "live" and m["live"] is True
+    assert m["my_points"] == 4.0 and m["my_left"] == 12.0 and m["my_live"] == 16.0
+    assert m["their_points"] == 24.0 and m["their_left"] == 10.0 and m["their_live"] == 34.0
+    assert m["my_proj"] == 32.0, "the pre-game projection stays where it was"
+    assert m["win_prob"] < report.win_probability(16.0, 34.0), "less left to play, less spread"
+
+
+def test_the_matchup_at_the_final_whistle_is_a_result():
+    lg = _duel([P(1, "QB", 20, "BUF")], [P(8, "QB", 18, "BUF")], slots=("QB",))
+    live.annotate(lg, live.game_states(GAMES, now=SUNDAY_NIGHT), {"1": {"pass_yd": 200}, "8": {"pass_yd": 250}})
+    rows = [{"roster_id": 1, "matchup_id": 1, "points": 8.0}, {"roster_id": 2, "matchup_id": 1, "points": 10.0}]
+    m = report.matchup(lg, lg.teams[0], rows)
+    assert m["state"] == "final" and m["win_prob"] == 0.0, "lost by 2 with nothing left: 0%, not the pre-game 54%"
+    assert m["my_live"] == 8.0 and m["their_live"] == 10.0
+
+
+def test_kickoffs_are_stamped_for_every_man_with_a_game():
+    lg = league_for([P(1, "QB", 20, "PHI"), P(2, "RB", 12, "MIA"), P(3, "RB", 9, None)], ["1", "2", "3"])
+    live.stamp_kickoffs(lg, GAMES)
+    p = {x.id: x for x in lg.teams[0].players}
+    assert p["1"].kickoff == "2026-09-22T00:20Z" and p["2"].kickoff is None and p["3"].kickoff is None
+    assert report.player_dict(p["1"])["kickoff"] == "2026-09-22T00:20Z"
+
+
+def test_refresh_stamps_the_weeks_clock(monkeypatch):
+    from edge.data import nfl_stats, schedule
+    lg = league_for([P(1, "QB", 20, "BUF")], ["1"], slots=("QB",))
+    monkeypatch.setattr(schedule, "load_week_games", lambda season, week: [{k: g[k] for k in ("home", "away", "kickoff")} for g in GAMES])
+    monkeypatch.setattr(schedule, "load_games", lambda season: {"4": [{"home": "NE", "away": "NYJ", "kickoff": "2026-09-25T00:15Z"}]})
+    assert live.refresh(lg, now=ts("2026-09-17T12:00Z")) is None
+    assert lg.clock["phase"] == "before" and lg.clock["next_kickoff"] == "2026-09-25T00:15Z"
+    assert lg.teams[0].players[0].kickoff == "2026-09-18T00:15Z", "the kickoff is known before anything is live"
+    monkeypatch.setattr(schedule, "load_week_games", lambda season, week: GAMES)
+    monkeypatch.setattr(nfl_stats, "week_lines", lambda season, week, ttl: [])
+    live.refresh(lg, now=SUNDAY_NIGHT)
+    assert lg.clock["phase"] == "live" and lg.clock["target_week"] == 3

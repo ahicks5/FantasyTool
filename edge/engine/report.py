@@ -6,7 +6,7 @@ import math
 from dataclasses import asdict
 
 from edge.engine import lineup as lineup_mod
-from edge.engine import trade, waivers
+from edge.engine import gameday, trade, waivers
 from edge.engine.lineup import LineupAdvice
 from edge.models import League, Player, Team
 
@@ -51,7 +51,7 @@ def player_dict(p: Player | None) -> dict | None:
             "news_updated": p.news_updated, "bye_week": p.bye_week or None,
             "projected": p.projected,
             # The week in progress (`engine/live.py`): null until his game has kicked off.
-            "game": p.game_status, "points": p.points,
+            "game": p.game_status, "points": p.points, "kickoff": getattr(p, "kickoff", None),
             "photo": photo_url(p), "team_logo": team_logo_url(p.nfl_team)}
 
 
@@ -98,6 +98,10 @@ def lineup_dict(adv: LineupAdvice) -> dict:
         "week": adv.week, "projected_total": adv.projected_total, "current_total": adv.current_total,
         "standing": {"rank": adv.standing[0], "of": adv.standing[1]},
         "live": adv.live,
+        # Starters still to kick off: zero means nothing is left to set this week (W-021).
+        "pending": adv.pending,
+        "recap": ({**adv.recap, "bench": [{"player": player_dict(b["player"]), "points": b["points"]}
+                                          for b in adv.recap["bench"]]} if adv.recap else None),
         "summary": {"required": len(adv.required) + len(adv.holes),
                     "decisions": sum(1 for r in adv.roles if r.decision)},
         "required": [_swap_dict(ch) for ch in adv.required],
@@ -115,11 +119,15 @@ def lineup_dict(adv: LineupAdvice) -> dict:
 
 
 def waivers_dict(league: League, team: Team, picks: list[waivers.Pick]) -> dict:
+    """`week` is the week the claims are for; `rolled_from` is set when that is next week
+    because this one is decided (`engine/gameday.py`, W-027). `played` on a pick: his game
+    this week has kicked off, so his weekly number is gone and the page says "Played"."""
     return {
         "week": league.week, "faab_remaining": team.faab_remaining, "waiver_type": league.waiver_type,
+        "rolled_from": getattr(league, "rolled_from", None),
         "picks": [{"player": player_dict(p.player), "fit_score": p.fit_score, "weekly_gain": p.weekly_gain,
                    "ros_gain": p.ros_gain, "trending_adds": p.trending_adds, "drop": player_dict(p.drop),
-                   "bid": p.bid, "reason": p.reason} for p in picks],
+                   "bid": p.bid, "reason": p.reason, "played": p.played} for p in picks],
     }
 
 
@@ -129,7 +137,36 @@ def win_probability(my_proj: float, their_proj: float, sigma: float = 22.0) -> f
     return round(0.5 * (1 + math.erf(diff / (sigma * math.sqrt(2)))), 2)
 
 
+def _live_side(league: League, team: Team, platform_pts: float) -> dict:
+    """One side of the matchup as the week stands (`engine/gameday.py`).
+
+    The lineup is the one the engine tells that manager to start (`lineup.settle`): the men
+    who have played hold their slots, the rest are set by the projection. Its number is the
+    platform's own points so far plus the projection still to come; when the platform has
+    no points yet but a man has played, our own scoring of what he did stands in.
+    """
+    starters = [p for p in lineup_mod.settle(team, league.starting_slots).lineup if p]
+    ours = sum(p.points or 0.0 for p in starters if p.locked)
+    so_far = platform_pts if platform_pts else ours
+    left = round(sum(gameday.remaining(p) for p in starters), 2)
+    proj = round(sum(gameday.projection(p) for p in starters), 2)
+    return {"state": gameday.side_state(starters), "so_far": round(so_far, 2), "left": left,
+            "live": round(so_far + left, 2), "proj": proj}
+
+
 def matchup(league: League, team: Team, matchups_raw: list[dict] | None) -> dict | None:
+    """The week's head-to-head for the call sheet, the desk and the matchup page.
+
+    Before kickoff it is the two projections and the odds between them, as it always was.
+    Once any starter on either side has kicked off (W-013, W-017) it reads the week as it
+    stands: `my_live`/`their_live` are points so far plus the projection still to come,
+    `win_prob` is taken from those with the spread shrunk to the points still to play
+    (`gameday.win_probability`), and `state` says which you are looking at: `pre`, `live`,
+    or `final` once every starter on both sides has played -- when the odds are 100 or 0.
+    `my_proj`/`their_proj` stay the pre-game projections, always. `clock` is the week's
+    (`gameday.week_clock`), for the kickoff clock beside the score; null before the
+    scoreboard has been read.
+    """
     if not matchups_raw:
         return None
     mine = next((m for m in matchups_raw if str(m.get("roster_id")) == team.id), None)
@@ -138,16 +175,33 @@ def matchup(league: League, team: Team, matchups_raw: list[dict] | None) -> dict
     opp = next((m for m in matchups_raw if m.get("matchup_id") == mine.get("matchup_id")
                 and str(m.get("roster_id")) != team.id), None)
     my_proj = lineup_mod.lineup_total(team.players, league.starting_slots)
+    clock = getattr(league, "clock", None)
     if not opp:
-        return {"opponent": None, "my_proj": my_proj, "their_proj": None, "win_prob": None}
+        return {"opponent": None, "my_proj": my_proj, "their_proj": None, "win_prob": None, "state": "pre",
+                "clock": clock}
     other = league.team(str(opp["roster_id"]))
     their_proj = lineup_mod.lineup_total(other.players, league.starting_slots) if other else 0.0
     # The platform's own points once the games are on (0.0 before kickoff reads as null).
     my_pts, their_pts = float(mine.get("points") or 0.0), float(opp.get("points") or 0.0)
     live = bool(my_pts or their_pts)
-    return {"opponent": other.name if other else None, "opponent_id": other.id if other else None,
-            "my_proj": my_proj, "their_proj": their_proj, "win_prob": win_probability(my_proj, their_proj),
-            "my_points": my_pts if live else None, "their_points": their_pts if live else None, "live": live}
+    out = {"opponent": other.name if other else None, "opponent_id": other.id if other else None,
+           "my_proj": my_proj, "their_proj": their_proj, "win_prob": win_probability(my_proj, their_proj),
+           "my_points": my_pts if live else None, "their_points": their_pts if live else None, "live": live,
+           "state": "pre", "my_live": None, "their_live": None, "my_left": None, "their_left": None,
+           "clock": clock}
+    if other is None or not any(p.locked for t in (team, other) for p in t.players):
+        return out  # nobody on either roster has kicked off: the pre-game read, at no cost
+    a, b =_live_side(league, team, my_pts), _live_side(league, other, their_pts)
+    if a["state"] == "pre" and b["state"] == "pre":
+        return out
+    state = "final" if a["state"] == "final" and b["state"] == "final" else "live"
+    total = (a["proj"] + b["proj"]) or 1.0
+    share = 0.0 if state == "final" else (a["left"] + b["left"]) / total
+    out.update({"state": state, "live": True,
+                "my_points": a["so_far"], "their_points": b["so_far"],
+                "my_live": a["live"], "their_live": b["live"], "my_left": a["left"], "their_left": b["left"],
+                "win_prob": gameday.win_probability(a["live"], b["live"], share)})
+    return out
 
 
 def scoreboard(league: League, matchups_raw: list[dict] | None) -> list[dict]:

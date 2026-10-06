@@ -13,14 +13,16 @@ import Link from "next/link";
 import { PlayerName } from "@/components/Players";
 import { AppShell } from "@/components/Shell";
 import { Avatar } from "@/components/Avatar";
-import { Countdown, ErrorBox, Eyebrow, OnAirLive, SkeletonList, SplitMeter, Why } from "@/components/ui";
+import { ErrorBox, Eyebrow, SkeletonList, SplitMeter, Why } from "@/components/ui";
+import { WeekClock, WeekLamp } from "@/components/WeekClock";
 import { getActions, getLineup } from "@/lib/api";
 import { useCached } from "@/lib/cache";
-import { pct, signed } from "@/lib/format";
-import { EVEN_MARGIN, matchupCall, printProj, splitMatchup, type SlotDuel } from "@/lib/matchup";
+import { signed } from "@/lib/format";
+import { scoreFace } from "@/lib/gameday";
+import { EVEN_MARGIN, matchupRead, splitMatchup, type SlotDuel } from "@/lib/matchup";
 import type { Connection } from "@/lib/storage";
 import type { ActionFeed, Lineup, Player } from "@/lib/types";
-import { DESK, LINEUP } from "@/lib/vocab";
+import { DESK, WEEK } from "@/lib/vocab";
 import { IconChevron } from "@/components/icons";
 
 /**
@@ -32,18 +34,21 @@ import { IconChevron } from "@/components/icons";
  * the full width, and the two projections still line up in one right-hand column, which
  * is what actually makes the pair comparable.
  */
-function DuelRow({ d, index }: { d: SlotDuel; index: number }) {
+function DuelRow({ d, index, week }: { d: SlotDuel; index: number; week: number }) {
   const tone = d.edge === "mine" ? "text-start" : d.edge === "theirs" ? "text-sit" : "text-muted";
+  // The margin says how it was reached (W-017): final, live (actual + what is left), or proj.
+  const how = d.state === "final" ? WEEK.score.final : d.state === "live" ? WEEK.score.live : WEEK.score.proj;
   return (
     <li className={`px-4 py-3 print print-${Math.min(index + 1, 5)}`}>
       <div className="flex items-center gap-2">
         <span className="text-[10px] font-black uppercase tracking-[0.1em] text-muted">{d.slot}</span>
         <span aria-hidden className="h-px flex-1 bg-line" />
+        <span className="text-[8.5px] font-extrabold uppercase tracking-[0.1em] text-muted">{how}</span>
         <span className={`tnum text-[12px] font-black ${tone}`}>{d.edge === "even" ? "Even" : signed(d.margin)}</span>
       </div>
       <div className="mt-2 grid gap-1.5">
-        <Side p={d.mine} mine won={d.edge === "mine"} />
-        <Side p={d.theirs} won={d.edge === "theirs"} />
+        <Side p={d.mine} mine won={d.edge === "mine"} week={week} />
+        <Side p={d.theirs} won={d.edge === "theirs"} week={week} />
       </div>
     </li>
   );
@@ -55,7 +60,8 @@ function DuelRow({ d, index }: { d: SlotDuel; index: number }) {
  * The winning side is marked by a rule down its left edge as well as by its ink, so the
  * row never depends on colour alone — and an even slot marks neither.
  */
-function Side({ p, mine = false, won }: { p: Player | null; mine?: boolean; won: boolean }) {
+function Side({ p, mine = false, won, week }: { p: Player | null; mine?: boolean; won: boolean; week: number }) {
+  const face = p ? scoreFace(p, week) : null;
   return (
     <div className={`flex min-w-0 items-center gap-2.5 rounded-lg border-l-[3px] py-0.5 pl-2 ${won ? (mine ? "border-start bg-start-soft" : "border-sit bg-sit-soft") : "border-line-2"}`}>
       {p ? <Avatar name={p.name} photo={p.photo} teamLogo={p.team_logo} size="sm" /> : <span aria-hidden className="h-9 w-9 shrink-0" />}
@@ -66,13 +72,14 @@ function Side({ p, mine = false, won }: { p: Player | null; mine?: boolean; won:
           {p?.nfl_team ? ` · ${p.position} ${p.nfl_team}` : ""}
         </div>
       </div>
-      {p && p.points != null && (p.game === "in" || p.game === "final") ? (
+      {face && (
+        // Every number carries its state: FINAL 13.1, LIVE 8.2, PROJ 17.4 (W-017, W-026).
         <span className="display tnum shrink-0 text-right text-[17px] leading-none">
-          <span className={`block text-[8.5px] font-extrabold uppercase tracking-[0.1em] ${p.game === "in" ? "text-start" : "text-muted"}`}>{p.game === "in" ? LINEUP.live.on : LINEUP.live.final}</span>
-          {p.points.toFixed(1)}
+          <span className={`block text-[8.5px] font-extrabold uppercase tracking-[0.1em] ${face.kind === "live" ? "text-start" : "text-muted"}`}>
+            {face.kickoff ? `${face.label} \u00b7 ${face.kickoff}` : face.label}
+          </span>
+          {face.value ?? "\u2014"}
         </span>
-      ) : (
-        <span className="display tnum shrink-0 text-[17px] leading-none">{printProj(p)}</span>
       )}
     </div>
   );
@@ -130,24 +137,22 @@ function MatchupBody({ c }: { c: Connection }) {
     );
   }
 
-  // The games are on: the platform's points lead the hero, the projection sits under them.
-  const live = !!m.live && m.my_points != null && m.their_points != null;
-  const myBig = live ? m.my_points! : m.my_proj;
-  const theirBig = live ? m.their_points! : m.their_proj;
+  // Pre-game, live or final (W-013, W-017): one read, shared with the desk's card.
+  const read = matchupRead(m);
+  const { myBig, theirBig, diff, share } = read;
   const ahead = myBig >= theirBig;
-  const diff = myBig - theirBig;
-  const share = m.win_prob ?? 0.5;
   const split = mine && theirs ? splitMatchup(mine, theirs) : null;
+  const eyebrow = read.state === "final" ? WEEK.score.final : read.state === "live" ? DESK.matchup.live : null;
 
   return (
     <div className="grid gap-3.5">
       <section className="hero callsheet rise overflow-hidden">
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
-          <OnAirLive className="text-white/70" />
-          <Countdown onHero />
+          <WeekLamp clock={m.clock} className="text-white/70" />
+          <WeekClock clock={m.clock} onHero />
         </div>
         <div className="p-5">
-          <Eyebrow>{live ? `${DESK.matchup.live} · ` : ""}Week {feed.week}</Eyebrow>
+          <Eyebrow>{eyebrow ? `${eyebrow} · ` : ""}Week {feed.week}</Eyebrow>
           {/* Names above the numbers, each on its own half, so a long team name
               truncates instead of pushing the scoreline around. */}
           <div className="mt-1.5 flex items-start gap-3">
@@ -156,7 +161,7 @@ function MatchupBody({ c }: { c: Connection }) {
               <div className={`display tnum text-[36px] leading-none ${ahead ? "text-white" : "text-white/55"}`}>
                 {myBig.toFixed(1)}
               </div>
-              {live && <div className="tnum mt-1 text-[11px] font-bold text-white/50">{DESK.matchup.proj(m.my_proj.toFixed(1))}</div>}
+              {read.mySub != null && <div className="tnum mt-1 text-[11px] font-bold text-white/50">{WEEK.projects(read.mySub.toFixed(1))}</div>}
             </div>
             <div aria-hidden className="pt-4 text-[16px] font-bold text-white/35">
               –
@@ -166,17 +171,17 @@ function MatchupBody({ c }: { c: Connection }) {
               <div className={`display tnum text-[36px] leading-none ${ahead ? "text-white/55" : "text-white"}`}>
                 {theirBig.toFixed(1)}
               </div>
-              {live && <div className="tnum mt-1 text-[11px] font-bold text-white/50">{DESK.matchup.proj(m.their_proj.toFixed(1))}</div>}
+              {read.theirSub != null && <div className="tnum mt-1 text-[11px] font-bold text-white/50">{WEEK.projects(read.theirSub.toFixed(1))}</div>}
             </div>
           </div>
 
-          {m.win_prob !== null && (
-            <div className="mt-4">
+          {read.odds && (
+            <div className="mt-4" data-testid="matchup-odds">
               <SplitMeter
                 left={share}
                 right={1 - share}
-                leftLabel={`${pct(share)} to win`}
-                rightLabel={pct(1 - share)}
+                leftLabel={read.odds}
+                rightLabel={`${Math.round((1 - share) * 100)}%`}
                 onHero
               />
             </div>
@@ -189,7 +194,7 @@ function MatchupBody({ c }: { c: Connection }) {
             <span className="display tnum shrink-0 rounded-lg bg-white/10 px-2.5 py-1.5 text-[19px] leading-none text-white">
               {signed(diff)}
             </span>
-            <p className="min-w-0 flex-1 text-[13px] leading-snug text-white/70">{matchupCall(myBig, theirBig)}</p>
+            <p className="min-w-0 flex-1 text-[13px] leading-snug text-white/70" data-testid="matchup-line">{read.line}</p>
           </div>
         </div>
       </section>
@@ -215,7 +220,7 @@ function MatchupBody({ c }: { c: Connection }) {
         {split ? (
           <ol className="divide-y divide-line">
             {split.duels.map((d, i) => (
-              <DuelRow key={`${d.slot}-${i}`} d={d} index={i} />
+              <DuelRow key={`${d.slot}-${i}`} d={d} index={i} week={feed.week} />
             ))}
           </ol>
         ) : theirError ? (

@@ -8,6 +8,8 @@
  */
 
 import type { WaiverPick } from "./types";
+import { signed } from "./format.ts";
+import { WEEK, WIRE } from "./vocab.ts";
 
 export type Urgency = "must" | "claim" | "stash" | "depth";
 
@@ -66,4 +68,37 @@ export function findPick(picks: readonly WaiverPick[], id: string | null): { pic
 /** The key the page and the scout's opening both read the wire under. */
 export function wireKey(platform: string, leagueId: string, teamId: string): string {
   return `waivers:${platform}:${leagueId}:${teamId}`;
+}
+
+/**
+ * A pickup's weekly number as Scouting prints it (W-027). A man whose game this week has
+ * kicked off reads "Played", never "0.0 wk": that week is gone for him. Once the claims are
+ * for next week (`rolled_from`), the unit names the week ("wk 5") so the number is never
+ * read as one for the week already played.
+ */
+export interface WeeklyLabel {
+  played: boolean;
+  /** "+2.4", or "Played". */
+  value: string;
+  /** "wk", "wk 5", or "" beside "Played". */
+  unit: string;
+  tone: "start" | "muted";
+}
+
+export function weeklyLabel(
+  p: Pick<WaiverPick, "weekly_gain" | "played">,
+  w: { week: number; rolled_from?: number | null },
+): WeeklyLabel {
+  if (p.played) return { played: true, value: WEEK.scouting.played, unit: "", tone: "muted" };
+  return {
+    played: false,
+    value: signed(p.weekly_gain),
+    unit: w.rolled_from != null ? WEEK.scouting.wk(w.week) : WIRE.week,
+    tone: p.weekly_gain > 0 ? "start" : "muted",
+  };
+}
+
+/** The one line on top of Scouting once its claims are for next week, or null. */
+export function rolledLine(w: { week: number; rolled_from?: number | null }): string | null {
+  return w.rolled_from != null ? WEEK.scouting.rolled(w.rolled_from, w.week) : null;
 }

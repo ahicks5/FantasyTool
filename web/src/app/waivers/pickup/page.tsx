@@ -27,8 +27,8 @@ import { signed } from "@/lib/format";
 import { paywallTeaser } from "@/lib/teaser";
 import type { Connection } from "@/lib/storage";
 import type { WaiverPick, Waivers } from "@/lib/types";
-import { WIRE } from "@/lib/vocab";
-import { findPick, pickupHref, urgency, wireKey } from "@/lib/wire";
+import { WEEK, WIRE } from "@/lib/vocab";
+import { findPick, pickupHref, rolledLine, urgency, weeklyLabel, wireKey } from "@/lib/wire";
 
 function Back() {
   return (
@@ -39,7 +39,8 @@ function Back() {
   );
 }
 
-function Read({ pick, rank, picks }: { pick: WaiverPick; rank: number; picks: WaiverPick[] }) {
+function Read({ pick, rank, picks, w }: { pick: WaiverPick; rank: number; picks: WaiverPick[]; w: Waivers }) {
+  const wk = weeklyLabel(pick, w);
   const { open } = usePlayerSheet();
   const u = urgency(pick, rank);
   const p = pick.player;
@@ -73,7 +74,8 @@ function Read({ pick, rank, picks }: { pick: WaiverPick; rank: number; picks: Wa
       </section>
 
       <section className="card rise rise-1 grid grid-cols-2 gap-4 p-4">
-        <Stat label={WIRE.page.thisWeek} value={signed(pick.weekly_gain)} tone={pick.weekly_gain > 0 ? "start" : "muted"} />
+        {/* The week the claim lands in: "Week 5" once this one is played; "Played" for a man whose game is over (W-027). */}
+        <Stat label={w.rolled_from != null ? WEEK.clock.week(w.week) : WIRE.page.thisWeek} value={wk.value} tone={wk.tone} />
         <Stat label={WIRE.page.restOfSeason} value={signed(pick.ros_gain, 0)} tone={pick.ros_gain > 0 ? "start" : "muted"} />
         <Stat label={WIRE.page.fit} value={pick.fit_score.toFixed(1)} />
         <Stat label={WIRE.page.adds} value={pick.trending_adds > 0 ? pick.trending_adds.toLocaleString() : "—"} tone="muted" />
@@ -81,6 +83,7 @@ function Read({ pick, rank, picks }: { pick: WaiverPick; rank: number; picks: Wa
 
       <section className="card rise rise-2 p-4">
         <Eyebrow>{WIRE.page.why}</Eyebrow>
+        {rolledLine(w) && <p className="mt-1 text-[12px] font-semibold text-muted">{rolledLine(w)}</p>}
         <p className="mt-1.5 text-[15px] leading-relaxed text-ink-2">{pick.reason}</p>
         <Why lines={[...WIRE.page.howLines]} label={WIRE.page.how} />
       </section>
@@ -135,7 +138,7 @@ function Read({ pick, rank, picks }: { pick: WaiverPick; rank: number; picks: Wa
                     <span className="block truncate text-[14px] font-bold">{o.player.name}</span>
                     <span className="block truncate text-[11px] text-muted">{o.player.position} · {WIRE.urgency[urgency(o, picks.indexOf(o) + 1)]}</span>
                   </span>
-                  <span className={`tnum shrink-0 text-[13px] font-black ${o.weekly_gain > 0 ? "text-start" : "text-muted"}`}>{signed(o.weekly_gain)}</span>
+                  <span className={`tnum shrink-0 text-[13px] font-black ${weeklyLabel(o, w).tone === "start" ? "text-start" : "text-muted"}`}>{weeklyLabel(o, w).value}</span>
                   <IconChevron size={14} className="shrink-0 text-muted" />
                 </Link>
               </li>
@@ -173,7 +176,7 @@ function PickupBody({ c, refresh, signedIn }: { c: Connection; refresh: () => vo
       </div>
     );
   }
-  return <Read pick={hit.pick} rank={hit.rank} picks={data.picks} />;
+  return <Read pick={hit.pick} rank={hit.rank} picks={data.picks} w={data} />;
 }
 
 export default function PickupPage() {

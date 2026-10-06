@@ -22,7 +22,7 @@ import { Compare } from "@/components/Compare";
 import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { Grades, LeagueSummary, Player, TeamGrades, TradeFinderResponse, TradeResult } from "@/lib/types";
-import { OFFICE } from "@/lib/vocab";
+import { OFFICE, WEEK } from "@/lib/vocab";
 import { ACCEPT_INK, canGrade, officeKey } from "@/lib/office";
 
 function sortRoster(players: Player[]): Player[] {
@@ -514,8 +514,8 @@ function VerdictView({ result, give, get, theirName, c }: { result: TradeResult;
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <SideBox label={V.you} side={result.me} />
-            <SideBox label={theirName} side={result.them} />
+            <SideBox label={V.you} side={result.me} week={result.week} />
+            <SideBox label={theirName} side={result.them} week={result.week} />
           </div>
           <p className="mt-4 text-[15px] leading-relaxed text-ink-2">{result.explanation}</p>
           {result.notes?.map((n) => (
@@ -536,7 +536,8 @@ function VerdictView({ result, give, get, theirName, c }: { result: TradeResult;
                 result.their_tendencies.style,
                 `${result.their_tendencies.trades ?? 0} trades`,
                 `${result.their_tendencies.waiver_claims ?? 0} claims`,
-                `avg bid $${result.their_tendencies.avg_bid ?? 0}`,
+                // No FAAB in this league: the API sends no average bid, and none is shown (W-034).
+                ...(result.their_tendencies.avg_bid != null ? [`avg bid $${result.their_tendencies.avg_bid}`] : []),
                 ...(result.their_tendencies.favorite_positions ?? []).map((p) => `acquires ${p}s`),
                 ...(result.their_tendencies.hoards ?? []).map((p) => `hoards ${p}s`),
               ]
@@ -640,7 +641,7 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
 }
 
 /** One side's numbers, secondary to the lead: the lineup first, then this week, then name value. */
-function SideBox({ label, side }: { label: string; side: TradeResult["me"] }) {
+function SideBox({ label, side, week }: { label: string; side: TradeResult["me"]; week?: number }) {
   const V = OFFICE.verdict;
   return (
     <div className="min-w-0 rounded-2xl bg-soft p-3.5">
@@ -649,7 +650,8 @@ function SideBox({ label, side }: { label: string; side: TradeResult["me"] }) {
         {signed(side.lineup_delta_ros, 0)} <span className="text-[11px] font-bold text-muted">{OFFICE.ros}</span>
       </div>
       <div className="tnum mt-1.5 text-[11px] text-muted">
-        {V.weekLabel} {signed(side.lineup_delta_week)}
+        {/* The week the trade lands in: "wk 5" once week 4 is decided (W-034). */}
+        {week != null ? WEEK.scouting.wk(week) : V.weekLabel} {signed(side.lineup_delta_week)}
       </div>
       <div className="tnum mt-0.5 text-[11px] text-muted">
         {V.valueLabel} {V.out} {side.value_out} · {V.in} {side.value_in}

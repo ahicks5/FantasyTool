@@ -439,9 +439,11 @@ def settle(team: Team, slots: list[str], ctx: decisions_mod.Context | None = Non
 
 def _decision_reason(start: Player, sit: Player, p: float, tag: str, tipped: bool, tilt: int) -> str:
     a, b = effective(start), effective(sit)
-    if tipped:
+    if tipped and tilt:
         return (f"{start.name} projects {a:.1f} to {sit.name}\u2019s {b:.1f}, too close for the projection to call. "
-                f"The reads tip it his way, {tilt} to none." if tilt else "")
+                f"The reads tip it his way, {tilt} to none.")
+    # A swap the projection made on its own (HOLD_P and up) carries no reads to quote, and
+    # used to fall through to an empty reason: the band's own sentence below says it.
     if tag == LOCK:
         return f"{start.name} projects {a:.1f} to {sit.name}\u2019s {b:.1f}: {p:.0%} to outscore him."
     if tag == LEAN:
@@ -650,6 +652,32 @@ class LineupAdvice:
     pos_rank: dict[str, tuple[int, int]] = field(default_factory=dict)
     # The week in progress (`engine/live.py`): None until a starter's game has kicked off.
     live: dict | None = None
+    # The week, played (`recap`): only from the week's last game until Tuesday noon ET.
+    recap: dict | None = None
+    # Starters whose game has not kicked off: what is still the owner's to set.
+    pending: int = 0
+
+
+def recap(team: Team, slots: list[str]) -> dict | None:
+    """The week, played (W-021): the lineup as the owner set it, what it scored, the best
+    lineup the roster could have scored with the same men, and the men who would have been
+    in it from the bench. Actual points only (`engine/live.py`, the league's own scoring);
+    None until every starter with a game has finished."""
+    n = len(slots)
+    set_ = [team.player(pid) for pid in team.starters[:n]]
+    starters = [p for p in set_ if p]
+    if not starters or any(p.game_status in ("pre", "in") for p in starters):
+        return None
+    if not any(p.game_status == "final" for p in starters):
+        return None
+    pts = {p.id: (p.points or 0.0) if p.game_status == "final" else 0.0 for p in team.players}
+    total = round(sum(pts[p.id] for p in starters), 2)
+    best_lineup = optimize(team.players, slots, pts)
+    best = round(sum(pts[p.id] for p in best_lineup if p), 2)
+    set_ids = {p.id for p in starters}
+    missed = sorted((p for p in best_lineup if p and p.id not in set_ids), key=lambda p: -pts[p.id])
+    return {"total": total, "best": best, "left": round(max(0.0, best - total), 2),
+            "bench": [{"player": p, "points": round(pts[p.id], 2)} for p in missed[:3]]}
 
 
 def live_tally(lineup: list[Player | None]) -> dict | None:
@@ -744,4 +772,15 @@ def advise(league: League, team: Team, ctx: decisions_mod.Context | None = None)
     return LineupAdvice(league.week, total, current_total, calls, bench_notes,
                         settled.changes, settled.required, settled.decisions, settled.holes,
                         roles(team, slots, settled, ctx), standing(league, team, total), position_ranks(league),
-                        live=live_tally(best))
+                        live=live_tally(best),
+                        recap=_recap_due(league, team, slots),
+                        pending=sum(1 for p in best if p and not p.locked))
+
+
+def _recap_due(league: League, team: Team, slots: list[str]) -> dict | None:
+    """The recap shows from the week's last game until Tuesday noon ET (the clock's FINAL,
+    `engine/gameday.py`), and only for the week this league is on."""
+    clock = getattr(league, "clock", None) or {}
+    if clock.get("phase") != "final" or clock.get("week") != league.week:
+        return None
+    return recap(team, slots)

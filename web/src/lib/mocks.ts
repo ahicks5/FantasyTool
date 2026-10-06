@@ -652,6 +652,11 @@ export function lineupFor(teamId: string): Lineup {
     projected_total,
     current_total,
     standing,
+    // The mock week has not kicked off: every starter is still the owner's to set, no recap.
+    pending: slots.filter((sl) => sl.player).length,
+    recap: null,
+    clock: null,
+    rolled_from: null,
     roles,
     slots,
     bench: bench.map((p) => ({
@@ -745,6 +750,8 @@ function reasonFor(slot: string, p: Player, margin: number): string {
 export const WAIVERS: Waivers = {
   week: WEEK,
   faab_remaining: 100,
+  // The claims are for this week: nothing has kicked off in the mock week.
+  rolled_from: null,
   picks: [
     {
       player: { id: "8134", name: "Khalil Shakir", position: "WR", nfl_team: "BUF", injury_status: null, projected: 8.7, opponent: "DET" },
@@ -879,6 +886,8 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
   };
 
   return {
+    // The week `lineup_delta_week` is for (W-034): this one, since nothing has kicked off.
+    week: WEEK,
     verdict,
     me: { value_out: outW, value_in: inW, value_net: inW - outW, lineup_delta_week: round1(weekIn - weekOut), lineup_delta_ros: myRos },
     them: { value_out: inW, value_in: outW, value_net: outW - inW, lineup_delta_week: round1(weekOut - weekIn), lineup_delta_ros: theirRos },
@@ -1048,7 +1057,8 @@ export function actionsFor(teamId: string, entitlements: Feature[]): ActionFeed 
     week: WEEK, team: rosterFor(teamId).name, league: LEAGUE.name,
     projected_total: lineup.projected_total, current_total: lineup.current_total,
     summary: `${moves} move${moves === 1 ? "" : "s"} to make`, all_clear: false, footer: "Everything else looks fine.",
-    matchup: { opponent: "Wait, another league?", opponent_id: "9", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
+    // Pre-game (the mock week has not kicked off), and no clock: the page keeps the Sunday-1pm countdown.
+    matchup: { opponent: "Wait, another league?", opponent_id: "9", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61, state: "pre", clock: null },
     actions, entitlements, synced_at: Date.now() / 1000 - 120,
     // Free for every reader (D4). Two counts and a scoreline — never a rate, never a sum.
     last_week: {
@@ -1103,7 +1113,8 @@ export function reportFor(teamId: string): Report {
         why: "philking has six RBs and sits on his roster. Hubbard's role is safer than Swift's in CHI; ask, don't chase.",
       },
     ],
-    matchup: { opponent: "Wait, another league?", opponent_id: "9", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61 },
+    // Pre-game (the mock week has not kicked off), and no clock: the page keeps the Sunday-1pm countdown.
+    matchup: { opponent: "Wait, another league?", opponent_id: "9", my_proj: lineup.projected_total, their_proj: 108.9, win_prob: 0.61, state: "pre", clock: null },
     waiver_plan: WAIVER_PLAN,
     trade_finder: TRADE_FINDER,
     html: "",

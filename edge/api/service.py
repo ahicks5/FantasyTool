@@ -234,6 +234,32 @@ def _keep(key, b: Bundle) -> None:
             _locks.pop(k, None)
 
 
+def rolled(b: Bundle, week: int) -> Bundle | None:
+    """The bundle as it will look in `week` (`engine/gameday.roll`): the same league, every
+    man re-projected to that week, nothing locked and no matchup yet. Scouting and Trade Lab
+    price a move made now in the week it lands in (W-027, W-034); the lineup reads it once
+    the week has rolled over at Tuesday noon (W-021).
+
+    One provider call per bundle and week, kept on the bundle, so it is rebuilt with it.
+    None when the provider cannot answer: the rooms then stay on this week, which is
+    labelled, rather than show a week with no numbers.
+    """
+    import dataclasses
+
+    from edge.engine import gameday
+    memo = b.__dict__.setdefault("_rolled", {})
+    if week in memo:
+        return memo[week]
+    try:
+        positions = sleeper.projection_positions(b.league.roster_positions)
+        rows = to_raw(get_provider().weekly(b.league.season, week, positions))
+        out = dataclasses.replace(b, league=gameday.roll(b.league, rows, week), matchups=[])
+    except Exception:  # noqa: BLE001
+        out = None
+    memo[week] = out
+    return out
+
+
 def _build(platform: str, league_id: str, auth=None) -> Bundle:
     if platform == "sleeper":
         b = load_sleeper(league_id)

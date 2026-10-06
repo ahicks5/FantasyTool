@@ -11,6 +11,7 @@ import { signed } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { PlayerName } from "./Players";
 import { Eyebrow, InjuryTag, Why } from "./ui";
+import { weeklyLabel } from "@/lib/wire";
 
 export function WaiversView({ waivers, compact = false }: { waivers: Waivers; compact?: boolean }) {
   return (
@@ -36,7 +37,9 @@ export function WaiversView({ waivers, compact = false }: { waivers: Waivers; co
                   {w.trending_adds > 0 && <span className="tnum"> · {w.trending_adds.toLocaleString()} adds</span>}
                 </div>
                 <div className="tnum mt-1.5 flex flex-wrap gap-x-3 text-[13px]">
-                  <span className={`font-black ${w.weekly_gain > 0 ? "text-start" : "text-muted"}`}>{signed(w.weekly_gain)} wk</span>
+                  <span className={`font-black ${weeklyLabel(w, waivers).tone === "start" ? "text-start" : "text-muted"}`}>
+                    {weeklyLabel(w, waivers).value} {weeklyLabel(w, waivers).unit}
+                  </span>
                   <span className={`font-bold ${w.ros_gain > 0 ? "text-start" : "text-muted"}`}>{signed(w.ros_gain, 0)} ROS</span>
                   <span className="font-bold text-muted">{w.fit_score.toFixed(1)} fit</span>
                 </div>

@@ -19,6 +19,10 @@ class Pick:
     bid: dict
     reason: str
     trending_adds: int = 0
+    # His game this week has kicked off (`engine/live.py`): he cannot help this week, so
+    # `weekly_gain` is 0 and he is ranked on the rest of the season (W-027). The page
+    # prints "Played", never "0.0 wk".
+    played: bool = False
 
 
 def _bye_cover(team: Team, fa: Player, week: int, byes: dict[str, int]) -> str | None:
@@ -70,7 +74,8 @@ def rank(league: League, team: Team, ros: dict[str, float], byes: dict[str, int]
         if not any(player_fits(s, fa) for s in slots):
             continue
         roster = team.players + [fa]
-        weekly_gain = round(lineup_total(roster, slots) - base_week, 2)
+        played = fa.locked
+        weekly_gain = 0.0 if played else round(lineup_total(roster, slots) - base_week, 2)
         ros_gain = round(lineup_total(roster, slots, ros) - base_ros, 1)
         # Depth credit: only vs the backup we already have at that position. A 3rd QB in a
         # 1-QB league is worth almost nothing; an RB better than our RB4 is worth something.
@@ -89,9 +94,10 @@ def rank(league: League, team: Team, ros: dict[str, float], byes: dict[str, int]
             fit = round(0.01 * ros.get(fa.id, 0.0) / remaining_weeks, 3)  # stash-only: rank by raw talent
             reason = "No lineup upgrade this week. Best available stash" + (f"; drop {drop.name}." if drop else ".")
         else:
-            reason = _reason(fa, weekly_gain, ros_gain, drop, slots, team, league.week, byes)
+            reason = _reason(fa, weekly_gain, ros_gain, drop, slots, team, league.week, byes,
+                             rolled=league.rolled_from is not None, played=played)
         bid = suggest_bid(fit, league, team, bid_stats, trending.get(fa.id, 0))
-        picks.append(Pick(fa, fit, weekly_gain, ros_gain, drop, bid, reason, trending.get(fa.id, 0)))
+        picks.append(Pick(fa, fit, weekly_gain, ros_gain, drop, bid, reason, trending.get(fa.id, 0), played))
     picks.sort(key=lambda p: (-p.fit_score, -(ros.get(p.player.id, 0.0))))
     # Diversity: a top-5 full of streaming defenses helps nobody. The cap has to follow the
     # league, not a 1-QB assumption — a superflex roster can genuinely want two quarterbacks.
@@ -141,12 +147,16 @@ def _drop_candidate(team: Team, slots: list[str], ros: dict[str, float]) -> Play
 
 
 def _reason(fa: Player, weekly_gain: float, ros_gain: float, drop: Player | None,
-            slots: list[str], team: Team, week: int, byes: dict[str, int]) -> str:
+            slots: list[str], team: Team, week: int, byes: dict[str, int],
+            rolled: bool = False, played: bool = False) -> str:
     bits = []
-    if weekly_gain > 0:
-        bits.append(f"Starts for you this week (+{weekly_gain:.1f}).")
+    when = f"in week {week}" if rolled else "this week"
+    if played:
+        bits.append("Already played this week: a claim for what comes next.")
+    elif weekly_gain > 0:
+        bits.append(f"Starts for you {when} (+{weekly_gain:.1f}).")
     else:
-        bits.append("Depth now, not a starter this week.")
+        bits.append(f"Depth now, not a starter {when}.")
     if ros_gain > 0:
         bits.append(f"Adds {ros_gain:.0f} pts to your lineup rest of season.")
     cover = _bye_cover(team, fa, week, byes)
