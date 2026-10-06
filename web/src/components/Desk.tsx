@@ -126,10 +126,13 @@ function NewsRow({ it, index }: { it: NewsItem; index: number }) {
         </button>
         {/* The right column: the plan on top, the clock under it. */}
         <span className="flex shrink-0 flex-col items-end gap-1">
-          <Link href={planHref(it)} className="desk-plan-link" aria-label={DESK.news.planAria(a.name)}>
-            <span>{DESK.news.plan}</span>
-            <IconArrowUp size={11} strokeWidth={2.8} className="rotate-90" />
-          </Link>
+          {/* Good news needs no fallback: the engine says which rows get a door (W-015). */}
+          {(it.plan ?? it.level !== "upside") && (
+            <Link href={planHref(it)} className="desk-plan-link" aria-label={DESK.news.planAria(a.name)}>
+              <span>{DESK.news.plan}</span>
+              <IconArrowUp size={11} strokeWidth={2.8} className="rotate-90" />
+            </Link>
+          )}
           <span className="tnum text-[10px] font-bold uppercase text-muted">{DESK.news.ago(it.age_hours)}</span>
         </span>
       </div>

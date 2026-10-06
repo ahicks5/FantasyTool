@@ -315,7 +315,7 @@ and never a name.
   "news": {
     "window_hours": 72, "count": 6,
     "items": [{
-      "id": "own:4866:4866", "kind": "own", "level": "critical", "severity": 3,
+      "id": "own:4866:4866", "kind": "own", "level": "critical", "severity": 3, "plan": true,
       "headline": "Saquon Barkley is Questionable (arm)",
       "detail": "RB, in your lineup. Practice: limited.",
       "at": 1789940000000, "age_hours": 9.4,
@@ -360,6 +360,8 @@ and never a name.
   the other players of yours the same story touches. Every word is the platform's own
   (`injury_status`, `injury_body_part`, `injury_notes`) or the depth chart as it lists it;
   nothing is predicted and no number is invented. Only news dated inside the window counts.
+  `plan` is whether the row carries a door into the action plan ("Plan B"): false on an
+  `upside` story, because good news needs no fallback (`newsdesk.has_plan`).
 - `binders[].count` is the number of call-sheet actions of that binder's type, so the badge
   and the tab it opens cannot disagree. `locked` follows `edge/products.py`. `top` is the
   binder's first action as its cover line, its title and the first player on it (a

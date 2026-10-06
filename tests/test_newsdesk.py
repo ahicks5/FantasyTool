@@ -190,6 +190,8 @@ def test_order_is_by_how_hard_it_lands_then_critical_warning_upside_note_lineup_
     assert [i["severity"] for i in out["items"]] == [3, 2, 1, 1, 1]
     assert out["items"][0]["player"]["name"] == "Jahmyr Gibbs"
     assert out["items"][2]["player"]["name"] == "Isiah Pacheco"
+    # W-015: good news gets no "Plan B" door; serious stories and notes keep theirs.
+    assert [i["plan"] for i in out["items"]] == [True, True, True, False, True]
 
 
 def test_the_desk_shows_eight_and_counts_them_all():

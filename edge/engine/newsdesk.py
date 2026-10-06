@@ -100,11 +100,19 @@ def severity(kind: str, starter: bool, about: Slot) -> int:
     return SEVERITY.get((kind, starter, status_of(about) in DOWN), 0)
 
 
+def has_plan(level: str) -> bool:
+    """Whether a story gets a door into the action plan ("Plan B"). Good news for you needs
+    no fallback (Andrew, W-015: "if it's good news then fine, take off the button"), so an
+    upside story carries none; serious stories and notes keep theirs. Decided here, not in
+    a view, so the desk, the ticker and the email cannot disagree."""
+    return level != "upside"
+
+
 def _item(kind: str, level: str, mine, starter: bool, about: Slot, headline: str, detail: str,
           now_ms: int) -> dict:
     return {
         "id": f"{kind}:{mine.id}:{about.id}", "kind": kind, "level": level,
-        "severity": severity(kind, starter, about),
+        "severity": severity(kind, starter, about), "plan": has_plan(level),
         "headline": headline, "detail": detail,
         "at": about.news_updated, "age_hours": _hours_ago(about, now_ms),
         "player": {"id": mine.id, "name": mine.name, "position": mine.position,
