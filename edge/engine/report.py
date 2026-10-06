@@ -189,9 +189,9 @@ def matchup(league: League, team: Team, matchups_raw: list[dict] | None) -> dict
            "my_points": my_pts if live else None, "their_points": their_pts if live else None, "live": live,
            "state": "pre", "my_live": None, "their_live": None, "my_left": None, "their_left": None,
            "clock": clock}
-    if other is None:
-        return out
-    a, b = _live_side(league, team, my_pts), _live_side(league, other, their_pts)
+    if other is None or not any(p.locked for t in (team, other) for p in t.players):
+        return out  # nobody on either roster has kicked off: the pre-game read, at no cost
+    a, b =_live_side(league, team, my_pts), _live_side(league, other, their_pts)
     if a["state"] == "pre" and b["state"] == "pre":
         return out
     state = "final" if a["state"] == "final" and b["state"] == "final" else "live"
