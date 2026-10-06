@@ -62,11 +62,28 @@ function notify() {
   listeners.forEach((l) => l());
 }
 
+/** Which team a connection is, as one string: platform, league, team. */
+export function teamKey(c: Pick<Connection, "platform" | "league_id" | "team_id">): string {
+  return `${c.platform}:${c.league_id}:${c.team_id}`;
+}
+
+/**
+ * The last team saved on this device. Kept apart from the connection on purpose: sign-out
+ * forgets the connection, and signing back in to the same team is still not a new office.
+ */
+const RIDE_TEAM_KEY = "booth.ride.team";
+
 export function saveConnection(c: Connection): void {
   try {
     window.localStorage.setItem(KEY, JSON.stringify(c));
-    // A new team is a new office: the next open rides up to it, whatever the day.
-    window.localStorage.removeItem(RIDE_KEY);
+    // A new team is a new office: the next open rides up to it, whatever the day. The same
+    // team saved again (reopened from "Where to?", restored after a sign-in, a new week)
+    // keeps the day's stamp, so the ride stays once a day (walkthrough W-012).
+    const team = teamKey(c);
+    if (window.localStorage.getItem(RIDE_TEAM_KEY) !== team) {
+      window.localStorage.removeItem(RIDE_KEY);
+      window.localStorage.setItem(RIDE_TEAM_KEY, team);
+    }
   } catch {
     /* private mode / blocked storage: ignore */
   }
@@ -99,7 +116,7 @@ export function useConnection(): Connection | null {
 /* ---------------------------------------------------------------- the ride ---
    The last local day the elevator played (`lib/elevator.ts` decides what to do with
    it). One stamp, so the ride is the first impression of the day and not of every
-   reload. Cleared by `saveConnection`.                                            */
+   reload. Cleared by `saveConnection` for a new team. */
 
 const RIDE_KEY = "booth.ride";
 

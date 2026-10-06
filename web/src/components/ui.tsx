@@ -15,7 +15,8 @@ import {
   verdictClass,
 } from "@/lib/format";
 import { describeError, isOnline } from "@/lib/errors";
-import { CLOSED, CONFIDENCE_HIT_LINE, CONFIDENCE_LABEL } from "@/lib/vocab";
+import { CLOSED, CONFIDENCE_HIT_LINE, CONFIDENCE_LABEL, LINES } from "@/lib/vocab";
+import { useSession } from "@/lib/session";
 import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitPhase } from "@/lib/wait";
 import { dayStamp, liftRideBoot, rideDue, rideForced } from "@/lib/elevator";
 import { loadConnection, loadRideDay, resetOpenings } from "@/lib/storage";
@@ -57,7 +58,9 @@ export function Wordmark({
   className = "",
   lamp = true,
   markOnlyOnTiny = false,
-  short = false,
+  full = false,
+  link = true,
+  linkClassName = "flex min-h-11 items-center",
 }: {
   className?: string;
   lamp?: boolean;
@@ -72,10 +75,21 @@ export function Wordmark({
    * on that page the wordmark is the pitch and has to survive every width.
    */
   markOnlyOnTiny?: boolean;
-  /** "SUITE" in place of the full word: the signed-in bar, where the owner already knows the building (Andrew, 2026-09-27). */
-  short?: boolean;
+  /**
+   * "OWNER’S SUITE" in place of "SUITE". Only the landing page asks for it: everywhere
+   * else the top left always reads "SUITE" (Andrew, 2026-10-05, walkthrough W-007).
+   */
+  full?: boolean;
+  /**
+   * The wordmark is the way home, and it picks its own target so no caller can get it
+   * wrong: the call sheet signed in, the landing page signed out (W-007). `false` only
+   * where it already sits inside a link or is pure decoration.
+   */
+  link?: boolean;
+  /** Classes for the link around it (the tap target), when it is one. */
+  linkClassName?: string;
 }) {
-  return (
+  const mark = (
     <span className={`display inline-flex items-center gap-[0.26em] ${markOnlyOnTiny ? "wordmark-mark-only" : ""} ${className}`} style={{ fontWeight: 800 }}>
       {/* The mark takes the flat `metal` colour: background-clip:text clips to an
           element's own glyphs, and a seven-stop gradient would not read inside a
@@ -85,9 +99,20 @@ export function Wordmark({
           wrapper it paints nothing — the clip has no glyphs of its own to clip to —
           while the transparent text fill still inherits down, which renders the
           wordmark invisible. */}
-      <span className="wordmark-type chrome-type">{short ? "SUITE" : "OWNER’S SUITE"}</span>
+      <span className="wordmark-type chrome-type">{full ? "OWNER’S SUITE" : "SUITE"}</span>
       {lamp && <span className="lamp ml-[0.1em]" aria-hidden />}
     </span>
+  );
+  return link ? <HomeLink className={linkClassName}>{mark}</HomeLink> : mark;
+}
+
+/** The wordmark's link: `/home` once the session says signed in, `/` until then. */
+function HomeLink({ className, children }: { className: string; children: React.ReactNode }) {
+  const session = useSession();
+  return (
+    <Link href={session.signedIn ? "/home" : "/"} aria-label={LINES.homeAria} className={className}>
+      {children}
+    </Link>
   );
 }
 

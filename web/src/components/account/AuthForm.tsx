@@ -27,8 +27,12 @@ export function AuthForm({
 }: {
   mode: AuthMode;
   onMode: (m: AuthMode) => void;
-  /** Called once the API has signed the account in. `created` is true for a brand-new account. */
-  onDone: (me: Me, created?: boolean) => void;
+  /**
+   * Called once the API has signed the account in. `created` is true for a brand-new account.
+   * A promise holds the form, its button still spinning, until it settles: the door uses
+   * that to stay put while it opens the league and moves on (walkthrough W-010).
+   */
+  onDone: (me: Me, created?: boolean) => void | Promise<void>;
   autoFocus?: boolean;
 }) {
   const session = useSession();
@@ -37,9 +41,11 @@ export function AuthForm({
   // signing up both start with a phone number. Email and password are the fallback for
   // someone without a mobile, one tap away. Until the API has said whether texting is on,
   // show nothing rather than flash the email form at a phone visitor.
-  if (session.loading) return <div className="min-h-[188px]" data-auth="loading" aria-busy />;
+  // Only before the first answer: a sign-in re-asks the API, and the form on screen (its
+  // button spinning) must stay rather than blink out while it does (W-010).
+  if (session.loading && !session.me) return <div className="min-h-[188px]" data-auth="loading" aria-busy />;
   if (session.me?.phone_sign_in && !emailChosen && (mode === "signin" || mode === "register")) {
-    return <PhoneFlow onDone={onDone} onEmail={() => setEmailChosen(true)} autoFocus={autoFocus} />;
+    return <PhoneFlow onDone={onDone} onEmail={() => setEmailChosen(true)} onRegister={mode === "signin" ? () => onMode("register") : undefined} autoFocus={autoFocus} />;
   }
   return (
     <EmailForm
@@ -61,7 +67,7 @@ function EmailForm({
 }: {
   mode: AuthMode;
   onMode: (m: AuthMode) => void;
-  onDone: (me: Me, created?: boolean) => void;
+  onDone: (me: Me, created?: boolean) => void | Promise<void>;
   autoFocus: boolean;
   onPhone?: () => void;
 }) {
@@ -81,7 +87,7 @@ function EmailForm({
         setSent(await forgotPassword(email.trim()));
       } else {
         const out = mode === "register" ? await register(email.trim(), password, name.trim()) : await login(email.trim(), password);
-        onDone(out.me, mode === "register");
+        await onDone(out.me, mode === "register");
       }
     } catch (err) {
       setError(err);
@@ -181,12 +187,7 @@ function EmailForm({
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[13px] text-muted">
         {mode === "signin" && (
           <>
-            <span>
-              {ACCOUNT.noAccount}{" "}
-              <button type="button" onClick={() => switchTo("register")} className="min-h-11 font-bold text-ink underline underline-offset-4">
-                {ACCOUNT.register}
-              </button>
-            </span>
+            <NewHere onClick={() => switchTo("register")} />
             <button type="button" onClick={() => switchTo("forgot")} className="min-h-11 font-bold text-ink underline underline-offset-4">
               {ACCOUNT.forgot}
             </button>
@@ -210,10 +211,33 @@ function EmailForm({
   );
 }
 
+/** "New here? Get started": the way from sign-in to the sign-up walk (walkthrough W-009). */
+function NewHere({ onClick }: { onClick: () => void }) {
+  return (
+    <span className="text-muted" data-testid="new-here">
+      {ACCOUNT.noAccount}{" "}
+      <button type="button" onClick={onClick} className="min-h-11 font-bold text-ink underline underline-offset-4">
+        {ACCOUNT.getStarted}
+      </button>
+    </span>
+  );
+}
+
 type PhoneStep = { step: "number" } | { step: "code"; phone: string; display: string; devCode?: string } | { step: "profile"; ticket: string };
 
 /** The phone door: a number, the texted code, then (for a new number) the name and an optional email. */
-function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: boolean) => void; onEmail: () => void; autoFocus: boolean }) {
+function PhoneFlow({
+  onDone,
+  onEmail,
+  onRegister,
+  autoFocus,
+}: {
+  onDone: (me: Me, created?: boolean) => void | Promise<void>;
+  onEmail: () => void;
+  /** Signing in (not up): the "New here? Get started" line. */
+  onRegister?: () => void;
+  autoFocus: boolean;
+}) {
   const [state, setState] = useState<PhoneStep>({ step: "number" });
   const [number, setNumber] = useState("");
   const [code, setCode] = useState("");
@@ -251,14 +275,14 @@ function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: 
       if (state.step !== "code") return;
       const out = await phoneVerify(state.phone, code.trim());
       if (out.new) setState({ step: "profile", ticket: out.ticket });
-      else onDone(out.me, false);
+      else await onDone(out.me, false);
     });
 
   const finish = () =>
     run(async () => {
       if (state.step !== "profile") return;
       const out = await phoneComplete(state.ticket, name.trim(), email.trim(), sms);
-      onDone(out.me, true);
+      await onDone(out.me, true);
     });
 
   const link = "min-h-11 font-bold text-ink underline underline-offset-4";
@@ -370,10 +394,11 @@ function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: 
         {busy ? ACCOUNT.phone.busySend : ACCOUNT.phone.send}
       </Button>
       {errorBox}
-      <div className="mt-1 text-[13px]">
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[13px]">
         <button type="button" onClick={onEmail} className={link}>
           {ACCOUNT.phone.useEmail}
         </button>
+        {onRegister && <NewHere onClick={onRegister} />}
       </div>
     </form>
   );

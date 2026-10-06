@@ -15,6 +15,14 @@
 
 import { useSyncExternalStore } from "react";
 
+/**
+ * Whether the web offers Yahoo at all. Off until Yahoo ships (Andrew, 2026-10-05,
+ * walkthrough W-006): no "add a league" screen shows it, not even as "Soon". The code and
+ * the `/connect/yahoo` return stay; `NEXT_PUBLIC_YAHOO=1` (build time) brings the choice
+ * back, and it is still live only once the API says its sign-in is configured.
+ */
+export const YAHOO_OFFERED = process.env.NEXT_PUBLIC_YAHOO === "1";
+
 export interface YahooTokens {
   access_token: string;
   refresh_token: string;

@@ -135,6 +135,8 @@ export const LINES = {
   threshold: "Welcome to the owner\u2019s box.",
   /** The same move where the line has to be shorter. */
   thresholdShort: "Take the top floor.",
+  /** The wordmark is a link: the call sheet signed in, the landing page signed out. */
+  homeAria: "Owner's Suite home",
 
   /**
    * The h1 on /connect. It is the one page in the app that is a task rather than a
@@ -816,6 +818,16 @@ export const YAHOO = {
 } as const;
 
 /**
+ * The phone door's words, said once: the sign-in form and the sign-up walk both read these,
+ * so the two phone screens cannot drift apart again (walkthrough W-008, 2026-10-05).
+ */
+const PHONE_DOOR = {
+  send: "Text me the code",
+  useEmail: "No phone? Use email.",
+  trust: "One text now. Nothing else unless you ask for it.",
+} as const;
+
+/**
  * The account: register, sign in, the plan flag, the leagues on file, the upgrade sheet,
  * the reset, and the owner's admin desk. Every word on those screens and in the two
  * popups is here, so the sheet and the page can never disagree.
@@ -836,7 +848,7 @@ export const ACCOUNT = {
     leagues: "Your leagues",
     openAria: (name: string) => `Open ${name}`,
     add: "Add a league",
-    addLead: "Sleeper, ESPN or Yahoo.",
+    addLead: "Sleeper or ESPN.",
     settings: "Account & settings",
     settingsLead: "Your plan, your sign-in, your leagues on file.",
   },
@@ -855,6 +867,8 @@ export const ACCOUNT = {
   /** Swapping between the two. */
   haveAccount: "Already have an account?",
   noAccount: "New here?",
+  /** Under the sign-in form, the way to the sign-up walk (walkthrough W-009). */
+  getStarted: "Get started",
   forgot: "Forgot your password?",
   busySignIn: "Signing in\u2026",
   busyRegister: "Setting up\u2026",
@@ -1014,8 +1028,8 @@ export const ACCOUNT = {
   /** Phone sign-in: the number, the texted code, then the name and an optional email. */
   phone: {
     label: "Mobile number",
-    hint: "We’ll send a text to verify.",
-    send: "Text me a code",
+    hint: PHONE_DOOR.trust,
+    send: PHONE_DOOR.send,
     busySend: "Texting\u2026",
     codeLabel: "Code",
     codeLead: (to: string) => `Code sent to ${to}.`,
@@ -1026,7 +1040,7 @@ export const ACCOUNT = {
     change: "Change number",
     devCode: (code: string) => `Dev API, nothing texted. Code: ${code}`,
     /** Phone is the way in; email is the fallback for someone without a mobile. */
-    useEmail: "No mobile? Use email instead",
+    useEmail: PHONE_DOOR.useEmail,
     usePhone: "Use your phone number",
     emailFallback: "Phone is the fastest way in. Email works if you don\u2019t have a mobile.",
     profileTitle: "Last thing.",
@@ -2145,10 +2159,10 @@ export const ONBOARD = {
     line: "A text gets you through the door. No password to remember.",
     label: "Mobile number",
     placeholder: "(555) 234-5678",
-    send: "Text me the code",
+    send: PHONE_DOOR.send,
     busy: "Texting…",
-    trust: "One text now. Nothing else unless you ask for it.",
-    useEmail: "No phone? Use email.",
+    trust: PHONE_DOOR.trust,
+    useEmail: PHONE_DOOR.useEmail,
     haveAccount: "Already in the building?",
     signIn: "Sign in",
   },

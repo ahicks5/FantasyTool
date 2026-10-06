@@ -169,13 +169,10 @@ const PAGES: PageCase[] = [
       const sleeper = page.getByRole("radio", { name: "Sleeper" });
       await expect(sleeper).toBeVisible();
       await expect(page.getByRole("radio", { name: "ESPN" })).toBeVisible();
-      // Yahoo is a roadmap marker until the API reports its sign-in is configured
-      // (/api/yahoo/status); the fixture API has no YAHOO_* keys. Until then it must be
-      // visible and unpickable: never offered as a third radio, and disabled if reached.
+      // Yahoo is not offered until it ships (NEXT_PUBLIC_YAHOO unset, walkthrough W-006):
+      // not a radio, and not even the dashed "Soon" marker.
       await expect(page.getByRole("radio", { name: /yahoo/i })).toHaveCount(0);
-      const yahoo = page.getByRole("button", { name: /yahoo/i });
-      await expect(yahoo).toBeVisible();
-      await expect(yahoo).toBeDisabled();
+      await expect(page.getByRole("button", { name: /yahoo/i })).toHaveCount(0);
       await expect(page.locator("#sleeper-input")).toHaveCount(0);
       // ESPN leads with the phone way: the door to the walk sits above the ID box.
       await page.getByRole("radio", { name: "ESPN" }).click();

@@ -144,6 +144,7 @@ set, and the privacy page already names all four:
 | `NEXT_PUBLIC_META_PIXEL_ID` | digits (Events Manager → Data sources) | Meta pixel: PageView, ViewContent, CompleteRegistration, Lead, InitiateCheckout, Purchase. |
 | `NEXT_PUBLIC_REDDIT_PIXEL_ID` | `t2_…` (Reddit Ads → Events Manager) | Reddit pixel: PageVisit, ViewContent, SignUp, Lead, AddToCart, Purchase. |
 | `NEXT_PUBLIC_GOOGLE_ADS_ID` | `AW-…` | Google Ads tag. `NEXT_PUBLIC_GOOGLE_ADS_SEND_TO` (`AW-…/label`, from the conversion action) makes Purchase a conversion. |
+| `NEXT_PUBLIC_YAHOO` | `1` to offer Yahoo | **Off (unset) until Yahoo ships** (Andrew, 2026-10-05, walkthrough W-006). Unset, no "add a league" screen names or shows Yahoo, not even as "Soon". Set to `1` *and* the three `YAHOO_*` on Render to bring it back. Build-time: redeploy after setting. |
 
 The first-party event log and the admin's numbers need none of these: they run off the API.
 
@@ -170,7 +171,7 @@ API (Railway):
 | `EDGE_ADMINS` | comma-separated emails | **The admin account.** Anyone who signs in with one of these addresses gets the front office (`/admin`): every account, grant or revoke a pass, add league slots, hand out reset links, promote another admin. `deploy/render.yaml` carries Andrew's address; the running service still has to be set by hand. An admin can also be made from the store (`role` column) once one exists. |
 | `SUPABASE_JWT_SECRET` | optional | A Supabase JWT is still accepted as a bearer token when set. Nothing in the web sends one any more. |
 | `EDGE_USE_CLAUDE`, `ANTHROPIC_API_KEY` | optional | LLM-written trade explanations. Without them the templates are used. |
-| `YAHOO_CLIENT_ID` | Yahoo app Client ID | **Yahoo leagues.** All three `YAHOO_*` set turns Yahoo on: the connect page's "Yahoo · Soon" becomes a live choice (it asks `GET /api/yahoo/status`). See "Yahoo" below. |
+| `YAHOO_CLIENT_ID` | Yahoo app Client ID | **Yahoo leagues.** All three `YAHOO_*` set, plus `NEXT_PUBLIC_YAHOO=1` on Vercel, turns Yahoo on: the connect page shows it as a live choice (it asks `GET /api/yahoo/status`). Without the Vercel flag Yahoo is not shown at all. See "Yahoo" below. |
 | `YAHOO_CLIENT_SECRET` | secret | Yahoo app Client Secret. Secret: set on Render only. |
 | `YAHOO_REDIRECT_URI` | `https://penthousefantasy.com/connect/yahoo` | Must match the redirect URI registered on the Yahoo app **exactly** (scheme, host, path, no trailing slash). |
 | `EDGE_CHROMIUM` | optional | Path to an existing Chromium. Only needed if the image does not install its own — see below. |

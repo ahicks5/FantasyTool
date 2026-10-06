@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page, type Route } from "@playwright/test";
 import { API_URL } from "../playwright.config";
-import { ACCOUNT, CONNECT, DESK, ONBOARD, PRICING, RIDE, WIRE } from "../src/lib/vocab";
+import { ACCOUNT, CONNECT, DESK, LINES, ONBOARD, PRICING, RIDE, WIRE } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 
 /**
@@ -215,9 +215,15 @@ test("a stranger's door is the account: register, land on it, then link a league
   expect(await page.evaluate(() => localStorage.getItem("booth.session"))).toBeNull();
   await page.goto("/login");
   await expect(page.getByLabel(ACCOUNT.phone.label)).toBeVisible();
-  // And back in with the phone: a number on file signs straight in, no profile step, onto
-  // the where-to menu with the league on it.
+  // And back in with the phone: a number on file signs straight in, no profile step, and
+  // goes straight to the call sheet on its league (W-011), with no ride: the same team
+  // reopened the same day is not a new office (W-012).
   await phoneIn(page, phone);
+  await page.waitForURL("**/home");
+  await expect(page.getByRole("region", { name: DESK.aria })).toBeVisible();
+  await expect(page.getByRole("status", { name: RIDE.aria })).toHaveCount(0);
+  // /login once in is the switcher, with the league on it.
+  await page.goto("/login");
   await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.whereTo.title })).toBeVisible();
   await expect(page.getByTestId("where-league")).toHaveCount(1);
 });
@@ -239,9 +245,14 @@ test("a returning account lands on its league without entering it again", async 
   const stored = JSON.parse((await page.evaluate(() => localStorage.getItem("booth.connection"))) ?? "null");
   expect(stored?.league_id).toBe(CONNECTION.league_id);
   expect(stored?.team_id).toBe(CONNECTION.team_id);
-  // Signed in, the wordmark is the way back to the call sheet, never the landing page.
+  // Signed in, the wordmark is the way back to the call sheet, never the landing page, and
+  // it reads SUITE everywhere but the landing page (W-007).
   await page.goto("/team");
-  await expect(page.getByRole("link", { name: "Owner's Suite home" })).toHaveAttribute("href", "/home");
+  const mark = page.getByRole("link", { name: LINES.homeAria });
+  await expect(mark).toHaveAttribute("href", "/home");
+  await expect(mark).toHaveText(/^SUITE/);
+  await page.goto("/account");
+  await expect(page.getByRole("link", { name: LINES.homeAria })).toHaveAttribute("href", "/home");
 });
 
 test("a wrong password says one thing and signs nobody in", async ({ context, page }) => {
@@ -284,6 +295,16 @@ test("the account changes its password and signs out the other devices, and this
   expect(await me(otherToken)).toBe(false);
   await security.getByRole("button", { name: ACCOUNT.security.others }).click();
   await expect(security.getByRole("status")).toHaveText(ACCOUNT.security.othersDone(0));
+});
+
+test("sign-in has a way to sign up, and it carries ?next= (W-009)", async ({ context, page }) => {
+  await beAStranger(context);
+  await page.goto("/login?next=/trade");
+  const line = page.getByTestId("new-here");
+  await expect(line).toContainText(ACCOUNT.noAccount);
+  await line.getByRole("button", { name: ACCOUNT.getStarted }).click();
+  await page.waitForURL("**/register?next=%2Ftrade");
+  await expect(page.getByRole("heading", { level: 1, name: ONBOARD.phone.title })).toBeVisible();
 });
 
 test("forgot password says your sign-in is your email", async ({ context, page }) => {
@@ -418,7 +439,11 @@ test("signing in or out in one tab reaches the others without a reload", async (
   await page.getByLabel(ACCOUNT.email).fill(email);
   await page.getByLabel(ACCOUNT.password).fill(PASSWORD);
   await page.getByRole("button", { name: ACCOUNT.signIn, exact: true }).click();
+  // No league on this account: nowhere upstairs to land, so "Where to?" is just add a league
+  // and the settings (W-011).
   await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.whereTo.title })).toBeVisible();
+  await expect(page.getByTestId("where-league")).toHaveCount(0);
+  await expect(page.getByTestId("where-add")).toBeVisible();
   await expect(other.getByRole("heading", { level: 1, name: ACCOUNT.whereTo.title })).toBeVisible();
   // Into the building, where the top bar shows the account.
   await page.goto("/home");
@@ -461,7 +486,7 @@ test("a signed-in browser at the door sees 'checking you in', never a blank page
   await expect(page.getByTestId("door-checking")).toHaveCount(0);
 });
 
-test("signing in at the door lands on a short where-to menu: your league, add one, the account", async ({ context, page }) => {
+test("signing in at the door goes straight to the call sheet on the last league; the door after is the switcher", async ({ context, page }) => {
   await beAStranger(context);
   const email = freshEmail("menu");
   const token = await registerViaApi(page, email);
@@ -474,11 +499,19 @@ test("signing in at the door lands on a short where-to menu: your league, add on
   await useEmail(page);
   await page.getByLabel(ACCOUNT.email).fill(email);
   await page.getByLabel(ACCOUNT.password).fill(PASSWORD);
-  await page.getByRole("button", { name: ACCOUNT.signIn, exact: true }).click();
+  const signIn = page.getByRole("button", { name: ACCOUNT.signIn, exact: true });
+  await signIn.click();
+  // The form stays, its button spinning, until the page moves on: no in-between card (W-010).
+  await expect(page.getByTestId("door-checking")).toHaveCount(0);
+  await page.waitForURL("**/home");
+  await expect(page.getByRole("region", { name: DESK.aria })).toBeVisible();
+  const opened = JSON.parse((await page.evaluate(() => localStorage.getItem("booth.connection"))) ?? "null");
+  expect(opened?.league_id).toBe(CONNECTION.league_id);
 
+  // Back at the door, signed in: "Where to?" is the league switcher.
+  await page.goto("/login");
   const menu = page.getByTestId("where-to");
   await expect(menu.getByRole("heading", { level: 1, name: ACCOUNT.whereTo.title })).toBeVisible();
-  await expect(page).toHaveURL(/\/login/);
   await expect(menu.getByTestId("where-league")).toHaveCount(1);
   await expect(menu.getByTestId("where-add")).toHaveAttribute("href", "/connect");
   await expect(menu.getByTestId("where-settings")).toHaveAttribute("href", "/account");

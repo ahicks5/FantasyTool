@@ -313,6 +313,14 @@ test("the account's words are the staff at the door: sign in, create, no magic l
   assert.match(ACCOUNT.reset.notSent, /nothing was sent/);
 });
 
+test("the two phone doors say the same thing, and Yahoo is not offered until it ships (W-006, W-008)", () => {
+  assert.equal(ACCOUNT.phone.send, ONBOARD.phone.send);
+  assert.equal(ACCOUNT.phone.useEmail, ONBOARD.phone.useEmail);
+  assert.equal(ACCOUNT.phone.hint, ONBOARD.phone.trust);
+  assert.doesNotMatch(ACCOUNT.whereTo.addLead, /yahoo/i);
+  assert.equal(`${ACCOUNT.noAccount} ${ACCOUNT.getStarted}`, "New here? Get started");
+});
+
 test("the ESPN walk is one direction a step, in the least words, and never sends anyone to DevTools", () => {
   // Andrew, 2026-09-28: the plan in one breath, then one direction per step.
   assert.match(ESPN_KEY.lead, /^We add a bookmark/);

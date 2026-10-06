@@ -63,6 +63,16 @@ export function firstStep(me: Me | null, local: Local): Step {
   return "done";
 }
 
+/**
+ * Where a number that already had an account goes after its code (walkthrough W-003):
+ * straight in when it has a league, the way a sign-in does; the walk only for an account
+ * with no league at all, which picks up at its first gap.
+ */
+export function returningStep(me: Me, local: Local): Step {
+  if (me.signed_in && me.leagues.length > 0) return "done";
+  return firstStep(me, local);
+}
+
 /** How much of the bar is lit on this screen: never zero, so the walk reads as begun. */
 export function progress(step: Step, path: Path): number {
   const steps = PATHS[path];

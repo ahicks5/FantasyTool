@@ -13,6 +13,7 @@ import {
   clearWalkReturn,
   phoneReady,
   progress,
+  returningStep,
   walkExit,
   PATHS,
 } from "./onboarding.ts";
@@ -63,6 +64,16 @@ test("a signed-in account resumes at its first gap, in order", () => {
   assert.equal(firstStep(me({ leagues: [LEAGUE], onboarding: { reached: { reveal: 1 }, skipped: { offer: 1 } } }), L), "done");
   assert.equal(firstStep(me({ leagues: [LEAGUE], trial_eligible: false }), { ...L, revealSeen: true }), "done");
   assert.equal(firstStep(me({ leagues: [LEAGUE], tier: "premium" }), { ...L, revealSeen: true }), "done");
+});
+
+test("a number already on file with a league goes straight in, not through the walk (W-003)", () => {
+  const L = { path: "phone" as const };
+  // No reveal mark and no local reveal: firstStep would say "reveal", which is the bug.
+  assert.equal(firstStep(me({ leagues: [LEAGUE] }), L), "reveal");
+  assert.equal(returningStep(me({ leagues: [LEAGUE] }), L), "done");
+  assert.equal(returningStep(me({ name: "", email: "", phone: "+15552345678", leagues: [LEAGUE] }), L), "done", "a missing name or mailbox does not block use");
+  assert.equal(returningStep(me(), L), "league", "no league at all: the walk picks up at the league");
+  assert.equal(returningStep(me({ name: "" }), L), "name", "and in its own order");
 });
 
 test("the bar is never empty and ends full", () => {

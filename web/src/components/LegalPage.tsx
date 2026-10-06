@@ -11,9 +11,7 @@ export function LegalPage({ title, children }: { title: string; children: React.
         {/* The word goes below 360px: the nameplate and the Terms/Privacy nav want 358px
             between them, so these two pages scrolled sideways on a small phone. The mark
             alone is still the mark and the link keeps its aria-label. */}
-        <Link href="/" aria-label="Owner's Suite home" className="flex min-h-11 items-center">
-          <Wordmark className="text-[22px]" markOnlyOnTiny />
-        </Link>
+        <Wordmark className="text-[22px]" markOnlyOnTiny />
         <nav className="flex items-center gap-1 text-[13px] font-bold text-muted">
           <Link href="/terms" className="flex min-h-11 items-center px-3 hover:text-ink">
             Terms
