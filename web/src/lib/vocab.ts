@@ -249,14 +249,16 @@ export const DESK = {
     /**
      * Why this story is on your desk, in a few words beside the level: the player of
      * yours it lands on and how. `pos` and `last` are his; `starter` is whether he is in
-     * your lineup this week.
+     * your lineup this week. Short on purpose: the slot beside the meter is narrow at 375px,
+     * and a cut-off "Ahead of your W…" lost the point (W-016). The name carries it.
      */
     tag: {
       own: (pos: string, starter: boolean) => `Your ${pos} \u00b7 ${starter ? "starting" : "bench"}`,
-      qb: (pos: string, last: string) => `QB1 for your ${pos} ${last}`,
-      target: (pos: string, last: string) => `Ahead of your ${pos} ${last}`,
-      backfield: (pos: string, last: string) => `RB1 ahead of your ${last}`,
-      line: (pos: string, last: string) => `Blocks for your ${pos} ${last}`,
+      // `pos` stays in the signature for a wider slot; the short line does not need it.
+      qb: (_pos: string, last: string) => `${last}\u2019s QB1`,
+      target: (_pos: string, last: string) => `Opens up for ${last}`,
+      backfield: (_pos: string, last: string) => `Opens up for ${last}`,
+      line: (_pos: string, last: string) => `Blocks for ${last}`,
     },
   },
   /** The matchup card, where the call sheet's stack used to sit: who, the projected

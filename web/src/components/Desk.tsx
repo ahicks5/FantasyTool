@@ -121,7 +121,7 @@ function NewsRow({ it, index }: { it: NewsItem; index: number }) {
           <span className="display line-clamp-2 text-[13.5px] leading-tight text-ink">{newsHeadline(it)}</span>
           <span className="mt-1 flex min-w-0 items-center gap-1.5">
             <Severity n={it.severity} up={it.level === "upside"} />
-            <span className="min-w-0 truncate text-[11px] font-bold text-ink-2">{tagFor(it)}</span>
+            <span className="min-w-0 line-clamp-2 text-[11px] font-bold leading-tight text-ink-2">{tagFor(it)}</span>
           </span>
         </button>
         {/* The right column: the plan on top, the clock under it. */}
@@ -326,7 +326,8 @@ function Notebook({
       <span className="desk-from">{from}</span>
       <span className="notebook-line" aria-hidden>
         {face && <Avatar name={face.name} photo={face.photo} teamLogo={face.team_logo} size="xs" className="notebook-face" />}
-        <span className="min-w-0 truncate">{line}</span>
+        {/* Two lines, never a mid-word "…" where the point is (W-016). */}
+        <span className="min-w-0 line-clamp-2">{line}</span>
       </span>
       {locked && <span className="notebook-lock">{DESK.notebooks.locked}</span>}
     </Link>
