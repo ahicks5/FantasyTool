@@ -47,15 +47,26 @@ export function firstTab(o: BattleOptions, pos: string | null): CornerTab {
  * red corner walks out, both wind back, then they meet. The verdict slams once the hit has
  * landed AND the judges are back (the API call); if they are slow, the stage holds on the
  * charge rather than slamming a word it does not have.
+ *
+ * The whole thing is capped at four seconds (Andrew, W-024: "clash animation lets drop to
+ * 4 seconds"). On schedule it runs {@link CLASH_MIN_MS}, with the slack under the cap kept
+ * for the judges; when they are late the verdict gives back time, down to
+ * `VERDICT_MIN_MS`, so the stage still clears by {@link CLASH_MAX_MS}. Only judges later
+ * than that push past it, because a blank never slams. The walk-out, wind-up and fade
+ * durations are mirrored in `globals.css` (`.clash-fighter-*`, `charge`, `clash-out`).
  */
 export const CLASH = {
-  BLUE_MS: 650,
-  RED_MS: 650,
-  WIND_MS: 700,
+  BLUE_MS: 520,
+  RED_MS: 520,
+  WIND_MS: 560,
   HIT_MS: 520,
-  VERDICT_MS: 1100,
-  OUT_MS: 380,
+  VERDICT_MS: 950,
+  VERDICT_MIN_MS: 700,
+  OUT_MS: 330,
 } as const;
+
+/** The longest the clash runs while the judges are back in time. */
+export const CLASH_MAX_MS = 4000;
 
 export type ClashPhase = "blue" | "red" | "wind" | "hit" | "verdict" | "out" | "done";
 
@@ -77,8 +88,11 @@ export function clashPhase(t: number, readyAt: number | null): ClashPhase {
   const hitAt = Math.max(T_HIT, readyAt ?? Infinity);
   if (t < hitAt) return "wind";
   if (t < hitAt + CLASH.HIT_MS) return "hit";
-  if (t < hitAt + CLASH.HIT_MS + CLASH.VERDICT_MS) return "verdict";
-  if (t < hitAt + CLASH.HIT_MS + CLASH.VERDICT_MS + CLASH.OUT_MS) return "out";
+  // Late judges eat into the verdict, never below the floor, so the cap holds.
+  const room = CLASH_MAX_MS - hitAt - CLASH.HIT_MS - CLASH.OUT_MS;
+  const verdict = Math.max(CLASH.VERDICT_MIN_MS, Math.min(CLASH.VERDICT_MS, room));
+  if (t < hitAt + CLASH.HIT_MS + verdict) return "verdict";
+  if (t < hitAt + CLASH.HIT_MS + verdict + CLASH.OUT_MS) return "out";
   return "done";
 }
 
