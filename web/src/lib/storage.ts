@@ -62,11 +62,19 @@ function notify() {
   listeners.forEach((l) => l());
 }
 
+/** The same league and the same seat in it. */
+export function sameTeam(a: Pick<Connection, "platform" | "league_id" | "team_id"> | null, b: Pick<Connection, "platform" | "league_id" | "team_id">): boolean {
+  return !!a && a.platform === b.platform && a.league_id === b.league_id && String(a.team_id) === String(b.team_id);
+}
+
 export function saveConnection(c: Connection): void {
   try {
+    const before = loadConnection();
     window.localStorage.setItem(KEY, JSON.stringify(c));
-    // A new team is a new office: the next open rides up to it, whatever the day.
-    window.localStorage.removeItem(RIDE_KEY);
+    // A new team is a new office: the next open rides up to it, whatever the day. The same
+    // team saved again (reopened from "Where to?", restored after a sign-in) is the same
+    // office, and the once-a-day rule stands (Andrew, 2026-10-05, W-012).
+    if (!sameTeam(before, c)) window.localStorage.removeItem(RIDE_KEY);
   } catch {
     /* private mode / blocked storage: ignore */
   }

@@ -6,11 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AuthForm, type AuthMode } from "./AuthForm";
 import { WhereTo } from "./WhereTo";
 import { hasToken } from "@/lib/auth";
+import { enterLastLeague } from "@/lib/openLeague";
 import { useSession } from "@/lib/session";
 import { safeNext } from "@/lib/identity";
 import { IconChevron } from "@/components/icons";
-import { Eyebrow, Wordmark } from "@/components/ui";
+import { Eyebrow } from "@/components/ui";
 import { ACCOUNT, LINES } from "@/lib/vocab";
+import { HomeMark } from "@/components/HomeMark";
 
 /**
  * The chrome the account pages share: wordmark and one column. Signed in, the wordmark
@@ -23,9 +25,7 @@ export function DoorFrame({ children }: { children: React.ReactNode }) {
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href={inside ? "/home" : "/"} aria-label="Owner's Suite home" className="flex min-h-11 items-center">
-          <Wordmark className="text-[26px]" short={inside} />
-        </Link>
+        <HomeMark className="text-[26px]" />
         {inside && (
           <Link
             href="/home"
@@ -91,13 +91,19 @@ function LoginInner({ start }: { start: AuthMode }) {
   // A browser holding a token is probably signed in: say we are checking rather than flash
   // the sign-in form and then swap it for the account (Andrew, 2026-10-05: "that limbo").
   const checking = session.loading && hasToken();
+  // Set the moment a sign-in succeeds: the form stays on screen (its button still turning)
+  // until we are on the desk, instead of swapping to "Checking you in" and then the menu
+  // (Andrew, 2026-10-05, W-010).
+  const [leaving, setLeaving] = useState(false);
   const title = mode === "register" ? ACCOUNT.register : mode === "forgot" ? ACCOUNT.reset.title : ACCOUNT.signIn;
   // Fewest words at the door (Andrew, 2026-09-27): only the reset form keeps a line.
   const lead = mode === "forgot" ? ACCOUNT.reset.lead : null;
 
-  if (checking) return <DoorWaitPage />;
-  // In: a short menu (your leagues, add one, the account), not the settings page.
-  if (session.signedIn) {
+  if (checking && !leaving) return <DoorWaitPage />;
+  // In: a short menu (your leagues, add one, the account), not the settings page. It is the
+  // league switcher for someone who opens /login already signed in; a fresh sign-in goes
+  // straight to the desk (W-011).
+  if (session.signedIn && !leaving) {
     return (
       <DoorFrame>
         <WhereTo next={asked ? next : null} />
@@ -118,9 +124,14 @@ function LoginInner({ start }: { start: AuthMode }) {
           <AuthForm
             mode={mode}
             onMode={setMode}
-            onDone={(_, created) => {
-              if (created && !asked) router.push("/register");
-              else if (asked) router.push(next);
+            onDone={async (me, created) => {
+              if (created && !asked) return router.push("/register");
+              if (asked) return router.push(next);
+              // No league yet: the menu is the way to add one.
+              if (!me.leagues.length) return;
+              setLeaving(true);
+              await enterLastLeague(me);
+              router.replace("/home");
             }}
           />
         </div>

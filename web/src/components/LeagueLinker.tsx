@@ -28,8 +28,9 @@ import { useLocation } from "@/lib/href";
 import { clearYahooAuth, loadYahooAuth, newYahooState, useYahooAuth } from "@/lib/yahooAuth";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck, IconChevron } from "@/components/icons";
-import { Button, Countdown, ErrorBox, Eyebrow, LinkButton, Wordmark } from "@/components/ui";
+import { Button, Countdown, ErrorBox, Eyebrow, LinkButton } from "@/components/ui";
 import { ACCOUNT, CONNECT, ESPN_KEY, LINES, YAHOO } from "@/lib/vocab";
+import { HomeMark } from "@/components/HomeMark";
 
 const FIELD =
   "w-full min-w-0 rounded-xl border border-line-2 bg-soft px-4 py-3 text-base text-ink placeholder:text-muted focus:border-ink focus:bg-paper focus:outline-none";
@@ -347,9 +348,7 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
     <div className={walk ? "" : "mx-auto w-full max-w-lg px-4 pb-16"}>
       {!walk && (
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href={session.signedIn ? "/home" : "/"} aria-label="Owner's Suite home" className="flex min-h-11 items-center">
-          <Wordmark className="text-[26px]" short={session.signedIn} />
-        </Link>
+        <HomeMark className="text-[26px]" />
         {/* The way back out, for an owner who came here from their account (Andrew, 2026-09-28). */}
         {session.signedIn && (
           <Link

@@ -1,9 +1,9 @@
 "use client";
 /** The walk's chrome: the small wordmark, the way back, the bar, and one screen at a time sliding in. */
-import Link from "next/link";
 import { IconChevron } from "@/components/icons";
-import { Eyebrow, Wordmark } from "@/components/ui";
+import { Eyebrow } from "@/components/ui";
 import { ONBOARD } from "@/lib/vocab";
+import { HomeMark } from "@/components/HomeMark";
 
 /**
  * The frame every screen of the walk sits in. A full-height column on a phone: the bar
@@ -36,12 +36,8 @@ export function Frame({
           >
             <IconChevron size={18} strokeWidth={2.6} className="rotate-180" />
           </button>
-        ) : (
-          <span className="h-11 w-2" aria-hidden />
-        )}
-        <Link href="/" aria-label="Owner's Suite home" className="flex min-h-11 flex-1 items-center">
-          <Wordmark className="text-[20px]" />
-        </Link>
+        ) : null}
+        <HomeMark className="text-[20px]" linkClassName="flex min-h-11 flex-1 items-center" />
       </header>
       <div
         className="h-1.5 w-full overflow-hidden rounded-full bg-line"

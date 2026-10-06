@@ -819,6 +819,17 @@ export const YAHOO = {
  * Voice: the staff at the door. Short, verb first, no apology. Sign-in is first-party
  * (an email and a password), so nothing here promises a magic link.
  */
+/**
+ * The phone door's words, said once and used by both doors: sign-in (`ACCOUNT.phone`) and the
+ * sign-up walk (`ONBOARD.phone`). Two copies drifted into "Text me a code" vs "Text me the
+ * code" (Andrew, 2026-10-05, W-008).
+ */
+const PHONE_DOOR = {
+  send: "Text me the code",
+  useEmail: "No phone? Use email.",
+  trust: "One text now. Nothing else unless you ask for it.",
+} as const;
+
 export const ACCOUNT = {
   title: "Your account",
   /** The door while it asks the API who this browser is: never a blank screen. */
@@ -832,7 +843,7 @@ export const ACCOUNT = {
     leagues: "Your leagues",
     openAria: (name: string) => `Open ${name}`,
     add: "Add a league",
-    addLead: "Sleeper, ESPN or Yahoo.",
+    addLead: "Sleeper or ESPN.",
     settings: "Account & settings",
     settingsLead: "Your plan, your sign-in, your leagues on file.",
   },
@@ -1010,8 +1021,8 @@ export const ACCOUNT = {
   /** Phone sign-in: the number, the texted code, then the name and an optional email. */
   phone: {
     label: "Mobile number",
-    hint: "We’ll send a text to verify.",
-    send: "Text me a code",
+    hint: PHONE_DOOR.trust,
+    send: PHONE_DOOR.send,
     busySend: "Texting\u2026",
     codeLabel: "Code",
     codeLead: (to: string) => `Code sent to ${to}.`,
@@ -1022,7 +1033,10 @@ export const ACCOUNT = {
     change: "Change number",
     devCode: (code: string) => `Dev API, nothing texted. Code: ${code}`,
     /** Phone is the way in; email is the fallback for someone without a mobile. */
-    useEmail: "No mobile? Use email instead",
+    useEmail: PHONE_DOOR.useEmail,
+    /** Under the phone sign-in, for a visitor who has no account yet (W-009). */
+    newHere: "New here?",
+    getStarted: "Get started",
     usePhone: "Use your phone number",
     emailFallback: "Phone is the fastest way in. Email works if you don\u2019t have a mobile.",
     profileTitle: "Last thing.",
@@ -2141,10 +2155,10 @@ export const ONBOARD = {
     line: "A text gets you through the door. No password to remember.",
     label: "Mobile number",
     placeholder: "(555) 234-5678",
-    send: "Text me the code",
+    send: PHONE_DOOR.send,
     busy: "Texting…",
-    trust: "One text now. Nothing else unless you ask for it.",
-    useEmail: "No phone? Use email.",
+    trust: PHONE_DOOR.trust,
+    useEmail: PHONE_DOOR.useEmail,
     haveAccount: "Already in the building?",
     signIn: "Sign in",
   },

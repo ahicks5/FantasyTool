@@ -42,12 +42,14 @@ import {
   PATHS,
   phoneReady,
   progress,
+  returningGoesIn,
   walkExit,
   type Local,
   type Path,
   type Step,
 } from "@/lib/onboarding";
 import { useSession } from "@/lib/session";
+import { enterLastLeague } from "@/lib/openLeague";
 import type { ActionFeed, Me, OnboardStep, Product, VerifyStartResponse } from "@/lib/types";
 import { featuresForSku, waitForFeatures } from "@/lib/unlock";
 import { PRODUCTS as FALLBACK } from "@/lib/mocks";
@@ -190,10 +192,12 @@ function Walk() {
               setDraft((d) => ({ ...d, ticket }));
               go("name");
             }}
-            onIn={(m) => {
-              // A number already on file: signed in. Straight on to whatever is unfinished.
-              if (firstStep(m, { path, ...local }) === "done") router.replace(walkExit(next));
-              else landed(m);
+            onIn={async (m) => {
+              // A number already on file: this is a sign-in. With a league, straight to the desk.
+              if (returningGoesIn(m) || firstStep(m, { path, ...local }) === "done") {
+                await enterLastLeague(m);
+                router.replace(walkExit(next));
+              } else landed(m);
             }}
           />
         )}
@@ -402,7 +406,8 @@ function CodeScreen({
   onDraft: (f: (d: Draft) => Draft) => void;
   onChange: () => void;
   onNew: (ticket: string) => void;
-  onIn: (me: Me) => void;
+  /** A number already on file. Awaited, so the code screen keeps turning until we are upstairs. */
+  onIn: (me: Me) => void | Promise<void>;
 }) {
   const { busy, error, run } = useRun();
   const [code, setCode] = useState("");
@@ -418,7 +423,7 @@ function CodeScreen({
     run(async () => {
       const out = await phoneVerify(draft.phone, value);
       if (out.new) onNew(out.ticket);
-      else onIn(out.me);
+      else await onIn(out.me);
     });
   const resend = () =>
     run(async () => {

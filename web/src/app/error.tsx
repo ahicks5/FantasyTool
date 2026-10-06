@@ -6,8 +6,8 @@
  */
 
 import { useEffect } from "react";
-import Link from "next/link";
-import { Button, ErrorBox, Wordmark } from "@/components/ui";
+import { Button, ErrorBox } from "@/components/ui";
+import { HomeMark } from "@/components/HomeMark";
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -19,9 +19,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-4">
       <header className="flex h-16 items-center">
-        <Link href="/" aria-label="Owner's Suite home">
-          <Wordmark className="text-[22px]" />
-        </Link>
+        <HomeMark className="text-[22px]" />
       </header>
       <main className="flex flex-1 flex-col justify-center gap-4 pb-24">
         <ErrorBox error={error} onRetry={reset} />

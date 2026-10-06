@@ -13,6 +13,7 @@ import {
   clearWalkReturn,
   phoneReady,
   progress,
+  returningGoesIn,
   walkExit,
   PATHS,
 } from "./onboarding.ts";
@@ -131,4 +132,13 @@ test("a trip to ESPN or Yahoo comes back to the walk for an hour, then to /conne
   clearWalkReturn(store);
   assert.equal(leagueHome(store, 2_000), "/connect");
   assert.equal(leagueHome(null), "/connect");
+});
+
+test("a number already on file with a league goes straight in, not mid-walk (W-003)", () => {
+  // The account that hit this: leagues on file, never marked as having seen the reveal.
+  const returning = me({ leagues: [LEAGUE], onboarding: {} });
+  assert.equal(firstStep(returning, { path: "phone" }), "reveal");
+  assert.equal(returningGoesIn(returning), true);
+  // No league yet: the walk still has the one thing upstairs needs.
+  assert.equal(returningGoesIn(me()), false);
 });

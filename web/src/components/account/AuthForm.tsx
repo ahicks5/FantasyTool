@@ -4,6 +4,7 @@
  * /login and /register pages all mount this, so the fields, the errors and the words are
  * the same wherever the door is.
  */
+import Link from "next/link";
 import { useState } from "react";
 import { forgotPassword, login, phoneComplete, phoneStart, phoneVerify, register } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -27,8 +28,12 @@ export function AuthForm({
 }: {
   mode: AuthMode;
   onMode: (m: AuthMode) => void;
-  /** Called once the API has signed the account in. `created` is true for a brand-new account. */
-  onDone: (me: Me, created?: boolean) => void;
+  /**
+   * Called once the API has signed the account in. `created` is true for a brand-new account.
+   * A promise keeps the button turning until it settles, so a sign-in that goes straight on to
+   * the desk never shows the form idle in between (W-010).
+   */
+  onDone: (me: Me, created?: boolean) => void | Promise<void>;
   autoFocus?: boolean;
 }) {
   const session = useSession();
@@ -39,7 +44,7 @@ export function AuthForm({
   // show nothing rather than flash the email form at a phone visitor.
   if (session.loading) return <div className="min-h-[188px]" data-auth="loading" aria-busy />;
   if (session.me?.phone_sign_in && !emailChosen && (mode === "signin" || mode === "register")) {
-    return <PhoneFlow onDone={onDone} onEmail={() => setEmailChosen(true)} autoFocus={autoFocus} />;
+    return <PhoneFlow onDone={onDone} onEmail={() => setEmailChosen(true)} autoFocus={autoFocus} offerSignUp={mode === "signin"} />;
   }
   return (
     <EmailForm
@@ -61,7 +66,7 @@ function EmailForm({
 }: {
   mode: AuthMode;
   onMode: (m: AuthMode) => void;
-  onDone: (me: Me, created?: boolean) => void;
+  onDone: (me: Me, created?: boolean) => void | Promise<void>;
   autoFocus: boolean;
   onPhone?: () => void;
 }) {
@@ -81,7 +86,7 @@ function EmailForm({
         setSent(await forgotPassword(email.trim()));
       } else {
         const out = mode === "register" ? await register(email.trim(), password, name.trim()) : await login(email.trim(), password);
-        onDone(out.me, mode === "register");
+        await onDone(out.me, mode === "register");
       }
     } catch (err) {
       setError(err);
@@ -213,7 +218,18 @@ function EmailForm({
 type PhoneStep = { step: "number" } | { step: "code"; phone: string; display: string; devCode?: string } | { step: "profile"; ticket: string };
 
 /** The phone door: a number, the texted code, then (for a new number) the name and an optional email. */
-function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: boolean) => void; onEmail: () => void; autoFocus: boolean }) {
+function PhoneFlow({
+  onDone,
+  onEmail,
+  autoFocus,
+  offerSignUp = false,
+}: {
+  onDone: (me: Me, created?: boolean) => void | Promise<void>;
+  onEmail: () => void;
+  autoFocus: boolean;
+  /** Signing in: a stranger gets the door to the sign-up walk under the form. */
+  offerSignUp?: boolean;
+}) {
   const [state, setState] = useState<PhoneStep>({ step: "number" });
   const [number, setNumber] = useState("");
   const [code, setCode] = useState("");
@@ -251,14 +267,14 @@ function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: 
       if (state.step !== "code") return;
       const out = await phoneVerify(state.phone, code.trim());
       if (out.new) setState({ step: "profile", ticket: out.ticket });
-      else onDone(out.me, false);
+      else await onDone(out.me, false);
     });
 
   const finish = () =>
     run(async () => {
       if (state.step !== "profile") return;
       const out = await phoneComplete(state.ticket, name.trim(), email.trim(), sms);
-      onDone(out.me, true);
+      await onDone(out.me, true);
     });
 
   const link = "min-h-11 font-bold text-ink underline underline-offset-4";
@@ -370,10 +386,18 @@ function PhoneFlow({ onDone, onEmail, autoFocus }: { onDone: (me: Me, created?: 
         {busy ? ACCOUNT.phone.busySend : ACCOUNT.phone.send}
       </Button>
       {errorBox}
-      <div className="mt-1 text-[13px]">
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[13px]">
         <button type="button" onClick={onEmail} className={link}>
           {ACCOUNT.phone.useEmail}
         </button>
+        {offerSignUp && (
+          <span className="text-muted">
+            {ACCOUNT.phone.newHere}{" "}
+            <Link href="/register" className={link} data-testid="get-started">
+              {ACCOUNT.phone.getStarted}
+            </Link>
+          </span>
+        )}
       </div>
     </form>
   );

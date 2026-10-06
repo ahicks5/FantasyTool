@@ -1,14 +1,14 @@
 /** The public share snapshot: opens with no account, unfurls with a rendered card. */
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IconArrowUp, IconCheck } from "@/components/icons";
-import { ConfidencePill, Eyebrow, LinkButton, OnAir, Stamp, Stat, StatusMeter, Wordmark } from "@/components/ui";
+import { ConfidencePill, Eyebrow, LinkButton, OnAir, Stamp, Stat, StatusMeter } from "@/components/ui";
 import { signed, verdictBlurb } from "@/lib/format";
 import { isSharedBattle, isSharedFilm, isSharedLock, type SharedBattle, type SharedFilm, type SharedLock, type SharedSnapshot, type SharedVerdict } from "@/lib/types";
 import { BATTLE, FILM } from "@/lib/vocab";
 import { shortName } from "@/lib/battle";
 import { LINES } from "@/lib/vocab";
+import { HomeMark } from "@/components/HomeMark";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 /** The static demo (`npm run demo`) has no API to read a snapshot from. */
@@ -421,9 +421,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href="/" aria-label="Owner's Suite home" className="flex min-h-11 items-center">
-          <Wordmark className="text-[26px]" />
-        </Link>
+        <HomeMark className="text-[26px]" />
         <span className="min-w-0 truncate text-right text-[12px] font-bold text-muted">
           {v.league_name}
           {v.week ? (

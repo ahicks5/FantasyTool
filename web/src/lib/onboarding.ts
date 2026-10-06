@@ -63,6 +63,16 @@ export function firstStep(me: Me | null, local: Local): Step {
   return "done";
 }
 
+/**
+ * A number that was already on file, met on the sign-up walk: someone signing in, not signing
+ * up. With a league on the account they go straight in, whatever the walk would still like to
+ * show them (the reveal, the offer); only a missing league keeps them in the walk, because
+ * there is nothing upstairs without one (Andrew, 2026-10-05, W-003).
+ */
+export function returningGoesIn(me: Me): boolean {
+  return me.leagues.length > 0;
+}
+
 /** How much of the bar is lit on this screen: never zero, so the walk reads as begun. */
 export function progress(step: Step, path: Path): number {
   const steps = PATHS[path];

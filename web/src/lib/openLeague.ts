@@ -1,7 +1,8 @@
 /** Open a league already on the account: load it, make it this device's league, and note it was used. */
 import { getLeague, markLeagueUsed } from "./api";
-import { saveConnection } from "./storage";
-import type { MeLeague } from "./types";
+import { pickLeague } from "./account";
+import { loadConnection, saveConnection } from "./storage";
+import type { Me, MeLeague } from "./types";
 
 export async function openSavedLeague(l: MeLeague): Promise<void> {
   const league = await getLeague(l.platform, l.league_id);
@@ -15,4 +16,15 @@ export async function openSavedLeague(l: MeLeague): Promise<void> {
     week: league.week,
   });
   void markLeagueUsed(l.platform, l.league_id).catch(() => undefined);
+}
+
+/**
+ * Straight in after a sign-in (W-003, W-011): the league this device already has open, else the
+ * account's last-used one. A league that will not load is no reason to keep someone at the
+ * door, so a failure still lets them through; the desk has its own way to recover.
+ */
+export async function enterLastLeague(me: Me): Promise<void> {
+  if (loadConnection()) return;
+  const pick = pickLeague(me.leagues);
+  if (pick) await openSavedLeague(pick).catch(() => undefined);
 }

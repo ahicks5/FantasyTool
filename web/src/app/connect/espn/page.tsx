@@ -38,10 +38,10 @@ import {
 import { leagueHome, walkStore } from "@/lib/onboarding";
 import { saveEspnAuth } from "@/lib/espnAuth";
 import { useLocation } from "@/lib/href";
-import { useSession } from "@/lib/session";
 import { IconArrowUp, IconChevron, IconCopy } from "@/components/icons";
-import { Button, Eyebrow, Wordmark } from "@/components/ui";
+import { Button, Eyebrow } from "@/components/ui";
 import { ESPN_KEY } from "@/lib/vocab";
+import { HomeMark } from "@/components/HomeMark";
 
 const HANDS: Hand[] = ["iphone", "android", "computer"];
 
@@ -96,7 +96,6 @@ function Next() {
 
 export default function EspnKeyPage() {
   const router = useRouter();
-  const session = useSession();
   // Everything the page knows about itself is read off the address: the league it is for,
   // where the bookmark should come back to, and whether the bookmark has just landed.
   const here = useLocation();
@@ -157,9 +156,7 @@ export default function EspnKeyPage() {
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href={session.signedIn ? "/home" : "/"} aria-label="Owner's Suite home" className="flex min-h-11 items-center">
-          <Wordmark className="text-[26px]" short={session.signedIn} />
-        </Link>
+        <HomeMark className="text-[26px]" />
         <Link
           href={leagueId ? `/connect?platform=espn&id=${encodeURIComponent(leagueId)}` : "/connect"}
           className="inline-flex min-h-11 items-center gap-1 rounded-full border border-line-2 px-4 text-[13px] font-bold hover:bg-soft"
