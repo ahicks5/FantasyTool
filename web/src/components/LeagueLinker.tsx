@@ -25,7 +25,7 @@ import { clearWalkReturn, markWalkReturn, walkStore } from "@/lib/onboarding";
 import { EspnAuthForm } from "@/components/EspnAuthForm";
 import { clearEspnAuth, useEspnAuth } from "@/lib/espnAuth";
 import { useLocation } from "@/lib/href";
-import { clearYahooAuth, loadYahooAuth, newYahooState, useYahooAuth } from "@/lib/yahooAuth";
+import { clearYahooAuth, loadYahooAuth, newYahooState, useYahooAuth, YAHOO_OFFERED } from "@/lib/yahooAuth";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck, IconChevron } from "@/components/icons";
 import { Button, Countdown, ErrorBox, Eyebrow, LinkButton, Wordmark } from "@/components/ui";
@@ -129,8 +129,9 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
   // first time or telling them the ones they gave have expired.
   const [espnAuthNeeded, setEspnAuthNeeded] = useState<{ expired: boolean } | null>(null);
   const [lastLeagueId, setLastLeagueId] = useState("");
-  // Yahoo is offered only once the API says its sign-in is switched on; until then it stays
-  // the dashed "Soon" marker. `yahooAuthNeeded` is a sign-in that failed or ran out.
+  // Yahoo is not offered at all until it ships (`YAHOO_OFFERED`, walkthrough W-006). With the
+  // flag on, it is a live choice only once the API says its sign-in is switched on; until then
+  // it is the dashed "Soon" marker. `yahooAuthNeeded` is a sign-in that failed or ran out.
   const [yahooEnabled, setYahooEnabled] = useState(false);
   const [yahooAuthNeeded, setYahooAuthNeeded] = useState(false);
   const storedYahoo = useYahooAuth();
@@ -146,6 +147,7 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
       .catch(() => undefined);
   }, []);
   useEffect(() => {
+    if (!YAHOO_OFFERED) return;
     getYahooStatus()
       .then((r) => {
         setYahooEnabled(r.enabled);
@@ -431,7 +433,7 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
               <PlatformChoice key={p} p={p} on={platform === p} onPick={pickPlatform} />
             ))}
           </div>
-          {yahooEnabled && (
+          {YAHOO_OFFERED && yahooEnabled && (
             <div className="mt-2.5">
               <PlatformChoice p="yahoo" on={platform === "yahoo"} onPick={pickPlatform} />
             </div>
@@ -442,7 +444,7 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
             roadmap marker and has to be impossible to pick: disabled, outside the radio group
             so a screen reader never offers it as a third choice, and drawn dashed and unfilled
             so it does not read as a live button that ignores the tap. */}
-        {!yahooEnabled && (
+        {YAHOO_OFFERED && !yahooEnabled && (
           <button
             type="button"
             disabled
