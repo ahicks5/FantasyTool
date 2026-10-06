@@ -4,6 +4,7 @@ import { ADMIN_METRICS_FIXTURE } from "./adminMetrics.mock";
 import { BATTLE_FIXTURE, BATTLE_FIXTURE_TEASER } from "./battle.mock";
 import { withArticle } from "./format";
 import type {
+  Acceptance,
   Battle,
   BattleBrief,
   BattleOptions,
@@ -826,8 +827,13 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
   const value_in = round1(get.reduce((a, p) => a + rosValue(p), 0));
   const weekOut = give.reduce((a, p) => a + (p.projected ?? 0), 0);
   const weekIn = get.reduce((a, p) => a + (p.projected ?? 0), 0);
-  const fairness = value_in && value_out ? round2(Math.min(value_in, value_out) / Math.max(value_in, value_out)) : 0;
   const ratio = value_out ? value_in / value_out : 0;
+  // Every printed figure rounded once, the way `Side.to_dict` does: ROS in whole points.
+  const whole = (x: number) => (x >= 0 ? Math.floor(x + 0.5) : -Math.floor(-x + 0.5));
+  const myRos = whole((value_in - value_out) / 4);
+  const theirRos = whole((value_out - value_in) / 4);
+  const outW = whole(value_out);
+  const inW = whole(value_in);
 
   let verdict: Verdict;
   if (ratio >= 1.12) verdict = "Accept";
@@ -836,6 +842,9 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
   else verdict = "Reject";
 
   const tend = TENDENCIES[req.their_team_id] ?? DEFAULT_TENDENCIES;
+  // Same three steps as `trade.acceptance`: their lineup, nudged by how they trade.
+  let acceptance: Acceptance = theirRos <= -8 || ratio > 1.43 ? "Unlikely" : theirRos >= 1 ? "Likely" : theirRos >= -4 ? "Maybe" : "Unlikely";
+  if (tend.trades === 0 && acceptance === "Likely") acceptance = "Maybe";
   const theirName = rosterFor(req.their_team_id).name;
   const names = (ps: Player[]) => ps.map((p) => p.name).join(" + ") || "nothing";
 
@@ -863,20 +872,20 @@ export function evaluateTrade(req: TradeRequest): TradeResult {
     title: `${verdict}: ${names(give)} for ${names(get)}`,
     give: give.map((p) => p.name),
     get: get.map((p) => p.name),
-    my_delta_ros: round1((value_in - value_out) / 4),
-    their_delta_ros: round1((value_out - value_in) / 4),
-    fairness,
+    my_delta_ros: myRos,
+    their_delta_ros: theirRos,
+    acceptance,
     style: tend.style ?? null,
   };
 
   return {
     verdict,
-    me: { value_out, value_in, lineup_delta_week: round1(weekIn - weekOut), lineup_delta_ros: round1((value_in - value_out) / 4) },
-    them: { value_out: value_in, value_in: value_out, lineup_delta_week: round1(weekOut - weekIn), lineup_delta_ros: round1((value_out - value_in) / 4) },
-    fairness,
+    me: { value_out: outW, value_in: inW, value_net: inW - outW, lineup_delta_week: round1(weekIn - weekOut), lineup_delta_ros: myRos },
+    them: { value_out: inW, value_in: outW, value_net: outW - inW, lineup_delta_week: round1(weekOut - weekIn), lineup_delta_ros: theirRos },
+    acceptance,
     their_tendencies: tend,
     counter,
-    notes: ratio > 1.4 ? ["Lopsided in your favor. They are unlikely to accept as-is."] : [],
+    notes: [],
     explanation,
     explanation_source: "template",
     graphic,
@@ -939,8 +948,8 @@ export const TRADE_FINDER: TradeFinderResponse = {
           give_names: offerSide(MY_TEAM_ID, ["2449"]).names, get_names: offerSide("4", ["7526"]).names,
           give_players: offerSide(MY_TEAM_ID, ["2449"]).players, get_players: offerSide("4", ["7526"]).players,
           my_gain_ros: 21, their_gain_ros: 6, my_gain_week: 1.4,
-          fairness: 0.91, verdict: "Fair", score: 27.4,
-          why: "You gain 21 rest-of-season lineup points, they gain 6. Value is 91% balanced. This manager has acquired WRs in 3 of their last 5 moves.",
+          fairness: 0.91, acceptance: "Likely", verdict: "Fair", score: 27.4,
+          why: "You gain 21 rest-of-season lineup points, they gain 6. They should say yes. This manager has acquired WRs in 3 of their last 5 moves.",
           reason_codes: ["both_sides_improve", "one_for_one", "matches_their_history"],
         },
       ],
@@ -956,8 +965,8 @@ export const TRADE_FINDER: TradeFinderResponse = {
           give_names: offerSide(MY_TEAM_ID, ["6790"]).names, get_names: offerSide("9", ["7594"]).names,
           give_players: offerSide(MY_TEAM_ID, ["6790"]).players, get_players: offerSide("9", ["7594"]).players,
           my_gain_ros: 11, their_gain_ros: 4, my_gain_week: 0.6,
-          fairness: 0.95, verdict: "Fair", score: 17.2,
-          why: "You gain 11 rest-of-season lineup points, they gain 4. Value is 95% balanced.",
+          fairness: 0.95, acceptance: "Maybe", verdict: "Fair", score: 17.2,
+          why: "You gain 11 rest-of-season lineup points, they gain 4. They might say yes.",
           reason_codes: ["both_sides_improve", "one_for_one"],
         },
       ],
@@ -1110,9 +1119,6 @@ export function hasFeature(me: Me, f: Feature): boolean {
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
 function signed(n: number): string {
   const s = n.toFixed(1);
   return n > 0 ? `+${s}` : s;
@@ -1158,7 +1164,7 @@ export function sharedVerdictDemo(): SharedVerdict {
     get: [getP.name],
     my_delta_ros: res.me.lineup_delta_ros,
     their_delta_ros: res.them.lineup_delta_ros,
-    fairness: res.fairness,
+    acceptance: res.acceptance,
     style: res.their_tendencies.style ?? null,
     explanation: res.explanation,
     league_name: LEAGUE.name,

@@ -101,6 +101,20 @@ def template(v: Verdict) -> str:
     return " ".join(s.split())
 
 
+def prompt_payload(v: Verdict) -> dict:
+    """`verdict_payload` with the team ids taken out: the model gets names and the printed
+    figures, never an id (`docs/DATA_INVENTORY.md` promises exactly that)."""
+    p = verdict_payload(v)
+
+    def strip(side: dict | None) -> dict | None:
+        return {k: x for k, x in side.items() if k != "team_id"} if side else side
+
+    p["me"], p["them"] = strip(p["me"]), strip(p["them"])
+    if p.get("counter"):
+        p["counter"] = {**p["counter"], "me": strip(p["counter"].get("me")), "them": strip(p["counter"].get("them"))}
+    return p
+
+
 def explain(v: Verdict) -> tuple[str, str]:
     """Returns (text, source) where source is 'claude' or 'template'."""
     if os.environ.get("EDGE_USE_CLAUDE") != "1":
@@ -114,7 +128,7 @@ def explain(v: Verdict) -> tuple[str, str]:
             max_tokens=600,
             output_config={"effort": "low"},
             system=SYSTEM,
-            messages=[{"role": "user", "content": "Engine output:\n" + json.dumps(verdict_payload(v), indent=1)
+            messages=[{"role": "user", "content": "Engine output:\n" + json.dumps(prompt_payload(v), indent=1)
                        + "\n\nWrite the verdict."}],
         )
         if resp.stop_reason == "refusal":

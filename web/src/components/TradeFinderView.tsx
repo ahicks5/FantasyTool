@@ -19,7 +19,8 @@ import type { FinderOffer, Player } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { IconChevron, IconTrade } from "./icons";
 import { Eyebrow, Skeleton, Spinner, Why } from "./ui";
-import { TRADE } from "@/lib/vocab";
+import { OFFICE, TRADE } from "@/lib/vocab";
+import { ACCEPT_INK } from "@/lib/office";
 
 /**
  * What the board needs, whichever payload it was handed.
@@ -109,9 +110,9 @@ function Figures({ o }: { o: FinderOffer }) {
   const cells: [string, string, string][] = [
     ["You", `+${o.my_gain_ros.toFixed(0)}`, "text-start"],
     ["Them", `+${o.their_gain_ros.toFixed(0)}`, "text-ink-2"],
-    // "Balanced" truncated to "BALAN…" in a third of a 320px card. Same number, a word
-    // that fits.
-    ["Fair", `${Math.round(o.fairness * 100)}%`, "text-ink-2"],
+    // "Will they say yes?" where "Fair 91%" used to be (W-033). A short head that fits a
+    // third of a 320px card; the full question is on the verdict.
+    [OFFICE.yes, o.acceptance ? OFFICE.verdict.will[o.acceptance] : OFFICE.verdict.noRead, o.acceptance ? ACCEPT_INK[o.acceptance] : "text-muted"],
   ];
   return (
     <dl className="mt-3.5 grid grid-cols-3 overflow-hidden rounded-xl bg-soft">
@@ -156,7 +157,7 @@ export function Offer({ o }: { o: FinderOffer }) {
           <Why
             lines={[
               `Your lineup gains ${o.my_gain_ros.toFixed(0)} rest-of-season points; theirs gains ${o.their_gain_ros.toFixed(0)}.`,
-              `Asset value is ${Math.round(o.fairness * 100)}% balanced, so it should not read as an insult.`,
+              o.acceptance ? `${OFFICE.verdict.willThey} ${OFFICE.verdict.will[o.acceptance]}.` : OFFICE.verdict.scoredBoth,
               o.reason_codes.includes("matches_their_history")
                 ? "It also matches what this manager has traded for before."
                 : "Scored on both lineups, not just yours.",

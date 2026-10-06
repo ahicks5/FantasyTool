@@ -6,9 +6,9 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import type { Player, TradeResult } from "@/lib/types";
+import type { Acceptance, Player, TradeResult } from "@/lib/types";
 import { signed } from "@/lib/format";
-import { LINES } from "@/lib/vocab";
+import { LINES, OFFICE } from "@/lib/vocab";
 
 const SIZE = 1080;
 const TONE: Record<string, { ink: string; soft: string }> = {
@@ -16,6 +16,12 @@ const TONE: Record<string, { ink: string; soft: string }> = {
   Reject: { ink: "#c02b23", soft: "#fbe9e7" },
   Counter: { ink: "#b57500", soft: "#fdf1d8" },
   Fair: { ink: "#1e4fd8", soft: "#e6ecfc" },
+};
+/** "Will they say yes?" in three steps, the same inks `edge/graphics.py` uses (W-033). */
+const WILL: Record<Acceptance, { steps: number; ink: string }> = {
+  Likely: { steps: 3, ink: "#22a468" },
+  Maybe: { steps: 2, ink: "#f0b429" },
+  Unlikely: { steps: 1, ink: "#e2554e" },
 };
 
 export function ShareCard({ result, give, get, leagueName }: { result: TradeResult; give: Player[]; get: Player[]; leagueName: string }) {
@@ -35,7 +41,10 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
   const tone = TONE[result.verdict] ?? { ink: "#0e1116", soft: "#f1efea" };
   // The card is always dark, so the stamp takes the light step of the verdict colour.
   const stampInk = tone.ink === "#0e1116" ? "#ffffff" : tone.soft;
-  const fair = Math.round(result.fairness * 100);
+  // Each side's OWN printed figure (W-032): the card used to print ours negated as theirs.
+  const mine = result.graphic.my_delta_ros;
+  const theirs = result.graphic.their_delta_ros;
+  const will = WILL[result.graphic.acceptance] ?? null;
 
   return (
     <div ref={wrap} className="relative w-full overflow-hidden rounded-2xl border border-line shadow-[var(--shadow-card)]" style={{ height: SIZE * scale }}>
@@ -68,7 +77,7 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
         </div>
 
         <div style={{ marginTop: 44, fontSize: 26, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(247,246,243,0.45)", fontWeight: 700 }}>
-          Owner&rsquo;s Suite verdict
+          {OFFICE.card.eyebrow}
         </div>
         {/* The signature: the verdict is stamped, not typeset. Same device as the app. */}
         <div style={{ marginTop: 18, paddingLeft: 10 }}>
@@ -95,18 +104,34 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
         </div>
 
         <div className="grid grid-cols-2" style={{ gap: 28, marginTop: 44 }}>
-          <Side label="Gives up" players={give} delta={result.graphic.my_delta_ros} deltaLabel="Their lineup" flip />
-          <Side label="Gets back" players={get} delta={result.graphic.my_delta_ros} deltaLabel="Your lineup" />
+          <Side label={OFFICE.card.youGive} players={give} />
+          <Side label={OFFICE.card.youGet} players={get} />
+        </div>
+
+        {/* One delta row, each side's own number: the same two figures the verdict box shows. */}
+        <div className="flex" style={{ gap: 40, marginTop: 28, fontSize: 32, fontWeight: 900 }}>
+          <span style={{ color: mine >= 0 ? "#22a468" : "#e2554e" }}>{OFFICE.card.yourLineup(signed(mine, 0))}</span>
+          <span style={{ color: "rgba(247,246,243,0.55)" }}>{OFFICE.card.theirs(signed(theirs, 0))}</span>
         </div>
 
         <div style={{ marginTop: "auto" }}>
           <div className="flex items-baseline justify-between" style={{ fontSize: 30, fontWeight: 700 }}>
-            <span>Fairness {fair}%</span>
+            <span>
+              {will && (
+                <>
+                  {OFFICE.verdict.willThey} <span style={{ color: will.ink }}>{OFFICE.verdict.will[result.graphic.acceptance]}</span>
+                </>
+              )}
+            </span>
             <span style={{ color: "rgba(247,246,243,0.5)", fontWeight: 500 }}>{result.graphic.style ?? ""}</span>
           </div>
-          <div style={{ marginTop: 14, height: 18, borderRadius: 99, background: "rgba(255,255,255,0.14)", overflow: "hidden" }}>
-            <div style={{ width: `${fair}%`, height: "100%", borderRadius: 99, background: fair >= 90 ? "#22a468" : fair >= 75 ? "#f0b429" : "#e2554e" }} />
-          </div>
+          {will && (
+            <div className="flex" style={{ marginTop: 14, gap: 10 }}>
+              {[0, 1, 2].map((i) => (
+                <span key={i} style={{ flex: 1, height: 18, borderRadius: 99, background: i < will.steps ? will.ink : "rgba(255,255,255,0.14)" }} />
+              ))}
+            </div>
+          )}
           {/* The signature. Small, in the corner, where a maker's plate goes. */}
           <div
             className="flex items-center justify-between"
@@ -143,8 +168,7 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
   );
 }
 
-function Side({ label, players, delta, deltaLabel, flip = false }: { label: string; players: Player[]; delta: number; deltaLabel: string; flip?: boolean }) {
-  const shown = flip ? -delta : delta;
+function Side({ label, players }: { label: string; players: Player[] }) {
   return (
     <div style={{ borderRadius: 28, background: "rgba(255,255,255,0.06)", border: "2px solid rgba(255,255,255,0.1)", padding: 28 }}>
       <div style={{ fontSize: 24, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(247,246,243,0.45)", fontWeight: 700 }}>{label}</div>
@@ -165,11 +189,8 @@ function Side({ label, players, delta, deltaLabel, flip = false }: { label: stri
             </span>
           </li>
         ))}
-        {players.length === 0 && <li style={{ color: "rgba(247,246,243,0.5)", fontSize: 32 }}>Nothing</li>}
+        {players.length === 0 && <li style={{ color: "rgba(247,246,243,0.5)", fontSize: 32 }}>{OFFICE.card.nothing}</li>}
       </ul>
-      <div style={{ marginTop: 24, fontSize: 32, fontWeight: 900, color: shown >= 0 ? "#22a468" : "#e2554e" }}>
-        {deltaLabel} {signed(shown, 0)} ROS
-      </div>
     </div>
   );
 }

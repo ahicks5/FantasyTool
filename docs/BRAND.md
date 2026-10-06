@@ -374,7 +374,7 @@ logo. Both shapes are built:
 │ └───────────┘ └─────────────┘ │
 │ Your lineup −11 ROS  Theirs +12│
 │ One line of why, staff voice.  │
-│ Fairness 78% ▓▓▓▓▓▓▓▓░░░       │
+│ Will they say yes? Maybe ▓▓▓▓░ │  three steps, never a percentage
 │ ─────────────────────────────  │
 │ ◆ OWNER'S SUITE •    OWN THE WEEK. │  signature: mark + nameplate + tagline
 └──────────────────────────────┘

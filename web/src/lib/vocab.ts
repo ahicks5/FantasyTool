@@ -1772,7 +1772,8 @@ export const OFFICE = {
   youGet: "You get",
   forWord: "for",
   ros: "ROS",
-  fair: "fair",
+  /** "Will they say yes?" on a deal row, in place of the old "% fair" (W-033). */
+  yes: "yes?",
   /** Your roster, one tile per position. */
   shape: "Your roster",
   shapeWord: { spare: "Spare", short: "Short", set: "Set", mixed: "Mixed" },
@@ -1795,9 +1796,86 @@ export const OFFICE = {
   needs: "Needs",
   offers: (n: number) => `${n} offer${n === 1 ? "" : "s"}`,
   build: "Trade room",
-  buildHint: "Pick the players, we grade it on both rosters and write the counter.",
-  buildOpen: "Open the table",
-  buildClose: "Close the table",
+  buildHint: "Size up a manager's roster, or put an offer on the table and we grade it.",
+  /**
+   * The two doors into the trade room (W-037). "Open the table" opened one long panel with
+   * an opponent already picked and a grade button over an empty table; each door now opens
+   * empty, on a "Pick a manager" control, and loads nothing until you pick.
+   */
+  doors: {
+    compare: "Compare teams",
+    compareHint: "Strong, short and spare, side by side.",
+    build: "Build a trade",
+    buildHint: "Your players, theirs, and the grade.",
+    close: "Close",
+    pick: "Pick a manager",
+    pickLabel: "Across the table",
+    pickFirst: "Pick a manager to load their roster.",
+    loading: "Loading their roster…",
+    toBuild: (team: string) => `Build a trade with ${team}`,
+    toCompare: "See how your teams compare",
+  },
+  /** The two halves of the table in Build a trade. */
+  table: {
+    send: "You send",
+    get: (team: string) => `You get from ${team}`,
+    add: "+ Add",
+    sendEmpty: "Tap Add to put someone on the table.",
+    getEmpty: "Tap Add to name what you want back.",
+    /** The bar between the halves: name value only. The lineup is what the grade reads. */
+    value: "Name value on the table",
+    valueLive: (net: string) => `Name value ${net} · grade it for the lineup`,
+    grade: (give: number, get: number) => `Grade ${give}-for-${get}`,
+    grading: "Grading it…",
+  },
+  /**
+   * The verdict (W-033): one lead number (what the trade does to your starting lineup rest
+   * of season), name value as a secondary line that cannot read as a loss, and "Will they
+   * say yes?" in three steps where "Fairness 90%" used to sit.
+   */
+  verdict: {
+    eyebrow: "The verdict",
+    lead: "Your lineup",
+    leadUnit: "rest of season",
+    scored: (give: number, get: number, team: string) => `Your ${give}-for-${get} with ${team}, scored on both rosters.`,
+    willThey: "Will they say yes?",
+    will: { Likely: "Likely", Maybe: "Maybe", Unlikely: "Unlikely as is" },
+    theirLine: (delta: number) =>
+      delta > 0 ? `Their lineup gains ${delta}.` : delta < 0 ? `Their lineup drops ${-delta}.` : "Their lineup holds.",
+    /** Name value, worded so it never reads as a loss when the lineup gets better. */
+    nameValue: (lineup: number, net: number) =>
+      net < 0 && lineup > 0
+        ? `You give up more name value (${net}), but your lineup gets better.`
+        : net < 0
+          ? `You give up more name value (${net}).`
+          : net > 0
+            ? `You get more name value (+${net}).`
+            : "Even on name value.",
+    you: "You",
+    them: "Them",
+    noRead: "\u2013",
+    scoredBoth: "Scored on both rosters.",
+    weekLabel: "this week",
+    valueLabel: "name value",
+    out: "out",
+    in: "in",
+    how: "How is this scored?",
+    howLines: (out: number, inn: number) => [
+      "The lead number is your starting lineup, rest of season, with the trade against without it.",
+      `Name value is rest-of-season projected points, rescored to this league's settings. You send ${out} and receive ${inn}.`,
+      "Lineup impact counts free agents, so an emptied slot costs the gap to the best waiver option, not the whole player.",
+      "Will they say yes reads their lineup change and how this manager has traded.",
+    ],
+  },
+  /** The share card. Still dark and still English whatever the reader's theme. */
+  card: {
+    eyebrow: "Owner\u2019s Suite verdict",
+    youGive: "You give",
+    youGet: "You get",
+    nothing: "Nothing",
+    yourLineup: (n: string) => `Your lineup ${n} ROS`,
+    theirs: (n: string) => `Theirs ${n}`,
+  },
   /** One partner's page, `/trade/deal?team=`. */
   deal: {
     back: "Back to the office",

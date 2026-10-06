@@ -181,3 +181,17 @@ def test_an_unlikely_deal_gets_a_counter_that_names_what_changes(league, ros):
             assert f"Your lineup {v.counter['me']['lineup_delta_ros']:+d} ROS" in why
             assert "—" not in why
     assert found, "no fixture trade produced an unlikely deal with a counter"
+
+
+def test_the_claude_prompt_quotes_the_printed_figures_and_carries_no_ids(league, ros):
+    import json as _json
+
+    from edge.engine.explain import SYSTEM, prompt_payload, verdict_payload
+
+    v = _lopsided(league, ros)
+    p = prompt_payload(v)
+    assert p["me"]["lineup_delta_ros"] == verdict_payload(v)["me"]["lineup_delta_ros"]
+    assert p["acceptance"] == v.acceptance and "fairness" not in p
+    blob = _json.dumps(p)
+    assert '"team_id"' not in blob
+    assert "exactly as it appears" in SYSTEM and "em dash" in SYSTEM

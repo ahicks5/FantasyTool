@@ -241,23 +241,6 @@ export function SplitMeter({
   );
 }
 
-/** A 0–100% quality reading (trade fairness). Status colour plus the number. */
-export function StatusMeter({ value, label }: { value: number; label: string }) {
-  const pct = Math.max(0, Math.min(100, Math.round(value * 100)));
-  const tone = pct >= 90 ? "bg-start" : pct >= 75 ? "bg-flip-fill" : "bg-sit";
-  return (
-    <div>
-      <div className="flex items-baseline justify-between">
-        <span className="eyebrow">{label}</span>
-        <span className="tnum text-sm font-black">{pct}%</span>
-      </div>
-      <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-soft" role="img" aria-label={`${label} ${pct}%`}>
-        <div className={`h-full rounded-full ${tone}`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
-
 export function Stat({
   label,
   value,

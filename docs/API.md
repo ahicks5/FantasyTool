@@ -643,7 +643,7 @@ Free is the shape of the room: what you can spare, where you are thin, which ros
 the mirror image of yours. Paid is the move. It names **one** GM, the best fit, and
 `hidden` counts the partners a pass would open (Andrew, 2026-09-28: "one GM max, blur the
 rest"); the page hazes placeholder rows, never names. The preview carries no offer, no player
-name, no rest-of-season figure, no fairness number and no `blockers` -- the blocker
+name, no rest-of-season figure, no acceptance read and no `blockers` -- the blocker
 sentence names the player you want and who holds him, so the summary falls back to the
 neutral "Hold" line when there is no partner. Positions are ordered lists rather than
 magnitudes, because the magnitudes are ROS points. Built by
@@ -659,18 +659,42 @@ counter -- is unchanged and still 402s.
 →
 ```json
 {"verdict":"Accept"|"Reject"|"Counter"|"Fair",
- "me":{"value_out":88.1,"value_in":102.4,"lineup_delta_week":1.8,"lineup_delta_ros":9.6},
- "them":{...},
- "fairness":0.87,
+ "me":{"team_id":"1","team_name":"…","value_out":190,"value_in":171,"value_net":-19,
+       "lineup_delta_week":5.8,"lineup_delta_ros":28},
+ "them":{"team_id":"4","team_name":"…","value_out":171,"value_in":190,"value_net":19,
+         "lineup_delta_week":-6.0,"lineup_delta_ros":-41},
+ "acceptance":"Likely"|"Maybe"|"Unlikely",
  "their_tendencies":{"trades":2,"waiver_claims":9,"avg_bid":14,"favorite_positions":["RB"],"style":"active dealer"},
- "counter":{"give":["5892"],"get":["7525"],"why":"They hoard RBs; asking for two starters won't fly. One-for-one keeps them whole at WR."},
+ "counter":{"give":["5892","4034"],"get":["7525"],"give_names":[…],"get_names":[…],"me":{…},"them":{…},
+            "why":"Add Rhamondre Stevenson to get it done. Your lineup +12 ROS, theirs -1. They lose little, so they can say yes."},
+ "notes":[],
  "explanation":"3–4 sentences (Claude API when key present, template otherwise)",
- "graphic":{"title":"Accept: A for B","give":["A"],"get":["B"],"my_delta_ros":23.0,
-            "their_delta_ros":-13.0,"fairness":0.93,"style":"rare trader, FAAB frugal"}
+ "explanation_source":"claude"|"template",
+ "graphic":{"title":"Accept: A for B","verdict":"Accept","give":["A"],"get":["B"],"my_delta_ros":28,
+            "their_delta_ros":-41,"acceptance":"Unlikely","style":"rare trader, FAAB frugal"}
  // input for the shareable verdict card. POST /api/share may additionally carry
  // give_players / get_players (name, position, nfl_team, photo, team_logo) for headshots.
 }
 ```
+
+**Every figure is printed once (W-032, 2026-10-06).** `Side.to_dict` rounds them: ROS figures
+(`value_out`, `value_in`, `value_net`, `lineup_delta_ros`) in whole points, half away from
+zero (`trade.whole`), this week to one decimal. The verdict box, the explanation (template
+and Claude prompt), the share card and the counter's `why` all quote these numbers and never
+round again, so one trade cannot read -40 in the sentence and -41 in the box. The card's
+`their_delta_ros` is the other side's own figure, never ours negated.
+
+**`acceptance` replaced `fairness` (W-033).** "Will they say yes?" in three steps, read off
+the other side's `lineup_delta_ros` (Likely at +1 or better, Maybe down to -4, Unlikely
+below, or at any name-value haircut under 70%) and nudged by `their_tendencies`: a manager
+with no trades never reads Likely, an active dealer (3+) takes a free deal. An Unlikely read
+always looks for a counter, whose `why` names what to add or drop. The page leads with
+`me.lineup_delta_ros`; name value is the secondary line. Shares made before this carry
+`fairness` and no `acceptance`; the card and `/s/{id}` then show neither.
+
+Trade-finder offers (`/trades/find` → `partners[].offers[]`) carry the same `acceptance`
+beside `fairness`, which stays as an engine filter (`MIN_FAIRNESS`) and is no longer shown.
+The finder prices no K or DEF as a need or a surplus (`trade_finder.NOT_TRADED`, W-035).
 
 ### The week in progress (2026-09-28)
 

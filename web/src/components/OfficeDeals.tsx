@@ -13,7 +13,7 @@
  */
 import Link from "next/link";
 import type { FinderOffer } from "@/lib/types";
-import { dealHref, heat, lastName, posList, rosterShape, shapeLists, topDeals, type OfficeBoard, type OfficePartner } from "@/lib/office";
+import { ACCEPT_INK, dealHref, heat, lastName, posList, rosterShape, shapeLists, topDeals, type OfficeBoard, type OfficePartner } from "@/lib/office";
 import { OFFICE } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { IconChevron, IconLock } from "./icons";
@@ -94,8 +94,12 @@ function DealRow({ partner, offer, rank }: { partner: OfficePartner; offer: Find
           </span>
           <span className="tnum deal-mid-nums">
             <b className={offer.my_gain_ros > 0 ? "text-start" : "text-muted"}>+{offer.my_gain_ros.toFixed(0)}</b> {OFFICE.ros}
-            <span className="mx-1 text-line-2">·</span>
-            {Math.round(offer.fairness * 100)}% {OFFICE.fair}
+            {offer.acceptance && (
+              <>
+                <span className="mx-1 text-line-2">·</span>
+                <b className={ACCEPT_INK[offer.acceptance]}>{OFFICE.verdict.will[offer.acceptance]}</b> {OFFICE.yes}
+              </>
+            )}
           </span>
         </span>
         <Side players={offer.give_players} names={offer.give_names} tone="sit" label={OFFICE.youGive} />
