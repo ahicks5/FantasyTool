@@ -3033,6 +3033,14 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
   max-width: 32rem;
   margin: 0 auto;
 }
+/* From `sm:` up the bar lines up with the page's own column (`max-w-6xl px-6` on `/`):
+   words on its left content edge, the door on its right, never a cluster mid-screen
+   (W-002). The bar's padding matches the page's gutter, so the inner box is the page's
+   content box. */
+@media (min-width: 40rem) {
+  .landing-bar { padding-left: 24px; padding-right: 24px; }
+  .landing-bar-inner { max-width: calc(72rem - 48px); }
+}
 @media (prefers-reduced-motion: reduce) {
   .landing-bar { transition: none; }
 }
