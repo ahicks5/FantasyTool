@@ -10,6 +10,8 @@ import {
   overallRead,
   sharpestMismatches,
   MIN_MISMATCH_PLACES,
+  needsLines,
+  roomWord,
 } from "./compare.ts";
 import type { Grade, Grades, PositionGrade } from "./types.ts";
 
@@ -191,4 +193,23 @@ test("the overall read is one of three fixed lines", () => {
 
 test("ordinals survive the teens", () => {
   assert.deepEqual([1, 2, 3, 4, 11, 12, 13, 21].map(ordinal), ["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st"]);
+});
+
+
+test("one word per room: short is the bottom third and wins, then spare, strong, set (W-037)", () => {
+  assert.equal(roomWord(pos("RB", 11)), "short");
+  assert.equal(roomWord(pos("RB", 11, { depth: "deep" })), "short", "a deep bench behind a weak starter is still short");
+  assert.equal(roomWord(pos("RB", 6, { depth: "deep" })), "spare");
+  assert.equal(roomWord(pos("RB", 2)), "strong");
+  assert.equal(roomWord(pos("RB", 6)), "set");
+  assert.equal(roomWord(null), null);
+});
+
+test("what each needs pairs one side's short with the other's spare or strong, never K or DEF", () => {
+  const mine = grades(3, [pos("RB", 11), pos("WR", 2), pos("TE", 6), pos("K", 12), pos("DEF", 12)]);
+  const theirs = grades(7, [pos("RB", 5, { depth: "deep" }), pos("WR", 12), pos("TE", 6), pos("K", 1), pos("DEF", 1)]);
+  const n = needsLines(comparePositions(mine, theirs));
+  assert.deepEqual(n.mine, ["You're short at RB. They have one to spare."]);
+  assert.deepEqual(n.theirs, ["They're short at WR. You're strong there."]);
+  assert.deepEqual(needsLines(comparePositions(grades(1, [pos("RB", 6)]), grades(2, [pos("RB", 6)]))), { mine: [], theirs: [] });
 });

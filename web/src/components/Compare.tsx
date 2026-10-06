@@ -15,16 +15,19 @@
    reads with the colour stripped out. Green marks your own advantage; there is no
    red anywhere — `--color-sit` means "bench this player", not "worse than him".  */
 
-import type { Grade, Grades, TeamGrades } from "@/lib/types";
+import type { ReactNode } from "react";
+import type { Grade, Grades, PositionGrade, TeamGrades } from "@/lib/types";
 import {
   comparePositions,
   COMPARE_COPY as COPY,
   gapPhrase,
   leadWord,
   mismatchLine,
+  needsLines,
   ordinal,
   overallDiff,
   overallRead,
+  roomWord,
   sharpestMismatches,
   type PositionDiff,
   type Side,
@@ -118,6 +121,19 @@ function Lead({ better }: { better: Side | null }) {
   );
 }
 
+/** Strong, short, spare or set, under a position's letter (W-037). Words, not colour. */
+const ROOM_INK = { strong: "text-start", spare: "text-start", short: "text-sit", set: "text-muted" } as const;
+
+function RoomCell({ g }: { g: PositionGrade | null }) {
+  const room = roomWord(g);
+  return (
+    <div className="grid min-w-0 justify-items-center gap-1">
+      <Cell g={g} />
+      {room && <span className={`text-[10px] font-black uppercase tracking-[0.1em] ${ROOM_INK[room]}`}>{COPY.room[room]}</span>}
+    </div>
+  );
+}
+
 function PositionRow({ d }: { d: PositionDiff }) {
   return (
     <li className={`${ROW} border-t border-line py-2.5`}>
@@ -125,23 +141,26 @@ function PositionRow({ d }: { d: PositionDiff }) {
         <div className="display truncate text-[15px] leading-tight">{d.position}</div>
         <Lead better={d.better} />
       </div>
-      <Cell g={d.mine} />
-      <Cell g={d.theirs} />
+      <RoomCell g={d.mine} />
+      <RoomCell g={d.theirs} />
     </li>
   );
 }
 
 /**
- * Their roster against yours: the overall read, then every position, then the two
- * spots the rosters are furthest apart at.
+ * Compare teams (W-037): their roster against yours. The overall read, every position with
+ * the word for each room (strong, short, spare), what each side needs from the other, the
+ * two spots the rosters are furthest apart at, and `footer` (the door into Build a trade).
  */
 export function Compare({
   mine,
   theirs,
   animate = true,
   className = "",
-}: { mine: Grades; theirs: TeamGrades; animate?: boolean; className?: string }) {
+  footer,
+}: { mine: Grades; theirs: TeamGrades; animate?: boolean; className?: string; footer?: ReactNode }) {
   const rows = comparePositions(mine, theirs.grades);
+  const needs = needsLines(rows);
   const overall = overallDiff(mine, theirs.grades);
   const gap = gapPhrase(overall.gap, overall.better);
   const sharpest = sharpestMismatches(rows);
@@ -200,7 +219,22 @@ export function Compare({
         )}
       </section>
 
-      {/* 3. Where the rosters are furthest apart. Facts about two rooms, no advice. */}
+      {/* 3. What each needs from the other: one side's short against the other's spare. */}
+      {rows.length > 0 && (
+        <section className="min-w-0">
+          <H2>{COPY.needs}</H2>
+          <ul className="card mt-2.5 min-w-0 divide-y divide-line px-4">
+            {[...needs.mine, ...needs.theirs].map((line) => (
+              <li key={line} className="py-3 text-[13px] font-bold leading-snug text-ink-2">
+                {line}
+              </li>
+            ))}
+            {needs.mine.length + needs.theirs.length === 0 && <li className="py-3 text-[13px] leading-snug text-muted">{COPY.noNeeds}</li>}
+          </ul>
+        </section>
+      )}
+
+      {/* 4. Where the rosters are furthest apart. Facts about two rooms, no advice. */}
       {sharpest.length > 0 && (
         <section className="min-w-0">
           <H2>{COPY.furthestApart}</H2>
@@ -215,6 +249,7 @@ export function Compare({
       )}
 
       <p className="text-[12px] leading-relaxed text-muted">{COPY.footnote}</p>
+      {footer}
     </div>
   );
 }

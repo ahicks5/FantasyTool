@@ -65,6 +65,15 @@ export const COMPARE_COPY = {
   furthestApart: "Furthest apart",
   /** Under the block. A grade is a read, never a call — same rule as the scorecard. */
   footnote: "Two rooms, side by side. A grade is a read on a roster, not a call.",
+  /** The word under each letter in Compare teams (W-037): what that room is. */
+  room: { strong: "Strong", short: "Short", spare: "Spare", set: "Set" },
+  /** What each side needs from the other, stated as a fact about two rosters. */
+  needs: "What each needs",
+  youNeed: (pos: string, theirs: "spare" | "strong") =>
+    theirs === "spare" ? `You're short at ${pos}. They have one to spare.` : `You're short at ${pos}. They're strong there.`,
+  theyNeed: (pos: string, mine: "spare" | "strong") =>
+    mine === "spare" ? `They're short at ${pos}. You have one to spare.` : `They're short at ${pos}. You're strong there.`,
+  noNeeds: "No position lines up. A deal here is about value, not need.",
 } as const;
 
 /** Who is stronger. `even` is an exact tie on rank. */
@@ -223,4 +232,46 @@ export function leadWord(better: Side | null): { word: string; sr: string } | nu
   if (better === "mine") return { word: COMPARE_COPY.leadMine, sr: COMPARE_COPY.leadMineSr };
   if (better === "theirs") return { word: COMPARE_COPY.leadTheirs, sr: COMPARE_COPY.leadTheirsSr };
   return { word: COMPARE_COPY.leadEven, sr: "" };
+}
+
+
+/* ------------------------------------------------------------ Compare teams ---
+   The word under each letter, and what each roster needs from the other (W-037).
+   Both read only the rank and the depth the API already sent; nothing here is a score. */
+
+export type Room = "strong" | "short" | "spare" | "set";
+
+/** Nobody trades for a kicker or a defense (W-035), so they never make a "needs" line. */
+const NOT_TRADED = new Set(["K", "DEF", "DST", "D/ST"]);
+
+/**
+ * One room in one word. Short is the bottom third of the league at the position, and wins:
+ * a thin starter is the fact that matters. Spare is a deep bench that is not short. Strong is
+ * the top third. Anything else is set.
+ */
+export function roomWord(g: PositionGrade | null): Room | null {
+  if (!g) return null;
+  const size = g.league_size || 1;
+  const third = size / 3;
+  if (g.rank > size - third) return "short";
+  if (g.depth === "deep") return "spare";
+  if (g.rank <= third) return "strong";
+  return "set";
+}
+
+/**
+ * What each side is short at that the other has, as lines a manager can check: my short
+ * against their spare or strong, then theirs against mine. Positions nobody trades are left out.
+ */
+export function needsLines(diffs: PositionDiff[]): { mine: string[]; theirs: string[] } {
+  const mine: string[] = [];
+  const theirs: string[] = [];
+  for (const d of diffs) {
+    if (NOT_TRADED.has(d.position)) continue;
+    const a = roomWord(d.mine);
+    const b = roomWord(d.theirs);
+    if (a === "short" && (b === "spare" || b === "strong")) mine.push(COMPARE_COPY.youNeed(d.position, b));
+    if (b === "short" && (a === "spare" || a === "strong")) theirs.push(COMPARE_COPY.theyNeed(d.position, a));
+  }
+  return { mine, theirs };
 }
