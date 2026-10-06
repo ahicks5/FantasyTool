@@ -171,6 +171,8 @@ export const RIDE = {
   goingUp: "Going up",
   /** Above the doors once it has stopped. */
   topFloor: "Top floor",
+  /** The top floor's button and the plate's last stop: the suite itself (W-014, no "PH"). */
+  topButton: "OS",
   /** The eyebrow on the car's display: whose office this is. */
   owner: "Owner",
   /** The one control. A ride is a first impression, not a toll. */
@@ -205,7 +207,7 @@ export const DESK = {
   aria: "The owner\u2019s desk",
   owner: "Owner",
   /** The letterhead in the corner of every paper: the mark and two letters. */
-  letterhead: "PH",
+  letterhead: "OS",
   /** Three numbers on the nameplate. */
   standing: {
     record: "Record",

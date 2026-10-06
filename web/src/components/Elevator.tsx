@@ -28,9 +28,9 @@ import { Avatar } from "./Avatar";
 import { IconMark } from "./icons";
 
 /* ---------------------------------------------------------------- the car ---
-   The owner steps into the elevator, presses PH, the doors close, the car races up
+   The owner steps into the elevator, presses OS, the doors close, the car races up
    from the lobby, slows through the last floors with the panel lighting each one as it
-   passes, stops at PH with the PH button lit, and the doors open onto the office, dark:
+   passes, stops at OS with the OS button lit, and the doors open onto the office, dark:
    a room built from a handful of planes in CSS 3D (the wall with its window and
    nameplate, the floor, the desk), seen for a beat by the city in the window. The lights
    flick on. The camera walks in, comes around the desk to the owner's chair, looks down
@@ -127,9 +127,9 @@ export function ElevatorRide() {
   // Nothing sits in front of the doors but the doors: no card, no team, no words. The
   // rider's name is on the desk upstairs, where it belongs.
   const pressed = s.phase !== "boarding";
-  // The panel: PH is pressed and glows for the ride. From 23 up, the floor the car is
+  // The panel: OS is pressed and glows for the ride. From 23 up, the floor the car is
   // passing lights as the indicator and the ones below it keep a dim afterglow, so the
-  // climb reads up the panel as well as on the plate. At the stop PH comes on white.
+  // climb reads up the panel as well as on the plate. At the stop OS comes on white.
   const buttonClass = (f: string) => {
     const k = FLOORS.indexOf(f as (typeof FLOORS)[number]);
     if (arrived || s.floor > k) return "ride-button-passed";
@@ -296,12 +296,12 @@ export function ElevatorRide() {
           </div>
         </div>
 
-        {/* The button panel on the car wall: PH on top, then the floors the car slows
-            through. PH is pressed and glows for the ride; each floor lights as the car
-            passes it; PH comes on white at the stop. */}
+        {/* The button panel on the car wall: OS on top, then the floors the car slows
+            through. OS is pressed and glows for the ride; each floor lights as the car
+            passes it; OS comes on white at the stop. */}
         <div className="ride-panel" aria-hidden>
           <span className="ride-panel-brand chrome-type">OWNER’S SUITE</span>
-          <span className={`ride-button ride-button-ph display ${pressed ? "ride-button-lit" : ""} ${arrived ? "ride-button-now" : ""}`}>PH</span>
+          <span className={`ride-button ride-button-ph display ${pressed ? "ride-button-lit" : ""} ${arrived ? "ride-button-now" : ""}`}>{RIDE.topButton}</span>
           {PANEL_FLOORS.map((f) => (
             <span key={f} className={`ride-button tnum ${buttonClass(f)}`}>
               {f}
