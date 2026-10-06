@@ -255,7 +255,9 @@ export function AppShell({
     // the tab you are on, and the tab stays lit because nothing navigated.
     <PlayerSheetProvider>
     <div className="flex min-h-screen flex-col">
-      <TopBar session={session} wide={wide} />
+      {/* The top bar is the wide one on every page, so the wordmark and the tabs never
+          slide sideways between tabs on a desktop; only `main` narrows (W-019). */}
+      <TopBar session={session} wide />
       <main className={`mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5 tablet:max-w-3xl tablet:px-6 tablet:pb-16 tablet:pt-7 ${wide ? "lg:max-w-6xl" : ""}`}>
         {/* The band is one fixed height and every tab pays the same one, so moving between
             tabs never shifts the page. The h1 on the left; on the right the page's own

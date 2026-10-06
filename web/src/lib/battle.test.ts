@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   CLASH,
+  CLASH_MAX_MS,
   CLASH_MIN_MS,
   NO_BAR,
   battleHref,
@@ -57,6 +58,22 @@ test("the clash walks out both corners, holds the wind-up for the judges, then h
   assert.equal(clashPhase(hit + 1, null), "wind", "judges out: hold the charge, never slam a blank");
   assert.equal(clashPhase(hit + 4100, hit + 4000), "hit", "the hit counts from when they landed");
   assert.equal(clashPhase(CLASH_MIN_MS + 1, 0), "done");
+});
+
+test("the clash is over inside four seconds when the judges are back in time (W-024)", () => {
+  assert.ok(CLASH_MIN_MS <= CLASH_MAX_MS, `on schedule it runs ${CLASH_MIN_MS}ms`);
+  assert.equal(CLASH_MAX_MS, 4000);
+  // Judges back late but in time: the verdict gives back the difference, the cap holds.
+  const hit = CLASH.BLUE_MS + CLASH.RED_MS + CLASH.WIND_MS;
+  assert.equal(clashPhase(CLASH_MAX_MS, hit + 300), "done", "a little late: the slack absorbs it");
+  const late = CLASH_MAX_MS - CLASH.HIT_MS - CLASH.VERDICT_MIN_MS - CLASH.OUT_MS - 50;
+  assert.ok(late > hit);
+  assert.equal(clashPhase(CLASH_MAX_MS - 1, late), "out", "later: the verdict shortens");
+  assert.equal(clashPhase(CLASH_MAX_MS, late), "done");
+  // Very late judges: the word still gets its floor on screen before the fade.
+  const veryLate = 3500;
+  assert.equal(clashPhase(veryLate + CLASH.HIT_MS + CLASH.VERDICT_MIN_MS - 1, veryLate), "verdict");
+  assert.equal(clashPhase(veryLate + CLASH.HIT_MS + CLASH.VERDICT_MIN_MS + CLASH.OUT_MS, veryLate), "done");
 });
 
 test("this week shows the calibrated chance, never 0 or 100, and the longer windows show none", () => {

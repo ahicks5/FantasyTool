@@ -222,13 +222,22 @@ function fromRead(reads: ScoutRead[], key: string, label: string): VibeRow | nul
  * what he has been doing, which is the question a manager is asking when he looks at a
  * name he already owns. Only weeks he actually played count -- a bye in the window would
  * otherwise read as the floor falling out.
+ *
+ * The log is sorted by week here, never trusted in payload order: the scout payload ships
+ * it newest first, and slicing the tail read his *oldest* three weeks (W-022: Higgins at
+ * 8.9, 14.5, 21.0, 26.7 read "Cooling"). And a man coming off his best game of the year
+ * reads Hot rather than merely Warming: the window is three games, but the last one is
+ * the one a manager saw.
  */
 export function form(games: ScoutGame[], ppg: number | null | undefined): VibeRow | null {
-  const played = games.filter((g) => g.played);
+  const played = games.filter((g) => g.played).sort((a, b) => a.week - b.week);
   if (played.length < FORM_MIN_GAMES || !ppg) return null;
   const window = played.slice(-FORM_WINDOW);
   const recent = window.reduce((sum, g) => sum + g.points, 0) / window.length;
-  const b = band(recent / ppg, FORM);
+  let b = band(recent / ppg, FORM);
+  const last = played[played.length - 1];
+  const seasonBest = played.slice(0, -1).every((g) => last.points > g.points);
+  if (seasonBest && b === FORM[1]) b = FORM[0];
   return row("form", PLAYER.vibes.labels.form, b, b.verdict === "good" ? "up" : b.verdict === "bad" ? "down" : "level");
 }
 

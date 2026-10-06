@@ -1178,6 +1178,9 @@ export interface NewsItem {
   kind: NewsKind;
   level: NewsLevel;
   severity: NewsSeverity;
+  /** Whether the row carries a door into the action plan. False on upside (good-news)
+   *  stories (`newsdesk.has_plan`); absent from an older payload, read off `level`. */
+  plan?: boolean;
   headline: string;
   detail: string;
   /** Epoch milliseconds, the platform's own date on the news. */

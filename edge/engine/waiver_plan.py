@@ -167,18 +167,25 @@ def bye_cover_value(team: Team, fa: Player, week: int, byes: dict[str, int], wee
     """Covering a starter's bye is worth ONE week of the upgrade, spread over the season.
 
     Upgrade = this free agent minus the best body you already have at the position.
+
+    A free agent off the same week covers nothing (W-028: Jennings, MIN bye 6, was credited
+    with covering Higgins, CIN bye 6), so that starter is skipped. Every same-position player
+    with a bye in range is tried in turn, best first, rather than stopping at the first one:
+    the free agent may not cover your WR1 but still cover your WR2.
     """
+    fa_bye = byes.get(norm_team(fa.nfl_team) or "")
+    fa_ppg = ros.get(fa.id, 0.0) / weeks_left
     for p in sorted(team.players, key=lambda p: -ros.get(p.id, 0.0)):
         if p.position != fa.position:
             continue
         bye = byes.get(norm_team(p.nfl_team) or "")
-        if bye and week < bye <= week + 4:
-            fa_ppg = ros.get(fa.id, 0.0) / weeks_left
-            have = _best_alternative(team, fa.position, ros, weeks_left, exclude=p.id)
-            upgrade = max(0.0, fa_ppg - have)
-            if upgrade < 0.1:
-                return 0.0, None
-            return round(upgrade / weeks_left, 3), f"Covers {p.name}'s week {bye} bye"
+        if not bye or not (week < bye <= week + 4) or bye == fa_bye:
+            continue
+        have = _best_alternative(team, fa.position, ros, weeks_left, exclude=p.id)
+        upgrade = max(0.0, fa_ppg - have)
+        if upgrade < 0.1:
+            continue
+        return round(upgrade / weeks_left, 3), f"Covers {p.name}'s week {bye} bye"
     return 0.0, None
 
 

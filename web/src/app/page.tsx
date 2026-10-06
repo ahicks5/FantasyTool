@@ -174,18 +174,23 @@ export default function Landing() {
             On a phone the page is the headline, one line, the door and the sheet, in
             that order; the staff sentence and the three proof lines are for a wide
             screen, where they sit beside the sheet instead of pushing it below the fold
-            (Andrew, 2026-09-28: way fewer words on mobile). */}
+            (Andrew, 2026-09-28: way fewer words on mobile).
+
+            The copy column paints whole on the first frame: no `rise` and no `Reveal`
+            on it, so a cold load never shows a hole between the line and the button
+            while a delayed fade catches up (W-001). Only the sheet and what sits below
+            the fold arrive with motion. */}
         <section className="grid items-center gap-8 pt-6 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pt-16">
           <div>
-            <Eyebrow className="rise rise-1">
+            <Eyebrow>
               <span className="sm:hidden">{LANDING.eyebrowShort}</span>
               <span className="hidden sm:inline">{LANDING.eyebrow}</span>
             </Eyebrow>
-            <h1 className="display mt-3 text-[43px] leading-[0.98] rise rise-2 sm:text-[56px] lg:text-[64px]">{LANDING.headline}</h1>
-            <p className="display mt-4 max-w-[34rem] text-[18px] leading-snug text-ink rise rise-3 sm:mt-5 sm:text-[21px]">{LANDING.avatar}</p>
-            <p className="mt-3 hidden max-w-[32rem] text-[16px] leading-relaxed text-ink-2 rise rise-3 sm:block">{LANDING.staff}</p>
-            <p className="mt-2.5 text-[15px] leading-snug text-ink-2 rise rise-3 sm:hidden">{LANDING.staffShort}</p>
-            <div className="mt-6 grid max-w-[26rem] gap-3 rise rise-4 sm:mt-7">
+            <h1 className="display mt-3 text-[43px] leading-[0.98] sm:text-[56px] lg:text-[64px]">{LANDING.headline}</h1>
+            <p className="display mt-4 max-w-[34rem] text-[18px] leading-snug text-ink sm:mt-5 sm:text-[21px]">{LANDING.avatar}</p>
+            <p className="mt-3 hidden max-w-[32rem] text-[16px] leading-relaxed text-ink-2 sm:block">{LANDING.staff}</p>
+            <p className="mt-2.5 text-[15px] leading-snug text-ink-2 sm:hidden">{LANDING.staffShort}</p>
+            <div className="mt-6 grid max-w-[26rem] gap-3 sm:mt-7">
               <div id={HERO_CTA_ID} data-door="hero">
                 <LinkButton href={WAY_IN} variant="start" className="w-full">
                   {LANDING.cta}

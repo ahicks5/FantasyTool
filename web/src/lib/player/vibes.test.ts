@@ -167,6 +167,22 @@ test("form is him against himself, not against his position", () => {
   assert.equal(form([game(1, 12), game(2, 12), game(3, 12)], 12)?.word, PLAYER.vibes.form.level);
 });
 
+test("form reads the latest weeks whatever order the log arrives in (W-022)", () => {
+  // Higgins, weeks 1-4, shipped newest first as the scout payload does: 17.8 a game.
+  const higgins = [game(4, 26.7), game(3, 21.0), game(2, 14.5), game(1, 8.9)];
+  const row = form(higgins, 17.8);
+  assert.notEqual(row?.verdict, "bad", "his last three are well above his average");
+  // Weeks 2-4 average 20.7 (Warming), and week 4 is his season best: Hot.
+  assert.equal(row?.word, PLAYER.vibes.form.hot);
+  assert.deepEqual(form([...higgins].reverse(), 17.8), row, "order in, same answer out");
+});
+
+test("a warm window without a season-best last game stays Warming", () => {
+  // Weeks 2-4 average 13.3 against 12 (1.11): warm, and week 4 is not his best.
+  const games = [game(1, 6), game(2, 16), game(3, 14), game(4, 10)];
+  assert.equal(form(games, 12)?.word, PLAYER.vibes.form.warming);
+});
+
 test("two weeks is not form", () => {
   const games = Array.from({ length: FORM_MIN_GAMES - 1 }, (_, i) => game(i + 1, 30));
   assert.equal(form(games, 12), null);

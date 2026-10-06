@@ -171,6 +171,8 @@ export const RIDE = {
   goingUp: "Going up",
   /** Above the doors once it has stopped. */
   topFloor: "Top floor",
+  /** The top floor's button and the plate's last stop: the suite itself (W-014, no "PH"). */
+  topButton: "OS",
   /** The eyebrow on the car's display: whose office this is. */
   owner: "Owner",
   /** The one control. A ride is a first impression, not a toll. */
@@ -205,7 +207,7 @@ export const DESK = {
   aria: "The owner\u2019s desk",
   owner: "Owner",
   /** The letterhead in the corner of every paper: the mark and two letters. */
-  letterhead: "PH",
+  letterhead: "OS",
   /** Three numbers on the nameplate. */
   standing: {
     record: "Record",
@@ -247,14 +249,16 @@ export const DESK = {
     /**
      * Why this story is on your desk, in a few words beside the level: the player of
      * yours it lands on and how. `pos` and `last` are his; `starter` is whether he is in
-     * your lineup this week.
+     * your lineup this week. Short on purpose: the slot beside the meter is narrow at 375px,
+     * and a cut-off "Ahead of your W…" lost the point (W-016). The name carries it.
      */
     tag: {
       own: (pos: string, starter: boolean) => `Your ${pos} \u00b7 ${starter ? "starting" : "bench"}`,
-      qb: (pos: string, last: string) => `QB1 for your ${pos} ${last}`,
-      target: (pos: string, last: string) => `Ahead of your ${pos} ${last}`,
-      backfield: (pos: string, last: string) => `RB1 ahead of your ${last}`,
-      line: (pos: string, last: string) => `Blocks for your ${pos} ${last}`,
+      // `pos` stays in the signature for a wider slot; the short line does not need it.
+      qb: (_pos: string, last: string) => `${last}\u2019s QB1`,
+      target: (_pos: string, last: string) => `Opens up for ${last}`,
+      backfield: (_pos: string, last: string) => `Opens up for ${last}`,
+      line: (_pos: string, last: string) => `Blocks for ${last}`,
     },
   },
   /** The matchup card, where the call sheet's stack used to sit: who, the projected
@@ -595,9 +599,9 @@ export const SCOUT = {
     at: "@",
     week: (w: number) => `Wk ${w}`,
     softAria: (opp: string, rank: number, of: number) => `${opp}: offense ranks ${rank} of ${of} for fewest points`,
-    /** The shortlist's reasons: "#2 WR proj". */
+    /** The shortlist's reason, only for a #1: "#1 QB · proj · ROS" (W-030). */
     top: { proj: "proj", ros: "ROS", adds: "adds" } as const,
-    topLine: (n: number, pos: string, board: string) => `#${n} ${pos} ${board}`,
+    topLine: (n: number, pos: string, board: string) => `#${n} ${pos} \u00b7 ${board}`,
     /** A row the head of scouting put at the top of the tab. */
     pick: (n: number) => `Pick ${n}`,
     pickAria: (n: number) => `Top pickup number ${n}`,

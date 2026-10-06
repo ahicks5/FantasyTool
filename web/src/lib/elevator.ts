@@ -1,9 +1,11 @@
 /** The ride up: the opening as an elevator to the top floor. Pure, so the schedule is tested. */
 
+import { RIDE } from "./vocab.ts";
+
 /* ------------------------------------------------------------- the ride ---
    The app is the owner's office. The opening is the ride up to it: you step in, press
-   PH, the doors close, the car races up from the lobby, slows through the last floors
-   with the panel lighting each one as it passes, stops at PH with the PH button lit,
+   OS, the doors close, the car races up from the lobby, slows through the last floors
+   with the panel lighting each one as it passes, stops at OS with the OS button lit,
    and the doors open onto a dark office. A beat in the doorway, the lights flick on,
    and the camera walks in toward the desk, comes around it to the owner's chair, looks
    down at the papers, and the papers become the desk page.
@@ -16,14 +18,14 @@
 
                                                                                    */
 
-/** The top numbered floor; PH is above it. */
+/** The top numbered floor; OS is above it. */
 export const TOP_FLOOR = 28;
 /** The floor the car stops racing and starts to slow. From here up, the panel's buttons
  *  light one at a time as the car passes them. */
 export const SLOW_FROM = 23;
-/** The floor plate reads these, lobby to top: L, 1..28, PH. `FLOORS[k]` is floor k. */
-export const FLOORS = ["L", ...Array.from({ length: TOP_FLOOR }, (_, i) => String(i + 1)), "PH"] as const;
-/** The buttons on the car's panel, top down: PH, then the floors the car slows through. */
+/** The floor plate reads these, lobby to top: L, 1..28, OS. `FLOORS[k]` is floor k. */
+export const FLOORS = ["L", ...Array.from({ length: TOP_FLOOR }, (_, i) => String(i + 1)), RIDE.topButton] as const;
+/** The buttons on the car's panel, top down: OS, then the floors the car slows through. */
 export const PANEL_FLOORS = FLOORS.slice(SLOW_FROM, -1).reverse();
 
 /* Every beat is given room to be read. The whole ride is skippable with a tap, and
@@ -32,7 +34,7 @@ export const PANEL_FLOORS = FLOORS.slice(SLOW_FROM, -1).reverse();
 
 /** Lights up, doors ajar, the button panel in view: you have just stepped in. */
 export const BOARD_MS = 600;
-/** The PH button is pressed and lights. */
+/** The OS button is pressed and lights. */
 export const PRESS_MS = 550;
 /** The doors close. */
 export const CLOSE_MS = 650;
@@ -40,12 +42,12 @@ export const CLOSE_MS = 650;
 export const SEALED_MS = 250;
 /** The race: the lobby to `SLOW_FROM`, the plate flashing through the numbers. */
 export const FAST_MS = 1250;
-/** The slow-down: `SLOW_FROM` to PH, each floor lasting longer than the last, the panel's
+/** The slow-down: `SLOW_FROM` to OS, each floor lasting longer than the last, the panel's
  *  buttons lighting one by one as the car passes them. */
 export const SLOW_MS = 2600;
 /** The ascent, both parts. */
 export const RISE_MS = FAST_MS + SLOW_MS;
-/** The stop at PH: the ding, the PH button comes on, and a moment to take it in. */
+/** The stop at OS: the ding, the OS button comes on, and a moment to take it in. */
 export const ARRIVE_MS = 900;
 /** The doors open onto the office, dark. */
 export const OPEN_MS = 800;
@@ -104,7 +106,7 @@ export interface RideState {
   floor: number;
 }
 
-/** Quick at first and slower with every floor: the brakes coming on below PH. */
+/** Quick at first and slower with every floor: the brakes coming on below OS. */
 export function easeOut(t: number): number {
   const x = Math.min(1, Math.max(0, t));
   return 1 - (1 - x) * (1 - x);
@@ -112,8 +114,8 @@ export function easeOut(t: number): number {
 
 /**
  * Which floor the plate reads `t` ms into the ascent. Two legs: a race at one speed from
- * the lobby to `SLOW_FROM`, then a slow-down through the last floors to PH, so 23 is on the
- * plate for a beat, 24 for longer, and PH arrives like a car settling.
+ * the lobby to `SLOW_FROM`, then a slow-down through the last floors to OS, so 23 is on the
+ * plate for a beat, 24 for longer, and OS arrives like a car settling.
  */
 export function floorAt(t: number): number {
   const top = FLOORS.length - 1;

@@ -208,7 +208,7 @@ function Fact({ fact, pos }: { fact: LensFact; pos: string }) {
     <span className="mt-1 flex flex-wrap items-center gap-1">
       {fact.top &&
         topTags(fact.top).map(({ n, boards }) => (
-          <span key={n} className={`lens-fact lens-top ${n === 1 ? "lens-top-1" : ""}`}>
+          <span key={n} className="lens-fact lens-top lens-top-1">
             {F.topLine(n, pos, boards.map((b) => F.top[b]).join(" · "))}
           </span>
         ))}

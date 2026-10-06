@@ -2843,12 +2843,15 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
 
 /* A row the head of scouting picked, down in All players: the wire's red, so the three at
    the top of the tab are the same three men here. The top three are louder than the rest. */
-.board-flag-pick { color: #fff; background: var(--color-signal); letter-spacing: 0.02em; }
-.board-row-pick { box-shadow: inset 3px 0 0 var(--color-signal); background: rgb(255 77 58 / 0.05); }
-.board-row-top { background: rgb(255 77 58 / 0.1); }
-.board-row-top .board-name { color: var(--color-signal); }
-@media (hover: hover) { .board-row-pick:hover { background: rgb(255 77 58 / 0.12); } }
-/* The shortlist's reasons: "#2 WR proj". A first place is solid. */
+/* A pick is a move to make, so it wears the "go" green, never the red of OUT and losses
+   (W-031). The tokens are themed, so both modes follow; the flag's fill is the darker
+   green white text reads on. */
+.board-flag-pick { color: #fff; background: var(--color-start-fill); letter-spacing: 0.02em; }
+.board-row-pick { box-shadow: inset 3px 0 0 var(--color-start); background: color-mix(in srgb, var(--color-start) 6%, transparent); }
+.board-row-top { background: color-mix(in srgb, var(--color-start) 11%, transparent); }
+.board-row-top .board-name { color: var(--color-start); }
+@media (hover: hover) { .board-row-pick:hover { background: color-mix(in srgb, var(--color-start) 14%, transparent); } }
+/* The shortlist's reason, only for a #1: "#1 QB · proj · ROS", solid (W-030). */
 .lens-top { color: var(--color-ink-2); }
 .lens-top-1 { color: var(--color-paper); background: var(--color-ink); border-color: var(--color-ink); }
 
@@ -3032,6 +3035,14 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
   gap: 12px;
   max-width: 32rem;
   margin: 0 auto;
+}
+/* From `sm:` up the bar lines up with the page's own column (`max-w-6xl px-6` on `/`):
+   words on its left content edge, the door on its right, never a cluster mid-screen
+   (W-002). The bar's padding matches the page's gutter, so the inner box is the page's
+   content box. */
+@media (min-width: 40rem) {
+  .landing-bar { padding-left: 24px; padding-right: 24px; }
+  .landing-bar-inner { max-width: calc(72rem - 48px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .landing-bar { transition: none; }
@@ -3344,7 +3355,7 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
   justify-content: center;
   cursor: pointer;
 }
-.clash[data-phase="out"] { animation: clash-out 0.38s ease-in both; }
+.clash[data-phase="out"] { animation: clash-out 0.33s ease-in both; }
 @keyframes clash-out { to { opacity: 0; transform: scale(1.04); } }
 .clash-stage { position: relative; width: min(100vw, 520px); height: 100%; }
 .clash-light {
@@ -3379,14 +3390,15 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
 .clash-tag { font-size: 10px; font-weight: 900; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7; }
 
 /* Walk-outs: the blue corner from the left, the red from the right. */
-.clash-fighter-a { animation: walk-a 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
-.clash-fighter-b { animation: walk-b 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.65s both; }
+/* Durations mirror `CLASH` in lib/battle.ts (BLUE_MS, RED_MS). */
+.clash-fighter-a { animation: walk-a 0.52s cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
+.clash-fighter-b { animation: walk-b 0.52s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.52s both; }
 @keyframes walk-a { from { opacity: 0; transform: translate(-90%, -50%) scale(0.9); } to { opacity: 1; transform: translate(0, -50%); } }
 @keyframes walk-b { from { opacity: 0; transform: translate(90%, -50%) scale(0.9); } to { opacity: 1; transform: translate(0, -50%); } }
 
 /* The wind-up: both lean back and shudder, the charge builds between them. */
-.clash[data-phase="wind"] .clash-fighter-a { animation: wind-a 0.7s ease-in-out infinite alternate; }
-.clash[data-phase="wind"] .clash-fighter-b { animation: wind-b 0.7s ease-in-out infinite alternate; }
+.clash[data-phase="wind"] .clash-fighter-a { animation: wind-a 0.56s ease-in-out infinite alternate; }
+.clash[data-phase="wind"] .clash-fighter-b { animation: wind-b 0.56s ease-in-out infinite alternate; }
 @keyframes wind-a {
   0% { transform: translate(0, -50%); }
   80% { transform: translate(-14%, -50%) rotate(-3deg); }
@@ -3413,7 +3425,7 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
   box-shadow: 0 0 16px 4px rgb(255 255 255 / 0.35);
   opacity: 0;
 }
-.clash[data-phase="wind"] .clash-charge { animation: charge 0.7s ease-in forwards; }
+.clash[data-phase="wind"] .clash-charge { animation: charge 0.56s ease-in forwards; }
 @keyframes charge { to { width: 32%; opacity: 1; } }
 
 /* The hit: both drive into the middle, the flash, the ring, the sparks, the shake. */

@@ -22,11 +22,14 @@ class Pick:
 
 
 def _bye_cover(team: Team, fa: Player, week: int, byes: dict[str, int]) -> str | None:
+    # A free agent off the same week covers nothing (W-028), so that player is passed over
+    # and the next one at the position is tried.
+    fa_bye = byes.get(norm_team(fa.nfl_team) or "")
     for p in team.players:
         if p.position != fa.position:
             continue
         bye = byes.get(norm_team(p.nfl_team) or "")
-        if bye and week < bye <= week + 3:
+        if bye and week < bye <= week + 3 and bye != fa_bye:
             return f"Bye-week cover for {p.name} (wk {bye})."
     return None
 
