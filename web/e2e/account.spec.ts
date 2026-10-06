@@ -521,3 +521,32 @@ test("signing in at the door goes straight to the call sheet on the last league;
   const stored = JSON.parse((await page.evaluate(() => localStorage.getItem("booth.connection"))) ?? "null");
   expect(stored?.league_id).toBe(CONNECTION.league_id);
 });
+
+test("a private ESPN league opened from the menu on a browser without its key goes to the key form, not an error", async ({ context, page }) => {
+  await beAStranger(context);
+  const token = await registerViaApi(page, freshEmail("espnkey"));
+  const linked = await page.request.post(`${API_URL}/api/connect`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { platform: CONNECTION.platform, league_id: CONNECTION.league_id, team_id: CONNECTION.team_id },
+  });
+  expect(linked.ok(), await linked.text()).toBe(true);
+  // The account says its league is a private ESPN one, and ESPN refuses a browser with no key.
+  await page.route(`${API_URL}/api/me`, async (route) => {
+    const res = await route.fetch();
+    const body = await res.json();
+    for (const l of body.leagues ?? []) l.platform = "espn";
+    await route.fulfill({ response: res, json: body });
+  });
+  await page.route(`${API_URL}/api/league/espn/**`, (route) =>
+    route.fulfill({ status: 403, json: { detail: { error: "This ESPN league is private (401).", needs_espn_auth: true } } }),
+  );
+  await page.goto("/login");
+  await page.evaluate((t) => localStorage.setItem("booth.session", t), token);
+  await page.reload();
+
+  const menu = page.getByTestId("where-to");
+  await menu.getByTestId("where-league").click();
+  await page.waitForURL(/\/connect\?platform=espn&id=/);
+  expect(new URL(page.url()).searchParams.get("team")).toBe(CONNECTION.team_id);
+  await expect(page.getByText(/is private \(401\)/)).toHaveCount(0);
+});
