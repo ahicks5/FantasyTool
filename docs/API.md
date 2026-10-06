@@ -454,7 +454,7 @@ reader to a profile to find out.
  "rows":[{"id":"4866","name":"Saquon Barkley","position":"RB","positions":["RB"],
           "nfl_team":"PHI","photo":"https://...","team_logo":"https://...",
           "injury_status":null,"injury_body_part":null,"bye_week":9,
-          "projected":18.2,"ros":241.6,"trending_adds":1204,
+          "projected":18.2,"game":null,"ros":241.6,"trending_adds":1204,
           "rostered_by":{"team_id":"3","team_name":"Brown Town","is_me":false}}],
  "facets":{"positions":["QB","RB","WR","TE","DEF"],"nfl_teams":["ARI","ATL"],
            "teams":[{"id":"1","name":"Raft Ryders"}]},
@@ -463,6 +463,9 @@ reader to a profile to find out.
 
 The browse half of Scouting, next to the search box above. Every player in the league in
 one list, cut and ordered by the reader.
+
+`game` is `"in"` or `"final"` once his game this week has kicked off, else `null`: the board then
+reads "Played" instead of a projection for a game already under way.
 
 | Param | Values | Default |
 |---|---|---|

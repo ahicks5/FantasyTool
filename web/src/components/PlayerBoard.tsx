@@ -55,7 +55,7 @@ import {
 import { NO_NFL_TEAM, SEARCH_DEBOUNCE_MS, SEARCH_LABELS, normalizeQuery, nextIndex } from "@/lib/search";
 import type { Connection } from "@/lib/storage";
 import type { BoardQuery, BoardRow, BoardSort, Lens, LensCounts, LensFact, PlayerBoard as Board, WaiverPick } from "@/lib/types";
-import { SCOUT } from "@/lib/vocab";
+import { SCOUT, WEEK } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { usePlayerSheet } from "./player/PlayerSheetProvider";
 import { ErrorBox, H2, InjuryTag, SkeletonList, Spinner } from "./ui";
@@ -179,12 +179,19 @@ function Row({
         </span>
         {view === "outlook" ? (
           <>
-            <span className="board-num board-proj tnum">
-              {boardNumber(row.projected)}
-              <span className="board-bar" aria-hidden>
-                <span style={{ width: `${barPct(row.projected, max)}%` }} />
+            {row.game ? (
+              // His game has kicked off: this week's projection is spent (W-027).
+              <span className="board-num tnum text-muted" data-testid="board-played">
+                {WEEK.scouting.played}
               </span>
-            </span>
+            ) : (
+              <span className="board-num board-proj tnum">
+                {boardNumber(row.projected)}
+                <span className="board-bar" aria-hidden>
+                  <span style={{ width: `${barPct(row.projected, max)}%` }} />
+                </span>
+              </span>
+            )}
             <span className="board-num tnum text-ink-2">{boardNumber(row.ros, 0)}</span>
           </>
         ) : (
@@ -447,7 +454,7 @@ export function PlayerBoard({ c, picks = [] }: { c: Connection; picks?: readonly
   const onSort = (s: BoardSort) => setQuery((q) => pressColumn(q, s));
   // The bar under each projection is against the best on the board, so it reads as "how
   // close to the top" rather than as an absolute scale nobody can hold in their head.
-  const max = rows.reduce((m, r) => Math.max(m, r.projected ?? 0), 0);
+  const max = rows.reduce((m, r) => (r.game ? m : Math.max(m, r.projected ?? 0)), 0);
   // The wire's own ten, by id: those rows wear the pick's colours down here too.
   const pickRank = new Map(picks.map((p, i) => [p.player.id, i + 1]));
   const view: BoardView = query.season ? "market" : "outlook";

@@ -128,6 +128,9 @@ def _row(p: Any, team: Any, b: service.Bundle, team_id: str | None) -> dict:
         "injury_body_part": p.injury_body_part,
         "bye_week": p.bye_week or None,
         "projected": projected,
+        # His game this week once it has kicked off ("in" or "final"), so the board can say
+        # "Played" rather than show a projection for a game already under way (W-027).
+        "game": p.game_status if getattr(p, "game_status", None) in ("in", "final") else None,
         # Keyed by `Player.id`, which is the platform's id and NOT `pid` -- on ESPN those
         # are different namespaces and looking ROS up by the Sleeper id finds nothing.
         "ros": b.ros.get(p.id),

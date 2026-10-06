@@ -1531,6 +1531,9 @@ export interface BoardRow {
   bye_week: number | null;
   /** This week, in this league's scoring. */
   projected: number | null;
+  /** His game this week once it has kicked off; absent or null before kickoff. The board
+   *  then shows "Played" in place of a projection (W-027). */
+  game?: "in" | "final" | null;
   /** Rest of the fantasy regular season, in this league's scoring. */
   ros: number | null;
   trending_adds: number;

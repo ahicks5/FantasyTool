@@ -70,6 +70,15 @@ def test_the_board_holds_rostered_players_and_free_agents(bundle):
     assert len({r["id"] for r in rows}) == len(rows)
 
 
+def test_a_player_whose_game_has_kicked_off_carries_its_state_and_the_rest_carry_none(bundle):
+    p = bundle.league.teams[0].players[0]
+    p.game_status = "final"
+    rows = {r["name"]: r for r in directory.universe(bundle)}
+    assert rows[p.name]["game"] == "final"
+    assert all(r["game"] in (None, "in", "final") for r in rows.values())
+    assert sum(1 for r in rows.values() if r["game"]) == 1
+
+
 def test_a_rostered_player_names_the_team_that_holds_him(bundle):
     rows = directory.universe(bundle, team_id="1")
     mine = [r for r in rows if r["rostered_by"] and r["rostered_by"]["is_me"]]
