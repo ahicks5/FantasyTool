@@ -225,8 +225,10 @@ test("the shortlist opens free-only, steps aside for a typed name, and takes fre
   assert.equal(withLens({ ...DEFAULT_QUERY, lens: "risers" }, null).avail, "free");
 });
 
-test("shortlist reasons are one tag per rank, best first", () => {
-  assert.deepEqual(topTags({ proj: 1, ros: 1, adds: 4 }), [{ n: 1, boards: ["proj", "ros"] }, { n: 4, boards: ["adds"] }]);
+test("shortlist reasons: one merged tag for the boards he leads, nothing for a #2 to #5", () => {
+  assert.deepEqual(topTags({ proj: 1, ros: 1, adds: 4 }), [{ n: 1, boards: ["proj", "ros"] }]);
+  assert.deepEqual(topTags({ proj: 1, ros: 1, adds: 1 }), [{ n: 1, boards: ["proj", "ros", "adds"] }]);
+  assert.deepEqual(topTags({ proj: 2, adds: 3 }), []);
   assert.deepEqual(topTags({}), []);
 });
 

@@ -599,9 +599,9 @@ export const SCOUT = {
     at: "@",
     week: (w: number) => `Wk ${w}`,
     softAria: (opp: string, rank: number, of: number) => `${opp}: offense ranks ${rank} of ${of} for fewest points`,
-    /** The shortlist's reasons: "#2 WR proj". */
+    /** The shortlist's reason, only for a #1: "#1 QB · proj · ROS" (W-030). */
     top: { proj: "proj", ros: "ROS", adds: "adds" } as const,
-    topLine: (n: number, pos: string, board: string) => `#${n} ${pos} ${board}`,
+    topLine: (n: number, pos: string, board: string) => `#${n} ${pos} \u00b7 ${board}`,
     /** A row the head of scouting put at the top of the tab. */
     pick: (n: number) => `Pick ${n}`,
     pickAria: (n: number) => `Top pickup number ${n}`,
