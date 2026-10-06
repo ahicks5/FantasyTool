@@ -2843,12 +2843,15 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
 
 /* A row the head of scouting picked, down in All players: the wire's red, so the three at
    the top of the tab are the same three men here. The top three are louder than the rest. */
-.board-flag-pick { color: #fff; background: var(--color-signal); letter-spacing: 0.02em; }
-.board-row-pick { box-shadow: inset 3px 0 0 var(--color-signal); background: rgb(255 77 58 / 0.05); }
-.board-row-top { background: rgb(255 77 58 / 0.1); }
-.board-row-top .board-name { color: var(--color-signal); }
-@media (hover: hover) { .board-row-pick:hover { background: rgb(255 77 58 / 0.12); } }
-/* The shortlist's reasons: "#2 WR proj". A first place is solid. */
+/* A pick is a move to make, so it wears the "go" green, never the red of OUT and losses
+   (W-031). The tokens are themed, so both modes follow; the flag's fill is the darker
+   green white text reads on. */
+.board-flag-pick { color: #fff; background: var(--color-start-fill); letter-spacing: 0.02em; }
+.board-row-pick { box-shadow: inset 3px 0 0 var(--color-start); background: color-mix(in srgb, var(--color-start) 6%, transparent); }
+.board-row-top { background: color-mix(in srgb, var(--color-start) 11%, transparent); }
+.board-row-top .board-name { color: var(--color-start); }
+@media (hover: hover) { .board-row-pick:hover { background: color-mix(in srgb, var(--color-start) 14%, transparent); } }
+/* The shortlist's reason, only for a #1: "#1 QB · proj · ROS", solid (W-030). */
 .lens-top { color: var(--color-ink-2); }
 .lens-top-1 { color: var(--color-paper); background: var(--color-ink); border-color: var(--color-ink); }
 
