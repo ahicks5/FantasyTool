@@ -2,6 +2,16 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## Walkthrough fixes, pages 1-7 (2026-10-06)
+All 37 items in `docs/feedback/2026-10-walkthrough.md` (W-001 to W-037) built and shipped: the
+live week (one game-state helper: live win %, matchup actuals, LIVE/FINAL/countdown clock,
+locked slots, battle results, Scouting rolls to next week's claims), Trade Lab (one number per
+fact, "Will they say yes?" replaces Fairness, Compare teams / Build a trade), sign-in (straight
+to the desk, SUITE wordmark links home, Yahoo hidden behind `NEXT_PUBLIC_YAHOO`), and polish.
+The long-failing lineup test is fixed. Gates: pytest 1634/0, web 528, e2e 57/57.
+- [ ] **Andrew:** walk the film (`/report`, three open questions in the log) and pages 9-13.
+- [ ] **Andrew:** confirm the defaults listed at the top of the log (Eastern rollover, acceptance thresholds).
+
 ## Integration branch: every 2026-10-05 chat merged and shipped (`claude/integration-1005`)
 Production plus nine branches, merged in this order: phone-first-auth, password-reset-guide,
 signin-session-sync, onboarding-experience-plan, landing-signup-push, position-battle-feature,

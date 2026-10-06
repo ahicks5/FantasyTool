@@ -8,6 +8,17 @@ Chrome by `scripts/walkthrough.py`. Nothing was fixed during the walk; this is t
 - Screenshots are in `.walkthrough/shots/` (gitignored), named `NN-page-viewport-theme`.
 - Priority: **P0** broken · **P1** before launch · **P2** soon · **P3** nice to have. Size: **S / M / L**.
 
+## Built (2026-10-06)
+
+W-001 to W-037 are all implemented and shipped (branch `claude/integration-1005`, merged to
+production). W-029 was not our bug: Kyler Murray is a free agent in Degenerates FF (dropped by
+roster 3 in week 4); the one on Andrew's bench is in another league. Defaults taken, Andrew can
+overrule: the week rolls over Tuesday 12:00 **Eastern**; the live win % shrinks its spread by the
+square root of the share still to play; Scouting rolls to next week once your own matchup is all
+final; "OS" replaces "PH" in the elevator too; Plan B stays on note stories; trade acceptance is
+Likely (their lineup +1 or better) / Maybe (down to -4) / Unlikely (below -4, or under 70% of the
+name value back).
+
 ## Where we are
 
 - **Status:** PAUSED 2026-10-05, Monday evening of NFL week 4. Last ID: W-037.
