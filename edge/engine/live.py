@@ -126,6 +126,19 @@ def clear(league: League) -> None:
             p.game_status, p.points = None, None
 
 
+def stamp_kickoffs(league: League, games: list[dict]) -> None:
+    """Every man's kickoff this week, off the same scoreboard rows, so a man still to play
+    reads "MON 8:15" beside his projection (W-026). None for a man with no game."""
+    ko: dict[str, str] = {}
+    for g in games:
+        for side in ("home", "away"):
+            team = norm_team(g.get(side))
+            if team and g.get("kickoff"):
+                ko[team] = g["kickoff"]
+    for p in [p for t in league.teams for p in t.players] + list(getattr(league, "free_agents", None) or []):
+        p.kickoff = ko.get(norm_team(p.nfl_team) or "")
+
+
 # --------------------------------------------------------------------------- the feeds
 
 def refresh(league: League, now: float | None = None) -> LiveWeek | None:
@@ -133,10 +146,19 @@ def refresh(league: League, now: float | None = None) -> LiveWeek | None:
     week has not kicked off, or a feed failed: either way nothing is locked and the lineup
     paints from projections, which is the free page's floor."""
     from edge.data import nfl_stats, schedule  # local: the feeds, kept out of the pure half
+    from edge.engine import gameday
     try:
         games = schedule.load_week_games(league.season, league.week)
     except Exception:  # noqa: BLE001 - a scoreboard that fails is a week that is not live
         games = []
+    try:
+        season_games = schedule.load_games(league.season)
+    except Exception:  # noqa: BLE001 - next week's kickoff is a nicety on the clock
+        season_games = {}
+    league.clock = gameday.week_clock(league.week, games, clock() if now is None else now,
+                                      next_games=season_games.get(str(league.week + 1)),
+                                      prev_games=season_games.get(str(league.week - 1))) if games else None
+    stamp_kickoffs(league, games)
     states = game_states(games, now)
     if not any(s in (IN, FINAL) for s in states.values()):
         clear(league)

@@ -125,3 +125,30 @@ def test_one_qb_league_still_shows_at_most_one_quarterback(league, season_proj, 
     for t in league.teams:
         picks = waivers.rank(league, t, ros, byes)
         assert sum(1 for p in picks if p.player.position == "QB") <= 1
+
+
+def test_a_played_free_agent_reads_played_not_zero_this_week(league, season_proj, byes):
+    """W-027: a man whose game this week is over cannot help this week; his pick says
+    "played" and is ranked on what comes next, never a bare "0.0 wk"."""
+    import copy
+    from edge.engine import report
+    lg = copy.deepcopy(league)
+    ros = ros_values(lg, season_proj, byes)
+    for fa in lg.free_agents:
+        fa.game_status, fa.points = "final", 9.0
+    t = lg.teams[0]
+    picks = waivers.rank(lg, t, ros, byes)
+    assert picks and all(p.played and p.weekly_gain == 0.0 for p in picks)
+    assert all("Starts for you this week" not in p.reason for p in picks)
+    d = report.waivers_dict(lg, t, picks)
+    assert all(row["played"] for row in d["picks"]) and d["rolled_from"] is None
+
+
+def test_a_rolled_league_names_the_week_a_pickup_starts_in(league, season_proj, byes):
+    import copy
+    lg = copy.deepcopy(league)
+    lg.rolled_from = lg.week - 1
+    ros = ros_values(lg, season_proj, byes)
+    next(p for p in lg.free_agents if p.position == "RB" and not p.is_out).projected = 40.0
+    reasons = [p.reason for t in lg.teams for p in waivers.rank(lg, t, ros, byes) if p.weekly_gain > 0]
+    assert reasons and all(f"in week {lg.week}" in r for r in reasons if r.startswith("Starts"))

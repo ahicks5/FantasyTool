@@ -49,6 +49,7 @@ from edge.data.depth_charts import LINE, SKILL, Slot
 from edge.data.nfl_stats import StatLine, team_weeks
 from edge.data.schedule import FANTASY_LAST_WEEK, games_for, norm_team
 from edge.engine import decisions as decisions_mod
+from edge.engine import gameday
 from edge.engine import profile as profile_mod
 from edge.engine.lineup import FLIP, LEAN, LOCK, effective, role_labels
 from edge.engine.values import INJURY_GAMES_LOST
@@ -230,11 +231,16 @@ def playoff_window(lg: League) -> tuple[int, int, bool] | None:
     return first, FANTASY_LAST_WEEK, assumed
 
 
-def windows(lg: League) -> dict[str, tuple[int, int] | None]:
+def windows(lg: League, first: int | None = None) -> dict[str, tuple[int, int] | None]:
+    """The four windows. `first` is where the forward ones start: this week, or next week
+    once both men's games this week are in (W-023), so a played week is not counted twice."""
     wk = lg.week
+    start = first if first is not None else wk
     po = playoff_window(lg)
-    return {"week": (wk, wk), "next5": (wk, min(FANTASY_LAST_WEEK, wk + NEXT_WEEKS - 1)),
-            "ros": (wk, FANTASY_LAST_WEEK) if wk <= FANTASY_LAST_WEEK else None,
+    if po and po[0] < start:
+        po = (start, po[1], po[2]) if start <= po[1] else None
+    return {"week": (wk, wk), "next5": (start, min(FANTASY_LAST_WEEK, start + NEXT_WEEKS - 1)) if start <= FANTASY_LAST_WEEK else None,
+            "ros": (start, FANTASY_LAST_WEEK) if start <= FANTASY_LAST_WEEK else None,
             "playoffs": (po[0], po[1]) if po else None}
 
 
@@ -679,7 +685,7 @@ def tape(arena: Arena, a: Player, b: Player, horizons: dict[str, dict]) -> list[
     sla, slb = slate(arena, a), slate(arena, b)
     add(_row("matchup", "schedule", _matchup_cell(sla, arena.week), _matchup_cell(slb, arena.week),
              _num_edge(_week_rank(sla, arena.week), _week_rank(slb, arena.week), decisions_mod.RANK_GAP)))
-    win = windows(arena.league)
+    win = {k: (h["first"], h["last"]) for k, h in horizons.items() if k != "week"}
     for key, label in (("next5", "sos_next5"), ("ros", "sos_ros"), ("playoffs", "sos_playoffs")):
         w = win.get(key)
         if not w:
@@ -1042,9 +1048,34 @@ def _strength(gap: float) -> str:
     return "clear" if gap >= CLEAR_GAP else "edge" if gap >= EVEN_GAP else "even"
 
 
+def _played_verdict(arena: Arena, a: Player, b: Player) -> dict | None:
+    """This week once either man's game has kicked off (W-023, `engine/gameday.py`).
+
+    Both final: the result, actual against actual, and no probability -- it happened.
+    One or both still going: what each has so far plus the projection he has not scored
+    yet, labelled `live`. None while neither has kicked off: the projection's verdict.
+    """
+    sa, sb = gameday.player_state(a, arena.week), gameday.player_state(b, arena.week)
+    if sa not in (gameday.IN, gameday.FINAL) and sb not in (gameday.IN, gameday.FINAL):
+        return None
+    va, vb = gameday.live_value(a), gameday.live_value(b)
+    done = sa in (gameday.FINAL, None) and sb in (gameday.FINAL, None)
+    winner = "a" if va > vb else "b" if vb > va else None
+    return {"key": "week", "first": arena.week, "last": arena.week, "a": round(va, 1), "b": round(vb, 1),
+            "a_games": None, "b_games": None, "winner": winner, "strength": "final" if done else "live",
+            "p": None, "tipped": False, "held": False, "factors": [], "tilt": 0,
+            "state": "final" if done else "live", "a_state": sa, "b_state": sb,
+            "a_points": a.points if sa in (gameday.IN, gameday.FINAL) else None,
+            "b_points": b.points if sb in (gameday.IN, gameday.FINAL) else None}
+
+
 def week_verdict(arena: Arena, a: Player, b: Player, a_is_mine: bool) -> dict:
     """This week, the lineup engine's way: the calibrated chance first, two net reads to tip
-    a coin flip, and the man in the spot keeps it when nothing does."""
+    a coin flip, and the man in the spot keeps it when nothing does. Once either man has
+    kicked off, the result as it stands instead (`_played_verdict`)."""
+    played = _played_verdict(arena, a, b)
+    if played is not None:
+        return played
     ea, eb = effective(a), effective(b)
     p = calibration.p_beats(ea, eb)
     lead = "a" if p >= 0.5 else "b"
@@ -1066,7 +1097,9 @@ def week_verdict(arena: Arena, a: Player, b: Player, a_is_mine: bool) -> dict:
             winner, held = "a", True
     return {"key": "week", "first": arena.week, "last": arena.week, "a": round(ea, 1), "b": round(eb, 1),
             "a_games": None, "b_games": None, "winner": winner, "strength": tag, "p": round(pl, 3),
-            "tipped": tipped, "held": held, "factors": reads["factors"], "tilt": tilt}
+            "tipped": tipped, "held": held, "factors": reads["factors"], "tilt": tilt,
+            "state": "pre", "a_state": gameday.player_state(a, arena.week),
+            "b_state": gameday.player_state(b, arena.week), "a_points": None, "b_points": None}
 
 
 def window_verdict(arena: Arena, key: str, a: Player, b: Player, first: int, last: int,
@@ -1095,7 +1128,9 @@ def window_verdict(arena: Arena, key: str, a: Player, b: Player, first: int, las
 
 def verdicts(arena: Arena, a: Player, b: Player, a_is_mine: bool) -> dict[str, dict]:
     out = {"week": week_verdict(arena, a, b, a_is_mine)}
-    win = windows(arena.league)
+    # Both men's games this week are in: the forward windows start next week (W-023).
+    first = arena.week + 1 if out["week"].get("state") == "final" else arena.week
+    win = windows(arena.league, first)
     po = playoff_window(arena.league)
     for key in ("next5", "ros", "playoffs"):
         w = win.get(key)

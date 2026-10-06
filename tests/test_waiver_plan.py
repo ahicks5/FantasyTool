@@ -190,3 +190,42 @@ def test_hold_wording_matches_the_league_waiver_type(league, ros, byes):
     league.waiver_type, league.faab_budget = saved_type, saved_budget
     assert "FAAB" in faab_hold and "priority" not in faab_hold
     assert "priority" in prio_hold and "FAAB" not in prio_hold
+
+
+# ------------------------------------------------- the target week (W-027)
+
+def _team_with_a_starter_claim(lg, ros, byes):
+    """A copy of the league where one free agent plainly starts for team 0: the session
+    fixture is shared, so the test makes its own pickup rather than hope for one."""
+    star = next(p for p in lg.free_agents if p.position == "RB" and not p.is_out)
+    star.projected = 40.0
+    ros[star.id] = max(ros.get(star.id, 0.0), 200.0)
+    return lg.teams[0]
+
+
+def test_a_free_agent_who_has_played_has_no_weekly_value_and_says_so(league, ros, byes):
+    import copy
+    lg, ros = copy.deepcopy(league), dict(ros)
+    t = _team_with_a_starter_claim(lg, ros, byes)
+    for fa in lg.free_agents:
+        fa.game_status, fa.points = "final", 17.8
+    plan = _plan(lg, t, ros, byes)
+    for c in plan.claims:
+        assert c.played and c.weekly_gain == 0.0, "his game is over: this week is gone"
+        assert c.reason.startswith("Already played this week"), c.reason
+        assert "Starts for you this week" not in c.reason
+        assert c.to_dict()["played"] is True
+
+
+def test_a_rolled_league_says_which_week_the_claim_starts_in(league, ros, byes):
+    import copy
+    lg, ros = copy.deepcopy(league), dict(ros)
+    lg.rolled_from = lg.week - 1
+    t = _team_with_a_starter_claim(lg, ros, byes)
+    plan = _plan(lg, t, ros, byes)
+    d = plan.to_dict()
+    assert d["rolled_from"] == lg.week - 1 and d["week"] == lg.week
+    starts = [c.reason for c in plan.claims if c.weekly_gain >= waiver_plan.MEANINGFUL_WEEK_GAIN]
+    assert starts and all(f"Starts for you in week {lg.week}" in r for r in starts)
+    for t2 in lg.teams:
+        assert _plan(lg, t2, ros, byes).to_dict()["rolled_from"] == lg.week - 1, "a hold says it too"

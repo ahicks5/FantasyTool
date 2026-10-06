@@ -145,6 +145,8 @@ def build(team, feed: dict, entitlements: set[str], charts: dict | None = None,
         "news": news,
         "standing": standing(league, team, ros or {}, rows) if league is not None else None,
         "matchup": matchup_card(feed.get("matchup"), rows),
+        # Where the week stands (`engine/gameday.week_clock`): the clock beside the score.
+        "clock": getattr(league, "clock", None) if league is not None else None,
         "sheet": {"summary": feed.get("summary"), "moves": len(moves), "all_clear": feed.get("all_clear", False)},
         "binders": binders(feed, entitlements),
         "film": film(feed.get("last_week"), film_cover, league.season if league is not None else None),

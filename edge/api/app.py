@@ -368,6 +368,40 @@ def _refresh_live(b: service.Bundle) -> None:
     b._live_at = time.time()  # noqa: SLF001
 
 
+def _matchup_decided(b: service.Bundle, team_id: str) -> bool:
+    """Every starter on both sides of this team's matchup has played (`engine/gameday.py`)."""
+    from edge.engine import gameday
+    lg = b.league
+    me = lg.team(team_id)
+    mine = next((m for m in b.matchups if str(m.get("roster_id")) == team_id), None)
+    opp = next((m for m in b.matchups if mine and m.get("matchup_id") == mine.get("matchup_id")
+                and str(m.get("roster_id")) != team_id), None) if mine else None
+    them = lg.team(str(opp["roster_id"])) if opp else None
+    men = [t.player(pid) for t in (me, them) if t for pid in t.starters]
+    return gameday.matchup_decided(men)
+
+
+def _target(b: service.Bundle, team_id: str | None = None, lineup: bool = False) -> service.Bundle:
+    """The bundle for the week a move made now lands in (`gameday.target_week`).
+
+    Scouting and Trade Lab roll to next week once this week is final, or once the reader's
+    own matchup is. The lineup rolls only at Tuesday noon ET (`lineup=True`): until then it
+    shows the week's recap. Without a clock (the scoreboard unread, every test bundle) or a
+    provider answer, it is this week's bundle, unchanged.
+    """
+    from edge.engine import gameday
+    clock = b.league.clock
+    if not clock:
+        return b
+    if lineup:
+        week = clock["week"] + 1 if clock.get("phase") == gameday.NEXT else clock["week"]
+    else:
+        week = gameday.target_week(clock, bool(team_id) and _matchup_decided(b, team_id), b.league.week)
+    if not week or week <= b.league.week or not gameday.can_roll(b.league):
+        return b
+    return service.rolled(b, week) or b
+
+
 def _team(b: service.Bundle, team_id: str):
     t = b.league.team(team_id)
     if not t:
@@ -1407,9 +1441,14 @@ def roster(platform: str, league_id: str, team_id: str, auth=Depends(espn_auth))
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/lineup")
 def lineup(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
-    b = _bundle(platform, league_id, auth)
+    live_b = _bundle(platform, league_id, auth)
+    # From Tuesday noon ET the depth chart is next week's (W-021); until then this week's,
+    # with the recap once the last game is over.
+    b = _target(live_b, lineup=True)
     team = _team(b, team_id)
     out = report.lineup_dict(lineup_mod.advise(b.league, team, _decision_context(b, team)))
+    out["clock"] = live_b.league.clock
+    out["rolled_from"] = b.league.rolled_from
     # The scorecard rides along with the depth chart rather than getting its own endpoint:
     # the page that shows it already fetches this, and grading needs the same league bundle.
     out["grades"] = grades.grade_team(b.league, team, b.ros).to_dict()
@@ -1513,7 +1552,9 @@ def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
     """
     if owner:
         validate_id(owner, "team id")
-    b = _bundle(platform, league_id, auth)
+    # The board's "projected" is the target week's: next week's once this one is decided
+    # (W-027), and its `week` says which.
+    b = _target(_bundle(platform, league_id, auth), team_id)
     ctx = lenses_mod.load_context(b) if lens in lenses_mod.LENSES else None
     # The season so far (points and position rank) is one cached fetch, made only when the
     # reader's view asks for it; a feed that fails leaves those two columns as dashes.
@@ -1548,7 +1589,7 @@ def player_lenses(platform: str, league_id: str, team_id: str | None = None, aut
     count -- description -- and none of them prices a claim. Same `team_id` rule as the
     board: without it there are no handcuffs and no byes to cover, because nobody is "me".
     """
-    b = _bundle(platform, league_id, auth)
+    b = _target(_bundle(platform, league_id, auth), team_id)
     ctx = lenses_mod.load_context(b)
     rows = directory_mod.universe(b, team_id)
     return {"week": b.league.week, "counts": lenses_mod.counts(rows, b, ctx, team_id)}
@@ -1598,8 +1639,13 @@ def waiver_picks(platform: str, league_id: str, team_id: str, email: str | None 
     t = _team(b, team_id)
     if not products.can(_skus(email), "waivers"):
         _require(email, "waivers", teaser=_teaser(b, t, "waivers"))
-    picks = waivers.rank(b.league, t, b.ros, b.byes, bid_stats=b.bid_stats, trending=b.trending)
-    return report.waivers_dict(b.league, t, picks)
+    # The claims land next week once this week is decided (W-027): rank them for that week.
+    tb = _target(b, team_id)
+    t = _team(tb, team_id)
+    picks = waivers.rank(tb.league, t, tb.ros, tb.byes, bid_stats=tb.bid_stats, trending=tb.trending)
+    out = report.waivers_dict(tb.league, t, picks)
+    out["clock"] = b.league.clock
+    return out
 
 
 class TradeIn(BaseModel):
@@ -1615,13 +1661,19 @@ def trade_lab(platform: str, league_id: str, body: TradeIn, email: str | None = 
     me_t, them_t = _team(b, body.my_team_id), _team(b, body.their_team_id)
     if not products.can(_skus(email), "trade_lab"):
         _require(email, "trade_lab", teaser=_teaser(b, me_t, "trade_lab"))
+    # "This week" is the week the trade would land in (W-034): next week once this one is
+    # decided. The rest-of-season numbers do not move.
+    tb = _target(b, body.my_team_id)
+    me_t, them_t = _team(tb, body.my_team_id), _team(tb, body.their_team_id)
     try:
-        v = trade.evaluate(b.league, me_t, them_t, body.give, body.get, b.ros,
-                           their_profile=b.profiles.get(them_t.id), hoarded=b.hoarded(them_t.id))
+        v = trade.evaluate(tb.league, me_t, them_t, body.give, body.get, tb.ros,
+                           their_profile=tb.profiles.get(them_t.id), hoarded=tb.hoarded(them_t.id))
     except ValueError as e:
         raise HTTPException(400, str(e))
     text, source = explain(v)
     return {
+        # The week `lineup_delta_week` is for: next week once this one is decided (W-034).
+        "week": tb.league.week,
         "verdict": v.verdict, "me": v.me.to_dict(), "them": v.them.to_dict(), "fairness": v.fairness,
         "their_tendencies": v.their_tendencies, "counter": v.counter, "notes": v.notes,
         "explanation": text, "explanation_source": source,
@@ -1707,8 +1759,12 @@ def waiver_plan_endpoint(platform: str, league_id: str, team_id: str, email: str
     t = _team(b, team_id)
     if not products.can(_skus(email), "waivers"):
         _require(email, "waivers", teaser=_teaser(b, t, "waivers"))
-    plan = waiver_plan.build(b.league, t, b.ros, b.byes, bid_stats=b.bid_stats, trending=b.trending)
+    tb = _target(b, team_id)
+    t = _team(tb, team_id)
+    plan = waiver_plan.build(tb.league, t, tb.ros, tb.byes, bid_stats=tb.bid_stats, trending=tb.trending)
     out = plan.to_dict()
+    out["clock"] = b.league.clock
+    out["rolled_from"] = tb.league.rolled_from
     store.log_run(email, platform, league_id, team_id, b.league.week, "waiver_plan", plan.algo_version, out)
     return out
 

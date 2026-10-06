@@ -303,3 +303,51 @@ def test_standing_and_position_ranks_are_league_wide():
     ranks = lineup.position_ranks(league)
     assert ranks["2"] == (1, 3) and ranks["8"] == (2, 3)
     assert ranks["7"] == (3, 3), "a man who will not play ranks with the zeros, whatever his projection"
+
+
+# ------------------------------------------------- the week as it stands (W-021)
+
+def _lg(players, starters, slots=("QB", "RB", "FLEX"), clock=None):
+    team = T(players, starters)
+    return League(id="L", platform="sleeper", name="L", season=2026, week=4,
+                  roster_positions=list(slots) + ["BN", "BN"], scoring={}, teams=[team], clock=clock)
+
+
+def _played(p, pts):
+    p.game_status, p.points = "final", pts
+    return p
+
+
+def test_a_role_the_projection_swapped_in_without_reads_still_says_why():
+    """A swap made on the projection alone (HOLD_P and up) used to read an empty reason
+    when the role page quoted it as `tipped` with no reads (the API test caught it)."""
+    lg =_lg([P(1, "QB", 20), P(2, "RB", 10.6), P(3, "RB", 14.0), P(4, "RB", 9.0)], ["1", "2", "4"])
+    adv = advise(lg, lg.teams[0])
+    assert all(r.reason for r in adv.roles), [r.reason for r in adv.roles]
+
+
+def test_locked_slots_leave_nothing_pending_and_drop_out_of_both_piles():
+    qb, rb, flex, bench = P(1, "QB", 20), P(2, "RB", 6), P(3, "WR", 8), P(4, "RB", 18)
+    lg = _lg([qb, rb, flex, bench], ["1", "2", "3"])
+    assert advise(lg, lg.teams[0]).pending == 3
+    for p, pts in ((qb, 13.1), (rb, 4.0), (flex, 9.0), (bench, 23.1)):
+        _played(p, pts)
+    adv = advise(lg, lg.teams[0])
+    assert adv.pending == 0
+    assert adv.required == [] and adv.holes == [] and not any(r.decision for r in adv.roles)
+
+
+def test_the_recap_shows_from_the_last_game_until_tuesday_noon_only():
+    qb, rb, flex, bench = P(1, "QB", 20), P(2, "RB", 6), P(3, "WR", 8), P(4, "RB", 18)
+    for p, pts in ((qb, 13.1), (rb, 4.0), (flex, 9.0), (bench, 23.1)):
+        _played(p, pts)
+    lg = _lg([qb, rb, flex, bench], ["1", "2", "3"], clock={"week": 4, "phase": "live"})
+    assert advise(lg, lg.teams[0]).recap is None, "games still on somewhere: no recap yet"
+    lg.clock = {"week": 4, "phase": "final"}
+    rec = advise(lg, lg.teams[0]).recap
+    assert rec["total"] == 26.1 and rec["best"] == 45.2 and rec["left"] == 19.1
+    assert [(b["player"].id, b["points"]) for b in rec["bench"]] == [("4", 23.1)], "he scored 23.1 on your bench"
+    lg.clock = {"week": 4, "phase": "next"}
+    assert advise(lg, lg.teams[0]).recap is None, "from Tuesday noon the page is next week's"
+    lg.clock = {"week": 3, "phase": "final"}
+    assert advise(lg, lg.teams[0]).recap is None, "a final for another week is not this week's recap"

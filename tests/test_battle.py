@@ -341,3 +341,38 @@ def test_the_battle_card_renders_both_faces_and_the_verdict():
     out = graphics.card_html(snap)
     assert "Ann Alpha" in out and "Bob Beta" in out and "Beta sweeps" in out and "WR2" in out
     assert graphics.card_shape(snap, "story") == "square"
+
+
+# ------------------------------------------------- a played week (W-023)
+
+def _arena_for(a, b, week=4):
+    lg = _lg(week=week, playoff=15, players=[a, b])
+    games = {str(w): [{"home": "AAA", "away": "BBB", "kickoff": "2026-10-04T17:00Z"}] for w in range(1, 19)}
+    return B.Arena(league=lg, team=lg.teams[0], ros={a.id: 140.0, b.id: 150.0}, byes={}, games=games)
+
+
+def test_a_week_both_men_have_played_is_a_result_not_a_probability():
+    a, b = P(1, "WR", 16.5), P(2, "WR", 18.6, team="BBB")
+    a.game_status, a.points, b.game_status, b.points = "final", 26.7, "final", 30.8
+    h = B.verdicts(_arena_for(a, b), a, b, a_is_mine=True)
+    wk = h["week"]
+    assert wk["state"] == "final" and wk["p"] is None and wk["strength"] == "final"
+    assert (wk["a"], wk["b"], wk["winner"]) == (26.7, 30.8, "b"), "Collins 30.8 - Higgins 26.7, final"
+    assert not wk["held"], "a result is not held for the man in the spot"
+    assert h["next5"]["first"] == 5 and h["ros"]["first"] == 5, "the forward horizons start next week"
+
+
+def test_one_man_played_reads_actual_against_still_to_play():
+    a, b = P(1, "WR", 16.5), P(2, "WR", 18.6, team="BBB")
+    a.game_status, a.points = "final", 26.7
+    h = B.verdicts(_arena_for(a, b), a, b, a_is_mine=True)
+    wk = h["week"]
+    assert wk["state"] == "live" and wk["a_state"] == "final" and wk["b_state"] == "pre"
+    assert (wk["a"], wk["b"], wk["a_points"], wk["b_points"]) == (26.7, 18.6, 26.7, None)
+    assert h["next5"]["first"] == 4, "his game is not in yet: the windows still start this week"
+
+
+def test_neither_played_is_todays_projection():
+    a, b = P(1, "WR", 16.5), P(2, "WR", 18.6, team="BBB")
+    wk = B.verdicts(_arena_for(a, b), a, b, a_is_mine=True)["week"]
+    assert wk["state"] == "pre" and wk["p"] is not None and (wk["a"], wk["b"]) == (16.5, 18.6)

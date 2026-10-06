@@ -99,6 +99,10 @@ class Player:
     # whose game is "in" or "final" is locked: no swap moves him, in or out.
     game_status: str | None = None
     points: float | None = None
+    # His game's kickoff this week, ESPN's UTC ISO string ("2026-09-22T00:15Z"), stamped by
+    # `engine/live.py` from the scoreboard. None for a man with no game, or before the
+    # scoreboard has been read. Display only: the page prints "MON 8:15" beside "PROJ".
+    kickoff: str | None = None
 
     @property
     def locked(self) -> bool:
@@ -189,6 +193,13 @@ class League:
     playoff_teams: int | None = None
     playoff_week_start: int | None = None
     free_agents: list[Player] = field(default_factory=list)
+    # Where the week stands (`engine/gameday.week_clock`), stamped by `engine/live.refresh`:
+    # its phase (before / live / final / next) and the instants the page ticks on. None
+    # until the scoreboard has been read, which every room reads as "before kickoff".
+    clock: dict | None = None
+    # Set on the copy `engine/gameday.roll` makes for next week: the week it was rolled
+    # from. None on a league as the platform sent it.
+    rolled_from: int | None = None
 
     def __post_init__(self) -> None:
         self.name = clean_name(self.name) or self.name

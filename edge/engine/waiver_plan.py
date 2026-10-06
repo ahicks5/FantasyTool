@@ -48,6 +48,8 @@ class Claim:
     reason: str
     reason_codes: list[str] = field(default_factory=list)
     trending_adds: int = 0
+    # His game this week has kicked off: no weekly gain, judged on what comes next (W-027).
+    played: bool = False
 
     def to_dict(self) -> dict:
         from edge.engine.report import player_dict
@@ -56,6 +58,7 @@ class Claim:
             "net": self.net, "weekly_gain": self.weekly_gain, "ros_gain": self.ros_gain,
             "drop_cost": self.drop_cost, "bid": self.bid, "reason": self.reason,
             "reason_codes": self.reason_codes, "trending_adds": self.trending_adds,
+            "played": self.played,
         }
 
 
@@ -68,6 +71,8 @@ class WaiverPlan:
     fallbacks: list[Claim]
     hold_reason: str | None
     algo_version: str = ALGO_VERSION
+    # Set when `week` is next week because this one is decided (`engine/gameday.py`).
+    rolled_from: int | None = None
 
     @property
     def claims(self) -> list[Claim]:
@@ -76,6 +81,7 @@ class WaiverPlan:
     def to_dict(self) -> dict:
         return {
             "week": self.week, "faab_remaining": self.faab_remaining, "waiver_type": self.waiver_type,
+            "rolled_from": self.rolled_from,
             "primary": self.primary.to_dict() if self.primary else None,
             "fallbacks": [c.to_dict() for c in self.fallbacks],
             "hold_reason": self.hold_reason,
@@ -255,12 +261,14 @@ def _drop_candidates(team: Team, slots: list[str], ros: dict[str, float], n: int
 
 
 def _reason(add: Player, drop: Player | None, weekly: float, ros_gain: float, codes: list[str],
-            notes: list[str]) -> str:
+            notes: list[str], when: str = "this week", played: bool = False) -> str:
     bits = []
-    if weekly >= MEANINGFUL_WEEK_GAIN:
-        bits.append(f"Starts for you this week (+{weekly:.1f}).")
+    if played:
+        bits.append("Already played this week: a claim for what comes next.")
+    elif weekly >= MEANINGFUL_WEEK_GAIN:
+        bits.append(f"Starts for you {when} (+{weekly:.1f}).")
     elif ros_gain > 0:
-        bits.append("Not a starter this week, but he gets there.")
+        bits.append(f"Not a starter {when}, but he gets there.")
     else:
         bits.append("Depth and insurance, not a starter.")
     if ros_gain >= 1:
@@ -287,7 +295,9 @@ def evaluate_pair(league: League, team: Team, add: Player, drop: Player | None,
     weeks_left = max(1, FANTASY_LAST_WEEK - league.week + 1)
     roster_after = [p for p in team.players if not (drop and p.id == drop.id)] + [add]
 
-    weekly_gain = round(lineup_total(roster_after, slots) - base["week"], 2)
+    # A man whose game this week has kicked off cannot help this week (W-027).
+    played = add.locked
+    weekly_gain = 0.0 if played else round(lineup_total(roster_after, slots) - base["week"], 2)
     ros_total = lineup_total(roster_after, slots, ros)
     ros_gain = round(ros_total - base["ros"], 1)
     next3_gain = round(lineup_total(roster_after, slots, next3) - base["next3"], 2)
@@ -332,7 +342,10 @@ def evaluate_pair(league: League, team: Team, add: Player, drop: Player | None,
             notes.append(f"Dropping {drop.name} costs about {drop_cost:.1f} points a week")
     return Claim(
         add=add, drop=drop, net=net, weekly_gain=weekly_gain, ros_gain=ros_gain, drop_cost=drop_cost,
-        bid={}, reason=_reason(add, drop, weekly_gain, ros_gain, codes, notes), reason_codes=codes,
+        bid={}, reason=_reason(add, drop, weekly_gain, ros_gain, codes, notes,
+                               when=f"in week {league.week}" if league.rolled_from is not None else "this week",
+                               played=played),
+        reason_codes=codes, played=played,
     )
 
 
@@ -355,7 +368,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
     if not pool:
         return WaiverPlan(league.week, team.faab_remaining, league.waiver_type, None, [],
                           "No free agent on the wire can start or back up anyone on your roster. "
-                          + _keep_clause(league))
+                          + _keep_clause(league), rolled_from=league.rolled_from)
 
     # Cheap first pass on the add alone, then pair only the best adds with real drop candidates.
     shortlist = sorted(
@@ -389,7 +402,7 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
         else:
             why = "No free agent on the wire can start or back up anyone on your roster."
         return WaiverPlan(league.week, team.faab_remaining, league.waiver_type, None, [],
-                          why + " " + _keep_clause(league))
+                          why + " " + _keep_clause(league), rolled_from=league.rolled_from)
 
     # Budget across the sequence: the primary gets the real bid, fallbacks are cheaper.
     plan_claims: list[Claim] = []
@@ -405,4 +418,5 @@ def build(league: League, team: Team, ros: dict[str, float], byes: dict[str, int
         plan_claims.append(claim)
 
     primary, rest = plan_claims[0], plan_claims[1:]
-    return WaiverPlan(league.week, team.faab_remaining, league.waiver_type, primary, rest, None)
+    return WaiverPlan(league.week, team.faab_remaining, league.waiver_type, primary, rest, None,
+                      rolled_from=league.rolled_from)

@@ -153,6 +153,9 @@ def evaluate(league: League, my_team: Team, their_team: Team, give_ids: list[str
         notes.append("Both lineups get worse this season. This is a depth-for-depth shuffle.")
 
     tend = their_profile.to_dict(league.faab_budget) if their_profile else {}
+    if tend and (league.waiver_type != "faab" or not league.faab_budget):
+        # No FAAB in this league: "avg bid $0" is not a read on anyone (W-034).
+        tend["avg_bid"] = tend["max_bid"] = None
     hoarded = hoarded or []
     if hoarded:
         tend["hoards"] = hoarded
