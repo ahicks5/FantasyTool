@@ -60,7 +60,9 @@ export function Frame({
 
 /**
  * One screen: an eyebrow, the question, one line under it, the field, and the button
- * pinned to the bottom with the quiet way out under it. `dir` picks the side it slides
+ * pinned to the bottom with the quiet way out under it. Pinned on a phone only, where the
+ * thumb is; from 768px up the button follows the content instead of sitting a window's
+ * height below it (walkthrough W-005). `dir` picks the side it slides
  * in from; the parent keys it by step so each screen animates once.
  */
 export function Screen({
@@ -82,14 +84,14 @@ export function Screen({
 }) {
   return (
     <section className={`flex flex-1 flex-col ${dir === "back" ? "walk-back" : "walk-fwd"}`} data-testid={`walk-${testId}`}>
-      <div className="flex-1 pt-8">
+      <div className="flex-1 pt-8 min-[768px]:flex-none">
         <Eyebrow>{eyebrow}</Eyebrow>
         <h1 className="display mt-2 text-[32px] leading-[1.05]">{title}</h1>
         {line ? <p className="mt-2 max-w-[24rem] text-[15px] leading-relaxed text-muted">{line}</p> : null}
         {children ? <div className="mt-6">{children}</div> : null}
       </div>
       {footer ? (
-        <div className="sticky bottom-0 -mx-4 mt-6 bg-[color-mix(in_srgb,var(--color-plane)_94%,transparent)] px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3 backdrop-blur-md">
+        <div className="sticky bottom-0 -mx-4 mt-6 bg-[color-mix(in_srgb,var(--color-plane)_94%,transparent)] px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3 backdrop-blur-md min-[768px]:static min-[768px]:mt-8 min-[768px]:bg-transparent min-[768px]:backdrop-blur-none">
           {footer}
         </div>
       ) : null}
