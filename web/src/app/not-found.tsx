@@ -1,5 +1,4 @@
 /** The 404 page, deliberately not indexed. */
-import Link from "next/link";
 import { LinkButton, Wordmark } from "@/components/ui";
 
 export const metadata = { title: "Not found · Owner's Suite", robots: { index: false } };
@@ -9,9 +8,7 @@ export default function NotFound() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-4">
       <header className="flex h-16 items-center">
-        <Link href="/" aria-label="Owner's Suite home">
-          <Wordmark className="text-[22px]" />
-        </Link>
+        <Wordmark className="text-[22px]" />
       </header>
       <main className="flex flex-1 flex-col justify-center pb-24">
         <div className="hero p-7 text-center">

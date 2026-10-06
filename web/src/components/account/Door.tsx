@@ -23,9 +23,7 @@ export function DoorFrame({ children }: { children: React.ReactNode }) {
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href={inside ? "/home" : "/"} aria-label="Owner's Suite home" className="flex min-h-11 items-center">
-          <Wordmark className="text-[26px]" short={inside} />
-        </Link>
+        <Wordmark className="text-[26px]" />
         {inside && (
           <Link
             href="/home"

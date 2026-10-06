@@ -144,7 +144,7 @@ export default function Landing() {
       <header className="flex h-16 items-center justify-between gap-2">
         {/* 20px below 480: at 24px "OWNER'S SUITE" wrapped to two lines beside the log-in
             pill on a 375px phone, which doubled the header and pushed the door down. */}
-        <Wordmark className="whitespace-nowrap text-[20px] min-[480px]:text-[24px]" />
+        <Wordmark className="whitespace-nowrap text-[20px] min-[480px]:text-[24px]" full />
         <nav className="flex shrink-0 items-center gap-2" aria-label="Account">
           <Link
             href={LOGIN}
@@ -525,7 +525,7 @@ export default function Landing() {
           string; if the projection vendor ever changes, change it there and here together. */}
       <footer className="mt-16 border-t border-line pt-5">
         <div className="flex items-center gap-2.5">
-          <Wordmark className="text-[16px]" lamp={false} />
+          <Wordmark className="text-[16px]" lamp={false} full link={false} />
           <span className="text-[12px] font-bold text-muted">{LINES.tagline}</span>
         </div>
         <p className="mt-3 text-[12px] leading-relaxed text-muted">

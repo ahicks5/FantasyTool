@@ -40,9 +40,7 @@ export function TopBar({ session, wide = false }: { session: Session; wide?: boo
     // the ticker would hold a quarter of the view; there it scrolls away with the page.
     <header className="sticky top-0 z-20 [@media(max-height:500px)]:static border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
       <div className={`mx-auto flex h-14 max-w-lg items-center gap-3 px-4 tablet:max-w-3xl tablet:px-6 ${wide ? "lg:max-w-6xl" : ""}`}>
-        <Link href={account ? "/home" : "/"} aria-label="Owner's Suite home" className="min-w-0 flex-1 tablet:flex-none">
-          <Wordmark className="text-[20px]" short={!!account} />
-        </Link>
+        <Wordmark className="text-[20px]" linkClassName="min-w-0 flex-1 tablet:flex-none" />
         <TopTabs />
         {/* The account: an initial once signed in (ringed in the start colour on a premium
             account, so the flag is visible from every room), else the two words. */}

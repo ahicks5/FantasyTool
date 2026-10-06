@@ -1,6 +1,5 @@
 /** The public share snapshot: opens with no account, unfurls with a rendered card. */
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IconArrowUp, IconCheck } from "@/components/icons";
 import { ConfidencePill, Eyebrow, LinkButton, OnAir, Stamp, Stat, StatusMeter, Wordmark } from "@/components/ui";
@@ -421,9 +420,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href="/" aria-label="Owner's Suite home" className="flex min-h-11 items-center">
-          <Wordmark className="text-[26px]" />
-        </Link>
+        <Wordmark className="text-[26px]" />
         <span className="min-w-0 truncate text-right text-[12px] font-bold text-muted">
           {v.league_name}
           {v.week ? (

@@ -349,9 +349,7 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
     <div className={walk ? "" : "mx-auto w-full max-w-lg px-4 pb-16"}>
       {!walk && (
       <header className="flex h-16 items-center justify-between gap-3">
-        <Link href={session.signedIn ? "/home" : "/"} aria-label="Owner's Suite home" className="flex min-h-11 items-center">
-          <Wordmark className="text-[26px]" short={session.signedIn} />
-        </Link>
+        <Wordmark className="text-[26px]" />
         {/* The way back out, for an owner who came here from their account (Andrew, 2026-09-28). */}
         {session.signedIn && (
           <Link
