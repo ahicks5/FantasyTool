@@ -10,6 +10,8 @@ import { newsHeadline } from "@/lib/ticker.ts";
 import { notebookLine } from "@/lib/film";
 import type { Binder, Desk, DeskStanding, Film, Matchup, NewsItem, NewsSeverity, Player } from "@/lib/types";
 import { DESK, SECTIONS } from "@/lib/vocab";
+import { WEEK } from "@/lib/vocab";
+import { matchupRead } from "@/lib/matchup";
 
 /* ---------------------------------------------------------------- the desk ---
    The elevator's last frame, as a page: the desk top seen from the owner's chair, the
@@ -215,29 +217,30 @@ function MatchupPaper({ m, week, standing, animate }: { m: Matchup | null | unde
       </article>
     );
   }
-  // The games are on: the platform's points lead and the projection sits under them.
-  const live = !!m.live && m.my_points != null && m.their_points != null;
-  const myBig = live ? m.my_points! : m.my_proj;
-  const theirBig = live ? m.their_points! : m.their_proj;
+  // Pre-game, live or final (W-013, W-017): the same read as the full matchup page.
+  const read = matchupRead(m);
+  const live = read.state !== "pre";
+  const { myBig, theirBig } = read;
   const ahead = myBig >= theirBig;
+  const state = read.state === "final" ? WEEK.score.final : live ? DESK.matchup.live : DESK.matchup.eyebrow;
   const theirs =
     m.opponent_record && m.opponent_rank && m.teams ? DESK.matchup.standing(m.opponent_record, m.opponent_rank, m.teams) : null;
   // Your own record and place again, under your score: the same two numbers the
   // nameplate carries, so the two sides of the paper read alike.
   const mine = standing ? DESK.matchup.standing(standing.record, standing.rank, standing.teams) : null;
-  const odds = m.win_prob !== null ? DESK.matchup.odds(m.win_prob) : null;
+  const odds = read.odds;
   return (
     <Link
       href={SECTIONS.matchup.href}
       className={cls}
-      aria-label={`${live ? DESK.matchup.live : DESK.matchup.eyebrow}, ${DESK.week(week)}: ${DESK.matchup.vs} ${m.opponent}${theirs ? `, ${theirs}` : ""}. ${DESK.matchup.you} ${myBig.toFixed(1)}, ${DESK.matchup.them} ${theirBig.toFixed(1)}${odds ? `. ${odds}` : ""}. ${DESK.matchup.go}.`}
+      aria-label={`${state}, ${DESK.week(week)}: ${DESK.matchup.vs} ${m.opponent}${theirs ? `, ${theirs}` : ""}. ${DESK.matchup.you} ${myBig.toFixed(1)}, ${DESK.matchup.them} ${theirBig.toFixed(1)}. ${odds ?? read.line}. ${DESK.matchup.go}.`}
       data-live={live || undefined}
     >
       <Letterhead />
       {/* Who, when, and whose read it is, on one line at the top (Andrew). */}
       <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 pr-8">
         <span className="eyebrow shrink-0">
-          {live ? DESK.matchup.live : DESK.matchup.eyebrow} <span aria-hidden>·</span> {DESK.week(week)}
+          {state} <span aria-hidden>·</span> {DESK.week(week)}
         </span>
         <span className="desk-from !mt-0 min-w-0 truncate">{DESK.matchup.from}</span>
       </span>
@@ -245,7 +248,7 @@ function MatchupPaper({ m, week, standing, animate }: { m: Matchup | null | unde
         <span className="min-w-0 flex-1">
           <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-muted">{DESK.matchup.you}</span>
           <span className={`display tnum block text-[26px] leading-none ${ahead ? "text-ink" : "text-ink-2"}`}>{myBig.toFixed(1)}</span>
-          {live && <span className="tnum mt-1 block text-[10.5px] font-bold text-muted">{DESK.matchup.proj(m.my_proj.toFixed(1))}</span>}
+          {read.mySub != null && <span className="tnum mt-1 block text-[10.5px] font-bold text-muted">{WEEK.projects(read.mySub.toFixed(1))}</span>}
           {mine && <span className="tnum mt-1 block text-[10.5px] font-bold text-muted">{mine}</span>}
         </span>
         <span className="display pb-1 text-[12px] text-muted" aria-hidden>
@@ -254,17 +257,24 @@ function MatchupPaper({ m, week, standing, animate }: { m: Matchup | null | unde
         <span className="min-w-0 flex-1 text-right">
           <span className="block truncate text-[10px] font-black uppercase tracking-[0.12em] text-muted">{m.opponent}</span>
           <span className={`display tnum block text-[26px] leading-none ${ahead ? "text-ink-2" : "text-ink"}`}>{theirBig.toFixed(1)}</span>
-          {live && <span className="tnum mt-1 block text-[10.5px] font-bold text-muted">{DESK.matchup.proj(m.their_proj.toFixed(1))}</span>}
+          {read.theirSub != null && <span className="tnum mt-1 block text-[10.5px] font-bold text-muted">{WEEK.projects(read.theirSub.toFixed(1))}</span>}
           {theirs && <span className="tnum mt-1 block text-[10.5px] font-bold text-muted">{theirs}</span>}
         </span>
       </span>
-      {m.win_prob !== null && (
+      {odds ? (
         <span className="desk-odds" aria-hidden>
           <span className="desk-odds-bar">
-            <i style={{ width: `${Math.round(m.win_prob * 100)}%` }} />
+            <i style={{ width: `${Math.round(read.share * 100)}%` }} />
           </span>
           <span className="tnum desk-odds-word">{odds}</span>
         </span>
+      ) : (
+        read.state === "final" && (
+          // Every starter has played: the result in place of the odds (W-017).
+          <span className="mt-2 block text-[12.5px] font-bold leading-snug text-ink-2" data-testid="desk-final">
+            {read.line}
+          </span>
+        )
       )}
       <span className="mt-2 flex items-center justify-end gap-2">
         <span className="desk-go">

@@ -701,6 +701,63 @@ floor.
 The matchup (`/actions`, `/desk`) carries the platform's own points once either side has any:
 `{"my_points":98.4,"their_points":101.2,"live":true}`, null and false before kickoff.
 
+### Where the week stands (2026-10-06, `edge/engine/gameday.py`)
+
+One helper every room reads, so they roll over together (walkthrough W-013 to W-034).
+
+**The clock.** `/lineup`, `/waivers`, `/waivers/plan`, `/desk` (top level and inside
+`matchup`) and `/actions` (inside `matchup`) carry `clock`, null until the scoreboard has
+been read:
+
+```json
+"clock": {"week": 4, "phase": "final", "first_kickoff": "2026-10-02T00:15Z",
+          "last_kickoff": "2026-10-06T00:15Z", "final_until": "2026-10-06T16:00Z",
+          "next_kickoff": "2026-10-09T00:15Z", "target_week": 5}
+```
+
+`phase` is `before` (no game has kicked off), `live` (any game on, or more to come after one
+has finished), `final` (every game over, until **Tuesday 12:00 US/Eastern** after the last
+one: `final_until`) or `next` (from then). Instants are UTC ISO; the page ticks on them
+(`web/src/lib/gameday.ts`, `weekPhase`/`clockFace`). `week` is the week the clock is about:
+it can be the league's week minus one while last week is still in its FINAL window on a
+platform that has already moved on. `target_week` is the week a move made now lands in.
+
+**Every player** carries `kickoff` (UTC ISO, his game this week; null for no game).
+
+**The matchup** (`/actions`, `/desk`) adds `state`: `pre` until a starter on either side
+kicks off (`win_prob` is the pre-game number, unchanged), `live` once one has, `final` once
+every starter on both sides has played. From `live`: `my_points`/`their_points` are the
+platform's points so far, `my_live`/`their_live` are those plus the projection still to come
+(an on-field man counts `max(0, projection - points)` as still to come), `my_left`/
+`their_left` the projected points still to score, and `win_prob` comes from the live totals
+with the 22-point spread shrunk by the square root of the share of projected points still to
+play. At `final` it is 1.0, 0.0 (or 0.5 for a tie). `my_proj`/`their_proj` stay the pre-game
+projections.
+
+**The lineup** adds `pending` (starters still to kick off; 0 means nothing is left to set),
+`recap` (`{"total", "best", "left", "bench": [{"player", "points"}]}`, only while the clock is
+`final` for this league's week: what the lineup as set scored, the best the roster could have
+scored, and the bench men who would have been in it), and `rolled_from`: from Tuesday noon
+ET the lineup is next week's, re-projected, and this says which week it rolled from.
+
+**The target week.** `/waivers`, `/waivers/plan`, the player board (`/players`, `/players/lenses`)
+and `POST /trade` price the week a move lands in: next week once the clock is `final`/`next`,
+or once the reader's own matchup is decided (every starter on both sides final). The league is
+re-projected for that week from the provider's weekly line in this league's scoring
+(`gameday.roll`); `week` is that week and `rolled_from` (waivers, plan) says the week it
+rolled from. A provider that cannot answer leaves the room on this week. Before the roll, a
+free agent whose game has kicked off has `played: true` on his pick/claim and a
+`weekly_gain` of 0: that week is gone for him and he is ranked on what comes next.
+
+**Trade Lab** adds `week` (the week `lineup_delta_week` is for). In a league with no FAAB
+budget `their_tendencies.avg_bid` and `max_bid` are null.
+
+**Position Battle**: the `week` horizon adds `state`, `a_state`/`b_state` and
+`a_points`/`b_points`. Both men final: `state` `final`, `a`/`b` are actuals, `strength`
+`final`, `p` null, winner the higher score. Either still going: `state` `live`, `a`/`b` are
+actual + still to play, `strength` `live`, `p` null. Neither kicked off: `state` `pre`, as
+before. Once both are final the `next5`/`ros`/`playoffs` windows start next week.
+
 ## Head to head (free)
 
 One team's scorecard, for **any** team in the league, so a roster can be read against a

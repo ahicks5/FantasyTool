@@ -14,7 +14,8 @@
 // field is never evidence of anything: a player with no `news_updated` simply does not
 // appear in "Just in", and a roster with none of them still produces all three views.
 
-import type { Lineup, Player } from "./types";
+import type { Lineup, Player, WeekClock, WeekPhase } from "./types";
+import { WEEK } from "./vocab.ts";
 
 /* ------------------------------------------------------------------- copy ---
    TEMPORARY. Every user-facing string in this feature lives in this block until
@@ -492,4 +493,108 @@ export function alarm(lineup: Lineup, now: number): Alarm | null {
 
   const warning = questions.filter((q) => isRecentNews(q.newsUpdated, now));
   return warning.length > 0 ? { level: "warning", players: warning } : null;
+}
+
+/* =================================================================== the week ===
+   Where the week stands, mirrored from `edge/engine/gameday.py` (walkthrough W-013 to
+   W-034). The server reads the scoreboard and sends a `WeekClock`; these pure functions
+   let the page tick on its own between fetches and decide which words and which number
+   every score carries. Every clock is an argument, never read here.                    */
+
+/** An ISO instant as epoch ms, or null. */
+export function instant(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  return Number.isFinite(t) ? t : null;
+}
+
+/**
+ * The week's phase at `now`, starting from the server's read and moving it on by the
+ * instants it sent: FINAL turns into NEXT at Tuesday 12:00 ET (`final_until`), and a
+ * countdown turns LIVE at the kickoff it was counting to. It never moves backwards, and
+ * it never invents a FINAL: only the scoreboard can say every game is over.
+ */
+export function weekPhase(clock: WeekClock | null | undefined, now: number): WeekPhase | null {
+  if (!clock || !clock.phase) return null;
+  const until = instant(clock.final_until);
+  const first = instant(clock.first_kickoff);
+  const next = instant(clock.next_kickoff);
+  if (clock.phase === "final") return until !== null && now >= until ? "next" : "final";
+  if (clock.phase === "before") return first !== null && now >= first ? "live" : "before";
+  if (clock.phase === "next") return next !== null && now >= next ? "live" : "next";
+  return clock.phase;
+}
+
+/** What the clock beside the score shows: a state word, or a countdown to a kickoff. */
+export type ClockFace =
+  | { kind: "live"; week: number }
+  | { kind: "final"; week: number }
+  | { kind: "countdown"; week: number; at: number; left: number };
+
+/**
+ * The three faces (W-018): LIVE while any game of the week is on or more are to come,
+ * FINAL from the last game until Tuesday noon ET, then the countdown to the next week's
+ * first kickoff (or this week's, before it has started). Null when there is nothing to
+ * count to and nothing to say; the caller then keeps its old Sunday-1pm clock.
+ */
+export function clockFace(clock: WeekClock | null | undefined, now: number): ClockFace | null {
+  const phase = weekPhase(clock, now);
+  if (!clock || !phase) return null;
+  if (phase === "live") {
+    // A countdown that ran out is next week's kickoff: that week is the live one.
+    const rolled = clock.phase === "next" || clock.phase === "final";
+    return { kind: "live", week: rolled ? clock.week + 1 : clock.week };
+  }
+  if (phase === "final") return { kind: "final", week: clock.week };
+  const at = instant(phase === "before" ? clock.first_kickoff : clock.next_kickoff);
+  if (at === null) return null;
+  return { kind: "countdown", week: phase === "before" ? clock.week : clock.week + 1, at, left: Math.max(0, at - now) };
+}
+
+/* ------------------------------------------------------------- per player --- */
+
+export type ScoreKind = "final" | "live" | "proj" | "bye" | "noteam";
+
+/** One score with its state: the words and the number a row prints (W-026). */
+export interface ScoreFace {
+  kind: ScoreKind;
+  /** The state word: Final, Live, Proj, Bye, No team. */
+  label: string;
+  /** The number, printed, or null when there is none to print (no team, a bye). */
+  value: string | null;
+  /** For a man still to play: his kickoff, "MON 8:15", in the reader's zone. */
+  kickoff: string | null;
+}
+
+/**
+ * "MON 8:15": a kickoff as a row prints it, in `zone` (the reader's own when omitted, the
+ * same rule `CheckBack` follows: a wall-clock time is only true in the zone it is read in).
+ */
+export function kickoffLabel(iso: string | null | undefined, zone?: string): string | null {
+  const t = instant(iso);
+  if (t === null) return null;
+  const parts = new Intl.DateTimeFormat("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: zone }).formatToParts(new Date(t));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("weekday").toUpperCase()} ${get("hour")}:${get("minute")}`;
+}
+
+/** His number as the week stands: actual when final, actual + unscored projection while on. */
+export function liveValue(p: Player | null | undefined): number {
+  if (!p) return 0;
+  const proj = p.projected ?? 0;
+  if (p.game === "final") return p.points ?? 0;
+  if (p.game === "in") {
+    const pts = p.points ?? 0;
+    return pts + Math.max(0, proj - pts);
+  }
+  return p.nfl_team ? proj : 0;
+}
+
+/** Every score carries its state: FINAL 13.1, LIVE 8.2, PROJ 10.1 (MON 8:15), Bye, No team. */
+export function scoreFace(p: Player, week: number, zone?: string): ScoreFace {
+  if (!p.nfl_team) return { kind: "noteam", label: WEEK.score.noTeam, value: null, kickoff: null };
+  if (p.game === "final") return { kind: "final", label: WEEK.score.final, value: (p.points ?? 0).toFixed(1), kickoff: null };
+  if (p.game === "in") return { kind: "live", label: WEEK.score.live, value: (p.points ?? 0).toFixed(1), kickoff: null };
+  if (isOnBye(p, week)) return { kind: "bye", label: WEEK.score.bye, value: null, kickoff: null };
+  return { kind: "proj", label: WEEK.score.proj, value: (p.projected ?? 0).toFixed(1), kickoff: kickoffLabel(p.kickoff, zone) };
 }

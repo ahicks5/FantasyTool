@@ -15,7 +15,10 @@
  * connector bug is not a reason to render nonsense — pairs what it can and leaves the
  * short side empty.
  */
-import type { Lineup, LineupSlot, Player } from "./types";
+import type { Lineup, LineupSlot, Matchup, Player } from "./types";
+import { liveValue } from "./gameday.ts";
+import { pct } from "./format.ts";
+import { WEEK } from "./vocab.ts";
 
 export interface SlotDuel {
   /** Slot label from the league's own starting slots: QB, RB, FLEX, DEF… */
@@ -24,8 +27,16 @@ export interface SlotDuel {
   theirs: Player | null;
   /** Mine minus theirs, at this slot. Positive is points you win the slot by. */
   margin: number;
-  /** Which side this slot belongs to. `even` is a margin inside `EVEN_MARGIN`. */
+  /** Which side this slot belongs to. `even` is a margin inside `EVEN_MARGIN`, or a dead
+   *  heat once both men have played. */
   edge: "mine" | "theirs" | "even";
+  /**
+   * How the margin was reached (W-017): `final` when both men have played (actual minus
+   * actual), `live` when either has kicked off (actual so far + the projection still to
+   * come), `proj` before either has. The row says which, so a projected margin never sits
+   * bare beside a final score.
+   */
+  state: "final" | "live" | "proj";
 }
 
 /**
@@ -56,16 +67,28 @@ export const proj = (p: Player | null): number => Math.round((p?.projected ?? 0)
  */
 export const printProj = (p: Player | null): string => proj(p).toFixed(1);
 
+/** His number as the week stands, rounded the way the row prints it (`liveValue`). */
+export const live = (p: Player | null): number => Math.round(liveValue(p) * 10) / 10;
+
+const played = (p: Player | null) => !!p && (p.game === "in" || p.game === "final");
+/** Done for the week: his game is over, or he has none (no team, empty slot). */
+const done = (p: Player | null) => !p || p.game === "final" || !p.nfl_team;
+
 function duel(slot: string, mine: LineupSlot | undefined, theirs: LineupSlot | undefined): SlotDuel {
   const a = mine?.player ?? null;
   const b = theirs?.player ?? null;
-  const margin = +(proj(a) - proj(b)).toFixed(1);
+  const state = played(a) || played(b) ? (done(a) && done(b) ? "final" : "live") : "proj";
+  const margin = +(live(a) - live(b)).toFixed(1);
+  // Once both have played, a point is a point: only a dead heat is even. Before that the
+  // even band is the projection's noise, and a live slot still has projection in it.
+  const band = state === "final" ? 0.05 : EVEN_MARGIN;
   return {
     slot,
     mine: a,
     theirs: b,
     margin,
-    edge: Math.abs(margin) < EVEN_MARGIN ? "even" : margin > 0 ? "mine" : "theirs",
+    edge: Math.abs(margin) < band ? "even" : margin > 0 ? "mine" : "theirs",
+    state,
   };
 }
 
@@ -128,4 +151,59 @@ export function matchupCall(myProj: number, theirProj: number): string {
   if (a < 10) return d > 0 ? "You're ahead, not safe. Make every call." : "You're behind. You need the swaps.";
   if (a < 20) return d > 0 ? "You're the favourite. Don't give it back." : "Uphill. Take the upside everywhere.";
   return d > 0 ? "Comfortable. Bank it." : "Long shot. Swing on every slot.";
+}
+
+/**
+ * The matchup's hero, read one way for the desk card and the full page (W-013, W-017).
+ *
+ * Before kickoff: the two projections and the pre-game odds. Once a starter has played:
+ * the points on the board, the live totals under them ("projects 131.2"), odds labelled
+ * "· live", and the staff's line chosen from the live margin. Once every starter on both
+ * sides has played: the final score and "Final. Lost by 1.7." in place of the odds. An
+ * older API build that sends no `state` reads as before, from `live` and the points.
+ */
+export interface MatchupRead {
+  state: "pre" | "live" | "final";
+  myBig: number;
+  theirBig: number;
+  /** Under each big number: the live total while games are on, else null. */
+  mySub: number | null;
+  theirSub: number | null;
+  /** The odds, labelled, or null when there are none to show (final, or no odds). */
+  odds: string | null;
+  /** The share of the meter on your side, 0..1. */
+  share: number;
+  /** The margin the well prints, and the staff's line beside it. */
+  diff: number;
+  line: string;
+}
+
+export function matchupRead(m: Matchup): MatchupRead {
+  const theirProj = m.their_proj ?? 0;
+  const state = m.state ?? (m.live && m.my_points != null && m.their_points != null ? "live" : "pre");
+  const share = m.win_prob ?? 0.5;
+  if (state === "pre") {
+    return {
+      state, myBig: m.my_proj, theirBig: theirProj, mySub: null, theirSub: null,
+      odds: m.win_prob != null ? WEEK.odds.pre(pct(share)) : null, share,
+      diff: m.my_proj - theirProj, line: matchupCall(m.my_proj, theirProj),
+    };
+  }
+  const myBig = m.my_points ?? 0;
+  const theirBig = m.their_points ?? 0;
+  if (state === "final") {
+    const diff = +(myBig - theirBig).toFixed(1);
+    const by = Math.abs(diff).toFixed(1);
+    return {
+      state, myBig, theirBig, mySub: null, theirSub: null, odds: null, share: diff > 0 ? 1 : diff < 0 ? 0 : 0.5,
+      diff, line: diff > 0 ? WEEK.final.won(by) : diff < 0 ? WEEK.final.lost(by) : WEEK.final.tied,
+    };
+  }
+  const myLive = m.my_live ?? myBig;
+  const theirLive = m.their_live ?? theirBig;
+  return {
+    state, myBig, theirBig, mySub: m.my_live ?? null, theirSub: m.their_live ?? null,
+    odds: m.win_prob != null ? WEEK.odds.live(pct(share)) : null, share,
+    diff: myLive - theirLive, line: matchupCall(myLive, theirLive),
+  };
 }

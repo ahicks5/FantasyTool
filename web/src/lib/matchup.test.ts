@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { EVEN_MARGIN, matchupCall, slotDuels, splitMatchup } from "./matchup.ts";
+import { EVEN_MARGIN, matchupCall, matchupRead, slotDuels, splitMatchup } from "./matchup.ts";
 import type { Lineup, LineupSlot, Player } from "./types.ts";
 
 function player(name: string, projected: number, position = "WR"): Player {
@@ -138,4 +138,61 @@ test("rounding cannot leave a margin that does not print cleanly", () => {
   // 14.9 - 10.3, to one decimal, with no binary-float tail.
   assert.equal(d.margin, 4.6);
   assert.equal(String(d.margin), "4.6");
+});
+
+/* ------------------------------------------------- the week as it stands (W-013, W-017) --- */
+
+function played(name: string, projected: number, points: number, game: "final" | "in" = "final", position = "QB"): Player {
+  return { ...player(name, projected, position), game, points };
+}
+
+test("both men final: the slot is judged on actuals, never the projection", () => {
+  // Lawrence 13.1 lost to 20.5, though he out-projected him by 1.9 (the walkthrough's QB row).
+  const mine = lineup([slot("QB", played("Lawrence", 19.0, 13.1))]);
+  const theirs = lineup([slot("QB", played("Other", 17.1, 20.5))]);
+  const [d] = slotDuels(mine, theirs);
+  assert.equal(d.state, "final");
+  assert.equal(d.margin, -7.4);
+  assert.equal(d.edge, "theirs");
+  // A kicker who won 16.0 to 8.0 is not "Even".
+  const k = slotDuels(lineup([slot("K", played("Gay", 8, 16.0, "final", "K"))]), lineup([slot("K", played("Loop", 9, 8.0, "final", "K"))]))[0];
+  assert.equal(k.edge, "mine");
+  // Once both have played a one-point win is a win; only a dead heat is even.
+  const close = slotDuels(lineup([slot("TE", played("A", 8, 9.0, "final", "TE"))]), lineup([slot("TE", played("B", 8, 8.0, "final", "TE"))]))[0];
+  assert.equal(close.edge, "mine");
+});
+
+test("one man still to play: actual so far plus his projection, and the slot says live", () => {
+  const mine = lineup([slot("RB", played("Gibbs", 18, 17.7, "final", "RB"))]);
+  const theirs = lineup([slot("RB", player("Monday", 19.1, "RB"))]);
+  const [d] = slotDuels(mine, theirs);
+  assert.equal(d.state, "live");
+  assert.equal(d.margin, -1.4);
+  assert.equal(d.edge, "even", "a live slot with projection in it keeps the noise band");
+  const pre = slotDuels(lineup([slot("RB", player("A", 18, "RB"))]), lineup([slot("RB", player("B", 10, "RB"))]))[0];
+  assert.equal(pre.state, "proj");
+});
+
+test("the hero reads pre-game, then live, then the result", () => {
+  const base = { opponent: "Brown Town", opponent_id: "2", my_proj: 133.1, their_proj: 125.3, win_prob: 0.64 };
+  const pre = matchupRead(base);
+  assert.equal(pre.state, "pre");
+  assert.equal(pre.odds, "64% to win");
+  assert.equal(pre.myBig, 133.1);
+
+  const live = matchupRead({ ...base, state: "live", live: true, my_points: 100, their_points: 110, my_live: 120, their_live: 125, win_prob: 0.41 });
+  assert.equal(live.odds, "41% to win · live");
+  assert.equal(live.myBig, 100);
+  assert.equal(live.mySub, 120);
+  assert.equal(live.line, matchupCall(120, 125), "the verdict comes from the live margin, not the pre-game spread");
+
+  const final = matchupRead({ ...base, state: "final", live: true, my_points: 138.7, their_points: 140.4, my_live: 138.7, their_live: 140.4, win_prob: 0 });
+  assert.equal(final.odds, null, "no odds once it is decided");
+  assert.equal(final.line, "Final. Lost by 1.7.");
+  assert.equal(matchupRead({ ...final, state: "final", my_points: 140.4, their_points: 138.7 } as never).line, "Final. Won by 1.7.");
+
+  // An older API build: no `state`, the platform's points mean live.
+  const old = matchupRead({ ...base, live: true, my_points: 50, their_points: 40 });
+  assert.equal(old.state, "live");
+  assert.equal(old.myBig, 50);
 });

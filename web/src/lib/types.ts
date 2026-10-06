@@ -294,9 +294,44 @@ export interface Player {
    *  for a man with no game this week. A man whose game is `in` or `final` is locked. */
   game?: GameState | null;
   points?: number | null;
+  /** His game's kickoff this week, UTC ISO ("2026-10-06T00:15Z"); null for a man with no
+   *  game, and absent on an older API build. The page prints "MON 8:15" beside "PROJ". */
+  kickoff?: string | null;
 }
 
 export type GameState = "pre" | "in" | "final";
+
+/** Where the week stands (`edge/engine/gameday.py`, `GET` payloads carry it as `clock`). */
+export type WeekPhase = "before" | "live" | "final" | "next";
+
+/**
+ * The week's clock. `phase` is the server's read of the scoreboard; the instants let the
+ * page tick on its own (`lib/gameday.ts`, `weekPhase`): FINAL becomes the countdown at
+ * `final_until` (Tuesday 12:00 ET), and a countdown becomes LIVE at the kickoff it counts to.
+ * `week` is the week the clock is about, which can be the one before the league's own while
+ * last week is still in its FINAL window. `target_week` is the week a move made now lands in.
+ */
+export interface WeekClock {
+  week: number;
+  phase: WeekPhase | null;
+  first_kickoff: string | null;
+  last_kickoff: string | null;
+  final_until: string | null;
+  next_kickoff: string | null;
+  target_week: number | null;
+}
+
+/** The week, played: from the last game until Tuesday noon ET (W-021). */
+export interface LineupRecap {
+  /** What the lineup as you set it scored. */
+  total: number;
+  /** The best lineup the same roster could have scored. */
+  best: number;
+  /** `best - total`: what was left on the bench. */
+  left: number;
+  /** The bench men who would have been in that best lineup, most points first. */
+  bench: { player: Player; points: number }[];
+}
 
 /** What the lineup has on the board once a starter's game has kicked off. */
 export interface LineupLive {
@@ -510,6 +545,14 @@ export interface Lineup {
   standing?: { rank: number; of: number };
   /** Null (or absent, on an older API build) until a starter's game has kicked off. */
   live?: LineupLive | null;
+  /** Starters still to kick off. Zero: nothing left to set this week. */
+  pending?: number;
+  /** The week, played. Only from the week's last game until Tuesday 12:00 ET. */
+  recap?: LineupRecap | null;
+  /** Where the week stands. Null before the scoreboard has been read. */
+  clock?: WeekClock | null;
+  /** Set when this is next week's lineup because the week rolled at Tuesday noon. */
+  rolled_from?: number | null;
   slots: LineupSlot[];
   bench: BenchEntry[];
   /** Every swap the lineup makes from the one you set, required or decided. */
@@ -860,12 +903,18 @@ export interface WaiverPick {
   drop: PlayerRef | null;
   bid: Bid;
   reason: string;
+  /** His game this week has kicked off: `weekly_gain` is 0 and the page says "Played". */
+  played?: boolean;
 }
 
 export interface Waivers {
+  /** The week the claims are for: next week once this one is decided. */
   week: number;
   faab_remaining: number | null;
   waiver_type?: string;
+  /** Set when `week` is next week because the week it was rolled from is decided. */
+  rolled_from?: number | null;
+  clock?: WeekClock | null;
   picks: WaiverPick[];
 }
 
@@ -881,10 +930,14 @@ export interface WaiverClaim {
   reason: string;
   reason_codes: string[];
   trending_adds: number;
+  /** His game this week has kicked off: no weekly gain, judged on what comes next. */
+  played?: boolean;
 }
 
 export interface WaiverPlanResponse {
   week: number;
+  rolled_from?: number | null;
+  clock?: WeekClock | null;
   faab_remaining: number | null;
   waiver_type: string;
   primary: WaiverClaim | null;
@@ -1051,8 +1104,9 @@ export interface Tendencies {
   trades?: number;
   waiver_claims?: number;
   fa_adds?: number;
-  avg_bid?: number;
-  max_bid?: number;
+  /** Null in a league with no FAAB budget, where an average bid reads nothing. */
+  avg_bid?: number | null;
+  max_bid?: number | null;
   picks_traded?: number;
   favorite_positions?: string[];
   top_partner?: string | null;
@@ -1081,6 +1135,9 @@ export interface TradeGraphic {
 }
 
 export interface TradeResult {
+  /** The week `lineup_delta_week` is for: next week once this one is decided. Absent on
+   *  an older API build. */
+  week?: number;
   verdict: Verdict;
   me: TradeSide;
   them: TradeSide;
@@ -1117,6 +1174,18 @@ export interface Matchup {
   my_points?: number | null;
   their_points?: number | null;
   live?: boolean;
+  /** `pre` before any starter kicks off; `live` once one has; `final` once every starter on
+   *  both sides has played. Absent on an older API build, which reads as `pre`. From `live`
+   *  on, `win_prob` is taken from the live totals below, not the projections. */
+  state?: "pre" | "live" | "final";
+  /** Points so far plus the projection still to come, each side. Null before kickoff. */
+  my_live?: number | null;
+  their_live?: number | null;
+  /** Projected points each side has still to score. */
+  my_left?: number | null;
+  their_left?: number | null;
+  /** Where the week stands, for the clock beside the score. */
+  clock?: WeekClock | null;
   /** On the desk only: the opponent's record and competition rank out of `teams`, from the
    *  same standings table as the nameplate. Null when the opponent is not in the table. */
   opponent_record?: string | null;
@@ -1252,6 +1321,8 @@ export interface Desk {
   /** Optional as well as nullable: an older API build does not send it. */
   standing?: DeskStanding | null;
   matchup?: Matchup | null;
+  /** Where the week stands. Optional: an older API build does not send it. */
+  clock?: WeekClock | null;
   sheet: { summary: string; moves: number; all_clear: boolean };
   binders: Binder[];
   /** Optional as well as nullable: an older API build does not send it. */
@@ -1907,7 +1978,7 @@ export interface BattleFighter extends BattleBrief {
 export type BattleHorizonKey = "week" | "next5" | "ros" | "playoffs";
 
 /** This week's strength is the calibrated tag; a longer window's is the size of the gap. */
-export type BattleStrength = Confidence | "clear" | "edge" | "even";
+export type BattleStrength = Confidence | "clear" | "edge" | "even" | "live" | "final";
 
 export interface BattleHorizon {
   key: BattleHorizonKey;
@@ -1933,6 +2004,13 @@ export interface BattleHorizon {
   sos_b?: number | null;
   /** Playoffs only: the league never said when they start, so weeks 15-17 were used. */
   assumed?: boolean;
+  /** This week only: `final` once both men have played (`a`/`b` are actuals, no `p`),
+   *  `live` once either has kicked off (actual + still to play), `pre` before. */
+  state?: "pre" | "live" | "final";
+  a_state?: GameState | null;
+  b_state?: GameState | null;
+  a_points?: number | null;
+  b_points?: number | null;
 }
 
 export interface BattleCell {

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ago, alarm, dotted, gameDay, isClear, isHardOut, isOnBye, NEWS_WINDOW_MS, playerMeta } from "./gameday.ts";
-import type { BenchEntry, Lineup, LineupSlot, Player } from "./types";
+import { ago, alarm, clockFace, dotted, gameDay, isClear, isHardOut, isOnBye, kickoffLabel, liveValue, NEWS_WINDOW_MS, playerMeta, scoreFace, weekPhase } from "./gameday.ts";
+import type { BenchEntry, Lineup, LineupSlot, Player, WeekClock } from "./types";
 
 /* Every clock here is explicit. `gameDay` takes `now`, so nothing below depends on
    the machine's clock, its zone, or on when the suite happens to run.           */
@@ -396,4 +396,69 @@ test("a missing part costs nothing: no stray separators, no empty tails", () => 
   assert.equal(playerMeta("WR", "CIN"), "WR CIN");
   assert.equal(playerMeta("WR", null), "WR");
   assert.equal(playerMeta(null, null), "");
+});
+
+/* =================================================================== the week === */
+
+
+// Week 4 of 2026. Eastern is UTC-4 in October: Tuesday 12:00 ET is 16:00Z.
+const CLOCK = (phase: WeekClock["phase"]): WeekClock => ({
+  week: 4,
+  phase,
+  first_kickoff: "2026-10-02T00:15Z",
+  last_kickoff: "2026-10-06T00:15Z",
+  final_until: "2026-10-06T16:00Z",
+  next_kickoff: "2026-10-09T00:15Z",
+  target_week: phase === "final" || phase === "next" ? 5 : 4,
+});
+const at = (iso: string) => Date.parse(iso);
+
+test("the server's phase moves on by its own instants, and never backwards", () => {
+  assert.equal(weekPhase(CLOCK("before"), at("2026-10-02T00:14:59Z")), "before");
+  assert.equal(weekPhase(CLOCK("before"), at("2026-10-02T00:15:00Z")), "live", "kickoff: the countdown turns live");
+  assert.equal(weekPhase(CLOCK("live"), at("2026-10-06T15:00:00Z")), "live", "only the scoreboard can say final");
+  assert.equal(weekPhase(CLOCK("final"), at("2026-10-06T15:59:59Z")), "final", "Tuesday 11:59:59 ET");
+  assert.equal(weekPhase(CLOCK("final"), at("2026-10-06T16:00:00Z")), "next", "Tuesday 12:00 ET");
+  assert.equal(weekPhase(CLOCK("next"), at("2026-10-09T00:15:00Z")), "live", "next week's kickoff");
+  assert.equal(weekPhase(null, at("2026-10-06T16:00:00Z")), null);
+  assert.equal(weekPhase({ ...CLOCK("live"), phase: null }, at("2026-10-06T16:00:00Z")), null);
+});
+
+test("the clock reads LIVE while the week is on, FINAL until Tuesday noon, then counts down", () => {
+  assert.deepEqual(clockFace(CLOCK("live"), at("2026-10-05T01:00:00Z")), { kind: "live", week: 4 });
+  assert.deepEqual(clockFace(CLOCK("final"), at("2026-10-06T04:00:00Z")), { kind: "final", week: 4 });
+  const next = clockFace(CLOCK("final"), at("2026-10-06T16:00:00Z"));
+  assert.equal(next?.kind, "countdown");
+  assert.equal(next && next.kind === "countdown" && next.week, 5);
+  assert.equal(next && next.kind === "countdown" && next.left, at("2026-10-09T00:15Z") - at("2026-10-06T16:00:00Z"));
+  const before = clockFace(CLOCK("before"), at("2026-10-01T00:15:00Z"));
+  assert.equal(before?.kind === "countdown" && before.week, 4, "before kickoff it counts to this week's first game");
+  assert.deepEqual(clockFace(CLOCK("next"), at("2026-10-09T01:00:00Z")), { kind: "live", week: 5 });
+  assert.equal(clockFace({ ...CLOCK("next"), next_kickoff: null }, at("2026-10-07T00:00:00Z")), null, "nothing to count to");
+});
+
+test("every score carries its state, and a man with no team carries no number", () => {
+  const base = player({ projected: 10.1, nfl_team: "NO" });
+  assert.deepEqual(scoreFace({ ...base, game: "final", points: 13.1 }, 4), { kind: "final", label: "Final", value: "13.1", kickoff: null });
+  assert.deepEqual(scoreFace({ ...base, game: "in", points: 8.2 }, 4), { kind: "live", label: "Live", value: "8.2", kickoff: null });
+  const pre = scoreFace({ ...base, kickoff: "2026-10-06T00:15Z" }, 4, "America/New_York");
+  assert.deepEqual(pre, { kind: "proj", label: "Proj", value: "10.1", kickoff: "MON 8:15" });
+  assert.deepEqual(scoreFace({ ...base, nfl_team: null, projected: 0 }, 4), { kind: "noteam", label: "No team", value: null, kickoff: null });
+  assert.equal(scoreFace({ ...base, bye_week: 4 }, 4).kind, "bye");
+  assert.equal(scoreFace({ ...base, bye_week: 6 }, 4).kind, "proj");
+});
+
+test("a kickoff prints in the zone it is read in", () => {
+  assert.equal(kickoffLabel("2026-10-06T00:15Z", "America/New_York"), "MON 8:15");
+  assert.equal(kickoffLabel("2026-10-06T00:15Z", "America/Los_Angeles"), "MON 5:15", "the same instant, three hours earlier on the wall");
+  assert.equal(kickoffLabel(null), null);
+  assert.equal(kickoffLabel("not a date"), null);
+});
+
+test("a man's live value: actual when final, actual plus what he has not scored while on", () => {
+  assert.equal(liveValue(player({ projected: 16.5, game: "final", points: 26.7 })), 26.7);
+  assert.equal(liveValue(player({ projected: 12, game: "in", points: 5 })), 12);
+  assert.equal(liveValue(player({ projected: 12, game: "in", points: 18 })), 18);
+  assert.equal(liveValue(player({ projected: 9 })), 9);
+  assert.equal(liveValue(player({ projected: 9, nfl_team: null })), 0);
 });

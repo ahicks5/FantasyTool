@@ -2481,3 +2481,78 @@ export const NATIVE = {
   },
   share: { subject: "A call from Owner's Suite" },
 } as const;
+
+/**
+ * Where the week stands (`lib/gameday.ts`, `edge/engine/gameday.py`): the words every room
+ * uses once it knows whether a game is to come, on, or over (walkthrough W-013 to W-034).
+ * One object so the matchup, the lineup, Scouting and Trade Lab say it the same way.
+ */
+export const WEEK = {
+  /** The clock beside the score: LIVE while the week is on, FINAL until Tuesday noon ET,
+   *  then the countdown to the next kickoff. The lamp rule: the words carry the state. */
+  clock: {
+    live: "Live",
+    final: "Final",
+    kickoff: "Kickoff",
+    /** The lamp's words: lit while the week is on, dark once it is over. */
+    onAir: "On air",
+    offAir: "Off air",
+    /** Beside LIVE / FINAL, in place of a countdown. */
+    week: (week: number) => `Week ${week}`,
+    aria: {
+      live: (week: number) => `Week ${week} is live`,
+      final: (week: number) => `Week ${week} is final`,
+      countdown: (left: string) => `Kickoff in ${left}`,
+    },
+  },
+  /** The state stamped on every score: "FINAL 13.1", "LIVE 8.2", "PROJ 10.1". */
+  score: {
+    final: "Final",
+    live: "Live",
+    proj: "Proj",
+    /** A man with no NFL team: no game, no projection. */
+    noTeam: "No team",
+    bye: "Bye",
+  },
+  /** The odds line: pre-game, then live once a starter has kicked off. */
+  odds: {
+    pre: (pct: string) => `${pct} to win`,
+    live: (pct: string) => `${pct} to win · live`,
+  },
+  /** Every starter on both sides has played: the result, not the odds. */
+  final: {
+    won: (by: string) => `Final. Won by ${by}.`,
+    lost: (by: string) => `Final. Lost by ${by}.`,
+    tied: "Final. Dead even.",
+  },
+  /** Under a live score: where it ends up if the rest hit their projections. */
+  projects: (n: string) => `projects ${n}`,
+  lineup: {
+    /** Every starter's game has kicked off. */
+    nothingLeft: "Every game’s underway. Nothing left to set.",
+    /** No decision open, some games still to come. */
+    quietLive: "Nothing to weigh in the games still to come.",
+    /** The week, played: from the last game until Tuesday noon ET. */
+    recapEyebrow: (week: number) => `Final · Week ${week}`,
+    recapLeft: (n: string) => `${n} left on the bench`,
+    recapBench: (name: string, pts: string) => `${name} scored ${pts} on your bench.`,
+    recapClean: "Nobody on the bench outscored the lineup you set.",
+    recapFilm: "The full story is in the film.",
+    /** From Tuesday noon: the page is next week's. */
+    rolled: (from: number, to: number) => `Week ${from} is played. This is week ${to}.`,
+  },
+  scouting: {
+    /** The one line on top once the claims are for next week. */
+    rolled: (from: number, to: number) => `Week ${from} is played. These are your week ${to} claims.`,
+    /** In place of a weekly gain for a man whose game this week has kicked off. */
+    played: "Played",
+    /** After a weekly gain, so it says which week. */
+    wk: (week: number) => `wk ${week}`,
+  },
+  battle: {
+    /** This week's tile once both men have played: the result. */
+    final: "Final",
+    /** One or both still to play: actual plus what is left. */
+    live: "Live · still to play",
+  },
+} as const;
