@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { accountContact, accountLabel, displayPhone, initialOf, leagueRoom, matchesAccount, offersFor, pickLeague, planWord, shortDate, upgradesFor } from "./account.ts";
+import { accountContact, accountLabel, displayPhone, initialOf, leagueRoom, matchesAccount, offersFor, pickLeague, planWord, signInLanding, shortDate, upgradesFor } from "./account.ts";
 import type { Account, AdminUser, MeLeague, Product } from "./types";
 
 const L = (id: string, last_used: number | null): MeLeague => ({ platform: "sleeper", league_id: id, name: id, team_id: "1", last_used });
@@ -21,6 +21,24 @@ test("a returning account lands on the league it opened last, else the first lin
   assert.equal(pickLeague([L("a", null), L("b", null)])!.league_id, "a");
   assert.equal(pickLeague([L("a", 10), L("b", 30), L("c", 20)])!.league_id, "b");
   assert.equal(pickLeague([L("a", null), L("b", 5)])!.league_id, "b", "an old row with no stamp loses to any stamp");
+});
+
+test("a sign-in lands on the call sheet of the last league, honours ?next=, and has nowhere to go without a league", () => {
+  const leagues = [L("a", 10), L("b", 30)];
+  assert.deepEqual(signInLanding(leagues, null, null), { to: "/home", open: leagues[1] });
+  assert.deepEqual(signInLanding(leagues, null, "/trade"), { to: "/trade", open: null }, "an asked-for page wins");
+  assert.deepEqual(
+    signInLanding(leagues, { platform: "sleeper", league_id: "a", team_id: "1" }, null),
+    { to: "/home", open: null },
+    "the league already open on this device stays open",
+  );
+  assert.deepEqual(
+    signInLanding(leagues, { platform: "sleeper", league_id: "zzz", team_id: "1" }, null),
+    { to: "/home", open: leagues[1] },
+    "a league that is not the account's is replaced by the account's last one",
+  );
+  assert.equal(signInLanding([], null, null), null, "no league: the door shows Where to?");
+  assert.deepEqual(signInLanding([], null, "/account"), { to: "/account", open: null });
 });
 
 test("the account button wears the name's initial, then the email's", () => {

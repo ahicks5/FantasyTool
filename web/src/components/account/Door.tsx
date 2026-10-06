@@ -8,18 +8,21 @@ import { WhereTo } from "./WhereTo";
 import { hasToken } from "@/lib/auth";
 import { useSession } from "@/lib/session";
 import { safeNext } from "@/lib/identity";
+import { enterAfterSignIn } from "@/lib/openLeague";
 import { IconChevron } from "@/components/icons";
 import { Eyebrow, Wordmark } from "@/components/ui";
+import type { Me } from "@/lib/types";
 import { ACCOUNT, LINES } from "@/lib/vocab";
 
 /**
- * The chrome the account pages share: wordmark and one column. Signed in, the wordmark
- * is the short "PHF" and the header carries the way back to the league, because the
- * account page is a side room and nobody should get stuck in it (Andrew, 2026-09-27).
+ * The chrome the account pages share: wordmark and one column. Signed in, the header
+ * carries the way back to the league, because the account page is a side room and nobody
+ * should get stuck in it (Andrew, 2026-09-27). `back={false}` keeps it off while a sign-in
+ * is still on its way upstairs, so the header does not change under the spinning button.
  */
-export function DoorFrame({ children }: { children: React.ReactNode }) {
+export function DoorFrame({ children, back = true }: { children: React.ReactNode; back?: boolean }) {
   const session = useSession();
-  const inside = session.signedIn;
+  const inside = session.signedIn && back;
   return (
     <main className="mx-auto w-full max-w-lg px-4 pb-16">
       <header className="flex h-16 items-center justify-between gap-3">
@@ -43,17 +46,27 @@ export function DoorFrame({ children }: { children: React.ReactNode }) {
 /** Where a sign-in page sends you afterwards; the rule lives with the other sign-in rules. */
 export { safeNext };
 
+/** A check this quick never shows the card at all, so a fast answer never flashes it (W-010). */
+const CHECKING_AFTER_MS = 300;
+
 /**
  * What the door shows while it cannot yet say who you are: in the pre-built page (before the
- * app's code has run) and while `/api/me` answers for a browser holding a token. A cold API
- * can take a while to wake, so after a few seconds it says so instead of sitting silent.
+ * app's code has run) and while `/api/me` answers for a browser holding a token. Only past
+ * ~300ms, so a quick check goes straight to the page. A cold API can take a while to wake,
+ * so after a few seconds it says so instead of sitting silent.
  */
 function DoorWait() {
+  const [shown, setShown] = useState(false);
   const [slow, setSlow] = useState(false);
   useEffect(() => {
+    const show = setTimeout(() => setShown(true), CHECKING_AFTER_MS);
     const t = setTimeout(() => setSlow(true), 4000);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(t);
+    };
   }, []);
+  if (!shown) return <div className="mt-6" aria-busy />;
   return (
     <div className="mt-6 rise rise-1" data-testid="door-checking" role="status" aria-live="polite">
       <div className="card flex items-center gap-3 p-5">
@@ -78,32 +91,51 @@ export function DoorWaitPage() {
 
 function LoginInner({ start }: { start: AuthMode }) {
   const router = useRouter();
-  // A sign-in goes back upstairs; a new account (a new number signed up here) carries on
-  // into the sign-up walk at its first gap, the league. `?next=` overrides both.
+  // A sign-in goes straight upstairs, to the call sheet on the last league (W-011); a new
+  // account (a new number signed up here) carries on into the sign-up walk. `?next=`
+  // overrides both.
   const asked = useSearchParams().get("next");
   const next = safeNext(asked, start === "register" ? "/account" : "/home");
   const [mode, setModeRaw] = useState<AuthMode>(start);
   // Creating an account is the sign-up walk now (docs/SPEC-ONBOARDING.md), not this form.
-  const setMode = (m: AuthMode) => (m === "register" ? router.push(asked ? `/register?next=${encodeURIComponent(asked)}` : "/register") : setModeRaw(m));
+  const register = asked ? `/register?next=${encodeURIComponent(asked)}` : "/register";
+  const setMode = (m: AuthMode) => (m === "register" ? router.push(register) : setModeRaw(m));
   const session = useSession();
-  // A browser holding a token is probably signed in: say we are checking rather than flash
-  // the sign-in form and then swap it for the account (Andrew, 2026-10-05: "that limbo").
+  // A sign-in on this page, on its way in: the form and its spinning button stay on screen
+  // until the league is open and the page has moved on (W-010). No checking card, no menu.
+  const [entering, setEntering] = useState(false);
+  // A browser holding a token on a cold load is probably signed in: say we are checking
+  // rather than flash the sign-in form and then swap it (Andrew, 2026-10-05: "that limbo").
   const checking = session.loading && hasToken();
   const title = mode === "register" ? ACCOUNT.register : mode === "forgot" ? ACCOUNT.reset.title : ACCOUNT.signIn;
   // Fewest words at the door (Andrew, 2026-09-27): only the reset form keeps a line.
   const lead = mode === "forgot" ? ACCOUNT.reset.lead : null;
 
-  if (checking) return <DoorWaitPage />;
-  // In: a short menu (your leagues, add one, the account), not the settings page.
-  if (session.signedIn) {
-    return (
-      <DoorFrame>
-        <WhereTo next={asked ? next : null} />
-      </DoorFrame>
-    );
+  /** Signed in here: a new number to the walk, anyone else upstairs. Holds the form until gone. */
+  async function signedIn(me: Me, created?: boolean): Promise<void> {
+    setEntering(true);
+    const to = created && !asked ? "/register" : await enterAfterSignIn(me, asked ? next : null);
+    // No league on the account yet: "Where to?" is the next page, and it is just "Add a
+    // league" and the settings.
+    if (!to) return setEntering(false);
+    router.push(to);
+    // The page is leaving: keep the button spinning until it has.
+    return new Promise<void>(() => undefined);
+  }
+
+  if (!entering) {
+    if (checking) return <DoorWaitPage />;
+    // Opened already signed in: the switcher (your leagues, add one, the account).
+    if (session.signedIn) {
+      return (
+        <DoorFrame>
+          <WhereTo next={asked ? next : null} />
+        </DoorFrame>
+      );
+    }
   }
   return (
-    <DoorFrame>
+    <DoorFrame back={!entering}>
       <div className="pt-8 rise">
         <Eyebrow>{LINES.threshold}</Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">{title}</h1>
@@ -111,16 +143,7 @@ function LoginInner({ start }: { start: AuthMode }) {
       </div>
       <div className="mt-6 rise rise-1">
         <div className="card p-5">
-          {/* Done: a new number carries on into the walk; an asked-for page is honoured;
-              otherwise this page turns into the menu once the session knows who you are. */}
-          <AuthForm
-            mode={mode}
-            onMode={setMode}
-            onDone={(_, created) => {
-              if (created && !asked) router.push("/register");
-              else if (asked) router.push(next);
-            }}
-          />
+          <AuthForm mode={mode} onMode={setMode} onDone={signedIn} />
         </div>
       </div>
     </DoorFrame>

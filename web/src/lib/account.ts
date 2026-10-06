@@ -15,6 +15,31 @@ export function pickLeague(leagues: readonly MeLeague[]): MeLeague | null {
   return best;
 }
 
+/** The league a device has open, as far as the sign-in rule cares. */
+export interface OpenTeam {
+  platform: MeLeague["platform"];
+  league_id: string;
+  team_id: string;
+}
+
+/**
+ * Where a successful sign-in goes (walkthrough W-011): an asked-for page first; otherwise
+ * the call sheet on the league this device already has open when it is one of the
+ * account's, else on the account's last-opened league (`open` says which to load first).
+ * Null when the account has no league at all: the door then shows "Where to?", which is
+ * just "Add a league" and the settings.
+ */
+export function signInLanding(
+  leagues: readonly MeLeague[],
+  current: OpenTeam | null,
+  next: string | null,
+): { to: string; open: MeLeague | null } | null {
+  if (next) return { to: next, open: null };
+  if (!leagues.length) return null;
+  const here = current && leagues.some((l) => l.platform === current.platform && l.league_id === current.league_id && l.team_id === current.team_id);
+  return { to: "/home", open: here ? null : pickLeague(leagues) };
+}
+
 /** The letter on the account button: the name's first letter, else the email's. */
 export function initialOf(account: { email: string; name?: string } | null | undefined): string {
   const src = account?.name?.trim() || account?.email?.trim() || "";
