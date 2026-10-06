@@ -339,6 +339,17 @@ has leagues on file, picks the one with the newest `last_used` (`lib/account.pic
 reads the league for the week and the team's name, and saves the connection. The account page
 switches leagues the same way and tells the API (`/use`). Every word is `ACCOUNT` in `vocab.ts`.
 
+**Signing in goes straight upstairs** (walkthrough W-011, W-003, 2026-10-06): a sign-in on
+`/login`, or a number already on file entered on `/register`, opens the account's last league
+(`account.signInLanding` + `openLeague.enterAfterSignIn`) and goes to `/home`, or to `?next=`.
+The form keeps its spinning button until the page has moved on; never swap it for the
+"Checking you in." card, which is only for a cold load of `/login` with a token, and only past
+300ms. "Where to?" is the switcher at `/login` once signed in, and the whole page for an
+account with no league. **The wordmark is its own link** (`Wordmark` in `ui.tsx`): `/home`
+signed in, `/` signed out, and "SUITE" everywhere except the landing page (`full`). Never wrap
+it in another `Link`. `booth.ride.team` remembers the last team saved, so reopening the same
+team (even after a sign-out) does not replay the elevator.
+
 ## The landing page is a funnel (2026-09-27)
 
 `/` is a server component with two client islands, `Pricing` and `LandingBar`. Its order is
