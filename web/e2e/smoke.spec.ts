@@ -218,9 +218,10 @@ const PAGES: PageCase[] = [
     name: "lineup",
     check: async (page) => {
       // The head coach's stamp lands first and stays until dismissed: the summary is seen.
+      // It lands only when there is something to fix or decide, so it never reads "All set" (W-020).
       const boom = page.getByRole("dialog", { name: LINEUP.stamp.aria });
       await expect(boom).toBeVisible();
-      await expect(boom.getByText(/^(Urgent|All set)/)).toBeVisible();
+      await expect(boom.getByText(/^Urgent/)).toBeVisible();
       await boom.getByRole("button", { name: LINEUP.stamp.closeAria }).click();
       await expect(boom).toHaveCount(0);
       // In `main`: the ticker carries "Projected scores" too, and on a phone its top-bar copy is hidden.

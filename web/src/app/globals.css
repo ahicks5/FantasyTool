@@ -1947,7 +1947,7 @@ button, a.btn, select, input { min-height: 44px; }
 .roster-row { display: flex; align-items: stretch; min-width: 0; }
 .roster-row-main {
   display: grid; flex: 1; min-width: 0; align-items: center; column-gap: 8px;
-  grid-template-columns: 40px 24px minmax(0, 1fr) 42px 42px;
+  grid-template-columns: 40px 24px minmax(0, 1fr) 42px 50px;
   padding: 8px 0 8px 12px; text-align: left; min-height: 0;
 }
 .roster-role { font-size: 11px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-ink-2); }

@@ -25,10 +25,11 @@
 
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useState } from "react";
-import type { Lineup, LineupChange, LineupHole, LineupRole, Player } from "@/lib/types";
+import type { Lineup, LineupChange, LineupHole, LineupRecap, LineupRole, Player } from "@/lib/types";
 import { signed } from "@/lib/format";
+import { scoreFace } from "@/lib/gameday";
 import { boomSeen, handledKey, loadConnection, loadHandled, saveBoomSeen, saveHandled } from "@/lib/storage";
-import { CONFIDENCE_LABEL, LINEUP, SECTIONS } from "@/lib/vocab";
+import { CONFIDENCE_LABEL, LINEUP, SECTIONS, WEEK } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { PlayerName, PlayerTarget } from "./Players";
 import { IconAlert, IconArrowUp, IconCheck, IconChevron, IconFlag, IconLock, IconNotes, IconX } from "./icons";
@@ -81,17 +82,28 @@ export function useHandled(week: number): [Set<string>, (label: string, on: bool
   return [handled, set];
 }
 
-/** His number on the row: his points once his game is on or over, his projection before. */
-function RowNumber({ p }: { p: Player }) {
-  if (p.points != null && (p.game === "in" || p.game === "final")) {
-    return (
-      <span className={`roster-proj display tnum roster-live ${p.game === "in" ? "roster-live-on" : ""}`}>
-        <span className="roster-live-state">{p.game === "in" ? LINEUP.live.on : LINEUP.live.final}</span>
-        {p.points.toFixed(1)}
-      </span>
-    );
-  }
-  return <span className="roster-proj display tnum">{p.projected.toFixed(1)}</span>;
+/**
+ * His number on the row, always with its state (W-026): FINAL 13.1 once his game is over,
+ * LIVE 8.2 while it is on, his kickoff over PROJ 10.1 before it, and "No team" or "Bye" with
+ * no number at all for a man who has no game -- a bare 0.0 read as a projection.
+ */
+function RowNumber({ p, week }: { p: Player; week: number }) {
+  const face = scoreFace(p, week);
+  return (
+    <span className={`roster-proj display tnum roster-live ${face.kind === "live" ? "roster-live-on" : ""}`} data-state={face.kind}>
+      <span className="roster-live-state whitespace-nowrap">{face.kickoff ?? face.label}</span>
+      {face.value === null ? (
+        <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-muted">{face.kind === "noteam" ? "\u2014" : face.label}</span>
+      ) : face.kickoff ? (
+        <span className="whitespace-nowrap">
+          <span className="mr-0.5 text-[8.5px] font-extrabold uppercase tracking-[0.1em] text-muted">{face.label}</span>
+          {face.value}
+        </span>
+      ) : (
+        face.value
+      )}
+    </span>
+  );
 }
 
 /** "RB12": where he ranks at his position in this league this week. A dash without one. */
@@ -109,7 +121,7 @@ const DOWN = new Set(["OUT", "IR", "PUP", "SUS", "NA", "DOUBTFUL"]);
  * to decide (it opens that decision), and a red alert when he cannot play and has to leave
  * the lineup. The row itself opens the man's page.
  */
-function RosterRow({ label, p, confidence, role, changed }: { label: string; p: Player | null; confidence?: string; role?: LineupRole; changed?: boolean }) {
+function RosterRow({ label, p, confidence, role, changed, week }: { label: string; p: Player | null; confidence?: string; role?: LineupRole; changed?: boolean; week: number }) {
   const down = !p || DOWN.has((p.injury_status ?? "").toUpperCase());
   const inFrame = !!role?.decision && !!p && (p.id === role.pick?.id || role.candidates.some((c) => c.player.id === p.id));
   const mark = down ? (
@@ -138,7 +150,7 @@ function RosterRow({ label, p, confidence, role, changed }: { label: string; p: 
             <InjuryTag status={p.injury_status} />
           </span>
           <PosRank p={p} />
-          <RowNumber p={p} />
+          <RowNumber p={p} week={week} />
         </PlayerTarget>
       ) : (
         <span className="roster-row-main">
@@ -291,6 +303,38 @@ function Boom({ required, decisions, faces, onDone }: { required: number; decisi
   );
 }
 
+/**
+ * The week, played (W-021): from the last game until Tuesday noon ET, what the lineup as you
+ * set it scored and what was left on the bench. The whole story stays in the film.
+ */
+function Recap({ r, week }: { r: LineupRecap; week: number }) {
+  return (
+    <section className="card p-4" data-testid="lineup-recap">
+      <div className="flex items-baseline justify-between gap-3">
+        <Eyebrow>{WEEK.lineup.recapEyebrow(week)}</Eyebrow>
+        <span className="display tnum text-[22px] leading-none">{r.total.toFixed(1)}</span>
+      </div>
+      {r.bench.length > 0 ? (
+        <>
+          <p className="mt-2 text-[13px] font-bold text-sit">{WEEK.lineup.recapLeft(r.left.toFixed(1))}</p>
+          <ul className="mt-1 grid gap-0.5">
+            {r.bench.map((b) => (
+              <li key={b.player.id} className="text-[12.5px] leading-snug text-ink-2">
+                {WEEK.lineup.recapBench(b.player.name, b.points.toFixed(1))}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="mt-2 text-[13px] text-ink-2">{WEEK.lineup.recapClean}</p>
+      )}
+      <Link href={SECTIONS.report.href} className="mt-2 inline-block text-[12px] font-bold underline decoration-line-2 underline-offset-2">
+        {WEEK.lineup.recapFilm}
+      </Link>
+    </section>
+  );
+}
+
 export function LineupView({
   lineup,
   compact = false,
@@ -324,8 +368,11 @@ export function LineupView({
   // once"), never in the report's compact embed. It used to land on every arrival at the
   // tab, which made a summary into a toll. `?ride=1` resets it with the other openings.
   const [boom, setBoom] = useState(false);
+  const anyDecision = roles.some((r) => r.decision);
   useBeforePaint(() => {
     if (compact) return;
+    // "All set" never pops up (W-020): with nothing to fix or decide, the page says so itself.
+    if (nRequired === 0 && !anyDecision) return;
     // A shared link straight to a player opens his page over the lineup; the stamp would
     // land on top of it, two dialogs deep. He came for the player: let him have it.
     if (new URLSearchParams(window.location.search).has("player")) return;
@@ -333,17 +380,19 @@ export function LineupView({
     if (boomSeen(league, lineup.week)) return;
     saveBoomSeen(league, lineup.week);
     setBoom(true);
-  }, [compact, lineup.week]);
+  }, [compact, lineup.week, nRequired, anyDecision]);
   const dismiss = () => setBoom(false);
   const faces = [...required.map((c) => c.in), ...open.map((r) => r.pick)]
     .filter((p): p is Player => !!p && "projected" in p)
     .slice(0, 6);
   // The games are on (Andrew, 2026-09-28): the hero reads the board, not the projection.
   const live = lineup.live ?? null;
+  // Every starter's game has kicked off: nothing is the owner's to set (W-021).
+  const nothingLeft = !!live && lineup.pending === 0;
 
   return (
     <div className="grid min-w-0 gap-5">
-      {boom && <Boom required={nRequired} decisions={nDecisions} faces={faces} onDone={dismiss} />}
+      {boom && !set && <Boom required={nRequired} decisions={nDecisions} faces={faces} onDone={dismiss} />}
 
       <section className="hero callsheet">
         {/* The top line is the head coach's: the personality of the page, and who it is from. */}
@@ -406,6 +455,13 @@ export function LineupView({
         </div>
       </section>
 
+      {!compact && lineup.rolled_from != null && (
+        <p className="-mt-2 text-[12px] font-semibold text-muted" data-testid="lineup-rolled">
+          {WEEK.lineup.rolled(lineup.rolled_from, lineup.week)}
+        </p>
+      )}
+      {!compact && lineup.recap && <Recap r={lineup.recap} week={lineup.week} />}
+
       {/* Two piles side by side on a wide screen (1024px up): the calls to make on the
           left, the board they change on the right, so a decision and the row it moves are
           both on screen. One column everywhere else, and always in the report's embed. */}
@@ -414,7 +470,9 @@ export function LineupView({
       {!compact && (
         <section className="min-w-0">
           <H2>{LINEUP.section.required}</H2>
-          {nRequired === 0 ? (
+          {nRequired === 0 && nothingLeft ? (
+            <p className="mt-2 text-[13px] text-muted" data-testid="lineup-nothing-left">{WEEK.lineup.nothingLeft}</p>
+          ) : nRequired === 0 ? (
             <div className="mt-2 flex items-center gap-3">
               <Stamp ink="text-start" size="md" slam={animate}>
                 <IconCheck size={11} strokeWidth={3.4} />
@@ -439,7 +497,9 @@ export function LineupView({
         <section className="min-w-0">
           <H2>{LINEUP.section.decisions}</H2>
           {open.length === 0 ? (
-            <p className="mt-2 text-[13px] text-muted">{LINEUP.decisionsQuiet}</p>
+            <p className="mt-2 text-[13px] text-muted">
+              {nothingLeft ? WEEK.lineup.nothingLeft : live ? WEEK.lineup.quietLive : LINEUP.decisionsQuiet}
+            </p>
           ) : (
             <ul className="mt-2.5 grid gap-2">
               {open.map((r, i) => (
@@ -478,13 +538,13 @@ export function LineupView({
           {lineup.slots.map((s, i) => (
             // The tag is the role's: a starter with no man in the frame for his seat is a
             // Lock there even if a bench man who sits at another role projects near him.
-            <RosterRow key={i} label={roles[i]?.label ?? s.slot} p={s.player} confidence={roles[i]?.confidence ?? s.confidence} role={roles[i]} changed={s.change} />
+            <RosterRow key={i} label={roles[i]?.label ?? s.slot} p={s.player} confidence={roles[i]?.confidence ?? s.confidence} role={roles[i]} changed={s.change} week={lineup.week} />
           ))}
           {/* The same number as the hero, so the table adds up to what the page promised:
               the projection, or once the games are on, the total as it stands. */}
           <li className="roster-row roster-total">
             <span className="roster-row-main">
-              <span className="roster-role">{live ? LINEUP.live.total : LINEUP.total}</span>
+              <span className="roster-role whitespace-nowrap">{live ? LINEUP.live.total : LINEUP.total}</span>
               <span aria-hidden />
               <span className="roster-name" />
               <span className="roster-rank" />
@@ -500,7 +560,7 @@ export function LineupView({
           <H2>{LINEUP.section.bench}</H2>
           <ul className="card mt-2 min-w-0 divide-y divide-line overflow-hidden p-0">
             {bench.map((b, i) => (
-              <RosterRow key={i} label={b.player.position} p={b.player} role={roleOf.get(b.player.id)} />
+              <RosterRow key={i} label={b.player.position} p={b.player} role={roleOf.get(b.player.id)} week={lineup.week} />
             ))}
           </ul>
         </section>
@@ -511,7 +571,7 @@ export function LineupView({
           <H2>{LINEUP.section.reserve}</H2>
           <ul className="card mt-2 min-w-0 divide-y divide-line overflow-hidden p-0">
             {reserve.map((b, i) => (
-              <RosterRow key={i} label={b.player.position} p={b.player} />
+              <RosterRow key={i} label={b.player.position} p={b.player} week={lineup.week} />
             ))}
           </ul>
         </section>
