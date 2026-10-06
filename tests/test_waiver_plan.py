@@ -120,6 +120,46 @@ def test_bonus_terms_are_measured_against_depth_you_already_have(league, ros, by
     assert v2 > 0 and note2
 
 
+def _bye_team(_byes_map=None):
+    from edge.models import Team
+    starter = Player(id="wr1", name="Tee Higgins", position="WR", nfl_team="CIN")
+    backup = Player(id="wr2", name="Slow Backup", position="WR", nfl_team="KC")
+    team = Team(id="1", name="Mine", owner_id=None, owner_name=None, players=[starter, backup], starters=["wr1"])
+    return team, {"wr1": 160.0, "wr2": 40.0}
+
+
+def test_a_free_agent_on_the_same_bye_covers_nothing():
+    """W-028: Jennings (MIN, bye 6) was 'bye-week cover' for Higgins (CIN, bye 6)."""
+    byes_map = {"CIN": 6, "MIN": 6, "KC": 10, "SEA": 8}
+    team, ros = _bye_team(byes_map)
+    same = Player(id="fa1", name="Jauan Jennings", position="WR", nfl_team="MIN")
+    v, note = waiver_plan.bye_cover_value(team, same, 4, byes_map, 13, {**ros, "fa1": 120.0})
+    assert v == 0.0 and note is None
+    other = Player(id="fa2", name="Off Week Eight", position="WR", nfl_team="SEA")
+    v2, note2 = waiver_plan.bye_cover_value(team, other, 4, byes_map, 13, {**ros, "fa2": 120.0})
+    assert v2 > 0 and note2 == "Covers Tee Higgins's week 6 bye"
+
+
+def test_bye_cover_looks_past_the_first_starter_with_a_bye():
+    """A free agent who cannot cover the first same-position bye can still cover the next."""
+    byes_map = {"CIN": 6, "MIN": 6, "KC": 7}
+    team, ros = _bye_team(byes_map)
+    fa = Player(id="fa1", name="Jauan Jennings", position="WR", nfl_team="MIN")
+    v, note = waiver_plan.bye_cover_value(team, fa, 4, byes_map, 13, {**ros, "fa1": 200.0})
+    assert v > 0 and note == "Covers Slow Backup's week 7 bye"
+
+
+def test_the_wire_reason_never_calls_a_same_bye_pickup_cover():
+    """The line the wire prints (`waivers._bye_cover`) follows the same rule."""
+    from edge.engine import waivers
+    byes_map = {"CIN": 6, "MIN": 6, "KC": 10, "SEA": 6}
+    team, _ = _bye_team(byes_map)
+    same = Player(id="fa1", name="Jauan Jennings", position="WR", nfl_team="MIN")
+    assert waivers._bye_cover(team, same, 4, byes_map) is None
+    other = Player(id="fa2", name="Someone Else", position="WR", nfl_team="ARI")
+    assert waivers._bye_cover(team, other, 4, {**byes_map, "ARI": 11}) == "Bye-week cover for Tee Higgins (wk 6)."
+
+
 def test_injured_star_is_never_offered_as_a_drop(league, ros, byes):
     """Marking your best player out this week must not put him on the chopping block."""
     for t in league.teams:
