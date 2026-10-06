@@ -42,11 +42,13 @@ import {
   PATHS,
   phoneReady,
   progress,
+  returningStep,
   walkExit,
   type Local,
   type Path,
   type Step,
 } from "@/lib/onboarding";
+import { enterAfterSignIn } from "@/lib/openLeague";
 import { useSession } from "@/lib/session";
 import type { ActionFeed, Me, OnboardStep, Product, VerifyStartResponse } from "@/lib/types";
 import { featuresForSku, waitForFeatures } from "@/lib/unlock";
@@ -190,10 +192,16 @@ function Walk() {
               setDraft((d) => ({ ...d, ticket }));
               go("name");
             }}
-            onIn={(m) => {
-              // A number already on file: signed in. Straight on to whatever is unfinished.
-              if (firstStep(m, { path, ...local }) === "done") router.replace(walkExit(next));
-              else landed(m);
+            onIn={async (m) => {
+              // A number already on file is a sign-in, not a sign-up (W-003): with a league it
+              // goes straight in, to the call sheet on its last league, the way /login does.
+              // Only an account with no league at all carries on in the walk.
+              if (returningStep(m, { path, ...local }) !== "done") return landed(m);
+              const exit = walkExit(next);
+              const to = await enterAfterSignIn(m, exit === "/home" ? null : exit);
+              router.replace(to ?? exit);
+              // Leaving: the code screen keeps its spinner until the page has gone.
+              await new Promise<void>(() => undefined);
             }}
           />
         )}
@@ -402,7 +410,7 @@ function CodeScreen({
   onDraft: (f: (d: Draft) => Draft) => void;
   onChange: () => void;
   onNew: (ticket: string) => void;
-  onIn: (me: Me) => void;
+  onIn: (me: Me) => void | Promise<void>;
 }) {
   const { busy, error, run } = useRun();
   const [code, setCode] = useState("");
@@ -418,7 +426,7 @@ function CodeScreen({
     run(async () => {
       const out = await phoneVerify(draft.phone, value);
       if (out.new) onNew(out.ticket);
-      else onIn(out.me);
+      else await onIn(out.me);
     });
   const resend = () =>
     run(async () => {

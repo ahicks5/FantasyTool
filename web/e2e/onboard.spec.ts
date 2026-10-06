@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page, type Route } from "@playwright/test";
 import { API_URL } from "../playwright.config";
-import { ACCOUNT, CONNECT, DESK, ONBOARD, RIDE } from "../src/lib/vocab";
+import { ACCOUNT, CONNECT, DESK, LINES, ONBOARD, RIDE } from "../src/lib/vocab";
 import { dayStamp } from "../src/lib/elevator";
 
 /**
@@ -88,6 +88,10 @@ test("the walk: phone, code, nameplate, mailbox, league, the first call, the fre
 
   // One question: the number. The bar is already lit, and email is a side door.
   await expect(page.getByRole("heading", { level: 1, name: ONBOARD.phone.title })).toBeVisible();
+  // The wordmark reads SUITE and is the way home: the landing page, signed out (W-004, W-007).
+  const mark = page.getByRole("link", { name: LINES.homeAria });
+  await expect(mark).toHaveAttribute("href", "/");
+  await expect(mark).toHaveText(/^SUITE/);
   await expect(page.getByRole("button", { name: ONBOARD.phone.useEmail })).toBeVisible();
   await noSidewaysScroll(page);
   await phoneAndCode(page, freshPhone());
@@ -182,6 +186,33 @@ test("no phone: email, password, nameplate, no league yet, and not now to the fr
   expect(me.account.plan.tier).toBe("free");
   expect(me.trial_eligible).toBe(true);
   expect(me.account.name).toBe("Sam");
+});
+
+test("a number already on file with a league skips the walk and goes straight in (W-003)", async ({ context, page }) => {
+  await beAStranger(context);
+  // A phone account with a league, made against the API: the dev verifier hands the code back.
+  const phone = freshPhone();
+  const start = await (await page.request.post(`${API_URL}/api/auth/phone/start`, { data: { phone } })).json();
+  const verify = await (await page.request.post(`${API_URL}/api/auth/phone/verify`, { data: { phone: start.phone, code: start.dev_code } })).json();
+  expect(verify.new).toBe(true);
+  const done = await (await page.request.post(`${API_URL}/api/auth/phone/complete`, { data: { ticket: verify.ticket, name: "Ray" } })).json();
+  const linked = await page.request.post(`${API_URL}/api/connect`, {
+    headers: { Authorization: `Bearer ${done.token}` },
+    data: { platform: "sleeper", league_id: LEAGUE.league_id, team_id: "5" },
+  });
+  expect(linked.ok(), await linked.text()).toBe(true);
+
+  // Signing up again with the same number on a new device: no first call, no "You're in",
+  // straight to the call sheet on that league.
+  await page.goto("/register");
+  await phoneAndCode(page, phone);
+  await page.waitForURL("**/home");
+  await expect(page.getByTestId("walk-reveal")).toHaveCount(0);
+  const ride = page.getByRole("status", { name: RIDE.aria });
+  if (await ride.count()) await ride.click();
+  await expect(page.getByRole("region", { name: DESK.aria })).toBeVisible();
+  const stored = JSON.parse((await page.evaluate(() => localStorage.getItem("booth.connection"))) ?? "null");
+  expect(stored?.league_id).toBe(LEAGUE.league_id);
 });
 
 test("a half-walked account picks up where it stopped", async ({ context, page }) => {
