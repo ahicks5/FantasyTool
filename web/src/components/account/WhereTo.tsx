@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { logout } from "@/lib/api";
+import { EspnAuthError, YahooAuthError, logout } from "@/lib/api";
 import { openSavedLeague } from "@/lib/openLeague";
 import { useSession } from "@/lib/session";
 import type { MeLeague } from "@/lib/types";
@@ -37,6 +37,17 @@ export function WhereTo({ next }: { next: string | null }) {
       if (!reading) await openSavedLeague(l);
       router.push(next ?? "/home");
     } catch (e) {
+      // The key to a private ESPN league (or a Yahoo sign-in) lives on the device that linked
+      // it, so a new browser has none. That is a form to fill in on /connect, not an error.
+      if (e instanceof EspnAuthError) {
+        const q = new URLSearchParams({ platform: "espn", id: l.league_id, team: l.team_id });
+        router.push(`/connect?${q}`);
+        return;
+      }
+      if (e instanceof YahooAuthError) {
+        router.push("/connect?platform=yahoo");
+        return;
+      }
       setError(e);
       setOpening(null);
     }
