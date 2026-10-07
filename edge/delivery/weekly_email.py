@@ -34,7 +34,7 @@ SIGNAL = "#e02d1b"   # the ON AIR lamp — brand chrome only, never a status
 # Chrome, flattened. The wordmark is a gradient everywhere else; email clients render
 # neither gradients nor webfonts, so upstairs arrives as silver capitals or not at all.
 METAL = "#dde1e6"
-TAGLINE = "Own the week."
+TAGLINE = "Own the week. Own the league."
 
 TYPE_COLOR = {"start": START, "waiver": LEAN, "trade": INK, "hold": MUTED}
 # What the call sheet calls each play. The raw feed type ("waiver") is a data word, not a

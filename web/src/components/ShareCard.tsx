@@ -57,7 +57,12 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
           height: SIZE,
           transform: `scale(${scale})`,
           transformOrigin: "top left",
-          background: "radial-gradient(120% 78% at 50% 0%,#23272f 0%,#08090b 62%)",
+          // The kit's stage, as `STAGE` in edge/graphics.py paints the PNG this previews.
+          background:
+            "radial-gradient(70% 55% at 50% -6%,rgba(224,160,64,.14),transparent 70%)," +
+            "radial-gradient(38% 28% at 10% 2%,rgba(255,245,225,.2),transparent 72%)," +
+            "radial-gradient(38% 28% at 90% 2%,rgba(255,245,225,.2),transparent 72%)," +
+            "radial-gradient(120% 50% at 50% 112%,rgba(255,255,255,.06),transparent 60%),#050608",
           color: "#f7f6f3",
           padding: 72,
           fontFamily: "var(--font-archivo), system-ui, sans-serif",
@@ -139,10 +144,10 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
             className="flex items-center justify-between"
             style={{ marginTop: 34, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.12)" }}
           >
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 10, fontSize: 30, fontWeight: 800 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 10, fontSize: 28, fontWeight: 800 }}>
               {/* The mark, inlined with its own gradient: a still image posted into a feed
                   cannot depend on the page's chrome token. Soft chrome, as on the kit. */}
-              <svg width={Math.round((30 * MARK_BOX.w) / MARK_BOX.h)} height={30} viewBox={`${MARK_BOX.x} ${MARK_BOX.y} ${MARK_BOX.w} ${MARK_BOX.h}`} fill="url(#os-card-chrome)" fillRule="evenodd" aria-hidden>
+              <svg width={Math.round((27 * MARK_BOX.w) / MARK_BOX.h)} height={27} viewBox={`${MARK_BOX.x} ${MARK_BOX.y} ${MARK_BOX.w} ${MARK_BOX.h}`} fill="url(#os-card-chrome)" fillRule="evenodd" aria-hidden>
                 <defs>
                   <linearGradient id="os-card-chrome" x1="0" y1="0" x2="0.3" y2="1">
                     <stop offset="0" stopColor="#ffffff" />
@@ -159,8 +164,8 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
               <span style={{ letterSpacing: "0.08em", marginRight: "-0.08em", color: "#cdd2d9" }}>OWNER’S SUITE</span>
               <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 99, background: "#ff4d3a", marginLeft: 3 }} />
             </span>
-            <span style={{ fontSize: 24, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(247,246,243,0.45)" }}>
-              {LINES.tagline}
+            <span style={{ fontSize: 21, fontWeight: 700, letterSpacing: "0.1em", whiteSpace: "nowrap", textTransform: "uppercase", color: "rgba(247,246,243,0.5)" }}>
+              {LINES.taglineLong}
             </span>
           </div>
         </div>

@@ -14,7 +14,6 @@ import requests
 # The card is posted to Reddit, X and Discord, so it is fixed to one look for everyone
 # rather than following a viewer's theme. Dark, because it has to survive a busy feed.
 INK = "#08090b"          # the plane, same near-black the app sits on
-PLATE = "radial-gradient(120% 78% at 50% 0%,#23272f 0%,#08090b 62%)"  # the lit room
 PAPER = "rgba(247,246,243,"
 COLORS = {"Accept": "#22a468", "Reject": "#e2554e", "Counter": "#f0b429", "Fair": "#5b8def"}
 SIGNAL = "#ff4d3a"  # the ON AIR lamp — brand chrome only, never a status colour
@@ -103,16 +102,16 @@ def mark_svg(height: int) -> str:
         '<stop offset="1" stop-color="#ffffff"/></linearGradient></defs>'
         f'<path d="{MARK_PATH}"/></svg>'
     )
-def _lights(width: int, tint: str = "255,245,225") -> str:
+def _lights(width: int) -> str:
     """The stage's two floodlight banks: a grid of soft lamps at each top corner, blurred
     to bokeh and masked to an oval, with the glow they throw. Mirrors `.stage::before` and
     `.stage::after` in globals.css, sized to the card."""
     bank_w, bank_h = round(width * 0.3), round(width * 0.075)
     dot = max(3, round(width / 380))
     bank = (
-        f"position:absolute;top:{round(width * 0.016)}px;width:{bank_w}px;height:{bank_h}px;"
+        f"position:absolute;z-index:-1;top:-{round(bank_h * 0.45)}px;width:{bank_w}px;height:{bank_h}px;"
         f"background-image:radial-gradient(circle,rgba(255,252,240,.95) 0 {dot}px,rgba(255,240,210,.35) {dot + 1}px,transparent {dot * 3}px);"
-        f"background-size:{dot * 9}px {dot * 7}px;filter:blur(1.4px);opacity:.7;"
+        f"background-size:{dot * 9}px {dot * 7}px;filter:blur(1.4px);opacity:.5;"
         "-webkit-mask-image:radial-gradient(ellipse at center,#000 28%,transparent 72%);"
     )
     return (
@@ -269,6 +268,9 @@ def _on_air(size: int) -> str:
     )
 
 
+# How wide one stamp letter draws, in em: Archivo 900 caps plus .04em tracking, measured.
+STAMP_EM = 0.84
+
 # "Will they say yes?" replaced "Fairness %" (W-033): three steps, not a percentage.
 WILL_STEPS = {"Likely": 3, "Maybe": 2, "Unlikely": 1}
 WILL_COLORS = {"Likely": COLORS["Accept"], "Maybe": COLORS["Counter"], "Unlikely": COLORS["Reject"]}
@@ -332,12 +334,14 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
     # The stamp is the largest thing on the card, so it is the thing that overflows.
     # Size it from the word rather than pinning a number: "COUNTER" at a fixed 176px
     # ran off the right edge of the story card, and a longer verdict would do the same
-    # to the square one. Archivo 900 caps run about 0.72em wide; the frame adds
-    # 2x34 padding + 2x11 border, and rotating the box by 3.5deg widens its bounding
-    # box by sin(3.5deg) x its height. 95px covers the lot with room to spare.
+    # to the square one. Archivo 900 caps with the stamp's .04em tracking run 0.84em a
+    # letter, measured in Chromium (COUNTER at 161px drew 939px; the 0.72 this used to
+    # assume let the story's stamp run 100px off the right edge). The frame adds 2x34
+    # padding + 2x11 border, and rotating the box by 3.5deg widens its bounding box by
+    # sin(3.5deg) x its height. 95px covers the lot with room to spare.
     avail = w - 2 * pad - 10
     n = max(len(verdict), 1)
-    stamp_size = int(min(176 if tall else 138, (avail - 95) / (0.718 * n + 0.061)))
+    stamp_size = int(min(176 if tall else 138, (avail - 95) / (STAMP_EM * n + 0.061)))
     sides = ("grid-template-columns:1fr" if tall else "grid-template-columns:1fr 1fr")
 
     return f"""<!doctype html><html><head><meta charset="utf-8">
@@ -348,8 +352,9 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
     font-family:Archivo,-apple-system,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;
     font-variant-numeric:tabular-nums}}
   .card{{width:{w}px;height:{h}px;box-sizing:border-box;padding:{pad}px;display:flex;
-    flex-direction:column;background:{PLATE}}}
+    flex-direction:column;{STAGE['background']};position:relative;z-index:0;overflow:hidden}}
 </style></head><body><div class="card">
+  {_lights(w)}
   <!-- The band: the lamp and the week, the same two things the call sheet puts at its top. -->
   <div style="display:flex;align-items:center;justify-content:space-between;font-size:{30 if tall else 27}px">
     {_on_air(30 if tall else 27)}
@@ -389,9 +394,9 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
     <div style="margin-top:{40 if tall else 34}px;padding-top:{28 if tall else 24}px;
       border-top:1px solid rgba(255,255,255,.12);display:flex;align-items:center;
       justify-content:space-between">
-      {_nameplate(34 if tall else 30)}
-      <span style="font-size:{26 if tall else 24}px;font-weight:700;letter-spacing:.14em;
-        text-transform:uppercase;color:{PAPER}.45)">{TAGLINE}</span>
+      {_nameplate(28)}
+      <span style="font-size:21px;font-weight:700;letter-spacing:.1em;white-space:nowrap;
+        text-transform:uppercase;color:{PAPER}.5)">{TAGLINE_LONG}</span>
     </div>
   </div>
 </div></body></html>"""
@@ -439,8 +444,9 @@ def lock_card_html(call: dict, league_name: str = "", week: int | None = None) -
     font-family:Archivo,-apple-system,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;
     font-variant-numeric:tabular-nums}}
   .card{{width:1080px;height:1080px;box-sizing:border-box;padding:72px;display:flex;
-    flex-direction:column;background:{PLATE}}}
+    flex-direction:column;{STAGE['background']};position:relative;z-index:0;overflow:hidden}}
 </style></head><body><div class="card">
+  {_lights(1080)}
   <div style="display:flex;align-items:center;justify-content:space-between;font-size:27px">
     {_on_air(27)}
     <span style="color:{PAPER}.55);font-weight:700;max-width:620px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{sub}</span>
@@ -479,9 +485,9 @@ def lock_card_html(call: dict, league_name: str = "", week: int | None = None) -
          card's name in it. -->
     <div style="margin-top:20px;padding-top:24px;border-top:1px solid rgba(255,255,255,.12);
       display:flex;align-items:center;justify-content:space-between">
-      {_nameplate(30)}
-      <span style="font-size:24px;font-weight:700;letter-spacing:.14em;
-        text-transform:uppercase;color:{PAPER}.45)">{TAGLINE}</span>
+      {_nameplate(28)}
+      <span style="font-size:21px;font-weight:700;letter-spacing:.1em;white-space:nowrap;
+        text-transform:uppercase;color:{PAPER}.5)">{TAGLINE_LONG}</span>
     </div>
   </div>
 </div></body></html>"""
@@ -536,8 +542,9 @@ def film_card_html(snap: dict, league_name: str = "", week: int | None = None) -
     font-family:Archivo,-apple-system,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;
     font-variant-numeric:tabular-nums}}
   .card{{width:1080px;height:1080px;box-sizing:border-box;padding:72px;display:flex;
-    flex-direction:column;background:{PLATE}}}
+    flex-direction:column;{STAGE['background']};position:relative;z-index:0;overflow:hidden}}
 </style></head><body><div class="card">
+  {_lights(1080)}
   <div style="display:flex;align-items:center;justify-content:space-between;font-size:27px">
     {_on_air(27)}
     <span style="color:{PAPER}.55);font-weight:700;max-width:620px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{sub}</span>
@@ -550,14 +557,15 @@ def film_card_html(snap: dict, league_name: str = "", week: int | None = None) -
   {star_html}
   <div style="margin-top:auto;padding-top:24px;border-top:1px solid rgba(255,255,255,.12);
     display:flex;align-items:center;justify-content:space-between">
-    {_nameplate(30)}
-    <span style="font-size:24px;font-weight:700;letter-spacing:.14em;
-      text-transform:uppercase;color:{PAPER}.45)">{TAGLINE}</span>
+    {_nameplate(28)}
+    <span style="font-size:21px;font-weight:700;letter-spacing:.1em;white-space:nowrap;
+      text-transform:uppercase;color:{PAPER}.5)">{TAGLINE_LONG}</span>
   </div>
 </div></body></html>"""
 
 
 BATTLE_RED = "#e5232f"   # Position Battle's own red: the clash, never a status colour
+BATTLE_BLUE = "#48a8f8"  # the blue corner: the brand blue (`--color-blue`)
 BATTLE_HORIZON_LABELS = {"week": "This week", "next5": "Next 5", "ros": "Rest of season", "playoffs": "Playoffs"}
 
 
@@ -602,10 +610,13 @@ def battle_card_html(snap: dict, league_name: str = "", week: int | None = None)
     font-family:Archivo,-apple-system,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;
     font-variant-numeric:tabular-nums}}
   .card{{width:1080px;height:1080px;box-sizing:border-box;padding:64px 72px;display:flex;
-    flex-direction:column;background:{PLATE};position:relative;overflow:hidden}}
+    flex-direction:column;{STAGE['background']};position:relative;z-index:0;overflow:hidden}}
 </style></head><body><div class="card">
+  {_lights(1080)}
   <div style="position:absolute;inset:0;background:linear-gradient(115deg,transparent 49.6%,{BATTLE_RED} 49.6%,{BATTLE_RED} 50.4%,transparent 50.4%);opacity:.55"></div>
   <div style="position:absolute;right:-120px;top:-60px;width:600px;height:600px;border-radius:999px;background:radial-gradient(circle,{BATTLE_RED}55,transparent 70%)"></div>
+  <!-- The blue corner faces it, as on the kit's Position Battle poster. -->
+  <div style="position:absolute;left:-120px;top:-60px;width:600px;height:600px;border-radius:999px;background:radial-gradient(circle,{BATTLE_BLUE}55,transparent 70%)"></div>
   <div style="position:relative;display:flex;align-items:center;justify-content:space-between;font-size:27px">
     <span style="font-size:26px;font-weight:900;letter-spacing:.2em;color:{BATTLE_RED}">POSITION BATTLE{f" &middot; {e(snap.get('spot') or '')}" if snap.get("spot") else ""}</span>
     <span style="color:{PAPER}.55);font-weight:700;max-width:480px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{sub}</span>

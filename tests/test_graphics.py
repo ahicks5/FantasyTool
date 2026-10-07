@@ -146,8 +146,10 @@ def test_the_verdict_is_the_largest_thing_and_the_logo_is_a_signature():
 
 def test_the_stamp_is_sized_so_a_long_verdict_cannot_run_off_the_card():
     """A fixed stamp size overflowed the story card at 'COUNTER'. The size is computed
-    from the word, so the longest verdict still fits inside the padding."""
-    from edge.graphics import SHAPES
+    from the word, so the longest verdict still fits inside the padding. STAMP_EM is the
+    width Chromium actually draws (edge/graphics.py says how it was measured); this test
+    once used its own 0.718 and agreed with a card that clipped."""
+    from edge.graphics import SHAPES, STAMP_EM
 
     def stamp_px(html_str):
         i = html_str.index("font-size:", html_str.index("border:11px solid"))
@@ -159,7 +161,7 @@ def test_the_stamp_is_sized_so_a_long_verdict_cannot_run_off_the_card():
         for verdict in ("Fair", "Accept", "Reject", "Counter", "Counteroffer"):
             g = {"verdict": verdict, "give": [], "get": [], "my_delta_ros": 0, "acceptance": "Maybe"}
             size = stamp_px(verdict_card_html(g, "", "", 1, shape=shape))
-            drawn = 0.718 * len(verdict) * size + 0.061 * size + 95
+            drawn = STAMP_EM * len(verdict) * size + 0.061 * size + 95
             assert drawn <= width - 2 * pad, f"{verdict} overflows the {shape} card"
             assert size > 40, f"{verdict} shrank to {size}px, which is not a stamp"
 

@@ -465,10 +465,11 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
             </li>
           ))}
         </ul>
-        <LinkButton href="/register" variant="start" className="mt-6 w-full">
+        {/* A stranger's way in is a marketing door, so it wears the landing page's gold. */}
+        <LinkButton href="/register" variant="gold" className="mt-6 w-full rounded-full">
           Take me upstairs · free
         </LinkButton>
-        <p className="mt-3.5 text-[12px] font-bold text-muted">{LINES.tagline}</p>
+        <p className="poster-sub mt-3.5 text-[10.5px]">{LINES.taglineLong}</p>
       </section>
 
       <p className="mt-6 text-center text-[12px] leading-relaxed text-muted">
