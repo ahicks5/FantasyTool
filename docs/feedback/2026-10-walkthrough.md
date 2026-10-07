@@ -21,7 +21,7 @@ name value back).
 
 ## Where we are
 
-- **Status:** RESUMED 2026-10-06: film logged (W-038 to W-041); walking pages 9–13. Last ID: W-041.
+- **Status:** RESUMED 2026-10-06: film logged (W-038 to W-041); page 9 done; walking pages 10–13. Last ID: W-045.
 - **Paused at:** pages 1–7 walked and logged (landing, sign-up, sign-in, desk + full matchup, depth chart + player sheet + Position Battle, scouting + pickup, GM's Office + Trade Lab). Page 8, the film (`/report`), was looked at but **not reviewed with Andrew**: he will do it last, in a later session (draft observations are under §8 as open questions). Pages 9–13 (`/connect`, `/account`, upgrade sheet, `/admin`, privacy/terms/404) are not started.
 - **To resume:** `uv run python scripts/walkthrough.py start`, sign in if past page 3, then carry
   on from page 9 (`/connect`), then 10–13, then the film (§8) last. The next ID is the one after the last one in the log.
@@ -769,7 +769,7 @@ it on 1", taking Claude's suggested answer to each.
 
 ---
 
-## 9. Connect a league · `/connect`, `/connect/espn` (draft, waiting on Andrew)
+## 9. Connect a league · `/connect`, `/connect/espn`
 
 _Files: `web/src/app/connect/page.tsx`, `web/src/components/LeagueLinker.tsx`, `EspnAuthForm.tsx`,
 `web/src/app/connect/espn/page.tsx`, words in `CONNECT` / `ESPN_KEY` in `vocab.ts`._
@@ -778,9 +778,47 @@ Seen 2026-10-06, signed in. Sleeper search on the public test league (1403186749
 "Select your team"; nothing was saved. ESPN: the ID box and the four-step bookmark walk. Yahoo
 is gone from the picker (W-006). Loads in under a second; clean at both widths and themes.
 
-- **Draft A** · After "Find", a "KICKOFF 4d 15:37" line appears under the heading and pushes the
-  platform buttons and the box ~70px down, under the reader's thumb.
-- **Draft B** · "Select your team" lists all twelve teams with nothing marking which one is yours
-  (found by league ID; a username search could know).
-- **Draft C** · ESPN's "I have a league ID" is a grey underline that is easy to miss beside the
-  green button. Low stakes.
+### W-042 · Make the connect flow read as three clear steps: pick, load, choose
+- **Where:** `/connect` (and the same `LeagueLinker` inside the sign-up walk) · all viewports and themes
+- **Andrew:** "i think we should make that page better. make it clear too that you do whatever step,
+  and then load and wait for hte league to load, then sleect your team."
+- **Note:** today it is "Step 1 of 2 · Connect" with the platform buttons, the box and the team list
+  stacked, and the team list just appears. Make the order explicit and visible:
+  1. **Pick your platform** (Sleeper / ESPN).
+  2. **Find your league**: the box (Sleeper username or ID; ESPN ID or the bookmark), then a
+     clear loading state in place of the team list while it fetches ("Loading The Megalabowl…"
+     with the turning ring, never a blank gap).
+  3. **Pick your team**, with the save button.
+  Number the three, show which one you are on, and keep finished steps collapsed to one line
+  ("Sleeper · The Megalabowl · Change"). Same flow inside the sign-up walk, since it shares the
+  component.
+  Files: `web/src/components/LeagueLinker.tsx`, `web/src/app/connect/page.tsx`, words in `CONNECT`.
+- **Priority:** P1 · **Size:** M
+
+### W-043 · Nothing should move when the league loads
+- **Where:** `/connect` · phone 375 (any)
+- **Andrew:** "i agree with all your suggestions." (on: take the kickoff clock off this screen)
+- **What happened:** after "Find", a "KICKOFF 4d 15:37" line appeared under the heading and pushed
+  the platform buttons and the box ~70px down, under the reader's thumb.
+- **Note:** drop the clock from `/connect`; it belongs to the rooms, not to a setup form. Check the
+  rest of the page for anything else that mounts above the box after a fetch.
+  Files: `web/src/components/LeagueLinker.tsx`.
+- **Priority:** P2 · **Size:** S
+
+### W-044 · Mark your own team in "Select your team"
+- **Where:** `/connect` team list · all viewports
+- **Andrew:** "i agree with all your suggestions." (on: mark yours and put it first when we can tell)
+- **Note:** when the league was found by Sleeper username, that user's roster is known: put it
+  first, labelled "You", pre-selected. A team already on the account says "Already linked".
+  By league ID alone there is no way to know, so the list stays as is.
+  Files: `web/src/components/LeagueLinker.tsx`, `web/src/lib/leagueInput.ts`, the Sleeper lookup in
+  `edge/api/app.py` if it does not already return the owner id.
+- **Priority:** P2 · **Size:** S
+
+### W-045 · "I have a league ID" is too easy to miss
+- **Where:** `/connect`, ESPN · all viewports and themes
+- **Andrew:** "i agree with all your suggestions." (on: make it more visible)
+- **Note:** a grey underline under the big green "Link from ESPN". Make it a secondary button of the
+  same width under the green one ("I have a league ID"), so both ways in read as choices.
+  Files: `web/src/components/EspnAuthForm.tsx` / `LeagueLinker.tsx`.
+- **Priority:** P3 · **Size:** S
