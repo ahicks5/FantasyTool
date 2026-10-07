@@ -989,6 +989,7 @@ export const ACCOUNT = {
     /** Shown while the API has no Stripe key: the grant is written on the spot. */
     comp: "Launch week: no card, no charge. Tap it and the floor is yours.",
     get: (name: string) => `Get ${name}`,
+    getSlot: (price: string) => `Add a slot · ${price}`,
     done: "Done. The floor is open.",
     slotLead: "One more league on your account.",
     busy: "Opening\u2026",
@@ -998,6 +999,8 @@ export const ACCOUNT = {
     limit: "Your leagues are full",
     /** Under the offers: how the money moves. */
     stripe: "Paid through Stripe. The week renews until you cancel. The season is one payment.",
+    /** Under a league slot: it is one payment, and the pass's renew line does not apply (W-051). */
+    stripeSlot: "One payment. Yours for the rest of the season. Paid through Stripe.",
     noCharge: "Nothing is charged today.",
     /** On the locked card, under the two buttons. */
     terms: "The week renews until you cancel. The season is one payment, and nothing renews.",

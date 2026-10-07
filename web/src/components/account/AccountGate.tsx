@@ -335,7 +335,8 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
         </div>
       ) : (
         <div className="grid gap-3">
-          <p className="text-[14px] leading-relaxed text-muted">{sku === "league_slot" ? ACCOUNT.upgrade.slotLead : ACCOUNT.upgrade.lead}</p>
+          {/* A slot's own card already says what it is; a lead line over it said it twice (W-051). */}
+          {sku !== "league_slot" && <p className="text-[14px] leading-relaxed text-muted">{ACCOUNT.upgrade.lead}</p>}
           {!checkout && <p className="rounded-xl bg-start-soft px-3.5 py-2.5 text-[13px] font-bold leading-snug text-start">{ACCOUNT.upgrade.comp}</p>}
           <ul className="grid gap-2.5">
             {offers.map((o, i) => (
@@ -346,7 +347,7 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
                 </div>
                 <p className="mt-1 text-[13px] leading-snug text-muted">{o.blurb}</p>
                 <Button variant={i === 0 ? "start" : "secondary"} className="mt-3 w-full" busy={busy === o.sku} disabled={!!busy && busy !== o.sku} onClick={() => buy(o)}>
-                  {busy === o.sku ? ACCOUNT.upgrade.busy : ACCOUNT.upgrade.get(productName(o))}
+                  {busy === o.sku ? ACCOUNT.upgrade.busy : o.sku === "league_slot" ? ACCOUNT.upgrade.getSlot(priceLabel(o)) : ACCOUNT.upgrade.get(productName(o))}
                 </Button>
               </li>
             ))}
@@ -358,7 +359,7 @@ function UpgradeSheet({ sku, what, returnTo, onClose, onDone }: { sku: Sku; what
           )}
           <p className="flex items-center justify-center gap-1.5 text-center text-[12px] text-muted">
             <IconLock size={12} strokeWidth={2.4} />
-            {checkout ? ACCOUNT.upgrade.stripe : ACCOUNT.upgrade.noCharge}
+            {checkout ? (sku === "league_slot" ? ACCOUNT.upgrade.stripeSlot : ACCOUNT.upgrade.stripe) : ACCOUNT.upgrade.noCharge}
           </p>
         </div>
       )}

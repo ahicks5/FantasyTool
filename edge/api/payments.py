@@ -46,12 +46,13 @@ def checkout_description(sku: str, season: int, trial_days: int = 0) -> str:
 
 
 def checkout_name(sku: str, season: int) -> str:
-    """The line the buyer reads on Stripe's page and their receipt."""
+    """The line the buyer reads on Stripe's page and their receipt. A middot, not an em dash:
+    the separator the rest of the brand uses (W-050)."""
     if sku == products.WEEK_SKU:
-        return "Owner's Suite — Week pass (7 days)"
+        return "Owner's Suite · Week pass (7 days)"
     if sku == products.SEASON_SKU:
-        return f"Owner's Suite — Season pass ({season} season)"
-    return f"Owner's Suite — {products.BY_SKU[sku]['name']} ({season} season)"
+        return f"Owner's Suite · Season pass ({season} season)"
+    return f"Owner's Suite · {products.BY_SKU[sku]['name']} ({season} season)"
 
 
 def create_checkout(email: str, sku: str, season: int, success_url: str | None, cancel_url: str | None,
