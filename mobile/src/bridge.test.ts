@@ -8,7 +8,7 @@ test("only the five message shapes get through, and only well-formed", () => {
   assert.equal(parseMessage('{"type":"route","path":"https://evil.test/"}'), null);
   assert.deepEqual(parseMessage('{"type":"theme","mode":"light"}'), { type: "theme", mode: "light" });
   assert.deepEqual(parseMessage('{"type":"theme","mode":"neon"}'), { type: "theme", mode: "dark" });
-  assert.deepEqual(parseMessage('{"type":"share","url":"https://penthousefantasy.com/s/abc"}'), { type: "share", url: "https://penthousefantasy.com/s/abc" });
+  assert.deepEqual(parseMessage('{"type":"share","url":"https://ownerssuite.io/s/abc"}'), { type: "share", url: "https://ownerssuite.io/s/abc" });
   assert.equal(parseMessage('{"type":"share","url":"javascript:alert(1)"}'), null);
   assert.deepEqual(parseMessage('{"type":"tap"}'), { type: "tap" });
   assert.equal(parseMessage('{"type":"open","url":"https://x.test"}'), null);
@@ -21,8 +21,8 @@ test("the page's message to share is the one the app reads", () => {
   const sent: string[] = [];
   const w = { navigator: { userAgent: `Mobile ${APP_UA_TOKEN}1.0.0` }, ReactNativeWebView: { postMessage: (d: string) => void sent.push(d) } };
   return import("../../web/src/lib/native.ts").then(({ shareInApp }) => {
-    assert.equal(shareInApp("https://penthousefantasy.com/s/abc", w), true);
-    assert.deepEqual(parseMessage(sent[0]), { type: "share", url: "https://penthousefantasy.com/s/abc" });
+    assert.equal(shareInApp("https://ownerssuite.io/s/abc", w), true);
+    assert.deepEqual(parseMessage(sent[0]), { type: "share", url: "https://ownerssuite.io/s/abc" });
   });
 });
 

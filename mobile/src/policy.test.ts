@@ -2,18 +2,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parts, reloadAfter, routeFor } from "./policy.ts";
 
-const HOME = "https://penthousefantasy.com";
+const HOME = "https://ownerssuite.io";
 
 test("our own site stays in the app, with or without www", () => {
-  assert.equal(routeFor("https://penthousefantasy.com/home", HOME), "inside");
-  assert.equal(routeFor("https://www.penthousefantasy.com/team?x=1#y", HOME), "inside");
-  assert.equal(routeFor("https://PENTHOUSEFANTASY.com/", HOME), "inside");
+  assert.equal(routeFor("https://ownerssuite.io/home", HOME), "inside");
+  assert.equal(routeFor("https://www.ownerssuite.io/team?x=1#y", HOME), "inside");
+  assert.equal(routeFor("https://OWNERSSUITE.io/", HOME), "inside");
 });
 
 test("a look-alike host is not our site", () => {
-  assert.equal(routeFor("https://penthousefantasy.com.evil.test/home", HOME), "browser");
-  assert.equal(routeFor("https://evilpenthousefantasy.com/", HOME), "browser");
-  assert.equal(routeFor("https://penthousefantasy.com@evil.test/", HOME), "browser");
+  assert.equal(routeFor("https://ownerssuite.io.evil.test/home", HOME), "browser");
+  assert.equal(routeFor("https://evilownerssuite.io/", HOME), "browser");
+  assert.equal(routeFor("https://ownerssuite.io@evil.test/", HOME), "browser");
 });
 
 test("payments and outside links open in a Safari sheet, never in our frame", () => {
@@ -30,7 +30,7 @@ test("the Yahoo sign-in hops stay inside, because they end back on /connect/yaho
 });
 
 test("mail, phone and the App Store go to iOS; the page's own plumbing is left alone", () => {
-  assert.equal(routeFor("mailto:help@penthousefantasy.com", HOME), "system");
+  assert.equal(routeFor("mailto:help@ownerssuite.io", HOME), "system");
   assert.equal(routeFor("tel:+15555550100", HOME), "system");
   assert.equal(routeFor("sms:+15555550100", HOME), "system");
   assert.equal(routeFor("itms-apps://apps.apple.com/app/id1", HOME), "system");

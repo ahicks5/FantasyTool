@@ -7,7 +7,7 @@ Branched from production (`claude/edge-fantasy-app-launch-alo0rr` @ `fb7fbd1`), 
 The EAS link (`9effa56`) was cherry-picked in so `mobile/app.json` matches the TestFlight build.
 
 Andrew's calls (2026-10-06): trace the monogram from `img006.jpg` (D-1); the domain stays
-penthousefantasy.com for now (D-2, deferred); the landing h1 is the poster tagline with
+penthousefantasy.com for now (D-2, deferred; done 2026-10-06, see docs/DEPLOY.md); the landing h1 is the poster tagline with
 "Step into your front office." under it (D-3); its own branch; execute the plan.
 
 What the build changed from the plan below, and why:

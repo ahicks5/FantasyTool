@@ -5,7 +5,7 @@ Chrome is started once (`start`) with a remote-debugging port and its own profil
 command attaches to it, does one thing, and leaves the window as it was.
 
     uv run python scripts/walkthrough.py start
-    uv run python scripts/walkthrough.py goto https://penthousefantasy.com
+    uv run python scripts/walkthrough.py goto https://ownerssuite.io
     uv run python scripts/walkthrough.py resize 375 812        # or: resize desktop / phone
     uv run python scripts/walkthrough.py theme light           # sets booth.theme, reloads
     uv run python scripts/walkthrough.py shot landing-phone-dark [--full]

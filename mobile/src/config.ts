@@ -13,7 +13,7 @@
 import Constants from "expo-constants";
 import { APP_UA_TOKEN } from "../../web/src/lib/native.ts";
 
-export const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || "https://penthousefantasy.com").replace(/\/+$/, "");
+export const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || "https://ownerssuite.io").replace(/\/+$/, "");
 
 /** Where the app opens: the desk. A stranger is sent on to /register by the page itself. */
 export const START_PATH = "/home";

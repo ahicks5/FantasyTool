@@ -262,7 +262,7 @@ def main(argv: list[str] | None = None):
     s.add_argument("--to", help="email address to deliver to (renders only if omitted)")
     s.add_argument("--send", action="store_true",
                    help="actually deliver it; without this --to is a dry run")
-    s.add_argument("--base-url", default="https://penthousefantasy.com")
+    s.add_argument("--base-url", default="https://ownerssuite.io")
     s.add_argument("--features", default="", help="comma list, e.g. my_team to preview the free version")
     s.set_defaults(fn=cmd_email)
     s = sub.add_parser("economics", help="unit economics: margin per SKU, runway, cohort P&L")

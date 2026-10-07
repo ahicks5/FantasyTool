@@ -41,7 +41,7 @@ function copied(r: { clip: string[] }) {
   return r.clip.length ? parseEspnCode(r.clip[0]) : null;
 }
 
-const BACK = "https://penthousefantasy.com/connect/espn?id=123";
+const BACK = "https://ownerssuite.io/connect/espn?id=123";
 /** What ESPN actually writes: the s2 is long and percent-encoded, the SWID has braces. */
 const S2 = "AEBx%2Bq7Y%2FabcDEF0123456789%3D%3D";
 const SWID = "{DEAD0000-BEEF-1111-2222-333333333333}";
@@ -66,7 +66,7 @@ test("on ESPN with both cookies it leaves for Owner's Suite with the key in the 
 });
 
 test("on a team page it brings the league and the team back too, so nobody digs out an ID", () => {
-  const r = run(buildEspnKeyBookmarklet("https://penthousefantasy.com/connect/espn"), {
+  const r = run(buildEspnKeyBookmarklet("https://ownerssuite.io/connect/espn"), {
     hostname: "fantasy.espn.com",
     search: "?leagueId=98765&teamId=4&seasonId=2026",
     cookie: `SWID=${SWID}; espn_s2=${S2}`,
@@ -76,7 +76,7 @@ test("on a team page it brings the league and the team back too, so nobody digs 
 });
 
 test("with no league carried and none on the page, it says to open the league first", () => {
-  const r = run(buildEspnKeyBookmarklet("https://penthousefantasy.com/connect/espn"), {
+  const r = run(buildEspnKeyBookmarklet("https://ownerssuite.io/connect/espn"), {
     hostname: "www.espn.com",
     search: "",
     cookie: `SWID=${SWID}; espn_s2=${S2}`,
@@ -97,7 +97,7 @@ test("the key goes to the clipboard and nowhere else: no navigation, no URL carr
 });
 
 test("on any other site it says to open ESPN and stays put", () => {
-  for (const hostname of ["penthousefantasy.com", "espn.com.evil.example", "www.google.com"]) {
+  for (const hostname of ["ownerssuite.io", "espn.com.evil.example", "www.google.com"]) {
     const r = run(buildEspnKeyBookmarklet(BACK, "123"), { hostname, cookie: `SWID=${SWID}; espn_s2=${S2}` });
     assert.equal(copied(r), null, hostname);
     assert.equal(r.alerts.length, 1);
@@ -141,8 +141,8 @@ test("the return fragment is read strictly", () => {
 });
 
 test("the return address carries the league the key was asked for", () => {
-  assert.equal(espnKeyReturnUrl("https://penthousefantasy.com", "123"), `https://penthousefantasy.com${RETURN_PATH}?id=123`);
-  assert.equal(espnKeyReturnUrl("https://penthousefantasy.com/", " 123 "), `https://penthousefantasy.com${RETURN_PATH}?id=123`);
+  assert.equal(espnKeyReturnUrl("https://ownerssuite.io", "123"), `https://ownerssuite.io${RETURN_PATH}?id=123`);
+  assert.equal(espnKeyReturnUrl("https://ownerssuite.io/", " 123 "), `https://ownerssuite.io${RETURN_PATH}?id=123`);
   assert.equal(espnKeyReturnUrl("http://localhost:3000", ""), `http://localhost:3000${RETURN_PATH}`);
 });
 

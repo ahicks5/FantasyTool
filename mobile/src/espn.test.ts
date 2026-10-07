@@ -4,7 +4,7 @@ import { ESPN_READ_SCRIPT, isEspnWalk, keyHidden, keyReturnUrl, readyKey } from 
 // The web's own parser for the bookmark's return: the app's hand-off has to read the same.
 import { parseEspnKeyReturn, RETURN_PATH } from "../../web/src/lib/espnKey.ts";
 
-const HOME = "https://penthousefantasy.com";
+const HOME = "https://ownerssuite.io";
 // ESPN's s2 is long and full of characters that need encoding; this is the shape, not a real one.
 const S2 = "AEB%2Bq9x/z==abc+def";
 const SWID = "{1A2B3C4D-0000-4000-8000-ABCDEFABCDEF}";

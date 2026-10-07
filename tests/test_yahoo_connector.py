@@ -148,7 +148,7 @@ def test_unconfigured_server_says_so(monkeypatch):
 def test_authorize_url(monkeypatch):
     monkeypatch.setenv("YAHOO_CLIENT_ID", "cid")
     monkeypatch.setenv("YAHOO_CLIENT_SECRET", "shh")
-    monkeypatch.setenv("YAHOO_REDIRECT_URI", "https://penthousefantasy.com/connect/yahoo")
+    monkeypatch.setenv("YAHOO_REDIRECT_URI", "https://ownerssuite.io/connect/yahoo")
     url = yahoo_api.authorize_url("xyz")
     assert url.startswith(yahoo_api.AUTHORIZE_URL + "?")
     assert "client_id=cid" in url and "state=xyz" in url and "response_type=code" in url

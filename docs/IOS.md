@@ -7,7 +7,7 @@ call, and the walk-through from a fresh checkout to testers holding the app.
 ## What it is, in one paragraph
 
 An **Expo (SDK 57) app that frames the live site** and adds what only a phone can do. Every
-room, number, account and pass is still `web/`, loaded from `https://penthousefantasy.com`, so a
+room, number, account and pass is still `web/`, loaded from `https://ownerssuite.io`, so a
 web deploy reaches the app the same minute with no rebuild and no App Store review. The app
 itself is about 850 lines with its comments: the frame (`App.tsx`), a link policy, the bridge to
 the page, ESPN's own sign-in, kickoff reminders and an offline screen. Tests run in node; CI
@@ -100,7 +100,7 @@ three days of work, plus Apple's cut (15% under the Small Business Program).
 - **Account deletion in the app** (guideline 5.1.1(v)): `/account` → delete, already built.
 - **Sign in with Apple** is not required: we have no third-party sign-in.
 - **Encryption:** `usesNonExemptEncryption: false` is set, so no export question per build.
-- Privacy policy URL `https://penthousefantasy.com/privacy`; support URL `https://penthousefantasy.com`.
+- Privacy policy URL `https://ownerssuite.io/privacy`; support URL `https://ownerssuite.io`.
 
 ## Walk-through: from this branch to testers' phones
 

@@ -169,7 +169,7 @@ def test_reset_mail_is_capped_per_account_and_still_says_ok(client, monkeypatch)
 def test_reset_links_open_on_our_site_even_when_the_env_var_is_missing(client, monkeypatch):
     register(client)
     monkeypatch.delenv("EDGE_WEB_URL", raising=False)
-    assert app_mod._reset_link("owner@example.com").startswith("https://penthousefantasy.com/reset?token=")
+    assert app_mod._reset_link("owner@example.com").startswith("https://ownerssuite.io/reset?token=")
     monkeypatch.setenv("EDGE_DEV", "1")
     assert app_mod._reset_link("owner@example.com").startswith("http://localhost:3000/reset?token=")
     monkeypatch.setenv("EDGE_WEB_URL", "https://example.test/")

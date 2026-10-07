@@ -15,7 +15,7 @@ calls it with its refresh token when a read comes back 401.
 Configuration (all three are needed; see docs/DEPLOY.md):
     YAHOO_CLIENT_ID       the app's Client ID (Yahoo calls it the Consumer Key)
     YAHOO_CLIENT_SECRET   the app's Client Secret
-    YAHOO_REDIRECT_URI    where Yahoo sends the user back, e.g. https://penthousefantasy.com/connect/yahoo
+    YAHOO_REDIRECT_URI    where Yahoo sends the user back, e.g. https://ownerssuite.io/connect/yahoo
                           — must match the app's registered redirect exactly.
 
 Responses are XML. Yahoo's JSON form nests every collection as {"0": ..., "count": n} with

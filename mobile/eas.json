@@ -7,7 +7,7 @@
     "base": {
       "node": "22.22.0",
       "env": {
-        "EXPO_PUBLIC_WEB_URL": "https://penthousefantasy.com"
+        "EXPO_PUBLIC_WEB_URL": "https://ownerssuite.io"
       }
     },
     "simulator": {

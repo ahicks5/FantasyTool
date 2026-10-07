@@ -32,7 +32,7 @@ Where the build differs from the plan below, and why:
   `trial_eligible`, and gives way to a discount code.
 
 Not done, and why: Android's WebOTP autofill needs Twilio Verify's message template to end with
-`@penthousefantasy.com #<code>` (a Twilio console setting, not code). Requiring a confirmed email
+`@ownerssuite.io #<code>` (a Twilio console setting, not code). Requiring a confirmed email
 before an email-only account's first purchase waits on mail being switched on (Andrew's call).
 The two Stripe dashboard switches in §8 are Andrew's.
 

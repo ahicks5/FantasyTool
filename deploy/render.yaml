@@ -13,7 +13,7 @@ services:
       - key: EDGE_TRUST_PROXY
         value: "1"
       - key: EDGE_CORS
-        value: https://penthousefantasy.com,https://www.penthousefantasy.com,https://fantasy-tool-alpha.vercel.app
+        value: https://ownerssuite.io,https://www.ownerssuite.io,https://penthousefantasy.com,https://www.penthousefantasy.com,https://fantasy-tool-alpha.vercel.app
       - key: DATABASE_URL
         sync: false
       - key: SUPABASE_JWT_SECRET
@@ -26,7 +26,7 @@ services:
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
       - key: EDGE_WEB_URL
-        value: https://penthousefantasy.com
+        value: https://ownerssuite.io
       # Stripe's no-code customer portal login link (not a secret), where a week-pass
       # subscriber manages or cancels. Enable the portal in the Stripe dashboard, then set
       # this on Render by hand; unset, the account page shows no "Manage or cancel" link.

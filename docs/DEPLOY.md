@@ -25,7 +25,7 @@ from the API.
 
 | Piece | Where | Notes |
 |---|---|---|
-| Web (Next.js) | **https://penthousefantasy.com** | Vercel. Root Directory must be `web/`, not the repo root. `www.` redirects to the apex; `fantasy-tool-alpha.vercel.app` still serves the same build. |
+| Web (Next.js) | **https://ownerssuite.io** | Vercel. Root Directory must be `web/`, not the repo root. `www.` redirects to the apex; the old `penthousefantasy.com` and `fantasy-tool-alpha.vercel.app` still serve the same build. |
 | API (FastAPI) | **https://edge-api-gi8d.onrender.com** (Render, not Railway) | Container from the repo `Dockerfile`. Blueprint in `deploy/render.yaml`. |
 | Production branch | `claude/edge-fantasy-app-launch-alo0rr` | **There is no `main` in this repo.** Every branch is a `claude/*` branch. |
 
@@ -173,7 +173,7 @@ API (Railway):
 | `EDGE_USE_CLAUDE`, `ANTHROPIC_API_KEY` | optional | LLM-written trade explanations. Without them the templates are used. |
 | `YAHOO_CLIENT_ID` | Yahoo app Client ID | **Yahoo leagues.** All three `YAHOO_*` set, plus `NEXT_PUBLIC_YAHOO=1` on Vercel, turns Yahoo on: the connect page shows it as a live choice (it asks `GET /api/yahoo/status`). Without the Vercel flag Yahoo is not shown at all. See "Yahoo" below. |
 | `YAHOO_CLIENT_SECRET` | secret | Yahoo app Client Secret. Secret: set on Render only. |
-| `YAHOO_REDIRECT_URI` | `https://penthousefantasy.com/connect/yahoo` | Must match the redirect URI registered on the Yahoo app **exactly** (scheme, host, path, no trailing slash). |
+| `YAHOO_REDIRECT_URI` | `https://ownerssuite.io/connect/yahoo` | Must match the redirect URI registered on the Yahoo app **exactly** (scheme, host, path, no trailing slash). |
 | `EDGE_CHROMIUM` | optional | Path to an existing Chromium. Only needed if the image does not install its own — see below. |
 
 Secrets live in the host's dashboard, never in the repo. `.env` is gitignored.
@@ -186,7 +186,7 @@ token. So Yahoo needs an approved Yahoo developer app before anyone can connect 
 1. **Apply for API access** at https://sports.yahoo.com/developer/ ("Apply"). Since 2026 this is
    a reviewed application, not self-serve; approval is Yahoo's timeline, not ours.
 2. Once approved, create the app with **Fantasy Sports: Read** permission, type web
-   application, redirect URI `https://penthousefantasy.com/connect/yahoo`.
+   application, redirect URI `https://ownerssuite.io/connect/yahoo`.
 3. Set `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET`, `YAHOO_REDIRECT_URI` on Render. No web
    change or redeploy is needed: the connect page turns Yahoo on when the API says it is on.
 4. Yahoo's terms require the credit line "Fantasy data provided by Yahoo Fantasy", linked to
@@ -204,7 +204,7 @@ league call sends `X-Yahoo-Token`. Access tokens live an hour: a 403 with
 `refresh_token` out of `booth.yahoo.auth` (DevTools → Application → Local Storage), then:
 
 ```bash
-export YAHOO_CLIENT_ID=... YAHOO_CLIENT_SECRET=... YAHOO_REDIRECT_URI=https://penthousefantasy.com/connect/yahoo
+export YAHOO_CLIENT_ID=... YAHOO_CLIENT_SECRET=... YAHOO_REDIRECT_URI=https://ownerssuite.io/connect/yahoo
 export YAHOO_REFRESH_TOKEN=...          # your own; never commit it
 uv run python -m edge.cli yahoo                         # your leagues and their keys
 uv run python -m edge.cli yahoo 461.l.12345             # the league, as the engine sees it
@@ -338,8 +338,9 @@ curl -sI https://<api-host>/api/share/<some-id>/card.png   # want 200 image/png,
 
 ## Custom domain
 
-`penthousefantasy.com`, registered at Squarespace, DNS at Squarespace, served by Vercel. The apex is
-the primary domain; in Vercel, `www` is set to 308-redirect to it (not the other way round —
+`ownerssuite.io`, registered at Squarespace, DNS at Squarespace, served by Vercel (since
+2026-10-06; it was `penthousefantasy.com` before, which is still registered and still points at
+the same deployment). The apex is the primary domain; in Vercel, `www` is set to 308-redirect to it (not the other way round —
 every URL the API and the web generate is the apex).
 
 | Record | Name | Value |
@@ -354,11 +355,17 @@ Three settings have to name the domain, and the first one is the outage from abo
 
 | Where | Variable | Value |
 |---|---|---|
-| Render | `EDGE_CORS` | `https://penthousefantasy.com,https://www.penthousefantasy.com,https://fantasy-tool-alpha.vercel.app` |
-| Render | `EDGE_WEB_URL` | `https://penthousefantasy.com` (share links, reset links, Stripe return URL) |
-| Vercel | `NEXT_PUBLIC_SITE_URL` | `https://penthousefantasy.com` — build-time, so **redeploy** after setting it |
+| Render | `EDGE_CORS` | `https://ownerssuite.io,https://www.ownerssuite.io,https://penthousefantasy.com,https://www.penthousefantasy.com,https://fantasy-tool-alpha.vercel.app` |
+| Render | `EDGE_WEB_URL` | `https://ownerssuite.io` (share links, reset links, Stripe return URL) |
+| Vercel | `NEXT_PUBLIC_SITE_URL` | `https://ownerssuite.io` — build-time, so **redeploy** after setting it |
 
 Check: `curl -s https://edge-api-gi8d.onrender.com/api/health` lists `cors_origins` and `web_url`.
+
+Moving domains signs everyone out once: the sign-in token lives in browser storage, which
+belongs to the origin. Before `penthousefantasy.com` is set to 308 to `ownerssuite.io`, an
+iPhone build with `EXPO_PUBLIC_WEB_URL=https://ownerssuite.io` must be out: the app keeps only
+its own build-time host inside the WebView (`mobile/src/policy.ts`), so an older build would
+open every redirected page in Safari.
 
 ## Not wired up yet
 

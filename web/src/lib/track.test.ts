@@ -4,11 +4,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DOORS, attrFrom, doorOf } from "./track.ts";
 
-const HOST = "penthousefantasy.com";
+const HOST = "ownerssuite.io";
 
 test("the first touch keeps the campaign tags and the referring host only", () => {
   const a = attrFrom(
-    "https://penthousefantasy.com/?utm_source=reddit&utm_campaign=wk4&utm_content=hookA&fbclid=x",
+    "https://ownerssuite.io/?utm_source=reddit&utm_campaign=wk4&utm_content=hookA&fbclid=x",
     "https://www.reddit.com/r/fantasyfootball/comments/abc?secret=1",
     HOST,
   );
@@ -16,8 +16,8 @@ test("the first touch keeps the campaign tags and the referring host only", () =
 });
 
 test("our own pages are not a source, and a share card is", () => {
-  assert.deepEqual(attrFrom("https://penthousefantasy.com/team", "https://www.penthousefantasy.com/", HOST), {});
-  assert.deepEqual(attrFrom("https://penthousefantasy.com/s/ab3kx9qz", "", HOST), { share: "ab3kx9qz" });
+  assert.deepEqual(attrFrom("https://ownerssuite.io/team", "https://www.ownerssuite.io/", HOST), {});
+  assert.deepEqual(attrFrom("https://ownerssuite.io/s/ab3kx9qz", "", HOST), { share: "ab3kx9qz" });
   assert.deepEqual(attrFrom("not a url", "", HOST), {});
 });
 

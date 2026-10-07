@@ -13,7 +13,7 @@ function appWindow(sent: string[] = []) {
 
 test("no window, no app: the server never takes the app's path", () => {
   assert.equal(isNativeApp(), false);
-  assert.equal(shareInApp("https://penthousefantasy.com/s/abc"), false);
+  assert.equal(shareInApp("https://ownerssuite.io/s/abc"), false);
 });
 
 test("the app needs both its user-agent token and its message channel", () => {
@@ -25,8 +25,8 @@ test("the app needs both its user-agent token and its message channel", () => {
 
 test("a share in the app goes to the share sheet as one message; in a browser it is refused", () => {
   const sent: string[] = [];
-  assert.equal(shareInApp("https://penthousefantasy.com/s/abc", appWindow(sent)), true);
-  assert.deepEqual(sent.map((s) => JSON.parse(s)), [{ type: "share", url: "https://penthousefantasy.com/s/abc" }]);
+  assert.equal(shareInApp("https://ownerssuite.io/s/abc", appWindow(sent)), true);
+  assert.deepEqual(sent.map((s) => JSON.parse(s)), [{ type: "share", url: "https://ownerssuite.io/s/abc" }]);
   assert.equal(shareInApp("", appWindow(sent)), false, "nothing to share");
   assert.equal(shareInApp("https://x.test", { navigator: { userAgent: IPHONE_UA } }), false);
 });

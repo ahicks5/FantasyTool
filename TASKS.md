@@ -69,7 +69,7 @@ the season. Built the same day ("build it all now"); defaults taken for D4–D8 
       `customer.subscription.trial_will_end` event to the webhook — **Andrew** (docs/DEPLOY.md)
 - [ ] One test-mode Checkout with `FREEWEEK` on each pass against real Stripe before launch: the
       $0 invoice, the day-8 charge (Stripe's test clock), the season's subscription ending itself.
-- [ ] Twilio Verify template ending `@penthousefantasy.com #<code>` for Android code autofill — **Andrew**
+- [ ] Twilio Verify template ending `@ownerssuite.io #<code>` for Android code autofill — **Andrew**
 - [x] Decided (Andrew, 2026-10-05): phone is the primary way in, email-only accounts are fine; no confirmed email required before a purchase.
 - [x] Defaults confirmed (Andrew, 2026-10-05): season $29.99, free week (`FREEWEEK`) yes, week preselected, the skip's words, $25.00 credit.
 
@@ -181,12 +181,16 @@ where it names the old brand as history, and in an ESPN team name inside a recor
 - [x] The signed-in top bar's short wordmark is **SUITE** (was PHF). Andrew to confirm.
 - [x] `opengraph-image.png` re-rendered by `scripts/render_brand_assets.py`; the two launch
       PDFs re-rendered from their HTML.
-- [ ] **Domain.** Code, CORS, Yahoo redirect, reset links and the docs still say
-      `penthousefantasy.com` because that is the domain that resolves. When Andrew registers
-      the new one: `edge/api/limits.py`, `edge/cli.py`, `edge/delivery/weekly_email.py`,
-      `deploy/render.yaml`, `docs/DEPLOY.md`, the tests that pin them, then `EDGE_CORS`,
-      `EDGE_WEB_URL`, `YAHOO_REDIRECT_URI` on Render, `NEXT_PUBLIC_SITE_URL` on Vercel, and the
-      redirect URI on the Yahoo app. — **Andrew**
+- [x] **Domain: ownerssuite.io** (2026-10-06). DNS → Vercel, apex primary, `www` 308s to it;
+      `EDGE_CORS`, `EDGE_WEB_URL` on Render and `NEXT_PUBLIC_SITE_URL` on Vercel set and verified;
+      code defaults, `deploy/render.yaml`, `eas.json`, tests and docs follow. penthousefantasy.com
+      still serves the same site and stays in the CORS list.
+- [ ] Domain, the rest — **Andrew**: Resend sending domain `ownerssuite.io`; Twilio Verify
+      template (above); App Store Connect privacy and support URLs; Stripe business URL; Yahoo
+      redirect + `YAHOO_REDIRECT_URI` when Yahoo is approved (Y-7).
+- [ ] A TestFlight build with `EXPO_PUBLIC_WEB_URL=https://ownerssuite.io` (now in `eas.json`),
+      **then** in Vercel set `penthousefantasy.com` and `www` to 308 → `ownerssuite.io`. Not
+      before: an older build opens every redirected page in Safari. Keep the old domain registered.
 - [ ] Social handle (`penthousefootball` in BRAND.md §2), the Twilio Verify service name, and
       the Stripe product names already created in the dashboard — **Andrew**.
 - [ ] `launch/cards/` were already stale; re-render with `edge.cli card` before any post.
@@ -351,7 +355,7 @@ until the three `YAHOO_*` env vars are set on Render, then offers it. Setup: `do
 - [x] **Y-6** Andrew applied at https://sports.yahoo.com/developer/ on 2026-09-28 ("submitted,
       we'll be in touch"). Read-only access is all Yahoo offers, which is all we use.
 - [ ] **Y-7** Andrew: once approved, create the app (Fantasy Sports: Read, redirect
-      `https://penthousefantasy.com/connect/yahoo`) and set the three env vars on Render.
+      `https://ownerssuite.io/connect/yahoo`) and set the three env vars on Render.
 - [ ] **Y-8** Record a real league (`edge.cli yahoo <key> --record`) and replace the
       hand-written `free_agents.xml`; confirm stat ids beyond the documented sample (1-3, 7,
       14, 17, 24-28, 30) and the FAAB budget ($100 assumed, never stated by Yahoo).

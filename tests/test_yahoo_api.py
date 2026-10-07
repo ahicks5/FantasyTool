@@ -100,7 +100,7 @@ def test_connect_uses_the_body_platform_for_the_credential(client, seen):
 def test_sign_in_routes(client, monkeypatch):
     monkeypatch.setenv("YAHOO_CLIENT_ID", "cid")
     monkeypatch.setenv("YAHOO_CLIENT_SECRET", "shh")
-    monkeypatch.setenv("YAHOO_REDIRECT_URI", "https://penthousefantasy.com/connect/yahoo")
+    monkeypatch.setenv("YAHOO_REDIRECT_URI", "https://ownerssuite.io/connect/yahoo")
     assert client.get("/api/yahoo/status").json() == {"enabled": True}
     url = client.get("/api/yahoo/authorize", params={"state": "a" * 24}).json()["url"]
     assert "client_id=cid" in url and "shh" not in url

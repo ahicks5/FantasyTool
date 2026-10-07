@@ -44,8 +44,7 @@ because that is what an owner types into a search box.
 og:title         Owner's Suite · Fantasy sports, elevated.
 social bio       Fantasy sports, elevated. Built for owners who play to win. Own the week. Own the league.
 handles          X @owners_suite · Instagram @ownerssuite · Reddit u/OwnersSuite   (SOCIALS, lib/site.ts)
-domain           penthousefantasy.com today. The kit prints ownerssuite.io; that cutover is
-                 Andrew's, later (2026-10-06), and touches only env, DNS and callbacks.
+domain           ownerssuite.io (live 2026-10-06); penthousefantasy.com still points at the same site.
 ```
 
 **"Owner's Suite Fantasy" is not the name.** The descriptor never fuses into the name.

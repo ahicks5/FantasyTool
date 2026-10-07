@@ -170,10 +170,16 @@ class RateLimitMiddleware:
 #: whole site down silently: the API stayed healthy, answered every curl, and the browser
 #: threw away every response, so it read as "cannot reach Owner's Suite" rather than as config.
 #: This is our domain, not a wildcard — it grants nobody else anything.
-PRODUCTION_WEB_ORIGIN = "https://penthousefantasy.com"
-#: Other names the same deployment answers on: `www` redirects to the apex, and the Vercel
-#: address still serves every build. Allowed so a visitor on either is never locked out.
-PRODUCTION_WEB_ALIASES = ("https://www.penthousefantasy.com", "https://fantasy-tool-alpha.vercel.app")
+PRODUCTION_WEB_ORIGIN = "https://ownerssuite.io"
+#: Other names the same deployment answers on: `www` redirects to the apex, the old
+#: penthousefantasy.com domain still points here, and the Vercel address still serves every
+#: build. Allowed so a visitor on any of them is never locked out.
+PRODUCTION_WEB_ALIASES = (
+    "https://www.ownerssuite.io",
+    "https://penthousefantasy.com",
+    "https://www.penthousefantasy.com",
+    "https://fantasy-tool-alpha.vercel.app",
+)
 
 
 def cors_origins() -> list[str]:
