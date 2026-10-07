@@ -51,7 +51,7 @@ export function LandingBar({ heroId, closeId, href }: { heroId: string; closeId:
         ) : (
           <Countdown className="min-w-0" />
         )}
-        <LinkButton href={href} variant="start" size="sm" className="shrink-0">
+        <LinkButton href={href} variant="gold" size="sm" className="shrink-0">
           {LANDING.bar.cta}
         </LinkButton>
       </div>

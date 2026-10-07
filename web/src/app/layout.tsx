@@ -27,15 +27,15 @@ const archivo = Archivo({
   axes: ["wdth"],
 });
 
-// The name is one word. The descriptor "fantasy football call sheet" rides beside it
-// wherever context is missing and never fuses into it: "Owner's Suite Fantasy" as a bare
-// string reads as something else entirely in search. See docs/BRAND.md section 2.
-// The separator is the middot the rest of the app uses, not an em dash.
-const TITLE = "Owner's Suite · own the week";
-const OG_TITLE = "Owner's Suite · fantasy football call sheet";
+// The name is one word. The kit's brand line ("Fantasy sports, elevated.") rides beside
+// it where context is missing and never fuses into it, and the description still says
+// "fantasy football", which is what an owner types into a search box. See docs/BRAND.md
+// section 2. The separator is the middot the rest of the app uses, not an em dash.
+const TITLE = "Owner's Suite · Own the week. Own the league.";
+const OG_TITLE = "Owner's Suite · Fantasy sports, elevated.";
 const DESCRIPTION =
-  "Take the top floor. Owner's Suite writes your fantasy football call sheet every week: three moves before kickoff, who starts, who to claim, what to offer.";
-const OG_DESCRIPTION = "Three moves before kickoff: who starts, who to claim, what to offer. Own the week.";
+  "Step into your front office. Owner's Suite works your fantasy football league every week: who starts, who to claim, what to offer. Own the week. Own the league.";
+const OG_DESCRIPTION = "Your GM, your head of scouting and your head coach, working your fantasy football league every week. Own the week. Own the league.";
 
 export const metadata: Metadata = {
   // Without this, Next resolves every Open Graph image against localhost and share

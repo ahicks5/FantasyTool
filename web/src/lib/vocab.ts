@@ -123,8 +123,15 @@ export const TABS_ARIA = "Sections";
  * Voice: verb first, plural, no hedge, no exclamation marks. See docs/BRAND.md §3.
  */
 export const LINES = {
-  /** Under the wordmark, on the unfurl card, at the foot of the email. Locked. */
+  /** The short tagline, where the long one does not fit: the <title>, a 320px header. */
   tagline: "Own the week.",
+  /**
+   * The tagline, whole, as the kit writes it on every poster and the social bios (2026-10-06):
+   * the landing headline, the unfurl card, the share-card signature, the email foot.
+   */
+  taglineLong: "Own the week. Own the league.",
+  /** The brand line under the lockup. Search still reads "fantasy football" in the metadata. */
+  descriptor: "Fantasy sports, elevated.",
 
   /** The marketing h1. Its whole job is the contrast with an encyclopedia. */
   hero: "Three moves before kickoff.",
@@ -208,8 +215,6 @@ export const RIDE = {
 export const DESK = {
   aria: "The owner\u2019s desk",
   owner: "Owner",
-  /** The letterhead in the corner of every paper: the mark and two letters. */
-  letterhead: "OS",
   /** Three numbers on the nameplate. */
   standing: {
     record: "Record",
@@ -1270,8 +1275,14 @@ export const LANDING = {
   eyebrow: "All owners welcome · Sleeper · ESPN · Yahoo soon",
   /** The same line on a phone, where the welcome does not fit beside the platforms. */
   eyebrowShort: "Sleeper · ESPN · Yahoo soon",
-  /** The headline: you are walking into your office to make the calls. */
-  headline: "Step into your front office.",
+  /**
+   * The h1: the kit's tagline, as the poster sets it, in two plates (chrome, then gold).
+   * The rebrand moved it here (Andrew, 2026-10-06) and "Step into your front office." to
+   * the line under it.
+   */
+  headline: ["Own the week.", "Own the league."],
+  /** The line under the h1: you are walking into your office to make the calls. */
+  lead: "Step into your front office.",
   /** Status: this is where the owners who win sit. */
   avatar: "For fantasy football owners who expect to win their league, not just play in it.",
   /** The staff, in one sentence. */
@@ -1313,8 +1324,6 @@ export const LANDING = {
    * app answers it. The example figures are illustrative and carry no rate.
    */
   desk: {
-    eyebrow: "On your desk",
-    title: "Answers to your biggest questions, right on your desk.",
     /** The week the example was drawn from (Sleeper projections, 2026). */
     week: "Week 5 · The Megalabowl",
     coach: {
@@ -1390,33 +1399,86 @@ export const LANDING = {
     ],
   },
 
-  /**
-   * The rooms, coolest first, each one a member of the front office you work with. `key`
-   * pairs each card with its icon and tone in the page; the eyebrow is read off `SECTIONS`
-   * rather than typed again, so an advert for a room cannot survive that room being renamed.
-   */
+  /** The rooms, coolest first, each one a member of the front office you work with. */
   roomsHead: "Your front office",
   roomsLead: "A full staff, working your league around the clock.",
-  features: [
-    {
-      key: "trade",
-      room: SECTIONS.trade.title,
-      title: "Work with your general manager",
-      body: "See the best trade opportunities in your league, and a counter tuned to the manager across the table.",
+
+  /**
+   * The rooms as the kit's posters (NEW_BRANDING, 2026-10-06): each one a two-plate
+   * headline, the line under it, and what the room does, beside a worked answer from
+   * `desk`. The plates and lines are the posters' own words; Film's are ours, since the
+   * kit has no film poster. `metal` is the second plate's cut; `door` is the poster's
+   * own pill, named for the member of staff behind it.
+   */
+  posters: {
+    trade: {
+      plates: ["GM’s", "Office"],
+      metal: "gold",
+      door: "Meet your GM",
+      sub: "Manage. Optimize. Make moves.",
+      points: [
+        { head: "Your roster", body: "See who’s set, short, spare, or ready to move." },
+        { head: "Trade room", body: "Size up a manager’s roster, or put an offer on the table and we grade it." },
+        { head: "Compare teams", body: "Strengths, weaknesses and positional needs, side by side." },
+      ],
     },
-    {
-      key: "waivers",
-      room: SECTIONS.waivers.title,
-      title: "Work with your head of scouting",
-      body: "Find the hidden gems on the wire before anyone else does, with the bid and the drop already worked out.",
+    waivers: {
+      plates: ["Scouting", "Department"],
+      metal: "blue",
+      door: "Meet your head of scouting",
+      sub: "Find the edge. Before everyone else.",
+      points: [
+        { head: "Top pickups", body: "Who to put in a claim for, stash or watch, before the rest of your league." },
+        { head: "Sharp filters", body: "The whole wire, bye-week cover, handcuffs and risers." },
+        { head: "The right adds", body: "Ranked for your roster and what it is short of." },
+      ],
     },
-    {
-      key: "team",
-      room: SECTIONS.team.title,
-      title: "Work with your head coach",
-      body: "Every starter checked against your bench, with a confidence stamp and one line of why.",
+    team: {
+      plates: ["Coach’s", "Lineup"],
+      metal: "gold",
+      door: "Meet your head coach",
+      sub: "The right moves. A stronger lineup.",
+      points: [
+        { head: "Required changes", body: "Nobody hurt, nobody on a bye, every slot filled." },
+        { head: "Decisions to make", body: "Every close call, with the call made and one line of why." },
+        { head: "Side by side", body: "The matchup, the stack and the health of both men." },
+      ],
     },
-  ],
+    battle: {
+      plates: ["Position", "Battle"],
+      metal: "blue",
+      door: "Start a battle",
+      sub: "Any two players. Every angle. A clearer answer.",
+      points: [
+        { head: "Any two players", body: "How they stack up for your lineup, this week and every week after." },
+        { head: "Built for your spot", body: "Underdog chasing a ceiling, or a favorite who needs the floor. The battle says which." },
+        { head: "Every angle", body: "Matchups, projections, trends and context, in one view." },
+      ],
+    },
+    report: {
+      plates: ["The", "Film"],
+      metal: "chrome",
+      door: "Watch your film",
+      sub: "Watch the week back.",
+      points: [],
+    },
+  },
+
+  /** Position Battle's worked answer: two quarterbacks, one spot (figures illustrative). */
+  battle: {
+    from: "Position Battle",
+    q: "Who gets the spot?",
+    blue: "Blue corner",
+    red: "Red corner",
+    a: { player: "Drake Maye", meta: "QB · NE" },
+    b: { player: "Malik Willis", meta: "QB · MIA" },
+    call: "Maye sweeps",
+    line: "Every horizon, one way.",
+    horizons: [
+      { label: "This week", a: "19.3", b: "14.9" },
+      { label: "Next 5", a: "94.3", b: "63.6" },
+    ],
+  },
 
   /** The film room: the depth behind the calls, sold on its own. */
   film: {
@@ -1471,9 +1533,14 @@ export const LANDING = {
     /** The clock beside it prints its own word (Kickoff, Soon, Last call), so this one does not. */
     eyebrow: "The clock is running",
     title: "Your office is ready.",
+    /** The same line as the poster's two plates. */
+    plates: ["Your office", "is ready."],
     body: "Link a league and your staff has the week’s calls on your desk in about a minute.",
     cta: "Get this week\u2019s moves",
   },
+
+  /** The foot of the page: where the brand lives off the site. */
+  follow: "Follow the front office",
 
   /** The bar that follows the reader down the page once the first button has scrolled away. */
   bar: {

@@ -43,7 +43,7 @@ const ALL_COPY: string[] = [
   ...Object.values(NATIVE.offline), ...Object.values(NATIVE.espn), NATIVE.share.subject,
   ...Object.values(NATIVE.reminders).flatMap((r) => [r.title, r.body]),
   // The desk's words: the strings, plus every templated line rendered once.
-  DESK.aria, DESK.owner, DESK.letterhead, DESK.news.eyebrow, DESK.news.quiet, DESK.news.window(72), DESK.news.also(2),
+  DESK.aria, DESK.owner, DESK.news.eyebrow, DESK.news.quiet, DESK.news.window(72), DESK.news.also(2),
   DESK.news.more(3), DESK.news.less, ...DESK.news.severity, DESK.news.plan, DESK.news.planAria("Saquon Barkley"), DESK.news.tag.own("RB", true),
   DESK.news.tag.own("RB", false), DESK.news.tag.qb("TE", "Loveland"), DESK.news.tag.target("WR", "TeSlaa"),
   DESK.news.tag.backfield("RB", "Pacheco"), DESK.news.tag.line("RB", "Montgomery"),
@@ -68,13 +68,15 @@ const ALL_COPY: string[] = [
   ...Object.values(ESPN_KEY.bookmark), ESPN_KEY.privacy, ESPN_KEY.back, ...Object.values(ESPN_KEY.saved), ...Object.values(ESPN_KEY.entry),
   ...Object.values(ESPN_KEY.form),
   ...Object.values(GROUPS).flatMap((g) => [g.clear, g.stamp]),
-  ...LANDING.features.flatMap((f) => [f.room, f.title, f.body]),
+  ...Object.values(LANDING.posters).flatMap((p) => [...p.plates, p.sub, p.door, ...p.points.flatMap((pt) => [pt.head, pt.body])]),
+  LANDING.battle.from, LANDING.battle.q, LANDING.battle.blue, LANDING.battle.red, LANDING.battle.call, LANDING.battle.line,
+  LANDING.battle.a.player, LANDING.battle.b.player, ...LANDING.battle.horizons.map((h) => h.label), LANDING.follow,
   LANDING.exampleHead,
   // The rest of the landing page: every string, every templated line rendered once.
-  LANDING.eyebrow, LANDING.eyebrowShort, LANDING.headline, LANDING.avatar, LANDING.staff, LANDING.staffShort, LANDING.cta, LANDING.effort, LANDING.login, LANDING.loginLead,
+  LANDING.eyebrow, LANDING.eyebrowShort, ...LANDING.headline, LANDING.lead, LANDING.avatar, LANDING.staff, LANDING.staffShort, LANDING.cta, LANDING.effort, LANDING.login, LANDING.loginLead,
   LANDING.sheetCta, LANDING.deskCta, LANDING.steps.cta,
   ...LANDING.proof.flatMap((p) => [p.head, p.body]),
-  LANDING.desk.eyebrow, LANDING.desk.title, LANDING.desk.week, LANDING.desk.foot,
+  LANDING.desk.week, LANDING.desk.foot,
   ...Object.values(LANDING.desk.coach), ...Object.values(LANDING.desk.scout),
   ...Object.values(LANDING.desk.gm).filter((v) => typeof v === "string"), LANDING.desk.gm.offer("Courtland Sutton", "David Montgomery"),
   LANDING.desk.film.from, LANDING.desk.film.q, LANDING.desk.film.line, ...LANDING.desk.film.grades.flatMap((g) => [g.pos, g.grade]),
@@ -83,7 +85,7 @@ const ALL_COPY: string[] = [
   LANDING.film.room, LANDING.film.title, LANDING.film.body, ...LANDING.film.points,
   LANDING.steps.head, LANDING.steps.title, ...LANDING.steps.items.flatMap((s) => [s.title, s.when, s.body]),
   LANDING.faq.head, ...LANDING.faq.items.flatMap((i) => [i.q, i.a]),
-  ...Object.values(LANDING.close), ...Object.values(LANDING.bar),
+  LANDING.close.eyebrow, LANDING.close.title, LANDING.close.body, LANDING.close.cta, ...LANDING.close.plates, ...Object.values(LANDING.bar),
   // The offer.
   PRICING.eyebrow, PRICING.title("$29.99"), PRICING.lead, ...Object.values(PRICING.unlocks), ...Object.values(PRICING.badge),
   ...Object.values(PRICING.names), ...Object.values(PRICING.per), ...Object.values(PRICING.term),
@@ -236,7 +238,11 @@ test("the voice rules hold: no exclamation marks, no em dashes", () => {
 test("the landing page sells the room, not the price", () => {
   // Andrew, 2026-09-27: you walk into your own front office; the price, the refund and the
   // "free, no card" hedge are met at the upgrade, never on the front page.
-  assert.match(LANDING.headline, /office/i);
+  // The rebrand (2026-10-06): the h1 is the kit's tagline in two plates, and the front
+  // office is the line straight under it.
+  assert.equal(LANDING.headline.join(" "), LINES.taglineLong);
+  assert.match(LANDING.lead, /office/i);
+  assert.equal(LANDING.close.plates.join(" "), LANDING.close.title);
   assert.match(LANDING.staff, /GM/);
   assert.match(LANDING.staff, /scouting/);
   assert.equal(LANDING.cta, LANDING.close.cta, "the first ask and the last ask are the same door");
@@ -279,14 +285,14 @@ test("the landing page advertises the same headline the engine writes", () => {
   assert.equal(LANDING.exampleHead, "3 moves to make");
 });
 
-test("every staff card names a room the app actually has, the GM first", () => {
-  const rooms = new Set(SECTION_VALUES.map((s) => s.title));
-  assert.deepEqual(LANDING.features.map((f) => f.key), ["trade", "waivers", "team"]);
-  for (const f of LANDING.features) {
-    assert.ok(f.key in SECTIONS, `feature card "${f.title}" points at no section`);
-    assert.ok(rooms.has(f.room), `feature eyebrow "${f.room}" is not a section title`);
-    assert.ok(f.title.length > 0 && f.body.length > 0);
+test("every room poster names a room the app actually has, the GM first", () => {
+  assert.deepEqual(Object.keys(LANDING.posters), ["trade", "waivers", "team", "battle", "report"]);
+  for (const [key, p] of Object.entries(LANDING.posters)) {
+    assert.ok(key in SECTIONS, `poster "${p.plates.join(" ")}" points at no section`);
+    assert.equal(p.plates.length, 2, "a poster headline is two plates");
+    assert.ok(["gold", "blue", "chrome"].includes(p.metal));
   }
+  const rooms = new Set(SECTION_VALUES.map((s) => s.title));
   assert.ok(rooms.has(LANDING.film.room), "the film card names the film");
 });
 

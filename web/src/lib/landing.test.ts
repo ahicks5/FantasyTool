@@ -14,10 +14,13 @@ const BAR = readFileSync(join(import.meta.dirname, "../components/LandingBar.tsx
 test("every door on the landing page opens the account", () => {
   // The account comes first (Andrew, 2026-09-24). Anything else a link points at is the
   // way back in for an owner who has one, or the legal pages.
+  // The footer's social links (`social.href`, from SOCIALS in lib/site.ts) are the one
+  // other way off the page, and they open in a new tab.
   const hrefs = [...PAGE.matchAll(/href=\{?"?([^"}\s]+)"?\}?/g)].map((m) => m[1]);
   assert.ok(hrefs.includes("LOGIN"), "log in is on the front page (Andrew, 2026-09-27)");
   assert.match(PAGE, /const LOGIN = "\/login";/);
-  const doors = hrefs.filter((h) => !["LOGIN", "/terms", "/privacy"].includes(h));
+  assert.match(PAGE, /href=\{social\.href\}\s+target="_blank"\s+rel="noopener noreferrer"/);
+  const doors = hrefs.filter((h) => !["LOGIN", "/terms", "/privacy", "social.href"].includes(h));
   assert.ok(doors.length > 0);
   for (const h of doors) assert.equal(h, "WAY_IN", `a link on the landing page goes to ${h}, not the account`);
   assert.match(PAGE, /const WAY_IN = "\/register";/);
@@ -60,18 +63,18 @@ test("the front page carries no pricing table and no theme switch", () => {
   assert.doesNotMatch(PAGE, /<Pricing|ThemeToggle|#pricing/);
 });
 
-test("the things a reader taps are doors: the example sheet and every desk card", () => {
+test("the things a reader taps are doors: the example sheet and every worked answer", () => {
   // The sheet is the biggest thing on the first screen; a tap on it used to do nothing.
   assert.match(PAGE, /<Link href=\{WAY_IN\}[^>]*className="hero callsheet/);
   assert.match(PAGE, /LANDING\.sheetCta/);
-  // DeskCard renders a Link, so all four answers open the register page.
+  // DeskCard renders a Link, so every room's worked answer opens the register page.
   assert.match(PAGE, /function DeskCard[\s\S]*?<Link href=\{WAY_IN\}/);
 });
 
 test("how quick it is comes straight after the hero, and ends on a button", () => {
   const steps = PAGE.indexOf("LANDING.steps.title");
-  const desk = PAGE.indexOf("DESK.title");
-  assert.ok(steps > 0 && desk > 0 && steps < desk, "the steps sit before the desk");
+  const rooms = PAGE.indexOf("LANDING.roomsLead");
+  assert.ok(steps > 0 && rooms > 0 && steps < rooms, "the steps sit before the rooms");
   assert.match(PAGE, /\{LANDING\.steps\.cta\}/);
 });
 

@@ -39,3 +39,14 @@ export const INDEXABLE_PATHS = ["/", "/connect", "/terms", "/privacy"] as const;
  * connected, so indexing them buries the landing page under near-identical thin pages.
  */
 export const NOINDEX_PATHS = ["/home", "/team", "/waivers", "/trade", "/report", "/login"] as const;
+
+/**
+ * Where the brand lives off the site: the handles the kit's posters are posted from
+ * (2026-10-06). The landing footer links them; each opens in a new tab and is the only
+ * link on that page that does not lead to the account.
+ */
+export const SOCIALS = [
+  { label: "X", handle: "@owners_suite", href: "https://x.com/owners_suite" },
+  { label: "Instagram", handle: "@ownerssuite", href: "https://www.instagram.com/ownerssuite" },
+  { label: "Reddit", handle: "u/OwnersSuite", href: "https://www.reddit.com/user/OwnersSuite" },
+] as const;
