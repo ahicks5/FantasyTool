@@ -8,7 +8,6 @@ import { Projector } from "@/components/film/Projector";
 import { ShareFilm } from "@/components/film/ShareFilm";
 import { standout } from "@/lib/film";
 import type { Desk, FilmCover, FilmShare, WeekClock, WeekFilm } from "@/lib/types";
-import { weekPhase } from "@/lib/gameday";
 import { GhostRows, Locked } from "@/components/Locked";
 import { Film } from "@/components/Film";
 import { Standings } from "@/components/Standings";
@@ -215,10 +214,13 @@ export default function ReportPage() {
   );
 }
 
-/** True once the given week's games have started (the clock says LIVE or FINAL for it, or later). */
+/**
+ * True once the given week's games have started, by the server's own read of the scoreboard
+ * (the desk's clock, fetched this session). Not advanced by this device's clock: a stale
+ * cache must not hide advice the server still says applies.
+ */
 function weekUnderway(clock: WeekClock | null, week: number): boolean {
-  if (!clock) return false;
-  const phase = weekPhase(clock, Date.now());
+  if (!clock || !clock.phase) return false;
   if (clock.week > week) return true;
-  return clock.week === week && (phase === "live" || phase === "final" || phase === "next");
+  return clock.week === week && clock.phase !== "before";
 }
