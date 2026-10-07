@@ -156,7 +156,7 @@ test("a stranger's door is the account: register, land on it, then link a league
   await page.getByRole("radio", { name: "Sleeper" }).click();
   await page.locator("#sleeper-input").fill("someone");
   await page.getByRole("button", { name: "Find" }).click();
-  await expect(page.getByRole("heading", { name: "Select your team" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: CONNECT.steps.team })).toBeVisible();
   await page.getByRole("button", { name: new RegExp(CONNECTION.team_name) }).click();
   await page.getByRole("button", { name: CONNECT.submit }).click();
   // The first call, then not now to the free week: the account stays free for the sheet below.

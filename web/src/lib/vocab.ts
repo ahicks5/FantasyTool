@@ -701,6 +701,19 @@ export const CONNECT = {
   submit: "Show my moves",
   /** While the connection is being written. */
   busy: "Wiring you in\u2026",
+  /** The three steps, in order (W-042). */
+  stepOf: (n: number, of: number) => `Step ${n} of ${of} \u00b7 Connect`,
+  steps: {
+    platform: "Pick your platform",
+    sleeper: "Find your league: a Sleeper username or league ID",
+    espn: "Find your league",
+    team: "Pick your team",
+  },
+  /** Where the team list is about to land, while the league loads. */
+  loading: "Loading your league\u2026",
+  /** On the team list: the searched user's own team, and a team already on the account (W-044). */
+  you: "You",
+  linked: "Already linked",
 } as const;
 
 /**
