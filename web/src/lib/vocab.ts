@@ -201,6 +201,9 @@ export const RIDE = {
  * here: the head coach owns start/sit, the head of scouting owns the wire, the GM owns
  * the trade board. Counts come from the engine; these are only the words around them.
  */
+/** What the header clock says in place of a countdown (W-018): the games are on, or the week is decided. The colour never says it alone. */
+export const CLOCK_WORDS = { live: "Live", final: "Final" } as const;
+
 export const DESK = {
   aria: "The owner\u2019s desk",
   owner: "Owner",
@@ -265,8 +268,12 @@ export const DESK = {
     you: "You",
     them: "Them",
     vs: "vs",
-    /** "61% to win", the engine's own probability. */
-    odds: (p: number) => `${Math.round(p * 100)}% to win`,
+    /** "61% to win", the engine's own probability: the pre-game line before kickoff, the
+     *  score plus what is left once the games are on (W-013), and it says which. */
+    odds: (p: number, live = false) => `${Math.round(p * 100)}% to win${live ? " · live" : ""}`,
+    /** Every starter has played: the result in place of a chance (W-017). */
+    final: (mine: number, theirs: number) =>
+      mine > theirs ? `Final · Won by ${(mine - theirs).toFixed(1)}` : mine < theirs ? `Final · Lost by ${(theirs - mine).toFixed(1)}` : "Final · A tie",
     /** Their record and place, under their name. */
     standing: (record: string, rank: number, teams: number) => `${record} \u00b7 ${rank} of ${teams}`,
     go: "Full matchup",
@@ -1622,7 +1629,17 @@ export const LINEUP = {
   /** Nothing forced: a solid stamp, not an apology. */
   requiredClear: "Handled",
   requiredClearLine: "Nobody hurt, nobody on a bye, every slot filled.",
-  decisionsQuiet: "Every role is a Lock. Nothing to weigh.",
+  decisionsQuiet: "Every call is clear. Nothing to weigh.",
+  /** Some starters have played or are playing, and nothing still to play needs a call (W-021). */
+  decisionsUnderway: "Nothing left to set. The rest is on the field.",
+  /** Every starter has played: the week, in two lines, until the next one opens (W-021). */
+  recap: {
+    title: "The week",
+    total: (n: string) => `Final: ${n}.`,
+    regret: (name: string, pts: string, over: string, overPts: string) => `${name} scored ${pts} on your bench. ${over} started and scored ${overPts}.`,
+    clean: "Nothing better sat on your bench.",
+    next: "Next week's lineup opens Tuesday at noon ET.",
+  },
   /** Roles marked handled this week, folded away under the list. */
   handled: (n: number) => `${n} handled`,
   showHandled: "Show",

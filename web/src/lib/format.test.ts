@@ -11,6 +11,7 @@ import {
   formatCents,
   kickoffUrgency,
   nextKickoff,
+  weekClock,
   ordinal,
   pct,
   reservedWidth,
@@ -245,4 +246,21 @@ test("the standing line says out loud what the dots leave implicit", () => {
   assert.match(said, /8th of 12 on strength/);
   assert.match(said, /Record 0-2/);
   assert.doesNotMatch(standingLabel({ grade: "C", rank: 8, leagueSize: 12, record: null }), /Record/);
+});
+
+test("the week's clock: live in a game window, final until Tuesday noon, then counting (W-018)", () => {
+  const at = (iso: string) => weekClock(new Date(iso));
+  // Monday 5 Oct 2026, 3 PM ET: Monday night's game is next.
+  assert.deepEqual(at("2026-10-05T19:00:00Z"), { kind: "count", at: Date.parse("2026-10-06T00:15:00Z") });
+  // Monday night, during the game.
+  assert.deepEqual(at("2026-10-06T01:00:00Z"), { kind: "live" });
+  // Tuesday 1 AM ET to noon: the week is decided.
+  assert.deepEqual(at("2026-10-06T05:00:00Z"), { kind: "final" });
+  assert.deepEqual(at("2026-10-06T15:59:00Z"), { kind: "final" });
+  // Tuesday 12:30 PM ET: the clock starts on Sunday's slate.
+  assert.deepEqual(at("2026-10-06T16:30:00Z"), { kind: "count", at: Date.parse("2026-10-11T17:00:00Z") });
+  // Thursday night and Sunday afternoon are live; Saturday counts to Sunday.
+  assert.deepEqual(at("2026-10-09T01:00:00Z"), { kind: "live" });
+  assert.deepEqual(at("2026-10-11T18:00:00Z"), { kind: "live" });
+  assert.deepEqual(at("2026-10-10T18:00:00Z"), { kind: "count", at: Date.parse("2026-10-11T17:00:00Z") });
 });

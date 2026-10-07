@@ -146,6 +146,38 @@ export function nextKickoff(now: Date = new Date(), zone: string = ZONE): number
 }
 
 /**
+ * Where the week stands on the clock (Andrew, 2026-10-05, W-018), Eastern wall time:
+ *
+ * - `live`  inside a game window: Thursday night, Sunday from the London kick (9:30 AM) to
+ *           past midnight, Monday night. The games are on; a countdown would be a lie.
+ * - `final` from Monday night's last whistle (half past midnight) to Tuesday noon. The week
+ *           is decided and the clock says so, before it starts on the next one.
+ * - `count` everything else: a countdown to the next kickoff that matters, Monday night's
+ *           game on a Monday afternoon, otherwise Sunday's 1:00 PM slate.
+ *
+ * Calendar windows rather than the scoreboard on purpose: the clock is in every room's
+ * header and has no league to ask. A rare Saturday or Christmas game is the one it misses.
+ */
+export type WeekClock = { kind: "live" } | { kind: "final" } | { kind: "count"; at: number };
+
+export function weekClock(now: Date = new Date(), zone: string = ZONE): WeekClock {
+  const { y, m, d, weekday } = zoneDate(now, zone);
+  const t = now.getTime();
+  const at = (dayOffset: number, hour: number, minute = 0) => instantForZoneWallTime(y, m, d + dayOffset, hour, zone) + minute * 60_000;
+  const between = (a: number, b: number) => t >= a && t < b;
+  // Windows that start the evening before end just after midnight: checked from today.
+  if (weekday === 4 && t >= at(0, 20, 15)) return { kind: "live" }; // Thursday night
+  if (weekday === 5 && t < at(0, 0, 30)) return { kind: "live" };
+  if (weekday === 0 && t >= at(0, 9, 30)) return { kind: "live" }; // Sunday
+  if (weekday === 1 && t < at(0, 0, 30)) return { kind: "live" };
+  if (weekday === 1 && t >= at(0, 20, 15)) return { kind: "live" }; // Monday night
+  if (weekday === 2 && t < at(0, 0, 30)) return { kind: "live" };
+  if (weekday === 2 && between(at(0, 0, 30), at(0, 12))) return { kind: "final" };
+  if (weekday === 1) return { kind: "count", at: at(0, 20, 15) };
+  return { kind: "count", at: nextKickoff(now, zone) };
+}
+
+/**
  * How tense the room should be. A call sheet three days out is reference; a
  * call sheet ninety minutes out is a deadline, and the room should feel like it.
  *

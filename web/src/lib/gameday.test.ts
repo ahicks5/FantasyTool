@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ago, alarm, dotted, gameDay, isClear, isHardOut, isOnBye, NEWS_WINDOW_MS, playerMeta } from "./gameday.ts";
+import { ago, alarm, benchRegret, dotted, gameDay, isClear, isHardOut, isOnBye, NEWS_WINDOW_MS, playerMeta, weekStage } from "./gameday.ts";
 import type { BenchEntry, Lineup, LineupSlot, Player } from "./types";
 
 /* Every clock here is explicit. `gameDay` takes `now`, so nothing below depends on
@@ -396,4 +396,22 @@ test("a missing part costs nothing: no stray separators, no empty tails", () => 
   assert.equal(playerMeta("WR", "CIN"), "WR CIN");
   assert.equal(playerMeta("WR", null), "WR");
   assert.equal(playerMeta(null, null), "");
+});
+
+test("the lineup knows when your week is over, and what sat on the bench (W-021)", () => {
+  const p = (id: string, position: string, game: "pre" | "in" | "final" | null, points: number | null) =>
+    ({ id, name: id, position, nfl_team: "X", injury_status: null, projected: 10, game, points }) as Player;
+  const slot = (pl: Player) => ({ slot: pl.position, player: pl, confidence: "Lock" as const, reason: "", change: false });
+  const base = { week: 4, projected_total: 0, current_total: 0, changes: [] };
+  const pre = { ...base, slots: [slot(p("Lawrence", "QB", null, null))], bench: [] } as unknown as Lineup;
+  assert.equal(weekStage(pre), "pre");
+  const on = { ...base, slots: [slot(p("Lawrence", "QB", "final", 13.1)), slot(p("Vele", "WR", "pre", null))], bench: [] } as unknown as Lineup;
+  assert.equal(weekStage(on), "on");
+  const done = {
+    ...base,
+    slots: [slot(p("Lawrence", "QB", "final", 13.1))],
+    bench: [{ player: p("Stroud", "QB", "final", 23.1), reason: "" }],
+  } as unknown as Lineup;
+  assert.equal(weekStage(done), "done");
+  assert.deepEqual(benchRegret(done), { name: "Stroud", points: 23.1, over: "Lawrence", overPoints: 13.1 });
 });

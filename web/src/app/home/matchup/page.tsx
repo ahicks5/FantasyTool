@@ -39,6 +39,8 @@ function DuelRow({ d, index }: { d: SlotDuel; index: number }) {
       <div className="flex items-center gap-2">
         <span className="text-[10px] font-black uppercase tracking-[0.1em] text-muted">{d.slot}</span>
         <span aria-hidden className="h-px flex-1 bg-line" />
+        {/* What the margin is made of: a result, a game in progress, or a projection (W-017). */}
+        <span className="text-[8.5px] font-extrabold uppercase tracking-[0.1em] text-muted">{MARGIN_STATE[d.state]}</span>
         <span className={`tnum text-[12px] font-black ${tone}`}>{d.edge === "even" ? "Even" : signed(d.margin)}</span>
       </div>
       <div className="mt-2 grid gap-1.5">
@@ -48,6 +50,8 @@ function DuelRow({ d, index }: { d: SlotDuel; index: number }) {
     </li>
   );
 }
+
+const MARGIN_STATE: Record<SlotDuel["state"], string> = { final: LINEUP.live.final, live: LINEUP.live.on, proj: LINEUP.live.proj };
 
 /**
  * Half a duel: who is in the slot and what they are projected for.
@@ -72,7 +76,10 @@ function Side({ p, mine = false, won }: { p: Player | null; mine?: boolean; won:
           {p.points.toFixed(1)}
         </span>
       ) : (
-        <span className="display tnum shrink-0 text-[17px] leading-none">{printProj(p)}</span>
+        <span className="display tnum shrink-0 text-right text-[17px] leading-none">
+          <span className="block text-[8.5px] font-extrabold uppercase tracking-[0.1em] text-muted">{LINEUP.live.proj}</span>
+          {printProj(p)}
+        </span>
       )}
     </div>
   );
@@ -170,12 +177,13 @@ function MatchupBody({ c }: { c: Connection }) {
             </div>
           </div>
 
-          {m.win_prob !== null && (
+          {/* Over: the result, not a chance. Live: the chance from the score as it stands. */}
+          {m.win_prob !== null && !m.final && (
             <div className="mt-4">
               <SplitMeter
                 left={share}
                 right={1 - share}
-                leftLabel={`${pct(share)} to win`}
+                leftLabel={DESK.matchup.odds(share, live)}
                 rightLabel={pct(1 - share)}
                 onHero
               />
@@ -189,7 +197,7 @@ function MatchupBody({ c }: { c: Connection }) {
             <span className="display tnum shrink-0 rounded-lg bg-white/10 px-2.5 py-1.5 text-[19px] leading-none text-white">
               {signed(diff)}
             </span>
-            <p className="min-w-0 flex-1 text-[13px] leading-snug text-white/70">{matchupCall(myBig, theirBig)}</p>
+            <p className="min-w-0 flex-1 text-[13px] leading-snug text-white/70">{matchupCall(myBig, theirBig, !!m.final)}</p>
           </div>
         </div>
       </section>
@@ -237,7 +245,9 @@ function MatchupBody({ c }: { c: Connection }) {
             "Both sides show the lineup we would set for that team, rescored to this league's settings. Not whatever is currently in the slots.",
             "The scoreline above is the best each roster can do. A recommended lineup can sum a fraction under it, because a swap worth less than 1.5 points is not worth making and we hold the incumbent.",
             `A slot inside ${EVEN_MARGIN} points is called even: below that gap the higher projection wins barely half the time.`,
-            "Win probability treats a weekly team total as normal with a spread of about 22 points, which is what a nine-slot lineup actually swings by.",
+            "Before kickoff, win probability treats a weekly team total as normal with a spread of about 22 points, which is what a nine-slot lineup actually swings by.",
+            "Once the games are on it reads the score: what each side has, plus what its men still to play are projected for, with the spread shrinking as the week runs out. A man on the field counts half of what he has left.",
+            "A slot both men have played is won by the result, by any margin. Every number says what it is: Final, Live or Proj.",
           ]}
           label="How's this scored?"
         />

@@ -139,3 +139,30 @@ test("rounding cannot leave a margin that does not print cleanly", () => {
   assert.equal(d.margin, 4.6);
   assert.equal(String(d.margin), "4.6");
 });
+
+function done(name: string, projected: number, points: number, position = "WR"): Player {
+  return { ...player(name, projected, position), game: "final", points };
+}
+
+test("a played slot is judged on the result, not the projection (W-017)", () => {
+  // Week 4: Lawrence was +1.9 on projections and lost 13.1 to 20.5.
+  const [qb] = slotDuels(lineup([slot("QB", done("Lawrence", 19.1, 13.1, "QB"))]), lineup([slot("QB", done("Goff", 17.2, 20.5, "QB"))]));
+  assert.equal(qb.state, "final");
+  assert.equal(qb.margin, -7.4);
+  assert.equal(qb.edge, "theirs");
+  // Gay 16.0 against Loop 8.0 is not "Even" once the kicks are in.
+  const [k] = slotDuels(lineup([slot("K", done("Gay", 8.1, 16.0, "K"))]), lineup([slot("K", done("Loop", 8.0, 8.0, "K"))]));
+  assert.equal(k.edge, "mine");
+});
+
+test("a slot with a man still to play is live, and says so", () => {
+  const [d] = slotDuels(lineup([slot("WR", done("Collins", 18.6, 30.8))]), lineup([slot("WR", player("Vele", 10.1))]));
+  assert.equal(d.state, "live");
+  assert.equal(d.margin, 20.7);
+});
+
+test("once every starter has played the line is the result", () => {
+  assert.equal(matchupCall(138.7, 140.4, true), "Final. Lost by 1.7.");
+  assert.equal(matchupCall(141, 140.4, true), "Final. Won by 0.6.");
+  assert.equal(matchupCall(138.7, 140.4), "Coin flip. This one comes down to the slate.");
+});

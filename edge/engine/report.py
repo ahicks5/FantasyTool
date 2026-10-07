@@ -129,6 +129,49 @@ def win_probability(my_proj: float, their_proj: float, sigma: float = 22.0) -> f
     return round(0.5 * (1 + math.erf(diff / (sigma * math.sqrt(2)))), 2)
 
 
+# A man on the field has, on average, half his game still to play. Crude, and better than the
+# two alternatives: his projection again (counts what he already scored twice) or nothing
+# (calls a game over at the first snap).
+IN_LEFT = 0.5
+
+
+def points_left(team: Team, slots: list[str]) -> float:
+    """What the lineup actually set is still projected to add: a finished man adds nothing, a
+    man on the field adds half of what he has left against his projection, and a man yet to
+    play adds his projection. The platform's lineup when it has one, else ours."""
+    by_id = {p.id: p for p in team.players}
+    starters = [by_id[i] for i in team.starters if i in by_id]
+    if not starters:
+        starters = [p for p in lineup_mod.optimize(team.players, slots) if p]
+    left = 0.0
+    for p in starters:
+        proj = lineup_mod.effective(p)
+        if p.game_status == "final":
+            continue
+        if p.game_status == "in":
+            left += max(0.0, proj - (p.points or 0.0)) * IN_LEFT
+        else:
+            left += proj
+    return round(left, 2)
+
+
+def live_win_probability(my_points: float, their_points: float, my_left: float, their_left: float,
+                         pregame_total: float, sigma: float = 22.0) -> float:
+    """The chance to win from the score as it stands and what each side has still to play.
+
+    The spread shrinks with the share of the week's projected points still to come: a full
+    slate swings by about 22, two men left swing by a fraction of that, and with nobody left
+    the game is decided -- 1, 0, or a tie's even half (Andrew, 2026-10-05, W-013).
+    """
+    left = my_left + their_left
+    lead = (my_points + my_left) - (their_points + their_left)
+    if left <= 0.05:
+        return 1.0 if lead > 0 else 0.0 if lead < 0 else 0.5
+    share = min(1.0, left / max(pregame_total, 1.0))
+    spread = sigma * math.sqrt(share)
+    return round(0.5 * (1 + math.erf(lead / (spread * math.sqrt(2)))), 2)
+
+
 def matchup(league: League, team: Team, matchups_raw: list[dict] | None) -> dict | None:
     if not matchups_raw:
         return None
@@ -144,10 +187,21 @@ def matchup(league: League, team: Team, matchups_raw: list[dict] | None) -> dict
     their_proj = lineup_mod.lineup_total(other.players, league.starting_slots) if other else 0.0
     # The platform's own points once the games are on (0.0 before kickoff reads as null).
     my_pts, their_pts = float(mine.get("points") or 0.0), float(opp.get("points") or 0.0)
-    live = bool(my_pts or their_pts)
+    locked = any(p.locked for p in team.players) or bool(other and any(p.locked for p in other.players))
+    live = bool(my_pts or their_pts) or locked
+    win = win_probability(my_proj, their_proj)
+    final = False
+    if live and other is not None:
+        # Pre-game until the first kickoff; from then on the score and what is left (W-013).
+        my_left = points_left(team, league.starting_slots)
+        their_left = points_left(other, league.starting_slots)
+        win = live_win_probability(my_pts, their_pts, my_left, their_left, my_proj + their_proj)
+        final = locked and my_left + their_left <= 0.05
     return {"opponent": other.name if other else None, "opponent_id": other.id if other else None,
-            "my_proj": my_proj, "their_proj": their_proj, "win_prob": win_probability(my_proj, their_proj),
-            "my_points": my_pts if live else None, "their_points": their_pts if live else None, "live": live}
+            "my_proj": my_proj, "their_proj": their_proj, "win_prob": win,
+            "my_points": my_pts if live else None, "their_points": their_pts if live else None, "live": live,
+            # Every starter on both sides has played: the score is the result (W-017).
+            "final": final}
 
 
 def scoreboard(league: League, matchups_raw: list[dict] | None) -> list[dict]:

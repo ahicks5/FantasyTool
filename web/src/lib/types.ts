@@ -1118,6 +1118,10 @@ export interface Matchup {
   my_points?: number | null;
   their_points?: number | null;
   live?: boolean;
+  /** Every starter on both sides has played: the points are the result, and `win_prob` is
+   *  1, 0 or a tie's 0.5. Once `live`, `win_prob` reads the score and what is left to play,
+   *  not the pre-game line (W-013, W-017). */
+  final?: boolean;
   /** On the desk only: the opponent's record and competition rank out of `teams`, from the
    *  same standings table as the nameplate. Null when the opponent is not in the table. */
   opponent_record?: string | null;

@@ -230,7 +230,7 @@ function MatchupPaper({ m, week, standing, animate }: { m: Matchup | null | unde
   // Your own record and place again, under your score: the same two numbers the
   // nameplate carries, so the two sides of the paper read alike.
   const mine = standing ? DESK.matchup.standing(standing.record, standing.rank, standing.teams) : null;
-  const odds = m.win_prob !== null ? DESK.matchup.odds(m.win_prob) : null;
+  const odds = m.final ? DESK.matchup.final(myBig, theirBig) : m.win_prob !== null ? DESK.matchup.odds(m.win_prob, live) : null;
   return (
     <Link
       href={SECTIONS.matchup.href}
@@ -263,13 +263,19 @@ function MatchupPaper({ m, week, standing, animate }: { m: Matchup | null | unde
           {theirs && <span className="tnum mt-1 block text-[10.5px] font-bold text-muted">{theirs}</span>}
         </span>
       </span>
-      {m.win_prob !== null && (
+      {m.final ? (
         <span className="desk-odds" aria-hidden>
-          <span className="desk-odds-bar">
-            <i style={{ width: `${Math.round(m.win_prob * 100)}%` }} />
-          </span>
           <span className="tnum desk-odds-word">{odds}</span>
         </span>
+      ) : (
+        m.win_prob !== null && (
+          <span className="desk-odds" aria-hidden>
+            <span className="desk-odds-bar">
+              <i style={{ width: `${Math.round(m.win_prob * 100)}%` }} />
+            </span>
+            <span className="tnum desk-odds-word">{odds}</span>
+          </span>
+        )
       )}
       <span className="mt-2 flex items-center justify-end gap-2">
         <span className="desk-go">

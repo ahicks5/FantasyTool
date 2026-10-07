@@ -493,3 +493,38 @@ export function alarm(lineup: Lineup, now: number): Alarm | null {
   const warning = questions.filter((q) => isRecentNews(q.newsUpdated, now));
   return warning.length > 0 ? { level: "warning", players: warning } : null;
 }
+
+/**
+ * Where your own week stands, read off the lineup's stamps (W-021):
+ * - `pre`  no starter has kicked off.
+ * - `on`   at least one starter is on the field or done, at least one still to play.
+ * - `done` every starter with a game this week has played.
+ * Locked slots take no advice; the page only talks about what is still pending.
+ */
+export function weekStage(lineup: Lineup): "pre" | "on" | "done" {
+  const men = lineup.slots.map((s) => s.player).filter((p): p is Player => !!p && !!p.nfl_team);
+  const started = men.filter((p) => p.game === "in" || p.game === "final");
+  if (started.length === 0) return "pre";
+  return men.every((p) => p.game === "final") ? "done" : "on";
+}
+
+/**
+ * The week's one regret, for the recap: the bench man who scored most, if he outscored the
+ * starter at his own position who scored least. Null when the bench held nothing better.
+ */
+export function benchRegret(lineup: Lineup): { name: string; points: number; over: string; overPoints: number } | null {
+  let best: { name: string; points: number; over: string; overPoints: number } | null = null;
+  for (const b of lineup.bench) {
+    const p = b.player;
+    if (p.game !== "final" || p.points == null) continue;
+    const rivals = lineup.slots
+      .map((s) => s.player)
+      .filter((q): q is Player => !!q && q.position === p.position && q.game === "final" && q.points != null);
+    if (!rivals.length) continue;
+    const low = rivals.reduce((a, q) => (q.points! < a.points! ? q : a));
+    if (p.points > low.points! && (!best || p.points - low.points! > best.points - best.overPoints)) {
+      best = { name: p.name, points: p.points, over: low.name, overPoints: low.points! };
+    }
+  }
+  return best;
+}

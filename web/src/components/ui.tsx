@@ -10,12 +10,13 @@ import {
   COUNTDOWN_CH,
   kickoffUrgency,
   nextKickoff,
+  weekClock,
   reservedWidth,
   URGENCY_LABEL,
   verdictClass,
 } from "@/lib/format";
 import { describeError, isOnline } from "@/lib/errors";
-import { CLOSED, CONFIDENCE_HIT_LINE, CONFIDENCE_LABEL } from "@/lib/vocab";
+import { CLOCK_WORDS, CLOSED, CONFIDENCE_HIT_LINE, CONFIDENCE_LABEL } from "@/lib/vocab";
 import { claimWait, narratedFloorPassed, releaseWait, subscribeWaits, type WaitPhase } from "@/lib/wait";
 import { dayStamp, liftRideBoot, rideDue, rideForced } from "@/lib/elevator";
 import { loadConnection, loadRideDay, resetOpenings } from "@/lib/storage";
@@ -314,12 +315,34 @@ export function Countdown({ onHero = false, className = "" }: { onHero?: boolean
   // suppress, and the first real value arrives in a layout effect — which commits before
   // the browser paints, so the dash is never seen after hydration.
   const [left, setLeft] = useState<number | null>(null);
+  // The week's state (W-018): a clock that counts to next Sunday while this week's games
+  // are on, or after they are done, is counting to the wrong thing.
+  const [state, setState] = useState<"live" | "final" | "count">("count");
   useBeforePaint(() => {
-    const update = () => setLeft(nextKickoff() - Date.now());
+    const update = () => {
+      const w = weekClock();
+      setState(w.kind);
+      setLeft(w.kind === "count" ? w.at - Date.now() : null);
+    };
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
   }, []);
+
+  if (state !== "count") {
+    const isLive = state === "live";
+    return (
+      <span className={`inline-flex items-center gap-1.5 ${className}`} data-clock={state}>
+        <IconClock size={13} strokeWidth={2.2} className={onHero ? "text-white/55" : "text-muted"} />
+        <span
+          className={`tnum inline-block text-right text-[13px] font-black uppercase tracking-[0.12em] ${isLive ? "text-start" : onHero ? "text-white" : "text-ink"}`}
+          style={{ minWidth: `${COUNTDOWN_CH}ch` }}
+        >
+          {isLive ? CLOCK_WORDS.live : CLOCK_WORDS.final}
+        </span>
+      </span>
+    );
+  }
 
   const band = left === null ? "open" : kickoffUrgency(left);
   const muted = onHero ? "text-white/55" : "text-muted";

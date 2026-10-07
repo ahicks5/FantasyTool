@@ -28,6 +28,7 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import type { Lineup, LineupChange, LineupHole, LineupRole, Player } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { boomSeen, handledKey, loadConnection, loadHandled, saveBoomSeen, saveHandled } from "@/lib/storage";
+import { benchRegret, weekStage } from "@/lib/gameday";
 import { CONFIDENCE_LABEL, LINEUP, SECTIONS } from "@/lib/vocab";
 import { Avatar } from "./Avatar";
 import { PlayerName, PlayerTarget } from "./Players";
@@ -363,6 +364,9 @@ export function LineupView({
     .slice(0, 6);
   // The games are on (Andrew, 2026-09-28): the hero reads the board, not the projection.
   const live = lineup.live ?? null;
+  // Where your own week stands, and its one regret once it is over (W-021).
+  const stage = weekStage(lineup);
+  const regret = stage === "done" ? benchRegret(lineup) : null;
 
   return (
     <div className="grid min-w-0 gap-5">
@@ -434,7 +438,19 @@ export function LineupView({
           both on screen. One column everywhere else, and always in the report's embed. */}
       <div className={`grid min-w-0 gap-5 ${compact ? "" : "lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-8"}`}>
       <div className="grid min-w-0 content-start gap-5">
-      {!compact && (
+      {/* The week is over for you: what happened, not what to do (W-021). */}
+      {!compact && stage === "done" && (
+        <section className="min-w-0">
+          <H2>{LINEUP.recap.title}</H2>
+          <p className="mt-2 text-[15px] font-bold">{LINEUP.recap.total((live?.live_total ?? lineup.projected_total).toFixed(1))}</p>
+          <p className="mt-1 text-[13px] leading-snug text-ink-2">
+            {regret ? LINEUP.recap.regret(regret.name, regret.points.toFixed(1), regret.over, regret.overPoints.toFixed(1)) : LINEUP.recap.clean}
+          </p>
+          <p className="mt-1 text-[12px] text-muted">{LINEUP.recap.next}</p>
+        </section>
+      )}
+
+      {!compact && stage !== "done" && (
         <section className="min-w-0">
           <H2>{LINEUP.section.required}</H2>
           {nRequired === 0 ? (
@@ -458,11 +474,11 @@ export function LineupView({
         </section>
       )}
 
-      {!compact && (
+      {!compact && stage !== "done" && (
         <section className="min-w-0">
           <H2>{LINEUP.section.decisions}</H2>
           {open.length === 0 ? (
-            <p className="mt-2 text-[13px] text-muted">{LINEUP.decisionsQuiet}</p>
+            <p className="mt-2 text-[13px] text-muted">{stage === "on" ? LINEUP.decisionsUnderway : LINEUP.decisionsQuiet}</p>
           ) : (
             <ul className="mt-2.5 grid gap-2">
               {open.map((r, i) => (

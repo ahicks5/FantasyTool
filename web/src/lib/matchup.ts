@@ -26,6 +26,12 @@ export interface SlotDuel {
   margin: number;
   /** Which side this slot belongs to. `even` is a margin inside `EVEN_MARGIN`. */
   edge: "mine" | "theirs" | "even";
+  /**
+   * What the margin is made of (W-017): `final` when both men have played (actual minus
+   * actual), `live` when either is on the field or one has played and one has not, `proj`
+   * before either kicks off. The row says which, so a projection never passes for a result.
+   */
+  state: "final" | "live" | "proj";
 }
 
 /**
@@ -56,16 +62,39 @@ export const proj = (p: Player | null): number => Math.round((p?.projected ?? 0)
  */
 export const printProj = (p: Player | null): string => proj(p).toFixed(1);
 
+/** A man's game is over and his number is a result. */
+const played = (p: Player | null): boolean => !!p && p.game === "final" && p.points != null;
+const onField = (p: Player | null): boolean => !!p && p.game === "in" && p.points != null;
+
+/**
+ * What a man is worth to the slot right now, rounded the way the row prints it. A finished
+ * man is his points. A man on the field is his points plus half of what he has left against
+ * his projection (`IN_LEFT` in edge/engine/report.py, so the page and the win chance agree).
+ * A man yet to play is his projection.
+ */
+export function worth(p: Player | null): number {
+  if (!p) return 0;
+  if (played(p)) return Math.round(p.points! * 10) / 10;
+  if (onField(p)) return Math.round((p.points! + Math.max(0, (p.projected ?? 0) - p.points!) * 0.5) * 10) / 10;
+  return proj(p);
+}
+
 function duel(slot: string, mine: LineupSlot | undefined, theirs: LineupSlot | undefined): SlotDuel {
   const a = mine?.player ?? null;
   const b = theirs?.player ?? null;
-  const margin = +(proj(a) - proj(b)).toFixed(1);
+  const done = (p: Player | null) => !p || played(p);
+  const state: SlotDuel["state"] = done(a) && done(b) && (played(a) || played(b)) ? "final" : played(a) || played(b) || onField(a) || onField(b) ? "live" : "proj";
+  const margin = +(worth(a) - worth(b)).toFixed(1);
+  // A finished slot is won by any margin: "Even" is for a projection too close to call, not
+  // for 16.0 against 8.0 after the whistle.
+  const even = state === "final" ? margin === 0 : Math.abs(margin) < EVEN_MARGIN;
   return {
     slot,
     mine: a,
     theirs: b,
     margin,
-    edge: Math.abs(margin) < EVEN_MARGIN ? "even" : margin > 0 ? "mine" : "theirs",
+    edge: even ? "even" : margin > 0 ? "mine" : "theirs",
+    state,
   };
 }
 
@@ -121,8 +150,13 @@ export function splitMatchup(mine: Lineup, theirs: Lineup): MatchupSplit {
  * the difference between two whole lineups rather than one slot. Kept here, beside the
  * split, so the call sheet cell and the breakdown page cannot say different things.
  */
-export function matchupCall(myProj: number, theirProj: number): string {
+export function matchupCall(myProj: number, theirProj: number, final = false): string {
   const d = myProj - theirProj;
+  // Over: the line is the result, never "comes down to the slate" (W-017).
+  if (final) {
+    const by = Math.abs(d).toFixed(1);
+    return d > 0 ? `Final. Won by ${by}.` : d < 0 ? `Final. Lost by ${by}.` : "Final. A tie.";
+  }
   const a = Math.abs(d);
   if (a < 3) return "Coin flip. This one comes down to the slate.";
   if (a < 10) return d > 0 ? "You're ahead, not safe. Make every call." : "You're behind. You need the swaps.";

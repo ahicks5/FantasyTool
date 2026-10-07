@@ -45,3 +45,29 @@ def test_lineup_dict_ships_the_measured_hit_rates_unchanged(league):
     adv = lineup_mod.advise(league, league.teams[0])
     rates = report.lineup_dict(adv)["confidence_hit_rate"]
     assert rates == lineup_mod.HIT_RATE == {"Lock": 0.81, "Lean": 0.66, "Coin flip": 0.53}
+
+
+def test_live_win_probability_follows_the_score_not_the_pregame_line():
+    """Monday of week 4: 138.7-140.4 with nobody left read '64% to win' (W-013)."""
+    # Nobody left on either side: the score is the result.
+    assert report.live_win_probability(138.7, 140.4, 0.0, 0.0, 258.4) == 0.0
+    assert report.live_win_probability(141.0, 140.4, 0.0, 0.0, 258.4) == 1.0
+    assert report.live_win_probability(140.4, 140.4, 0.0, 0.0, 258.4) == 0.5
+    # Down 1.7 with 10 projected still to come for you: favoured, not certain.
+    p = report.live_win_probability(138.7, 140.4, 10.0, 0.0, 258.4)
+    assert 0.5 < p < 1.0
+    # Before kickoff it agrees with the pre-game number.
+    assert report.live_win_probability(0, 0, 133.1, 125.3, 258.4) == report.win_probability(133.1, 125.3)
+
+
+def test_points_left_counts_only_what_is_still_to_play():
+    from edge.models import Player, Team
+
+    done = Player(id="a", name="A", position="WR", nfl_team="X", projected=15.0)
+    done.game_status, done.points = "final", 20.0
+    on = Player(id="b", name="B", position="WR", nfl_team="Y", projected=16.0)
+    on.game_status, on.points = "in", 6.0
+    later = Player(id="c", name="C", position="WR", nfl_team="Z", projected=12.0)
+    team = Team(id="1", name="T", owner_id=None, owner_name=None, players=[done, on, later], starters=["a", "b", "c"])
+    # final adds 0, on the field adds half of the 10 he has left, yet to play adds 12.
+    assert report.points_left(team, ["WR", "WR", "WR"]) == 17.0

@@ -331,6 +331,7 @@ and never a name.
   },
   "standing": {"record": "2-0", "rank": 3, "teams": 12, "ppg": 121.4},
   "matchup": {"opponent": "HusH", "opponent_id": "8", "my_proj": 118.2, "their_proj": 109.7, "win_prob": 0.61,
+              "my_points": null, "their_points": null, "live": false, "final": false,
               "opponent_record": "1-1", "opponent_rank": 7, "teams": 12},
   "sheet": {"summary": "3 moves to make", "moves": 3, "all_clear": false},
   "binders": [
@@ -699,7 +700,12 @@ same 15-minute clock). Either feed failing leaves nothing locked, which is the f
 floor.
 
 The matchup (`/actions`, `/desk`) carries the platform's own points once either side has any:
-`{"my_points":98.4,"their_points":101.2,"live":true}`, null and false before kickoff.
+`{"my_points":98.4,"their_points":101.2,"live":true}`, null and false before kickoff. `live` is
+also true once any starter on either side has kicked off. From then on `win_prob` is read from
+the score plus what each lineup still has to play (`report.live_win_probability`: a man on the
+field counts half his remaining projection, and the spread shrinks with the share of points
+left), not the pre-game line. `final` is true once every starter on both sides has played:
+`win_prob` is then 1, 0 or 0.5 and the page says "Final" instead of a chance.
 
 ## Head to head (free)
 
