@@ -76,8 +76,9 @@ export function Wordmark({
    */
   markOnlyOnTiny?: boolean;
   /**
-   * "OWNER’S SUITE" in place of "SUITE". Only the landing page asks for it: everywhere
-   * else the top left always reads "SUITE" (Andrew, 2026-10-05, walkthrough W-007).
+   * "OWNER’S SUITE" beside the mark. Only the landing page asks for it: everywhere else
+   * the top left is the OS mark and its lamp, no word (Andrew, 2026-10-06; it read
+   * "SUITE" before, from W-007).
    */
   full?: boolean;
   /**
@@ -99,7 +100,7 @@ export function Wordmark({
           wrapper it paints nothing — the clip has no glyphs of its own to clip to —
           while the transparent text fill still inherits down, which renders the
           wordmark invisible. */}
-      <span className="wordmark-type chrome-type">{full ? "OWNER’S SUITE" : "SUITE"}</span>
+      {full && <span className="wordmark-type chrome-type">OWNER’S SUITE</span>}
       {lamp && <span className="lamp ml-[0.1em]" aria-hidden />}
     </span>
   );
