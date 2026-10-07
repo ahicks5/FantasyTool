@@ -246,11 +246,11 @@ test("a returning account lands on its league without entering it again", async 
   expect(stored?.league_id).toBe(CONNECTION.league_id);
   expect(stored?.team_id).toBe(CONNECTION.team_id);
   // Signed in, the wordmark is the way back to the call sheet, never the landing page, and
-  // it reads SUITE everywhere but the landing page (W-007).
+  // off the landing page it is the OS mark alone, no word (Andrew, 2026-10-06).
   await page.goto("/team");
   const mark = page.getByRole("link", { name: LINES.homeAria });
   await expect(mark).toHaveAttribute("href", "/home");
-  await expect(mark).toHaveText(/^SUITE/);
+  await expect(mark).toHaveText("");
   await page.goto("/account");
   await expect(page.getByRole("link", { name: LINES.homeAria })).toHaveAttribute("href", "/home");
 });

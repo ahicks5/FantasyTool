@@ -88,10 +88,11 @@ test("the walk: phone, code, nameplate, mailbox, league, the first call, the fre
 
   // One question: the number. The bar is already lit, and email is a side door.
   await expect(page.getByRole("heading", { level: 1, name: ONBOARD.phone.title })).toBeVisible();
-  // The wordmark reads SUITE and is the way home: the landing page, signed out (W-004, W-007).
+  // The mark is the way home: the landing page, signed out (W-004). Off the landing page
+  // it is the OS mark alone, no word (Andrew, 2026-10-06).
   const mark = page.getByRole("link", { name: LINES.homeAria });
   await expect(mark).toHaveAttribute("href", "/");
-  await expect(mark).toHaveText(/^SUITE/);
+  await expect(mark).toHaveText("");
   await expect(page.getByRole("button", { name: ONBOARD.phone.useEmail })).toBeVisible();
   await noSidewaysScroll(page);
   await phoneAndCode(page, freshPhone());
