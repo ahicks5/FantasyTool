@@ -18,8 +18,11 @@
  */
 import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = new URL("..", import.meta.url).pathname;
+// fileURLToPath, not `.pathname`: on Windows the pathname is "/C:/dev/...", which no path
+// API resolves, so the script reported a missing out/ that was sitting right there.
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SRC = join(ROOT, "out");
 const DEST = join(ROOT, "outpub");
 
