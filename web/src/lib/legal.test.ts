@@ -8,6 +8,7 @@ const complete: LegalConfig = {
   jurisdiction: "the State of Indiana, USA",
   effective: "18 September 2026",
   refundDays: 14,
+  updated: "6 October 2026",
 };
 
 test("a filled-in config is ready for Stripe's review", () => {

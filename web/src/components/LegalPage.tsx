@@ -24,7 +24,9 @@ export function LegalPage({ title, children }: { title: string; children: React.
 
       <main id="content">
         <h1 className="display mt-4 text-[32px] leading-tight">{title}</h1>
-      {LEGAL.effective && <p className="mt-2 text-[13px] text-muted">In effect from {LEGAL.effective}.</p>}
+      <p className="mt-2 text-[13px] text-muted">
+        {LEGAL.effective ? `In effect from ${LEGAL.effective}. ` : ""}Updated {LEGAL.updated}.
+      </p>
 
         <div className="mt-7 grid gap-7">{children}</div>
       </main>

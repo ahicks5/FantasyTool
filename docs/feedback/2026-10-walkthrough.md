@@ -21,8 +21,8 @@ name value back).
 
 ## Where we are
 
-- **Status:** PAUSED 2026-10-05, Monday evening of NFL week 4. Last ID: W-037.
-- **Paused at:** pages 1–7 walked and logged (landing, sign-up, sign-in, desk + full matchup, depth chart + player sheet + Position Battle, scouting + pickup, GM's Office + Trade Lab). Page 8, the film (`/report`), was looked at but **not reviewed with Andrew**: he will do it last, in a later session (draft observations are under §8 as open questions). Pages 9–13 (`/connect`, `/account`, upgrade sheet, `/admin`, privacy/terms/404) are not started.
+- **Status:** COMPLETE 2026-10-06. Pages 1–13 walked and logged, the film included. Last ID: W-054.
+- **Not seen:** the week/season pass offer (only shows to an account without a pass).
 - **To resume:** `uv run python scripts/walkthrough.py start`, sign in if past page 3, then carry
   on from page 9 (`/connect`), then 10–13, then the film (§8) last. The next ID is the one after the last one in the log.
 
@@ -720,27 +720,279 @@ first, then fix those items on top of it.
 
 ---
 
-## 8. The film · `/report` (not yet reviewed with Andrew)
-
-Andrew will walk this page last, in a later session. What Claude saw on 2026-10-05 (Monday,
-week 4), kept as **open questions**, not logged items. No IDs until Andrew has answered.
+## 8. The film · `/report`
 
 _Files: `web/src/app/report/page.tsx`, `web/src/components/film/Replay.tsx`, `film/League.tsx`,
 `film/Projector.tsx`, `Film.tsx`, `FilmWeek.tsx`, `Standings.tsx`, `web/src/lib/film.ts`,
 `edge/engine/film.py`, `league_film.py`, `recap.py`, `standings.py`._
 
-- **Open question 1** · When should week 4's replay appear: once all the user's starters are final, or at the Tuesday-noon rollover (W-018)?
-  Seen: Monday, week 4 decided for UVU (lost 138.7–140.4), but the film's newest replay is
-  week 3, the standings are through week 3, and the desk's "The film" notebook still says "Last
-  week, graded · W 125–114".
-- **Open question 2** · Should "Before Thursday" show only on the newest replay while that next week is ahead?
-  Seen: Week 3's last card, "BEFORE THURSDAY · START HIM · David Montgomery: He's your RB2
-  pick next week", is still showing after that week (and that game, 4.3) has been played.
-- **Open question 3** · For "The one who let you down", list only the stats that explain a bad game?
-  Seen: "The one who let you down" (Montgomery) lists "played 63% of the snaps (norm 36%)"
-  and "His 2nd best of 3 games this season" as reasons he flopped; both read as good news.
-- **Seen, not yet asked** · "You'd have beaten 7 of 11 teams this week" appears twice in a row (cover, then
-  card 1/7).
+Seen 2026-10-05 (Monday of week 4). Andrew answered the open questions on 2026-10-06 with "got
+it on 1", taking Claude's suggested answer to each.
 
-Pages still to walk after the film: 9 `/connect`, 10 `/account`, 11 upgrade sheet / pass offer,
-12 `/admin`, 13 privacy, terms, 404.
+### W-038 · Week 4's replay should appear once your own starters have all played
+- **Where:** `/report`, the desk's "The film" notebook · all viewports and themes
+- **Andrew:** "got it on 1" (accepting: as soon as your starters are done, not Tuesday noon)
+- **What happened:** UVU's week 4 was decided (lost 138.7–140.4), but the newest replay was week
+  3, the standings were through week 3, and the desk notebook still said "Last week, graded · W
+  125–114".
+- **Note:** use the same "my week is done" rule the rest of the app now uses (every starter
+  final): build the replay for the week just played from the live points, and roll the
+  notebook's cover to it. Standings can wait for the platform's own results.
+  Files: `edge/engine/film.py`, `recap.py`, the shared game-state helper, `web/src/components/Desk.tsx`.
+- **Priority:** P1 · **Size:** M
+
+### W-039 · "Before Thursday" only on the newest replay, while that week is still ahead
+- **Where:** `/report` replay, last card · all viewports
+- **Andrew:** "got it on 1" (accepting: yes)
+- **What happened:** week 3's last card still said "BEFORE THURSDAY · START HIM · David Montgomery:
+  He's your RB2 pick next week" after that week (4.3 points) was played.
+- **Note:** render the card only for the newest replay and only before the next week's first
+  kickoff. Files: `web/src/components/film/Replay.tsx`, `web/src/lib/film.ts`.
+- **Priority:** P2 · **Size:** S
+
+### W-040 · "The one who let you down" lists only reasons that explain a bad game
+- **Where:** `/report` replay · all viewports
+- **Andrew:** "got it on 1" (accepting: yes)
+- **What happened:** Montgomery (14.4 projected, 6.8 scored) "flopped" with "played 63% of the snaps
+  (norm 36%)" and "His 2nd best of 3 games this season", both good news.
+- **Note:** for the dud card keep only reads that point down (fewer snaps, touches, red-zone
+  looks, efficiency under norm); drop rows that point up. Same filter in reverse for "the one
+  who carried you". Files: `edge/engine/film.py` (the reasons), `web/src/lib/film.ts`.
+- **Priority:** P2 · **Size:** S
+
+### W-041 · "You'd have beaten 7 of 11 teams" is said twice in a row
+- **Where:** `/report` replay cover and card 1/7 · all viewports
+- **Andrew:** "got it on 1" (accepting Claude's note: drop one copy)
+- **Note:** keep it on the cover; drop it from "The game" card.
+  Files: `web/src/components/film/Replay.tsx`.
+- **Priority:** P3 · **Size:** S
+
+---
+
+## 9. Connect a league · `/connect`, `/connect/espn`
+
+_Files: `web/src/app/connect/page.tsx`, `web/src/components/LeagueLinker.tsx`, `EspnAuthForm.tsx`,
+`web/src/app/connect/espn/page.tsx`, words in `CONNECT` / `ESPN_KEY` in `vocab.ts`._
+
+Seen 2026-10-06, signed in. Sleeper search on the public test league (1403186749361901568) up to
+"Select your team"; nothing was saved. ESPN: the ID box and the four-step bookmark walk. Yahoo
+is gone from the picker (W-006). Loads in under a second; clean at both widths and themes.
+
+### W-042 · Make the connect flow read as three clear steps: pick, load, choose
+- **Where:** `/connect` (and the same `LeagueLinker` inside the sign-up walk) · all viewports and themes
+- **Andrew:** "i think we should make that page better. make it clear too that you do whatever step,
+  and then load and wait for hte league to load, then sleect your team."
+- **Note:** today it is "Step 1 of 2 · Connect" with the platform buttons, the box and the team list
+  stacked, and the team list just appears. Make the order explicit and visible:
+  1. **Pick your platform** (Sleeper / ESPN).
+  2. **Find your league**: the box (Sleeper username or ID; ESPN ID or the bookmark), then a
+     clear loading state in place of the team list while it fetches ("Loading The Megalabowl…"
+     with the turning ring, never a blank gap).
+  3. **Pick your team**, with the save button.
+  Number the three, show which one you are on, and keep finished steps collapsed to one line
+  ("Sleeper · The Megalabowl · Change"). Same flow inside the sign-up walk, since it shares the
+  component.
+  Files: `web/src/components/LeagueLinker.tsx`, `web/src/app/connect/page.tsx`, words in `CONNECT`.
+- **Priority:** P1 · **Size:** M
+
+### W-043 · Nothing should move when the league loads
+- **Where:** `/connect` · phone 375 (any)
+- **Andrew:** "i agree with all your suggestions." (on: take the kickoff clock off this screen)
+- **What happened:** after "Find", a "KICKOFF 4d 15:37" line appeared under the heading and pushed
+  the platform buttons and the box ~70px down, under the reader's thumb.
+- **Note:** drop the clock from `/connect`; it belongs to the rooms, not to a setup form. Check the
+  rest of the page for anything else that mounts above the box after a fetch.
+  Files: `web/src/components/LeagueLinker.tsx`.
+- **Priority:** P2 · **Size:** S
+
+### W-044 · Mark your own team in "Select your team"
+- **Where:** `/connect` team list · all viewports
+- **Andrew:** "i agree with all your suggestions." (on: mark yours and put it first when we can tell)
+- **Note:** when the league was found by Sleeper username, that user's roster is known: put it
+  first, labelled "You", pre-selected. A team already on the account says "Already linked".
+  By league ID alone there is no way to know, so the list stays as is.
+  Files: `web/src/components/LeagueLinker.tsx`, `web/src/lib/leagueInput.ts`, the Sleeper lookup in
+  `edge/api/app.py` if it does not already return the owner id.
+- **Priority:** P2 · **Size:** S
+
+### W-045 · "I have a league ID" is too easy to miss
+- **Where:** `/connect`, ESPN · all viewports and themes
+- **Andrew:** "i agree with all your suggestions." (on: make it more visible)
+- **Note:** a grey underline under the big green "Link from ESPN". Make it a secondary button of the
+  same width under the green one ("I have a league ID"), so both ways in read as choices.
+  Files: `web/src/components/EspnAuthForm.tsx` / `LeagueLinker.tsx`.
+- **Priority:** P3 · **Size:** S
+
+---
+
+## 10. Account · `/account`
+
+_Files: `web/src/app/account/page.tsx`, words in `ACCOUNT` in `vocab.ts`, `web/src/lib/account.ts`;
+billing in `edge/api/payments.py`._
+
+Seen 2026-10-06, signed in (season pass, admin). Phone, email (not confirmed), the game-day texts
+box, leagues on file (2 of 3), plan, security, appearance, sign out, delete.
+
+### W-046 · Leagues on file run off a phone screen
+- **Where:** phone 375 · both themes
+- **Andrew:** "i agree with all suggestions."
+- **What happened:** each league card measured 417px on a 375px screen: "Small to Medium Sized
+  League" plus Open and Forget do not shrink, so the whole page is 433px wide and scrolls
+  sideways / zooms out on a phone.
+- **Note:** `min-w-0` on the card's text column with the name allowed to wrap to two lines (or
+  `truncate` on the team line), buttons `shrink-0`. Add `/account` with a long league name to
+  the e2e overflow sweep at 320 and 375.
+  Files: `web/src/app/account/page.tsx`, `web/e2e/smoke.spec.ts`.
+- **Priority:** P1 · **Size:** S
+
+### W-047 · Confirm before "Forget"
+- **Where:** `/account` leagues · all viewports
+- **Andrew:** "i agree with all suggestions."
+- **Note:** "Forget" acts at once while small print says the slot is not given back this season.
+  Ask first: "Forget Degenerates FF? Its slot stays used this season." with Forget / Keep it.
+  Files: `web/src/app/account/page.tsx`, words in `ACCOUNT`.
+- **Priority:** P2 · **Size:** S
+
+### W-048 · The plan card says when, and opens billing, for every plan
+- **Where:** `/account` plan · all viewports
+- **Andrew:** "yes to number 3 for everything as well."
+- **Note:** show the date the pass started (and, for a week pass, the next charge date), plus a
+  "Manage billing" link to Stripe's customer portal for receipts, the card on file and cancelling.
+  Every paid plan and the league-slot add-on, not only the week pass. A complimentary grant (no
+  Stripe customer) says "Complimentary" and no link. A week-pass holder already gets "Manage or
+  cancel" (`billing_portal_url` from `EDGE_BILLING_PORTAL_URL` in `/api/me`); extend it to every paid
+  plan, and add the start date to the plan in `/api/me`.
+  Files: `web/src/app/account/page.tsx`, `edge/api/payments.py`, `edge/api/app.py`, `web/src/lib/types.ts`.
+- **Priority:** P1 · **Size:** M
+
+### W-049 · Leagues first on the account page
+- **Where:** `/account` · all viewports and themes
+- **Andrew:** "can we put leagues up top as more obvious? settings/email other housekeeping stuff
+  can be under. the league need to be the top and best"
+- **Note:** order the page: your leagues (bigger cards, the one you are reading marked, Open on each,
+  Link a league and Add a slot right under), then the plan, then the housekeeping block (phone,
+  email, texts, security, appearance), then sign out and delete. The admin link can sit in the
+  housekeeping block.
+  Files: `web/src/app/account/page.tsx`.
+- **Priority:** P2 · **Size:** S
+
+---
+
+## 11. Upgrade sheet / pass offer
+
+_Files: `web/src/components/account/AccountGate.tsx` (the upgrade sheet), `web/src/components/Pricing.tsx`,
+`web/src/components/Locked.tsx`, `web/src/lib/offer.ts`, `edge/products.py`, `edge/api/payments.py`._
+
+Seen 2026-10-06 as a season-pass holder: "Add a league slot" on `/account` → the sheet → "Get
+League slot" → Stripe live checkout, where we stopped (nothing entered, nothing paid).
+
+### W-050 · Stripe checkout still says "Penthouse Fantasy"
+- **Where:** checkout.stripe.com, every purchase
+- **Andrew:** "let's change the name."
+- **What happened:** the checkout header reads "Penthouse Fantasy" (the Stripe account's public
+  business name); the item reads "Owner's Suite — League slot (2026 season)".
+- **Note:** **Andrew, in the Stripe dashboard** (not code): Settings → Business → Public details →
+  public business name "Owner's Suite"; also the statement descriptor (what shows on a card
+  statement) and the checkout/branding icon and colour. In code: the line-item names in
+  `edge/products.py` / `edge/api/payments.py` lose the em dash ("Owner's Suite · League slot").
+- **Priority:** P1 · **Size:** S
+
+### W-051 · The slot sheet borrows the pass's small print
+- **Where:** `/account` → Add a league slot · all viewports
+- **Andrew:** "lets fix the slot."
+- **What happened:** "Paid through Stripe. The week renews until you cancel. The season is one
+  payment." under a $2.99 slot; "One more league on your account." said twice; button "Get League slot".
+- **Note:** for the slot sheet: one line ("One more league on your account, for the rest of the
+  season."), small print "One payment. Yours for the rest of the season. Paid through Stripe.",
+  button "Add a slot · $2.99". Keep the renew/one-payment line only where a pass is on offer.
+  Files: `web/src/components/account/AccountGate.tsx`, `Pricing.tsx`, words in `PRICING` in `vocab.ts`.
+- **Priority:** P2 · **Size:** S
+
+Noted, no change: Stripe Link texts a sign-in code to the account's phone when checkout opens
+(Stripe's own behaviour for a saved Link account).
+
+Not seen: the week/season pass offer. It only shows to an account without a pass, and the local
+mock build does not lock those rooms, so it could not be checked without a second account.
+
+---
+
+## 12. Admin · `/admin`
+
+_Files: `web/src/app/admin/page.tsx`, `web/src/components/admin/Dashboard.tsx`, `edge/business/metrics.py`,
+`edge/api/app.py` (admin routes)._ Account details on this page belong to real users and are not
+copied into this log. The walkthrough's own test checkout shows in "Last hour: 1 checkout".
+
+### W-052 · "Paying now" counts free grants
+- **Where:** `/admin` Today · all viewports
+- **Andrew:** "reword paying now yes, that's misleading."
+- **What happened:** "Paying now 4" beside $0 revenue, with every account listed "Paid $0"
+  (complimentary grants).
+- **Note:** "Paying now" counts only accounts with a live paid pass from a Stripe payment; a
+  separate tile (or a line under it) says "Comped N". Same split anywhere else the dashboard sums
+  plans (Revenue, Retention). Files: `edge/business/metrics.py`, `web/src/components/admin/Dashboard.tsx`;
+  test in `tests/test_metrics.py`.
+- **Priority:** P1 · **Size:** S
+
+### W-053 · Admin calls plans by the app's names
+- **Where:** `/admin` Accounts · all viewports
+- **Andrew:** "admin should use same name."
+- **What happened:** a "PREMIUM" badge and "The Owner's Suite · 2 of 3 leagues" here; "Season pass"
+  on `/account`.
+- **Note:** use `PRICING.names` from `vocab.ts` (Season pass, Week pass, League slot, and the old
+  Wire Pass / Trade Lab) for every plan line and badge; "Free" and "Comped" as the badges.
+  Files: `web/src/components/admin/Dashboard.tsx`, `web/src/app/admin/page.tsx`.
+- **Priority:** P2 · **Size:** S
+
+---
+
+## 13. Privacy, terms, 404
+
+_Files: `web/src/app/privacy/page.tsx`, `web/src/app/terms/page.tsx`, `web/src/lib/legal.ts`,
+`web/src/components/LegalPage.tsx`, `web/src/app/not-found.tsx`; source of truth `docs/DATA_INVENTORY.md`._
+
+Decided, no change: the 404 is good (plain, with "Go to this week").
+
+### W-054 · Terms and privacy rewritten to match the app (done 2026-10-06)
+- **Where:** `/terms`, `/privacy`
+- **Andrew:** "rewrite the terms pelase, i will not review just do it right. go ahead."
+- **What was wrong:** the terms said you could link a league without an account, that sign-in
+  happens at checkout by an emailed link, and named Yahoo among the leagues we read; privacy
+  described a weekly-email checkbox the app no longer shows and not the game-day texts it does.
+- **Done:** terms now say an account is needed to link a league; sign-in is a texted code, or email
+  and password; texts are sign-in codes plus opt-in game-day texts (up to four a week, STOP/HELP,
+  never required); three leagues per account and a forgotten league keeps its slot; the week pass
+  renews weekly and is cancelled from "Manage or cancel"; the season pass is one payment, cheaper
+  while a paid week runs, and ends the weekly subscription; a league slot is one payment; the free
+  week takes the card up front and charges on day eight unless cancelled; old Wire Pass / Trade
+  Lab purchases keep working; we read and never write; explanations may be AI-written from the
+  engine's numbers; Sleeper and ESPN today. Privacy's stored-data list now describes the game-day
+  text consent. Both pages show "Updated 6 October 2026" (`LEGAL.updated`, set in code).
+- **Priority:** P1 · **Size:** S
+
+---
+
+## Summary, pages 8–13 (2026-10-06)
+
+W-001 to W-037 are built and live (see the top of this file). These came after:
+
+| ID | Priority | Size | Page | Item |
+|---|---|---|---|---|
+| W-038 | P1 | M | The film | Week's replay appears once your own starters have all played |
+| W-042 | P1 | M | Connect | Three clear steps: pick, load (with a loading state), choose |
+| W-046 | P1 | S | Account | League cards run off a phone screen |
+| W-048 | P1 | M | Account | Plan card shows dates and "Manage billing" for every plan |
+| W-050 | P1 | S | Checkout | Stripe still says "Penthouse Fantasy" (**Andrew, in the Stripe dashboard**) |
+| W-052 | P1 | S | Admin | "Paying now" counts free grants |
+| W-054 | P1 | S | Legal | Terms and privacy rewritten (**done**) |
+| W-039 | P2 | S | The film | "Before Thursday" only on the newest replay |
+| W-040 | P2 | S | The film | "Let you down" lists only reasons that explain a bad game |
+| W-043 | P2 | S | Connect | Nothing moves when the league loads |
+| W-044 | P2 | S | Connect | Mark your own team |
+| W-047 | P2 | S | Account | Confirm before "Forget" |
+| W-049 | P2 | S | Account | Leagues first on the account page |
+| W-051 | P2 | S | Upgrade sheet | Slot sheet borrows the pass's small print |
+| W-053 | P2 | S | Admin | Admin uses the app's plan names |
+| W-041 | P3 | S | The film | "You'd have beaten 7 of 11" said twice |
+| W-045 | P3 | S | Connect | "I have a league ID" too easy to miss |
+
+Quick wins (P1/P2, size S): W-046, W-052, W-039, W-040, W-043, W-044, W-047, W-049, W-051, W-053.

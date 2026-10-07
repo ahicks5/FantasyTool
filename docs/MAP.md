@@ -204,7 +204,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/login/page.tsx` | Sign in: a phone number and a texted code first, email and password as the fallback. Signed in already, it is the door to the account. | 7 |
 | `web/src/app/not-found.tsx` | The 404 page, deliberately not indexed. | 27 |
 | `web/src/app/page.tsx` | The landing page: the stage and the door, how quick it is, the rooms as the kit's posters, who it is for, and the door again. Indexable. | 710 |
-| `web/src/app/privacy/page.tsx` | The privacy policy. docs/DATA_INVENTORY.md is the source of truth; if they disagree this page is stale. | 185 |
+| `web/src/app/privacy/page.tsx` | The privacy policy. docs/DATA_INVENTORY.md is the source of truth; if they disagree this page is stale. | 187 |
 | `web/src/app/register/page.tsx` | Create an account: the sign-up walk, one question a screen, from the phone to a linked league and the free week (docs/SPEC-ONBOARDING.md). | 7 |
 | `web/src/app/report/page.tsx` | The film: the replay of your week first, then the standings for everyone, then the season week by week. | 210 |
 | `web/src/app/reset/page.tsx` | Set a new password from a reset link (`?token=`), then land upstairs signed in. | 84 |
@@ -214,7 +214,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/team/battle/page.tsx` | Position Battle: `/team/battle?a=<id>&b=<id>`. Two men, one spot, the tale of the tape. The corner is free; the verdict is paid. | 29 |
 | `web/src/app/team/decide/page.tsx` | One lineup role, the whole question: `/team/decide?role=RB2`. Reads the lineup the tab already fetched. Free tier. | 38 |
 | `web/src/app/team/page.tsx` | Lineup: is my starting lineup right for this week? The required changes, the decisions, then the board. Free tier. | 25 |
-| `web/src/app/terms/page.tsx` | The terms of service. The facts it cannot work out for itself live in lib/legal.ts. | 132 |
+| `web/src/app/terms/page.tsx` | The terms of service. The facts it cannot work out for itself live in lib/legal.ts. | 166 |
 | `web/src/app/trade/deal/page.tsx` | One GM, read in full: the arrow on each of the office's panels and rows lands here. | 140 |
 | `web/src/app/trade/page.tsx` | GM's Office: the three deals worth a call, every GM in one line each, and the trade room | 688 |
 | `web/src/app/verify/page.tsx` | Confirm an email address from the link we mailed (`?token=`), then carry on signed in. | 66 |
@@ -242,7 +242,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Freshness.tsx` | The age line under the title band: how old the numbers on screen are, and a Refresh. | 52 |
 | `web/src/components/LandingBar.tsx` | The landing page's follow-along bar: how quick the door is (or the clock, near kickoff) and the one door, once the first button has scrolled away. | 60 |
 | `web/src/components/LeagueLinker.tsx` | The league link itself, shared by /connect and the sign-up walk: pick a platform, find the league, pick the team, save it to the account. | 726 |
-| `web/src/components/LegalPage.tsx` | Shared chrome and typography for /terms and /privacy. Plain, readable, no app shell. | 64 |
+| `web/src/components/LegalPage.tsx` | Shared chrome and typography for /terms and /privacy. Plain, readable, no app shell. | 66 |
 | `web/src/components/LineupView.tsx` | Lineup: is my starting lineup right for this week? Two piles, then the roster. | 583 |
 | `web/src/components/Loading.tsx` | Any wait that is not the ride: the mark in the middle, a ring turning around it, and a | 31 |
 | `web/src/components/Locked.tsx` | The paywall as a haze, not a wall (Andrew, 2026-09-28): the room's content sits under a | 152 |
@@ -322,7 +322,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/identity.ts` | The rules for "who is signed in", minus React and the network: when a failed `/api/me` | 73 |
 | `web/src/lib/leagueFilm.ts` | The film's league half, minus React: bar geometry, grade shading and orders. | 59 |
 | `web/src/lib/leagueInput.ts` | One box for Sleeper, because asking someone to know whether they have a "username" or a | 100 |
-| `web/src/lib/legal.ts` | The handful of facts the Terms and Privacy pages cannot work out for themselves. | 51 |
+| `web/src/lib/legal.ts` | The handful of facts the Terms and Privacy pages cannot work out for themselves. | 55 |
 | `web/src/lib/mark.ts` | The mark: the OS monogram. Two strokes of script, the O thrown wide and the S swept | 20 |
 | `web/src/lib/matchup.ts` | The week's head-to-head, worked out slot by slot. | 209 |
 | `web/src/lib/mocks.ts` | Mock data matching docs/API.md exactly. Player names, rosters and week-2 | 1831 |
