@@ -910,3 +910,35 @@ League slot" → Stripe live checkout, where we stopped (nothing entered, nothin
 
 Noted, no change: Stripe Link texts a sign-in code to the account's phone when checkout opens
 (Stripe's own behaviour for a saved Link account).
+
+Not seen: the week/season pass offer. It only shows to an account without a pass, and the local
+mock build does not lock those rooms, so it could not be checked without a second account.
+
+---
+
+## 12. Admin · `/admin` (draft, waiting on Andrew)
+
+_Files: `web/src/app/admin/page.tsx`, `web/src/components/admin/Dashboard.tsx`, `edge/business/metrics.py`,
+`edge/api/app.py` (admin routes)._ Account details on this page belong to real users and are not
+copied into this log.
+
+- **Draft A** · "Paying now 4" while every account listed says "Paid $0" (complimentary grants), and
+  revenue is $0: comps are counted as paying.
+- **Draft B** · Plan names disagree with the rest of the app: a "PREMIUM" badge and "The Owner's
+  Suite · 2 of 3 leagues" here, "Season pass" on `/account`.
+- **Draft C** · The walkthrough's own test checkout shows in "Last hour: 1 checkout".
+
+---
+
+## 13. Privacy, terms, 404 (draft, waiting on Andrew)
+
+_Files: `web/src/app/privacy/page.tsx`, `web/src/app/terms/page.tsx`, `web/src/lib/legal.ts`,
+`web/src/app/not-found.tsx`; source of truth `docs/DATA_INVENTORY.md`._
+
+- **Draft A** · Terms are out of date with how the product works: "You can connect a league and see
+  your week without an account" (linking needs an account now), "Signing in happens at checkout, by
+  a link sent to your email address" (sign-in is a texted code, or email and password), and "cancel
+  from your account page (Manage or cancel)" (there is no such button yet; W-048).
+- **Draft B** · Privacy still describes the weekly-email checkbox; the account page now offers
+  game-day texts instead.
+- **Draft C** · The 404 is good: plain, with "Go to this week".
