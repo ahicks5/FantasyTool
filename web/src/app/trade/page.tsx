@@ -170,7 +170,12 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   // gets `{preview: true, ...}` from /trades/find — the same board with the offers taken
   // out — rather than a 402. See `edge/engine/trade_finder.preview`.
   const [found, setFound] = useState<(TradeFinderResponse & { preview?: boolean }) | null>(null);
-  const [build, setBuild] = useState(params.get("build") === "1");
+  // Two doors into the room (Andrew, 2026-10-05, W-037): compare the two rosters, or build a
+  // trade. Null until one is picked; an arrival with an offer or a manager in the address
+  // opens straight onto the builder.
+  const [mode, setMode] = useState<"teams" | "trade" | null>(
+    params.get("build") === "1" || (params.get("give") && params.get("get")) || params.get("their") ? "trade" : null,
+  );
 
   useEffect(() => {
     Promise.all([
@@ -180,7 +185,6 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       .then(([l, roster]) => {
         setLeague(l);
         setMine(sortRoster(roster.players));
-        setTheirId((cur) => cur || l.teams.find((t) => t.id !== c.team_id)?.id || "");
       })
       .catch((e: unknown) => setError(e));
   }, [c.platform, c.league_id, c.team_id]);
@@ -281,7 +285,6 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
   if (error && !league) return <ErrorBox error={error} />;
   if (!league) return <SkeletonList rows={3} />;
 
-  const building = build || !!prefilled || !!params.get("their");
 
   return (
     <div className="grid gap-7">
@@ -297,7 +300,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
             board={found}
             preview={preview}
             onJump={() => {
-              setBuild(true);
+              setMode("trade");
               // After the open lands, so the scroll finds the room at its full height.
               requestAnimationFrame(() => document.getElementById("build")?.scrollIntoView({ behavior: "smooth", block: "start" }));
             }}
@@ -327,25 +330,29 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       // The room's own width, edge to edge with the office above it: centred at 768px it sat
       // indented under a left-aligned column on a wide screen (W-036).
       <section id="build" className="office-build grid scroll-mt-20 tablet:scroll-mt-28 gap-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="display text-[20px] leading-tight">{OFFICE.build}</h2>
-            <p className="mt-1 text-[12px] leading-snug text-muted">{OFFICE.buildHint}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setBuild((b) => !b)}
-            aria-expanded={building}
-            className="min-h-0 shrink-0 rounded-full bg-ink px-3.5 py-2 text-[12px] font-black text-paper"
-          >
-            {building ? OFFICE.buildClose : OFFICE.buildOpen}
-          </button>
+        <div className="min-w-0">
+          <h2 className="display text-[20px] leading-tight">{OFFICE.build}</h2>
+          <p className="mt-1 text-[12px] leading-snug text-muted">{OFFICE.buildHint}</p>
         </div>
-      {building && (
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label={OFFICE.build}>
+          {(["teams", "trade"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode((cur) => (cur === m ? null : m))}
+              aria-pressed={mode === m}
+              className={`min-h-11 rounded-xl px-3 py-2.5 text-[13px] font-black ${mode === m ? "bg-ink text-paper" : "border border-line-2 bg-soft text-ink"}`}
+              data-testid={`room-${m}`}
+            >
+              {m === "teams" ? OFFICE.compareTeams : OFFICE.buildTrade}
+            </button>
+          ))}
+        </div>
+      {mode && (
       <>
       <section className="card p-4">
         <label htmlFor="their-team" className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
-          Across the table
+          {OFFICE.acrossTable}
         </label>
         <select
           id="their-team"
@@ -358,6 +365,10 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
             setResult(null);
           }}
         >
+          {/* Nobody picked for you: the room loads once you choose (W-037). */}
+          <option value="" disabled>
+            {OFFICE.pickManager}
+          </option>
           {others.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name} ({t.record})
@@ -370,7 +381,20 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
           public inside the league and the letters are our arithmetic on them, while what
           Trade Lab sells -- the verdict on an actual offer and a counter tuned to this
           manager -- sits further down this same page. Nothing here names a target. */}
-      {cards?.id === theirId && <Compare mine={cards.mine} theirs={cards.theirs} className="mt-3.5" />}
+      {mode === "teams" && theirId && (
+        <>
+          {cards?.id === theirId ? <Compare mine={cards.mine} theirs={cards.theirs} className="mt-3.5" /> : <SkeletonList rows={3} quiet />}
+          <Button variant="start" className="w-full" onClick={() => setMode("trade")} data-testid="to-trade">
+            {OFFICE.toTrade(theirTeam?.name ?? "them")}
+          </Button>
+        </>
+      )}
+
+      {mode === "trade" && theirId && (
+      <>
+      <button type="button" onClick={() => setMode("teams")} className="justify-self-start text-[13px] font-bold text-lean underline underline-offset-4" data-testid="to-teams">
+        {OFFICE.toTeams}
+      </button>
 
       {/* One table rather than two cards. The two sides of a trade are one object, and
           splitting them into separate panels meant nothing on screen ever showed the
@@ -403,12 +427,16 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
       <PickerSheet open={sheet === "give"} onClose={() => setSheet(null)} title="Your roster" players={mine} selected={give} onToggle={(id) => toggle(give, setGive, id)} tone="sit" />
       <PickerSheet open={sheet === "get"} onClose={() => setSheet(null)} title={`${theirTeam?.name ?? "Their"} roster`} players={theirs} selected={get} onToggle={(id) => toggle(get, setGet, id)} tone="start" />
 
-      {/* Clears the phone's tab bar; from tablet up there is none, so it sits at the edge. */}
-      <div className="sticky bottom-24 z-[5] tablet:bottom-6">
-        <Button variant="start" className="w-full shadow-[var(--shadow-float)]" onClick={submit} busy={busy} disabled={give.length === 0 || get.length === 0}>
-          {busy ? "Grading it…" : `Grade ${give.length}-for-${get.length}`}
-        </Button>
-      </div>
+      {/* Clears the phone's tab bar; from tablet up there is none, so it sits at the edge.
+          Only once both sides hold a player: a floating "Grade 0-for-0" over an empty table
+          was noise (W-037). */}
+      {give.length > 0 && get.length > 0 && (
+        <div className="sticky bottom-24 z-[5] tablet:bottom-6">
+          <Button variant="start" className="w-full shadow-[var(--shadow-float)]" onClick={submit} busy={busy}>
+            {busy ? "Grading it…" : `Grade ${give.length}-for-${get.length}`}
+          </Button>
+        </div>
+      )}
       {error && <ErrorBox error={error} />}
 
       {result && (
@@ -497,6 +525,8 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
             </div>
           </section>
         </div>
+      )}
+      </>
       )}
       </>
       )}

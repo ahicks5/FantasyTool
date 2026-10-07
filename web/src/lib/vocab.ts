@@ -1853,9 +1853,16 @@ export const OFFICE = {
   needs: "Needs",
   offers: (n: number) => `${n} offer${n === 1 ? "" : "s"}`,
   build: "Trade room",
-  buildHint: "Pick the players, we grade it on both rosters and write the counter.",
+  buildHint: "Size up a manager, or put players on the table and we grade it on both rosters.",
   buildOpen: "Open the table",
   buildClose: "Close the table",
+  /** The room's two doors (W-037). */
+  compareTeams: "Compare teams",
+  buildTrade: "Build a trade",
+  acrossTable: "Across the table",
+  pickManager: "Pick a manager",
+  toTrade: (team: string) => `Build a trade with ${team}`,
+  toTeams: "See how your teams compare",
   /** One partner's page, `/trade/deal?team=`. */
   deal: {
     back: "Back to the office",
