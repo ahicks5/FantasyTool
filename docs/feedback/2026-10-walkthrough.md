@@ -822,3 +822,21 @@ is gone from the picker (W-006). Loads in under a second; clean at both widths a
   same width under the green one ("I have a league ID"), so both ways in read as choices.
   Files: `web/src/components/EspnAuthForm.tsx` / `LeagueLinker.tsx`.
 - **Priority:** P3 · **Size:** S
+
+---
+
+## 10. Account · `/account` (draft, waiting on Andrew)
+
+_Files: `web/src/app/account/page.tsx`, words in `ACCOUNT` in `vocab.ts`, `web/src/lib/account.ts`._
+
+Seen 2026-10-06, signed in (season pass, admin). Phone, email (not confirmed), the game-day texts
+box, leagues on file (2 of 3), plan, security, appearance, sign out, delete.
+
+- **Draft A** · Phone 375: each "Leagues on file" card is 417px wide (a long league name plus
+  Open and Forget do not shrink), so the whole page is 433px wide and scrolls sideways / zooms
+  out on a phone.
+- **Draft B** · "Forgetting a league does not give its slot back this season." A hard rule stated
+  in small print under the list, with no confirm on "Forget".
+- **Draft C** · The plan card says "Season pass · Every room open for the rest of the season" and
+  nothing else: no date bought, no receipt, no way to manage billing (week-pass holders need a
+  cancel).
