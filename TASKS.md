@@ -5,7 +5,8 @@ Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 ## Private ESPN league won't open from the account page (2026-10-07, branch `claude/espn-private-reopen-fix`)
 
 - [x] "Open" on a private ESPN league whose key is missing or stale now shows the ESPN key form inside that league's card (Get my key, or paste espn_s2 + SWID), then retries the open. Other open errors show on the card too, not at the foot of the page. Test: `web/e2e/account.spec.ts` "asks for its key on its own card".
-- [ ] **Andrew:** ship it (`git push origin claude/espn-private-reopen-fix:claude/edge-fantasy-app-launch-alo0rr`) and try it on the phone app; "Get my key" opens the ESPN sign-in sheet there.
+- [x] Shipped to production (90df24b, CI fixes in 49145ee: two e2e tests still expected the SUITE wordmark; CI green).
+- [ ] **Andrew:** try it on the phone app; "Get my key" opens the ESPN sign-in sheet there.
 
 ## The rebrand to the kit (2026-10-06, branch `claude/rebrand`, not yet on production)
 The kit's posters and socials, built through web and the iPhone app (`docs/REBRAND.md`,
