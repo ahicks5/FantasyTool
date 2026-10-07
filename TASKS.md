@@ -185,14 +185,18 @@ where it names the old brand as history, and in an ESPN team name inside a recor
       `EDGE_CORS`, `EDGE_WEB_URL` on Render and `NEXT_PUBLIC_SITE_URL` on Vercel set and verified;
       code defaults, `deploy/render.yaml`, `eas.json`, tests and docs follow. penthousefantasy.com
       still serves the same site and stays in the CORS list.
-- [ ] Domain, the rest — **Andrew**: Resend sending domain `ownerssuite.io`; Twilio Verify
-      template (above); App Store Connect privacy and support URLs; Stripe business URL; Yahoo
-      redirect + `YAHOO_REDIRECT_URI` when Yahoo is approved (Y-7).
-- [ ] A TestFlight build with `EXPO_PUBLIC_WEB_URL=https://ownerssuite.io` (now in `eas.json`),
-      **then** in Vercel set `penthousefantasy.com` and `www` to 308 → `ownerssuite.io`. Not
-      before: an older build opens every redirected page in Safari. Keep the old domain registered.
-- [ ] Social handle (`penthousefootball` in BRAND.md §2), the Twilio Verify service name, and
-      the Stripe product names already created in the dashboard — **Andrew**.
+- [x] Domain, the rest (2026-10-06): App Store Connect privacy and support URLs; Stripe public
+      details (website, name, descriptor OWNERS SUITE FOOTBALL; no saved products, prices are
+      inline); Twilio Verify service renamed Owner's Suite; Resend domain `ownerssuite.io` added
+      with its four DNS records live, `EDGE_EMAIL_FROM` = `Owner's Suite <hello@ownerssuite.io>`.
+- [ ] Confirm Resend shows ownerssuite.io **Verified**, then a Forgot-password email arrives from
+      `hello@ownerssuite.io` — **Andrew**
+- [ ] Yahoo redirect `https://ownerssuite.io/connect/yahoo` + `YAHOO_REDIRECT_URI` when Yahoo is
+      approved (Y-7).
+- [x] TestFlight build 3 with `EXPO_PUBLIC_WEB_URL=https://ownerssuite.io`: the monogram icon and
+      splash, stays in the app. `penthousefantasy.com` now 308s to `ownerssuite.io` in Vercel.
+      Keep the old domain registered.
+- [ ] Social handle (`penthousefootball` in BRAND.md §2) — **Andrew**. (Twilio name and Stripe done 2026-10-06.)
 - [ ] `launch/cards/` were already stale; re-render with `edge.cli card` before any post.
 - [ ] Trademark screen moves to "Owner's Suite" (B-10).
 ## Promo code STHTIKTOK (2026-10-05)
