@@ -21,7 +21,7 @@ name value back).
 
 ## Where we are
 
-- **Status:** RESUMED 2026-10-06: film logged (W-038 to W-041); pages 9–10 done; walking pages 11–13. Last ID: W-049.
+- **Status:** RESUMED 2026-10-06: film logged (W-038 to W-041); pages 9–10 done; walking pages 11–13. Last ID: W-051.
 - **Paused at:** pages 1–7 walked and logged (landing, sign-up, sign-in, desk + full matchup, depth chart + player sheet + Position Battle, scouting + pickup, GM's Office + Trade Lab). Page 8, the film (`/report`), was looked at but **not reviewed with Andrew**: he will do it last, in a later session (draft observations are under §8 as open questions). Pages 9–13 (`/connect`, `/account`, upgrade sheet, `/admin`, privacy/terms/404) are not started.
 - **To resume:** `uv run python scripts/walkthrough.py start`, sign in if past page 3, then carry
   on from page 9 (`/connect`), then 10–13, then the film (§8) last. The next ID is the one after the last one in the log.
@@ -878,19 +878,35 @@ box, leagues on file (2 of 3), plan, security, appearance, sign out, delete.
 
 ---
 
-## 11. Upgrade sheet / pass offer (draft, waiting on Andrew)
+## 11. Upgrade sheet / pass offer
 
 _Files: `web/src/components/account/AccountGate.tsx` (the upgrade sheet), `web/src/components/Pricing.tsx`,
 `web/src/components/Locked.tsx`, `web/src/lib/offer.ts`, `edge/products.py`, `edge/api/payments.py`._
 
 Seen 2026-10-06 as a season-pass holder: "Add a league slot" on `/account` → the sheet → "Get
-League slot" → Stripe live checkout, where we stopped (nothing entered, nothing paid). The
-week/season pass offer only shows to an account without a pass, so it was not seen.
+League slot" → Stripe live checkout, where we stopped (nothing entered, nothing paid).
 
-- **Draft A** · Stripe's checkout header says **"Penthouse Fantasy"** (the business name in the
-  Stripe account), and the item reads "Owner's Suite — League slot (2026 season)" with an em dash.
-- **Draft B** · The slot sheet's small print is the pass's: "The week renews until you cancel. The
-  season is one payment." A slot is one payment, rest of season. "One more league on your account."
-  is said twice, and the button reads "Get League slot".
-- **Draft C** · Stripe Link texted a sign-in code to the account's phone the moment checkout opened
-  ("Enter the code sent to (•••) ••• ••15"), before the buyer chose to pay.
+### W-050 · Stripe checkout still says "Penthouse Fantasy"
+- **Where:** checkout.stripe.com, every purchase
+- **Andrew:** "let's change the name."
+- **What happened:** the checkout header reads "Penthouse Fantasy" (the Stripe account's public
+  business name); the item reads "Owner's Suite — League slot (2026 season)".
+- **Note:** **Andrew, in the Stripe dashboard** (not code): Settings → Business → Public details →
+  public business name "Owner's Suite"; also the statement descriptor (what shows on a card
+  statement) and the checkout/branding icon and colour. In code: the line-item names in
+  `edge/products.py` / `edge/api/payments.py` lose the em dash ("Owner's Suite · League slot").
+- **Priority:** P1 · **Size:** S
+
+### W-051 · The slot sheet borrows the pass's small print
+- **Where:** `/account` → Add a league slot · all viewports
+- **Andrew:** "lets fix the slot."
+- **What happened:** "Paid through Stripe. The week renews until you cancel. The season is one
+  payment." under a $2.99 slot; "One more league on your account." said twice; button "Get League slot".
+- **Note:** for the slot sheet: one line ("One more league on your account, for the rest of the
+  season."), small print "One payment. Yours for the rest of the season. Paid through Stripe.",
+  button "Add a slot · $2.99". Keep the renew/one-payment line only where a pass is on offer.
+  Files: `web/src/components/account/AccountGate.tsx`, `Pricing.tsx`, words in `PRICING` in `vocab.ts`.
+- **Priority:** P2 · **Size:** S
+
+Noted, no change: Stripe Link texts a sign-in code to the account's phone when checkout opens
+(Stripe's own behaviour for a saved Link account).
