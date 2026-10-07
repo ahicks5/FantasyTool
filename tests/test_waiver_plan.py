@@ -190,3 +190,23 @@ def test_hold_wording_matches_the_league_waiver_type(league, ros, byes):
     league.waiver_type, league.faab_budget = saved_type, saved_budget
     assert "FAAB" in faab_hold and "priority" not in faab_hold
     assert "priority" in prio_hold and "FAAB" not in prio_hold
+
+
+def test_a_free_agent_off_the_same_week_covers_no_bye():
+    """Jauan Jennings (MIN, bye 6) was sold as 'Bye-week cover for Tee Higgins (wk 6)' (W-028)."""
+    from edge.models import Team
+
+    higgins = Player(id="h", name="Tee Higgins", position="WR", nfl_team="CIN")
+    depth = Player(id="d", name="Depth WR", position="WR", nfl_team="NO")
+    team = Team(id="1", name="Us", owner_id=None, owner_name=None, players=[higgins, depth], starters=["h"])
+    byes = {"CIN": 6, "MIN": 6, "LAC": 7}
+    ros = {"h": 200.0, "d": 40.0, "j": 150.0, "q": 150.0}
+    weeks_left = 13
+
+    jennings = Player(id="j", name="Jauan Jennings", position="WR", nfl_team="MIN")
+    assert waiver_plan.bye_cover_value(team, jennings, 4, byes, weeks_left, ros) == (0.0, None)
+
+    # Off a different week, the same man would cover it.
+    johnston = Player(id="q", name="Quentin Johnston", position="WR", nfl_team="LAC")
+    value, note = waiver_plan.bye_cover_value(team, johnston, 4, byes, weeks_left, ros)
+    assert value > 0 and note == "Covers Tee Higgins's week 6 bye"

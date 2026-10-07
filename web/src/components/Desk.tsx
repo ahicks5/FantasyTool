@@ -119,17 +119,22 @@ function NewsRow({ it, index }: { it: NewsItem; index: number }) {
         <NewsFace it={it} />
         <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
           <span className="display line-clamp-2 text-[13.5px] leading-tight text-ink">{newsHeadline(it)}</span>
-          <span className="mt-1 flex min-w-0 items-center gap-1.5">
+          {/* Two lines rather than an ellipsis: the cut always landed on the point ("Ahead of your
+              W…"), W-016. */}
+          <span className="mt-1 flex min-w-0 items-start gap-1.5">
             <Severity n={it.severity} up={it.level === "upside"} />
-            <span className="min-w-0 truncate text-[11px] font-bold text-ink-2">{tagFor(it)}</span>
+            <span className="min-w-0 line-clamp-2 text-[11px] font-bold leading-snug text-ink-2">{tagFor(it)}</span>
           </span>
         </button>
         {/* The right column: the plan on top, the clock under it. */}
         <span className="flex shrink-0 flex-col items-end gap-1">
-          <Link href={planHref(it)} className="desk-plan-link" aria-label={DESK.news.planAria(a.name)}>
-            <span>{DESK.news.plan}</span>
-            <IconArrowUp size={11} strokeWidth={2.8} className="rotate-90" />
-          </Link>
+          {/* Good news needs no plan B (Andrew, 2026-10-05, W-015). */}
+          {it.level !== "upside" && (
+            <Link href={planHref(it)} className="desk-plan-link" aria-label={DESK.news.planAria(a.name)}>
+              <span>{DESK.news.plan}</span>
+              <IconArrowUp size={11} strokeWidth={2.8} className="rotate-90" />
+            </Link>
+          )}
           <span className="tnum text-[10px] font-bold uppercase text-muted">{DESK.news.ago(it.age_hours)}</span>
         </span>
       </div>
@@ -323,7 +328,7 @@ function Notebook({
       <span className="desk-from">{from}</span>
       <span className="notebook-line" aria-hidden>
         {face && <Avatar name={face.name} photo={face.photo} teamLogo={face.team_logo} size="xs" className="notebook-face" />}
-        <span className="min-w-0 truncate">{line}</span>
+        <span className="min-w-0 line-clamp-2">{line}</span>
       </span>
       {locked && <span className="notebook-lock">{DESK.notebooks.locked}</span>}
     </Link>

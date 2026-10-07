@@ -33,14 +33,16 @@ const TAB_ICONS: Record<TabKey, (p: { size?: number; strokeWidth?: number }) => 
  * wordmark on a 320px phone. They are a nameplate, not navigation, so they moved to
  * the title band on the right — see `Nameplate`.
  */
-export function TopBar({ session, wide = false }: { session: Session; wide?: boolean }) {
+export function TopBar({ session }: { session: Session }) {
   const account = session.account;
   const premium = session.premium;
   return (
     // Sticky, except on a screen under 500px tall (a phone held sideways), where the bar and
     // the ticker would hold a quarter of the view; there it scrolls away with the page.
     <header className="sticky top-0 z-20 [@media(max-height:500px)]:static border-b border-line bg-[color-mix(in_srgb,var(--color-plane)_88%,transparent)] backdrop-blur-md">
-      <div className={`mx-auto flex h-14 max-w-lg items-center gap-3 px-4 tablet:max-w-3xl tablet:px-6 ${wide ? "lg:max-w-6xl" : ""}`}>
+      {/* One width on every page, the widest room's, whatever the page below does: a bar that
+          followed the page's width slid the wordmark and tabs sideways between rooms (W-019). */}
+      <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4 tablet:max-w-3xl tablet:px-6 lg:max-w-6xl">
         <HomeMark className="text-[20px]" linkClassName="min-w-0 flex-1 tablet:flex-none" />
         <TopTabs />
         {/* The account: an initial once signed in (ringed in the start colour on a premium
@@ -254,7 +256,7 @@ export function AppShell({
     // the tab you are on, and the tab stays lit because nothing navigated.
     <PlayerSheetProvider>
     <div className="flex min-h-screen flex-col">
-      <TopBar session={session} wide={wide} />
+      <TopBar session={session} />
       <main className={`mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5 tablet:max-w-3xl tablet:px-6 tablet:pb-16 tablet:pt-7 ${wide ? "lg:max-w-6xl" : ""}`}>
         {/* The band is one fixed height and every tab pays the same one, so moving between
             tabs never shifts the page. The h1 on the left; on the right the page's own

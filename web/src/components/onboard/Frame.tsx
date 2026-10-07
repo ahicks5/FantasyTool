@@ -81,7 +81,9 @@ export function Screen({
 }) {
   return (
     <section className={`flex flex-1 flex-col ${dir === "back" ? "walk-back" : "walk-fwd"}`} data-testid={`walk-${testId}`}>
-      <div className="flex-1 pt-8">
+      {/* On a phone the button sits at the bottom, under the thumb. From a tablet up it follows
+          the screen's content instead of waiting 650px below it (W-005). */}
+      <div className="flex-1 pt-8 tablet:flex-none">
         <Eyebrow>{eyebrow}</Eyebrow>
         <h1 className="display mt-2 text-[32px] leading-[1.05]">{title}</h1>
         {line ? <p className="mt-2 max-w-[24rem] text-[15px] leading-relaxed text-muted">{line}</p> : null}

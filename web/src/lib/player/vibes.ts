@@ -224,7 +224,10 @@ function fromRead(reads: ScoutRead[], key: string, label: string): VibeRow | nul
  * otherwise read as the floor falling out.
  */
 export function form(games: ScoutGame[], ppg: number | null | undefined): VibeRow | null {
-  const played = games.filter((g) => g.played);
+  // Oldest first, whatever order the payload came in: the scout report ships the log newest
+  // first, and slicing that from the end averaged his three *oldest* games (Higgins, 8.9 →
+  // 26.7 over four weeks, read "Cooling"; W-022).
+  const played = games.filter((g) => g.played).sort((a, b) => a.week - b.week);
   if (played.length < FORM_MIN_GAMES || !ppg) return null;
   const window = played.slice(-FORM_WINDOW);
   const recent = window.reduce((sum, g) => sum + g.points, 0) / window.length;

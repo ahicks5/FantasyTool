@@ -3033,6 +3033,13 @@ li + li > .office-row { border-top: 1px solid var(--color-line); }
   max-width: 32rem;
   margin: 0 auto;
 }
+/* From a tablet up the bar lines up with the page's own column (`max-w-6xl px-6` in
+   app/page.tsx): words on the left edge, the door on the right. Held to 32rem it floated
+   both in the middle of a 1440px screen (Andrew, 2026-10-05, W-002). */
+@media (min-width: 40rem) {
+  .landing-bar { padding-left: 24px; padding-right: 24px; }
+  .landing-bar-inner { max-width: calc(72rem - 48px); }
+}
 @media (prefers-reduced-motion: reduce) {
   .landing-bar { transition: none; }
 }

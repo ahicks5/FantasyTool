@@ -168,17 +168,21 @@ def bye_cover_value(team: Team, fa: Player, week: int, byes: dict[str, int], wee
 
     Upgrade = this free agent minus the best body you already have at the position.
     """
+    fa_bye = byes.get(norm_team(fa.nfl_team) or "")
     for p in sorted(team.players, key=lambda p: -ros.get(p.id, 0.0)):
         if p.position != fa.position:
             continue
         bye = byes.get(norm_team(p.nfl_team) or "")
-        if bye and week < bye <= week + 4:
-            fa_ppg = ros.get(fa.id, 0.0) / weeks_left
-            have = _best_alternative(team, fa.position, ros, weeks_left, exclude=p.id)
-            upgrade = max(0.0, fa_ppg - have)
-            if upgrade < 0.1:
-                return 0.0, None
-            return round(upgrade / weeks_left, 3), f"Covers {p.name}'s week {bye} bye"
+        # A man off the same week covers nothing (Jennings and Higgins, both week 6: W-028).
+        # Keep looking: the next starter's bye may be one he does cover.
+        if not bye or not week < bye <= week + 4 or bye == fa_bye:
+            continue
+        fa_ppg = ros.get(fa.id, 0.0) / weeks_left
+        have = _best_alternative(team, fa.position, ros, weeks_left, exclude=p.id)
+        upgrade = max(0.0, fa_ppg - have)
+        if upgrade < 0.1:
+            return 0.0, None
+        return round(upgrade / weeks_left, 3), f"Covers {p.name}'s week {bye} bye"
     return 0.0, None
 
 

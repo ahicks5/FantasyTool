@@ -228,3 +228,10 @@ test("position groups fall back rather than throw on an unknown one", () => {
   assert.equal(group("TE"), "WR");
   assert.equal(group(null), "WR");
 });
+
+test("form reads the newest weeks whatever order the log arrives in (W-022)", () => {
+  // Tee Higgins, 2026 weeks 1-4, as the scout report ships it: newest first. 17.8 a game.
+  const newestFirst = [game(4, 26.7), game(3, 21.0), game(2, 14.5), game(1, 8.9)];
+  assert.equal(form(newestFirst, 17.8)?.word, PLAYER.vibes.form.warming);
+  assert.equal(form([...newestFirst].reverse(), 17.8)?.word, PLAYER.vibes.form.warming);
+});

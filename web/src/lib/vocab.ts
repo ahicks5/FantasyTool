@@ -205,7 +205,7 @@ export const DESK = {
   aria: "The owner\u2019s desk",
   owner: "Owner",
   /** The letterhead in the corner of every paper: the mark and two letters. */
-  letterhead: "PH",
+  letterhead: "OS",
   /** Three numbers on the nameplate. */
   standing: {
     record: "Record",
@@ -1574,6 +1574,11 @@ export const LINEUP = {
     /** The mark on a roster row: his game is over, or on. */
     final: "Final",
     on: "Live",
+    /** Over the number of a man still to play while the week is on, so a projection never
+     *  passes for a score (W-026). */
+    proj: "Proj",
+    /** In place of a number: a player no NFL team has signed. */
+    noTeam: "No team",
     /** The last row of the table once the games are on. */
     total: "So far",
   },
