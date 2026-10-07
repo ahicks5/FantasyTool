@@ -33,6 +33,7 @@ export function EspnAuthForm({
   onSaved,
   busy = false,
   openPaste = false,
+  className = "mt-7",
 }: {
   /** The failure that opened this card. `expired` picks which one sentence to show. */
   status: { expired: boolean };
@@ -42,6 +43,8 @@ export function EspnAuthForm({
   busy?: boolean;
   /** Arrived from the walk's "paste them yourself" door: open the fields at once. */
   openPaste?: boolean;
+  /** Spacing from what sits above it: the account page puts it inside a league's card. */
+  className?: string;
 }) {
   const stored = useEspnAuth();
   const [s2, setS2] = useState("");
@@ -53,7 +56,7 @@ export function EspnAuthForm({
   const walk = `/connect/espn?id=${encodeURIComponent(leagueId)}`;
 
   return (
-    <section className="mt-7 rounded-[var(--radius-card)] border border-line-2 bg-paper p-4" data-testid="espn-auth">
+    <section className={`${className} rounded-[var(--radius-card)] border border-line-2 bg-paper p-4`} data-testid="espn-auth">
       <div className="flex items-start gap-3">
         <span
           aria-hidden

@@ -552,3 +552,42 @@ test("a private ESPN league opened from the menu on a browser without its key go
   expect(new URL(page.url()).searchParams.get("team")).toBe(CONNECTION.team_id);
   await expect(page.getByText(/is private \(401\)/)).toHaveCount(0);
 });
+
+test("a private ESPN league opened from the account page asks for its key on its own card, then retries with it", async ({ context, page }) => {
+  await beAStranger(context);
+  const token = await registerViaApi(page, freshEmail("espnacct"));
+  const linked = await page.request.post(`${API_URL}/api/connect`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { platform: CONNECTION.platform, league_id: CONNECTION.league_id, team_id: CONNECTION.team_id },
+  });
+  expect(linked.ok(), await linked.text()).toBe(true);
+  await page.route(`${API_URL}/api/me`, async (route) => {
+    const res = await route.fetch();
+    const body = await res.json();
+    for (const l of body.leagues ?? []) l.platform = "espn";
+    await route.fulfill({ response: res, json: body });
+  });
+  // ESPN refuses every ask; we only care that the second one carries the pasted key.
+  const keys: (string | undefined)[] = [];
+  await page.route(`${API_URL}/api/league/espn/**`, (route) => {
+    keys.push(route.request().headers()["x-espn-s2"]);
+    return route.fulfill({ status: 403, json: { detail: { error: "This ESPN league is private (401).", needs_espn_auth: true } } });
+  });
+  await page.goto("/login");
+  await page.evaluate((t) => localStorage.setItem("booth.session", t), token);
+  await page.goto("/account");
+
+  const card = page.locator("li.card").filter({ has: page.getByRole("button", { name: /open/i }) });
+  await card.getByRole("button", { name: /open/i }).click();
+  const form = card.getByTestId("espn-auth");
+  await expect(form).toBeVisible();
+  await expect(form.getByRole("link", { name: /get my key/i })).toHaveAttribute("href", new RegExp(`/connect/espn\\?id=${CONNECTION.league_id}`));
+  await expect(page.getByText(/is private \(401\)/)).toHaveCount(0);
+
+  await form.getByRole("button", { name: /paste the two values/i }).click();
+  await form.getByPlaceholder("AEB1x...").fill("fresh-s2");
+  await form.getByPlaceholder(/XXXXXXXX/).fill("ABC-123");
+  await form.getByRole("button", { name: /save these/i }).click();
+  await expect.poll(() => keys.at(-1)).toBe("fresh-s2");
+  await expect(card.getByTestId("espn-auth")).toBeVisible();
+});

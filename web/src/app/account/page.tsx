@@ -7,7 +7,8 @@ import { DoorFrame } from "@/components/account/Door";
 import { IconCheck, IconChevron } from "@/components/icons";
 import { Loading } from "@/components/Loading";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton, OnAir, ThemeSetting } from "@/components/ui";
-import { addPhone, changePassword, setSmsOptIn, deleteMyAccount, phoneStart, setAccountEmail, forgetLeague, logout, logoutOthers, startEmailVerify } from "@/lib/api";
+import { EspnAuthForm } from "@/components/EspnAuthForm";
+import { EspnAuthError, YahooAuthError, addPhone, changePassword, setSmsOptIn, deleteMyAccount, phoneStart, setAccountEmail, forgetLeague, logout, logoutOthers, startEmailVerify } from "@/lib/api";
 import { dayFromSeconds } from "@/lib/onboarding";
 import { formatCents } from "@/lib/format";
 import { describeAuthError } from "@/lib/authError";
@@ -363,15 +364,27 @@ function AccountBody() {
   const account = session.account;
   const me = session.me;
 
+  // A league that would not open says why on its own card, not at the foot of the page
+  // (Andrew, 2026-10-07): a private ESPN league gets the key form right there, anything else
+  // its error box. Keyed `platform:league_id`.
+  const [stuck, setStuck] = useState<{ key: string; espn?: { expired: boolean }; error?: unknown } | null>(null);
+
   const open = useCallback(
     async (l: MeLeague) => {
+      const key = `${l.platform}:${l.league_id}`;
       setBusy(`open:${l.league_id}`);
       setError(null);
       try {
         await openSavedLeague(l);
+        setStuck(null);
         router.push("/home");
       } catch (e) {
-        setError(e);
+        // The key to a private ESPN league lives on the device that linked it, and ESPN
+        // rotates it: a new phone, the app, or a few weeks on, and ESPN says 401. Saving a
+        // fresh key here (the walk, or the two pasted values) opens it again.
+        if (e instanceof EspnAuthError) setStuck({ key, espn: { expired: !e.needsAuth } });
+        else if (e instanceof YahooAuthError) router.push("/connect?platform=yahoo");
+        else setStuck({ key, error: e });
       } finally {
         setBusy(null);
       }
@@ -493,6 +506,20 @@ function AccountBody() {
                   {ACCOUNT.leagues.forget}
                 </Button>
                 </div>
+                {stuck?.key === `${l.platform}:${l.league_id}` && stuck.espn && (
+                  <EspnAuthForm
+                    className="mt-3"
+                    status={stuck.espn}
+                    leagueId={l.league_id}
+                    busy={busy === `open:${l.league_id}`}
+                    onSaved={() => open(l)}
+                  />
+                )}
+                {stuck?.key === `${l.platform}:${l.league_id}` && stuck.error ? (
+                  <div className="mt-3">
+                    <ErrorBox error={stuck.error} />
+                  </div>
+                ) : null}
                 {asking === `${l.platform}:${l.league_id}` && (
                   <div className="mt-3 grid gap-2 border-t border-line pt-3" data-testid="forget-ask">
                     <p className="text-[13px] leading-snug text-ink-2">{ACCOUNT.leagues.forgetAsk(l.name)}</p>
