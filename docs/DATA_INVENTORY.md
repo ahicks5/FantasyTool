@@ -51,6 +51,11 @@ personal data on their own.
 ### `ad_spend` — what the ads cost
 Typed in by the admin: day, channel, campaign, cents, clicks, a note. No personal data.
 
+### `radar_marks` — which public posts the admins answered
+The radar (`edge/radar.py`, admin only) reads public Reddit and Bluesky posts live and holds them in memory for
+five minutes; **their text and authors are never written down.** What is stored is a post's id (`reddit:t1_…`),
+`done` or `skip`, the admin's email and when. No data about the poster beyond the id of their public post.
+
 ### `sessions` and `resets` — signed-in devices, and pending password resets
 | Field | Why |
 |---|---|

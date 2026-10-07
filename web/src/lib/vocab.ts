@@ -1141,6 +1141,23 @@ export const ACCOUNT = {
     timeline: "Timeline",
     timelineHide: "Hide timeline",
     timelineEmpty: "Nothing logged yet.",
+    /** The radar (edge/radar.py): advice questions on Reddit and Bluesky, to answer by hand. */
+    radar: {
+      lead: "People asking for a call right now. Open it, answer it by hand, mark it. Never paste a link where the sub bans them.",
+      intents: { all: "All", start_sit: "Start/sit", waiver: "Waivers", trade: "Trades", other: "Other" },
+      showHandled: "Show handled",
+      refresh: "Refresh",
+      updated: (ago: string) => `Updated ${ago} ago`,
+      open: "Open",
+      done: "Answered",
+      skip: "Skip",
+      undo: "Undo",
+      handledBy: (status: "done" | "skip", who: string) => `${status === "done" ? "Answered" : "Skipped"} by ${who}`,
+      inThread: (t: string) => `in ${t}`,
+      none: "Nothing waiting. Check back after the next game window.",
+      feedDown: (name: string, err: string) => `${name} didn\u2019t load: ${err}`,
+      count: (n: number) => `${n} waiting`,
+    },
     /** The numbers (docs/SPEC-ADMIN-METRICS.md). */
     metrics: {
       tabs: {
@@ -1151,6 +1168,7 @@ export const ACCOUNT = {
         retention: "Retention",
         loop: "The loop",
         accounts: "Accounts",
+        radar: "Radar",
       },
       ranges: { week: "This week", last: "Last week", season: "Season" },
       rangeLabel: (from: string, to: string) => `${from} to ${to}, Eastern`,

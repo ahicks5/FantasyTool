@@ -83,6 +83,8 @@ CREATE INDEX IF NOT EXISTS email_verifications_email ON email_verifications (ema
 CREATE TABLE IF NOT EXISTS ad_spend (
   id TEXT PRIMARY KEY, day TEXT NOT NULL, channel TEXT NOT NULL, campaign TEXT NOT NULL DEFAULT '',
   cents INTEGER NOT NULL, clicks INTEGER, note TEXT NOT NULL DEFAULT '', created DOUBLE PRECISION);
+CREATE TABLE IF NOT EXISTS radar_marks (
+  item_id TEXT PRIMARY KEY, status TEXT NOT NULL, email TEXT NOT NULL, at DOUBLE PRECISION NOT NULL);
 """
 
 
@@ -514,6 +516,18 @@ class PostgresStore:
 
     def delete_spend(self, spend_id: str) -> bool:
         return self._exec("DELETE FROM ad_spend WHERE id=%s", (spend_id,)).rowcount == 1
+
+    def mark_radar(self, item_id: str, status: str, email: str, at: float | None = None) -> None:
+        if status == "new":
+            self._exec("DELETE FROM radar_marks WHERE item_id=%s", (item_id,))
+        else:
+            self._exec("INSERT INTO radar_marks (item_id, status, email, at) VALUES (%s,%s,%s,%s) "
+                       "ON CONFLICT (item_id) DO UPDATE SET status=excluded.status, email=excluded.email, "
+                       "at=excluded.at", (item_id, status, email.lower(), at or time.time()))
+
+    def radar_marks(self, since: float = 0) -> dict[str, dict]:
+        cur = self._exec("SELECT item_id, status, email, at FROM radar_marks WHERE at >= %s", (since,))
+        return {r[0]: {"status": r[1], "by": r[2], "at": r[3]} for r in cur.fetchall()}
 
     # ---- data subject requests -----------------------------------------------------
     # Mirrors Store.export_user / Store.delete_user. The privacy policy promises export

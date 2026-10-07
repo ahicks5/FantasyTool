@@ -9,6 +9,8 @@ import type {
   AdminUsersResponse,
   AdminMetrics,
   AdminEvent,
+  RadarResponse,
+  RadarStatus,
   AuthResponse,
   PhoneStartResponse,
   PhoneVerifyResponse,
@@ -559,6 +561,17 @@ export async function adminAddSpend(row: { day: string; channel: string; dollars
 export async function adminDeleteSpend(id: string): Promise<void> {
   if (USE_MOCKS) return;
   await request<unknown>(`/admin/spend/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+/** The radar: live advice questions to answer. `fresh` skips the server's five-minute cache. */
+export async function adminRadar(fresh = false): Promise<RadarResponse> {
+  if (USE_MOCKS) return mocks.ADMIN_RADAR;
+  return request<RadarResponse>(`/admin/radar${fresh ? "?fresh=true" : ""}`);
+}
+
+export async function adminRadarMark(id: string, status: RadarStatus): Promise<void> {
+  if (USE_MOCKS) return;
+  await request<unknown>("/admin/radar/mark", { method: "POST", body: JSON.stringify({ id, status }) });
 }
 
 /** One account's event timeline, newest first. */

@@ -1941,6 +1941,35 @@ export interface AdminEvent {
   props: Record<string, string | number | boolean | null>;
 }
 
+/* ------------------------------------------------------------------ The radar --- */
+// GET /api/admin/radar (edge/radar.py): people asking for advice on Reddit and Bluesky.
+
+export type RadarIntent = "start_sit" | "waiver" | "trade" | "other";
+export type RadarStatus = "new" | "done" | "skip";
+
+export interface RadarItem {
+  id: string;
+  source: "reddit" | "bluesky";
+  where: string;
+  author: string;
+  /** The post a comment sits under; "" for a post. */
+  thread: string;
+  text: string;
+  url: string;
+  /** Epoch seconds. */
+  created: number;
+  intent: RadarIntent;
+  status: RadarStatus;
+  /** Which admin handled it. */
+  by: string | null;
+}
+
+export interface RadarResponse {
+  fetched_at: number;
+  items: RadarItem[];
+  sources: { name: string; ok: boolean; count: number; error: string | null }[];
+}
+
 /* ------------------------------------------------------------ Position Battle --- */
 // docs/API.md "Position Battle"; edge/engine/battle.py.
 

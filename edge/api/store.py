@@ -40,6 +40,8 @@ CREATE INDEX IF NOT EXISTS events_created ON events (created);
 CREATE TABLE IF NOT EXISTS ad_spend (id TEXT PRIMARY KEY, day TEXT NOT NULL, channel TEXT NOT NULL,
   campaign TEXT NOT NULL DEFAULT '', cents INTEGER NOT NULL, clicks INTEGER, note TEXT NOT NULL DEFAULT '',
   created REAL);
+CREATE TABLE IF NOT EXISTS radar_marks (item_id TEXT PRIMARY KEY, status TEXT NOT NULL, email TEXT NOT NULL,
+  at REAL NOT NULL);
 """
 
 
@@ -577,6 +579,23 @@ class Store:
         cur = self.db.execute("DELETE FROM ad_spend WHERE id=?", (spend_id,))
         self.db.commit()
         return cur.rowcount == 1
+
+    # ---- the radar (edge/radar.py): which public posts the admins answered or passed on ----
+
+    def mark_radar(self, item_id: str, status: str, email: str, at: float | None = None) -> None:
+        """Record that an admin handled a post. Status "new" takes the mark back off."""
+        if status == "new":
+            self.db.execute("DELETE FROM radar_marks WHERE item_id=?", (item_id,))
+        else:
+            self.db.execute("INSERT INTO radar_marks (item_id, status, email, at) VALUES (?,?,?,?) "
+                            "ON CONFLICT (item_id) DO UPDATE SET status=excluded.status, email=excluded.email, "
+                            "at=excluded.at", (item_id, status, email.lower(), at or time.time()))
+        self.db.commit()
+
+    def radar_marks(self, since: float = 0) -> dict[str, dict]:
+        """Every mark made since `since`, by item id."""
+        rows = self.db.execute("SELECT item_id, status, email, at FROM radar_marks WHERE at >= ?", (since,))
+        return {r[0]: {"status": r[1], "by": r[2], "at": r[3]} for r in rows}
 
     # ---- data subject requests ----
     # A privacy policy that promises export and deletion needs code behind it, and the

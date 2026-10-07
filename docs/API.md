@@ -149,6 +149,14 @@ from the `events` table; the shape is pinned by `tests/test_metrics.py`. 400 on 
 lower-cased and must match the ads' `utm_source`.
 `DELETE /api/admin/spend/{id}` → `{"ok":true}`; 404 for no such row.
 
+`GET /api/admin/radar?fresh=` → `{"fetched_at","items":[{id,source,where,author,thread,text,url,created,intent,status,by}],
+"sources":[{name,ok,count,error}]}`. Live advice questions from Reddit RSS and Bluesky search (`edge/radar.py`), newest
+first, at most 36 hours old. `intent` is `start_sit|waiver|trade|other`; `status` is `new|done|skip` with `by` the admin
+who marked it. Held five minutes in memory; `fresh=true` skips that, but not more than once a minute. A feed that fails is
+a source with `ok:false`, never a 5xx.
+`POST /api/admin/radar/mark {"id","status"}` → `{"ok":true}`; 400 unless status is `new`, `done` or `skip`. `new` takes
+the mark back off.
+
 ### Telemetry
 `POST /api/events {"name":"landing_view","props":{utm_*,referrer,share}}` with `X-Anon-Id` → `{"ok":true}`, and
 `{"name":"cta_click","props":{"door":"hero"}}` when a landing sign-up button is pressed (`door` must be one of

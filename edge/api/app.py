@@ -1163,6 +1163,36 @@ def admin_delete_spend(spend_id: str, _: str = Depends(require_admin)):
     return {"ok": True}
 
 
+# ---- the radar: people asking for advice on Reddit and Bluesky (edge/radar.py) ----
+
+RADAR_STATUSES = ("new", "done", "skip")
+
+
+@app.get("/api/admin/radar")
+def admin_radar(fresh: bool = False, _: str = Depends(require_admin)):
+    """Every live advice question we can answer, newest first, with who already handled it."""
+    from edge import radar
+    scan = radar.cached_scan(fresh=fresh)
+    marks = store.radar_marks(since=time.time() - 7 * 24 * 3600)
+    items = [{**i, "status": marks.get(i["id"], {}).get("status", "new"), "by": marks.get(i["id"], {}).get("by")}
+             for i in scan["items"]]
+    return {"fetched_at": scan["fetched_at"], "items": items, "sources": scan["sources"]}
+
+
+class RadarMarkIn(BaseModel):
+    id: str
+    status: str
+
+
+@app.post("/api/admin/radar/mark")
+def admin_radar_mark(body: RadarMarkIn, admin: str = Depends(require_admin)):
+    """Answered, passed on, or back to new. The id is the radar's own (`reddit:t1_...`)."""
+    if body.status not in RADAR_STATUSES or not body.id or len(body.id) > 300:
+        raise HTTPException(400, "status is new, done or skip")
+    store.mark_radar(body.id, body.status, admin)
+    return {"ok": True}
+
+
 @app.get("/api/admin/users/{email}/events")
 def admin_user_events(email: str, _: str = Depends(require_admin)):
     """One account's timeline, newest first: the fastest way to answer "I paid and it's

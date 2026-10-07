@@ -5,6 +5,7 @@ import { BATTLE_FIXTURE, BATTLE_FIXTURE_TEASER } from "./battle.mock";
 import { withArticle } from "./format";
 import type {
   Acceptance,
+  RadarResponse,
   Battle,
   BattleBrief,
   BattleOptions,
@@ -447,6 +448,24 @@ export const ME: Me = {
  * with `uv run python scripts/gen_admin_mock.py` when the report's shape changes.
  */
 export const ADMIN_METRICS = ADMIN_METRICS_FIXTURE;
+
+/** The radar on the demo: three made-up askers, one already answered. */
+const RADAR_NOW = Date.UTC(2026, 9, 7, 16, 0) / 1000;
+export const ADMIN_RADAR: RadarResponse = {
+  fetched_at: RADAR_NOW,
+  items: [
+    { id: "reddit:t1_demo1", source: "reddit", where: "r/fantasyfootball", author: "flexdecider", thread: "Official: [WDIS RB] - Wed 10/07/2026",
+      text: "Achane or Pacheco? Half PPR.", url: "https://www.reddit.com/r/fantasyfootball/", created: RADAR_NOW - 600, intent: "start_sit", status: "new", by: null },
+    { id: "reddit:t3_demo2", source: "reddit", where: "r/fantasyfootballadvice", author: "waiverhawk", thread: "",
+      text: "How much should I bid on Roman Wilson?\n$64 FAAB left, 12 team.", url: "https://www.reddit.com/r/fantasyfootballadvice/", created: RADAR_NOW - 2400, intent: "waiver", status: "new", by: null },
+    { id: "bluesky:at://demo/3", source: "bluesky", where: "Bluesky", author: "gridiron.bsky.social", thread: "",
+      text: "Someone offered me Swift + Egbuka for Deebo. Should I accept this trade?", url: "https://bsky.app/", created: RADAR_NOW - 5400, intent: "trade", status: "done", by: "owner@example.com" },
+  ],
+  sources: [
+    { name: "Reddit posts", ok: true, count: 2, error: null },
+    { name: "Bluesky \"who do I start\"", ok: false, count: 0, error: "HTTPError: HTTP Error 429: Too Many Requests" },
+  ],
+};
 
 export const ADMIN_USERS: AdminUsersResponse = {
   season: 2026,

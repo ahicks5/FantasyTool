@@ -32,7 +32,7 @@ def store(request, tmp_path):
     s = PostgresStore(TEST_DSN)
     # Each test starts from nothing, so ordering assertions mean something.
     with s.db.cursor() as cur:
-        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback, email_prefs, users, sessions, resets, phone_tickets, events, ad_spend, email_verifications")
+        cur.execute("TRUNCATE purchases, leagues, shares, runs, feedback, email_prefs, users, sessions, resets, phone_tickets, events, ad_spend, email_verifications, radar_marks")
     yield s
     s.close()
 
@@ -586,3 +586,17 @@ def test_a_confirm_link_is_spent_once_dies_on_time_and_goes_with_the_account(sto
     assert store.prune_auth(now) >= 3
     store.create_verification("a@b.c", "v4", now + 60)
     assert store.delete_user("a@b.c")["email_verifications"] == 1
+
+
+# ---- the radar's marks -----------------------------------------------------------------
+
+def test_a_radar_mark_sticks_moves_and_comes_off(store):
+    store.mark_radar("reddit:t3_a", "done", "Andrew@x.io", at=100.0)
+    store.mark_radar("reddit:t3_b", "skip", "co@x.io", at=200.0)
+    assert store.radar_marks() == {"reddit:t3_a": {"status": "done", "by": "andrew@x.io", "at": 100.0},
+                                   "reddit:t3_b": {"status": "skip", "by": "co@x.io", "at": 200.0}}
+    assert list(store.radar_marks(since=150)) == ["reddit:t3_b"]
+    store.mark_radar("reddit:t3_b", "done", "andrew@x.io", at=300.0)
+    assert store.radar_marks()["reddit:t3_b"]["status"] == "done", "the second mark wins"
+    store.mark_radar("reddit:t3_a", "new", "andrew@x.io")
+    assert "reddit:t3_a" not in store.radar_marks(), "new takes the mark off"

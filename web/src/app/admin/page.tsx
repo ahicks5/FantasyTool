@@ -8,6 +8,7 @@ import { Loading } from "@/components/Loading";
 import { Button, Card, ErrorBox, Eyebrow, LinkButton } from "@/components/ui";
 import { adminGrant, adminResetLink, adminRevoke, adminSetRole, adminUserEvents, adminUsers } from "@/lib/api";
 import Dashboard, { type MetricsTab } from "@/components/admin/Dashboard";
+import Radar from "@/components/admin/Radar";
 import { money } from "@/lib/adminMetrics";
 import { accountContact, accountLabel, matchesAccount, planLabel, shortDate } from "@/lib/account";
 import { useSession } from "@/lib/session";
@@ -237,8 +238,8 @@ function AdminBody({ me }: { me: string }) {
   );
 }
 
-type Tab = MetricsTab | "accounts";
-const TABS: Tab[] = ["today", "funnel", "channels", "revenue", "retention", "loop", "accounts"];
+type Tab = MetricsTab | "accounts" | "radar";
+const TABS: Tab[] = ["today", "radar", "funnel", "channels", "revenue", "retention", "loop", "accounts"];
 
 /** The numbers first, the accounts last: the owner opens this on Sunday morning to see the week. */
 function AdminTabs({ me }: { me: string }) {
@@ -258,7 +259,7 @@ function AdminTabs({ me }: { me: string }) {
           </button>
         ))}
       </nav>
-      {tab === "accounts" ? <AdminBody me={me} /> : <Dashboard tab={tab} />}
+      {tab === "accounts" ? <AdminBody me={me} /> : tab === "radar" ? <Radar /> : <Dashboard tab={tab} />}
     </>
   );
 }
