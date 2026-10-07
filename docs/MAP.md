@@ -65,7 +65,7 @@ the value is visible and the names are not.
 | A screen | `web/src/app/<route>/page.tsx` plus its view in `web/src/components/` | check both themes; `npm run build` |
 | Any word a user reads | `web/src/lib/vocab.ts` — never inline a section name or a tagline | `npm test` |
 | Colour, type, elevation, motion | `web/src/app/globals.css` (the tokens) | docs/BRAND.md; check light **and** dark |
-| The mark | all **four** copies in one commit: `web/src/app/icon.svg`, `IconMark` in `web/src/components/icons.tsx`, `MARK_PATH` in `edge/graphics.py`, and the inlined path in `web/src/components/ShareCard.tsx` (a still image in a feed cannot fetch an icon) | `uv run python scripts/render_brand_assets.py` |
+| The mark (the OS monogram) | `web/src/lib/mark.ts` (every React copy imports it), `web/src/app/icon.svg`, `MARK_PATH` in `edge/graphics.py`, `web/public/brand/*.svg`, all in one commit | `uv run pytest -q tests/test_mark.py`, then `uv run python scripts/render_brand_assets.py` |
 | Anything about hosting, env vars or shipping | nothing in code — `docs/DEPLOY.md` | |
 | The iPhone app: its frame, links, ESPN sign-in, reminders | `mobile/App.tsx`, `mobile/src/` (pure logic in `policy.ts`, `bridge.ts`, `espn.ts`, `reminders.ts`); words in `NATIVE` in `vocab.ts`; the page's side in `web/src/lib/native.ts` | `cd mobile && npm run typecheck && npm test && npm run bundle:check`; read `docs/IOS.md` first |
 
@@ -117,7 +117,7 @@ uv run python scripts/weekly.py freeze|grade|health
 
 _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails if it drifts. Descriptions are each file's own first line — edit the file, not this table._
 
-### `edge/` — the Python engine and API (64 modules, 21,245 lines)
+### `edge/` — the Python engine and API (64 modules, 21,256 lines)
 
 | Module | What it is | Tests that touch it | Lines |
 |---|---|---|---|
@@ -182,7 +182,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `edge/engine/waivers.py` | Waiver ranker: free agents scored by how much they improve THIS roster, with FAAB bids. | waivers_values, espn_live_fixture +2 | 169 |
 | `edge/evaluate.py` | Did the advice work? Replays a finished week and scores Edge against the managers. | evaluate, frozen +2 | 208 |
 | `edge/evaluate_moves.py` | Did the *waiver and trade* advice make anyone money? | evaluate_moves | 358 |
-| `edge/graphics.py` | Shareable trade-verdict card (1080x1080). HTML in, PNG out via headless Chromium (Playwright). | graphics, battle +4 | 675 |
+| `edge/graphics.py` | Shareable trade-verdict card (1080x1080). HTML in, PNG out via headless Chromium (Playwright). | graphics, battle +4 | 686 |
 | `edge/models.py` | Platform-agnostic models. Every connector (Sleeper, ESPN, ...) maps into these. | battle, bundle_cache +21 | 226 |
 | `edge/products.py` | Product catalog: free tier, the week pass, the season pass (The Owner's Suite) and the league-slot add-on. Prices in cents. | tendencies_products, api +2 | 232 |
 
@@ -203,13 +203,13 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/layout.tsx` | The root layout: the two type families, every metadata tag, and the theme boot script. | 103 |
 | `web/src/app/login/page.tsx` | Sign in: a phone number and a texted code first, email and password as the fallback. Signed in already, it is the door to the account. | 7 |
 | `web/src/app/not-found.tsx` | The 404 page, deliberately not indexed. | 27 |
-| `web/src/app/page.tsx` | The landing page: the stage and the door, how quick it is, the rooms as the kit's posters, who it is for, and the door again. Indexable. | 693 |
+| `web/src/app/page.tsx` | The landing page: the stage and the door, how quick it is, the rooms as the kit's posters, who it is for, and the door again. Indexable. | 710 |
 | `web/src/app/privacy/page.tsx` | The privacy policy. docs/DATA_INVENTORY.md is the source of truth; if they disagree this page is stale. | 185 |
 | `web/src/app/register/page.tsx` | Create an account: the sign-up walk, one question a screen, from the phone to a linked league and the free week (docs/SPEC-ONBOARDING.md). | 7 |
 | `web/src/app/report/page.tsx` | The film: the replay of your week first, then the standings for everyone, then the season week by week. | 210 |
 | `web/src/app/reset/page.tsx` | Set a new password from a reset link (`?token=`), then land upstairs signed in. | 84 |
 | `web/src/app/robots.ts` | robots.txt, built from the indexable paths in lib/site.ts. | 19 |
-| `web/src/app/s/[id]/page.tsx` | The public share snapshot: opens with no account, unfurls with a rendered card. | 479 |
+| `web/src/app/s/[id]/page.tsx` | The public share snapshot: opens with no account, unfurls with a rendered card. | 480 |
 | `web/src/app/sitemap.ts` | The sitemap, built from the indexable paths in lib/site.ts. | 18 |
 | `web/src/app/team/battle/page.tsx` | Position Battle: `/team/battle?a=<id>&b=<id>`. Two men, one spot, the tale of the tape. The corner is free; the verdict is paid. | 29 |
 | `web/src/app/team/decide/page.tsx` | One lineup role, the whole question: `/team/decide?role=RB2`. Reads the lineup the tab already fetched. Free tier. | 38 |
@@ -257,7 +257,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/components/Scorecard.tsx` | A grade is a read on the roster, not a call the user has to make, so it never | 204 |
 | `web/src/components/ScoutOpening.tsx` | The scout takes his seat: the first time Scouting opens, you are in the stands. | 233 |
 | `web/src/components/SeasonLine.tsx` | The season's scoring as one line: a point per week, inline SVG, no library. | 81 |
-| `web/src/components/ShareCard.tsx` | The marketing asset: a 1080x1080 card rendered at full size and scaled to fit. It is | 197 |
+| `web/src/components/ShareCard.tsx` | The marketing asset: a 1080x1080 card rendered at full size and scaled to fit. It is | 202 |
 | `web/src/components/ShareLock.tsx` | Turns a start/sit call into a public link — free, no account, no purchase. | 68 |
 | `web/src/components/Shell.tsx` | The room itself: top bar, title band with the nameplate, ticker, tab bar, and the shell every page mounts. | 293 |
 | `web/src/components/Standing.tsx` | Where you stand, in one line under the call sheet's hero: grade, rank, record. | 92 |
@@ -348,7 +348,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/lib/types.ts` | Mirrors docs/API.md (Owner's Suite API contract v1). | 2088 |
 | `web/src/lib/unlock.ts` | Waiting for a purchase to take effect. | 92 |
 | `web/src/lib/viewport.ts` | The tablet breakpoint, for the few places script has to know it. Pure. | 15 |
-| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 2715 |
+| `web/src/lib/vocab.ts` | Every section name the app says out loud, in one place. | 2721 |
 | `web/src/lib/wait.ts` | Who is allowed to narrate, and how many waits are on screen. | 168 |
 | `web/src/lib/wire.ts` | The top of Scouting, minus React: how hard to go after each pickup, and which ones lead. | 104 |
 | `web/src/lib/yahooAuth.ts` | Yahoo sign-in, held on this device. | 129 |
@@ -360,7 +360,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `mobile/App.tsx` | Owner's Suite for iPhone: the live site in a native frame, plus what only a phone can do. | 235 |
 | `mobile/index.ts` | The app's entry: registers App as the root component, in Expo Go and in a native build alike. | 6 |
 | `mobile/src/EspnSheet.tsx` | ESPN's own sign-in in a sheet over the app, in place of the bookmark walk. | 109 |
-| `mobile/src/Offline.tsx` | The screen the frame draws itself when our site cannot be reached. | 31 |
+| `mobile/src/Offline.tsx` | The screen the frame draws itself when our site cannot be reached. | 35 |
 | `mobile/src/bridge.ts` | The bridge between the page and the frame: the script injected first, and the messages back. | 122 |
 | `mobile/src/config.ts` | What the build points at: the site, the inspector switch, the version. | 29 |
 | `mobile/src/espn.ts` | A private ESPN league, linked from the app: the key read off ESPN's page, handed to ours. | 99 |

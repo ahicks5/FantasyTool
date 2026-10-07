@@ -15,3 +15,6 @@ launch/cards/*.html
 
 # The walkthrough browser profile and its screenshots (scripts/walkthrough.py).
 .walkthrough/
+
+# The brand kit's source renders: derivatives only in git (docs/BRAND.md §11).
+NEW_BRANDING/

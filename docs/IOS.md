@@ -60,7 +60,7 @@ same as Safari's.
 | D-1 | **Bundle ID.** Permanent once the first build is uploaded. | `com.ownerssuite.app` (in `mobile/app.json`; change it there before the first build if you want another). |
 | D-2 | **Payments posture.** | **US storefront only, link out to Stripe** (below). Zero commission, nothing to build. IAP only if we go international. |
 | D-3 | **Where the app is sold.** | United States only, for the beta and v1. Fantasy football is a US product, and the link-out rule is US-only. |
-| D-4 | **App Store name.** 30 characters max, must be unique on the store. | "Owner's Suite"; if taken, "Owner's Suite: Fantasy Football". Subtitle "Own the week." |
+| D-4 | **App Store name.** 30 characters max, must be unique on the store. | "Owner's Suite"; if taken, "Owner's Suite: Fantasy Football". Subtitle "Own the week. Own the league." (29, the kit's tagline, 2026-10-06) |
 | D-5 | **Ship the web changes to production now?** They are inert for web visitors. | Yes, before inviting outside testers, so they get the share sheet. It is one push of this branch's `web/` commits. |
 | D-6 | **A reviewer account.** Apple's reviewers (and the external TestFlight review) need to sign in. | An account like `review@…` with the Megalabowl linked and a comp season pass from `/admin`. |
 

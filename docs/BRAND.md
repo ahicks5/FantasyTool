@@ -34,15 +34,18 @@ that sentence. If an asset could belong to a sportsbook or a DFS app, it is not 
 
 **Product name: Owner's Suite.** One word, everywhere a user reads it.
 
-**Descriptor: fantasy football call sheet.** It rides beside the name where context is
-missing — title tags, app-store listing, social bios, the first email — and never
-becomes part of the name.
+**Brand line: Fantasy sports, elevated.** (the kit, 2026-10-06). It rides under the lockup
+and beside the name where context is missing (OG title, app-store listing, social bios)
+and never becomes part of the name. The page description still says *fantasy football*,
+because that is what an owner types into a search box.
 
 ```
-<title>          Owner's Suite · own the week
-og:title         Owner's Suite · fantasy football call sheet
-social bio       Owner's Suite. Fantasy football, three moves before kickoff.
-handle           penthousefootball  (not penthousefantasy)
+<title>          Owner's Suite · Own the week. Own the league.
+og:title         Owner's Suite · Fantasy sports, elevated.
+social bio       Fantasy sports, elevated. Built for owners who play to win. Own the week. Own the league.
+handles          X @owners_suite · Instagram @ownerssuite · Reddit u/OwnersSuite   (SOCIALS, lib/site.ts)
+domain           penthousefantasy.com today. The kit prints ownerssuite.io; that cutover is
+                 Andrew's, later (2026-10-06), and touches only env, DNS and callbacks.
 ```
 
 **"Owner's Suite Fantasy" is not the name.** The descriptor never fuses into the name.
@@ -113,9 +116,10 @@ the landing page sound like a lobby.
 
 | Key | Line | Where |
 |---|---|---|
-| `tagline` | **Own the week.** | Landing footer, share card, OG image, email. Locked. |
-| `hero` | Three moves before kickoff. | Landing h1 |
-| `heroSub` | Everyone else hands you a database. We hand you a call sheet. | Landing, second beat |
+| `taglineLong` | **Own the week. Own the league.** | The kit's tagline, whole: landing h1 (two plates), OG card, every share-card signature, email foot, footer. |
+| `tagline` | Own the week. | Where the long one cannot fit: the battle card beside its tally. |
+| `descriptor` | Fantasy sports, elevated. | Under the lockup: landing stage, OG card, templates. |
+| `LANDING.lead` | Step into your front office. | Straight under the landing h1. |
 | `threshold` | Welcome to the owner's box. | `/login` eyebrow, `/connect` h1 |
 | `thresholdShort` | Take the top floor. | Meta description |
 | `paywallBundle` | The rest of the building. | The Owner's Suite card in `Pricing` |
@@ -138,74 +142,72 @@ Any of them could be a sportsbook's.
 
 ## 4. The mark
 
-### What shipped — **shipping**
+### What shipped — **shipping** (2026-10-06)
 
-**The ball and the box.** A football stood upright, with its top floor lit: three panes
-punched across the upper third, which read as laces at size and as a lit window band
-small. The building's one lit floor and the ball are the same drawing — that dual read
-is the whole idea, and it is what the crown could not do and the kit's plain football
-could not do either.
+**The OS monogram.** Two strokes of script: the O thrown wide and open, the S swept through
+it into a long tail. It is the kit's own lettering (NEW_BRANDING/img006.jpg), **traced, not
+redrawn**, so the app, the posters, the helmet decal and the socials all carry exactly the
+same mark. It is a signature, which is what an owner puts on a deal.
 
-It replaced a chrome crown. The crown said *top* and said nothing about football, which
-is the one thing this name needs said beside it.
+It replaced the ball and the box (a football with a lit window band), which replaced a
+chrome crown. The football said *football* and the building at once, but the kit and the
+socials had already moved to the monogram, and two marks is no mark. Rejected before the
+football, and not to be re-proposed: the ball on a plinth (a flying saucer), the stepped
+tower (a wedding cake), the cantilevered box (a hammer).
 
-Three directions were drawn and rejected before this one, which is worth recording so
-they are not re-proposed:
+The script is about **2.2 times as wide as it is tall**. Two boxes follow from that:
 
-1. **Ball horizontally on a plinth** — a flying saucer. A wide lens over a flaring stem
-   is a tractor beam; there is no fixing it.
-2. **Stepped art-deco tower** — a wedding cake, and the lit window died below 32px.
-3. **Cantilevered box on a shaft** — a hammer at every size.
+- **Square** (`IconMark`, `0 0 24 24`): the ink full width and centred. The favicon, the app
+  icon, the loading ring and the elevator doors take this. At 16px it reads as a chrome
+  swash, which is the right read for a tab.
+- **Tight** (`IconMark tight`, `MARK_BOX`): cropped to the ink, `size` is the height. Anywhere
+  it sits on a line of type: the header, the lockup, the card signatures, the letterheads.
 
-Detail lives in the **outer silhouette** on purpose: at 16px interior drawing turns to
-mush, so the pointed oval identifies the mark and the panes degrade to a single notch.
-That is also why the kit's bevelled, glowing renders cannot be the mark — they are
-marketing renders *of* it. The mark is a **flat silhouette that takes `--chrome`**, so
-it flips to graphite on paper.
+Metal: the mark's own **soft chrome** (`--mark-1..4`, `IconMarkChrome`), near-white with one
+quiet band, the way the kit draws it, softer than the wordmark's seven-stop cut. Graphite on
+paper; pinned silver wherever `--chrome` is. Flat `--color-metal` where it is too small for a
+gradient (the header).
 
 Rules:
 
-- The path exists **three times** — `web/src/app/icon.svg`, `IconMark` in
-  `web/src/components/icons.tsx`, and `MARK_PATH` in `edge/graphics.py` (the share card
-  is rendered from an HTML string with no stylesheet to reach) — plus a fourth inline
-  copy in `web/src/components/ShareCard.tsx`, the in-app preview of that card. Redraw
-  them **together, in one commit**. A half-applied mark is worse than either.
-- `fill-rule="evenodd"` is what makes the lit band a hole and the two mullions solid
-  again inside it. Drop it and the mark fills in solid.
-- Re-run `uv run python scripts/render_brand_assets.py` in the same commit — favicon,
-  apple-icon and OG image come from the SVG.
+- The path lives in **`web/src/lib/mark.ts`** (every React copy imports it), **`icon.svg`**
+  (a favicon is fetched without the page, so it cannot import), **`MARK_PATH`** in
+  `edge/graphics.py` (cards are HTML strings with no stylesheet) and the downloadable kit in
+  `web/public/brand/`. **`tests/test_mark.py` fails if any of them drift**, so a redraw lands
+  everywhere or the build is red.
+- One path, `fill-rule="evenodd"`: the outline is the ink and the O's counter is the hole.
+- Re-run `uv run python scripts/render_brand_assets.py` in the same commit: favicon,
+  apple-icon, OG card, app icon, splash and the offline screen's mark come from it
+  (`--posters` adds the blank social templates).
 - The favicon PNG is rendered *with* alpha on purpose; Next's ICO decoder rejects RGB.
-- Minimum size: mark alone 16px (tab), lockup 96px wide. Below that, mark only.
-- Clear space: half the mark's height on every side. Nothing enters it — not the lamp.
+- Minimum size: tight mark 7px tall (the scout pad), square mark 16px (a tab).
+- Clear space: half the mark's height on every side. Nothing enters it, not the lamp.
 
 ---
 
-## 5. The wordmark
+## 5. The wordmark and the lockup
 
 ### What shipped — **shipping**
 
-**Nameplate, not jersey.** The kit's wordmark leans forward with a swoosh underline.
-That is the visual language of speed — of a jersey number, a sports-car badge. The brand
-is the opposite: above the noise, still, decides. An owner's suite has a **nameplate on the
-door**: upright, heavy, wide-tracked, engraved in metal.
+**Nameplate, not jersey.** An owner's suite has a **nameplate on the door**: upright, heavy,
+wide-tracked, engraved in metal. The kit's posters set it exactly this way under the monogram.
 
 ```
-Was:  OWNER'S SUITE   (Archivo 900, skewX −7°, tracking −0.02em)
-Now:  OWNER'S SUITE   (Archivo 800, upright, tracking +0.08em, all caps)
+Header   OS · SUITE ●            (Wordmark: tight monogram, SUITE, the lamp)
+Lockup   OS                      (Lockup: monogram 2.4em over the nameplate,
+         OWNER'S SUITE            the brand line under it on the stage)
+         FANTASY SPORTS, ELEVATED.
 ```
 
-- Upright. The skew is gone. `.wordmark-type` in `globals.css` carries no `transform`.
-- Wide-tracked, which is what makes caps read as engraved rather than shouted. `.wordmark-type`
-  carries a `margin-right: -0.08em` to cancel the sidebearing tracking adds after the final E,
-  which otherwise pushes the lamp off the end of the word.
-- Still `.chrome-type`, and that class stays on the element **holding the glyphs** —
-  `background-clip: text` on a wrapper paints nothing while the transparent fill still
-  inherits down, and the word disappears.
-- The lamp stays as the full stop. It is the one thing on the nameplate that moves.
-
-The kit's custom italic lettering ("use supplied artwork only") is retired. A wordmark
-we cannot set in CSS cannot be themed, cannot be selected, and shifts layout while its
-PNG loads. Ours is type, so it costs nothing and is never wrong-sized.
+- `Wordmark` (`ui.tsx`) is the header form everywhere: the landing page, the top bar, every
+  door. The kit's own phone screens show it as OS · SUITE ●.
+- `Lockup` is the stacked form, for surfaces with room: the landing stage, the footer, the
+  OG card, the templates.
+- Upright, Archivo 800, +0.08em; `.wordmark-type` carries `margin-right: -0.08em` to cancel
+  the sidebearing after the final E, or the lamp floats off the word.
+- `.chrome-type` stays on the element **holding the glyphs**; on a wrapper the clip paints
+  nothing and the word disappears.
+- The lamp is the full stop, and the one thing on the nameplate that moves.
 
 ---
 
@@ -218,10 +220,16 @@ PNG loads. Ours is type, so it costs nothing and is never wrong-sized.
 | Display, numerals, stamps | **Archivo** 600–900 | Broadcast lower-third weight, and its numerals are properly tabular at heavy weights. Inter's are not. |
 | UI and body | **Inter** | The kit agrees. |
 
-**Oxanium is not adopted.** It is a squared HUD face and reads as *gaming* — the exact
-register the owner's box is above. If the display type ever needs more authority, use
-Archivo's width axis (Archivo Narrow for a scoreboard, Expanded for a nameplate) before
-reaching for a third family.
+**Oxanium is not adopted.** It is a squared HUD face and reads as *gaming*, the exact
+register the owner's box is above.
+
+**The poster headline is Archivo's width axis**, not a third family (2026-10-06). Archivo
+loads as the variable font with `wdth`, and `.poster-head` sets it at 900, "wdth" 82, caps,
+two lines: the first plate in chrome, the second in the room's metal (`.metal-chrome`,
+`.metal-gold`, `.metal-blue`), standing out of the page on `--extrude`. Under it, `.poster-sub`:
+Inter 500, caps, tracked 0.28em (MANAGE. OPTIMIZE. MAKE MOVES.). **Marketing surfaces only**:
+inside a room the h1 is plain ink, as the kit's own phone screens show it, and a room never
+carries a line under its title (Andrew, 2026-09-21: "get rid of it").
 
 Loading rules that already cost a day to learn, so they stay:
 
@@ -287,6 +295,27 @@ Rules, and they are strict:
 - Under `prefers-reduced-motion` it keeps its glow and loses its pulse.
 
 The kit does not have the lamp. It should — it is the most ownable thing we have.
+
+### The poster metals: gold and electric blue — **shipping** (2026-10-06)
+
+Read off the kit's posters. Brand only, like the lamp: they dress a room's name, a poster
+headline and a marketing door, **never a player row or a verdict**, so they cannot be mistaken
+for the status scale (which is unchanged and still validated).
+
+| Token | Dark | Light | Room |
+|---|---|---|---|
+| `--color-gold` / `-2` | `#e0a040` / `#f8d880` | `#9a6514` / `#7a490f` | GM's Office, Coach's Lineup, every landing CTA (`.cta-gold`) |
+| `--color-blue` / `-2` | `#48a8f8` / `#68c8f8` | `#1366c6` / `#104060` | Scouting Department, the Battle's blue corner |
+| `--gold`, `--blue` | the cuts, shaped like `--chrome` | darker cuts on paper | poster headlines |
+
+As text, gold is 7.5:1 and blue 6.6:1 on dark paper; 4.9:1 and 5.6:1 on white. Calls to action
+are gold on marketing surfaces (landing, share page); **inside a room they stay green**.
+
+**The stage** (`.stage`, and `STAGE` in `edge/graphics.py`): the posters' lit backdrop, two
+floodlight banks at the top corners over near-black, a haze tinted for the room (gold, blue,
+or blue against red for the Battle). CSS, no photograph. Dark in both themes. It is the
+landing hero, the room posters, the close, the OG card and every share card; never behind
+an app surface.
 
 ### Light mode
 
@@ -376,21 +405,24 @@ logo. Both shapes are built:
 │ One line of why, staff voice.  │
 │ Will they say yes? Maybe ▓▓▓▓░ │  three steps, never a percentage
 │ ─────────────────────────────  │
-│ ◆ OWNER'S SUITE •    OWN THE WEEK. │  signature: mark + nameplate + tagline
+│ OS OWNER'S SUITE •  OWN THE WEEK. OWN THE LEAGUE. │  signature
 └──────────────────────────────┘
 ```
 
 - **The verdict is the hero; the logo is the signature at the foot.** The old card
   opened with a 44px wordmark, which made the most-shared thing we own an advert for
   ourselves. What travels is the *call* — someone pastes this to win an argument.
-- **The stamp is sized from the word**, never pinned. A fixed 176px "COUNTER" ran off
-  the story card's right edge.
+- **Every card stands on the stage**, the floodlights peeking over the top edge and kept
+  off the band's words, so a pasted verdict looks like the posters it is posted beside.
+- **The stamp is sized from the word**, never pinned, at the width Chromium actually draws
+  (`STAMP_EM`, 0.84em a letter). The old 0.72 estimate let "COUNTER" run 100px off the story.
 - **The story's payload is centred**, not top-aligned: a phone's story UI covers the top
   and bottom of the frame, and top-aligning left 500px of dead black above the signature.
 - Snapshots are display-only: never an email, a league id or a roster.
-- The kit's background pattern is allowed here at ≤4% opacity, never in-product.
-- The in-app preview (`web/src/components/ShareCard.tsx`) mirrors this layout and holds
-  a fourth copy of the mark. It moves with the Python card.
+- Blank templates for a post or a story with no verdict on it: `web/public/brand/post-template.png`
+  and `story-template.png` (`render_brand_assets.py --posters`), plus the mark as files.
+- The in-app preview (`web/src/components/ShareCard.tsx`) mirrors this layout and imports
+  the mark from `lib/mark.ts`. It moves with the Python card.
 
 **Loading screen.** The first open of the day is the ride up (`web/src/components/Elevator.tsx`):
 you step into the car, press PH, the doors close over the mark, the floors go by on the plate,
@@ -399,8 +431,9 @@ on, and the doors open onto the office: the nameplate on the wall over the city 
 and the desk. The camera walks in, comes around to the owner's chair, and looks down at
 three papers with the team's name on them; the papers become the call sheet. The office
 is the app; nothing is revealed except the page. The lamp obeys its rule (it has the words
-beside it, and it comes on only when the car stops), the mark is engraved across the
-seam, and the doors and the office are dark in both themes. Tap to skip. Every later wait
+beside it, and it comes on only when the car stops), the monogram is engraved across the
+seam (the O on the left door, the S on the right), and the doors and the office are dark
+in both themes. Tap to skip. Every later wait
 is the quiet skeleton.
 
 **Email cannot be chrome.** Gmail strips `<style>`; Outlook renders no gradients, no
@@ -413,12 +446,15 @@ enforces it. The kit's glows are not a bug in the email; they are just not possi
 ## 11. Don'ts
 
 - **Don't** ship "Owner's Suite Fantasy" as a bare string anywhere a user or a crawler reads.
-- **Don't** tile the background pattern behind app surfaces. The metal is the only
-  decoration.
+- **Don't** put the stage, the poster headline or the extruded edge inside a room. In the
+  product the metal is the only decoration; the stage is for marketing surfaces.
+- **Don't** put gold or blue on a player row or a verdict. They name rooms; status keeps its scale.
 - **Don't** put the lamp on a player row, or status red on the chrome.
 - **Don't** stamp a list. Stamps are for decisions.
 - **Don't** add a third type family. Use Archivo's width axis.
-- **Don't** skew, outline, glow or drop-shadow the wordmark. It is a nameplate.
+- **Don't** skew, outline, glow or drop-shadow the wordmark. It is a nameplate. (The
+  extruded edge belongs to poster headlines, never to the nameplate.)
+- **Don't** redraw the monogram. It is traced from the kit; change the kit, then re-trace.
 - **Don't** commit the kit's PNGs. 23 MB of 1.5 MB renders — derivatives only, optimised,
   and the source zip stays out of git.
 - **Don't** read the OS colour scheme. Dark is the room.
@@ -458,6 +494,22 @@ Three things the build taught us, recorded so they are not undone:
 - **The stamp is sized from the word.** A fixed 176px "COUNTER" ran off the story card.
   It is computed from the verdict's length now, and a test pins it for every verdict on
   both shapes.
+
+### The rebrand to the kit (2026-10-06), branch `claude/rebrand`
+
+| Change | Where |
+|---|---|
+| The OS monogram replaces the football; one path, five copies, one test | `lib/mark.ts`, `icon.svg`, `icons.tsx`, `graphics.py`, `public/brand/`, `tests/test_mark.py` |
+| Header OS · SUITE ●, stacked `Lockup`, letterheads and elevator doors resized for a wide mark | `ui.tsx`, `Desk.tsx`, `Elevator.tsx`, `ScoutOpening.tsx` |
+| Gold and blue, the poster cuts, `--extrude`, `.stage`, `.phone`, `.cta-gold`; Archivo variable | `globals.css`, `layout.tsx` |
+| Landing rebuilt as the posters: stage hero, OWN THE WEEK. OWN THE LEAGUE. h1, five room posters with worked answers on phones, gold doors, socials in the footer | `app/page.tsx`, `vocab.ts LANDING`, `site.ts SOCIALS` |
+| Every share card on the stage with the monogram signature; story stamp overflow fixed | `graphics.py`, `ShareCard.tsx`, `s/[id]` |
+| Favicon, apple icon, OG card, app icon, splash, offline mark, post/story templates | `render_brand_assets.py` |
+| Title, OG and email foot on the kit's lines | `layout.tsx`, `weekly_email.py` |
+
+What did **not** change, on purpose: the room names and their plain-ink titles, the green
+in-app buttons and tab marker, the status scale, the lamp rules, the elevator ride, the
+internal names (`edge/`, `booth.*`, `X-Edge-*`, `PHF:`), the bundle id, and the domain.
 
 ### Left for Andrew
 

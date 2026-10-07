@@ -88,8 +88,10 @@ Then only what you need:
   no user-visible gain. The env vars (`EDGE_DEV`, `EDGE_DB`, `X-Edge-User`) and the `booth.*`
   browser keys stay too — renaming those signs every existing user out of their league, their
   theme and their ticked calls. Anything a *user* reads says Owner's Suite.
-- **The mark exists four times** (`icon.svg`, `IconMark`, `MARK_PATH`, `ShareCard.tsx`).
-  Redraw them in one commit and re-run `scripts/render_brand_assets.py`. See `docs/BRAND.md`.
+- **The mark is the OS monogram, traced from the kit** (`NEW_BRANDING/img006.jpg`). Its path
+  lives in `web/src/lib/mark.ts`, `icon.svg`, `MARK_PATH` and `web/public/brand/`, and
+  `tests/test_mark.py` fails if they drift. Re-run `scripts/render_brand_assets.py` with any
+  change to it. See `docs/BRAND.md` §4.
 - **Making the Lock card free must never open Trade Lab as a side effect.** A start/sit card
   is shareable by someone who has never paid and never signed in; that is the growth loop.
   `test_the_paid_card_is_still_paid` pins the other half. Snapshots are display-only: never
@@ -105,10 +107,12 @@ Then only what you need:
 The product is the **owner's box**: the top floor, above the noise, where the staff still
 hands you a **call sheet** but you own the building. Competitors are encyclopedias you browse;
 we are three moves you make before kickoff. **Owner's Suite** is one word, everywhere a user reads
-it. Tagline: **"Own the week."** Voice: the staff in your ear — confident, clipped, verb
-first, plural. Never hedge on a call the engine is confident about; say plainly when it is a
-coin flip. Look: black and polished chrome, two type families, the metal is the only
-decoration. Sections are **call sheet** (home) · **depth chart** (team) · **scouting**
+it. Tagline: **"Own the week. Own the league."**; brand line **"Fantasy sports, elevated."**
+Voice: the staff in your ear — confident, clipped, verb first, plural. Never hedge on a call
+the engine is confident about; say plainly when it is a coin flip. Look (the kit's posters,
+2026-10-06): the **OS monogram** in chrome, black and polished chrome in the rooms with the
+metal as the only decoration; on marketing surfaces the lit stage, condensed poster
+headlines in chrome and **gold** or electric **blue**, and gold doors. Two type families. Sections are **call sheet** (home) · **depth chart** (team) · **scouting**
 (waivers) · **GM's Office** (trade) · **the film** (report) — but what you *buy* keeps its
 product name: the week pass and the season pass (sku `full_report`, still "The Owner's Suite" in
 `edge/products.py`). Trade Lab is a room, no longer a separate purchase. Full guide: **`docs/BRAND.md`**; how it is

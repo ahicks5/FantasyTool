@@ -352,6 +352,15 @@ team (even after a sign-out) does not replay the elevator.
 
 ## The landing page is a funnel (2026-09-27)
 
+**Rebuilt as the kit's posters (2026-10-06, `docs/BRAND.md` §4-7).** The hero is a full-bleed
+`.stage` holding the header, the `Lockup` and the h1 in two metal plates; the call sheet sits
+in a `.phone`. The desk and staff sections became five `RoomPoster`s, each a staff door (its
+pill) beside a desk door (the worked answer on a phone); the film poster carries the film door.
+Calls to action are `variant="gold"`. The footer's social links (`SOCIALS`) are the one
+exception `landing.test.ts` allows to the every-door-is-`/register` rule. Unlayered classes
+(`.hero`, `.eyebrow`, `.poster-sub`) beat Tailwind utilities, so recolour them in CSS, not with
+a `text-*` on the element.
+
 `/` is a server component with two client islands, `Pricing` and `LandingBar`. Its order is
 the one Hormozi's page order and the brand agree on, and every section's words live in
 `LANDING` (`vocab.ts`), so a rewrite is a vocab change and the voice tests sweep it.

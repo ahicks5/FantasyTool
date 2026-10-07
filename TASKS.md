@@ -2,6 +2,17 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
+## The rebrand to the kit (2026-10-06, branch `claude/rebrand`, not yet on production)
+The kit's posters and socials, built through web and the iPhone app (`docs/REBRAND.md`,
+`docs/BRAND.md` §4-7, 10-12). The OS monogram (traced from `NEW_BRANDING/img006.jpg`) replaces
+the football everywhere, held together by `tests/test_mark.py`; header OS · SUITE ●; gold and
+electric blue beside the chrome; the landing page rebuilt as the posters; every share card on
+the lit stage; favicon, OG card, app icon, splash and social templates re-rendered. Gates:
+pytest 1640/0, web 528, build + demo export, e2e 58/58, mobile 22 + bundle.
+- [ ] **Andrew:** look at the branch (landing at 390px and desktop, a share card, the ride) and ship it.
+- [ ] **Andrew:** a TestFlight build to see the new icon and splash on a phone.
+- [ ] **Andrew, later:** the ownerssuite.io cutover (`docs/REBRAND.md` D-2).
+
 ## Walkthrough fixes, pages 1-7 (2026-10-06)
 All 37 items in `docs/feedback/2026-10-walkthrough.md` (W-001 to W-037) built and shipped: the
 live week (one game-state helper: live win %, matchup actuals, LIVE/FINAL/countdown clock,

@@ -1,5 +1,10 @@
 # Owner's Suite · the logo brief
 
+> **Retired 2026-10-06.** The logo job is done: the mark is the kit's **OS monogram**,
+> traced from `NEW_BRANDING/img006.jpg` into `web/src/lib/mark.ts`, and `docs/BRAND.md` §4
+> is how it is used. This brief produced the football mark that preceded it and is kept
+> only so its reasoning is not re-run.
+
 The prompt to hand an image model, a vector-drawing agent or a human designer to get the
 Owner's Suite logo built properly: the mark, the nameplate, the lockups, the chrome, and
 every surface it has to land on. `docs/BRAND.md` is the law; this is that law applied to

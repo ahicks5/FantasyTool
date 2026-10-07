@@ -234,7 +234,10 @@ organically. The math, the channels and the kill criteria are in §9.
 3. **Is the payer's name on the board?** It is the best social mechanic in the plan and it is
    also a name on a public page. Default proposed: opt-in at checkout, first name only.
 4. **Who does the Reddit grind, and under what handle?** It is the top channel and it is a person,
-   not a feature. It cannot be automated and it should not be faked.
+   not a feature. It cannot be automated and it should not be faked. *Handles as of 2026-10-06:*
+   Reddit **u/OwnersSuite**, X **@owners_suite**, Instagram **@ownerssuite** (linked from the
+   landing footer, `SOCIALS` in `web/src/lib/site.ts`). The kit's posters and blank templates
+   are in `NEW_BRANDING/` (not committed) and `web/public/brand/`.
 5. **Ad budget.** §9 ladders from $300 to about $5,000 across the season, front-loaded, with a kill
    criterion at every phase. What is the number you are willing to lose to find out?
 
