@@ -51,8 +51,9 @@ test("one tile per position says one thing: the larger side wins, and the previe
   const listed = { ...board(0), my_positions: { surplus: ["WR", "TE"], need: ["WR", "RB"] } };
   const l = Object.fromEntries(rosterShape(listed).map((r) => [r.pos, r.shape]));
   assert.deepEqual(l, { QB: "set", RB: "short", WR: "mixed", TE: "spare" });
-  const k = rosterShape({ ...board(0), my_positions: { surplus: { K: 3 }, need: {} } }).map((r) => r.pos);
-  assert.deepEqual(k, ["QB", "RB", "WR", "TE", "K"]);
+  // Nobody trades for a kicker or a defence: they get no tile (W-035).
+  const k = rosterShape({ ...board(0), my_positions: { surplus: { K: 3 }, need: { DEF: 4 } } }).map((r) => r.pos);
+  assert.deepEqual(k, ["QB", "RB", "WR", "TE"]);
 });
 
 test("a partner's row never has and needs the same position", () => {
