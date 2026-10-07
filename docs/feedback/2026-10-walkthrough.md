@@ -875,3 +875,22 @@ box, leagues on file (2 of 3), plan, security, appearance, sign out, delete.
   housekeeping block.
   Files: `web/src/app/account/page.tsx`.
 - **Priority:** P2 · **Size:** S
+
+---
+
+## 11. Upgrade sheet / pass offer (draft, waiting on Andrew)
+
+_Files: `web/src/components/account/AccountGate.tsx` (the upgrade sheet), `web/src/components/Pricing.tsx`,
+`web/src/components/Locked.tsx`, `web/src/lib/offer.ts`, `edge/products.py`, `edge/api/payments.py`._
+
+Seen 2026-10-06 as a season-pass holder: "Add a league slot" on `/account` → the sheet → "Get
+League slot" → Stripe live checkout, where we stopped (nothing entered, nothing paid). The
+week/season pass offer only shows to an account without a pass, so it was not seen.
+
+- **Draft A** · Stripe's checkout header says **"Penthouse Fantasy"** (the business name in the
+  Stripe account), and the item reads "Owner's Suite — League slot (2026 season)" with an em dash.
+- **Draft B** · The slot sheet's small print is the pass's: "The week renews until you cancel. The
+  season is one payment." A slot is one payment, rest of season. "One more league on your account."
+  is said twice, and the button reads "Get League slot".
+- **Draft C** · Stripe Link texted a sign-in code to the account's phone the moment checkout opened
+  ("Enter the code sent to (•••) ••• ••15"), before the buyer chose to pay.
