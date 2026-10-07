@@ -21,8 +21,8 @@ name value back).
 
 ## Where we are
 
-- **Status:** RESUMED 2026-10-06: film logged (W-038 to W-041); pages 9–10 done; walking pages 11–13. Last ID: W-051.
-- **Paused at:** pages 1–7 walked and logged (landing, sign-up, sign-in, desk + full matchup, depth chart + player sheet + Position Battle, scouting + pickup, GM's Office + Trade Lab). Page 8, the film (`/report`), was looked at but **not reviewed with Andrew**: he will do it last, in a later session (draft observations are under §8 as open questions). Pages 9–13 (`/connect`, `/account`, upgrade sheet, `/admin`, privacy/terms/404) are not started.
+- **Status:** COMPLETE 2026-10-06. Pages 1–13 walked and logged, the film included. Last ID: W-054.
+- **Not seen:** the week/season pass offer (only shows to an account without a pass).
 - **To resume:** `uv run python scripts/walkthrough.py start`, sign in if past page 3, then carry
   on from page 9 (`/connect`), then 10–13, then the film (§8) last. The next ID is the one after the last one in the log.
 
@@ -859,9 +859,9 @@ box, leagues on file (2 of 3), plan, security, appearance, sign out, delete.
 - **Note:** show the date the pass started (and, for a week pass, the next charge date), plus a
   "Manage billing" link to Stripe's customer portal for receipts, the card on file and cancelling.
   Every paid plan and the league-slot add-on, not only the week pass. A complimentary grant (no
-  Stripe customer) says "Complimentary" and no link. Needs a portal-session route in
-  `edge/api/payments.py` (+ route in `app.py`, contract in `docs/API.md`) and the date on the plan
-  in `/api/me`.
+  Stripe customer) says "Complimentary" and no link. A week-pass holder already gets "Manage or
+  cancel" (`billing_portal_url` from `EDGE_BILLING_PORTAL_URL` in `/api/me`); extend it to every paid
+  plan, and add the start date to the plan in `/api/me`.
   Files: `web/src/app/account/page.tsx`, `edge/api/payments.py`, `edge/api/app.py`, `web/src/lib/types.ts`.
 - **Priority:** P1 · **Size:** M
 
@@ -916,29 +916,83 @@ mock build does not lock those rooms, so it could not be checked without a secon
 
 ---
 
-## 12. Admin · `/admin` (draft, waiting on Andrew)
+## 12. Admin · `/admin`
 
 _Files: `web/src/app/admin/page.tsx`, `web/src/components/admin/Dashboard.tsx`, `edge/business/metrics.py`,
 `edge/api/app.py` (admin routes)._ Account details on this page belong to real users and are not
-copied into this log.
+copied into this log. The walkthrough's own test checkout shows in "Last hour: 1 checkout".
 
-- **Draft A** · "Paying now 4" while every account listed says "Paid $0" (complimentary grants), and
-  revenue is $0: comps are counted as paying.
-- **Draft B** · Plan names disagree with the rest of the app: a "PREMIUM" badge and "The Owner's
-  Suite · 2 of 3 leagues" here, "Season pass" on `/account`.
-- **Draft C** · The walkthrough's own test checkout shows in "Last hour: 1 checkout".
+### W-052 · "Paying now" counts free grants
+- **Where:** `/admin` Today · all viewports
+- **Andrew:** "reword paying now yes, that's misleading."
+- **What happened:** "Paying now 4" beside $0 revenue, with every account listed "Paid $0"
+  (complimentary grants).
+- **Note:** "Paying now" counts only accounts with a live paid pass from a Stripe payment; a
+  separate tile (or a line under it) says "Comped N". Same split anywhere else the dashboard sums
+  plans (Revenue, Retention). Files: `edge/business/metrics.py`, `web/src/components/admin/Dashboard.tsx`;
+  test in `tests/test_metrics.py`.
+- **Priority:** P1 · **Size:** S
+
+### W-053 · Admin calls plans by the app's names
+- **Where:** `/admin` Accounts · all viewports
+- **Andrew:** "admin should use same name."
+- **What happened:** a "PREMIUM" badge and "The Owner's Suite · 2 of 3 leagues" here; "Season pass"
+  on `/account`.
+- **Note:** use `PRICING.names` from `vocab.ts` (Season pass, Week pass, League slot, and the old
+  Wire Pass / Trade Lab) for every plan line and badge; "Free" and "Comped" as the badges.
+  Files: `web/src/components/admin/Dashboard.tsx`, `web/src/app/admin/page.tsx`.
+- **Priority:** P2 · **Size:** S
 
 ---
 
-## 13. Privacy, terms, 404 (draft, waiting on Andrew)
+## 13. Privacy, terms, 404
 
 _Files: `web/src/app/privacy/page.tsx`, `web/src/app/terms/page.tsx`, `web/src/lib/legal.ts`,
-`web/src/app/not-found.tsx`; source of truth `docs/DATA_INVENTORY.md`._
+`web/src/components/LegalPage.tsx`, `web/src/app/not-found.tsx`; source of truth `docs/DATA_INVENTORY.md`._
 
-- **Draft A** · Terms are out of date with how the product works: "You can connect a league and see
-  your week without an account" (linking needs an account now), "Signing in happens at checkout, by
-  a link sent to your email address" (sign-in is a texted code, or email and password), and "cancel
-  from your account page (Manage or cancel)" (there is no such button yet; W-048).
-- **Draft B** · Privacy still describes the weekly-email checkbox; the account page now offers
-  game-day texts instead.
-- **Draft C** · The 404 is good: plain, with "Go to this week".
+Decided, no change: the 404 is good (plain, with "Go to this week").
+
+### W-054 · Terms and privacy rewritten to match the app (done 2026-10-06)
+- **Where:** `/terms`, `/privacy`
+- **Andrew:** "rewrite the terms pelase, i will not review just do it right. go ahead."
+- **What was wrong:** the terms said you could link a league without an account, that sign-in
+  happens at checkout by an emailed link, and named Yahoo among the leagues we read; privacy
+  described a weekly-email checkbox the app no longer shows and not the game-day texts it does.
+- **Done:** terms now say an account is needed to link a league; sign-in is a texted code, or email
+  and password; texts are sign-in codes plus opt-in game-day texts (up to four a week, STOP/HELP,
+  never required); three leagues per account and a forgotten league keeps its slot; the week pass
+  renews weekly and is cancelled from "Manage or cancel"; the season pass is one payment, cheaper
+  while a paid week runs, and ends the weekly subscription; a league slot is one payment; the free
+  week takes the card up front and charges on day eight unless cancelled; old Wire Pass / Trade
+  Lab purchases keep working; we read and never write; explanations may be AI-written from the
+  engine's numbers; Sleeper and ESPN today. Privacy's stored-data list now describes the game-day
+  text consent. Both pages show "Updated 6 October 2026" (`LEGAL.updated`, set in code).
+- **Priority:** P1 · **Size:** S
+
+---
+
+## Summary, pages 8–13 (2026-10-06)
+
+W-001 to W-037 are built and live (see the top of this file). These came after:
+
+| ID | Priority | Size | Page | Item |
+|---|---|---|---|---|
+| W-038 | P1 | M | The film | Week's replay appears once your own starters have all played |
+| W-042 | P1 | M | Connect | Three clear steps: pick, load (with a loading state), choose |
+| W-046 | P1 | S | Account | League cards run off a phone screen |
+| W-048 | P1 | M | Account | Plan card shows dates and "Manage billing" for every plan |
+| W-050 | P1 | S | Checkout | Stripe still says "Penthouse Fantasy" (**Andrew, in the Stripe dashboard**) |
+| W-052 | P1 | S | Admin | "Paying now" counts free grants |
+| W-054 | P1 | S | Legal | Terms and privacy rewritten (**done**) |
+| W-039 | P2 | S | The film | "Before Thursday" only on the newest replay |
+| W-040 | P2 | S | The film | "Let you down" lists only reasons that explain a bad game |
+| W-043 | P2 | S | Connect | Nothing moves when the league loads |
+| W-044 | P2 | S | Connect | Mark your own team |
+| W-047 | P2 | S | Account | Confirm before "Forget" |
+| W-049 | P2 | S | Account | Leagues first on the account page |
+| W-051 | P2 | S | Upgrade sheet | Slot sheet borrows the pass's small print |
+| W-053 | P2 | S | Admin | Admin uses the app's plan names |
+| W-041 | P3 | S | The film | "You'd have beaten 7 of 11" said twice |
+| W-045 | P3 | S | Connect | "I have a league ID" too easy to miss |
+
+Quick wins (P1/P2, size S): W-046, W-052, W-039, W-040, W-043, W-044, W-047, W-049, W-051, W-053.

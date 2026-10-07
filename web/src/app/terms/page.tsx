@@ -15,41 +15,74 @@ export default function TermsPage() {
         <p>
           Owner&rsquo;s Suite reads a fantasy football league you already have and tells you what it would do this week: who to start,
           who to claim and for how much, and whether a proposed trade is worth taking. It is information and opinion.
-          The decisions stay yours.
+          The decisions stay yours, and nothing is ever changed in your league for you: we read, we never write.
+        </p>
+        <p>
+          The numbers come from our own engine. Where a sentence explains them, it may be written by an AI model working
+          only from those numbers; it does not invent a figure.
         </p>
         <p>
           {LEGAL.operator} is not affiliated with, endorsed by, or connected to the NFL, ESPN, Sleeper, Yahoo, or any
-          other league platform. Their names are used only to say which leagues we can read.
+          other league platform. Their names are used only to say which leagues we can read. Today that is Sleeper and
+          ESPN.
         </p>
       </Section>
 
       <Section heading="Your account">
-        <p>
-          You can connect a league and see your week without an account. Signing in happens at checkout, by a link sent
-          to your email address, so whoever can read that inbox can reach the account. Keep it to yourself.
-        </p>
+        <Bullets
+          items={[
+            <>
+              You need an account to link a league. You sign in with your mobile number and a code we text to it, or,
+              if you have no mobile, with an email address and a password.
+            </>,
+            <>
+              Whoever controls that phone or that inbox can reach the account, so keep them to yourself. One account
+              per person.
+            </>,
+            <>
+              Sign-in codes are the only texts we send unless you tick the box for game-day texts: up to four a week
+              with your calls and offers. Message and data rates may apply. Reply STOP to end them or HELP for help, or
+              untick the box on your account page. You never have to agree to texts to sign up or to buy.
+            </>,
+            <>
+              Every account, free or paid, keeps up to three leagues. More can be added as league slots. Forgetting a
+              league does not give its slot back for the rest of the season.
+            </>,
+          ]}
+        />
       </Section>
 
       <Section heading="What you are paying for">
         <Bullets
           items={[
             <>
-              The <strong>season pass</strong> and a <strong>league slot</strong> are each a{" "}
-              <strong>one-time payment for the rest of the current NFL season</strong>. Nothing about them renews. When
-              the season ends, they end with it.
-            </>,
-            <>
               The <strong>week pass</strong> is a <strong>subscription that renews automatically every week</strong> at
-              the price shown at checkout, charged to the card you paid with, until you cancel. You can cancel at any
+              the price shown before you pay, charged to the card you paid with, until you cancel. You can cancel at any
               time from your account page (Manage or cancel) or by contacting us. Cancelling stops the next renewal; the
               week you have already paid for stays open until it runs out.
             </>,
             <>
-              Prices are shown before you pay and charged in US dollars. The price you see at checkout is the price you
-              pay.
+              The <strong>season pass</strong> is a <strong>one-time payment for the rest of the current NFL season</strong>.
+              Nothing about it renews. While a paid week pass is running it costs less, as shown at checkout, and buying
+              it ends the week pass&rsquo;s subscription so you are never charged for both.
             </>,
             <>
-              Each pass covers the number of leagues stated on the pricing page. The free tier covers up to three leagues; more can be added as an add-on.
+              A <strong>league slot</strong> is a one-time payment for one more league on your account, for the rest of
+              the current season. It does not renew.
+            </>,
+            <>
+              <strong>The free week.</strong> A new account can start either pass with its first seven days free. Your
+              card is taken up front and nothing is charged during those seven days. On day eight we charge the pass you
+              picked: the week pass then renews weekly, the season pass is one payment. Cancel before day eight and you
+              are not charged at all.
+            </>,
+            <>
+              Prices are shown before you pay and charged in US dollars by Stripe. The price you see at checkout is the
+              price you pay. We never see or store your card details.
+            </>,
+            <>
+              A pass you bought before these terms, such as Wire Pass or Trade Lab, keeps working for the season it was
+              bought for.
             </>,
           ]}
         />
@@ -92,8 +125,9 @@ export default function TermsPage() {
               other people&rsquo;s rate limits as well as ours.
             </>,
             <>
-              Connecting a league means you are entitled to see that league. If you supply ESPN credentials, they must
-              be yours. You remain bound by your league platform&rsquo;s own terms.
+              Linking a league means you are entitled to see that league. A private ESPN league is read with a key from
+              your own ESPN sign-in, which stays on your device; it must be yours. You remain bound by your league
+              platform&rsquo;s own terms.
             </>,
           ]}
         />
@@ -109,7 +143,7 @@ export default function TermsPage() {
 
       <Section heading="Ending it">
         <p>
-          You can stop using Owner&rsquo;s Suite at any time and ask us to delete your account. We can suspend access for behaviour
+          You can stop using Owner&rsquo;s Suite at any time and delete your account from your account page, or ask us to. We can suspend access for behaviour
           that breaks these terms or that puts the service at risk, and where that happens through no fault of yours we
           will refund the unused part of a pass.
         </p>

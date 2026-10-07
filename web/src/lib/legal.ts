@@ -19,6 +19,8 @@ export interface LegalConfig {
   effective: string;
   /** Days a customer has to ask for a refund. */
   refundDays: number;
+  /** When the wording last changed. Set in code with the change, so it can never lag the text. */
+  updated: string;
 }
 
 const env = (name: string): string => (process.env[name] ?? "").trim();
@@ -29,6 +31,8 @@ export const LEGAL: LegalConfig = {
   jurisdiction: env("NEXT_PUBLIC_LEGAL_JURISDICTION"),
   effective: env("NEXT_PUBLIC_LEGAL_EFFECTIVE"),
   refundDays: Number(env("NEXT_PUBLIC_REFUND_DAYS")) || 14,
+  // Rewritten to match the app as it works today (2026-10-06 walkthrough, W-054).
+  updated: "6 October 2026",
 };
 
 /**
