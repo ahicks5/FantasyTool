@@ -51,7 +51,9 @@ class Profile:
             "trades": self.trades,
             "waiver_claims": self.waiver_claims,
             "fa_adds": self.fa_adds,
-            "avg_bid": self.avg_bid,
+            # No FAAB budget, no bids to average: "avg bid $0" in a waiver-priority league read
+            # as a fact about the manager (W-034).
+            "avg_bid": self.avg_bid if faab_budget else None,
             "max_bid": self.max_bid,
             "picks_traded": self.picks_traded,
             "favorite_positions": self.favorite_positions,

@@ -102,6 +102,10 @@ class PartnerFit:
                 "offers": [o.to_dict() for o in self.best_offers]}
 
 
+# Positions the trade office never reads: they are streamed off the wire, not traded for.
+UNTRADED = frozenset({"K", "DEF"})
+
+
 def starters_required(slots: list[str]) -> dict[str, float]:
     """How many of each position a lineup starts. Flex slots split evenly across what they accept."""
     need: dict[str, float] = {}
@@ -119,6 +123,10 @@ def position_profile(league: League, team: Team, ros: dict[str, float],
     req = starters_required(league.starting_slots)
     prof = PositionProfile(starters_required=req)
     for pos, n in req.items():
+        # Nobody trades for a kicker or a defence: a "short at K" left the office with no calls
+        # to return at all (Andrew, 2026-10-05, W-035). The wire is where those get fixed.
+        if pos in UNTRADED:
+            continue
         mine = sorted((ros.get(p.id, 0.0) for p in team.players if p.position == pos), reverse=True)
         line = max(1, round(n))
         league_starters = baseline.get(pos) or [0.0]

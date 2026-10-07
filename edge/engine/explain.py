@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 
-from edge.engine.copy import with_article
+from edge.engine.copy import signed_whole, whole, with_article
 from edge.engine.trade import ACCEPT, COUNTER, REJECT, Verdict
 
 MODEL = os.environ.get("EDGE_CLAUDE_MODEL", "claude-opus-5")
@@ -36,14 +36,14 @@ def template(v: Verdict) -> str:
     get = ", ".join(p.name for p in me.get)
     s = ""
     if v.verdict == ACCEPT:
-        s = f"Accept. Sending {give} for {get} lifts your starting lineup by {me.lineup_delta_ros:.0f} points rest of season."
+        s = f"Accept. Sending {give} for {get} lifts your starting lineup by {whole(me.lineup_delta_ros)} points rest of season."
     elif v.verdict == REJECT:
-        s = f"Reject. {give} for {get} costs your lineup {abs(me.lineup_delta_ros):.0f} points rest of season and you give up {me.value_out:.0f} in value for {me.value_in:.0f}."
+        s = f"Reject. {give} for {get} costs your lineup {abs(whole(me.lineup_delta_ros))} points rest of season and you give up {whole(me.value_out)} in value for {whole(me.value_in)}."
     elif v.verdict == COUNTER:
-        s = f"Not as offered. {give} for {get} leaves your lineup {me.lineup_delta_ros:+.0f} rest of season, but there is a version that works."
+        s = f"Not as offered. {give} for {get} leaves your lineup {signed_whole(me.lineup_delta_ros)} rest of season, but there is a version that works."
     else:
-        s = f"Fair. {give} for {get} is close to even ({me.value_out:.0f} out, {me.value_in:.0f} in); your lineup moves {me.lineup_delta_ros:+.0f} rest of season."
-    s += f" Their lineup moves {them.lineup_delta_ros:+.0f}."
+        s = f"Fair. {give} for {get} is close to even ({whole(me.value_out)} out, {whole(me.value_in)} in); your lineup moves {signed_whole(me.lineup_delta_ros)} rest of season."
+    s += f" Their lineup moves {signed_whole(them.lineup_delta_ros)}."
     style = v.their_tendencies.get("style")
     if style:
         s += f" This manager is {with_article(style)}."

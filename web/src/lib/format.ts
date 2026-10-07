@@ -63,8 +63,12 @@ export function formatCents(cents: number): string {
 
 /** +1.0 / -0.4 / 0.0 with one decimal and explicit sign. */
 export function signed(n: number, digits = 1): string {
-  const s = n.toFixed(digits);
-  return n > 0 ? `+${s}` : s;
+  // A half rounds away from zero on both signs, as `whole()` in edge/engine/copy.py does, so a
+  // number in a sentence the engine wrote and the same number in a box always agree (W-032).
+  const f = 10 ** digits;
+  const r = Math.sign(n) * Math.round(Math.abs(n) * f) / f;
+  const s = (Object.is(r, -0) ? 0 : r).toFixed(digits);
+  return r > 0 ? `+${s}` : s;
 }
 
 export function pct(p: number): string {

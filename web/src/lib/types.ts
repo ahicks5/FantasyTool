@@ -1051,7 +1051,8 @@ export interface Tendencies {
   trades?: number;
   waiver_claims?: number;
   fa_adds?: number;
-  avg_bid?: number;
+  /** Null in a league with no FAAB budget. */
+  avg_bid?: number | null;
   max_bid?: number;
   picks_traded?: number;
   favorite_positions?: string[];

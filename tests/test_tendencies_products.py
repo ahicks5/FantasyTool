@@ -105,3 +105,12 @@ def test_opening_the_free_trade_board_does_not_open_trade_lab():
     assert "A Player" not in json.dumps(free) and "B Player" not in json.dumps(free)
     # The paid payload is untouched: preview reads, it does not strip in place.
     assert paid["partners"][0]["offers"][0]["give_names"] == ["A Player"]
+
+
+def test_no_faab_budget_means_no_average_bid():
+    """'avg bid $0' showed in a waiver-priority league (W-034)."""
+    from edge.engine.tendencies import Profile
+
+    p = Profile(roster_id="1")
+    assert p.to_dict(None)["avg_bid"] is None
+    assert p.to_dict(100)["avg_bid"] == p.avg_bid

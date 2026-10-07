@@ -106,7 +106,9 @@ export function rosterShape(board: Pick<OfficeBoard, "my_positions">): { pos: st
     Array.isArray(v) ? (v.includes(pos) ? 1 : 0) : Math.max(0, v[pos] ?? 0);
   const { surplus, need } = board.my_positions;
   const listed = Array.isArray(surplus) || Array.isArray(need);
-  const keys = new Set([...ALWAYS, ...posList(surplus, 99), ...posList(need, 99)]);
+  // K and DEF are never traded for, so they get no tile (W-035); the engine leaves them out
+  // too, this only guards a payload cached from before.
+  const keys = new Set([...ALWAYS, ...posList(surplus, 99), ...posList(need, 99)].filter((p) => p !== "K" && p !== "DEF"));
   const order = [...SHAPE_ORDER.filter((p) => keys.has(p)), ...[...keys].filter((p) => !SHAPE_ORDER.includes(p))];
   const rows = order.map((pos) => {
     const s = val(surplus, pos);

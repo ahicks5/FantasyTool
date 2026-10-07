@@ -48,13 +48,15 @@ export function firstTab(o: BattleOptions, pos: string | null): CornerTab {
  * landed AND the judges are back (the API call); if they are slow, the stage holds on the
  * charge rather than slamming a word it does not have.
  */
+// 3.2s scripted, so with the judges' wait the whole clash lands inside 4s (Andrew,
+// 2026-10-05, W-024: it ran 5s+). The CSS in globals.css (`.clash*`) uses the same numbers.
 export const CLASH = {
-  BLUE_MS: 650,
-  RED_MS: 650,
-  WIND_MS: 700,
-  HIT_MS: 520,
-  VERDICT_MS: 1100,
-  OUT_MS: 380,
+  BLUE_MS: 520,
+  RED_MS: 520,
+  WIND_MS: 560,
+  HIT_MS: 420,
+  VERDICT_MS: 880,
+  OUT_MS: 300,
 } as const;
 
 export type ClashPhase = "blue" | "red" | "wind" | "hit" | "verdict" | "out" | "done";

@@ -226,7 +226,9 @@ test("the shortlist opens free-only, steps aside for a typed name, and takes fre
 });
 
 test("shortlist reasons are one tag per rank, best first", () => {
-  assert.deepEqual(topTags({ proj: 1, ros: 1, adds: 4 }), [{ n: 1, boards: ["proj", "ros"] }, { n: 4, boards: ["adds"] }]);
+  assert.deepEqual(topTags({ proj: 1, ros: 1, adds: 4 }), [{ n: 1, boards: ["proj", "ros"] }]);
+  // Only a #1 is a badge (W-030).
+  assert.deepEqual(topTags({ proj: 2, ros: 3, adds: 4 }), []);
   assert.deepEqual(topTags({}), []);
 });
 

@@ -205,16 +205,13 @@ export function queryKey(q: BoardQuery): string {
 export const LENSES: readonly Lens[] = ["shortlist", "handcuffs", "backups", "defenses", "byes", "risers"];
 
 /**
- * The shortlist's reasons as tags, one per rank: #1 on this week and the rest of the season
- * is one tag, "#1 QB proj · ROS", not two. Best rank first.
+ * The shortlist's reasons as a tag, and only for a #1: "#1 QB proj · ROS" is one tag, not two.
+ * A #2 to #5 earns no ink. When nearly every row carried "#1 something" and "#3 something",
+ * the badge stopped meaning anything (Andrew, 2026-10-05, W-030).
  */
 export function topTags(top: NonNullable<LensFact["top"]>): { n: number; boards: ("proj" | "ros" | "adds")[] }[] {
-  const by = new Map<number, ("proj" | "ros" | "adds")[]>();
-  for (const b of ["proj", "ros", "adds"] as const) {
-    const n = top[b];
-    if (n) by.set(n, [...(by.get(n) ?? []), b]);
-  }
-  return [...by.entries()].sort((a, b) => a[0] - b[0]).map(([n, boards]) => ({ n, boards }));
+  const boards = (["proj", "ros", "adds"] as const).filter((b) => top[b] === 1);
+  return boards.length ? [{ n: 1, boards: [...boards] }] : [];
 }
 
 /**

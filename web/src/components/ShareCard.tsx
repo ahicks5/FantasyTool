@@ -95,7 +95,9 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
         </div>
 
         <div className="grid grid-cols-2" style={{ gap: 28, marginTop: 44 }}>
-          <Side label="Gives up" players={give} delta={result.graphic.my_delta_ros} deltaLabel="Their lineup" flip />
+          {/* Their own number, not ours with the sign flipped: -28 printed where their lineup
+              actually moved -41 (Andrew, 2026-10-05, W-032). */}
+          <Side label="Gives up" players={give} delta={result.graphic.their_delta_ros} deltaLabel="Their lineup" />
           <Side label="Gets back" players={get} delta={result.graphic.my_delta_ros} deltaLabel="Your lineup" />
         </div>
 
@@ -143,8 +145,8 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
   );
 }
 
-function Side({ label, players, delta, deltaLabel, flip = false }: { label: string; players: Player[]; delta: number; deltaLabel: string; flip?: boolean }) {
-  const shown = flip ? -delta : delta;
+function Side({ label, players, delta, deltaLabel }: { label: string; players: Player[]; delta: number; deltaLabel: string }) {
+  const shown = delta;
   return (
     <div style={{ borderRadius: 28, background: "rgba(255,255,255,0.06)", border: "2px solid rgba(255,255,255,0.1)", padding: 28 }}>
       <div style={{ fontSize: 24, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(247,246,243,0.45)", fontWeight: 700 }}>{label}</div>

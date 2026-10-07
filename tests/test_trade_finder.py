@@ -304,3 +304,22 @@ def test_preview_survives_an_empty_board():
     assert prev["partners"] == [] and prev["summary"] == trade_finder.NO_DEAL
     assert prev["my_positions"] == {"surplus": [], "need": []}
     assert trade_finder.preview({})["algo_version"] == trade_finder.ALGO_VERSION
+
+
+def test_kickers_and_defences_are_never_spare_or_short():
+    """A 'short at K/DEF' emptied the office's calls (W-035): nobody trades for them."""
+    from edge.engine.trade_finder import UNTRADED, league_baseline, position_profile
+    from types import SimpleNamespace
+
+    from edge.models import Player, Team
+
+    me = Team(id="1", name="Us", owner_id=None, owner_name=None, starters=[],
+              players=[Player(id="k", name="K", position="K", nfl_team="LV"),
+                       Player(id="d", name="D", position="DEF", nfl_team="CHI")])
+    other = Team(id="2", name="Them", owner_id=None, owner_name=None, starters=[],
+                 players=[Player(id="k2", name="K2", position="K", nfl_team="BAL"),
+                          Player(id="d2", name="D2", position="DEF", nfl_team="PIT")])
+    league = SimpleNamespace(starting_slots=["QB", "K", "DEF"], teams=[me, other])
+    ros = {"k": 10.0, "d": 10.0, "k2": 90.0, "d2": 90.0}
+    prof = position_profile(league, me, ros, league_baseline(league, ros))
+    assert not (UNTRADED & (set(prof.surplus) | set(prof.need)))

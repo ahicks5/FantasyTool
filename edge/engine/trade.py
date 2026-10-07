@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from itertools import combinations
 
+from edge.engine.copy import signed_whole
 from edge.engine.lineup import lineup_total
 from edge.engine.tendencies import Profile
 from edge.models import League, Player, Team
@@ -217,7 +218,7 @@ def _counter(league: League, my_team: Team, their_team: Team, give: list[Player]
 
 def _counter_why(c_give, c_get, give, get, me: Side, them: Side, fav: set[str]) -> str:
     """Why this counter works — the give/get lists are shown separately, so don't restate them."""
-    s = f"Your lineup {me.lineup_delta_ros:+.0f} ROS, theirs {them.lineup_delta_ros:+.0f} — they stay whole, so it is askable."
+    s = f"Your lineup {signed_whole(me.lineup_delta_ros)} ROS, theirs {signed_whole(them.lineup_delta_ros)}. They stay whole, so it is askable."
     given_fav = [p.position for p in c_give if p.position in fav]
     if given_fav:
         s += f" They chase {given_fav[0]}s; this feeds that."

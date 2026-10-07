@@ -226,3 +226,11 @@ def test_a_name_a_manager_typed_with_a_trailing_space_does_not_corrupt_our_sente
     assert clean_name(None) is None
     assert clean_name("") == ""
     assert clean_name("   ") == "", "a name of only spaces collapses rather than staying blank-ish"
+
+
+def test_whole_numbers_round_a_half_away_from_zero_like_the_web_app():
+    """-40.5 read "-40" in the trade sentence and "-41" in the box beside it (W-032)."""
+    from edge.engine.copy import signed_whole, whole
+
+    assert [whole(x) for x in (-40.5, 40.5, -0.4, 2.5, 0.0)] == [-41, 41, 0, 3, 0]
+    assert [signed_whole(x) for x in (28.4, -40.5, 0.2)] == ["+28", "-41", "0"]

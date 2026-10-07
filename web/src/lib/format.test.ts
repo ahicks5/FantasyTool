@@ -50,6 +50,10 @@ test("money and numbers", () => {
   assert.equal(formatCents(950), "$9.50");
   assert.equal(signed(1), "+1.0");
   assert.equal(signed(-0.4), "-0.4");
+  // A half rounds away from zero, as the engine's prose does (W-032).
+  assert.equal(signed(-40.5, 0), "-41");
+  assert.equal(signed(40.5, 0), "+41");
+  assert.equal(signed(-0.04, 1), "0.0");
   assert.equal(pct(0.61), "61%");
 });
 

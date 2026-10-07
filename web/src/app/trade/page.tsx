@@ -324,8 +324,9 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
 
       {/* Free, there is no builder to offer: grading an offer is the thing being sold. */}
       {!preview && (
-      // The trade table stays the reading width it was drawn at, centred, however wide the room.
-      <section id="build" className="office-build grid scroll-mt-20 tablet:scroll-mt-28 gap-4 lg:mx-auto lg:w-full lg:max-w-3xl">
+      // The room's own width, edge to edge with the office above it: centred at 768px it sat
+      // indented under a left-aligned column on a wide screen (W-036).
+      <section id="build" className="office-build grid scroll-mt-20 tablet:scroll-mt-28 gap-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="display text-[20px] leading-tight">{OFFICE.build}</h2>
@@ -462,7 +463,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
                     result.their_tendencies.style,
                     `${result.their_tendencies.trades ?? 0} trades`,
                     `${result.their_tendencies.waiver_claims ?? 0} claims`,
-                    `avg bid $${result.their_tendencies.avg_bid ?? 0}`,
+                    ...(result.their_tendencies.avg_bid != null ? [`avg bid $${result.their_tendencies.avg_bid}`] : []),
                     ...(result.their_tendencies.favorite_positions ?? []).map((p) => `acquires ${p}s`),
                     ...(result.their_tendencies.hoards ?? []).map((p) => `hoards ${p}s`),
                   ]

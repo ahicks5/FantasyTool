@@ -11,6 +11,8 @@ from pathlib import Path
 
 import requests
 
+from edge.engine.copy import signed_whole
+
 # The card is posted to Reddit, X and Discord, so it is fixed to one look for everyone
 # rather than following a viewer's theme. Dark, because it has to survive a busy feed.
 INK = "#08090b"          # the plane, same near-black the app sits on
@@ -247,8 +249,8 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
   </div>
 
   <div style="display:flex;gap:40px;margin-top:28px;font-size:30px;font-weight:900">
-    <span style="color:{mine_colour}">Your lineup {mine:+.0f} ROS</span>
-    <span style="color:{PAPER}.55)">Theirs {theirs:+.0f}</span>
+    <span style="color:{mine_colour}">Your lineup {signed_whole(mine)} ROS</span>
+    <span style="color:{PAPER}.55)">Theirs {signed_whole(theirs)}</span>
   </div>
 
   <div style="margin-top:26px;font-size:{31 if tall else 29}px;line-height:1.38;color:{PAPER}.82)">{e(blurb)}</div>
