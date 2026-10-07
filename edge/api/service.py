@@ -473,8 +473,12 @@ def played_weeks(platform: str, league_id: str, b: Bundle, auth=None,
                 players_raw = api.players()  # on-disk cache; no network on the warm path
             pw = _sleeper_played_week(league_raw, users_raw, players_raw, week, matchups_raw)
             if not pw.played:
-                continue  # in progress or not kicked off — and never cached, the scores move
-            _keep_played(key, pw)
+                continue  # not kicked off
+            # Only a week the league has moved past is final and cached for good. The week in
+            # progress has points as soon as its first game kicks off, and caching it then froze
+            # a half-played scoreline into the film and the standings for the rest of the season.
+            if week < int(b.league.week):
+                _keep_played(key, pw)
         out.append(pw)
     return out
 

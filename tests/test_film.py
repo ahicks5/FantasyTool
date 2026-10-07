@@ -601,3 +601,15 @@ def test_types_ts_mirrors_the_film_payload(real):
     assert _interface("FilmAttribution") == set(a)
     assert _interface("FilmSwing") == set(w["swing"])
     assert _interface("FilmCover") == set(w["cover"]) | {"week"}
+
+
+def test_a_decided_week_is_the_newest_replay_before_the_platform_moves_on():
+    """Monday night, my starters and theirs all played: the film shows this week (W-038)."""
+    playing = _league([MINE, THEIRS, *FILLERS], week=WEEK)      # the platform still says WEEK
+    weeks = [_week(week=WEEK - 1), _week(week=WEEK)]
+    ctx = film.Context(league=playing, score=lambda s: score(s, SCORING), weeks=weeks)
+    assert [w["week"] for w in film.build(ctx, "1")["weeks"]] == [WEEK - 1]
+    ctx.through = WEEK
+    out = film.build(ctx, "1")
+    assert [w["week"] for w in out["weeks"]] == [WEEK, WEEK - 1]
+    assert out["cover"]["week"] == WEEK

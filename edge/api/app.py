@@ -1737,6 +1737,8 @@ def _film_cover(platform: str, league_id: str, b, t, auth) -> dict | None:
     try:
         weeks = service.played_weeks(platform, league_id, b, auth=auth, only_latest=True)
         ctx = film.Context(league=b.league, score=lambda stats: score(stats, b.league.scoring), weeks=weeks)
+        if _matchup_decided(b, t.id):
+            ctx.through = int(b.league.week)  # W-038: the decided week is the newest cover
         return film.build(ctx, t.id)["cover"]
     except Exception:  # noqa: BLE001
         return None
@@ -1980,12 +1982,15 @@ def _film_context(email: str | None, platform: str, league_id: str, b, t, weeks,
 
     league = b.league
     ctx = film.Context(league=league, score=lambda stats: score(stats, league.scoring), weeks=weeks)
+    if _matchup_decided(b, t.id):
+        ctx.through = int(league.week)  # W-038: the replay is there once your matchup is decided
     if not full:
         return ctx
     rows = _recorded(email, platform, league_id, t.id)
     recorded = recap_mod.projections_from_runs(rows)
     ctx.calls = recap_mod.calls_from_runs(rows)
-    over = [w for w in weeks if w.week < league.week and w.played]
+    last = ctx.through if ctx.through is not None else league.week - 1
+    over = [w for w in weeks if w.week <= last and w.played]
     # The stat log and the freeze are keyed by Sleeper id; an ESPN week is not.
     id_map = service.platform_id_map(over) if platform == "espn" else None
     from edge.data import frozen
@@ -2002,20 +2007,24 @@ def _film_context(email: str | None, platform: str, league_id: str, b, t, weeks,
             ctx.pregame[w.week] = service.pregame_for_platform_ids(pregame, id_map) if id_map is not None else pregame
         ctx.results[w.week] = service.week_results(league.season, w.week)
     try:
-        ctx.log = service.stat_log(league.season, league.week - 1)
+        ctx.log = service.stat_log(league.season, last)
         if id_map is not None:
             ctx.log = service.log_for_platform_ids(ctx.log, over, id_map)
     except Exception:  # noqa: BLE001
         ctx.log = {}
     # Next week's reads, from the engines that own them (SPEC-FILM §5: never computed here).
-    ctx.next_week = league.week
-    ctx.ros = b.ros
+    # Once this week is the newest replay (W-038), "next week" is the one after it: the
+    # rolled bundle when there is one, so the advice is about a week still to play.
+    nb = _target(b, t.id) if ctx.through is not None else b
+    nt = nb.league.team(t.id) or t
+    ctx.next_week = last + 1
+    ctx.ros = nb.ros
     try:
-        ctx.roles = lineup_mod.advise(league, t, _decision_context(b, t)).roles
+        ctx.roles = lineup_mod.advise(nb.league, nt, _decision_context(nb, nt)).roles
     except Exception:  # noqa: BLE001
         ctx.roles = []
     try:
-        plan_ = waiver_plan.build(league, t, b.ros, b.byes, bid_stats=b.bid_stats, trending=b.trending)
+        plan_ = waiver_plan.build(nb.league, nt, nb.ros, nb.byes, bid_stats=nb.bid_stats, trending=nb.trending)
         ctx.pickups = [c.add for c in plan_.claims]
     except Exception:  # noqa: BLE001
         ctx.pickups = []
@@ -2036,7 +2045,7 @@ def _film(email: str | None, platform: str, league_id: str, team_id: str, auth, 
     weeks = service.played_weeks(platform, league_id, b, auth=auth)
     if week is not None:
         weeks_for = [w for w in weeks if w.week == week]
-        if not weeks_for or week >= b.league.week:
+        if not weeks_for or week > (b.league.week if _matchup_decided(b, t.id) else b.league.week - 1):
             raise HTTPException(404, f"week {week} is not a finished week in this league")
     full = products.can(_skus(email), "full_report")
     if not full:
