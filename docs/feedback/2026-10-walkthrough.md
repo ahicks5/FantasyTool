@@ -21,7 +21,7 @@ name value back).
 
 ## Where we are
 
-- **Status:** RESUMED 2026-10-06: film logged (W-038 to W-041); page 9 done; walking pages 10–13. Last ID: W-045.
+- **Status:** RESUMED 2026-10-06: film logged (W-038 to W-041); pages 9–10 done; walking pages 11–13. Last ID: W-049.
 - **Paused at:** pages 1–7 walked and logged (landing, sign-up, sign-in, desk + full matchup, depth chart + player sheet + Position Battle, scouting + pickup, GM's Office + Trade Lab). Page 8, the film (`/report`), was looked at but **not reviewed with Andrew**: he will do it last, in a later session (draft observations are under §8 as open questions). Pages 9–13 (`/connect`, `/account`, upgrade sheet, `/admin`, privacy/terms/404) are not started.
 - **To resume:** `uv run python scripts/walkthrough.py start`, sign in if past page 3, then carry
   on from page 9 (`/connect`), then 10–13, then the film (§8) last. The next ID is the one after the last one in the log.
@@ -825,18 +825,53 @@ is gone from the picker (W-006). Loads in under a second; clean at both widths a
 
 ---
 
-## 10. Account · `/account` (draft, waiting on Andrew)
+## 10. Account · `/account`
 
-_Files: `web/src/app/account/page.tsx`, words in `ACCOUNT` in `vocab.ts`, `web/src/lib/account.ts`._
+_Files: `web/src/app/account/page.tsx`, words in `ACCOUNT` in `vocab.ts`, `web/src/lib/account.ts`;
+billing in `edge/api/payments.py`._
 
 Seen 2026-10-06, signed in (season pass, admin). Phone, email (not confirmed), the game-day texts
 box, leagues on file (2 of 3), plan, security, appearance, sign out, delete.
 
-- **Draft A** · Phone 375: each "Leagues on file" card is 417px wide (a long league name plus
-  Open and Forget do not shrink), so the whole page is 433px wide and scrolls sideways / zooms
-  out on a phone.
-- **Draft B** · "Forgetting a league does not give its slot back this season." A hard rule stated
-  in small print under the list, with no confirm on "Forget".
-- **Draft C** · The plan card says "Season pass · Every room open for the rest of the season" and
-  nothing else: no date bought, no receipt, no way to manage billing (week-pass holders need a
-  cancel).
+### W-046 · Leagues on file run off a phone screen
+- **Where:** phone 375 · both themes
+- **Andrew:** "i agree with all suggestions."
+- **What happened:** each league card measured 417px on a 375px screen: "Small to Medium Sized
+  League" plus Open and Forget do not shrink, so the whole page is 433px wide and scrolls
+  sideways / zooms out on a phone.
+- **Note:** `min-w-0` on the card's text column with the name allowed to wrap to two lines (or
+  `truncate` on the team line), buttons `shrink-0`. Add `/account` with a long league name to
+  the e2e overflow sweep at 320 and 375.
+  Files: `web/src/app/account/page.tsx`, `web/e2e/smoke.spec.ts`.
+- **Priority:** P1 · **Size:** S
+
+### W-047 · Confirm before "Forget"
+- **Where:** `/account` leagues · all viewports
+- **Andrew:** "i agree with all suggestions."
+- **Note:** "Forget" acts at once while small print says the slot is not given back this season.
+  Ask first: "Forget Degenerates FF? Its slot stays used this season." with Forget / Keep it.
+  Files: `web/src/app/account/page.tsx`, words in `ACCOUNT`.
+- **Priority:** P2 · **Size:** S
+
+### W-048 · The plan card says when, and opens billing, for every plan
+- **Where:** `/account` plan · all viewports
+- **Andrew:** "yes to number 3 for everything as well."
+- **Note:** show the date the pass started (and, for a week pass, the next charge date), plus a
+  "Manage billing" link to Stripe's customer portal for receipts, the card on file and cancelling.
+  Every paid plan and the league-slot add-on, not only the week pass. A complimentary grant (no
+  Stripe customer) says "Complimentary" and no link. Needs a portal-session route in
+  `edge/api/payments.py` (+ route in `app.py`, contract in `docs/API.md`) and the date on the plan
+  in `/api/me`.
+  Files: `web/src/app/account/page.tsx`, `edge/api/payments.py`, `edge/api/app.py`, `web/src/lib/types.ts`.
+- **Priority:** P1 · **Size:** M
+
+### W-049 · Leagues first on the account page
+- **Where:** `/account` · all viewports and themes
+- **Andrew:** "can we put leagues up top as more obvious? settings/email other housekeeping stuff
+  can be under. the league need to be the top and best"
+- **Note:** order the page: your leagues (bigger cards, the one you are reading marked, Open on each,
+  Link a league and Add a slot right under), then the plan, then the housekeeping block (phone,
+  email, texts, security, appearance), then sign out and delete. The admin link can sit in the
+  housekeeping block.
+  Files: `web/src/app/account/page.tsx`.
+- **Priority:** P2 · **Size:** S
