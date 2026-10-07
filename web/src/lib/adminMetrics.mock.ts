@@ -247,7 +247,7 @@ export const ADMIN_METRICS_FIXTURE: AdminMetrics = {
         verdict: "watch",
         campaigns: [
           {
-            campaign: "wk4 · hookA",
+            campaign: "wk4 Â· hookA",
             signups: 1,
             buyers: 1,
             revenue_cents: 499,
