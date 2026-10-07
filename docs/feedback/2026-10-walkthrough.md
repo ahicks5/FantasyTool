@@ -766,3 +766,21 @@ it on 1", taking Claude's suggested answer to each.
 - **Note:** keep it on the cover; drop it from "The game" card.
   Files: `web/src/components/film/Replay.tsx`.
 - **Priority:** P3 · **Size:** S
+
+---
+
+## 9. Connect a league · `/connect`, `/connect/espn` (draft, waiting on Andrew)
+
+_Files: `web/src/app/connect/page.tsx`, `web/src/components/LeagueLinker.tsx`, `EspnAuthForm.tsx`,
+`web/src/app/connect/espn/page.tsx`, words in `CONNECT` / `ESPN_KEY` in `vocab.ts`._
+
+Seen 2026-10-06, signed in. Sleeper search on the public test league (1403186749361901568) up to
+"Select your team"; nothing was saved. ESPN: the ID box and the four-step bookmark walk. Yahoo
+is gone from the picker (W-006). Loads in under a second; clean at both widths and themes.
+
+- **Draft A** · After "Find", a "KICKOFF 4d 15:37" line appears under the heading and pushes the
+  platform buttons and the box ~70px down, under the reader's thumb.
+- **Draft B** · "Select your team" lists all twelve teams with nothing marking which one is yours
+  (found by league ID; a username search could know).
+- **Draft C** · ESPN's "I have a league ID" is a grey underline that is easy to miss beside the
+  green button. Low stakes.
