@@ -15,3 +15,6 @@ launch/cards/*.html
 
 # The walkthrough browser profile and its screenshots (scripts/walkthrough.py).
 .walkthrough/
+
+# IDE settings (PyCharm).
+.idea/
