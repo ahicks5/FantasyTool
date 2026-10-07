@@ -22,6 +22,7 @@ and, under `mobile/assets/`, the iPhone app's (docs/IOS.md):
                      plate's rounding and hairline are taken off rather than doubled
   splash-icon.png    512x512 bare monogram on transparent, centred on the plate colour
                      at launch, the way the kit shows it on black (NEW_BRANDING/img006)
+  mark.png           240x110 the monogram for the frame's offline screen
 
 and with `--posters`, under `web/public/brand/`:
 
@@ -205,6 +206,12 @@ def main() -> None:
             bg="transparent",
         )
         _shot(page, splash, 512, 512, MOBILE / "splash-icon.png", alpha=True)
+
+        # The offline screen's mark: the monogram alone, at 3x for an 80pt-wide slot, so
+        # the frame's own screen carries the brand without an SVG library in the app.
+        _shot(page, _page_html(
+            f'<div style="width:240px;height:110px;display:flex;align-items:center;justify-content:center">'
+            f'{mark_svg(106)}</div>', bg="transparent"), 240, 110, MOBILE / "mark.png", alpha=True)
 
         if posters:
             # Blank templates for the feed and for stories: the payload goes in the
