@@ -1,4 +1,7 @@
 /** Line icons at a common 24px grid. Emoji read as placeholder art in a paid product. */
+import { useId } from "react";
+import { MARK_BOX, MARK_D } from "@/lib/mark";
+
 type P = { className?: string; size?: number; strokeWidth?: number };
 
 function Svg({ children, className = "", size = 22, strokeWidth = 1.9 }: P & { children: React.ReactNode }) {
@@ -79,23 +82,51 @@ export const IconKey = (p: P) => (
   <Svg {...p}><circle cx="8" cy="14.5" r="4" /><path d="M11 12 20 3M16 7l2.5 2.5M13.5 9.5 16 12" /></Svg>
 );
 
-/**
- * The mark: the ball and the box. A football stood upright with its top floor lit —
- * three panes punched across the upper third, laces at size and a lit window band
- * small. This is the same drawing as `web/src/app/icon.svg`; the two are redrawn
- * together or not at all, because one is the browser's copy and one is the app's.
- *
- * One path with `fillRule="evenodd"`: the outer oval fills, the band cuts a hole in
- * it, and the two mullions inside the hole fill again. Filled rather than stroked,
- * unlike everything else here, because the logo is a solid silhouette and a hairline
- * outline of it turns to mush below ~20px. It inks in `currentColor`, so it takes
- * the chrome gradient from a parent with `.chrome-type` exactly like the letters do.
- */
-export const IconMark = ({ className = "", size = 22 }: { className?: string; size?: number | string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" className={className} aria-hidden>
-    <path d="M12 2.2C16.6 6.4 17.8 9.5 17.8 12c0 2.5-1.2 5.6-5.8 9.8C7.4 17.6 6.2 14.5 6.2 12c0-2.5 1.2-5.6 5.8-9.8ZM8.2 7.6h7.6v1.8H8.2Zm2 0h.8v1.8h-.8Zm2.8 0h.8v1.8H13Z" />
-  </svg>
+/* The poster set: the tiles beside each room's points on the landing page, drawn from the
+   kit's own icon squares. Same grid and stroke as everything above. */
+
+/** Four position chips: the roster at a glance. */
+export const IconRoster = (p: P) => (
+  <Svg {...p}><rect x="3.5" y="4.5" width="7.5" height="6.5" rx="1.6" /><rect x="13" y="4.5" width="7.5" height="6.5" rx="1.6" /><rect x="3.5" y="13" width="7.5" height="6.5" rx="1.6" /><rect x="13" y="13" width="7.5" height="6.5" rx="1.6" /></Svg>
 );
+/** Three rising bars. */
+export const IconBars = (p: P) => (
+  <Svg {...p}><path d="M5.5 19.5v-5M12 19.5v-9M18.5 19.5V5" strokeWidth={p.strokeWidth ? p.strokeWidth + 1.2 : 3} /></Svg>
+);
+export const IconBinoculars = (p: P) => (
+  <Svg {...p}><circle cx="6.8" cy="15.5" r="3.6" /><circle cx="17.2" cy="15.5" r="3.6" /><path d="M10.4 15.2h3.2M4.2 12.6 6.6 5.5h2.6l1 4.5M19.8 12.6l-2.4-7.1h-2.6l-1 4.5" /></Svg>
+);
+export const IconTarget = (p: P) => (
+  <Svg {...p}><circle cx="12" cy="12" r="7.5" /><circle cx="12" cy="12" r="3" /><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4" /></Svg>
+);
+/** Three heads: the managers across the league, side by side. */
+export const IconPeople = (p: P) => (
+  <Svg {...p}><circle cx="12" cy="8.5" r="3" /><circle cx="5.6" cy="10" r="2.3" /><circle cx="18.4" cy="10" r="2.3" /><path d="M6.8 19.5a5.2 5.2 0 0 1 10.4 0M2.5 18.6a3.6 3.6 0 0 1 4.6-3.4M21.5 18.6a3.6 3.6 0 0 0-4.6-3.4" /></Svg>
+);
+export const IconBolt = (p: P) => (
+  <Svg {...p}><path d="M13.2 2.8 5.5 13.2h6l-1 8 7.9-10.6h-6.1l.9-7.8Z" /></Svg>
+);
+
+/**
+ * The mark: the OS monogram (`lib/mark.ts` holds the path and says where its other two
+ * copies live). Filled rather than stroked, unlike everything else here, because the logo
+ * is a solid silhouette. It inks in `currentColor`, so a parent sets its metal.
+ *
+ * By default it sits in a 24x24 square and `size` is the square's side, so a slot built
+ * for a square mark (the loading ring, the elevator doors, a letterhead) takes it as is.
+ * `tight` crops to the ink instead and makes `size` the height, for where the mark sits
+ * on a line of type and has to stand as tall as the caps beside it.
+ */
+export const IconMark = ({ className = "", size = 22, tight = false }: { className?: string; size?: number | string; tight?: boolean }) => {
+  const box = tight ? `${MARK_BOX.x} ${MARK_BOX.y} ${MARK_BOX.w} ${MARK_BOX.h}` : "0 0 24 24";
+  const ratio = MARK_BOX.w / MARK_BOX.h;
+  const width = !tight ? size : typeof size === "number" ? size * ratio : `calc(${size} * ${ratio.toFixed(4)})`;
+  return (
+    <svg width={width} height={size} viewBox={box} fill="currentColor" fillRule="evenodd" className={className} aria-hidden>
+      <path d={MARK_D} />
+    </svg>
+  );
+};
 
 /* The section set: a call sheet, a depth-chart board, the wire, the film. */
 
@@ -179,3 +210,30 @@ export const IconClash = (p: P) => (
     <path d="M12 2.5v2M9.5 3.5l.8 1.6M14.5 3.5l-.8 1.6" strokeWidth={1.6} />
   </Svg>
 );
+
+/**
+ * The monogram in metal, for where it is big enough for a gradient to read: the stacked
+ * lockup, the elevator doors, the loading ring. The stops are CSS variables (`--mark-*` in
+ * globals.css), so it is near-white chrome in the dark room and graphite on paper, and any
+ * surface that is dark in both themes pins it silver the way it pins `--chrome`.
+ */
+export const IconMarkChrome = ({ className = "", size = 22, tight = false }: { className?: string; size?: number | string; tight?: boolean }) => {
+  const id = `osm-${useId().replace(/:/g, "")}`;
+  const box = tight ? `${MARK_BOX.x} ${MARK_BOX.y} ${MARK_BOX.w} ${MARK_BOX.h}` : "0 0 24 24";
+  const ratio = MARK_BOX.w / MARK_BOX.h;
+  const width = !tight ? size : typeof size === "number" ? size * ratio : `calc(${size} * ${ratio.toFixed(4)})`;
+  return (
+    <svg width={width} height={size} viewBox={box} fillRule="evenodd" className={className} aria-hidden>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0" style={{ stopColor: "var(--mark-1)" }} />
+          <stop offset="0.34" style={{ stopColor: "var(--mark-2)" }} />
+          <stop offset="0.6" style={{ stopColor: "var(--mark-3)" }} />
+          <stop offset="0.8" style={{ stopColor: "var(--mark-4)" }} />
+          <stop offset="1" style={{ stopColor: "var(--mark-1)" }} />
+        </linearGradient>
+      </defs>
+      <path d={MARK_D} fill={`url(#${id})`} />
+    </svg>
+  );
+};

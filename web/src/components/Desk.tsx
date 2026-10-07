@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Avatar } from "./Avatar";
-import { IconArrowUp, IconChevron, IconMark } from "./icons";
+import { IconArrowUp, IconChevron, IconMarkChrome } from "./icons";
 import { PlayerName } from "./Players";
 import { filmKey, loadFilmSeen, type Connection } from "@/lib/storage";
 import { newsHeadline } from "@/lib/ticker.ts";
@@ -26,12 +26,11 @@ import { matchupRead } from "@/lib/matchup";
    staff and one for the film, each saying who it is from. The numbers are the engine's
    (`edge/api/desk.py`); every word around them is in `vocab.ts`.                       */
 
-/** The letterhead in the corner of every paper: the mark and two letters. */
+/** The letterhead in the corner of every paper: the OS monogram, small, in chrome. */
 function Letterhead() {
   return (
     <span className="desk-letterhead" aria-hidden>
-      <IconMark size={9} />
-      <span className="chrome-type">{DESK.letterhead}</span>
+      <IconMarkChrome tight size={10} />
     </span>
   );
 }

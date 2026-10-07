@@ -17,11 +17,14 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 // so a heading never re-shapes after paint. Next self-hosts and preloads these files, so
 // in practice the font wins that race; on a connection slow enough to lose it, a heading
 // set in the fallback is a better trade than the whole page jumping.
+// Variable, with the width axis: the kit's poster headlines are Archivo condensed
+// (`.poster-head`, "wdth" 82), and the axis is how a condensed cut comes without a third
+// family. One file covers 600-900 and every width, so it replaces the four static weights.
 const archivo = Archivo({
   subsets: ["latin"],
   variable: "--font-archivo",
   display: "optional",
-  weight: ["600", "700", "800", "900"],
+  axes: ["wdth"],
 });
 
 // The name is one word. The descriptor "fantasy football call sheet" rides beside it

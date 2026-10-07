@@ -10,8 +10,7 @@
     "test": "node --test \"src/**/*.test.ts\"",
     "test:e2e": "playwright test",
     "demo": "EDGE_DEMO_EXPORT=1 NEXT_PUBLIC_EDGE_DEMO=1 next build",
-    "demo:pack": "node scripts/pack-demo.mjs",
-    "og": "node scripts/make-og.mjs"
+    "demo:pack": "node scripts/pack-demo.mjs"
   },
   "dependencies": {
     "next": "16.3.5",

@@ -27,8 +27,8 @@ test("falls back to localhost for next dev", () => {
 test("trailing slashes are dropped so joined paths do not double up", () => {
   assert.equal(normalizeSiteUrl("https://edge.example.com/"), "https://edge.example.com");
   assert.equal(normalizeSiteUrl("https://edge.example.com///"), "https://edge.example.com");
-  assert.equal(new URL("/og.png", resolveSiteUrl({ NEXT_PUBLIC_SITE_URL: "https://e.test/" })).href,
-    "https://e.test/og.png");
+  assert.equal(new URL("/opengraph-image.png", resolveSiteUrl({ NEXT_PUBLIC_SITE_URL: "https://e.test/" })).href,
+    "https://e.test/opengraph-image.png");
 });
 
 test("blank and whitespace values do not become a scheme on its own", () => {

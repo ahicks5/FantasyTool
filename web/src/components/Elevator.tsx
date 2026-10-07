@@ -47,8 +47,9 @@ import { IconMark } from "./icons";
    underneath it the whole time, so when the papers fade there is a page there, and
    nothing below the overlay ever reflows.                                        */
 
-/** The seam runs down the middle: half the mark on each door. */
-const MARK_SIZE = 72;
+/** The seam runs down the middle: the O on the left door, the S on the right. The
+ *  monogram is wide, so its square is wider than the football's was to stand as tall. */
+const MARK_SIZE = 132;
 
 /** The grey rules on a paper the desk has not filled yet. */
 function Rules({ n, short = true }: { n: number; short?: boolean }) {
@@ -62,12 +63,11 @@ function Rules({ n, short = true }: { n: number; short?: boolean }) {
   );
 }
 
-/** A sheet of Owner's Suite letterhead: the wordmark small in the corner. */
+/** A sheet of Owner's Suite letterhead: the OS monogram small in the corner. */
 function Letterhead() {
   return (
     <div className="ride-letterhead">
-      <IconMark size={8} className="ride-letterhead-mark" />
-      <span className="chrome-type">{DESK.letterhead}</span>
+      <IconMark tight size={9} className="ride-letterhead-mark" />
     </div>
   );
 }

@@ -91,6 +91,21 @@
   --color-metal: #cdd2d9;
   --color-metal-2: #8b929d;
 
+  /* The two brand metals beside the chrome, read off the kit's posters (2026-10-06):
+     gold for the GM's Office and the Lineup, electric blue for Scouting and the Battle's
+     blue corner. Brand only, like `signal`: they dress a room's name, a poster headline
+     and a call to action, never a player row or a verdict, so they cannot be mistaken
+     for the status scale. As text, gold is 7.5:1 and blue 6.6:1 on paper (#1b1d21);
+     `-2` is the highlight; `-ink` is text ON a filled gold (8.2:1) or blue (7.4:1). */
+  --color-gold: #e0a040;
+  --color-gold-2: #f8d880;
+  --color-gold-soft: #2a1f08;
+  --color-gold-ink: #1a1204;
+  --color-blue: #48a8f8;
+  --color-blue-2: #68c8f8;
+  --color-blue-soft: #0b1f33;
+  --color-blue-ink: #04121f;
+
   --radius-card: 22px;
 }
 
@@ -108,6 +123,28 @@
   --chrome: var(--chrome-silver);
   --chrome-rail: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.05) 12%, rgb(255 255 255 / 0.34) 50%, rgb(255 255 255 / 0.05) 88%, transparent 100%);
   --bevel: inset 0 1px 0 0 rgb(255 255 255 / 0.07);
+
+  /* The poster metals, cut the same way as the chrome (a bright top, a dark band below
+     the middle, a lift at the foot) so the three read as one set. The silver/gold/blue
+     cuts are never overridden by a theme, like `--chrome-silver`; `--gold` and `--blue`
+     flip to their darker cuts on paper. */
+  --gold-cut: linear-gradient(177deg, #fff4d0 0%, #f8d880 20%, #e0a040 44%, #f6d27c 56%, #a06828 76%, #e8c060 90%, #fff0c0 100%);
+  --blue-cut: linear-gradient(177deg, #e8f6ff 0%, #8ad4ff 20%, #48a8f8 44%, #a8e0ff 56%, #1f6fc0 76%, #58b8f0 90%, #e0f2ff 100%);
+  --gold: var(--gold-cut);
+  --blue: var(--blue-cut);
+
+  /* The OS monogram's metal (`IconMarkChrome`): softer than the wordmark's seven stops,
+     near-white with one quiet band, the way the kit draws it. Pinned silver anywhere
+     `--chrome` is pinned silver. */
+  --mark-1: #ffffff;
+  --mark-2: #f1f3f5;
+  --mark-3: #b9bec6;
+  --mark-4: #e8ebee;
+
+  /* The poster edge: display caps stand out of the page on a stack of hard drop
+     shadows, the way the kit's GM'S / OFFICE headlines do. `filter`, not text-shadow,
+     because a text-shadow paints over a background-clipped fill. Headlines only. */
+  --extrude: drop-shadow(0 1px 0 rgb(0 0 0 / 0.55)) drop-shadow(0 2px 0 rgb(0 0 0 / 0.45)) drop-shadow(0 10px 18px rgb(0 0 0 / 0.6));
 
   /* Neutral black shadows. The warm-tinted ones the light theme uses would read
      as brown haze on this page. */
@@ -157,6 +194,24 @@
 
   --color-metal: #6e757f;
   --color-metal-2: #9aa1ab;
+
+  /* Text-safe on white (4.9:1, 5.6:1) and on the plane (4.5:1, 5.2:1). */
+  --color-gold: #9a6514;
+  --color-gold-2: #7a490f;
+  --color-gold-soft: #fdf1d8;
+  --color-gold-ink: #1a1204;
+  --color-blue: #1366c6;
+  --color-blue-2: #104060;
+  --color-blue-soft: #e3f0fc;
+  --color-blue-ink: #04121f;
+
+  --gold: linear-gradient(177deg, #c48a2a 0%, #8a5a18 24%, #5a3408 46%, #b07a22 58%, #6a420c 80%, #9a6514 100%);
+  --blue: linear-gradient(177deg, #2a86e0 0%, #1366c6 24%, #0a3a78 46%, #1f7fd0 58%, #0b3462 80%, #1366c6 100%);
+  --mark-1: #4a515c;
+  --mark-2: #2b3038;
+  --mark-3: #0e1116;
+  --mark-4: #3b4048;
+  --extrude: drop-shadow(0 1px 0 rgb(255 255 255 / 0.9)) drop-shadow(0 6px 12px rgb(20 18 12 / 0.18));
 
   --chrome: linear-gradient(177deg, #2b3038 0%, #545b66 18%, #12151a 38%, #6b7380 52%, #0e1116 70%, #4a515c 88%, #23272e 100%);
   --chrome-rail: linear-gradient(90deg, transparent 0%, rgb(14 17 22 / 0.04) 12%, rgb(14 17 22 / 0.16) 50%, rgb(14 17 22 / 0.04) 88%, transparent 100%);
@@ -240,6 +295,159 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   letter-spacing: 0.08em;
   margin-right: -0.08em;
 }
+
+/* --------------------------------------------------------------- posters ---
+   The kit's headline system (NEW_BRANDING, 2026-10-06): GM'S OFFICE, SCOUTING
+   DEPARTMENT, COACH'S LINEUP, POSITION BATTLE. Two lines of heavy condensed caps, the
+   first cut in chrome and the second in the room's metal, standing out of the page on
+   a hard extruded edge, with a thin wide-tracked line under them.
+
+   Marketing surfaces only: the landing page, the door, the share cards. Inside a room
+   the h1 is plain ink, the way the kit's own phone screens show it, and a room never
+   carries a line under its title (Andrew, 2026-09-21: "get rid of it").
+
+   Condensed is Archivo's own width axis, not a third family (docs/BRAND.md §6). The
+   metal is background-clipped like `.chrome-type`, with the flat colour underneath
+   where the clip is unsupported, and the edge is `filter` because a text-shadow
+   paints over a clipped fill. */
+.poster-head {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "wdth" 82;
+  text-transform: uppercase;
+  letter-spacing: -0.005em;
+  line-height: 0.9;
+}
+.metal {
+  background-clip: text;
+  -webkit-background-clip: text;
+  filter: var(--extrude);
+}
+.metal-chrome { background-image: var(--chrome); color: var(--color-metal); }
+.metal-gold { background-image: var(--gold); color: var(--color-gold); }
+.metal-blue { background-image: var(--blue); color: var(--color-blue); }
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .metal { -webkit-text-fill-color: transparent; }
+}
+/* The line under a poster headline: MANAGE. OPTIMIZE. MAKE MOVES. Thin and tracked
+   wide, so it reads as engraved under the plate rather than as a second headline.
+   `margin-right` cancels the trailing tracking, as on the wordmark. */
+.poster-sub {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  margin-right: -0.28em;
+  color: var(--color-ink-2);
+}
+/* The rule under a poster's sub-line: a short bar of the room's metal. */
+.poster-rule {
+  display: block;
+  height: 2px;
+  width: 120px;
+  border-radius: 2px;
+  background-image: linear-gradient(90deg, transparent, var(--rule, var(--color-gold)), transparent);
+}
+
+/* The stage: the kit's lit backdrop, two floodlight banks at the top corners over a
+   black field, a haze falling from them, and a floor sheen at the foot. It is the
+   stadium the owner's box looks out on, and it is dark in both themes, like the hero,
+   so everything on it takes the dark room's ink and the silver cuts.
+
+   Behind the content on purpose (`isolation` keeps the lights under the stage's own
+   children) and painted in CSS rather than shipped as a photograph: it costs no bytes,
+   cannot be the largest paint, and reflows to any width. `stage-gold`, `stage-blue` and
+   `stage-split` tint the haze for the room a poster is about. */
+.stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #f7f6f3;
+  --color-ink: #f4f3f0;
+  --color-ink-2: #c9c7c1;
+  --color-muted: #9a9892;
+  --color-line: rgb(255 255 255 / 0.1);
+  --color-line-2: rgb(255 255 255 / 0.16);
+  --chrome: var(--chrome-silver);
+  --mark-1: #ffffff; --mark-2: #f1f3f5; --mark-3: #b9bec6; --mark-4: #e8ebee;
+  --gold: var(--gold-cut); --blue: var(--blue-cut);
+  --color-gold: #e0a040; --color-blue: #48a8f8;
+  --extrude: drop-shadow(0 1px 0 rgb(0 0 0 / 0.55)) drop-shadow(0 2px 0 rgb(0 0 0 / 0.45)) drop-shadow(0 10px 18px rgb(0 0 0 / 0.6));
+  --haze: rgb(170 190 220 / 0.16);
+  background:
+    radial-gradient(70% 55% at 50% -6%, var(--haze), transparent 70%),
+    radial-gradient(38% 28% at 10% 2%, rgb(255 245 225 / 0.2), transparent 72%),
+    radial-gradient(38% 28% at 90% 2%, rgb(255 245 225 / 0.2), transparent 72%),
+    radial-gradient(120% 50% at 50% 112%, rgb(255 255 255 / 0.06), transparent 60%),
+    #050608;
+}
+.stage-gold { --haze: rgb(224 160 64 / 0.16); }
+.stage-blue { --haze: rgb(72 168 248 / 0.2); }
+.stage-split {
+  background:
+    radial-gradient(60% 70% at 0% 10%, rgb(30 110 230 / 0.32), transparent 70%),
+    radial-gradient(60% 70% at 100% 10%, rgb(220 40 40 / 0.3), transparent 70%),
+    radial-gradient(120% 50% at 50% 112%, rgb(255 255 255 / 0.06), transparent 60%),
+    #050608;
+}
+/* The floodlight banks: a grid of soft lamps, blurred to bokeh and masked to an oval. */
+.stage::before,
+.stage::after {
+  content: "";
+  position: absolute;
+  top: 14px;
+  z-index: -1;
+  width: min(34%, 260px);
+  height: 64px;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgb(255 252 240 / 0.95) 0 2.5px, rgb(255 240 210 / 0.35) 3.5px, transparent 8px);
+  background-size: 24px 20px;
+  filter: blur(1.2px);
+  opacity: 0.7;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 28%, transparent 72%);
+  mask-image: radial-gradient(ellipse at center, #000 28%, transparent 72%);
+}
+.stage::before { left: 1%; transform: rotate(-9deg); }
+.stage::after { right: 1%; transform: rotate(9deg); }
+.stage-split::before, .stage-split::after { opacity: 0.45; }
+
+/* A phone, the way the kit's posters hold the app: a machined bezel with a chrome edge
+   around a black screen. Marketing surfaces only; the screen inside is real app markup,
+   so the worked examples on the landing page are the product, not a picture of it. */
+.phone {
+  display: block;
+  border-radius: 36px;
+  padding: 7px;
+  background: linear-gradient(155deg, #5a5f68 0%, #1c1e22 22%, #0a0b0d 55%, #2a2d33 82%, #6a6f78 100%);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(0 0 0 / 0.9), 0 34px 70px -28px rgb(0 0 0 / 0.95);
+}
+.phone-screen {
+  position: relative;
+  overflow: hidden;
+  border-radius: 29px;
+  background: #090a0e;
+}
+/* A lit panel inside a screen is the screen: no card corners, edge or shadow of its own. */
+.phone-screen .hero { border-radius: 0; border: 0; box-shadow: none; }
+/* The app's own top bar, small, across the top of the screen. */
+.phone-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+
+/* The call to act on a marketing surface: a gold plate with dark ink and a glow, the
+   kit's OWNERSSUITE.IO pill made into a button. In-app buttons stay green. */
+.cta-gold {
+  background-image: linear-gradient(180deg, #f8d880 0%, #e0a040 55%, #c48a2a 100%);
+  color: var(--color-gold-ink);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55), 0 0 0 1px rgb(160 104 40 / 0.6), 0 10px 30px -10px rgb(224 160 64 / 0.7);
+}
+.cta-gold:hover { filter: brightness(1.06); }
+.cta-gold:active { filter: brightness(0.96); }
 
 /* The top bar keeps the mark and drops the word below 360px. "OWNER'S SUITE" is half
    again as wide as the old wordmark, and on a 320px phone it left the league label
@@ -335,6 +543,8 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -0.03em; }
   /* Dark in both modes, so chrome on it is always the silver cut — the light
      theme's graphite chrome would disappear here. */
   --chrome: var(--chrome-silver);
+  --mark-1: #ffffff; --mark-2: #f1f3f5; --mark-3: #b9bec6; --mark-4: #e8ebee;
+  --gold: var(--gold-cut); --blue: var(--blue-cut);
   --bevel: inset 0 1px 0 0 rgb(255 255 255 / 0.07);
 }
 .hero .eyebrow { color: rgb(247 246 243 / 0.55); }
@@ -774,6 +984,8 @@ html.ride-boot::before {
   transition: opacity calc(var(--ride-open, 800ms) * 0.5) ease-in;
   /* The panel is dark in both themes, so its brand line is always the silver cut. */
   --chrome: var(--chrome-silver);
+  --mark-1: #ffffff; --mark-2: #f1f3f5; --mark-3: #b9bec6; --mark-4: #e8ebee;
+  --gold: var(--gold-cut); --blue: var(--blue-cut);
 }
 .ride-panel-brand {
   font-family: var(--font-display);
@@ -851,6 +1063,8 @@ html.ride-boot::before {
   /* Dark in both modes, so the nameplate on the wall is always the silver cut; the
      light theme's graphite chrome would vanish here. Same rule as the hero. */
   --chrome: var(--chrome-silver);
+  --mark-1: #ffffff; --mark-2: #f1f3f5; --mark-3: #b9bec6; --mark-4: #e8ebee;
+  --gold: var(--gold-cut); --blue: var(--blue-cut);
   perspective: 760px;
   perspective-origin: 50% 46%;
   opacity: 0;
@@ -1289,6 +1503,8 @@ html.ride-boot::before {
   box-shadow: var(--bevel), var(--shadow-hero), inset 0 0 0 1px rgb(255 255 255 / 0.06);
   /* Dark whatever the theme, so the chrome on the letterhead is always the silver cut. */
   --chrome: var(--chrome-silver);
+  --mark-1: #ffffff; --mark-2: #f1f3f5; --mark-3: #b9bec6; --mark-4: #e8ebee;
+  --gold: var(--gold-cut); --blue: var(--blue-cut);
 }
 /* The blotter under the papers. */
 .desk::before {
@@ -1671,6 +1887,8 @@ html.ride-boot::before {
   background: linear-gradient(180deg, #14171c 0%, #0c0e11 100%);
   border-top: 1px solid rgb(255 255 255 / 0.08);
   --chrome: var(--chrome-silver);
+  --mark-1: #ffffff; --mark-2: #f1f3f5; --mark-3: #b9bec6; --mark-4: #e8ebee;
+  --gold: var(--gold-cut); --blue: var(--blue-cut);
 }
 .ticker-plate {
   display: inline-flex;

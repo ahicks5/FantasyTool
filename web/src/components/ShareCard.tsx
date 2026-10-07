@@ -1,14 +1,16 @@
 "use client";
 /**
  * The marketing asset: a 1080x1080 card rendered at full size and scaled to fit. It is
- * deliberately hard-coded to the light palette — it gets posted to Reddit and X, where it has
- * to read the same for everyone regardless of their theme.
+ * deliberately hard-coded to the dark room rather than following the viewer's theme: it gets
+ * posted to Reddit and X, where it has to read the same for everyone. It mirrors
+ * `verdict_card_html` in edge/graphics.py, which renders the PNG that actually travels.
  */
 
 import { useEffect, useRef, useState } from "react";
 import type { Acceptance, Player, TradeResult } from "@/lib/types";
 import { signed } from "@/lib/format";
 import { LINES, OFFICE } from "@/lib/vocab";
+import { MARK_BOX, MARK_D } from "@/lib/mark";
 
 const SIZE = 1080;
 const TONE: Record<string, { ink: string; soft: string }> = {
@@ -138,20 +140,19 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
             style={{ marginTop: 34, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.12)" }}
           >
             <span style={{ display: "inline-flex", alignItems: "center", gap: 10, fontSize: 30, fontWeight: 800 }}>
-              {/* The mark, inlined. A still image posted into a feed cannot depend on the
-                  page's chrome gradient, so the silver is spelled out here. Same path as
-                  `icon.svg`, `IconMark` and `MARK_PATH` in edge/graphics.py. */}
-              <svg width={35} height={35} viewBox="0 0 24 24" fill="url(#ph-card-chrome)" fillRule="evenodd" aria-hidden>
+              {/* The mark, inlined with its own gradient: a still image posted into a feed
+                  cannot depend on the page's chrome token. Soft chrome, as on the kit. */}
+              <svg width={Math.round((30 * MARK_BOX.w) / MARK_BOX.h)} height={30} viewBox={`${MARK_BOX.x} ${MARK_BOX.y} ${MARK_BOX.w} ${MARK_BOX.h}`} fill="url(#os-card-chrome)" fillRule="evenodd" aria-hidden>
                 <defs>
-                  <linearGradient id="ph-card-chrome" x1="0" y1="0" x2="0.08" y2="1">
+                  <linearGradient id="os-card-chrome" x1="0" y1="0" x2="0.3" y2="1">
                     <stop offset="0" stopColor="#ffffff" />
-                    <stop offset="0.38" stopColor="#9aa1ac" />
-                    <stop offset="0.52" stopColor="#f2f4f7" />
-                    <stop offset="0.7" stopColor="#7d858f" />
+                    <stop offset="0.34" stopColor="#f1f3f5" />
+                    <stop offset="0.6" stopColor="#b9bec6" />
+                    <stop offset="0.8" stopColor="#e8ebee" />
                     <stop offset="1" stopColor="#ffffff" />
                   </linearGradient>
                 </defs>
-                <path d="M12 2.2C16.6 6.4 17.8 9.5 17.8 12c0 2.5-1.2 5.6-5.8 9.8C7.4 17.6 6.2 14.5 6.2 12c0-2.5 1.2-5.6 5.8-9.8ZM8.2 7.6h7.6v1.8H8.2Zm2 0h.8v1.8h-.8Zm2.8 0h.8v1.8H13Z" />
+                <path d={MARK_D} />
               </svg>
               {/* Nameplate: upright and tracked out. `marginRight` cancels the sidebearing
                   the tracking adds after the final E, or the lamp floats off the word. */}

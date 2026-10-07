@@ -104,7 +104,7 @@ function Pad({ waivers, week }: { waivers: Waivers | undefined; week: number | n
     <div className="scout-pad" aria-hidden>
       <div className="scout-pad-rings" />
       <div className="scout-pad-head">
-        <IconMark size={12} className="scout-pad-mark" />
+        <IconMark tight size={7} className="scout-pad-mark" />
         <span>{SCOUT_OPEN.pad}</span>
         {week != null && <span className="scout-pad-week">{SCOUT_OPEN.week(week)}</span>}
       </div>

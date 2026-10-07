@@ -22,7 +22,7 @@ import { dayStamp, liftRideBoot, rideDue, rideForced } from "@/lib/elevator";
 import { loadConnection, loadRideDay, resetOpenings } from "@/lib/storage";
 import { ElevatorRide } from "./Elevator";
 import { Loading } from "./Loading";
-import { IconCheck, IconChevron, IconClock, IconMark, IconMoon, IconSun, IconThumbDown, IconThumbUp } from "./icons";
+import { IconCheck, IconChevron, IconClock, IconMark, IconMarkChrome, IconMoon, IconSun, IconThumbDown, IconThumbUp } from "./icons";
 
 export function Card({
   children,
@@ -46,13 +46,13 @@ export function Eyebrow({ children, className = "" }: { children: React.ReactNod
 }
 
 /**
- * OWNER'S SUITE. The mark, the word cut in chrome and standing upright, and the ON
- * AIR lamp as the full stop. `lamp={false}` for surfaces where the pulse would be
+ * OWNER'S SUITE. The OS monogram, the word cut in chrome and standing upright, and the
+ * ON AIR lamp as the full stop. `lamp={false}` for surfaces where the pulse would be
  * noise — a footer, a print card.
  *
  * A nameplate, not a jersey: upright and tracked out rather than leaning forward
- * (see `.wordmark-type`). The mark sits beside the word rather than above it the
- * way the app icon stacks them, because stacked marks do not survive a 56px header.
+ * (see `.wordmark-type`). The monogram sits beside the word in a header; the stacked
+ * lockup (monogram over the word) is `Lockup`, for the landing page and the footer.
  */
 export function Wordmark({
   className = "",
@@ -90,11 +90,11 @@ export function Wordmark({
   linkClassName?: string;
 }) {
   const mark = (
-    <span className={`display inline-flex items-center gap-[0.26em] ${markOnlyOnTiny ? "wordmark-mark-only" : ""} ${className}`} style={{ fontWeight: 800 }}>
-      {/* The mark takes the flat `metal` colour: background-clip:text clips to an
-          element's own glyphs, and a seven-stop gradient would not read inside a
-          20px silhouette anyway. */}
-      <IconMark size="0.92em" className="shrink-0 -translate-y-[0.04em] text-metal" />
+    <span className={`display inline-flex items-center gap-[0.34em] ${markOnlyOnTiny ? "wordmark-mark-only" : ""} ${className}`} style={{ fontWeight: 800 }}>
+      {/* The OS monogram, cropped to its ink and set a touch taller than the caps, the
+          way the kit's own header carries it (OS · SUITE ●). Flat `metal`, because
+          background-clip:text clips to an element's own glyphs and an SVG has none. */}
+      <IconMark tight size="0.98em" className="shrink-0 -translate-y-[0.03em] text-metal" />
       {/* `chrome-type` sits on the span that actually holds the letters. On the
           wrapper it paints nothing — the clip has no glyphs of its own to clip to —
           while the transparent text fill still inherits down, which renders the
@@ -104,6 +104,25 @@ export function Wordmark({
     </span>
   );
   return link ? <HomeLink className={linkClassName}>{mark}</HomeLink> : mark;
+}
+
+/**
+ * The stacked lockup, as on every poster: the OS monogram in metal over OWNER'S SUITE,
+ * and the brand line under it when `descriptor` is set. Sized by the caller's font size
+ * (the monogram is 2.4em tall), so one class scales the whole thing. For surfaces with
+ * room for it: the landing stage, the footer, the door. A header takes `Wordmark`.
+ */
+export function Lockup({ className = "", descriptor, lamp = false }: { className?: string; descriptor?: string; lamp?: boolean }) {
+  return (
+    <span className={`inline-flex flex-col items-center ${className}`}>
+      <IconMarkChrome tight size="2.4em" className="shrink-0" />
+      <span className="display mt-[0.3em] inline-flex items-center" style={{ fontWeight: 800 }}>
+        <span className="wordmark-type chrome-type">OWNER’S SUITE</span>
+        {lamp && <span className="lamp ml-[0.32em]" aria-hidden />}
+      </span>
+      {descriptor && <span className="poster-sub mt-[0.75em] text-[0.42em]">{descriptor}</span>}
+    </span>
+  );
 }
 
 /** The wordmark's link: `/home` once the session says signed in, `/` until then. */
@@ -576,7 +595,7 @@ function QuietWait() {
 
 type BtnProps = {
   children: React.ReactNode;
-  variant?: "primary" | "secondary" | "ghost" | "start" | "onHero";
+  variant?: "primary" | "secondary" | "ghost" | "start" | "onHero" | "gold";
   size?: "md" | "sm";
   className?: string;
 };
@@ -592,6 +611,9 @@ const VARIANTS = {
   // `text-ink` flips to near-white in dark mode, so a white button would vanish. The hero
   // surface colour is dark in both modes, which is exactly what this needs.
   onHero: "bg-white text-hero hover:opacity-90",
+  // The marketing door (`.cta-gold`): the landing page and the door to the account.
+  // Inside a room the action stays green.
+  gold: "cta-gold font-black",
 };
 
 /**
