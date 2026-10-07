@@ -2,21 +2,24 @@
 
 Legend: `[ ]` backlog · `[~]` in progress · `[x]` done (has a test or demo)
 
-## The radar: every advice question in one inbox (2026-10-07, branch `claude/radar-outreach`, not on production)
+## The radar: every advice question in one inbox (2026-10-07, shipped 2026-10-07)
 Admin → **Radar** tab. Reads r/fantasyfootball, r/fantasyfootballadvice, r/Fantasy_Football, r/Sleeperapp,
 r/DynastyFF, r/FFCommish (posts, plus comments in the busiest two) and Bluesky search; keeps only people asking
 for a start/sit, waiver or trade call in the last 36 hours; tags each; Answered / Skip are shared between admins.
 No keys needed. Nothing posts: we answer by hand (`docs/MARKETING.md` §5.1). `edge/radar.py`, `tests/test_radar.py`.
 Live check 2026-10-07: 58 open questions across 9 feeds.
-- [ ] **Andrew:** look at the tab on the branch, then ship it (it only touches the admin page).
+- [x] Shipped to production on Andrew's go. Check Render redeployed the API, then open /admin → Radar.
 - [ ] Reddit reads are keyless RSS and throttle under load (a 429 shows as a red line). If Render's IP is refused,
       register a Reddit app and add OAuth (`REDDIT_CLIENT_ID/SECRET`).
-- [ ] Known red on production, not this branch: e2e `account.spec.ts:231` and `onboard.spec.ts:83` still expect
-      the header to read SUITE, which commit d2e4f90 removed. Update the two assertions to the mark.
 - [ ] Next sources: YouTube comments on start/sit videos (free API key), Threads keyword search (Meta app review),
       X (paid API: decide if it is worth it). Instagram has no comment search; stays manual.
 - [ ] Next: run the engine on the two players named in a start/sit ask and show our call beside the row. Needs the
       scoring the asker states ("half PPR"); never assume PPR.
+
+## Private ESPN league won't open from the account page (2026-10-07, branch `claude/espn-private-reopen-fix`)
+
+- [x] "Open" on a private ESPN league whose key is missing or stale now shows the ESPN key form inside that league's card (Get my key, or paste espn_s2 + SWID), then retries the open. Other open errors show on the card too, not at the foot of the page. Test: `web/e2e/account.spec.ts` "asks for its key on its own card".
+- [ ] **Andrew:** ship it (`git push origin claude/espn-private-reopen-fix:claude/edge-fantasy-app-launch-alo0rr`) and try it on the phone app; "Get my key" opens the ESPN sign-in sheet there.
 
 ## The rebrand to the kit (2026-10-06, branch `claude/rebrand`, not yet on production)
 The kit's posters and socials, built through web and the iPhone app (`docs/REBRAND.md`,
