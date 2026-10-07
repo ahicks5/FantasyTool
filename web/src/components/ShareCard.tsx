@@ -8,7 +8,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Player, TradeResult } from "@/lib/types";
 import { signed } from "@/lib/format";
-import { LINES } from "@/lib/vocab";
+import { LINES, OFFICE } from "@/lib/vocab";
+import { acceptanceOf } from "@/lib/office";
 
 const SIZE = 1080;
 const TONE: Record<string, { ink: string; soft: string }> = {
@@ -35,7 +36,9 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
   const tone = TONE[result.verdict] ?? { ink: "#0e1116", soft: "#f1efea" };
   // The card is always dark, so the stamp takes the light step of the verdict colour.
   const stampInk = tone.ink === "#0e1116" ? "#ffffff" : tone.soft;
-  const fair = Math.round(result.fairness * 100);
+  // Will they say yes, in fairness's place (W-033).
+  const yes = acceptanceOf(result.graphic.acceptance ? { acceptance: result.graphic.acceptance } : { fairness: result.fairness });
+  const yesInk = yes === "likely" ? "#22a468" : yes === "maybe" ? "#f0b429" : "#e2554e";
 
   return (
     <div ref={wrap} className="relative w-full overflow-hidden rounded-2xl border border-line shadow-[var(--shadow-card)]" style={{ height: SIZE * scale }}>
@@ -103,11 +106,10 @@ export function ShareCard({ result, give, get, leagueName }: { result: TradeResu
 
         <div style={{ marginTop: "auto" }}>
           <div className="flex items-baseline justify-between" style={{ fontSize: 30, fontWeight: 700 }}>
-            <span>Fairness {fair}%</span>
+            <span>
+              {OFFICE.accept.question} <span style={{ color: yesInk }}>{OFFICE.accept[yes]}</span>
+            </span>
             <span style={{ color: "rgba(247,246,243,0.5)", fontWeight: 500 }}>{result.graphic.style ?? ""}</span>
-          </div>
-          <div style={{ marginTop: 14, height: 18, borderRadius: 99, background: "rgba(255,255,255,0.14)", overflow: "hidden" }}>
-            <div style={{ width: `${fair}%`, height: "100%", borderRadius: 99, background: fair >= 90 ? "#22a468" : fair >= 75 ? "#f0b429" : "#e2554e" }} />
           </div>
           {/* The signature. Small, in the corner, where a maker's plate goes. */}
           <div

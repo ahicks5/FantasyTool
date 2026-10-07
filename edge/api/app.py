@@ -1513,7 +1513,7 @@ def player_directory(platform: str, league_id: str, q: str = "", pos: str = "",
     """
     if owner:
         validate_id(owner, "team id")
-    b = _bundle(platform, league_id, auth)
+    b = service.forward_bundle(_bundle(platform, league_id, auth), team_id)  # W-027
     ctx = lenses_mod.load_context(b) if lens in lenses_mod.LENSES else None
     # The season so far (points and position rank) is one cached fetch, made only when the
     # reader's view asks for it; a feed that fails leaves those two columns as dashes.
@@ -1548,7 +1548,7 @@ def player_lenses(platform: str, league_id: str, team_id: str | None = None, aut
     count -- description -- and none of them prices a claim. Same `team_id` rule as the
     board: without it there are no handcuffs and no byes to cover, because nobody is "me".
     """
-    b = _bundle(platform, league_id, auth)
+    b = service.forward_bundle(_bundle(platform, league_id, auth), team_id)  # W-027
     ctx = lenses_mod.load_context(b)
     rows = directory_mod.universe(b, team_id)
     return {"week": b.league.week, "counts": lenses_mod.counts(rows, b, ctx, team_id)}
@@ -1598,8 +1598,11 @@ def waiver_picks(platform: str, league_id: str, team_id: str, email: str | None 
     t = _team(b, team_id)
     if not products.can(_skus(email), "waivers"):
         _require(email, "waivers", teaser=_teaser(b, t, "waivers"))
-    picks = waivers.rank(b.league, t, b.ros, b.byes, bid_stats=b.bid_stats, trending=b.trending)
-    return report.waivers_dict(b.league, t, picks)
+    # Once this owner's week is played, the wire is next week's (W-027).
+    f = service.forward_bundle(b, team_id)
+    t = f.league.team(team_id) or t
+    picks = waivers.rank(f.league, t, f.ros, f.byes, bid_stats=f.bid_stats, trending=f.trending)
+    return report.waivers_dict(f.league, t, picks)
 
 
 class TradeIn(BaseModel):
@@ -1611,7 +1614,8 @@ class TradeIn(BaseModel):
 
 @app.post("/api/league/{platform}/{league_id}/trade")
 def trade_lab(platform: str, league_id: str, body: TradeIn, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
-    b = _bundle(platform, league_id, auth)
+    # Once this owner's week is played, "this week" in a verdict is next week (W-034).
+    b = service.forward_bundle(_bundle(platform, league_id, auth), body.my_team_id)
     me_t, them_t = _team(b, body.my_team_id), _team(b, body.their_team_id)
     if not products.can(_skus(email), "trade_lab"):
         _require(email, "trade_lab", teaser=_teaser(b, me_t, "trade_lab"))
@@ -1623,6 +1627,8 @@ def trade_lab(platform: str, league_id: str, body: TradeIn, email: str | None = 
     text, source = explain(v)
     return {
         "verdict": v.verdict, "me": v.me.to_dict(), "them": v.them.to_dict(), "fairness": v.fairness,
+        # The read the page shows in fairness's place (W-033); `fairness` stays for old clients.
+        "acceptance": v.acceptance, "week": b.league.week,
         "their_tendencies": v.their_tendencies, "counter": v.counter, "notes": v.notes,
         "explanation": text, "explanation_source": source,
         "graphic": {
@@ -1630,6 +1636,7 @@ def trade_lab(platform: str, league_id: str, body: TradeIn, email: str | None = 
             "give": [p.name for p in v.me.give], "get": [p.name for p in v.me.get],
             "my_delta_ros": v.me.lineup_delta_ros, "their_delta_ros": v.them.lineup_delta_ros,
             "fairness": v.fairness, "style": v.their_tendencies.get("style"),
+            "acceptance": v.acceptance,
         },
     }
 
@@ -1707,16 +1714,19 @@ def waiver_plan_endpoint(platform: str, league_id: str, team_id: str, email: str
     t = _team(b, team_id)
     if not products.can(_skus(email), "waivers"):
         _require(email, "waivers", teaser=_teaser(b, t, "waivers"))
-    plan = waiver_plan.build(b.league, t, b.ros, b.byes, bid_stats=b.bid_stats, trending=b.trending)
+    f = service.forward_bundle(b, team_id)  # next week's, once this owner's week is played (W-027)
+    t = f.league.team(team_id) or t
+    plan = waiver_plan.build(f.league, t, f.ros, f.byes, bid_stats=f.bid_stats, trending=f.trending)
     out = plan.to_dict()
-    store.log_run(email, platform, league_id, team_id, b.league.week, "waiver_plan", plan.algo_version, out)
+    out["week"] = f.league.week
+    store.log_run(email, platform, league_id, team_id, f.league.week, "waiver_plan", plan.algo_version, out)
     return out
 
 
 @app.get("/api/league/{platform}/{league_id}/team/{team_id}/trades/find")
 def trade_finder_endpoint(platform: str, league_id: str, team_id: str, email: str | None = Depends(optional_user), auth=Depends(espn_auth)):
     """Who to talk to and about what, without the user proposing anything first."""
-    b = _bundle(platform, league_id, auth)
+    b = service.forward_bundle(_bundle(platform, league_id, auth), team_id)  # W-034
     t = _team(b, team_id)
     out = trade_finder.find(b.league, t, b.ros, b.profiles)
     if not products.can(_skus(email), "trade_lab"):

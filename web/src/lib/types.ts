@@ -907,6 +907,8 @@ export interface FinderOffer {
   their_gain_ros: number;
   my_gain_week: number;
   fairness: number;
+  /** Will they say yes? Read off their side (`trade.acceptance`); shown in fairness's place (W-033). */
+  acceptance?: Acceptance;
   verdict: Verdict;
   score: number;
   why: string;
@@ -969,6 +971,8 @@ export interface SharedVerdict {
   my_delta_ros: number;
   their_delta_ros: number;
   fairness: number;
+  /** Will they say yes? Read off their side (`trade.acceptance`); shown in fairness's place (W-033). */
+  acceptance?: Acceptance;
   style: string | null;
   explanation: string;
   league_name: string;
@@ -1078,6 +1082,8 @@ export interface TradeGraphic {
   my_delta_ros: number;
   their_delta_ros: number;
   fairness: number;
+  /** Will they say yes? Read off their side (`trade.acceptance`); shown in fairness's place (W-033). */
+  acceptance?: Acceptance;
   style: string | null;
 }
 
@@ -1086,6 +1092,10 @@ export interface TradeResult {
   me: TradeSide;
   them: TradeSide;
   fairness: number;
+  /** Will they say yes? Read off their side (`trade.acceptance`); shown in fairness's place (W-033). */
+  acceptance?: Acceptance;
+  /** The week "this week" means in the verdict: next week's once the owner's week is played (W-034). */
+  week?: number;
   their_tendencies: Tendencies;
   counter: Counter | null;
   notes: string[];
@@ -1912,13 +1922,18 @@ export interface BattleFighter extends BattleBrief {
 export type BattleHorizonKey = "week" | "next5" | "ros" | "playoffs";
 
 /** This week's strength is the calibrated tag; a longer window's is the size of the gap. */
-export type BattleStrength = Confidence | "clear" | "edge" | "even";
+/** Will the other manager take it: three steps, never a percentage. */
+export type Acceptance = "likely" | "maybe" | "unlikely";
+
+export type BattleStrength = Confidence | "clear" | "edge" | "even" | "final" | "live";
 
 export interface BattleHorizon {
   key: BattleHorizonKey;
   first: number;
   last: number;
-  /** Projected points over the window, each side, this league's scoring. */
+  /** Projected points over the window, each side, this league's scoring. This week, once
+   *  either man has kicked off: his points (final) or points plus what is left (live), and
+   *  `strength` says which (W-023). */
   a: number;
   b: number;
   a_games: number | null;

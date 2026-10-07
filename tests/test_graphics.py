@@ -8,7 +8,8 @@ def test_card_html_contains_verdict_players_and_colors():
     assert "COUNTER" in h and "Terry McLaurin" in h and "Kyle Monangai" in h
     assert COLORS["Counter"] in h               # the verdict carries its own colour
     assert "&lt;script&gt;" in h                # escaped
-    assert "Week 2" in h and "Fairness 90%" in h
+    # "Will they say yes?" replaced the fairness bar (W-033); a 90% snapshot reads Likely.
+    assert "Week 2" in h and "Will they say yes?" in h and "Likely" in h and "Fairness" not in h
 
 
 def test_card_names_every_player_with_his_position_and_team():
@@ -174,7 +175,7 @@ def test_the_story_shape_stacks_the_deal_and_keeps_every_number():
     tall = verdict_card_html(g, "No.", "League", 5, shape="story")
     assert "grid-template-columns:1fr;" in tall, "the two sides stack on a story"
     assert "1080px" in tall and "1920px" in tall
-    for fragment in ("REJECT", "Your lineup -6 ROS", "Theirs +6", "Fairness 40%", "Week 5", "ON AIR"):
+    for fragment in ("REJECT", "Your lineup -6 ROS", "Theirs +6", "Will they say yes?", "Unlikely", "Week 5", "ON AIR"):
         assert fragment in tall, fragment
     wide = verdict_card_html(g, "No.", "League", 5)
     assert "grid-template-columns:1fr 1fr;" in wide, "the square card sets them side by side"

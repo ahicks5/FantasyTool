@@ -18,7 +18,7 @@ from itertools import combinations
 
 from edge.engine.lineup import optimize
 from edge.engine.tendencies import Profile
-from edge.engine.trade import FAIR, Context, Side, _fairness, _side
+from edge.engine.trade import FAIR, Context, Side, _fairness, _side, acceptance
 from edge.models import FLEX_SLOTS, League, Team, Player, slot_accepts
 
 ALGO_VERSION = "trade_finder.v1"
@@ -82,7 +82,7 @@ class Offer:
             "get_players": [player_dict(p) for p in self.get],
             "my_gain_ros": self.me.lineup_delta_ros, "their_gain_ros": self.them.lineup_delta_ros,
             "my_gain_week": self.me.lineup_delta_week,
-            "fairness": self.fairness, "verdict": FAIR, "score": self.score,
+            "fairness": self.fairness, "acceptance": acceptance(self.them), "verdict": FAIR, "score": self.score,
             "why": self.why, "reason_codes": self.reason_codes,
         }
 

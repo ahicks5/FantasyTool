@@ -47,6 +47,8 @@ export function Headline({ battle }: { battle: Battle }) {
 /* ------------------------------------------------------------------ the tiles --- */
 
 function strengthWord(h: BattleHorizon): string {
+  if (h.strength === "final") return BATTLE.final;
+  if (h.strength === "live") return BATTLE.live;
   if (h.key === "week") {
     const pct = chancePct(h);
     const label = CONFIDENCE_LABEL[h.strength as Confidence] ?? h.strength;

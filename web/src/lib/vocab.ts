@@ -629,6 +629,8 @@ export const SCOUT = {
  * voice rule, and `vocab.test.ts` pins that it stays the only one.
  */
 export const WIRE = {
+  /** Your week is played and the wire has moved on to the next one (W-027). */
+  nextWeek: (played: number, next: number) => `Week ${played} is played. These are your week ${next} claims.`,
   title: "Top pickups",
   /** The eyebrow on the wire's lock card: the room, now that no pass is named for it. */
   lockEyebrow: "The wire",
@@ -1783,6 +1785,15 @@ export const LAST_WEEK = {
 } as const;
 
 /** The trade board, free and paid. */
+/** The trade verdict's numbers, lineup first (W-033). */
+export const TRADE_VERDICT = {
+  lineupLabel: "lineup, rest of season",
+  valueLine: (out: string, inn: string) => `player value out ${out} · in ${inn}`,
+  weekLine: (week: number | undefined, delta: string) => (week ? `wk ${week} lineup ${delta}` : `this week ${delta}`),
+  tableNet: (net: string) => `Player value · ${net} to you`,
+  tableEmpty: "Player value on the table",
+} as const;
+
 export const TRADE = {
   eyebrow: "Trade lab",
   previewEyebrow: "GM's Office",
@@ -1809,6 +1820,17 @@ export const OFFICE = {
   forWord: "for",
   ros: "ROS",
   fair: "fair",
+  /** Will they say yes? In place of a fairness percentage (W-033). */
+  accept: {
+    question: "Will they say yes?",
+    likely: "Likely",
+    maybe: "Maybe",
+    unlikely: "Unlikely",
+    /** Beside a deal on the board: the answer in two words. */
+    short: { likely: "likely yes", maybe: "maybe", unlikely: "unlikely" },
+    /** Under the answer: why, from their side. */
+    why: (theirs: string) => `Their lineup moves ${theirs} rest of season.`,
+  },
   /** Your roster, one tile per position. */
   shape: "Your roster",
   shapeWord: { spare: "Spare", short: "Short", set: "Set", mixed: "Mixed" },
@@ -2400,6 +2422,9 @@ export const BATTLE = {
   },
   /** This week's strength carries the calibrated chance. */
   chance: (p: number) => `${p}% to outscore`,
+  /** This week once the games are on: the result, or the score so far (W-023). */
+  final: "Final",
+  live: "Live · still being played",
   tipped: "The reads tipped it",
   tippedLater: "The schedule tipped it",
   held: "Too close to move. He keeps the spot.",

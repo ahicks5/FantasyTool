@@ -20,6 +20,8 @@ import {
   STANDING,
   TAB_ORDER,
   TRADE,
+  TRADE_VERDICT,
+  CLOCK_WORDS,
   SCOUT,
   SCOUT_OPEN,
   WIRE,
@@ -99,6 +101,12 @@ const ALL_COPY: string[] = [
   LAST_WEEK.go,
   ...Object.values(LAST_WEEK.said),
   ...Object.values(TRADE),
+  // The walkthrough's new words (2026-10-05): the verdict lineup-first, will they say yes, the clock.
+  TRADE_VERDICT.lineupLabel, TRADE_VERDICT.valueLine("190", "171"), TRADE_VERDICT.weekLine(5, "+5.8"),
+  TRADE_VERDICT.weekLine(undefined, "+5.8"), TRADE_VERDICT.tableNet("-19"), TRADE_VERDICT.tableEmpty,
+  OFFICE.accept.question, OFFICE.accept.likely, OFFICE.accept.maybe, OFFICE.accept.unlikely,
+  ...Object.values(OFFICE.accept.short), OFFICE.accept.why("-41"),
+  ...Object.values(CLOCK_WORDS),
   ...Object.values(EMAIL),
   // The lineup tab: every string, and every templated line rendered once.
   ...Object.values(LINEUP.coach), LINEUP.projected(2), LINEUP.standingLabel, LINEUP.standing(1, 12), LINEUP.standing(2, 12), LINEUP.standing(3, 12), LINEUP.standing(11, 12),

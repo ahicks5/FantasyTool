@@ -341,3 +341,18 @@ def test_the_battle_card_renders_both_faces_and_the_verdict():
     out = graphics.card_html(snap)
     assert "Ann Alpha" in out and "Bob Beta" in out and "Beta sweeps" in out and "WR2" in out
     assert graphics.card_shape(snap, "story") == "square"
+
+
+def test_a_played_week_is_the_result_not_the_projection():
+    """Higgins vs Collins, both FINAL 26.7 / 30.8, read 'Higgins wins now' on 16.5 / 18.6 (W-023)."""
+    a, b = P(1, "WR", 16.5), P(2, "WR", 18.6)
+    lg = _lg(players=[a, b])
+    arena = B.Arena(league=lg, team=lg.teams[0], ros={}, byes={})
+    a.game_status, a.points = "final", 26.7
+    b.game_status, b.points = "final", 30.8
+    v = B.week_verdict(arena, a, b, a_is_mine=True)
+    assert (v["winner"], v["strength"], v["a"], v["b"], v["p"], v["held"]) == ("b", "final", 26.7, 30.8, None, False)
+    # One played, one still to play: the score plus what is left, called live.
+    b.game_status, b.points = None, None
+    v = B.week_verdict(arena, a, b, a_is_mine=True)
+    assert (v["winner"], v["strength"], v["a"], v["b"]) == ("a", "live", 26.7, 18.6)

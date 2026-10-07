@@ -10,7 +10,7 @@ import { GhostRows, Locked } from "@/components/Locked";
 import { ShareCard } from "@/components/ShareCard";
 import { Avatar } from "@/components/Avatar";
 import { PlayerLine } from "@/components/Players";
-import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, Stamp, StatusMeter, Why } from "@/components/ui";
+import { Button, Card, ErrorBox, Eyebrow, H2, Sheet, SkeletonList, Stamp, Why } from "@/components/ui";
 import { createShare, evaluateTrade, findTrades, getLeague, getRoster, getTeamGrades, PaywallError } from "@/lib/api";
 import { shareInApp } from "@/lib/native";
 import { once } from "@/lib/cache";
@@ -21,8 +21,8 @@ import { Compare } from "@/components/Compare";
 import { signed, verdictBlurb, verdictClass } from "@/lib/format";
 import type { Connection } from "@/lib/storage";
 import type { Grades, LeagueSummary, Player, TeamGrades, TradeFinderResponse, TradeResult } from "@/lib/types";
-import { OFFICE } from "@/lib/vocab";
-import { officeKey } from "@/lib/office";
+import { OFFICE, TRADE_VERDICT } from "@/lib/vocab";
+import { acceptanceOf, officeKey } from "@/lib/office";
 
 function sortRoster(players: Player[]): Player[] {
   return [...players].sort((a, b) => (b.ros ?? b.projected ?? 0) - (a.ros ?? a.projected ?? 0));
@@ -147,7 +147,7 @@ function TableBalance({ out, in: inValue, live }: { out: number; in: number; liv
         <span className={`tnum shrink-0 text-[13px] font-black ${inValue > 0 ? "text-start" : "text-muted"}`}>{inValue.toFixed(0)}</span>
       </div>
       <p className="mt-1.5 truncate text-center text-[11px] font-bold uppercase tracking-[0.1em] text-muted">
-        {live ? `ROS value · ${signed(net, 0)} to you` : "ROS value on the table"}
+        {live ? TRADE_VERDICT.tableNet(signed(net, 0)) : TRADE_VERDICT.tableEmpty}
       </p>
     </div>
   );
@@ -431,12 +431,10 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
             <div className="p-5">
               <p className={`display text-[19px] leading-snug ${verdictClass(result.verdict)}`}>{verdictBlurb(result.verdict)}</p>
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <SideBox label="You" side={result.me} />
-                <SideBox label={theirTeam?.name ?? "Them"} side={result.them} />
+                <SideBox label="You" side={result.me} week={result.week} />
+                <SideBox label={theirTeam?.name ?? "Them"} side={result.them} week={result.week} />
               </div>
-              <div className="mt-4">
-                <StatusMeter value={result.fairness} label="Fairness" />
-              </div>
+              <WillTheySayYes result={result} />
               <p className="mt-4 text-[15px] leading-relaxed text-ink-2">{result.explanation}</p>
               {result.notes?.map((n) => (
                 <p key={n} className="mt-2.5 rounded-xl bg-flip-soft px-3 py-2 text-[13px] leading-snug text-flip">
@@ -447,7 +445,7 @@ function TradeBody({ c, refresh, signedIn }: { c: Connection; refresh: () => voi
                 lines={[
                   `Value is rest-of-season projected points, rescored to this league's settings. You send ${result.me.value_out.toFixed(0)} and receive ${result.me.value_in.toFixed(0)}.`,
                   "Lineup impact is measured with free agents available, so an emptied slot costs the gap to the best waiver option rather than the whole player.",
-                  "Fairness is the smaller side divided by the larger side of asset value.",
+                  "Will they say yes reads their side: a trade that costs their lineup 8 or more points, or hands them under 70% of the value they give, is unlikely; one that leaves their lineup whole and their value within 10% is likely.",
                 ]}
                 label="How is this scored?"
               />
@@ -567,18 +565,36 @@ function ShareLink({ result, give, get, c }: { result: TradeResult; give: Player
   );
 }
 
-function SideBox({ label, side }: { label: string; side: TradeResult["me"] }) {
-  const net = side.value_in - side.value_out;
+/**
+ * One side of the verdict. The lead number is what the trade does to the starting lineup the
+ * rest of the season, which is what the verdict is decided on; player value (name value in,
+ * name value out) is a smaller line under it, so a red "-19" can no longer sit over "Accept"
+ * (Andrew, 2026-10-05, W-033).
+ */
+function SideBox({ label, side, week }: { label: string; side: TradeResult["me"]; week?: number }) {
+  const lineup = side.lineup_delta_ros;
   return (
     <div className="min-w-0 rounded-2xl bg-soft p-3.5">
       <div className="truncate text-[10px] font-black uppercase tracking-[0.1em] text-muted">{label}</div>
-      <div className={`display tnum mt-1 text-[26px] leading-none ${net >= 0 ? "text-start" : "text-sit"}`}>{signed(net, 0)}</div>
+      <div className={`display tnum mt-1 text-[26px] leading-none ${lineup >= 0 ? "text-start" : "text-sit"}`}>{signed(lineup, 0)}</div>
+      <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-muted">{TRADE_VERDICT.lineupLabel}</div>
       <div className="tnum mt-1.5 text-[11px] text-muted">
-        <span className="text-sit">out {side.value_out.toFixed(0)}</span> · <span className="text-start">in {side.value_in.toFixed(0)}</span>
+        {TRADE_VERDICT.valueLine(side.value_out.toFixed(0), side.value_in.toFixed(0))}
       </div>
-      <div className="tnum mt-0.5 text-[11px] text-muted">
-        lineup wk {signed(side.lineup_delta_week)} · ROS {signed(side.lineup_delta_ros, 0)}
-      </div>
+      <div className="tnum mt-0.5 text-[11px] text-muted">{TRADE_VERDICT.weekLine(week, signed(side.lineup_delta_week))}</div>
+    </div>
+  );
+}
+
+/** Will they say yes: the answer, and why, from their side (W-033). */
+function WillTheySayYes({ result }: { result: TradeResult }) {
+  const yes = acceptanceOf(result);
+  const ink = yes === "likely" ? "text-start" : yes === "maybe" ? "text-flip" : "text-sit";
+  return (
+    <div className="mt-4 rounded-2xl bg-soft p-3.5" data-testid="will-they">
+      <div className="text-[10px] font-black uppercase tracking-[0.1em] text-muted">{OFFICE.accept.question}</div>
+      <div className={`display mt-1 text-[20px] leading-none ${ink}`}>{OFFICE.accept[yes]}</div>
+      <div className="tnum mt-1 text-[12px] text-ink-2">{OFFICE.accept.why(signed(result.them.lineup_delta_ros, 0))}</div>
     </div>
   );
 }

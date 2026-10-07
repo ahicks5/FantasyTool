@@ -58,7 +58,11 @@ function Rooms({ c, refresh, signedIn }: { c: Connection; refresh: () => void; s
       ) : !data ? (
         <Opening />
       ) : (
-        <TopPickups waivers={data} />
+        <div className="grid min-w-0 gap-3">
+          {/* Monday after your games: the claims being made now land next week (W-027). */}
+          {data.week > c.week && <p className="text-[13px] font-bold text-ink-2" data-testid="wire-next-week">{WIRE.nextWeek(c.week, data.week)}</p>}
+          <TopPickups waivers={data} />
+        </div>
       )}
 
       <PlayerBoard c={c} picks={data?.picks} />

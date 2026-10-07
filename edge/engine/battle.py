@@ -1042,9 +1042,30 @@ def _strength(gap: float) -> str:
     return "clear" if gap >= CLEAR_GAP else "edge" if gap >= EVEN_GAP else "even"
 
 
+def _so_far(p: Player) -> float:
+    """What he is worth to this week once his game has started: his points when it is over,
+    his points plus half of what he has left against his projection while it is on (the same
+    rule as `report.points_left`, so the battle and the matchup agree)."""
+    if p.game_status == "final":
+        return p.points or 0.0
+    return (p.points or 0.0) + max(0.0, effective(p) - (p.points or 0.0)) * 0.5
+
+
 def week_verdict(arena: Arena, a: Player, b: Player, a_is_mine: bool) -> dict:
     """This week, the lineup engine's way: the calibrated chance first, two net reads to tip
-    a coin flip, and the man in the spot keeps it when nothing does."""
+    a coin flip, and the man in the spot keeps it when nothing does.
+
+    Once either man has kicked off it is no longer a projection (Andrew, 2026-10-05, W-023):
+    both played is the result, by any margin; one or both on the field is the score so far
+    plus what is left, labelled `live`. No chance, no reads, no hold: the game decides."""
+    if a.locked or b.locked:
+        va = _so_far(a) if a.locked else effective(a)
+        vb = _so_far(b) if b.locked else effective(b)
+        final = a.game_status == "final" and b.game_status == "final"
+        winner = None if round(va, 1) == round(vb, 1) else "a" if va > vb else "b"
+        return {"key": "week", "first": arena.week, "last": arena.week, "a": round(va, 1), "b": round(vb, 1),
+                "a_games": None, "b_games": None, "winner": winner, "strength": "final" if final else "live",
+                "p": None, "tipped": False, "held": False, "factors": [], "tilt": 0}
     ea, eb = effective(a), effective(b)
     p = calibration.p_beats(ea, eb)
     lead = "a" if p >= 0.5 else "b"

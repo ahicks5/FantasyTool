@@ -7,7 +7,7 @@
  * a number the engine already computed. Same split as `lib/wire.ts` for Scouting.
  */
 
-import type { FinderOffer } from "./types";
+import type { Acceptance, FinderOffer } from "./types";
 
 /** The two shapes the board arrives in, paid and preview, as far as this file cares. */
 export interface OfficePartner {
@@ -133,4 +133,14 @@ export function shapeLists(positions: OfficeBoard["my_positions"], max = 2): { h
     has: tiles.filter((t) => t.shape === "spare").map((t) => t.pos).slice(0, max),
     needs: tiles.filter((t) => t.shape === "short").map((t) => t.pos).slice(0, max),
   };
+}
+
+/**
+ * Will they say yes, for any trade the API sent: its own `acceptance`, or, from an API built
+ * before it existed, the same three steps read off the fairness figure (W-033).
+ */
+export function acceptanceOf(x: { acceptance?: Acceptance | null; fairness?: number | null }): Acceptance {
+  if (x.acceptance) return x.acceptance;
+  const f = x.fairness ?? 0;
+  return f >= 0.9 ? "likely" : f >= 0.75 ? "maybe" : "unlikely";
 }

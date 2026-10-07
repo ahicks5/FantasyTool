@@ -10,6 +10,8 @@ from edge.engine.tendencies import Profile
 from edge.models import League, Player, Team
 
 ACCEPT, REJECT, COUNTER, FAIR = "Accept", "Reject", "Counter", "Fair"
+# Will they say yes? Three steps, never a percentage (`acceptance`).
+LIKELY, MAYBE, UNLIKELY = "likely", "maybe", "unlikely"
 
 
 @dataclass
@@ -53,6 +55,7 @@ class Verdict:
     their_tendencies: dict
     counter: dict | None = None
     notes: list[str] = field(default_factory=list)
+    acceptance: str = MAYBE
 
 
 def replacements(league: League, ros: dict[str, float]) -> list[Player]:
@@ -123,6 +126,20 @@ def _side(league: League, team: Team, give: list[Player], get: list[Player], ros
     )
 
 
+def acceptance(them: Side) -> str:
+    """Will they say yes? Read off *their* side, in three steps, never a percentage.
+
+    "Fairness" (the smaller asset side over the larger) said 90% beside "lopsided, they
+    will not take it", because it measured name value while the lineup is what a manager
+    feels (Andrew, 2026-10-05, W-033). Their lineup and what they get back decide this.
+    """
+    if them.lineup_delta_ros <= -8 or them.value_in < 0.7 * them.value_out:
+        return UNLIKELY
+    if them.lineup_delta_ros >= 0 and them.value_in >= 0.9 * them.value_out:
+        return LIKELY
+    return MAYBE
+
+
 def _fairness(a: Side) -> float:
     hi = max(a.value_in, a.value_out, 1.0)
     return round(min(a.value_in, a.value_out) / hi, 2)
@@ -148,8 +165,6 @@ def evaluate(league: League, my_team: Team, their_team: Team, give_ids: list[str
         verdict = REJECT
     else:
         verdict = FAIR
-    if them.lineup_delta_ros <= -8 or them.value_in < 0.7 * them.value_out:
-        notes.append("Lopsided in your favor — they are unlikely to accept as-is.")
     if them.lineup_delta_ros < 0 and me.lineup_delta_ros < 0:
         notes.append("Both lineups get worse this season. This is a depth-for-depth shuffle.")
 
@@ -163,7 +178,7 @@ def evaluate(league: League, my_team: Team, their_team: Team, give_ids: list[str
         counter = _counter(league, my_team, their_team, give, get, ros, their_profile, hoarded, ctx)
         if counter and verdict == REJECT:
             verdict = COUNTER
-    return Verdict(verdict, me, them, fairness, tend, counter, notes)
+    return Verdict(verdict, me, them, fairness, tend, counter, notes, acceptance(them))
 
 
 def _counter(league: League, my_team: Team, their_team: Team, give: list[Player], get: list[Player],

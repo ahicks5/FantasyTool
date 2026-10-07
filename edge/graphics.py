@@ -13,6 +13,9 @@ import requests
 
 from edge.engine.copy import signed_whole
 
+# The acceptance read, as the card prints it (`trade.acceptance`).
+ACCEPT_WORDS = {"likely": "Likely", "maybe": "Maybe", "unlikely": "Unlikely"}
+
 # The card is posted to Reddit, X and Discord, so it is fixed to one look for everyone
 # rather than following a viewer's theme. Dark, because it has to survive a busy feed.
 INK = "#08090b"          # the plane, same near-black the app sits on
@@ -190,8 +193,13 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
     tall = shape == "story"
     verdict = graphic.get("verdict") or str(graphic.get("title", "")).split(":")[0]
     colour = COLORS.get(verdict, "#ffffff")
-    fair = int(round((graphic.get("fairness") or 0) * 100))
-    bar = COLORS["Accept"] if fair >= 90 else COLORS["Counter"] if fair >= 75 else COLORS["Reject"]
+    # "Will they say yes?" in fairness's place (W-033). A snapshot saved before it carries
+    # only the fairness figure, read the same three steps.
+    yes = graphic.get("acceptance")
+    if yes not in ACCEPT_WORDS:
+        fair = float(graphic.get("fairness") or 0)
+        yes = "likely" if fair >= 0.9 else "maybe" if fair >= 0.75 else "unlikely"
+    yes_colour = {"likely": COLORS["Accept"], "maybe": COLORS["Counter"], "unlikely": COLORS["Reject"]}[yes]
     mine = graphic.get("my_delta_ros") or 0
     theirs = graphic.get("their_delta_ros") or 0
     mine_colour = COLORS["Accept"] if mine >= 0 else COLORS["Reject"]
@@ -258,10 +266,7 @@ def verdict_card_html(graphic: dict, explanation: str, league_name: str = "", we
 
   <div style="{'' if tall else 'margin-top:auto'}">
     <div style="display:flex;align-items:baseline;justify-content:space-between;font-size:30px;font-weight:700">
-      <span>Fairness {fair}%</span><span style="color:{PAPER}.5);font-weight:500">{e(graphic.get('style') or '')}</span>
-    </div>
-    <div style="margin-top:14px;height:18px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden">
-      <div style="width:{fair}%;height:100%;border-radius:99px;background:{bar}"></div>
+      <span>Will they say yes? <span style="color:{yes_colour}">{ACCEPT_WORDS[yes]}</span></span><span style="color:{PAPER}.5);font-weight:500">{e(graphic.get('style') or '')}</span>
     </div>
     <!-- The signature. Small, in the corner, where a maker's plate goes. -->
     <div style="margin-top:{40 if tall else 34}px;padding-top:{28 if tall else 24}px;

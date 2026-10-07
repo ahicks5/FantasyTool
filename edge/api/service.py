@@ -636,3 +636,61 @@ def log_for_platform_ids(log: dict[str, list], weeks: list, ids: dict[str, str] 
 def pregame_for_platform_ids(pregame: dict[str, str | None], ids: dict[str, str]) -> dict[str, str | None]:
     """The freeze's pregame tags re-keyed the same way. Unmatched men stay unknown."""
     return {pid: pregame[sid] for pid, sid in ids.items() if sid in pregame}
+
+
+# ------------------------------------------------------------------ the week after
+
+def week_done(team: Team) -> bool:
+    """Every starter of this team with a game this week has played (`engine/live.py` stamps).
+
+    The moment the owner's own week is decided, advice about "this week" is advice about a
+    week nobody can change any more (Andrew, 2026-10-05, W-027). It also covers Tuesday: the
+    platform still says week N with every game final until it flips, and once it flips no
+    starter carries a stamp and this is false again.
+    """
+    ids = set(team.starters)
+    men = [p for p in team.players if p.id in ids and p.nfl_team]
+    return bool(men) and all(p.game_status == "final" for p in men)
+
+
+def forward_league(b: Bundle) -> League | None:
+    """The same league one week on: next week's projections in this league's scoring, every
+    live stamp cleared, the free-agent pool re-read. Built once per cached bundle. None when
+    next week's projections cannot be had, so the caller keeps this week rather than guess."""
+    if getattr(b, "_forward_built", False):
+        return getattr(b, "_forward", None)
+    import copy
+
+    lg: League | None = None
+    try:
+        lg = copy.deepcopy(b.league)
+        lg.week = int(lg.week) + 1
+        for t in lg.teams:
+            for p in t.players:
+                p.game_status, p.points = None, None
+        positions = sleeper.projection_positions(lg.roster_positions)
+        raw = to_raw(get_provider().weekly(lg.season, lg.week, positions))
+        if lg.platform == "sleeper":
+            sleeper.apply_projections(lg, raw, api.players())
+        else:
+            sleeper.apply_projections(lg, raw, api.players(), sleeper_id=lambda p: p.ext_ids.get("sleeper"),
+                                      free_agents=list(lg.free_agents))
+    except Exception:  # noqa: BLE001 - no next week to read: this week stands
+        lg = None
+    b._forward, b._forward_built = lg, True  # noqa: SLF001
+    return lg
+
+
+def forward_bundle(b: Bundle, team_id: str | None) -> Bundle:
+    """The bundle forward-looking advice should read for this team: next week's once the
+    owner's own week is played, else this one. Waivers, the scouting board and the trade
+    office all read it, so the rooms roll over together (W-027, W-034)."""
+    team = b.league.team(team_id) if team_id else None
+    if team is None or not week_done(team):
+        return b
+    lg = forward_league(b)
+    if lg is None:
+        return b
+    from dataclasses import replace
+
+    return replace(b, league=lg)

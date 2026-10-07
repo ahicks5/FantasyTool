@@ -33,7 +33,8 @@ def test_lopsided_trade_is_rejected_and_reverse_is_accepted(league, ros):
     v2 = trade.evaluate(league, me, them, [my_worst.id], [their_best.id], ros)
     assert v2.verdict == trade.ACCEPT
     assert v2.me.lineup_delta_ros > 0
-    assert any("unlikely to accept" in n for n in v2.notes)
+    # The lopsided read is the acceptance, not a note beside a 90% "fairness" (W-033).
+    assert v2.acceptance == trade.UNLIKELY
 
 
 def test_counter_improves_me_without_gutting_them(league, ros):

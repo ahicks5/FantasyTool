@@ -19,7 +19,9 @@ import type { FinderOffer, Player } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { IconChevron, IconTrade } from "./icons";
 import { Eyebrow, Skeleton, Spinner, Why } from "./ui";
-import { TRADE } from "@/lib/vocab";
+import { OFFICE, TRADE } from "@/lib/vocab";
+import { acceptanceOf } from "@/lib/office";
+import { signed } from "@/lib/format";
 
 /**
  * What the board needs, whichever payload it was handed.
@@ -109,9 +111,9 @@ function Figures({ o }: { o: FinderOffer }) {
   const cells: [string, string, string][] = [
     ["You", `+${o.my_gain_ros.toFixed(0)}`, "text-start"],
     ["Them", `+${o.their_gain_ros.toFixed(0)}`, "text-ink-2"],
-    // "Balanced" truncated to "BALAN…" in a third of a 320px card. Same number, a word
-    // that fits.
-    ["Fair", `${Math.round(o.fairness * 100)}%`, "text-ink-2"],
+    // Will they say yes, in a word: a fairness percentage beside "lopsided" never made
+    // sense (W-033).
+    ["Yes?", OFFICE.accept[acceptanceOf(o)], "text-ink-2"],
   ];
   return (
     <dl className="mt-3.5 grid grid-cols-3 overflow-hidden rounded-xl bg-soft">
@@ -156,7 +158,7 @@ export function Offer({ o }: { o: FinderOffer }) {
           <Why
             lines={[
               `Your lineup gains ${o.my_gain_ros.toFixed(0)} rest-of-season points; theirs gains ${o.their_gain_ros.toFixed(0)}.`,
-              `Asset value is ${Math.round(o.fairness * 100)}% balanced, so it should not read as an insult.`,
+              `${OFFICE.accept.question} ${OFFICE.accept[acceptanceOf(o)]}. ${OFFICE.accept.why(signed(o.their_gain_ros, 0))}`,
               o.reason_codes.includes("matches_their_history")
                 ? "It also matches what this manager has traded for before."
                 : "Scored on both lineups, not just yours.",

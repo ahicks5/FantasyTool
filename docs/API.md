@@ -662,16 +662,28 @@ counter -- is unchanged and still 402s.
 {"verdict":"Accept"|"Reject"|"Counter"|"Fair",
  "me":{"value_out":88.1,"value_in":102.4,"lineup_delta_week":1.8,"lineup_delta_ros":9.6},
  "them":{...},
- "fairness":0.87,
+ "fairness":0.87,            // kept for old clients; the page shows `acceptance` instead
+ "acceptance":"likely"|"maybe"|"unlikely",   // will they say yes, read off their side (W-033)
+ "week":4,                   // the week "lineup_delta_week" is for: next week's once the owner's week is played
  "their_tendencies":{"trades":2,"waiver_claims":9,"avg_bid":14,"favorite_positions":["RB"],"style":"active dealer"},
+ // avg_bid is null in a league with no FAAB budget
  "counter":{"give":["5892"],"get":["7525"],"why":"They hoard RBs; asking for two starters won't fly. One-for-one keeps them whole at WR."},
  "explanation":"3–4 sentences (Claude API when key present, template otherwise)",
  "graphic":{"title":"Accept: A for B","give":["A"],"get":["B"],"my_delta_ros":23.0,
-            "their_delta_ros":-13.0,"fairness":0.93,"style":"rare trader, FAAB frugal"}
+            "their_delta_ros":-13.0,"fairness":0.93,"acceptance":"likely","style":"rare trader, FAAB frugal"}
  // input for the shareable verdict card. POST /api/share may additionally carry
  // give_players / get_players (name, position, nfl_team, photo, team_logo) for headshots.
 }
 ```
+
+### The week after (2026-10-05)
+
+Once every starter of the asking team has played (`service.week_done`), the forward-looking
+routes read next week: `/waivers`, `/waivers/plan`, `/players`, `/players/lenses`,
+`/trades/find` and `POST /trade` answer with next week's projections and carry `"week": N+1`
+(`service.forward_bundle`). The lineup, the matchup and the desk stay on the week being
+played until the platform turns it over. Before that point a free agent whose game has kicked
+off adds nothing to "this week" in the waiver plan.
 
 ### The week in progress (2026-09-28)
 

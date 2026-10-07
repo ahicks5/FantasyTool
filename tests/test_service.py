@@ -70,3 +70,28 @@ def test_the_sleeper_path_stamps_bye_weeks_onto_players(monkeypatch):
     # And the stamp is the schedule's own answer, not a number we made up somewhere.
     for p in stamped[:20]:
         assert p.bye_week == b.byes[p.nfl_team]
+
+
+def test_an_owner_whose_starters_have_all_played_reads_next_week(monkeypatch):
+    """Monday of week 4, every starter final: the wire and the trade office are week 5 (W-027)."""
+    from types import SimpleNamespace
+
+    from edge.api import service
+    from edge.models import Player, Team
+
+    done = Player(id="a", name="A", position="WR", nfl_team="X", projected=10.0)
+    done.game_status, done.points = "final", 20.0
+    later = Player(id="b", name="B", position="WR", nfl_team="Y", projected=10.0)
+    team = Team(id="1", name="T", owner_id=None, owner_name=None, players=[done, later], starters=["a", "b"])
+    assert not service.week_done(team)          # B still to play
+    later.game_status, later.points = "final", 3.0
+    assert service.week_done(team)
+
+    league = SimpleNamespace(team=lambda i: team if i == "1" else None)
+    b = SimpleNamespace(league=league)
+    nxt = SimpleNamespace(week=5)
+    monkeypatch.setattr(service, "forward_league", lambda _b: nxt)
+    import dataclasses
+    monkeypatch.setattr(dataclasses, "replace", lambda bb, league: SimpleNamespace(league=league))
+    assert service.forward_bundle(b, "1").league is nxt
+    assert service.forward_bundle(b, None) is b

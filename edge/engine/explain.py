@@ -23,7 +23,7 @@ def verdict_payload(v: Verdict) -> dict:
         "verdict": v.verdict,
         "me": v.me.to_dict() | {"give": [p.name for p in v.me.give], "get": [p.name for p in v.me.get]},
         "them": v.them.to_dict(),
-        "fairness": v.fairness,
+        "will_they_accept": v.acceptance,
         "their_tendencies": v.their_tendencies,
         "counter": v.counter,
         "notes": v.notes,

@@ -292,6 +292,10 @@ def evaluate_pair(league: League, team: Team, add: Player, drop: Player | None,
     roster_after = [p for p in team.players if not (drop and p.id == drop.id)] + [add]
 
     weekly_gain = round(lineup_total(roster_after, slots) - base["week"], 2)
+    # A man whose game has already kicked off cannot score for you this week, whatever his
+    # projection said (Murray, claimable Monday, 17.8 "this week": W-027).
+    if add.locked:
+        weekly_gain = 0.0
     ros_total = lineup_total(roster_after, slots, ros)
     ros_gain = round(ros_total - base["ros"], 1)
     next3_gain = round(lineup_total(roster_after, slots, next3) - base["next3"], 2)
