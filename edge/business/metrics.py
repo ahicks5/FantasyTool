@@ -106,7 +106,8 @@ def _net_after_fees(cents_list: list[int]) -> int:
 # ---- the report --------------------------------------------------------------------------
 
 def report(events: list[dict], users: list[dict], spend: list[dict], activity: list[tuple[str, float]],
-           paying_now: int, start: float, end: float, now: float, shares: list[dict] | None = None) -> dict:
+           paying_now: int, comped_now: int, start: float, end: float, now: float,
+           shares: list[dict] | None = None) -> dict:
     """Everything the admin page shows for [start, end). `events` must be every event up to
     `end` (oldest first): first touches and first purchases can predate the range."""
     events = [e for e in events if e["created"] < max(end, now)]
@@ -118,7 +119,7 @@ def report(events: list[dict], users: list[dict], spend: list[dict], activity: l
     return {
         "range": {"start": start, "end": end, "now": now,
                   "start_day": et_day(start), "end_day": et_day(max(start, min(end, now) - 1))},
-        "today": _today(events, spend_in, paying_now, (start, end), prev, now),
+        "today": _today(events, spend_in, paying_now, comped_now, (start, end), prev, now),
         "funnel": _funnel(events, start, end, now),
         "walk": _walk(events, start, end),
         "channels": _channels(events, source, spend_in(start, end), start, end),
@@ -147,11 +148,12 @@ def _tiles(events: list[dict], spend_rows: list[dict], a: float, b: float) -> di
     }
 
 
-def _today(events, spend_in, paying_now, cur, prev, now) -> dict:
+def _today(events, spend_in, paying_now, comped_now, cur, prev, now) -> dict:
     this, last = _tiles(events, spend_in(*cur), *cur), _tiles(events, spend_in(*prev), *prev)
     hour = [e for e in events if now - 3600 <= e["created"] <= now]
     return {
-        "current": this | {"paying_now": paying_now},
+        # Paying is money on record; comped holds a pass nobody paid for (W-052).
+        "current": this | {"paying_now": paying_now, "comped_now": comped_now},
         "previous": last,
         "last_hour": {"signups": sum(e["name"] == "signup" for e in hour),
                       "checkouts": sum(e["name"] == "checkout_start" for e in hour),

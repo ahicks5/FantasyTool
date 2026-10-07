@@ -196,9 +196,11 @@ def test_a_finished_week_is_cached_and_an_unfinished_one_is_not(raw, monkeypatch
     assert calls == [1, 2, 3, 4, 5, 6, 7, 8, 9]
     calls.clear()
     assert [w.week for w in service.played_weeks("sleeper", "L", bundle)] == [8, 9]
-    # Weeks 1-7 are empty in this fixture and 8-9 are finished, so only the empty ones are
-    # asked for again. A played week is never re-fetched: it cannot change.
-    assert 8 not in calls and 9 not in calls
+    # Weeks 1-7 are empty in this fixture and week 8 is finished, so week 8 is never asked for
+    # again: it cannot change. Week 9 is the league's own week, still in progress however many
+    # points it has, so it is read again every time: caching it froze a half-played scoreline
+    # into the film and the standings for the rest of the season.
+    assert 8 not in calls and 9 in calls
 
 
 # ---------------------------------------------------------------- what we said at the time

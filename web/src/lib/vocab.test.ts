@@ -61,7 +61,8 @@ const ALL_COPY: string[] = [
   PLAN.wire.title, PLAN.wire.from, PLAN.wire.locked(1), PLAN.wire.locked(2), PLAN.wire.unlock, PLAN.wire.none, PLAN.wire.bid(12), PLAN.wire.priority,
   PLAN.trade.title, PLAN.trade.from, PLAN.trade.locked(1), PLAN.trade.locked(3), PLAN.trade.unlock, PLAN.trade.none, PLAN.trade.surplus,
   TICKER.aria, TICKER.plate, TICKER.quiet, TICKER.loading, TICKER.proj, TICKER.score("A", 1, "B", 2), NAMEPLATE.connect, NAMEPLATE.week(2),
-  ...Object.values(CONNECT),
+  ...(Object.values(CONNECT) as unknown[]).filter((v): v is string => typeof v === "string"),
+  CONNECT.stepOf(2, 3), ...Object.values(CONNECT.steps),
   // The ESPN key: the walk, the bookmark's messages and the form.
   ESPN_KEY.eyebrow, ESPN_KEY.title, ESPN_KEY.lead, ESPN_KEY.handAria, ...Object.values(ESPN_KEY.hand), ESPN_KEY.step(1),
   ...Object.values(ESPN_KEY.place), ...Object.values(ESPN_KEY.prime), ...Object.values(ESPN_KEY.go), ...Object.values(ESPN_KEY.paste),

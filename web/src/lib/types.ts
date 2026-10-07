@@ -73,6 +73,10 @@ export interface Account {
   league_slots: number;
   /** Unix seconds when the paid week runs out (grace included); null without a live week pass. */
   pass_until?: number | null;
+  /** Unix seconds of this season's first live purchase; null on a free account (W-048). */
+  plan_since?: number | null;
+  /** True when money is on record for the account; false for a granted ("comped") pass. */
+  plan_paid?: boolean;
   /** Whether they ticked the marketing-text box. */
   sms_opt_in?: boolean;
   created?: number | null;
@@ -1883,7 +1887,8 @@ export interface CohortRow {
 export interface AdminMetrics {
   range: { start: number; end: number; now: number; start_day: string; end_day: string };
   today: {
-    current: MetricTiles & { paying_now: number };
+    /** `paying_now` is money on record; `comped_now` holds a granted pass (W-052). */
+    current: MetricTiles & { paying_now: number; comped_now?: number };
     previous: MetricTiles;
     last_hour: { signups: number; checkouts: number; purchases: number };
   };

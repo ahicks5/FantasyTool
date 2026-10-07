@@ -48,7 +48,7 @@ function Today({ m }: { m: AdminMetrics }) {
     <>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Tile label={W.tiles.revenue} value={money(c.revenue_cents)} sub={delta(c.revenue_cents, p.revenue_cents, true)} testid="tile-revenue" />
-        <Tile label={W.tiles.paying} value={c.paying_now.toLocaleString("en-US")} />
+        <Tile label={W.tiles.paying} value={c.paying_now.toLocaleString("en-US")} sub={c.comped_now ? W.tiles.comped(c.comped_now) : undefined} />
         <Tile label={W.tiles.buyers} value={String(c.new_buyers)} sub={delta(c.new_buyers, p.new_buyers)} />
         <Tile label={W.tiles.signups} value={String(c.signups)} sub={delta(c.signups, p.signups)} />
         <Tile label={W.tiles.linked} value={String(c.leagues_linked)} sub={delta(c.leagues_linked, p.leagues_linked)} />

@@ -379,7 +379,11 @@ function AccountBody() {
     [router],
   );
 
+  // Which league's "Forget" is waiting on a yes (W-047): the slot does not come back.
+  const [asking, setAsking] = useState<string | null>(null);
+
   async function forget(l: MeLeague) {
+    setAsking(null);
     setBusy(`forget:${l.league_id}`);
     setError(null);
     try {
@@ -423,21 +427,14 @@ function AccountBody() {
   const fresh = me.leagues.length === 0 && !me.leagues_used;
   const row = "flex min-h-12 w-full items-center justify-between gap-3 rounded-xl px-4 text-[14px] font-bold";
 
-  // The order, top to bottom (Andrew, 2026-09-27): who you are, your leagues, your plan,
-  // then the settings. No price is printed on this page; the upgrade sheet carries it.
+  // The order, top to bottom (Andrew, 2026-10-06): your leagues, your plan, then the
+  // housekeeping. No price is printed on this page; the upgrade sheet carries it.
   return (
     <>
       <div className="pt-6 rise">
         <Eyebrow>{fresh ? ACCOUNT.welcome.eyebrow : ACCOUNT.eyebrow}</Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">{fresh ? ACCOUNT.welcome.title(account.name) : ACCOUNT.title}</h1>
       </div>
-
-      {account.is_admin && (
-        <LinkButton href="/admin" variant="secondary" className="mt-5 w-full">
-          {ACCOUNT.adminLink}
-          <IconChevron size={16} strokeWidth={2.4} />
-        </LinkButton>
-      )}
 
       {/* A new account: it is set, and the one thing left is the league. */}
       {fresh && (
@@ -451,18 +448,9 @@ function AccountBody() {
         </div>
       )}
 
-      {/* Who you are. */}
+      {/* Leagues first: the reason the account exists, so it leads the page and the
+          housekeeping sits under it (Andrew, 2026-10-06, W-049). */}
       <section className="mt-6 rise rise-1">
-        <div className="flex items-center justify-between gap-3">
-          {/* The name, when there is one; the email and phone are right below it. */}
-          <p className="display min-w-0 truncate text-[22px] leading-tight">{account.name || ""}</p>
-          <PlanFlag premium={premium} admin={account.is_admin} />
-        </div>
-        <Contact />
-      </section>
-
-      {/* Leagues on file: the reason the account exists. */}
-      <section className="mt-8 rise rise-2">
         <div className="flex items-baseline justify-between gap-3">
           <Eyebrow>{ACCOUNT.leagues.eyebrow}</Eyebrow>
           <span className="tnum text-[12px] font-bold text-muted" data-testid="league-room">
@@ -473,9 +461,12 @@ function AccountBody() {
           {me.leagues.map((l) => {
             const reading = current?.platform === l.platform && current.league_id === l.league_id;
             return (
-              <li key={`${l.platform}:${l.league_id}`} className={`card flex items-center gap-3 p-4 ${reading ? "card-open" : ""}`}>
+              // `min-w-0` on the grid item: without it a long league name and the two buttons
+              // stretched the card to 417px on a 375px phone and the page scrolled sideways (W-046).
+              <li key={`${l.platform}:${l.league_id}`} className={`card min-w-0 p-4 ${reading ? "card-open" : ""}`}>
+                <div className="flex min-w-0 items-center gap-3">
                 <span className="min-w-0 flex-1">
-                  <span className="display block truncate text-[16px] leading-tight">{l.name}</span>
+                  <span className="display line-clamp-2 break-words text-[17px] leading-tight">{l.name}</span>
                   <span className="mt-0.5 block truncate text-[12px] text-muted">
                     {l.team_name || `Team ${l.team_id}`} · {l.platform === "espn" ? "ESPN" : l.platform === "yahoo" ? YAHOO.label : "Sleeper"}
                     {reading && (
@@ -487,13 +478,34 @@ function AccountBody() {
                   </span>
                 </span>
                 {!reading && (
-                  <Button size="sm" variant="secondary" busy={busy === `open:${l.league_id}`} onClick={() => open(l)} aria-label={ACCOUNT.leagues.openAria(l.name)}>
+                  <Button size="sm" variant="secondary" className="shrink-0" busy={busy === `open:${l.league_id}`} onClick={() => open(l)} aria-label={ACCOUNT.leagues.openAria(l.name)}>
                     {ACCOUNT.leagues.open}
                   </Button>
                 )}
-                <Button size="sm" variant="ghost" busy={busy === `forget:${l.league_id}`} onClick={() => forget(l)} aria-label={ACCOUNT.leagues.forgetAria(l.name)}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="shrink-0"
+                  busy={busy === `forget:${l.league_id}`}
+                  onClick={() => setAsking(`${l.platform}:${l.league_id}`)}
+                  aria-label={ACCOUNT.leagues.forgetAria(l.name)}
+                >
                   {ACCOUNT.leagues.forget}
                 </Button>
+                </div>
+                {asking === `${l.platform}:${l.league_id}` && (
+                  <div className="mt-3 grid gap-2 border-t border-line pt-3" data-testid="forget-ask">
+                    <p className="text-[13px] leading-snug text-ink-2">{ACCOUNT.leagues.forgetAsk(l.name)}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button size="sm" variant="secondary" onClick={() => setAsking(null)}>
+                        {ACCOUNT.leagues.forgetKeep}
+                      </Button>
+                      <Button size="sm" variant="secondary" className="text-sit" busy={busy === `forget:${l.league_id}`} onClick={() => forget(l)}>
+                        {ACCOUNT.leagues.forget}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </li>
             );
           })}
@@ -532,13 +544,37 @@ function AccountBody() {
             <IconChevron size={16} strokeWidth={2.6} />
           </Button>
         )}
-        {weekOnly && me.billing_portal_url && (
+        {/* Since when, and where the receipts are, for every paid plan (W-048). A granted pass
+            says so and offers no billing it does not have. */}
+        {premium && account.plan_since ? (
+          <p className="mt-1 text-[12px] text-muted" data-testid="plan-since">
+            {ACCOUNT.plan.since(shortDate(account.plan_since))} {account.plan_paid === false ? ACCOUNT.plan.compedLine : ""}
+          </p>
+        ) : null}
+        {premium && account.plan_paid !== false && me.billing_portal_url && (
           <a href={me.billing_portal_url} target="_blank" rel="noopener noreferrer" className={`${row} mt-3 bg-soft text-ink`} data-testid="billing-portal">
-            {ACCOUNT.plan.manage}
+            {weekOnly ? ACCOUNT.plan.manage : ACCOUNT.plan.billing}
             <IconChevron size={16} strokeWidth={2.4} />
           </a>
         )}
       </Card>
+
+      {/* The housekeeping, under the leagues and the plan (W-049): who you are, the admin's
+          door, sign-in and security, appearance. */}
+      <section className="mt-8 rise rise-3">
+        <div className="flex items-center justify-between gap-3">
+          {/* The name, when there is one; the email and phone are right below it. */}
+          <p className="display min-w-0 truncate text-[22px] leading-tight">{account.name || ""}</p>
+          <PlanFlag premium={premium} admin={account.is_admin} />
+        </div>
+        <Contact />
+        {account.is_admin && (
+          <LinkButton href="/admin" variant="secondary" className="mt-4 w-full">
+            {ACCOUNT.adminLink}
+            <IconChevron size={16} strokeWidth={2.4} />
+          </LinkButton>
+        )}
+      </section>
 
       <Security hasPassword={account.has_password !== false} />
 

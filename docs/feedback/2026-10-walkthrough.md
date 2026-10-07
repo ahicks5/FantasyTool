@@ -996,3 +996,27 @@ W-001 to W-037 are built and live (see the top of this file). These came after:
 | W-045 | P3 | S | Connect | "I have a league ID" too easy to miss |
 
 Quick wins (P1/P2, size S): W-046, W-052, W-039, W-040, W-043, W-044, W-047, W-049, W-051, W-053.
+
+## Fix pass, pages 8–13 (2026-10-06, branch `claude/walkthrough-38-53`)
+
+| ID | Outcome |
+|---|---|
+| W-038 | Done. Once every starter on both sides of your matchup has played, the film counts the week as over for you: the replay and the desk's film cover show it, and its takeaway reads the week after. Also fixed on the way: Sleeper's week in progress was cached for good as soon as it had points, freezing a half-played scoreline into the film and standings. |
+| W-039 | Done. "Before Thursday" shows only on the newest replay, and not once that week's games are on. |
+| W-040 | Done. The dud card lists only what went wrong (and drops "2nd best of 3"); the standout only what went right. |
+| W-041 | Done. The game card no longer repeats the cover line. |
+| W-042 | Done. Connect is three numbered steps (platform, find, team) with "Loading your league…" where the teams land. |
+| W-043 | Done. No kickoff clock on `/connect`. |
+| W-044 | Done. Searched by Sleeper username: your team is marked "You" and put first (matched on the owner's display name; Sleeper's league data carries no owner id). A team already on the account says "Already linked". |
+| W-045 | Done. "I have a league ID" is a full-width secondary button. |
+| W-046 | Done. League cards fit a phone. |
+| W-047 | Done. Forget asks first. |
+| W-048 | Done. The plan card says since when, offers "Receipts and billing" for every paid plan (Manage or cancel for the week pass), and a granted pass says "Complimentary". Needs `EDGE_BILLING_PORTAL_URL` set on Render, as before. |
+| W-049 | Done. Leagues lead `/account`; the plan, then the housekeeping, sit under them. |
+| W-050 | Done. Andrew renamed the business in Stripe; the item names use a middot. |
+| W-051 | Done. The slot sheet has its own small print and "Add a slot · $2.99". |
+| W-052 | Done. "Paying now" counts money on record; granted passes show as "Comped N". |
+| W-053 | Done. Admin uses the app's plan names, with a Comped badge. |
+
+Postgres: `plan_since` was added to both stores; the Postgres half of the contract test runs only
+with `TEST_DATABASE_URL` and was not run on this machine.

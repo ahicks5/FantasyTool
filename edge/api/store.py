@@ -146,6 +146,13 @@ class Store:
             (email.lower(), season)).fetchall()
         return _live_skus([(r[0], r[1]) for r in rows], now)
 
+    def plan_since(self, email: str, season: int) -> float | None:
+        """When this account's first live purchase of the season was made, or None."""
+        row = self.db.execute(
+            "SELECT MIN(created) FROM purchases WHERE email=? AND season=? AND revoked IS NULL",
+            (email.lower(), season)).fetchone()
+        return row[0] if row and row[0] is not None else None
+
     def pass_until(self, email: str, sku: str, season: int, now: float | None = None) -> float | None:
         """When this account's timed pass runs out, or None if it holds no live one."""
         rows = self.db.execute(

@@ -156,7 +156,7 @@ test("a stranger's door is the account: register, land on it, then link a league
   await page.getByRole("radio", { name: "Sleeper" }).click();
   await page.locator("#sleeper-input").fill("someone");
   await page.getByRole("button", { name: "Find" }).click();
-  await expect(page.getByRole("heading", { name: "Select your team" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: CONNECT.steps.team })).toBeVisible();
   await page.getByRole("button", { name: new RegExp(CONNECTION.team_name) }).click();
   await page.getByRole("button", { name: CONNECT.submit }).click();
   // The first call, then not now to the free week: the account stays free for the sheet below.
@@ -380,7 +380,9 @@ test("the owner's front office lists every account and the levers work", async (
   await row.getByRole("button", { name: `${ACCOUNT.admin.grant} ${PRICING.names.week_pass}` }).click();
   await expect(row.getByRole("button", { name: `${ACCOUNT.admin.revoke} ${PRICING.names.week_pass}` })).toBeVisible();
   await expect(row.getByRole("button", { name: `${ACCOUNT.admin.grant} ${PRICING.names.waivers}` })).toHaveCount(0);
-  await expect(row.getByText(ACCOUNT.plan.premium, { exact: true })).toBeVisible();
+  // A granted pass is not a sale: the badge says Comped and the plan line names it (W-052, W-053).
+  await expect(row.getByText(ACCOUNT.plan.comped, { exact: true })).toBeVisible();
+  await expect(row.getByText(new RegExp(`^${PRICING.names.week_pass}`))).toBeVisible();
   // One more league.
   await row.getByRole("button", { name: ACCOUNT.admin.slot }).click();
   await expect(row.getByText(ACCOUNT.admin.leagues(0, 4))).toBeVisible();

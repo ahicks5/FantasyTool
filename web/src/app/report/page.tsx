@@ -7,12 +7,12 @@ import { League } from "@/components/film/League";
 import { Projector } from "@/components/film/Projector";
 import { ShareFilm } from "@/components/film/ShareFilm";
 import { standout } from "@/lib/film";
-import type { FilmCover, FilmShare, WeekFilm } from "@/lib/types";
+import type { Desk, FilmCover, FilmShare, WeekClock, WeekFilm } from "@/lib/types";
 import { GhostRows, Locked } from "@/components/Locked";
 import { Film } from "@/components/Film";
 import { Standings } from "@/components/Standings";
 import { ErrorBox, Opening, SkeletonList, useHeldWait } from "@/components/ui";
-import { getFilm, getLeagueFilm, getRecap, getStandings, type FilmRead } from "@/lib/api";
+import { getDesk, getFilm, getLeagueFilm, getRecap, getStandings, type FilmRead } from "@/lib/api";
 import { useCached } from "@/lib/cache";
 import { standingsView } from "@/lib/recap";
 import type { Connection } from "@/lib/storage";
@@ -141,6 +141,9 @@ function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
     () => getFilm(c.platform, c.league_id, c.team_id),
   );
   const [pick, setPick] = useState<number | null>(null);
+  // The week's clock rides on the desk's payload; the desk is usually already in the session
+  // cache, so this costs nothing on the way here from the call sheet.
+  const deskClock = useCached<Desk>(`desk:${c.platform}:${c.league_id}:${c.team_id}`, () => getDesk(c.platform, c.league_id, c.team_id)).data?.clock ?? null;
 
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (!data) return <SkeletonList rows={3} />;
@@ -177,7 +180,9 @@ function ReplaySection({ c, paid, signedIn, refresh, fallbackTeaser }: {
       <WeekPicker weeks={weeks.map((x) => x.week)} value={w.week} onPick={setPick} />
       <Cover cover={w.cover} week={w.week} />
       <ShareFilm key={`share-${w.week}`} film={shareOf(w.cover, c.team_name, w)} leagueName={c.league_name} week={w.week} />
-      <Story key={w.week} w={w} />
+      {/* "Before Thursday" is advice for the week after this one: only on the newest replay,
+          and not once that week's games are on (W-039). */}
+      <Story key={w.week} w={w} takeaway={w.week === weeks[0].week && !weekUnderway(deskClock, w.week + 1)} />
     </div>
   );
 }
@@ -207,4 +212,15 @@ export default function ReportPage() {
       )}
     </AppShell>
   );
+}
+
+/**
+ * True once the given week's games have started, by the server's own read of the scoreboard
+ * (the desk's clock, fetched this session). Not advanced by this device's clock: a stale
+ * cache must not hide advice the server still says applies.
+ */
+function weekUnderway(clock: WeekClock | null, week: number): boolean {
+  if (!clock || !clock.phase) return false;
+  if (clock.week > week) return true;
+  return clock.week === week && clock.phase !== "before";
 }

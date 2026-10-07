@@ -28,7 +28,7 @@ import { useLocation } from "@/lib/href";
 import { clearYahooAuth, loadYahooAuth, newYahooState, useYahooAuth, YAHOO_OFFERED } from "@/lib/yahooAuth";
 import type { LeagueSummary, Platform, SleeperLeagueRef } from "@/lib/types";
 import { IconCheck, IconChevron } from "@/components/icons";
-import { Button, Countdown, ErrorBox, Eyebrow, LinkButton, Wordmark } from "@/components/ui";
+import { Button, ErrorBox, Eyebrow, LinkButton, Spinner, Wordmark } from "@/components/ui";
 import { ACCOUNT, CONNECT, ESPN_KEY, LINES, YAHOO } from "@/lib/vocab";
 
 const FIELD =
@@ -124,6 +124,8 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
   const [league, setLeague] = useState<LeagueSummary | null>(null);
   const [teamId, setTeamId] = useState("");
   const [busy, setBusy] = useState(false);
+  // The Sleeper username a league list came from, so that user's own team can be marked (W-044).
+  const [searchedUser, setSearchedUser] = useState("");
   const [error, setError] = useState<unknown>(null);
   // null = no ESPN sign-in problem. Otherwise, whether we are asking for cookies for the
   // first time or telling them the ones they gave have expired.
@@ -223,11 +225,13 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
         byUsername: (username) => getSleeperLeagues(username),
       });
       if (found.league) {
+        setSearchedUser("");
         setLastLeagueId(found.value);
         setLeagues(null);
         setLeague(found.league);
         setTeamId("");
       } else if (found.leagues) {
+        setSearchedUser(input.trim());
         setLeagues(found.leagues);
         setLeague(null);
         setTeamId("");
@@ -342,7 +346,15 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
     if (p === "yahoo" && hasYahoo) void loadYahooLeagues();
   }
 
-  const step = league ? 2 : 1;
+  // Three steps, said in order (Andrew, 2026-10-06, W-042): pick the platform, find the
+  // league (and watch it load), pick the team.
+  const step = league ? 3 : platform ? 2 : 1;
+  // The team this owner most likely is: the searched username's own (W-044), and any team
+  // already on the account. Marked, and the likely one goes first.
+  const isYou = (t: { owner_name: string }) => !!searchedUser && t.owner_name.trim().toLowerCase() === searchedUser.toLowerCase();
+  const isLinked = (t: { id: string }) =>
+    !!league && (session.me?.leagues ?? []).some((l) => l.platform === platform && l.league_id === league.id && String(l.team_id) === String(t.id));
+  const teams = league ? [...league.teams].sort((a, b) => Number(isYou(b)) - Number(isYou(a))) : [];
 
   const Outer = walk ? "div" : "main";
   return (
@@ -389,29 +401,18 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
       {!walk && (
       <>
       <div className="mt-2 flex items-center gap-2">
-        {[1, 2].map((n) => (
+        {[1, 2, 3].map((n) => (
           <span key={n} className={`h-1.5 flex-1 rounded-full ${n <= step ? "bg-start" : "bg-line"}`} aria-hidden />
         ))}
       </div>
 
       <div className="mt-4 rise">
         <Eyebrow>
-          Step <span className="tnum">1</span> of <span className="tnum">2</span> · Connect
+          {CONNECT.stepOf(step, 3)}
         </Eyebrow>
         <h1 className="display mt-2 text-[34px] leading-[1.04]">{LINES.connect}</h1>
-        {/* The on-ramp is only urgent if it says how long there is. Its own row, so a long
-            clock never crowds the wordmark on a small phone.
-
-            It waits for a league. A clock counting down over an empty form is pressure to
-            do something the page has not asked for yet, and on the one screen where a
-            first-time visitor is deciding whether to hand us anything at all, that reads
-            as a sales timer. Once a league is loaded the deadline is theirs and it is the
-            reason to finish. */}
-        {league && (
-          <div className="mt-3">
-            <Countdown />
-          </div>
-        )}
+        {/* No kickoff clock here: it mounted once a league loaded and pushed the whole form
+            down under the reader's thumb (W-043). The rooms carry the clock. */}
       </div>
       </>
       )}
@@ -423,7 +424,7 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
           type, so the two live platforms keep the two-column row and Yahoo sits under them. */}
       <div className={walk ? "" : "mt-6"}>
         <div className="eyebrow" id="platform-label">
-          Select your league
+          <StepNo n={1} on /> {CONNECT.steps.platform}
         </div>
         <div role="radiogroup" aria-labelledby="platform-label">
           <div className="mt-2 grid grid-cols-2 gap-2.5">
@@ -458,7 +459,7 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
       {platform === "sleeper" && (
         <section className="mt-7">
           <label className="eyebrow block" htmlFor="sleeper-input">
-            Paste a username or ID
+            <StepNo n={2} on /> {CONNECT.steps.sleeper}
           </label>
           <div className="mt-2 flex gap-2">
             <input
@@ -535,7 +536,10 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
               team and, if it is private, the key off ESPN's own page (Andrew, 2026-09-28:
               "do you still need to put in your league id? that's still hard"). */}
           <div data-testid="espn-entry">
-            <p className="text-[15px] leading-relaxed text-ink">{ESPN_KEY.entry.title}</p>
+            <div className="eyebrow">
+              <StepNo n={2} on /> {CONNECT.steps.espn}
+            </div>
+            <p className="mt-2 text-[15px] leading-relaxed text-ink">{ESPN_KEY.entry.title}</p>
             <div className="mt-3">
               <LinkButton
                 href={input.trim() ? `/connect/espn?id=${encodeURIComponent(input.trim())}` : "/connect/espn"}
@@ -547,13 +551,10 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
               </LinkButton>
             </div>
             {!showIdBox && (
-              <button
-                type="button"
-                onClick={() => setShowIdBox(true)}
-                className="mt-3 min-h-11 text-[13px] font-semibold text-muted underline underline-offset-4"
-              >
+              // A real second choice, not a grey underline under the green button (W-045).
+              <Button variant="secondary" className="mt-2.5 w-full" onClick={() => setShowIdBox(true)}>
                 {ESPN_KEY.entry.haveId}
-              </button>
+              </Button>
             )}
           </div>
           {showIdBox && (
@@ -655,21 +656,26 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
         </p>
       )}
 
+      {/* The wait, said out loud where the team list is about to land: never a blank gap
+          between "Find" and the teams (W-042). */}
+      {busy && !league && platform && (
+        <div className="card mt-6 flex items-center gap-3 p-4" role="status" aria-live="polite" data-testid="connect-loading">
+          <Spinner size={18} />
+          <span className="text-[14px] font-bold text-ink-2">{CONNECT.loading}</span>
+        </div>
+      )}
+
       {league && (
         <section className="mt-9 rise">
           <Eyebrow>
-            {!walk && (
-              <>
-                Step <span className="tnum">2</span> of <span className="tnum">2</span> ·{" "}
-              </>
-            )}
-            {league.name} · week{" "}
-            <span className="tnum">{league.week}</span>
+            <StepNo n={3} on /> {league.name} · week <span className="tnum">{league.week}</span>
           </Eyebrow>
-          <h2 className="display mt-2 text-[28px] leading-[1.06]">Select your team</h2>
+          <h2 className="display mt-2 text-[28px] leading-[1.06]">{CONNECT.steps.team}</h2>
           <ul className="mt-4 grid gap-2">
-            {league.teams.map((t) => {
+            {teams.map((t) => {
               const on = teamId === t.id;
+              const you = isYou(t);
+              const linked = isLinked(t);
               return (
                 <li key={t.id}>
                   <button
@@ -683,7 +689,11 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
                       {initials(t.name)}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="display block text-[16px] leading-tight break-words">{t.name}</span>
+                      <span className="display block text-[16px] leading-tight break-words">
+                        {t.name}
+                        {you && <span className="ml-2 rounded-full bg-start-soft px-2 py-0.5 align-middle text-[10px] font-black uppercase tracking-wider text-start">{CONNECT.you}</span>}
+                        {linked && <span className="ml-2 rounded-full bg-soft px-2 py-0.5 align-middle text-[10px] font-black uppercase tracking-wider text-muted">{CONNECT.linked}</span>}
+                      </span>
                       <span className="mt-0.5 block text-[12px] leading-snug text-muted">
                         {t.owner_name} · <span className="tnum">{t.record}</span> ·{" "}
                         <span className="tnum">{t.points_for.toFixed(1)}</span> PF
@@ -722,5 +732,17 @@ export function LeagueLinker({ variant = "page", onLinked }: { variant?: "page" 
         </Popup>
       )}
     </div>
+  );
+}
+
+/** A step's number in its own small disc (W-042). */
+function StepNo({ n, on }: { n: number; on: boolean }) {
+  return (
+    <span
+      className={`mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full align-middle text-[11px] font-black tabular-nums ${on ? "bg-start-fill text-white" : "bg-soft text-muted"}`}
+      aria-hidden
+    >
+      {n}
+    </span>
   );
 }

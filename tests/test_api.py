@@ -339,7 +339,7 @@ def test_checkout_falls_back_to_the_default_when_a_return_url_is_rejected(monkey
     assert "evil.example" not in captured["success_url"] + captured["cancel_url"]
     assert captured["allow_promotion_codes"] is True, "Andrew's promo codes need the field on Checkout"
     assert captured["line_items"][0]["price_data"]["unit_amount"] == 499
-    assert captured["line_items"][0]["price_data"]["product_data"]["name"] == "Owner's Suite — Week pass (7 days)"
+    assert captured["line_items"][0]["price_data"]["product_data"]["name"] == "Owner's Suite · Week pass (7 days)"
 
     payments.create_checkout(
         "a@b.c", "full_report", 2026,
@@ -347,7 +347,7 @@ def test_checkout_falls_back_to_the_default_when_a_return_url_is_rejected(monkey
         cancel_url=None,
     )
     assert captured["success_url"] == "https://edge.example.com/trade?paid=trade_lab"
-    assert captured["line_items"][0]["price_data"]["product_data"]["name"] == "Owner's Suite — Season pass (2026 season)"
+    assert captured["line_items"][0]["price_data"]["product_data"]["name"] == "Owner's Suite · Season pass (2026 season)"
     with pytest.raises(ValueError):
         payments.create_checkout("a@b.c", "trade_lab", 2026, None, None)
 

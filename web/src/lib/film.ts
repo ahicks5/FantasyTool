@@ -16,7 +16,7 @@ import { DESK, FILM } from "./vocab.ts";
 export type CardKey = keyof typeof FILM.card;
 
 /** The cards this week earns, in the order they are told. */
-export function storyCards(w: WeekFilm): CardKey[] {
+export function storyCards(w: WeekFilm, opts: { takeaway?: boolean } = {}): CardKey[] {
   const out: CardKey[] = ["game"];
   if (w.swing?.line) out.push("swing");
   if (w.lineup) out.push("lineup");
@@ -24,7 +24,9 @@ export function storyCards(w: WeekFilm): CardKey[] {
   if (dud(w)) out.push("dud");
   if (w.injuries.length > 0) out.push("injuries");
   if (starters(w).length > 0) out.push("starters");
-  out.push("takeaway");
+  // "Before Thursday" is advice for the week ahead: only on the newest replay, and only while
+  // that week is still to play (Andrew, 2026-10-06, W-039).
+  if (opts.takeaway !== false) out.push("takeaway");
   return out;
 }
 
@@ -52,6 +54,22 @@ export function dud(w: WeekFilm): FilmAttribution | null {
 /** True when any starter's projection is the vendor's stored number, so the note shows. */
 export function hasPlatformSource(w: WeekFilm): boolean {
   return starters(w).some((a) => a.source === "platform");
+}
+
+/**
+ * The reasons that tell this card's story, and only those (W-040): the man who carried you is
+ * explained by what went right, the one who let you down by what went wrong. "Played 63% of
+ * the snaps (norm 36%)" under "flopped" read as good news.
+ */
+export function reasonsFor(a: FilmAttribution, side: "carried" | "dud"): FilmAttribution["reasons"] {
+  return a.reasons.filter((r) => (side === "carried" ? r.sign > 0 : r.sign < 0));
+}
+
+/** His season in one line, kept only when it says the same thing as the card (W-040). */
+export function historyFor(h: FilmHistory | null, side: "carried" | "dud"): string | null {
+  if (!h) return null;
+  if (side === "dud") return h.weeks >= 2 && h.rank_this_season > Math.ceil(h.weeks / 2) ? historyLine(h) : null;
+  return h.best_since || h.rank_this_season <= Math.ceil(h.weeks / 2) ? historyLine(h) : null;
 }
 
 /** His season in one line: the best-since when it is his best game, else where it ranks. */

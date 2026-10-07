@@ -78,7 +78,7 @@ ACTIVITY = [("eve@x", T - 6 * m.DAY), ("eve@x", T + H), ("ann@x", T + 3 * H), ("
 def r():
     start, end = m.resolve_range(None, None, NOW)
     assert (start, end) == (T, T + m.WEEK), "the default range is this NFL week"
-    return m.report(EVENTS, USERS, SPEND, ACTIVITY, paying_now=3, start=start, end=end, now=NOW,
+    return m.report(EVENTS, USERS, SPEND, ACTIVITY, paying_now=3, comped_now=2, start=start, end=end, now=NOW,
                     shares=[{"id": "abc", "views": 5, "created": T}])
 
 
@@ -94,7 +94,7 @@ def test_the_tiles(r):
     # 499 (Ann) + 2499 (Cat) + 499 (Eve's second week) - 499 refunded
     assert cur["revenue_cents"] == 2998
     assert cur["new_buyers"] == 2, "Eve first paid last week"
-    assert cur["signups"] == 6 and cur["leagues_linked"] == 3 and cur["paying_now"] == 3
+    assert cur["signups"] == 6 and cur["leagues_linked"] == 3 and cur["paying_now"] == 3 and cur["comped_now"] == 2
     assert cur["spend_cents"] == 5500 and cur["cac_cents"] == 2750
     assert (prev["revenue_cents"], prev["new_buyers"], prev["signups"], prev["spend_cents"]) == (499, 1, 1, 999)
     assert r["today"]["last_hour"] == {"signups": 1, "checkouts": 0, "purchases": 0}
@@ -117,7 +117,7 @@ def test_the_funnel(r):
 
 
 def test_an_empty_step_says_so_rather_than_zero():
-    rep = m.report([], [], [], [], 0, T, T + m.WEEK, NOW)
+    rep = m.report([], [], [], [], 0, 0, T, T + m.WEEK, NOW)
     assert all(s["rate"] is None and s["status"] == "none" for s in rep["funnel"]["steps"])
     assert rep["today"]["current"]["cac_cents"] is None
 
@@ -190,7 +190,7 @@ def test_the_landing_doors_credit_each_signup_to_the_last_button_pressed():
         # Last week's press is outside the range.
         ev("cta_click", T - 2 * m.DAY, anon="b5", door="desk"),
     ], key=lambda e: e["created"])
-    doors = {d["door"]: d for d in m.report(events, [], [], [], 0, T, T + m.WEEK, NOW)["funnel"]["doors"]}
+    doors = {d["door"]: d for d in m.report(events, [], [], [], 0, 0, T, T + m.WEEK, NOW)["funnel"]["doors"]}
     assert set(doors) == set(m.DOORS), "every door is listed, pressed or not"
     assert (doors["hero"]["clicks"], doors["hero"]["people"], doors["hero"]["signups"]) == (3, 2, 0)
     assert (doors["bar"]["clicks"], doors["bar"]["signups"], doors["bar"]["rate"]) == (1, 1, 1.0)

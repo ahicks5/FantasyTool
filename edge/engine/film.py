@@ -99,6 +99,9 @@ class Context:
     weeks: list[PlayedWeek] = field(default_factory=list)     # every played week, for season bests
     # Next week's reads, from the engines that own them. Only the newest graded week uses them.
     next_week: int | None = None
+    # The week in progress counts as over for this team once its own matchup is decided (every
+    # starter on both sides has played): the replay is there Monday night, not Tuesday (W-038).
+    through: int | None = None
     roles: list[Any] = field(default_factory=list)            # lineup.Role (label, pick)
     ros: dict[str, float] = field(default_factory=dict)       # values.ros_values
     pickups: list[Player] = field(default_factory=list)       # waiver_plan claims' adds
@@ -644,8 +647,9 @@ def build(ctx: Context, team_id: str, weeks: Iterable[PlayedWeek] | None = None)
     belongs to every other room, and the film starts where they stop.
     """
     league = ctx.league
+    last = ctx.through if ctx.through is not None else league.week - 1
     played = sorted((w for w in (weeks if weeks is not None else ctx.weeks)
-                     if w.week < league.week and w.played), key=lambda w: -w.week)
+                     if w.week <= last and w.played), key=lambda w: -w.week)
     team = league.team(team_id)
     films = [week_film(ctx, team_id, w) for w in played]
     return {

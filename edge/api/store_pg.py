@@ -168,6 +168,12 @@ class PostgresStore:
                          (email.lower(), season))
         return _live_skus([(r[0], r[1]) for r in cur.fetchall()], now)
 
+    def plan_since(self, email: str, season: int) -> float | None:
+        cur = self._exec("SELECT MIN(created) FROM purchases WHERE email=%s AND season=%s AND revoked IS NULL",
+                         (email.lower(), season))
+        row = cur.fetchone()
+        return row[0] if row and row[0] is not None else None
+
     def pass_until(self, email: str, sku: str, season: int, now: float | None = None) -> float | None:
         cur = self._exec("SELECT created FROM purchases WHERE email=%s AND sku=%s AND season=%s AND revoked IS NULL",
                          (email.lower(), sku, season))

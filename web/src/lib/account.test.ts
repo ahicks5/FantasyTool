@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { accountContact, accountLabel, displayPhone, initialOf, leagueRoom, matchesAccount, offersFor, pickLeague, planWord, signInLanding, shortDate, upgradesFor } from "./account.ts";
+import { accountContact, accountLabel, displayPhone, initialOf, leagueRoom, matchesAccount, offersFor, pickLeague, planLabel, planWord, signInLanding, shortDate, upgradesFor } from "./account.ts";
 import type { Account, AdminUser, MeLeague, Product } from "./types";
 
 const L = (id: string, last_used: number | null): MeLeague => ({ platform: "sleeper", league_id: id, name: id, team_id: "1", last_used });
@@ -111,4 +111,11 @@ test("a phone-only account is named by its name or its number, never its interna
   assert.equal(accountLabel({ email: "a@b.co", name: "", phone: "+15552345678" }), "(555) 234-5678");
   assert.equal(accountContact({ email: "a@b.co", name: "", phone: "+15552345678" }), "a@b.co");
   assert.equal(displayPhone("+447911123456"), "+447911123456");
+});
+
+test("plans read by the app's own names, never the catalog's (W-053)", () => {
+  assert.equal(planLabel(["full_report"]), "Season pass");
+  assert.equal(planLabel(["week_pass", "league_slot"]), "Week pass");
+  assert.equal(planLabel(["league_slot"]), "Free");
+  assert.equal(planLabel([]), "Free");
 });

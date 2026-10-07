@@ -706,6 +706,19 @@ export const CONNECT = {
   submit: "Show my moves",
   /** While the connection is being written. */
   busy: "Wiring you in\u2026",
+  /** The three steps, in order (W-042). */
+  stepOf: (n: number, of: number) => `Step ${n} of ${of} \u00b7 Connect`,
+  steps: {
+    platform: "Pick your platform",
+    sleeper: "Find your league: a Sleeper username or league ID",
+    espn: "Find your league",
+    team: "Pick your team",
+  },
+  /** Where the team list is about to land, while the league loads. */
+  loading: "Loading your league\u2026",
+  /** On the team list: the searched user's own team, and a team already on the account (W-044). */
+  you: "You",
+  linked: "Already linked",
 } as const;
 
 /**
@@ -911,6 +924,8 @@ export const ACCOUNT = {
     eyebrow: "Plan",
     free: "Free",
     premium: "Premium",
+    /** A pass nobody paid for: an admin grant (W-052, W-053). */
+    comped: "Comped",
     admin: "Admin",
     upgrade: "Upgrade to full premium",
     /** A week-pass holder's button: the season, with the week they paid for counted. */
@@ -926,6 +941,10 @@ export const ACCOUNT = {
     trialOpen: (date: string) => `Free week. Every room open until ${date}.`,
     /** Stripe's customer portal, for the week pass. */
     manage: "Manage or cancel",
+    /** Every paid plan (W-048): receipts and the card on file. The week pass keeps "Manage or cancel". */
+    billing: "Receipts and billing",
+    since: (date: string) => `Since ${date}.`,
+    compedLine: "Complimentary. Nothing to bill.",
   },
   /** Leagues on file. */
   leagues: {
@@ -937,6 +956,9 @@ export const ACCOUNT = {
     keeps: "Forgetting a league does not give its slot back this season.",
     forget: "Forget",
     forgetAria: (name: string) => `Forget ${name}`,
+    /** Asked before a league goes, because its slot does not come back (W-047). */
+    forgetAsk: (name: string) => `Forget ${name}? Its slot stays used this season.`,
+    forgetKeep: "Keep it",
     open: "Open",
     openAria: (name: string) => `Open ${name}`,
     reading: "Reading now",
@@ -985,6 +1007,7 @@ export const ACCOUNT = {
     /** Shown while the API has no Stripe key: the grant is written on the spot. */
     comp: "Launch week: no card, no charge. Tap it and the floor is yours.",
     get: (name: string) => `Get ${name}`,
+    getSlot: (price: string) => `Add a slot · ${price}`,
     done: "Done. The floor is open.",
     slotLead: "One more league on your account.",
     busy: "Opening\u2026",
@@ -994,6 +1017,8 @@ export const ACCOUNT = {
     limit: "Your leagues are full",
     /** Under the offers: how the money moves. */
     stripe: "Paid through Stripe. The week renews until you cancel. The season is one payment.",
+    /** Under a league slot: it is one payment, and the pass's renew line does not apply (W-051). */
+    stripeSlot: "One payment. Yours for the rest of the season. Paid through Stripe.",
     noCharge: "Nothing is charged today.",
     /** On the locked card, under the two buttons. */
     terms: "The week renews until you cancel. The season is one payment, and nothing renews.",
@@ -1133,6 +1158,8 @@ export const ACCOUNT = {
       tiles: {
         revenue: "Revenue",
         paying: "Paying now",
+        /** Under "Paying now": passes granted, not bought (W-052). */
+        comped: (n: number) => `Comped ${n}`,
         buyers: "New buyers",
         signups: "Sign-ups",
         linked: "Leagues linked",
