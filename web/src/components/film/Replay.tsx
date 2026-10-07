@@ -13,7 +13,7 @@
  * lays it out.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { dud, hasPlatformSource, historyLine, lineupBars, standout, starters, storyCards, verdictTone, type CardKey } from "@/lib/film";
+import { dud, hasPlatformSource, historyFor, historyLine, lineupBars, reasonsFor, standout, starters, storyCards, verdictTone, type CardKey } from "@/lib/film";
 import type { FilmAttribution, FilmCover, FilmReason, WeekFilm } from "@/lib/types";
 import { FILM } from "@/lib/vocab";
 import { Avatar } from "../Avatar";
@@ -103,9 +103,9 @@ function VerdictTag({ a }: { a: FilmAttribution }) {
   return <span className={`film-verdict ${tone ? `film-verdict-${tone}` : ""}`}>{FILM.verdict[a.verdict]}</span>;
 }
 
-/** One man, the way the standout and the dud cards tell him. */
-function Man({ a }: { a: FilmAttribution }) {
-  const history = historyLine(a.history);
+/** One man, the way the standout and the dud cards tell him: only the reads that tell that story. */
+function Man({ a, side }: { a: FilmAttribution; side: "carried" | "dud" }) {
+  const history = historyFor(a.history, side);
   return (
     <div>
       <div className="flex items-center gap-3">
@@ -124,7 +124,7 @@ function Man({ a }: { a: FilmAttribution }) {
         <HadWent a={a} big />
         <VerdictTag a={a} />
       </div>
-      <Reasons reasons={a.reasons} />
+      <Reasons reasons={reasonsFor(a, side)} />
       {history && <p className="mt-2 text-[12px] font-bold text-lean">{history}</p>}
     </div>
   );
@@ -197,9 +197,10 @@ function CardBody({ k, w }: { k: CardKey; w: WeekFilm }) {
             {w.their_points === null || !w.result ? FILM.bye : FILM.margin(w.result, Math.abs(w.my_points - w.their_points))}
           </p>
           {w.opponent && <p className="mt-1 text-[13px] font-bold text-muted">{FILM.vs(w.opponent)}</p>}
-          {w.facts.length > 0 && (
+          {/* The cover already says its line; the card does not say it again (W-041). */}
+          {w.facts.some((f) => f.line !== w.cover.line) && (
             <ul className="mt-3 grid gap-1.5">
-              {w.facts.map((f) => (
+              {w.facts.filter((f) => f.line !== w.cover.line).map((f) => (
                 <li key={f.kind} className="film-fact">{f.line}</li>
               ))}
             </ul>
@@ -232,9 +233,9 @@ function CardBody({ k, w }: { k: CardKey; w: WeekFilm }) {
       );
     }
     case "standout":
-      return <Man a={standout(w)!} />;
+      return <Man a={standout(w)!} side="carried" />;
     case "dud":
-      return <Man a={dud(w)!} />;
+      return <Man a={dud(w)!} side="dud" />;
     case "injuries":
       return (
         <ul className="grid gap-2.5">
@@ -286,8 +287,9 @@ function Bar({ label, value, note, tone }: { label: string; value: number; note:
 }
 
 /** The story under the cover, with the rail that says where you are in it. */
-export function Story({ w }: { w: WeekFilm }) {
-  const cards = useMemo(() => storyCards(w), [w]);
+export function Story({ w, takeaway = true }: { w: WeekFilm; takeaway?: boolean }) {
+  // The takeaway is next week's advice: the page decides when it still applies (W-039).
+  const cards = useMemo(() => storyCards(w, { takeaway }), [w, takeaway]);
   const [active, setActive] = useState(0);
   const refs = useRef<(HTMLLIElement | null)[]>([]);
 

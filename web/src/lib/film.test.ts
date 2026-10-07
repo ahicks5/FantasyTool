@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { dud, hasPlatformSource, historyLine, lineupBars, notebookLine, standout, storyCards, verdictTone } from "./film.ts";
+import { dud, hasPlatformSource, historyFor, historyLine, lineupBars, notebookLine, reasonsFor, standout, storyCards, verdictTone } from "./film.ts";
 import type { FilmAttribution, WeekFilm } from "./types.ts";
 
 function man(id: string, over: Partial<FilmAttribution> = {}): FilmAttribution {
@@ -87,4 +87,24 @@ test("the desk's film line: calls when we recorded some, else the replay's cover
   assert.equal(notebookLine({ ...base, hits: null, total: null }), "W 130–116 · Your best score of the season");
   assert.equal(notebookLine({ ...base, hits: null, total: null, line: null }), "W 130–116");
   assert.equal(notebookLine(null), "No week graded yet");
+});
+
+test("the dud card keeps only what went wrong, the standout only what went right (W-040)", () => {
+  // Montgomery, week 3: "played 63% of the snaps (norm 36%)" read as a reason he flopped.
+  const m = man("dm", {
+    reasons: [
+      { kind: "snaps", line: "played 63% of the snaps (norm 36%)", sign: 1 },
+      { kind: "usage", line: "8 carries and targets (norm 15)", sign: -1 },
+    ],
+    history: { rank_this_season: 2, weeks: 3, best_since: null } as WeekFilm["attributions"][number]["history"],
+  });
+  assert.deepEqual(reasonsFor(m, "dud").map((r) => r.kind), ["usage"]);
+  assert.deepEqual(reasonsFor(m, "carried").map((r) => r.kind), ["snaps"]);
+  // "His 2nd best of 3 games" is not a reason he let you down.
+  assert.equal(historyFor(m.history, "dud"), null);
+});
+
+test("the takeaway card goes when the page says the week ahead is gone (W-039)", () => {
+  assert.ok(storyCards(week()).includes("takeaway"));
+  assert.ok(!storyCards(week(), { takeaway: false }).includes("takeaway"));
 });
