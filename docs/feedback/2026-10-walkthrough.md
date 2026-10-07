@@ -10,7 +10,7 @@ Chrome by `scripts/walkthrough.py`. Nothing was fixed during the walk; this is t
 
 ## Where we are
 
-- **Status:** PAUSED 2026-10-05, Monday evening of NFL week 4. Last ID: W-037.
+- **Status:** PAUSED 2026-10-05, Monday evening of NFL week 4. Last ID: W-037. Items W-001..W-037 were worked on 2026-10-06 (see "Fix pass" below).
 - **Paused at:** pages 1–7 walked and logged (landing, sign-up, sign-in, desk + full matchup, depth chart + player sheet + Position Battle, scouting + pickup, GM's Office + Trade Lab). Page 8, the film (`/report`), was looked at but **not reviewed with Andrew**: he will do it last, in a later session (draft observations are under §8 as open questions). Pages 9–13 (`/connect`, `/account`, upgrade sheet, `/admin`, privacy/terms/404) are not started.
 - **To resume:** `uv run python scripts/walkthrough.py start`, sign in if past page 3, then carry
   on from page 9 (`/connect`), then 10–13, then the film (§8) last. The next ID is the one after the last one in the log.
@@ -706,6 +706,37 @@ first, then fix those items on top of it.
 - **W-031** (P2) Recommended picks are drawn in red
 - **W-035** (P2) Take K and DEF out of "Your roster" at the top of the office
 - **W-036** (P2) Desktop: the Trade room card doesn't line up with the column above
+
+---
+
+## Fix pass (2026-10-06, branch `claude/walkthrough-fixes`)
+
+Built straight off this log. Every item below was done unless it
+says otherwise; each one has a test where the logic allows.
+
+| ID | Outcome |
+|---|---|
+| W-001 | **No change needed.** Re-measured on a cold, uncached phone load: the line is fully visible by 0.46s. The gap in the walkthrough was the helper re-applying phone emulation between steps, which replayed the fade. |
+| W-002, W-004, W-005, W-019, W-025, W-036 | Layout fixed as logged. |
+| W-003, W-010, W-011 | A sign-in (or a number already on file on `/register`) goes straight to the desk of the last league, the form keeping its spinner; "Where to?" is the menu at `/login` once in, and the fallback when the league will not open on this browser. |
+| W-006 | "Add a league" says "Sleeper or ESPN." The `/connect` picker already hides Yahoo behind the API's switch. |
+| W-007 | `HomeMark`: "SUITE" everywhere but the landing page, linking to `/home` signed in, `/` signed out. |
+| W-008, W-009 | One shared set of phone-door words; "New here? Get started" under the phone sign-in. |
+| W-012 | The ride replays only when the team actually changes. |
+| W-013, W-017 | Live win chance from the score plus what is left; `final` on the matchup; slots judged on results and labelled Final/Live/Proj; "Final. Lost by 1.7." |
+| W-014, W-015, W-016 | "OS" letterhead; no Plan B on good news; two-line wraps instead of ellipses on the desk. The elevator's "PH" floor button was left as an elevator's penthouse button. |
+| W-018 | Clock: LIVE in a game window, FINAL from Monday night to Tuesday noon ET, then the countdown. |
+| W-020, W-021, W-026 | No "All set" stamp; locked slots take no advice; the week's recap with the bench regret; Final/Live/Proj/No team on every lineup number. |
+| W-022 | Form sorted by week before reading the last three (Higgins now reads Warming). |
+| W-023 | Battle's "this week" is the result once played, or Live. |
+| W-024 | Clash scripted at 3.2s so it lands inside 4s with the wait. |
+| W-027, W-034 | Once your starters have all played, the wire, the board, the lenses, the trade finder and Trade Lab read next week (`service.forward_bundle`); Scouting says so; a free agent who has played adds nothing this week; no "avg bid" without FAAB. |
+| W-028 | A free agent on the same bye covers nothing. |
+| W-029 | **Not changed: still to verify.** Sleeper's live rosters do not have Murray on any team in Degenerates FF. Andrew to say which team he is on. |
+| W-030, W-031 | Only #1 badges; picks in green. |
+| W-032, W-033 | Share card prints their own number; one rounding rule; "Fairness %" replaced everywhere by "Will they say yes? Likely / Maybe / Unlikely", lineup gain leads. |
+| W-035 | K and DEF out of the office tiles and the finder's needs. |
+| W-037 | Trade room has two doors (Compare teams / Build a trade), nobody pre-picked, no grade button until both sides hold a player. |
 
 ---
 

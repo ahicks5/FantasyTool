@@ -217,11 +217,13 @@ const PAGES: PageCase[] = [
     path: "/team",
     name: "lineup",
     check: async (page) => {
-      // The head coach's stamp lands first and stays until dismissed: the summary is seen.
+      // The head coach's stamp lands only when something is pending, and then it is urgent:
+      // an "All set" stamp over a page that says so was a toll (W-020).
       const boom = page.getByRole("dialog", { name: LINEUP.stamp.aria });
-      await expect(boom).toBeVisible();
-      await expect(boom.getByText(/^(Urgent|All set)/)).toBeVisible();
-      await boom.getByRole("button", { name: LINEUP.stamp.closeAria }).click();
+      if (await boom.count()) {
+        await expect(boom.getByText(/^Urgent/)).toBeVisible();
+        await boom.getByRole("button", { name: LINEUP.stamp.closeAria }).click();
+      }
       await expect(boom).toHaveCount(0);
       // In `main`: the ticker carries "Projected scores" too, and on a phone its top-bar copy is hidden.
       await expect(page.locator("main").getByText(/Projected/i).first()).toBeVisible();
@@ -336,7 +338,8 @@ test("the desk names a player without a click, and the plan opens, for a reader 
   await page.goto("/home");
   const desk = page.getByRole("region", { name: DESK.aria });
   await expect(desk).toBeVisible();
-  const first = desk.locator(".desk-news-row").first();
+  // The first story with a plan: good news carries no Plan B (W-015).
+  const first = desk.locator(".desk-news-row").filter({ has: page.locator(".desk-plan-link") }).first();
   // A real name, not a skeleton: at least two capitalised words in the headline.
   await expect(first.getByText(/[A-Z][a-z]+ [A-Z][a-zA-Z.'-]+/).first()).toBeVisible();
   await first.locator(".desk-plan-link").click();
@@ -745,7 +748,9 @@ test("the desk: three stories on top, hardest first, the matchup, four notebooks
   // Every story carries the meter and the arrow into its plan; the meter never climbs
   // down the page, because the desk is sorted by how hard a story lands.
   await expect(desk.locator(".desk-sev")).toHaveCount(DESK.news.shown);
-  await expect(desk.locator(".desk-plan-link")).toHaveCount(DESK.news.shown);
+  // Every story but good news carries the arrow into its plan (W-015).
+  const upside = await news.locator(".desk-mark-up").count();
+  await expect(desk.locator(".desk-plan-link")).toHaveCount(DESK.news.shown - upside);
   const sev = await desk.locator(".desk-sev").evaluateAll((els) => els.map((e) => Number(/desk-sev-(\d)/.exec(e.className)?.[1])));
   for (let i = 1; i < sev.length; i++) expect(sev[i], `story ${i + 1} lands harder than the one above it`).toBeLessThanOrEqual(sev[i - 1]);
   await desk.locator(".desk-more").click();
@@ -791,7 +796,7 @@ test("the desk: three stories on top, hardest first, the matchup, four notebooks
 test("a story's arrow opens its action plan: the call, the next man up, and the way back", async ({ page }) => {
   await visit(page, "/home");
   const desk = page.getByRole("region", { name: DESK.aria });
-  const row = desk.locator(".desk-news-row").first();
+  const row = desk.locator(".desk-news-row").filter({ has: page.locator(".desk-plan-link") }).first();
   const who = (await row.locator(".display").first().textContent())!.split(" ").slice(0, 2).join(" ");
   await row.locator(".desk-plan-link").click();
   await page.waitForURL(`**${SECTIONS.plan.href}**`);
@@ -895,7 +900,9 @@ test("a laptop gets two columns: the lineup's calls beside its field, five picku
   await assertNoHorizontalOverflow(page);
 
   await visit(page, SECTIONS.trade.href);
-  await page.getByRole("button", { name: OFFICE.buildOpen }).click();
+  // Two doors, and nobody picked for you: choose the builder, then a manager (W-037).
+  await page.getByTestId("room-trade").click();
+  await page.locator("#their-team").selectOption({ index: 1 });
   await page.getByRole("button", { name: /\+ Add/ }).first().click();
   const picker = page.locator('div[role=dialog][aria-label="Your roster"] > div.relative');
   await expect(picker).toBeVisible();

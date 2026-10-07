@@ -20,11 +20,13 @@ export async function openSavedLeague(l: MeLeague): Promise<void> {
 
 /**
  * Straight in after a sign-in (W-003, W-011): the league this device already has open, else the
- * account's last-used one. A league that will not load is no reason to keep someone at the
- * door, so a failure still lets them through; the desk has its own way to recover.
+ * account's last-used one.
  */
-export async function enterLastLeague(me: Me): Promise<void> {
-  if (loadConnection()) return;
+export async function enterLastLeague(me: Me): Promise<boolean> {
+  if (loadConnection()) return true;
   const pick = pickLeague(me.leagues);
   if (pick) await openSavedLeague(pick).catch(() => undefined);
+  // False when it would not open here (a private ESPN league with no key on this browser):
+  // the caller shows "Where to?", whose league row knows the way to the key form.
+  return !!loadConnection();
 }

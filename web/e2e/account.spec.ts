@@ -216,8 +216,10 @@ test("a stranger's door is the account: register, land on it, then link a league
   await page.goto("/login");
   await expect(page.getByLabel(ACCOUNT.phone.label)).toBeVisible();
   // And back in with the phone: a number on file signs straight in, no profile step, onto
-  // the where-to menu with the league on it.
+  // the desk of its league (W-011); /login once in is the where-to menu with it on.
   await phoneIn(page, phone);
+  await page.waitForURL("**/home");
+  await page.goto("/login");
   await expect(page.getByRole("heading", { level: 1, name: ACCOUNT.whereTo.title })).toBeVisible();
   await expect(page.getByTestId("where-league")).toHaveCount(1);
 });
@@ -461,7 +463,7 @@ test("a signed-in browser at the door sees 'checking you in', never a blank page
   await expect(page.getByTestId("door-checking")).toHaveCount(0);
 });
 
-test("signing in at the door lands on a short where-to menu: your league, add one, the account", async ({ context, page }) => {
+test("signing in at the door goes straight to the desk, and /login once in is the where-to menu", async ({ context, page }) => {
   await beAStranger(context);
   const email = freshEmail("menu");
   const token = await registerViaApi(page, email);
@@ -475,7 +477,14 @@ test("signing in at the door lands on a short where-to menu: your league, add on
   await page.getByLabel(ACCOUNT.email).fill(email);
   await page.getByLabel(ACCOUNT.password).fill(PASSWORD);
   await page.getByRole("button", { name: ACCOUNT.signIn, exact: true }).click();
+  // Straight in: the desk, on the account's league, with no stop at a menu (W-011) and no
+  // "checking you in" card swapped in for the form on the way (W-010).
+  await page.waitForURL("**/home");
+  const entered = JSON.parse((await page.evaluate(() => localStorage.getItem("booth.connection"))) ?? "null");
+  expect(entered?.league_id).toBe(CONNECTION.league_id);
 
+  // Signed in, the door is the menu: your league, add one, the account.
+  await page.goto("/login");
   const menu = page.getByTestId("where-to");
   await expect(menu.getByRole("heading", { level: 1, name: ACCOUNT.whereTo.title })).toBeVisible();
   await expect(page).toHaveURL(/\/login/);

@@ -130,8 +130,8 @@ function LoginInner({ start }: { start: AuthMode }) {
               // No league yet: the menu is the way to add one.
               if (!me.leagues.length) return;
               setLeaving(true);
-              await enterLastLeague(me);
-              router.replace("/home");
+              if (await enterLastLeague(me)) router.replace("/home");
+              else setLeaving(false); // it would not open here: the menu takes it from here
             }}
           />
         </div>

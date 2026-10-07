@@ -195,8 +195,8 @@ function Walk() {
             onIn={async (m) => {
               // A number already on file: this is a sign-in. With a league, straight to the desk.
               if (returningGoesIn(m) || firstStep(m, { path, ...local }) === "done") {
-                await enterLastLeague(m);
-                router.replace(walkExit(next));
+                // A league that will not open on this browser goes through "Where to?" instead.
+                router.replace((await enterLastLeague(m)) ? walkExit(next) : "/login");
               } else landed(m);
             }}
           />
