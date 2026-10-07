@@ -18,6 +18,7 @@ export const ADMIN_METRICS_FIXTURE: AdminMetrics = {
       spend_cents: 5500,
       cac_cents: 2750,
       paying_now: 3,
+      comped_now: 2,
     },
     previous: {
       revenue_cents: 499,
@@ -158,6 +159,61 @@ export const ADMIN_METRICS_FIXTURE: AdminMetrics = {
       finish_rate: 0.6666666666666666,
     },
   },
+  walk: {
+    cohort: 6,
+    steps: [
+      {
+        key: "signup",
+        label: "Signed up",
+        num: 6,
+        of_signups: 1.0,
+        of_previous: null,
+      },
+      {
+        key: "named",
+        label: "Named the office",
+        num: 0,
+        of_signups: 0.0,
+        of_previous: 0.0,
+      },
+      {
+        key: "league",
+        label: "Linked a league",
+        num: 3,
+        of_signups: 0.5,
+        of_previous: null,
+      },
+      {
+        key: "reveal",
+        label: "Saw the first call",
+        num: 0,
+        of_signups: 0.0,
+        of_previous: 0.0,
+      },
+      {
+        key: "offer",
+        label: "Saw the free week",
+        num: 0,
+        of_signups: 0.0,
+        of_previous: null,
+      },
+      {
+        key: "trial",
+        label: "Card on file",
+        num: 0,
+        of_signups: 0.0,
+        of_previous: null,
+      },
+      {
+        key: "convert",
+        label: "Paid after the week",
+        num: 0,
+        of_signups: 0.0,
+        of_previous: null,
+      },
+    ],
+    offer_skipped: 0,
+  },
   channels: {
     rows: [
       {
@@ -191,7 +247,7 @@ export const ADMIN_METRICS_FIXTURE: AdminMetrics = {
         verdict: "watch",
         campaigns: [
           {
-            campaign: "wk4 Â· hookA",
+            campaign: "wk4 · hookA",
             signups: 1,
             buyers: 1,
             revenue_cents: 499,

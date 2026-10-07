@@ -380,7 +380,9 @@ test("the owner's front office lists every account and the levers work", async (
   await row.getByRole("button", { name: `${ACCOUNT.admin.grant} ${PRICING.names.week_pass}` }).click();
   await expect(row.getByRole("button", { name: `${ACCOUNT.admin.revoke} ${PRICING.names.week_pass}` })).toBeVisible();
   await expect(row.getByRole("button", { name: `${ACCOUNT.admin.grant} ${PRICING.names.waivers}` })).toHaveCount(0);
-  await expect(row.getByText(ACCOUNT.plan.premium, { exact: true })).toBeVisible();
+  // A granted pass is not a sale: the badge says Comped and the plan line names it (W-052, W-053).
+  await expect(row.getByText(ACCOUNT.plan.comped, { exact: true })).toBeVisible();
+  await expect(row.getByText(new RegExp(`^${PRICING.names.week_pass}`))).toBeVisible();
   // One more league.
   await row.getByRole("button", { name: ACCOUNT.admin.slot }).click();
   await expect(row.getByText(ACCOUNT.admin.leagues(0, 4))).toBeVisible();

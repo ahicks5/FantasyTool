@@ -36,7 +36,7 @@ def main() -> None:
     from edge.business import metrics as m
 
     start, end = m.resolve_range(None, None, t.NOW)
-    report = m.report(t.EVENTS, t.USERS, t.SPEND, t.ACTIVITY, 3, start, end, t.NOW,
+    report = m.report(t.EVENTS, t.USERS, t.SPEND, t.ACTIVITY, 3, 2, start, end, t.NOW,
                       shares=[{"id": "ab3kx9qz", "views": 5, "created": t.T}])
     body = ts_style(json.dumps(report, indent=2, ensure_ascii=False))
     OUT.write_text(

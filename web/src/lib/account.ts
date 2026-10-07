@@ -3,6 +3,7 @@
  * and how much room is left for leagues. Pure, so every rule is a node:test.
  */
 import type { Account, AdminUser, MeLeague, AccountPlan, Product, Sku } from "./types";
+import { PRICING } from "./vocab.ts";
 
 /**
  * The league a returning account should land on: the one opened most recently on any
@@ -132,4 +133,15 @@ export function matchesAccount(u: AdminUser, query: string): boolean {
   if (!needle) return true;
   const hay = [u.email, u.name, u.phone ?? "", displayPhone(u.phone), ...u.leagues.flatMap((l) => [l.name, l.team_name ?? "", l.league_id])];
   return hay.some((h) => (h ?? "").toLowerCase().includes(needle));
+}
+
+/**
+ * A plan by the names the rest of the app uses ("Season pass", "Week pass"), never the catalog's
+ * internal "The Owner's Suite" (W-053). Passes only: a league slot is not a plan. Several at once
+ * read with a middot; none is "Free".
+ */
+export function planLabel(skus: readonly string[]): string {
+  const names = PRICING.names as Record<string, string>;
+  const passes = skus.filter((k) => k !== "league_slot" && k !== "free" && names[k]);
+  return passes.length ? passes.map((k) => names[k]).join(" · ") : names.free;
 }

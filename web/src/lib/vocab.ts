@@ -906,6 +906,8 @@ export const ACCOUNT = {
     eyebrow: "Plan",
     free: "Free",
     premium: "Premium",
+    /** A pass nobody paid for: an admin grant (W-052, W-053). */
+    comped: "Comped",
     admin: "Admin",
     upgrade: "Upgrade to full premium",
     /** A week-pass holder's button: the season, with the week they paid for counted. */
@@ -921,6 +923,10 @@ export const ACCOUNT = {
     trialOpen: (date: string) => `Free week. Every room open until ${date}.`,
     /** Stripe's customer portal, for the week pass. */
     manage: "Manage or cancel",
+    /** Every paid plan (W-048): receipts and the card on file. The week pass keeps "Manage or cancel". */
+    billing: "Receipts and billing",
+    since: (date: string) => `Since ${date}.`,
+    compedLine: "Complimentary. Nothing to bill.",
   },
   /** Leagues on file. */
   leagues: {
@@ -932,6 +938,9 @@ export const ACCOUNT = {
     keeps: "Forgetting a league does not give its slot back this season.",
     forget: "Forget",
     forgetAria: (name: string) => `Forget ${name}`,
+    /** Asked before a league goes, because its slot does not come back (W-047). */
+    forgetAsk: (name: string) => `Forget ${name}? Its slot stays used this season.`,
+    forgetKeep: "Keep it",
     open: "Open",
     openAria: (name: string) => `Open ${name}`,
     reading: "Reading now",
@@ -1128,6 +1137,8 @@ export const ACCOUNT = {
       tiles: {
         revenue: "Revenue",
         paying: "Paying now",
+        /** Under "Paying now": passes granted, not bought (W-052). */
+        comped: (n: number) => `Comped ${n}`,
         buyers: "New buyers",
         signups: "Sign-ups",
         linked: "Leagues linked",

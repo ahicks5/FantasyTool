@@ -172,6 +172,9 @@ def _account(email: str) -> dict:
     out["league_slots"] = _slots(email)
     # When a week pass runs out (epoch seconds), so the account page can say so; None without one.
     out["pass_until"] = store.pass_until(email, products.WEEK_SKU, _season()) if email else None
+    # The plan card's facts (W-048): since when, and whether anyone paid for it (a grant did not).
+    out["plan_since"] = store.plan_since(email, _season()) if email and skus else None
+    out["plan_paid"] = email in _payers() if email and skus else False
     out["sms_opt_in"] = bool((store.get_user(email) or {}).get("sms_opt_in")) if email else False
     return out
 
@@ -1095,10 +1098,20 @@ def set_sms_pref(body: SmsPrefIn, email: str = Depends(current_user)):
     return {"sms_opt_in": body.sms_opt_in}
 
 
-def _paying_now() -> int:
+def _payers() -> set[str]:
+    """Accounts with money on record: a purchase, renewal, upgrade or converted trial."""
+    return {e["email"] for e in store.events(names=telemetry.MONEY_EVENTS) if int(e["amount_cents"] or 0) > 0}
+
+
+def _paying_now() -> tuple[int, int]:
+    """(paying, comped): accounts holding a pass right now, split by whether anyone paid for it.
+    A complimentary grant used to count as "paying", which put 4 payers beside $0 revenue
+    (Andrew, 2026-10-06, W-052)."""
     season = _season()
-    return sum(1 for u in store.users(limit=100_000)
-               if products.is_premium(store.skus(u["email"], season)))
+    payers = _payers()
+    premium = [u["email"] for u in store.users(limit=100_000) if products.is_premium(store.skus(u["email"], season))]
+    paying = sum(1 for e in premium if e in payers)
+    return paying, len(premium) - paying
 
 
 @app.get("/api/admin/metrics")
@@ -1114,7 +1127,7 @@ def admin_metrics(frm: str | None = None, to: str | None = None, _: str = Depend
     span = end - start
     return metrics.report(store.events(until=end), store.users(limit=100_000), store.spend(),
                           store.activity(since=start - 6 * metrics.WEEK - span),
-                          _paying_now(), start, end, now, shares=store.share_stats(10))
+                          *_paying_now(), start, end, now, shares=store.share_stats(10))
 
 
 class SpendIn(BaseModel):

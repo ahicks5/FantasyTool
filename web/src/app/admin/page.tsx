@@ -9,7 +9,7 @@ import { Button, Card, ErrorBox, Eyebrow, LinkButton } from "@/components/ui";
 import { adminGrant, adminResetLink, adminRevoke, adminSetRole, adminUserEvents, adminUsers } from "@/lib/api";
 import Dashboard, { type MetricsTab } from "@/components/admin/Dashboard";
 import { money } from "@/lib/adminMetrics";
-import { accountContact, accountLabel, matchesAccount, shortDate } from "@/lib/account";
+import { accountContact, accountLabel, matchesAccount, planLabel, shortDate } from "@/lib/account";
 import { useSession } from "@/lib/session";
 import type { AdminEvent, AdminUser, AdminUsersResponse, Sku } from "@/lib/types";
 import { ACCOUNT, PRICING } from "@/lib/vocab";
@@ -94,6 +94,7 @@ function Row({ u, me, onChange }: { u: AdminUser; me: string; onChange: () => vo
   }
 
   const premium = u.plan.tier === "premium";
+  const paid = (u.revenue_cents ?? 0) > 0;
   return (
     <li className="card p-4" data-testid="admin-row" data-email={u.email}>
       <div className="flex items-start justify-between gap-3">
@@ -105,14 +106,15 @@ function Row({ u, me, onChange }: { u: AdminUser; me: string; onChange: () => vo
           {accountContact(u) && <p className="truncate text-[12px] text-muted">{accountContact(u)}</p>}
         </div>
         <span className="flex shrink-0 items-center gap-1.5">
-          <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${premium ? "bg-start-fill text-white" : "bg-soft text-muted"}`}>
-            {premium ? ACCOUNT.plan.premium : ACCOUNT.plan.free}
+          {/* Paid, comped or free: a granted pass is not a customer (W-052, W-053). */}
+          <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${premium && paid ? "bg-start-fill text-white" : premium ? "bg-flip-soft text-flip" : "bg-soft text-muted"}`}>
+            {premium ? (paid ? planLabel(u.skus) : ACCOUNT.plan.comped) : ACCOUNT.plan.free}
           </span>
           {u.is_admin && <span className="inline-flex rounded-full bg-ink px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-paper">{ACCOUNT.plan.admin}</span>}
         </span>
       </div>
       <p className="mt-2 text-[13px] leading-snug text-ink-2">
-        {u.plan.name} <span aria-hidden>·</span> <span className="tnum">{ACCOUNT.admin.leagues(u.leagues.length, u.leagues_allowed)}</span>
+        {planLabel(u.skus)} <span aria-hidden>·</span> <span className="tnum">{ACCOUNT.admin.leagues(u.leagues.length, u.leagues_allowed)}</span>
       </p>
       <p className="mt-0.5 text-[12px] text-muted">
         {ACCOUNT.admin.joined} <span className="tnum">{shortDate(u.created) || ACCOUNT.admin.never}</span> <span aria-hidden>·</span> {ACCOUNT.admin.lastSeen}{" "}

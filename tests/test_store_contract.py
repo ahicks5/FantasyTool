@@ -57,6 +57,10 @@ def test_a_week_pass_runs_for_its_week_plus_grace_then_drops_out(store):
     assert until is not None and abs(until - (t0 + 8 * day)) < 60
     assert store.pass_until("a@b.c", "week_pass", 2026, now=t0 + 9 * day) is None
     assert store.pass_until("a@b.c", "full_report", 2026) is None, "the season pass has no clock"
+    # The plan card's "since" (W-048): the first live purchase of the season.
+    since = store.plan_since("a@b.c", 2026)
+    assert since is not None and abs(since - t0) < 60
+    assert store.plan_since("nobody@b.c", 2026) is None
 
 
 def test_each_paid_week_is_its_own_window_and_a_replay_is_not_a_second(store):
