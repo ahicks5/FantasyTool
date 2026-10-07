@@ -206,7 +206,7 @@ _Generated from the tree by `scripts/gen_map.py`; `tests/test_docs_map.py` fails
 | `web/src/app/page.tsx` | The landing page: the front office you walk into, how quick it is, the answers on your desk, the staff, the film, and the door. Indexable. | 556 |
 | `web/src/app/privacy/page.tsx` | The privacy policy. docs/DATA_INVENTORY.md is the source of truth; if they disagree this page is stale. | 187 |
 | `web/src/app/register/page.tsx` | Create an account: the sign-up walk, one question a screen, from the phone to a linked league and the free week (docs/SPEC-ONBOARDING.md). | 7 |
-| `web/src/app/report/page.tsx` | The film: the replay of your week first, then the standings for everyone, then the season week by week. | 224 |
+| `web/src/app/report/page.tsx` | The film: the replay of your week first, then the standings for everyone, then the season week by week. | 226 |
 | `web/src/app/reset/page.tsx` | Set a new password from a reset link (`?token=`), then land upstairs signed in. | 84 |
 | `web/src/app/robots.ts` | robots.txt, built from the indexable paths in lib/site.ts. | 19 |
 | `web/src/app/s/[id]/page.tsx` | The public share snapshot: opens with no account, unfurls with a rendered card. | 479 |
