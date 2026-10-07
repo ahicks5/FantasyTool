@@ -219,6 +219,8 @@ const PAGES: PageCase[] = [
     check: async (page) => {
       // The head coach's stamp lands only when something is pending, and then it is urgent:
       // an "All set" stamp over a page that says so was a toll (W-020).
+      // It mounts in the same commit as the hero, so wait for the hero before counting it.
+      await expect(page.getByLabel(LINEUP.coach.aria)).toBeVisible();
       const boom = page.getByRole("dialog", { name: LINEUP.stamp.aria });
       if (await boom.count()) {
         await expect(boom.getByText(/^Urgent/)).toBeVisible();
@@ -630,7 +632,8 @@ test("the office leads with your roster and three deal rows, and skips to the tr
   expect(await deals.count()).toBeLessThanOrEqual(3);
   await expect(deals.first().getByText(OFFICE.youGive)).toBeVisible();
   await page.getByRole("button", { name: OFFICE.jump }).click();
-  await expect(page.getByRole("button", { name: OFFICE.buildClose })).toBeVisible();
+  // The jump opens the trade room on the builder (W-037).
+  await expect(page.getByTestId("room-trade")).toHaveAttribute("aria-pressed", "true");
   await assertNoHorizontalOverflow(page);
 });
 
@@ -1057,7 +1060,8 @@ test("a free reader gets the whole clash, then the haze on the verdict and none 
   const clash = page.locator(".clash");
   await expect(clash).toBeVisible();
   await expect(clash.getByText(BATTLE.clash.sealed)).toBeVisible({ timeout: 15_000 });
-  await clash.click();
+  // The clash is short now (W-024): it may finish on its own before a tap lands.
+  await clash.click({ timeout: 2_000 }).catch(() => undefined);
   await expect(page.locator('[data-locked="battle"]')).toBeVisible();
   await expect(page.locator(".tape-row")).toHaveCount(0);
 });
