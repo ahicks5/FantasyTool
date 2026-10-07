@@ -21,7 +21,7 @@ name value back).
 
 ## Where we are
 
-- **Status:** PAUSED 2026-10-05, Monday evening of NFL week 4. Last ID: W-037.
+- **Status:** RESUMED 2026-10-06: film logged (W-038 to W-041); walking pages 9–13. Last ID: W-041.
 - **Paused at:** pages 1–7 walked and logged (landing, sign-up, sign-in, desk + full matchup, depth chart + player sheet + Position Battle, scouting + pickup, GM's Office + Trade Lab). Page 8, the film (`/report`), was looked at but **not reviewed with Andrew**: he will do it last, in a later session (draft observations are under §8 as open questions). Pages 9–13 (`/connect`, `/account`, upgrade sheet, `/admin`, privacy/terms/404) are not started.
 - **To resume:** `uv run python scripts/walkthrough.py start`, sign in if past page 3, then carry
   on from page 9 (`/connect`), then 10–13, then the film (§8) last. The next ID is the one after the last one in the log.
@@ -720,27 +720,49 @@ first, then fix those items on top of it.
 
 ---
 
-## 8. The film · `/report` (not yet reviewed with Andrew)
-
-Andrew will walk this page last, in a later session. What Claude saw on 2026-10-05 (Monday,
-week 4), kept as **open questions**, not logged items. No IDs until Andrew has answered.
+## 8. The film · `/report`
 
 _Files: `web/src/app/report/page.tsx`, `web/src/components/film/Replay.tsx`, `film/League.tsx`,
 `film/Projector.tsx`, `Film.tsx`, `FilmWeek.tsx`, `Standings.tsx`, `web/src/lib/film.ts`,
 `edge/engine/film.py`, `league_film.py`, `recap.py`, `standings.py`._
 
-- **Open question 1** · When should week 4's replay appear: once all the user's starters are final, or at the Tuesday-noon rollover (W-018)?
-  Seen: Monday, week 4 decided for UVU (lost 138.7–140.4), but the film's newest replay is
-  week 3, the standings are through week 3, and the desk's "The film" notebook still says "Last
-  week, graded · W 125–114".
-- **Open question 2** · Should "Before Thursday" show only on the newest replay while that next week is ahead?
-  Seen: Week 3's last card, "BEFORE THURSDAY · START HIM · David Montgomery: He's your RB2
-  pick next week", is still showing after that week (and that game, 4.3) has been played.
-- **Open question 3** · For "The one who let you down", list only the stats that explain a bad game?
-  Seen: "The one who let you down" (Montgomery) lists "played 63% of the snaps (norm 36%)"
-  and "His 2nd best of 3 games this season" as reasons he flopped; both read as good news.
-- **Seen, not yet asked** · "You'd have beaten 7 of 11 teams this week" appears twice in a row (cover, then
-  card 1/7).
+Seen 2026-10-05 (Monday of week 4). Andrew answered the open questions on 2026-10-06 with "got
+it on 1", taking Claude's suggested answer to each.
 
-Pages still to walk after the film: 9 `/connect`, 10 `/account`, 11 upgrade sheet / pass offer,
-12 `/admin`, 13 privacy, terms, 404.
+### W-038 · Week 4's replay should appear once your own starters have all played
+- **Where:** `/report`, the desk's "The film" notebook · all viewports and themes
+- **Andrew:** "got it on 1" (accepting: as soon as your starters are done, not Tuesday noon)
+- **What happened:** UVU's week 4 was decided (lost 138.7–140.4), but the newest replay was week
+  3, the standings were through week 3, and the desk notebook still said "Last week, graded · W
+  125–114".
+- **Note:** use the same "my week is done" rule the rest of the app now uses (every starter
+  final): build the replay for the week just played from the live points, and roll the
+  notebook's cover to it. Standings can wait for the platform's own results.
+  Files: `edge/engine/film.py`, `recap.py`, the shared game-state helper, `web/src/components/Desk.tsx`.
+- **Priority:** P1 · **Size:** M
+
+### W-039 · "Before Thursday" only on the newest replay, while that week is still ahead
+- **Where:** `/report` replay, last card · all viewports
+- **Andrew:** "got it on 1" (accepting: yes)
+- **What happened:** week 3's last card still said "BEFORE THURSDAY · START HIM · David Montgomery:
+  He's your RB2 pick next week" after that week (4.3 points) was played.
+- **Note:** render the card only for the newest replay and only before the next week's first
+  kickoff. Files: `web/src/components/film/Replay.tsx`, `web/src/lib/film.ts`.
+- **Priority:** P2 · **Size:** S
+
+### W-040 · "The one who let you down" lists only reasons that explain a bad game
+- **Where:** `/report` replay · all viewports
+- **Andrew:** "got it on 1" (accepting: yes)
+- **What happened:** Montgomery (14.4 projected, 6.8 scored) "flopped" with "played 63% of the snaps
+  (norm 36%)" and "His 2nd best of 3 games this season", both good news.
+- **Note:** for the dud card keep only reads that point down (fewer snaps, touches, red-zone
+  looks, efficiency under norm); drop rows that point up. Same filter in reverse for "the one
+  who carried you". Files: `edge/engine/film.py` (the reasons), `web/src/lib/film.ts`.
+- **Priority:** P2 · **Size:** S
+
+### W-041 · "You'd have beaten 7 of 11 teams" is said twice in a row
+- **Where:** `/report` replay cover and card 1/7 · all viewports
+- **Andrew:** "got it on 1" (accepting Claude's note: drop one copy)
+- **Note:** keep it on the cover; drop it from "The game" card.
+  Files: `web/src/components/film/Replay.tsx`.
+- **Priority:** P3 · **Size:** S
