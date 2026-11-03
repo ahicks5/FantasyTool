@@ -123,3 +123,63 @@ The numbers in this document, and the ones `tests/test_evaluate.py` asserts, are
 graded-at-the-time column; the recorded fixtures preserve the projections as they stood. Do
 not refresh `docs/backtest_week1.json` by re-running it — that overwrites a measurement with a
 worse one.
+
+<!-- weekly:2026:8 -->
+## Week 8 — graded 2026-11-03
+
+Produced by `uv run python scripts/weekly.py grade`. Raw numbers in `docs/backtest_week8.json` and `docs/backtest_moves_2026.json`.
+
+### Lineup advice
+
+```
+projections: live API (may have been revised after the games)
+
+PROJECTIONS  week 8: n=388 mean err -0.03 MAE 3.64
+  margin   <1.5:  51.6% right  (n=1371)
+  margin  1.5-4:  60.7% right  (n=1216)
+  margin    4-8:  71.2% right  (n=978)
+  margin     >8:  82.6% right  (n=552)
+  The Megalabowl                      12 teams  +2.52 pts/team
+  Special Teams Dynasty League        12 teams  +2.60 pts/team
+  Chopped Koopa troopas                7 teams  +3.97 pts/team
+  D201: History of a Decade of Dynas  13 teams  +3.94 pts/team
+  Fantasy Kings                       10 teams  +6.02 pts/team
+  Randoms Dynasty League               7 teams  +13.59 pts/team
+
+DECISIONS  week 8: 61 teams in 6 leagues (7 abandoned, excluded)
+  manager avg 121.67  ->  Edge avg 126.52   (+4.85 pts/team)
+  Edge >= manager: 88%   better: 31%   worse: 12%
+  captured 22% of the points managers left on the bench
+  start/sit calls Edge actually made:
+    Lock        78.6% right   +9.80 pts/call  (n=28)
+    Lean        80.0% right   +2.78 pts/call  (n=10)
+
+wrote docs/backtest_week8.json
+```
+
+### Waivers, FAAB and trades
+
+```
+replaying 6 leagues, decision weeks 8-8
+  megalabowl               weeks 8-8: 12 claims, 0 holds, 12 priced bids, 0 trade sides
+  standard_ppr             weeks 8-8: 11 claims, 1 holds, 0 priced bids, 0 trade sides
+  superflex                weeks 8-8: 10 claims, 0 holds, 10 priced bids, 0 trade sides
+  multiflex_te_premium     weeks 8-8: 8 claims, 6 holds, 0 priced bids, 0 trade sides
+  wrrb_flex                weeks 8-8: 10 claims, 0 holds, 0 priced bids, 0 trade sides
+  idp                      weeks 8-8: 8 claims, 2 holds, 0 priced bids, 0 trade sides
+
+WAIVERS  59 claims in 6 leagues
+  our claim was worth +1.79 pts/week to the best lineup; 80% helped at all
+  head to head on 27 weeks where the manager also moved: manager +1.22 -> Edge +1.79 (59% of the time we picked better)
+
+HOLDS  9 weeks we said sit tight
+  against hindsight, the best add on the wire would have been worth +0.32 pts/week (67% of holds had nothing better available at all)
+  on 4 of them the manager moved anyway: their move was worth +0.00 pts/week, so holding was the better call 100% of the time
+
+FAAB  22 bids against the price the market really paid
+  we bid 4.3% of budget on average, the winner paid 1.7%; our bid would have won 91% (overpaying by 3.2% of budget when it did)
+    megalabowl             n= 12  budget $100   we bid    4.0  market    3.0  won 83%
+    superflex              n= 10  budget $200   we bid    9.5  market    0.3  won 100%
+
+wrote docs/backtest_moves_2026.json
+```

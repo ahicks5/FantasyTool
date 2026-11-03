@@ -1,0 +1,54 @@
+{
+ "week": 8,
+ "season": 2026,
+ "projections": {
+  "n": 388,
+  "mae": 3.64,
+  "buckets": {
+   "<1.5": {
+    "hit_rate": 0.516,
+    "n": 1371
+   },
+   "1.5-4": {
+    "hit_rate": 0.607,
+    "n": 1216
+   },
+   "4-8": {
+    "hit_rate": 0.712,
+    "n": 978
+   },
+   ">8": {
+    "hit_rate": 0.826,
+    "n": 552
+   }
+  }
+ },
+ "decisions": {
+  "season": 2026,
+  "week": 8,
+  "leagues": 6,
+  "teams": 61,
+  "skipped": 7,
+  "manager_avg": 121.67,
+  "edge_avg": 126.52,
+  "avg_gain": 4.85,
+  "beat_or_tied": 0.885,
+  "beat": 0.311,
+  "hurt": 0.115,
+  "gap_captured": 0.221,
+  "confidence": {
+   "Lock": {
+    "n": 28,
+    "right": 22,
+    "hit_rate": 0.786,
+    "avg_points": 9.8
+   },
+   "Lean": {
+    "n": 10,
+    "right": 8,
+    "hit_rate": 0.8,
+    "avg_points": 2.78
+   }
+  }
+ }
+}
