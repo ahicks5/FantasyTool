@@ -2,10 +2,1197 @@
  "summary": {
   "season": 2026,
   "leagues": 6,
-  "algo_version": "evaluate_moves.v1"
+  "algo_version": "evaluate_moves.v1",
+  "waivers": {
+   "claims": 63,
+   "avg_gain_per_week": 1.04,
+   "helped": 0.556,
+   "head_to_head": 35,
+   "manager_avg_gain": 0.92,
+   "beat_manager": 0.486
+  },
+  "holds": {
+   "n": 5,
+   "right_vs_oracle": 0.4,
+   "avg_missed_per_week": 0.94,
+   "contested": 2,
+   "manager_avg_gain": 0.0,
+   "right_vs_manager": 1.0
+  },
+  "faab": {
+   "n": 20,
+   "would_have_won": 0.9,
+   "avg_our_share": 6.03,
+   "avg_winning_share": 0.95,
+   "avg_overpay_share_when_winning": 5.86,
+   "by_league": {
+    "megalabowl": {
+     "n": 13,
+     "would_have_won": 0.846,
+     "avg_our_bid": 6.0,
+     "avg_winning_bid": 1.5,
+     "budget": 100
+    },
+    "superflex": {
+     "n": 7,
+     "would_have_won": 1.0,
+     "avg_our_bid": 12.1,
+     "avg_winning_bid": 0.0,
+     "budget": 200
+    }
+   }
+  },
+  "trades": {
+   "n": 6,
+   "directional": 5,
+   "right": 0.8,
+   "avg_actual_delta": 0.36
+  }
  },
- "claims": [],
- "holds": [],
- "bids": [],
- "trades": []
+ "claims": [
+  {
+   "league": "megalabowl",
+   "team": "Gaainzzz",
+   "week": 10,
+   "add": "Bryce Young",
+   "drop": "Darius Cooper",
+   "projected_net": 9.34,
+   "bid": 10,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Indianapolis Colts",
+   "manager_gain": 3.5
+  },
+  {
+   "league": "megalabowl",
+   "team": "The Dart Knight Chases",
+   "week": 10,
+   "add": "Austin Ekeler",
+   "drop": "Emeka Egbuka",
+   "projected_net": 3.956,
+   "bid": 10,
+   "edge_gain": 0.5,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "megalabowl",
+   "team": "Eppsy13",
+   "week": 10,
+   "add": "Bryce Young",
+   "drop": "Carnell Tate",
+   "projected_net": 45.975,
+   "bid": 10,
+   "edge_gain": 2.47,
+   "weeks": 4,
+   "manager_add": "Aaron Rodgers",
+   "manager_gain": 5.33
+  },
+  {
+   "league": "megalabowl",
+   "team": "FxxxKroenke",
+   "week": 10,
+   "add": "Austin Ekeler",
+   "drop": "Michael Wilson",
+   "projected_net": 2.729,
+   "bid": 10,
+   "edge_gain": 1.5,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "megalabowl",
+   "team": "GoldenPP",
+   "week": 10,
+   "add": "Bryce Young",
+   "drop": "Rome Odunze",
+   "projected_net": 10.043,
+   "bid": 10,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Darnell Washington",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "megalabowl",
+   "team": "Prestige Worldwide",
+   "week": 10,
+   "add": "Austin Ekeler",
+   "drop": "Luther Burden III",
+   "projected_net": 8.664,
+   "bid": 10,
+   "edge_gain": 2.02,
+   "weeks": 4,
+   "manager_add": "Zonovan Knight",
+   "manager_gain": 0.6
+  },
+  {
+   "league": "megalabowl",
+   "team": "Noflyzone444",
+   "week": 10,
+   "add": "Bryce Young",
+   "drop": "Bo Nix",
+   "projected_net": 8.707,
+   "bid": 10,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Geno Smith",
+   "manager_gain": -2.74
+  },
+  {
+   "league": "megalabowl",
+   "team": "HusH",
+   "week": 10,
+   "add": "Bryce Young",
+   "drop": "Mike Evans",
+   "projected_net": 4.457,
+   "bid": 10,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Tank Dell",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "megalabowl",
+   "team": "Wait, another league?",
+   "week": 10,
+   "add": "Bryce Young",
+   "drop": "Caleb Williams",
+   "projected_net": 0.756,
+   "bid": 10,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "megalabowl",
+   "team": "Raft Ryders",
+   "week": 10,
+   "add": "Darren Waller",
+   "drop": "Bucky Irving",
+   "projected_net": 9.844,
+   "bid": 10,
+   "edge_gain": 0.85,
+   "weeks": 4,
+   "manager_add": "San Francisco 49ers",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "megalabowl",
+   "team": "Themagicman",
+   "week": 10,
+   "add": "Indianapolis Colts",
+   "drop": "Detroit Lions",
+   "projected_net": 3.12,
+   "bid": 10,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Kaleb Johnson",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "megalabowl",
+   "team": "2KSports",
+   "week": 10,
+   "add": "Indianapolis Colts",
+   "drop": "Jonathon Brooks",
+   "projected_net": 2.83,
+   "bid": 10,
+   "edge_gain": 2.0,
+   "weeks": 4,
+   "manager_add": "Green Bay Packers",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "standard_ppr",
+   "team": "I Feel Purdy",
+   "week": 10,
+   "add": "Demarcus Robinson",
+   "drop": "Jayden Reed",
+   "projected_net": 1.27,
+   "bid": 172,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "standard_ppr",
+   "team": "younger33",
+   "week": 10,
+   "add": "Indianapolis Colts",
+   "drop": "Pat Bryant",
+   "projected_net": 2.65,
+   "bid": 172,
+   "edge_gain": 1.75,
+   "weeks": 4,
+   "manager_add": "Austin Ekeler",
+   "manager_gain": 0.38
+  },
+  {
+   "league": "standard_ppr",
+   "team": "Bucsmaximus",
+   "week": 10,
+   "add": "Indianapolis Colts",
+   "drop": "Will Shipley",
+   "projected_net": 8.08,
+   "bid": 172,
+   "edge_gain": 3.75,
+   "weeks": 4,
+   "manager_add": "Indianapolis Colts",
+   "manager_gain": 3.75
+  },
+  {
+   "league": "standard_ppr",
+   "team": "Guns N\u2019 Moses",
+   "week": 10,
+   "add": "Indianapolis Colts",
+   "drop": "Roschon Johnson",
+   "projected_net": 2.06,
+   "bid": 172,
+   "edge_gain": 2.25,
+   "weeks": 4,
+   "manager_add": "Brevyn Spann-Ford",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "standard_ppr",
+   "team": "Thorpedo\u2019s Torpedos",
+   "week": 10,
+   "add": "Ryan Fitzgerald",
+   "drop": "Marvin Harrison Jr.",
+   "projected_net": 8.57,
+   "bid": 172,
+   "edge_gain": 2.75,
+   "weeks": 4,
+   "manager_add": "Xavier Legette",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "standard_ppr",
+   "team": "Dustin Wells",
+   "week": 10,
+   "add": "Indianapolis Colts",
+   "drop": "Ladd McConkey",
+   "projected_net": 1.3,
+   "bid": 172,
+   "edge_gain": 1.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "standard_ppr",
+   "team": "Bigcat42",
+   "week": 10,
+   "add": "Indianapolis Colts",
+   "drop": "Cedric Tillman",
+   "projected_net": 8.08,
+   "bid": 172,
+   "edge_gain": 3.75,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "standard_ppr",
+   "team": "Tua Legit To Quit",
+   "week": 10,
+   "add": "Austin Ekeler",
+   "drop": "Jaydon Blue",
+   "projected_net": 10.098,
+   "bid": 172,
+   "edge_gain": 2.1,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "standard_ppr",
+   "team": "Big Duck Energy",
+   "week": 10,
+   "add": "Ryan Fitzgerald",
+   "drop": "Ja'Tavion Sanders",
+   "projected_net": 8.57,
+   "bid": 172,
+   "edge_gain": 2.75,
+   "weeks": 4,
+   "manager_add": "Dominic Zvada",
+   "manager_gain": 0.5
+  },
+  {
+   "league": "standard_ppr",
+   "team": "TrentDuckworth",
+   "week": 10,
+   "add": "Indianapolis Colts",
+   "drop": "Jake Bobo",
+   "projected_net": 6.26,
+   "bid": 172,
+   "edge_gain": 5.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "superflex",
+   "team": "Let James Cook",
+   "week": 10,
+   "add": "Aaron Rodgers",
+   "drop": "Makai Lemon",
+   "projected_net": 2.576,
+   "bid": 18,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Jordan Addison",
+   "manager_gain": -1.2
+  },
+  {
+   "league": "superflex",
+   "team": "canzhi",
+   "week": 10,
+   "add": "Aaron Rodgers",
+   "drop": "Emeka Egbuka",
+   "projected_net": 6.912,
+   "bid": 18,
+   "edge_gain": 1.68,
+   "weeks": 4,
+   "manager_add": "Aaron Rodgers",
+   "manager_gain": 1.68
+  },
+  {
+   "league": "superflex",
+   "team": "Beijing Cucks",
+   "week": 10,
+   "add": "Baltimore Ravens",
+   "drop": "Ladd McConkey",
+   "projected_net": 9.28,
+   "bid": 18,
+   "edge_gain": 1.34,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "superflex",
+   "team": "Rise of SkyWalker",
+   "week": 10,
+   "add": "Aaron Rodgers",
+   "drop": "Tyler Loop",
+   "projected_net": 2.565,
+   "bid": 18,
+   "edge_gain": 1.04,
+   "weeks": 4,
+   "manager_add": "Jordyn Tyson",
+   "manager_gain": 0.41
+  },
+  {
+   "league": "superflex",
+   "team": "Cleveland Navaliers",
+   "week": 10,
+   "add": "Mike Gesicki",
+   "drop": "RJ Harvey",
+   "projected_net": 2.761,
+   "bid": 18,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Baltimore Ravens",
+   "manager_gain": 0.32
+  },
+  {
+   "league": "superflex",
+   "team": "mkcheung",
+   "week": 10,
+   "add": "Germie Bernard",
+   "drop": "Caleb Williams",
+   "projected_net": 4.451,
+   "bid": 18,
+   "edge_gain": 0.18,
+   "weeks": 4,
+   "manager_add": "Germie Bernard",
+   "manager_gain": 0.18
+  },
+  {
+   "league": "superflex",
+   "team": "Love Ty Nabers Penix\ud83c\udf46",
+   "week": 10,
+   "add": "Aaron Rodgers",
+   "drop": "Michael Wilson",
+   "projected_net": 5.506,
+   "bid": 1,
+   "edge_gain": 0.7,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "superflex",
+   "team": "kanaad",
+   "week": 10,
+   "add": "Aaron Rodgers",
+   "drop": "Sam Darnold",
+   "projected_net": 12.891,
+   "bid": 18,
+   "edge_gain": 2.63,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "superflex",
+   "team": "DB",
+   "week": 10,
+   "add": "Aaron Rodgers",
+   "drop": "Marvin Harrison Jr.",
+   "projected_net": 12.268,
+   "bid": 18,
+   "edge_gain": 3.15,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "superflex",
+   "team": "Tummus",
+   "week": 10,
+   "add": "Germie Bernard",
+   "drop": "Carnell Tate",
+   "projected_net": 0.884,
+   "bid": 18,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "Patrik Starr",
+   "week": 10,
+   "add": "Audric Estime",
+   "drop": "Ladd McConkey",
+   "projected_net": 4.273,
+   "bid": null,
+   "edge_gain": 0.45,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "It's gonna be Maye",
+   "week": 10,
+   "add": "Audric Estime",
+   "drop": "Rome Odunze",
+   "projected_net": 2.267,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "Jabba",
+   "week": 10,
+   "add": "Audric Estime",
+   "drop": "Michael Wilson",
+   "projected_net": 5.274,
+   "bid": null,
+   "edge_gain": 0.53,
+   "weeks": 4,
+   "manager_add": "Ray Davis",
+   "manager_gain": 0.2
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "orangecrush43",
+   "week": 10,
+   "add": "Audric Estime",
+   "drop": "Ted Hurst III",
+   "projected_net": 3.743,
+   "bid": null,
+   "edge_gain": 0.05,
+   "weeks": 4,
+   "manager_add": "Tutu Atwell",
+   "manager_gain": 0.23
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "dcsportsfanatik",
+   "week": 10,
+   "add": "Audric Estime",
+   "drop": "Emanuel Wilson",
+   "projected_net": 1.1,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "I Choose You, Puka-chu!",
+   "week": 10,
+   "add": "Drew Lock",
+   "drop": "Malik Benson",
+   "projected_net": 0.929,
+   "bid": null,
+   "edge_gain": 0.05,
+   "weeks": 4,
+   "manager_add": "Brevyn Spann-Ford",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "Fatter Pandas",
+   "week": 10,
+   "add": "Audric Estime",
+   "drop": "Roman Wilson",
+   "projected_net": 0.95,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Pierre Strong Jr.",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "Water sucks!!",
+   "week": 10,
+   "add": "Drew Lock",
+   "drop": "Jayden Reed",
+   "projected_net": 5.574,
+   "bid": null,
+   "edge_gain": 2.84,
+   "weeks": 4,
+   "manager_add": "Jordan Watkins",
+   "manager_gain": 1.05
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "HunterX Golden",
+   "week": 10,
+   "add": "Brevyn Spann-Ford",
+   "drop": "Bucky Irving",
+   "projected_net": 2.641,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "jakirb93",
+   "week": 10,
+   "add": "Audric Estime",
+   "drop": "Jaydon Blue",
+   "projected_net": 3.195,
+   "bid": null,
+   "edge_gain": 0.12,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "Treymoses32",
+   "week": 10,
+   "add": "Kyle McCord",
+   "drop": "Caleb Williams",
+   "projected_net": 1.425,
+   "bid": null,
+   "edge_gain": 0.49,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "wrrb_flex",
+   "team": "The DART Side",
+   "week": 10,
+   "add": "Houston Texans",
+   "drop": "Jaxson Dart",
+   "projected_net": 2.08,
+   "bid": 57,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "wrrb_flex",
+   "team": "Show me your TD'S",
+   "week": 10,
+   "add": "Rico Dowdle",
+   "drop": "Will Shipley",
+   "projected_net": 3.998,
+   "bid": 57,
+   "edge_gain": 0.75,
+   "weeks": 4,
+   "manager_add": "Audric Estime",
+   "manager_gain": 0.05
+  },
+  {
+   "league": "wrrb_flex",
+   "team": "ericc12345",
+   "week": 10,
+   "add": "Houston Texans",
+   "drop": "Tyrone Tracy Jr.",
+   "projected_net": 3.97,
+   "bid": 57,
+   "edge_gain": 0.75,
+   "weeks": 4,
+   "manager_add": "Indianapolis Colts",
+   "manager_gain": 2.25
+  },
+  {
+   "league": "wrrb_flex",
+   "team": "Kareem abdul-ja\u2019marr",
+   "week": 10,
+   "add": "Rico Dowdle",
+   "drop": "Michael Wilson",
+   "projected_net": 3.656,
+   "bid": 57,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Houston Texans",
+   "manager_gain": -1.25
+  },
+  {
+   "league": "wrrb_flex",
+   "team": "evanpron",
+   "week": 10,
+   "add": "Houston Texans",
+   "drop": "Emeka Egbuka",
+   "projected_net": 3.12,
+   "bid": 57,
+   "edge_gain": 1.75,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "wrrb_flex",
+   "team": "Kansas City Queefs",
+   "week": 10,
+   "add": "Ryan Fitzgerald",
+   "drop": "Sam Darnold",
+   "projected_net": 7.02,
+   "bid": 57,
+   "edge_gain": 3.0,
+   "weeks": 4,
+   "manager_add": "Chris Boswell",
+   "manager_gain": 1.25
+  },
+  {
+   "league": "wrrb_flex",
+   "team": "Nacua Matata",
+   "week": 10,
+   "add": "J.J. McCarthy",
+   "drop": "Rome Odunze",
+   "projected_net": 25.385,
+   "bid": 57,
+   "edge_gain": 3.55,
+   "weeks": 4,
+   "manager_add": "J.J. McCarthy",
+   "manager_gain": 3.55
+  },
+  {
+   "league": "wrrb_flex",
+   "team": "Dak On The Train",
+   "week": 10,
+   "add": "Darren Waller",
+   "drop": "RJ Harvey",
+   "projected_net": 10.764,
+   "bid": 57,
+   "edge_gain": 0.85,
+   "weeks": 4,
+   "manager_add": "Brevyn Spann-Ford",
+   "manager_gain": 0.78
+  },
+  {
+   "league": "wrrb_flex",
+   "team": "Shough Me the Money",
+   "week": 10,
+   "add": "Rico Dowdle",
+   "drop": "Colston Loveland",
+   "projected_net": 1.422,
+   "bid": 57,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Tutu Atwell",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "wrrb_flex",
+   "team": "All You Need Is LOVE",
+   "week": 10,
+   "add": "Rico Dowdle",
+   "drop": "Caleb Williams",
+   "projected_net": 10.143,
+   "bid": 57,
+   "edge_gain": 1.1,
+   "weeks": 4,
+   "manager_add": "Buffalo Bills",
+   "manager_gain": 3.25
+  },
+  {
+   "league": "idp",
+   "team": "Balsamic Legion",
+   "week": 10,
+   "add": "Amani Hooker",
+   "drop": "Emanuel Wilson",
+   "projected_net": 7.6,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "idp",
+   "team": "djkret",
+   "week": 10,
+   "add": "Demetrius Knight Jr.",
+   "drop": "Jack Campbell",
+   "projected_net": 15.391,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "idp",
+   "team": "1AsianPersuasian1",
+   "week": 10,
+   "add": "Aaron Rodgers",
+   "drop": "Edgerrin Cooper",
+   "projected_net": 29.878,
+   "bid": null,
+   "edge_gain": 3.91,
+   "weeks": 4,
+   "manager_add": "J.J. McCarthy",
+   "manager_gain": 3.83
+  },
+  {
+   "league": "idp",
+   "team": "zedzachary",
+   "week": 10,
+   "add": "Amani Hooker",
+   "drop": "Rueben Bain Jr.",
+   "projected_net": 27.011,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "idp",
+   "team": "Noflyzone444",
+   "week": 10,
+   "add": "Amani Hooker",
+   "drop": "Caleb Williams",
+   "projected_net": 7.024,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Corey Kiner",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "idp",
+   "team": "No scrubs, just Lamb \u2b50\ufe0f",
+   "week": 10,
+   "add": "Demetrius Knight Jr.",
+   "drop": "Jonathon Brooks",
+   "projected_net": 4.925,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "idp",
+   "team": "Inform72",
+   "week": 10,
+   "add": "Amani Hooker",
+   "drop": "Michael Wilson",
+   "projected_net": 4.026,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "idp",
+   "team": "bdstudds",
+   "week": 10,
+   "add": "Demetrius Knight Jr.",
+   "drop": "Jaydon Blue",
+   "projected_net": 5.326,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "idp",
+   "team": "UhhnFlammable",
+   "week": 10,
+   "add": "Amani Hooker",
+   "drop": "Roman Wilson",
+   "projected_net": 5.564,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": "Ryan Flournoy",
+   "manager_gain": 4.42
+  },
+  {
+   "league": "idp",
+   "team": "BIGCHIFE55",
+   "week": 10,
+   "add": "Amani Hooker",
+   "drop": "Rome Odunze",
+   "projected_net": 21.151,
+   "bid": null,
+   "edge_gain": 0.0,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  }
+ ],
+ "holds": [
+  {
+   "league": "standard_ppr",
+   "team": "bsh01bsh",
+   "week": 10,
+   "best_available_gain": 3.0,
+   "weeks": 4,
+   "manager_add": "Tutu Atwell",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "standard_ppr",
+   "team": "Minioned",
+   "week": 10,
+   "best_available_gain": 0.75,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "BeerEmperor",
+   "week": 10,
+   "best_available_gain": 0.0,
+   "weeks": 0,
+   "manager_add": "Ashton Dulin",
+   "manager_gain": 0.0
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "D - Team",
+   "week": 10,
+   "best_available_gain": 0.95,
+   "weeks": 4,
+   "manager_add": null,
+   "manager_gain": null
+  },
+  {
+   "league": "multiflex_te_premium",
+   "team": "Waffles",
+   "week": 10,
+   "best_available_gain": 0.0,
+   "weeks": 0,
+   "manager_add": null,
+   "manager_gain": null
+  }
+ ],
+ "bids": [
+  {
+   "league": "megalabowl",
+   "team": "Gaainzzz",
+   "week": 10,
+   "player": "Indianapolis Colts",
+   "our_bid": 6,
+   "winning_bid": 2,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "Gaainzzz",
+   "week": 10,
+   "player": "Green Bay Packers",
+   "our_bid": 3,
+   "winning_bid": 0,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "The Dart Knight Chases",
+   "week": 10,
+   "player": "Zonovan Knight",
+   "our_bid": 3,
+   "winning_bid": 5,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "Eppsy13",
+   "week": 10,
+   "player": "Aaron Rodgers",
+   "our_bid": 6,
+   "winning_bid": 0,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "GoldenPP",
+   "week": 10,
+   "player": "Aaron Rodgers",
+   "our_bid": 6,
+   "winning_bid": 0,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "Prestige Worldwide",
+   "week": 10,
+   "player": "Zonovan Knight",
+   "our_bid": 3,
+   "winning_bid": 5,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "Noflyzone444",
+   "week": 10,
+   "player": "Aaron Rodgers",
+   "our_bid": 6,
+   "winning_bid": 0,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "Raft Ryders",
+   "week": 10,
+   "player": "Darren Waller",
+   "our_bid": 10,
+   "winning_bid": 3,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "Raft Ryders",
+   "week": 10,
+   "player": "Juwan Johnson",
+   "our_bid": 3,
+   "winning_bid": 0,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "Themagicman",
+   "week": 10,
+   "player": "Indianapolis Colts",
+   "our_bid": 10,
+   "winning_bid": 2,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "Themagicman",
+   "week": 10,
+   "player": "Green Bay Packers",
+   "our_bid": 6,
+   "winning_bid": 0,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "2KSports",
+   "week": 10,
+   "player": "Indianapolis Colts",
+   "our_bid": 10,
+   "winning_bid": 2,
+   "budget": 100
+  },
+  {
+   "league": "megalabowl",
+   "team": "2KSports",
+   "week": 10,
+   "player": "Green Bay Packers",
+   "our_bid": 6,
+   "winning_bid": 0,
+   "budget": 100
+  },
+  {
+   "league": "superflex",
+   "team": "Let James Cook",
+   "week": 10,
+   "player": "Baltimore Ravens",
+   "our_bid": 10,
+   "winning_bid": 0,
+   "budget": 200
+  },
+  {
+   "league": "superflex",
+   "team": "Beijing Cucks",
+   "week": 10,
+   "player": "Baltimore Ravens",
+   "our_bid": 18,
+   "winning_bid": 0,
+   "budget": 200
+  },
+  {
+   "league": "superflex",
+   "team": "Rise of SkyWalker",
+   "week": 10,
+   "player": "Baltimore Ravens",
+   "our_bid": 10,
+   "winning_bid": 0,
+   "budget": 200
+  },
+  {
+   "league": "superflex",
+   "team": "Cleveland Navaliers",
+   "week": 10,
+   "player": "Baltimore Ravens",
+   "our_bid": 10,
+   "winning_bid": 0,
+   "budget": 200
+  },
+  {
+   "league": "superflex",
+   "team": "mkcheung",
+   "week": 10,
+   "player": "Germie Bernard",
+   "our_bid": 18,
+   "winning_bid": 0,
+   "budget": 200
+  },
+  {
+   "league": "superflex",
+   "team": "Love Ty Nabers Penix\ud83c\udf46",
+   "week": 10,
+   "player": "Germie Bernard",
+   "our_bid": 1,
+   "winning_bid": 0,
+   "budget": 200
+  },
+  {
+   "league": "superflex",
+   "team": "Tummus",
+   "week": 10,
+   "player": "Germie Bernard",
+   "our_bid": 18,
+   "winning_bid": 0,
+   "budget": 200
+  }
+ ],
+ "trades": [
+  {
+   "league": "standard_ppr",
+   "week": 10,
+   "team": "TrentDuckworth",
+   "gave": [
+    "Bryce Young"
+   ],
+   "got": [
+    "Tyler Warren"
+   ],
+   "verdict": "Reject",
+   "predicted_delta": -47.9,
+   "actual_delta": 0.0,
+   "weeks": 4
+  },
+  {
+   "league": "standard_ppr",
+   "week": 10,
+   "team": "Dustin Wells",
+   "gave": [
+    "Tyler Warren"
+   ],
+   "got": [
+    "Bryce Young"
+   ],
+   "verdict": "Accept",
+   "predicted_delta": 16.4,
+   "actual_delta": 0.0,
+   "weeks": 4
+  },
+  {
+   "league": "standard_ppr",
+   "week": 10,
+   "team": "bsh01bsh",
+   "gave": [
+    "Corey Kiner",
+    "Wan'Dale Robinson"
+   ],
+   "got": [
+    "Emmett Johnson"
+   ],
+   "verdict": "Accept",
+   "predicted_delta": 47.6,
+   "actual_delta": 7.53,
+   "weeks": 4
+  },
+  {
+   "league": "standard_ppr",
+   "week": 10,
+   "team": "Thorpedo\u2019s Torpedos",
+   "gave": [
+    "Emmett Johnson"
+   ],
+   "got": [
+    "Corey Kiner",
+    "Wan'Dale Robinson"
+   ],
+   "verdict": "Reject",
+   "predicted_delta": -58.0,
+   "actual_delta": -5.35,
+   "weeks": 4
+  },
+  {
+   "league": "standard_ppr",
+   "week": 10,
+   "team": "Thorpedo\u2019s Torpedos",
+   "gave": [
+    "Zach Charbonnet"
+   ],
+   "got": [
+    "Xavier Worthy",
+    "Kendre Miller"
+   ],
+   "verdict": "Reject",
+   "predicted_delta": -11.9,
+   "actual_delta": 0.0,
+   "weeks": 4
+  },
+  {
+   "league": "standard_ppr",
+   "week": 10,
+   "team": "Minioned",
+   "gave": [
+    "Xavier Worthy",
+    "Kendre Miller"
+   ],
+   "got": [
+    "Zach Charbonnet"
+   ],
+   "verdict": "Fair",
+   "predicted_delta": 0.0,
+   "actual_delta": 0.0,
+   "weeks": 4
+  }
+ ]
 }
